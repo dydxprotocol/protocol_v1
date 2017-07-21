@@ -4,7 +4,7 @@ import './external/Exchange.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
 
-contract CoveredCallOption {
+contract CoveredCall {
   /**
    * Constant Variables
    */

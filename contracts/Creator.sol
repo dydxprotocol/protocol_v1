@@ -1,17 +1,17 @@
 pragma solidity ^0.4.13;
 
 import './lib/Ownable.sol';
-import './CoveredCallOption.sol';
+import './CoveredCall.sol';
 import './Proxy.sol';
 
-contract CoveredCallCreator is Ownable {
+contract Creator is Ownable {
   address proxy;
   address exchange;
   address exchangeProxy;
 
   mapping(bytes32 => address) options;
 
-  function CoveredCallCreator(
+  function Creator(
     address _proxy,
     address _owner,
     address _exchange,
@@ -26,7 +26,7 @@ contract CoveredCallCreator is Ownable {
    * Public functions
    */
 
-  function createOptionContract(
+  function createCoveredCall(
     address optionTokenAddress,
     address strikeTokenAddress,
     uint256 strikePrice,
