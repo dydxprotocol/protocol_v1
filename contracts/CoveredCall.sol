@@ -45,7 +45,7 @@ contract CoveredCall {
    * Constructor
    */
 
-  function CoveredCallOption(
+  function CoveredCall(
     address _optionToken,
     uint256 _expirationTimestamp,
     uint256 _strikePrice,
@@ -83,11 +83,12 @@ contract CoveredCall {
 
     // TODO Fees
 
-    Proxy(proxy).transfer(msg.sender, takerAmount);
+    Proxy(proxy).transfer(strikeToken, msg.sender, takerAmount);
 
     address writer = orderAddresses[0];
 
-    uint filledAmount = Exchange(exchange).fillOrder(
+    // Amount of strikeToken filled
+    uint strikeTokenFilled = Exchange(exchange).fillOrder(
       [
         writer,
         address(this),
@@ -103,21 +104,25 @@ contract CoveredCall {
       s
     );
 
-    require(filledAmount > 0);
+    // TODO how to get amount of optionToken filled ??
+    uint optionTokenFilled = 10;
 
-    holders[writer] = holders[writer] + filledAmount;
-    funders[msg.sender] = funders[msg.sender] + filledAmount;
+    require(strikeTokenFilled > 0);
+    require(optionTokenFilled > 0);
+
+    holders[writer] = holders[writer] + optionTokenFilled;
+    funders[msg.sender] = funders[msg.sender] + optionTokenFilled;
 
     // TODO make sure state of token has updated from first call
-    if (filledAmount < takerAmount) {
-      ERC20(strikeToken).transfer(msg.sender, takerAmount - filledAmount);
+    if (strikeTokenFilled < takerAmount) {
+      ERC20(strikeToken).transfer(msg.sender, takerAmount - strikeTokenFilled);
     }
 
-    totalOptionToken = totalOptionToken + filledAmount;
+    totalOptionToken = totalOptionToken + optionTokenFilled;
 
-    Buy(address indexed writer, address indexed buyer, uint options, uint premium);
+    Buy(writer, msg.sender, optionTokenFilled, strikeTokenFilled);
 
-    return filledAmount;
+    return optionTokenFilled;
   }
 
   function exercise(uint amount) {
@@ -128,11 +133,16 @@ contract CoveredCall {
     require(block.timestamp > expirationTimestamp);
     require(block.timestamp < expirationTimestamp + COLLECTION_TIME);
 
+    uint strikeTotal = amount * strikePrice;
+    Proxy(proxy).transfer(strikeToken, msg.sender, strikeTotal);
+
     holders[msg.sender] = balance - amount;
 
     require(ERC20(optionToken).transfer(msg.sender, amount));
 
     totalExercised = totalExercised + amount;
+
+    Exercise(msg.sender, amount);
   }
 
   function withdraw(uint amount) returns(uint) {
@@ -151,6 +161,8 @@ contract CoveredCall {
 
     require(ERC20(optionToken).transfer(msg.sender, withdrawalAmount));
 
+    Withdrawal(msg.sender, amount);
+
     return withdrawalAmount;
   }
 
@@ -168,6 +180,8 @@ contract CoveredCall {
     holders[msg.sender] = holderBalance - amount;
 
     require(ERC20(optionToken).transfer(msg.sender, amount));
+
+    Recovery(msg.sender, amount);
 
     totalOptionToken = totalOptionToken - amount;
   }

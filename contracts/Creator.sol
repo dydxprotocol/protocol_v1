@@ -40,16 +40,17 @@ contract Creator is Ownable {
     );
 
     require(options[optionHash] == address(0));
-    address option = new CoveredCallOption(
+    address option = new CoveredCall(
       optionTokenAddress,
       expirationTimestamp,
       strikePrice,
       strikeTokenAddress,
       exchange,
-      exchangeProxy
+      exchangeProxy,
+      proxy
     );
 
-    Proxy(proxy).authorize(strikeTokenAddress, option);
+    Proxy(proxy).authorize(option);
 
     return option;
   }

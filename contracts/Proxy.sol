@@ -6,7 +6,7 @@ import './interfaces/ERC20.sol';
 contract Proxy is Ownable {
   address creator;
 
-  mapping(address => address) public authorizations;
+  mapping(address => bool) public authorizations;
 
   modifier onlyCreator() {
     require(msg.sender == creator);
@@ -24,13 +24,12 @@ contract Proxy is Ownable {
     creator = _creator;
   }
 
-  function authorize(address token, address option) onlyCreator {
-    authorizations[option] = token;
+  function authorize(address option) onlyCreator {
+    authorizations[option] = true;
   }
 
-  function transfer(address from, uint value) {
-    address token = authorizations[msg.sender];
-    require(token != address(0));
+  function transfer(address token, address from, uint value) {
+    require(authorizations[msg.sender]);
 
     require(ERC20(token).transferFrom(from, msg.sender, value));
   }
