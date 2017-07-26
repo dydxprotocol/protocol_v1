@@ -1,19 +1,39 @@
 pragma solidity ^0.4.13;
 
 import './lib/Ownable.sol';
-import './CoveredCall.sol';
+import './CoveredOption.sol';
 import './Proxy.sol';
 
 contract Creator is Ownable {
-  address proxy;
-  address exchange;
-  address exchangeProxy;
+  // -----------------------
+  // ------ Constants ------
+  // -----------------------
 
-  mapping(bytes32 => address) options;
+  bytes8 constant COVERED_OPTION_TYPE = "0xCOVER_OP";
+
+  // ---------------------------
+  // ----- State Variables -----
+  // ---------------------------
+
+  // Address of the dYdX Proxy Contract
+  address public proxy;
+
+  // Address of the 0x Exchange Contract
+  address public exchange;
+
+  // Address of the 0x Exchange Proxy Contract
+  address public exchangeProxy;
+
+  // Mapping storing all child derivatives in existence
+  mapping(bytes32 => address) childDerivatives;
+
+  // -------------------------
+  // ------ Constructor ------
+  // -------------------------
 
   function Creator(
-    address _proxy,
     address _owner,
+    address _proxy,
     address _exchange,
     address _exchangeProxy
   ) Ownable(_owner) {
@@ -22,42 +42,88 @@ contract Creator is Ownable {
     exchangeProxy = _exchangeProxy;
   }
 
-  /**
-   * Public functions
-   */
+  // -----------------------------------------
+  // ---- Public State Changing Functions ----
+  // -----------------------------------------
 
-  function createCoveredCall(
-    address optionTokenAddress,
-    address strikeTokenAddress,
-    uint256 strikePrice,
-    uint256 expirationTimestamp
-  ) returns(address) {
+  function createCoveredOption(
+    address underlyingToken,
+    address baseToken,
+    uint256 expirationTimestamp,
+    uint256 underlyingTokenStrikeRate,
+    uint256 baseTokenStrikeRate
+  ) public returns(address _option) {
     bytes32 optionHash = sha3(
-      optionTokenAddress,
-      strikeTokenAddress,
-      strikePrice,
-      expirationTimestamp
+      COVERED_OPTION_TYPE,
+      underlyingToken,
+      baseToken,
+      expirationTimestamp,
+      underlyingTokenStrikeRate,
+      baseTokenStrikeRate
     );
 
-    require(options[optionHash] == address(0));
-    address option = new CoveredCall(
-      optionTokenAddress,
+    require(childDerivatives[optionHash] == address(0));
+
+    address option = new CoveredOption(
+      underlyingToken,
+      baseToken,
       expirationTimestamp,
-      strikePrice,
-      strikeTokenAddress,
+      underlyingTokenStrikeRate,
+      baseTokenStrikeRate,
       exchange,
       exchangeProxy,
       proxy
     );
+
+    childDerivatives[optionHash] = option;
 
     Proxy(proxy).authorize(option);
 
     return option;
   }
 
+  // -------------------------------------
+  // ----- Public Constant Functions -----
+  // -------------------------------------
+
+  function getCoveredOption(
+    address underlyingToken,
+    address baseToken,
+    uint256 expirationTimestamp,
+    uint256 underlyingTokenStrikeRate,
+    uint256 baseTokenStrikeRate
+  ) constant public returns(address _option){
+    bytes32 optionHash = sha3(
+      COVERED_OPTION_TYPE,
+      underlyingToken,
+      baseToken,
+      expirationTimestamp,
+      underlyingTokenStrikeRate,
+      baseTokenStrikeRate
+    );
+
+    return childDerivatives[optionHash];
+  }
+
   /**
-   * Owner only functions
+   * Divide integer values
+   *
+   * @param  {uint} numerator
+   * @param  {uint} denominator
+   * @param  {uint} target
+   * @return {uint} value of the division
    */
+  function getPartialAmount(
+    uint numerator,
+    uint denominator,
+    uint target
+  ) constant public returns (uint partialValue) {
+    return Exchange(exchange).getPartialAmount(numerator, denominator, target);
+  }
+
+  // --------------------------------
+  // ----- Owner Only Functions -----
+  // --------------------------------
 
   function updateExchange(address _exchange) onlyOwner {
     exchange = _exchange;
