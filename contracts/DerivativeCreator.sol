@@ -4,12 +4,20 @@ import './lib/Ownable.sol';
 import './CoveredOption.sol';
 import './Proxy.sol';
 
-contract Creator is Ownable {
+/**
+ * @title DerivativeCreator
+ * @author Antonio Juliano
+ *
+ * DerivativeCreator creates and maps derivatives corresponding to the dYdX protocol standards.
+ * Current derivatives include:
+ *    - Covered Option
+ */
+contract DerivativeCreator is Ownable {
   // -----------------------
   // ------ Constants ------
   // -----------------------
 
-  bytes8 constant COVERED_OPTION_TYPE = "0xCOVER_OP";
+  uint8 constant COVERED_OPTION_TYPE = 0;
 
   // ---------------------------
   // ----- State Variables -----
@@ -31,7 +39,7 @@ contract Creator is Ownable {
   // ------ Constructor ------
   // -------------------------
 
-  function Creator(
+  function DerivativeCreator(
     address _owner,
     address _proxy,
     address _exchange,
@@ -46,6 +54,21 @@ contract Creator is Ownable {
   // ---- Public State Changing Functions ----
   // -----------------------------------------
 
+  /**
+   * Create a new type of covered option
+   * Will create a new CoveredOption smart contract and return its address
+   *
+   * @param  underlyingToken            The address of the underlying token used in the option
+   * @param  baseToken                  The address of the base token used in the option
+   * @param  expirationTimestamp        A timestamp indicating the expiration date of the option
+   * @param  underlyingTokenStrikeRate  The underlyingToken half of the exchange rate for
+   *                                    the strike price of the option. Exchange rate
+   *                                    must be specified in simplest form
+   * @param  baseTokenStrikeRate        The baseToken half of the exchange rate for
+   *                                    the strike price of the option. Exchange rate
+   *                                    must be specified in simplest form
+   * @return _option                    The address of the new option contract
+   */
   function createCoveredOption(
     address underlyingToken,
     address baseToken,
@@ -53,6 +76,21 @@ contract Creator is Ownable {
     uint256 underlyingTokenStrikeRate,
     uint256 baseTokenStrikeRate
   ) public returns(address _option) {
+    // Require exchange rates for options to be in simplest form
+    if (underlyingTokenStrikeRate > baseTokenStrikeRate) {
+      require(
+        underlyingTokenStrikeRate == 1
+        || baseTokenStrikeRate == 1
+        || underlyingTokenStrikeRate % baseTokenStrikeRate != 0
+      );
+    } else {
+      require(
+        underlyingTokenStrikeRate == 1
+        || baseTokenStrikeRate == 1
+        || baseTokenStrikeRate % underlyingTokenStrikeRate != 0
+      );
+    }
+
     bytes32 optionHash = sha3(
       COVERED_OPTION_TYPE,
       underlyingToken,
@@ -86,6 +124,20 @@ contract Creator is Ownable {
   // ----- Public Constant Functions -----
   // -------------------------------------
 
+  /**
+   * Get the address of a covered option contract. Will return the 0 address if none exists
+   *
+   * @param  underlyingToken            The address of the underlying token used in the option
+   * @param  baseToken                  The address of the base token used in the option
+   * @param  expirationTimestamp        A timestamp indicating the expiration date of the option
+   * @param  underlyingTokenStrikeRate  The underlyingToken half of the exchange rate for
+   *                                    the strike price of the option. Exchange rate
+   *                                    must be specified in simplest form
+   * @param  baseTokenStrikeRate        The baseToken half of the exchange rate for
+   *                                    the strike price of the option. Exchange rate
+   *                                    must be specified in simplest form
+   * @return _option                    The address of the option contract
+   */
   function getCoveredOption(
     address underlyingToken,
     address baseToken,
@@ -103,22 +155,6 @@ contract Creator is Ownable {
     );
 
     return childDerivatives[optionHash];
-  }
-
-  /**
-   * Divide integer values
-   *
-   * @param  {uint} numerator
-   * @param  {uint} denominator
-   * @param  {uint} target
-   * @return {uint} value of the division
-   */
-  function getPartialAmount(
-    uint numerator,
-    uint denominator,
-    uint target
-  ) constant public returns (uint partialValue) {
-    return Exchange(exchange).getPartialAmount(numerator, denominator, target);
   }
 
   // --------------------------------

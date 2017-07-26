@@ -123,7 +123,7 @@ contract CoveredOption {
   // ------ Constructor ------
   // -------------------------
 
-  function CoveredCall(
+  function CoveredOption(
     address _underlyingToken,
     address _baseToken,
     uint256 _expirationTimestamp,
@@ -141,15 +141,8 @@ contract CoveredOption {
     exchange = _exchange;
     proxy = _proxy;
 
-    // ??? Is this needed? Does solidity autoset to 0?
-    totalOptions = 0;
-    totalBaseToken = 0;
-    totalExercised = 0;
-    totalWritten = 0;
-    totalWithdrawn = 0;
-
-    // TODO find max int value
-    require(ERC20(_baseToken).approve(_exchangeProxy, 100000000000000000000000000));
+    // TODO come up with better max uint value
+    require(ERC20(_baseToken).approve(_exchangeProxy, 2 ** 255));
   }
 
   // -----------------------------------------
@@ -170,24 +163,24 @@ contract CoveredOption {
    *     totalWritten is incremented by the number of options written
    * 7 - Buy event is recorded
    *
-   * @param  {address} writer       address of the writer of this option issuance
-   * @param  {uint[6]} orderValues  array containing:
-   *                                [
-   *                                  underlyingTokenAmount,
-   *                                  baseTokenAmount,
-   *                                  writerFee,
-   *                                  buyerFee,
-   *                                  expirationTimestampInSec,
-   *                                  salt
-   *                                ]
-   * @param  {uint}  maximumPremium amount of premium in baseToken the the buyer wishes to pay
-   *                                new options will be issued on a 1:1 basis with number of
-   *                                underlyingToken transfered in by the writer as per the
-   *                                exchange rate offered in the trade
-   * @param  {uint8}   v            ECDSA signature parameter v
-   * @param  {bytes32} r            CDSA signature parameters r
-   * @param  {bytes32} s            CDSA signature parameters s
-   * @return {uint}  _optionsIssued number of options issued to the buyer
+   * @param  writer         address of the writer of this option issuance
+   * @param  orderValues    array containing:
+   *                        [
+   *                          underlyingTokenAmount,
+   *                          baseTokenAmount,
+   *                          writerFee,
+   *                          buyerFee,
+   *                          expirationTimestampInSec,
+   *                          salt
+   *                        ]
+   * @param  maximumPremium Maximum amount of premium in baseToken the the buyer wishes to pay
+   *                        new options will be issued on a 1:1 basis with number of
+   *                        underlyingToken transfered in by the writer as per the
+   *                        exchange rate offered in the trade
+   * @param  v              ECDSA signature parameter v
+   * @param  r              CDSA signature parameters r
+   * @param  s              CDSA signature parameters s
+   * @return _optionsIssued number of options issued to the buyer
    */
   function buy(
     address writer,
@@ -202,8 +195,8 @@ contract CoveredOption {
 
     // TODO how to sign these?
     // TODO Fees
-    uint writerFee = orderValues[2];
-    uint buyerFee = orderValues[3];
+    // uint writerFee = orderValues[2];
+    // uint buyerFee = orderValues[3];
     orderValues[2] = 0;
     orderValues[3] = 0;
 
@@ -270,8 +263,8 @@ contract CoveredOption {
    *     totalBaseToken is incremented by the amount of baseToken paid to CoveredOption
    * 6 - Exercise event is recorded
    *
-   * @param  {uint} amount                number of options to exercise
-   * @return {uint} _totalBaseTokenPrice  total price in baseToken paid for exercise
+   * @param  amount                number of options to exercise
+   * @return _totalBaseTokenPrice  total price in baseToken paid for exercise
    */
   function exercise(uint amount)
     public
@@ -314,8 +307,8 @@ contract CoveredOption {
   }
 
   /**
-   * Withdraw a writer's portion of baseToken and underlyingToken. Can only be done after expiration
-   * of the option
+   * Withdraw a writer's portion of baseToken and underlyingToken.
+   * Can only be done after expiration of the option
    *
    * Note: this function can be called by any address. There is no reason for a writer not to
    *       withdraw, so anyone can trigger this
@@ -328,8 +321,8 @@ contract CoveredOption {
    * 4 - Increment totalWithdrawn by the writer's original balance
    * 5 - Record a Withdrawal event
    *
-   * @return {uint} _underlyingTokenAmount amount of underlyingToken withdrawn
-   * @return {uint} _baseTokenAmount       amount of baseToken withdrawn
+   * @return _underlyingTokenAmount amount of underlyingToken withdrawn
+   * @return _baseTokenAmount       amount of baseToken withdrawn
    */
   function withdraw(address writer)
     public
@@ -384,7 +377,7 @@ contract CoveredOption {
    * 3 - amount of underlyingToken is transfered to the sender
    * 4 - Recovery event is recorded
    *
-   * @param  {uint} amount amount of underlyingToken to recover
+   * @param  amount amount of underlyingToken to recover
    */
   function recover(uint amount) {
     // Validations
@@ -418,10 +411,10 @@ contract CoveredOption {
   /**
    * Divide integer values
    *
-   * @param  {uint} numerator
-   * @param  {uint} denominator
-   * @param  {uint} target
-   * @return {uint} value of the division
+   * @param  numerator    numerator of division
+   * @param  denominator  denominator of division
+   * @param  target       multiplier of division
+   * @return partialValue value of the division
    */
   function getPartialAmount(
     uint numerator,
