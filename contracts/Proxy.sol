@@ -30,6 +30,7 @@ contract Proxy is Ownable {
 
   function transfer(address token, address from, uint value) {
     require(authorizations[msg.sender]);
+    require(value > 0);
 
     require(ERC20(token).transferFrom(from, msg.sender, value));
   }

@@ -425,9 +425,9 @@ contract CoveredOption {
     return Exchange(exchange).getPartialAmount(numerator, denominator, target);
   }
 
-  // -------------------
-  // ------ ERC20 ------
-  // -------------------
+  // ---------------------
+  // ------- ERC20 -------
+  // ---------------------
 
   mapping (address => mapping (address => uint256)) allowed;
 
