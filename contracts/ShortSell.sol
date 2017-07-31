@@ -99,6 +99,73 @@ contract ShortSell is Ownable {
     mapping(bytes32 => LoanAmount) public loanAmounts;
     mapping(address => uint) public loanNumbers;
 
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    /**
+     * A short sell occurred
+     */
+    // TODO is this event too big? [omitted fee details]
+    event ShortInitiated(
+        bytes32 indexed id,
+        address indexed shortSeller,
+        address indexed lender,
+        address underlyingToken,
+        address baseToken,
+        uint shortAmount,
+        uint baseTokenFromSell,
+        uint depositAmount,
+        uint lockoutTime,
+        uint callTimeLimit,
+        uint interestRate,
+        uint timestamp // ??? are timestamps needed
+    );
+
+    /**
+     * A short sell was closed
+     */
+    event ShortClosed(
+        bytes32 indexed id,
+        uint interestFee,
+        uint shortSellerBaseToken,
+        uint timestamp
+    );
+
+    /**
+     * The loan for a short sell was called in
+     */
+    event LoanCalled(
+        bytes32 indexed id,
+        uint timestamp
+    );
+
+    /**
+     * A loan call was canceled
+     */
+    event LoanCallCanceled(
+        bytes32 indexed id,
+        uint timestamp
+    );
+
+    /**
+     * A short sell loan was forcibly recovered by the lender
+     */
+    event LoanForceRecovered(
+        bytes32 indexed id,
+        uint amount,
+        uint timestamp
+    );
+
+    /**
+     * Additional deposit for a short sell was posted by the short seller
+     */
+    event AdditionalDeposit(
+        bytes32 indexed id,
+        uint amount,
+        uint timestamp
+    );
+
     // -------------------------
     // ------ Constructor ------
     // -------------------------
@@ -129,6 +196,7 @@ contract ShortSell is Ownable {
      * 4 - use the provided 0x buy order to sell the loaned underlying token for base token.
      *     base token received from the sell is also stored in Vault
      * 5 - add details of the short sell to repo
+     * 6 - Short event recorded
      *
      * @param  addresses  Addresses corresponding to:
      *
@@ -260,6 +328,13 @@ contract ShortSell is Ownable {
             REPO_VERSION
         );
 
+        recordShortInitiated(
+            shortId,
+            msg.sender,
+            transaction,
+            baseTokenReceived
+        );
+
         return shortId;
     }
 
@@ -329,6 +404,13 @@ contract ShortSell is Ownable {
             shortId
         );
 
+        ShortClosed(
+            shortId,
+            interestFee,
+            sellerBaseTokenAmount,
+            block.timestamp
+        );
+
         return (
             sellerBaseTokenAmount,
             interestFee
@@ -336,7 +418,7 @@ contract ShortSell is Ownable {
     }
 
     /**
-     * Function called by lender when he wished to call in the loan used for a short sell.
+     * Call in a short sell loan.
      * Only callable by the lender for a short sell. After loan is called in, the short seller
      * will have time equal to the call time limit specified on the original short sell to
      * close the short and repay the loan. If the short seller does not close the short, the
@@ -353,6 +435,31 @@ contract ShortSell is Ownable {
         require(block.timestamp >= short.startTimestamp + short.lockoutTime);
 
         ShortSellRepo(repo).setShortCallStart(shortId, block.timestamp);
+
+        LoanCalled(
+            shortId,
+            block.timestamp
+        );
+    }
+
+    /**
+     * Cancel a loan call. Only callable by the short sell's lender
+     *
+     * @param  shortId  unique id for the short sell
+     */
+    function cancelLoanCall(
+        bytes32 shortId
+    ) external {
+        require(ShortSellRepo(repo).containsShort(shortId));
+        Short memory short = getShort(shortId);
+        require(msg.sender == short.lender);
+
+        ShortSellRepo(repo).setShortCallStart(shortId, 0);
+
+        LoanCallCanceled(
+            shortId,
+            block.timestamp
+        );
     }
 
     /**
@@ -382,13 +489,42 @@ contract ShortSell is Ownable {
             baseTokenAmount
         );
 
-        Vault(vault).deleteBalances(
+        cleanupShort(
+            short,
+            shortId
+        );
+
+        LoanForceRecovered(
             shortId,
-            short.baseToken,
-            short.underlyingToken
+            baseTokenAmount,
+            block.timestamp
         );
 
         return baseTokenAmount;
+    }
+
+    /**
+     * Deposit additional base token as colateral for a short sell loan. Only callable by
+     * the short seller
+     *
+     * @param  shortId          unique id for the short sell
+     * @param  depositAmount    additional amount in base token to deposit
+     */
+    function deposit(
+        bytes32 shortId,
+        uint depositAmount
+    ) external {
+        require(ShortSellRepo(repo).containsShort(shortId));
+        Short memory short = getShort(shortId);
+        require(msg.sender == short.lender);
+
+        Vault(vault).transfer(shortId, short.baseToken, short.lender, depositAmount);
+
+        AdditionalDeposit(
+            shortId,
+            depositAmount,
+            block.timestamp
+        );
     }
 
     // -------------------------------------
@@ -532,6 +668,28 @@ contract ShortSell is Ownable {
             loanOffering.lockoutTime,
             loanOffering.callTimeLimit,
             loanOffering.salt
+        );
+    }
+
+    function recordShortInitiated(
+        bytes32 shortId,
+        address shortSeller,
+        ShortTx transaction,
+        uint baseTokenReceived
+    ) internal {
+        ShortInitiated(
+            shortId,
+            shortSeller,
+            transaction.loanOffering.lender,
+            transaction.underlyingToken,
+            transaction.baseToken,
+            transaction.shortAmount,
+            baseTokenReceived,
+            transaction.depositAmount,
+            transaction.loanOffering.lockoutTime,
+            transaction.loanOffering.callTimeLimit,
+            transaction.loanOffering.rates.interestRate,
+            block.timestamp
         );
     }
 
