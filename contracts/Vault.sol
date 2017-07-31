@@ -6,8 +6,8 @@ import './Proxy.sol';
 import './external/Exchange.sol';
 
 contract Vault is AccessControlled {
-    uint constant ACCESS_DELAY = 1000 * 60 * 60 * 24; // 1 Day
-    uint constant GRACE_PERIOD = 1000 * 60 * 60 * 8; // 8 hours
+    uint constant ACCESS_DELAY = 1 days;
+    uint constant GRACE_PERIOD = 8 hours;
     address public ZRX_TOKEN_CONTRACT;
 
     mapping(bytes32 => mapping(address => uint256)) public balances;
@@ -24,10 +24,10 @@ contract Vault is AccessControlled {
     address exchangeProxy;
 
     function Vault(
-    address _owner,
-    address _proxy,
-    address _exchange,
-    address _ZRX_TOKEN_CONTRACT
+        address _owner,
+        address _proxy,
+        address _exchange,
+        address _ZRX_TOKEN_CONTRACT
     ) AccessControlled(_owner, ACCESS_DELAY, GRACE_PERIOD) {
         proxy = _proxy;
         exchange = _exchange;
@@ -50,25 +50,25 @@ contract Vault is AccessControlled {
     ) requiresAuthorization {
         Proxy(proxy).transfer(token, from, amount);
 
-        require(ERC20(token).balanceOf(address(this)) == totalBalances[token] + amount);
+        assert(ERC20(token).balanceOf(address(this)) == totalBalances[token] + amount);
 
         balances[id][token] = balances[id][token] + amount;
         totalBalances[token] = totalBalances[token] + amount;
     }
 
     function send(
-    bytes32 id,
-    address token,
-    address to,
-    uint amount
+        bytes32 id,
+        address token,
+        address to,
+        uint amount
     ) requiresAuthorization {
         uint256 balance = balances[id][token];
-        require(balance >= amount);
+        assert(balance >= amount);
 
         balances[id][token] = balances[id][token] - amount;
-        require(ERC20(token).transfer(to, amount));
+        assert(ERC20(token).transfer(to, amount));
 
-        require(ERC20(token).balanceOf(address(this)) == totalBalances[token] - amount);
+        assert(ERC20(token).balanceOf(address(this)) == totalBalances[token] - amount);
         totalBalances[token] = totalBalances[token] - amount;
     }
 
@@ -81,12 +81,12 @@ contract Vault is AccessControlled {
         bytes32 r,
         bytes32 s,
         bool requireFullAmount
-    ) requiresAuthorization returns(
+    ) requiresAuthorization returns (
         uint _filledTakerTokenAmount,
         uint _makerTokenAmount
     ) {
-        require(balances[id][orderAddresses[3]] >= requestedFillAmount);
-        require(totalBalances[orderAddresses[3]] >= requestedFillAmount);
+        assert(balances[id][orderAddresses[3]] >= requestedFillAmount);
+        assert(totalBalances[orderAddresses[3]] >= requestedFillAmount);
 
         balances[id][orderAddresses[3]] = balances[id][orderAddresses[3]] - requestedFillAmount;
 
@@ -133,6 +133,21 @@ contract Vault is AccessControlled {
         return (filledTakerTokenAmount, makerTokenAmount);
     }
 
+    function deleteBalances(
+        bytes32 shortId,
+        address baseToken,
+        address underlyingToken
+    ) requiresAuthorization {
+        assert(balances[shortId][baseToken] == 0);
+        assert(balances[shortId][underlyingToken] == 0);
+        assert(balances[shortId][ZRX_TOKEN_CONTRACT] == 0);
+
+        // ??? is it worth deleting these if they are 0 ?
+        delete balances[shortId][baseToken];
+        delete balances[shortId][underlyingToken];
+        delete balances[shortId][ZRX_TOKEN_CONTRACT];
+    }
+
     function updateBalancesForTrade(
         bytes32 id,
         address makerToken,
@@ -142,16 +157,16 @@ contract Vault is AccessControlled {
         uint requestedFillAmount,
         uint feeAmount
     ) internal {
-        require(balances[id][ZRX_TOKEN_CONTRACT] >= feeAmount);
-        require(
+        assert(balances[id][ZRX_TOKEN_CONTRACT] >= feeAmount);
+        assert(
             ERC20(ZRX_TOKEN_CONTRACT).balanceOf(address(this))
             == totalBalances[ZRX_TOKEN_CONTRACT] - feeAmount
         );
-        require(
+        assert(
             ERC20(makerToken).balanceOf(address(this))
             == totalBalances[makerToken] + makerAmount
         );
-        require(
+        assert(
             ERC20(takerToken).balanceOf(address(this))
             == totalBalances[takerToken] - takerAmount
         );

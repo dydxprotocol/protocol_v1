@@ -189,7 +189,7 @@ contract CoveredOption {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (
+    ) external returns (
         uint _optionsIssued
     ) {
         require(maximumPremium > 0);
@@ -200,8 +200,8 @@ contract CoveredOption {
 
         // uint writerFee = orderValues[2];
         // uint buyerFee = orderValues[3];
-        orderValues[2] = 0;
-        orderValues[3] = 0;
+        /*orderValues[2] = 0;
+        orderValues[3] = 0;*/
 
         // Transfer the maximum baseToken premium from the sender to CoveredOption
         Proxy(proxy).transfer(baseToken, msg.sender, maximumPremium);
@@ -272,7 +272,7 @@ contract CoveredOption {
      */
     function exercise(
         uint amount
-    ) public returns (
+    ) external returns (
         uint _totalBaseTokenPrice
     ) {
         require(amount > 0);
@@ -333,7 +333,7 @@ contract CoveredOption {
      */
     function withdraw(
         address writer
-    ) public returns (
+    ) external returns (
         uint _underlyingTokenAmount,
         uint _baseTokenAmount
     ) {
@@ -390,7 +390,7 @@ contract CoveredOption {
      */
     function recover(
         uint amount
-    ) public {
+    ) external {
         // Validations
         require(amount > 0);
         require(block.timestamp < expirationTimestamp);

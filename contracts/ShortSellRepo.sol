@@ -10,9 +10,12 @@ contract ShortSellRepo is AccessControlled {
         bool exists;
         address underlyingToken;
         address baseToken;
+        uint shortAmount;
         uint interestRate;
         uint callTimeLimit;
-        uint lockoutTimestamp;
+        uint lockoutTime;
+        uint startTimestamp;
+        uint callTimestamp;
         address lender;
         address seller;
         uint8 version;
@@ -29,9 +32,12 @@ contract ShortSellRepo is AccessControlled {
     ) constant public returns (
         address underlyingToken,
         address baseToken,
+        uint shortAmount,
         uint interestRate,
         uint callTimeLimit,
-        uint lockoutTimestamp,
+        uint lockoutTime,
+        uint startTimestamp,
+        uint callTimestamp,
         address lender,
         address seller,
         uint8 version
@@ -41,9 +47,12 @@ contract ShortSellRepo is AccessControlled {
         return (
             short.underlyingToken,
             short.baseToken,
+            short.shortAmount,
             short.interestRate,
             short.callTimeLimit,
-            short.lockoutTimestamp,
+            short.lockoutTime,
+            short.startTimestamp,
+            short.callTimestamp,
             short.lender,
             short.seller,
             short.version
@@ -58,28 +67,43 @@ contract ShortSellRepo is AccessControlled {
         return shorts[id].exists;
     }
 
-    function setShort(
+    function addShort(
         bytes32 id,
         address underlyingToken,
         address baseToken,
+        uint shortAmount,
         uint interestRate,
         uint callTimeLimit,
-        uint lockoutTimestamp,
+        uint lockoutTime,
+        uint startTimestamp,
         address lender,
         address seller,
         uint8 version
     ) requiresAuthorization {
+        require(!containsShort(id));
+
         shorts[id] = Short({
             exists: true,
             underlyingToken: underlyingToken,
             baseToken: baseToken,
+            shortAmount: shortAmount,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
-            lockoutTimestamp: lockoutTimestamp,
+            lockoutTime: lockoutTime,
+            startTimestamp: startTimestamp,
+            callTimestamp: 0, // Not set until later
             lender: lender,
             seller: seller,
             version: version
         });
+    }
+
+    function setShortCallStart(
+        bytes32 id,
+        uint callStart
+    ) requiresAuthorization {
+        require(containsShort(id));
+        shorts[id].callTimestamp = callStart;
     }
 
     function deleteShort(

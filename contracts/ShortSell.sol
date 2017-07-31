@@ -4,6 +4,12 @@ import './lib/Ownable.sol';
 import './Vault.sol';
 import './ShortSellRepo.sol';
 
+/**
+ * @title ShortSell
+ * @author Antonio Juliano
+ *
+ * This contract is used to facilitate short selling as per the dYdX short sell protocol
+ */
 contract ShortSell is Ownable {
     address public ZRX_TOKEN_CONTRACT;
     uint8 public constant REPO_VERSION = 1;
@@ -26,7 +32,7 @@ contract ShortSell is Ownable {
         address feeRecipient;
         LoanRates rates;
         uint expirationTimestamp;
-        uint lockoutTimestamp;
+        uint lockoutTime;
         uint callTimeLimit;
         uint salt;
         bytes32 loanHash;
@@ -69,9 +75,12 @@ contract ShortSell is Ownable {
     struct Short {
         address underlyingToken;
         address baseToken;
+        uint shortAmount;
         uint interestRate;
         uint callTimeLimit;
-        uint lockoutTimestamp;
+        uint lockoutTime;
+        uint startTimestamp;
+        uint callTimestamp;
         address lender;
         address seller;
         uint8 version;
@@ -109,9 +118,17 @@ contract ShortSell is Ownable {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
-    // TODO: lender, taker fees on loan offer
     /**
-     * TODO
+     * Initiate a short sell. Called by the short seller. Short seller must provide both a
+     * signed loan offering as well as a signed 0x buy order for the underlying token to
+     * be shorted
+     *
+     * 1 - base token deposit is transfered from the short seller to Vault
+     * 2 - underlying token is transfered from lender to Vault
+     * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
+     * 4 - use the provided 0x buy order to sell the loaned underlying token for base token.
+     *     base token received from the sell is also stored in Vault
+     * 5 - add details of the short sell to repo
      *
      * @param  addresses  Addresses corresponding to:
      *
@@ -132,7 +149,7 @@ contract ShortSell is Ownable {
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp
-     *  [7] = loan lockout timestamp
+     *  [7] = loan lockout time
      *  [8] = loan call time limit
      *  [9] = loan salt
      *  [10] = buy order base token amount
@@ -153,7 +170,9 @@ contract ShortSell is Ownable {
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) public returns(bytes32 _shortId) {
+    ) external returns(bytes32 _shortId) {
+        // TODO: lender, taker fees on loan offer
+
         // TODO understand memory vs storage better. Should this be storage? want to just
         // pass around a pointer to it
         ShortTx memory transaction = parseShortTx(
@@ -192,13 +211,20 @@ contract ShortSell is Ownable {
             transaction.shortAmount
         );
 
-        // Transfer ZRX fee for sell
-        if (transaction.buyOrder.takerFee > 0) {
+        // TODO check this is right amount
+        uint tradeTakerFee = getPartialAmount(
+            transaction.shortAmount,
+            transaction.buyOrder.underlyingTokenAmount,
+            transaction.buyOrder.takerFee
+        );
+
+        // Transfer ZRX taker fee for sell
+        if (tradeTakerFee > 0) {
             Vault(vault).transfer(
                 shortId,
                 ZRX_TOKEN_CONTRACT,
                 msg.sender,
-                transaction.buyOrder.takerFee
+                tradeTakerFee
             );
         }
 
@@ -209,32 +235,26 @@ contract ShortSell is Ownable {
         );
 
         // Should hold base token == deposit amount + base token from sell
-        require(
+        assert(
             Vault(vault).balances(
                 shortId,
                 transaction.baseToken
             ) == baseTokenReceived + transaction.depositAmount
         );
-        // Should hold 0 underlying token
-        require(Vault(vault).balances(shortId, transaction.underlyingToken) == 0);
 
-        // Send back any excess ZRX token
-        if (Vault(vault).balances(shortId, ZRX_TOKEN_CONTRACT) > 0) {
-            Vault(vault).send(
-                shortId,
-                ZRX_TOKEN_CONTRACT,
-                msg.sender,
-                Vault(vault).balances(shortId, ZRX_TOKEN_CONTRACT)
-            );
-        }
+        // Should hold 0 underlying token and ZRX token
+        assert(Vault(vault).balances(shortId, transaction.underlyingToken) == 0);
+        assert(Vault(vault).balances(shortId, ZRX_TOKEN_CONTRACT) == 0);
 
-        ShortSellRepo(repo).setShort(
+        ShortSellRepo(repo).addShort(
             shortId,
             transaction.underlyingToken,
             transaction.baseToken,
+            transaction.shortAmount,
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.lockoutTimestamp,
+            transaction.loanOffering.lockoutTime,
+            block.timestamp,
             transaction.loanOffering.lender,
             msg.sender,
             REPO_VERSION
@@ -243,24 +263,132 @@ contract ShortSell is Ownable {
         return shortId;
     }
 
+    /**
+     * Close a short sell. Only callable by short seller. Short seller must provide a 0x order
+     * offering at least as much underlying token as was loaned for the short sell. There must be
+     * enough base token left over after the trade to pay the lender the full owed interest fee.
+     * The short seller is sent base token = deposit + profit - interest fee
+     *
+     * @param  shortId              unique id for the short sell
+     * @param  orderAddresses       Addresses for the supplied 0x order:
+     *                              [0] = maker
+     *                              [1] = taker
+     *                              [2] = fee recipient
+     * @param  orderValues          Values for the supplied 0x order:
+     *                              [0] = underlying token amount
+     *                              [1] = base token amount
+     *                              [2] = maker fee
+     *                              [3] = taker fee
+     *                              [4] = expiration timestamp
+     *                              [5] = salt
+     * @param  orderV               ECDSA signature parameter v for the 0x order
+     * @param  orderR bytes32       CDSA signature parameter r for the 0x order
+     * @param  orderS bytes32       CDSA signature parameter s for the 0x order
+     * @return _baseTokenReceived   amount of base token received by the short seller after closing
+     * @return _interestFeeAmount   interest fee in base token paid to the lender
+     */
     function closeShort(
         bytes32 shortId,
-        address[2] orderAddresses,
+        address[3] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
-    ) public returns(
-        uint _baseTokenReceived
+    ) external returns (
+        uint _baseTokenReceived,
+        uint _interestFeeAmount
     ) {
         require(ShortSellRepo(repo).containsShort(shortId));
-        Short short = parseShort(ShortSellRepo(repo).getShort(shortId));
-        require(seller == msg.sender);
-        require()
 
-        uint interestFee = calculateInterestFee(short);
-        Vault.transfer(shortId, ZRX_TOKEN_CONTRACT, msg.sender, orderValues[3]);
+        Short memory short = getShort(shortId);
 
+        require(short.seller == msg.sender);
+        require(short.version == REPO_VERSION);
+
+        uint interestFee = calculateInterestFee(short.interestRate, short.startTimestamp);
+
+        buyBackUnderlyingToken(
+            short,
+            shortId,
+            interestFee,
+            orderAddresses,
+            orderValues,
+            orderV,
+            orderR,
+            orderS
+        );
+
+        uint sellerBaseTokenAmount = sendTokensOnClose(
+            short,
+            shortId,
+            interestFee
+        );
+
+        cleanupShort(
+            short,
+            shortId
+        );
+
+        return (
+            sellerBaseTokenAmount,
+            interestFee
+        );
+    }
+
+    /**
+     * Function called by lender when he wished to call in the loan used for a short sell.
+     * Only callable by the lender for a short sell. After loan is called in, the short seller
+     * will have time equal to the call time limit specified on the original short sell to
+     * close the short and repay the loan. If the short seller does not close the short, the
+     * lender can use forceRecoverLoan to recover his funds.
+     *
+     * @param  shortId  unique id for the short sell
+     */
+    function callInLoan(
+        bytes32 shortId
+    ) external {
+        require(ShortSellRepo(repo).containsShort(shortId));
+        Short memory short = getShort(shortId);
+        require(msg.sender == short.lender);
+        require(block.timestamp >= short.startTimestamp + short.lockoutTime);
+
+        ShortSellRepo(repo).setShortCallStart(shortId, block.timestamp);
+    }
+
+    /**
+     * Function callable by a short sell lender after he has called in the loan, but the
+     * short seller did not close the short sell before the call time limit. Used to recover the
+     * lender's original loaned amount of underlying token as well as any owed interest fee
+     *
+     * @param  shortId  unique id for the short sell
+     */
+    function forceRecoverLoan(
+        bytes32 shortId
+    ) external returns (uint _baseTokenAmount) {
+        // TODO decide best method to do this. Seller suplies order or auto market maker
+        // for now simple implementation of giving lender all funds
+
+        require(ShortSellRepo(repo).containsShort(shortId));
+        Short memory short = getShort(shortId);
+        require(msg.sender == short.lender);
+        require(short.callTimestamp != 0);
+        require(short.callTimestamp + short.callTimeLimit < block.timestamp);
+
+        uint baseTokenAmount = Vault(vault).balances(shortId, short.baseToken);
+        Vault(vault).send(
+            shortId,
+            short.baseToken,
+            short.lender,
+            baseTokenAmount
+        );
+
+        Vault(vault).deleteBalances(
+            shortId,
+            short.baseToken,
+            short.underlyingToken
+        );
+
+        return baseTokenAmount;
     }
 
     // -------------------------------------
@@ -271,7 +399,9 @@ contract ShortSell is Ownable {
         uint numerator,
         uint denominator,
         uint target
-    ) constant public returns (uint partialValue) {
+    ) constant public returns (
+        uint partialValue
+    ) {
         // TODO
         return 1;
     }
@@ -282,7 +412,7 @@ contract ShortSell is Ownable {
 
     function getNextShortId(
         address lender
-    ) internal constant returns(
+    ) internal constant returns (
         bytes32 _shortId
     ) {
         return sha3(
@@ -307,7 +437,7 @@ contract ShortSell is Ownable {
     function validateShort(
         ShortTx transaction,
         bytes32 shortId
-    ) internal constant returns(
+    ) internal constant returns (
         uint _maxLoanAmount
     ) {
         require(!ShortSellRepo(repo).containsShort(shortId));
@@ -341,7 +471,7 @@ contract ShortSell is Ownable {
     function executeSell(
         ShortTx transaction,
         bytes32 shortId
-    ) internal returns(
+    ) internal returns (
         uint _baseTokenReceived
     ) {
         var ( , baseTokenReceived) = Vault(vault).trade(
@@ -373,22 +503,22 @@ contract ShortSell is Ownable {
 
     function getLoanOfferingHash(
         ShortTx transaction
-    ) internal constant returns(
+    ) internal constant returns (
         bytes32 _hash
     ) {
         return sha3(
-        address(this),
-        transaction.underlyingToken,
-        transaction.baseToken,
-        transaction.loanOffering.lender,
-        transaction.loanOffering.feeRecipient,
-        getValuesHash(transaction.loanOffering)
+            address(this),
+            transaction.underlyingToken,
+            transaction.baseToken,
+            transaction.loanOffering.lender,
+            transaction.loanOffering.feeRecipient,
+            getValuesHash(transaction.loanOffering)
         );
     }
 
     function getValuesHash(
         LoanOffering loanOffering
-    ) internal constant returns(
+    ) internal constant returns (
         bytes32 _hash
     ) {
         return sha3(
@@ -399,19 +529,115 @@ contract ShortSell is Ownable {
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,
-            loanOffering.lockoutTimestamp,
+            loanOffering.lockoutTime,
             loanOffering.callTimeLimit,
             loanOffering.salt
         );
     }
 
     function calculateInterestFee(
-        Short short
+        uint interestRate,
+        uint startTimestamp
     ) internal constant returns (
         uint _interestFee
     ) {
         // TODO
         return 1;
+    }
+
+    function buyBackUnderlyingToken(
+        Short short,
+        bytes32 shortId,
+        uint interestFee,
+        address[3] orderAddresses,
+        uint[6] orderValues,
+        uint8 orderV,
+        bytes32 orderR,
+        bytes32 orderS
+    ) internal {
+        uint tradeTakerFee = getPartialAmount(
+            orderValues[1],
+            orderValues[0],
+            orderValues[3]
+        );
+
+        if (tradeTakerFee > 0) {
+            Vault(vault).transfer(shortId, ZRX_TOKEN_CONTRACT, msg.sender, tradeTakerFee);
+        }
+
+        uint baseTokenPrice = getPartialAmount(
+            orderValues[1],
+            orderValues[0],
+            short.shortAmount
+        );
+
+        require(baseTokenPrice + interestFee <= Vault(vault).balances(shortId, short.baseToken));
+
+        Vault(vault).trade(
+            shortId,
+            [
+                orderAddresses[0],
+                orderAddresses[1],
+                short.underlyingToken,
+                short.baseToken,
+                orderAddresses[2]
+            ],
+            orderValues,
+            baseTokenPrice,
+            orderV,
+            orderR,
+            orderS,
+            true
+        );
+
+        assert(Vault(vault).balances(shortId, short.underlyingToken) == short.shortAmount);
+    }
+
+    function sendTokensOnClose(
+        Short short,
+        bytes32 shortId,
+        uint interestFee
+    ) internal returns (
+        uint _sellerBaseTokenAmount
+    ) {
+        // Send original loaned underlying token to lender
+        Vault(vault).send(
+            shortId,
+            short.underlyingToken,
+            short.lender,
+            short.shortAmount
+        );
+        // Send base token interest fee to lender
+        Vault(vault).send(
+            shortId,
+            short.baseToken,
+            short.lender,
+            interestFee
+        );
+
+        // Send remaining base token (== deposit + profit - interestFee) to seller
+        uint sellerBaseTokenAmount = Vault(vault).balances(shortId, short.baseToken);
+        Vault(vault).send(
+            shortId,
+            short.baseToken,
+            short.seller,
+            sellerBaseTokenAmount
+        );
+
+        return sellerBaseTokenAmount;
+    }
+
+    function cleanupShort(
+        Short short,
+        bytes32 shortId
+    ) internal {
+        ShortSellRepo(repo).deleteShort(shortId);
+
+        Vault(vault).deleteBalances(
+            shortId,
+            short.baseToken,
+            short.underlyingToken
+        );
     }
 
     // -------- Parsing Functions -------
@@ -421,7 +647,7 @@ contract ShortSell is Ownable {
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns(
+    ) internal constant returns (
         ShortTx _transaction
     ) {
         ShortTx memory transaction = ShortTx({
@@ -453,7 +679,7 @@ contract ShortSell is Ownable {
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns(
+    ) internal constant returns (
         LoanOffering _loanOffering
     ) {
         LoanOffering memory loanOffering = LoanOffering({
@@ -461,7 +687,7 @@ contract ShortSell is Ownable {
             feeRecipient: addresses[3],
             rates: getLoanOfferRates(values),
             expirationTimestamp: values[6],
-            lockoutTimestamp: values[7],
+            lockoutTime: values[7],
             callTimeLimit: values[8],
             salt: values[9],
             loanHash: 0, // Set this later
@@ -473,7 +699,7 @@ contract ShortSell is Ownable {
 
     function getLoanOfferRates(
         uint[18] values
-    ) internal constant returns(
+    ) internal constant returns (
         LoanRates _loanRates
     ) {
         LoanRates memory rates = LoanRates({
@@ -491,7 +717,7 @@ contract ShortSell is Ownable {
     function getLoanOfferingSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns(
+    ) internal constant returns (
         Signature _signature
     ) {
         Signature memory signature = Signature({
@@ -508,7 +734,7 @@ contract ShortSell is Ownable {
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns(
+    ) internal constant returns (
         BuyOrder _buyOrder
     ) {
         BuyOrder memory order = BuyOrder({
@@ -530,7 +756,7 @@ contract ShortSell is Ownable {
     function getBuyOrderSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns(
+    ) internal constant returns (
         Signature _signature
     ) {
         Signature memory signature = Signature({
@@ -542,24 +768,34 @@ contract ShortSell is Ownable {
         return signature;
     }
 
-    function parseShort(
-        address underlyingToken,
-        address baseToken,
-        uint interestRate,
-        uint callTimeLimit,
-        uint lockoutTimestamp,
-        address lender,
-        address seller,
-        uint8 version
+    function getShort(
+        bytes32 shortId
     ) internal constant returns (
         Short _short
     ) {
+        var (
+            underlyingToken,
+            baseToken,
+            shortAmount,
+            interestRate,
+            callTimeLimit,
+            lockoutTime,
+            startTimestamp,
+            callTimestamp,
+            lender,
+            seller,
+            version
+        ) =  ShortSellRepo(repo).getShort(shortId);
+
         return Short({
             underlyingToken: underlyingToken,
             baseToken: baseToken,
+            shortAmount: shortAmount,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
-            lockoutTimestamp: lockoutTimestamp,
+            lockoutTime: lockoutTime,
+            startTimestamp: startTimestamp,
+            callTimestamp: callTimestamp,
             lender: lender,
             seller: seller,
             version: version
