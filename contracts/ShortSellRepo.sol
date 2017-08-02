@@ -3,8 +3,8 @@ pragma solidity ^0.4.13;
 import './lib/AccessControlled.sol';
 
 contract ShortSellRepo is AccessControlled {
-    uint constant ACCESS_DELAY = 1000 * 60 * 60 * 24; // 1 Day
-    uint constant GRACE_PERIOD = 1000 * 60 * 60 * 8; // 8 hours
+    uint constant ACCESS_DELAY = 1 days; // 1 Day
+    uint constant GRACE_PERIOD = 8 hours; // 8 hours
 
     struct Short {
         bool exists;
@@ -24,8 +24,7 @@ contract ShortSellRepo is AccessControlled {
     mapping(bytes32 => Short) public shorts;
 
     function ShortSellRepo(
-        address _owner
-    ) AccessControlled(_owner, ACCESS_DELAY, GRACE_PERIOD) {}
+    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {}
 
     function getShort(
         bytes32 id

@@ -1,0 +1,40 @@
+{
+  "name": "dydx-contracts",
+  "version": "1.0.0",
+  "description": "Ethereum Smart Contracts for dYdX",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AntonioJuliano/dydx-contracts.git"
+  },
+  "keywords": [
+    "dydx",
+    "ethereum"
+  ],
+  "author": "Antonio Juliano",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/AntonioJuliano/dydx-contracts/issues"
+  },
+  "homepage": "https://github.com/AntonioJuliano/dydx-contracts#readme",
+  "devDependencies": {
+    "babel-polyfill": "^6.23.0",
+    "babel-preset-es2017": "^6.24.1",
+    "babel-register": "^6.24.1",
+    "chai": "^4.1.0",
+    "truffle": "^3.4.7"
+  },
+  "dependencies": {
+    "0x.js": "^0.9.0",
+    "bignumber.js": "^4.0.2",
+    "es6-promisify": "^5.0.0",
+    "ethereumjs-util": "^5.1.2",
+    "web3": "^1.0.0-beta.14"
+  }
+}

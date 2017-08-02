@@ -10,10 +10,9 @@ contract AccessControlled is Ownable {
     mapping(address => uint256) public pendingAuthorizations;
 
     function AccessControlled(
-        address _owner,
         uint _accessDelay,
         uint _gracePeriod
-    ) Ownable(_owner) {
+    ) Ownable() {
         accessDelay = _accessDelay;
         gracePeriodExpiration = block.timestamp + _gracePeriod;
     }

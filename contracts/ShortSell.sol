@@ -1,6 +1,7 @@
 pragma solidity ^0.4.13;
 
 import './lib/Ownable.sol';
+import './lib/SafeMath.sol';
 import './Vault.sol';
 import './ShortSellRepo.sol';
 
@@ -10,7 +11,7 @@ import './ShortSellRepo.sol';
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
-contract ShortSell is Ownable {
+contract ShortSell is Ownable, SafeMath {
     address public ZRX_TOKEN_CONTRACT;
     uint8 public constant REPO_VERSION = 1;
 
@@ -171,11 +172,10 @@ contract ShortSell is Ownable {
     // -------------------------
 
     function ShortSell(
-        address _owner,
         address _vault,
         address _ZRX_TOKEN_CONTRACT,
         address _repo
-    ) Ownable(_owner) {
+    ) Ownable() {
         vault = _vault;
         ZRX_TOKEN_CONTRACT = _ZRX_TOKEN_CONTRACT;
         repo = _repo;
@@ -260,9 +260,9 @@ contract ShortSell is Ownable {
 
         // Update global amounts for the loan and lender
         loanAmounts[transaction.loanOffering.loanHash].remaining =
-            maxLoanAmount - transaction.shortAmount;
+            safeSub(maxLoanAmount, transaction.shortAmount);
         loanNumbers[transaction.loanOffering.lender] =
-            loanNumbers[transaction.loanOffering.lender] + 1;
+            safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
 
         // Transfer deposit
         Vault(vault).transfer(
@@ -271,6 +271,7 @@ contract ShortSell is Ownable {
             msg.sender,
             transaction.depositAmount
         );
+
         // Transfer underlying token
         Vault(vault).transfer(
             shortId,
@@ -307,8 +308,9 @@ contract ShortSell is Ownable {
             Vault(vault).balances(
                 shortId,
                 transaction.baseToken
-            ) == baseTokenReceived + transaction.depositAmount
+            ) == safeAdd(baseTokenReceived, transaction.depositAmount)
         );
+
 
         // Should hold 0 underlying token and ZRX token
         assert(Vault(vault).balances(shortId, transaction.underlyingToken) == 0);
@@ -375,7 +377,7 @@ contract ShortSell is Ownable {
     ) {
         require(ShortSellRepo(repo).containsShort(shortId));
 
-        Short memory short = getShort(shortId);
+        Short memory short = getShortObject(shortId);
 
         require(short.seller == msg.sender);
         require(short.version == REPO_VERSION);
@@ -430,9 +432,9 @@ contract ShortSell is Ownable {
         bytes32 shortId
     ) external {
         require(ShortSellRepo(repo).containsShort(shortId));
-        Short memory short = getShort(shortId);
+        Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
-        require(block.timestamp >= short.startTimestamp + short.lockoutTime);
+        require(block.timestamp >= safeAdd(short.startTimestamp, short.lockoutTime));
 
         ShortSellRepo(repo).setShortCallStart(shortId, block.timestamp);
 
@@ -451,7 +453,7 @@ contract ShortSell is Ownable {
         bytes32 shortId
     ) external {
         require(ShortSellRepo(repo).containsShort(shortId));
-        Short memory short = getShort(shortId);
+        Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
 
         ShortSellRepo(repo).setShortCallStart(shortId, 0);
@@ -476,10 +478,10 @@ contract ShortSell is Ownable {
         // for now simple implementation of giving lender all funds
 
         require(ShortSellRepo(repo).containsShort(shortId));
-        Short memory short = getShort(shortId);
+        Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
         require(short.callTimestamp != 0);
-        require(short.callTimestamp + short.callTimeLimit < block.timestamp);
+        require(safeAdd(short.callTimestamp, short.callTimeLimit) < block.timestamp);
 
         uint baseTokenAmount = Vault(vault).balances(shortId, short.baseToken);
         Vault(vault).send(
@@ -515,7 +517,7 @@ contract ShortSell is Ownable {
         uint depositAmount
     ) external {
         require(ShortSellRepo(repo).containsShort(shortId));
-        Short memory short = getShort(shortId);
+        Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
 
         Vault(vault).transfer(shortId, short.baseToken, short.lender, depositAmount);
@@ -531,6 +533,32 @@ contract ShortSell is Ownable {
     // ----- Public Constant Functions -----
     // -------------------------------------
 
+    function getShort(
+        bytes32 shortId
+    ) constant public returns (
+        address underlyingToken,
+        address baseToken,
+        uint shortAmount,
+        uint interestRate,
+        uint callTimeLimit,
+        uint lockoutTime,
+        uint startTimestamp,
+        uint callTimestamp,
+        address lender,
+        address seller,
+        uint8 version
+    ) {
+        return ShortSellRepo(repo).getShort(shortId);
+    }
+
+    function containsShort(
+        bytes32 shortId
+    ) constant public returns (
+        bool exists
+    ) {
+        return ShortSellRepo(repo).containsShort(shortId);
+    }
+
     function getPartialAmount(
         uint numerator,
         uint denominator,
@@ -538,8 +566,7 @@ contract ShortSell is Ownable {
     ) constant public returns (
         uint partialValue
     ) {
-        // TODO
-        return 1;
+        return safeDiv(safeMul(numerator, target), denominator);
     }
 
     // --------------------------------
@@ -699,8 +726,8 @@ contract ShortSell is Ownable {
     ) internal constant returns (
         uint _interestFee
     ) {
-        // TODO
-        return 1;
+        uint timeElapsed = safeSub(block.timestamp, startTimestamp);
+        return getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
     function buyBackUnderlyingToken(
@@ -729,7 +756,7 @@ contract ShortSell is Ownable {
             short.shortAmount
         );
 
-        require(baseTokenPrice + interestFee <= Vault(vault).balances(shortId, short.baseToken));
+        require(safeAdd(baseTokenPrice, interestFee) <= Vault(vault).balances(shortId, short.baseToken));
 
         Vault(vault).trade(
             shortId,
@@ -926,7 +953,7 @@ contract ShortSell is Ownable {
         return signature;
     }
 
-    function getShort(
+    function getShortObject(
         bytes32 shortId
     ) internal constant returns (
         Short _short
