@@ -1,3 +1,6 @@
+require("babel-register");
+require('babel-polyfill');
+
 module.exports = {
   networks: {
     development: {
@@ -5,5 +8,8 @@ module.exports = {
       port: 8545,
       network_id: "*" // Match any network id
     }
+  },
+  mocha: {
+    useColors: true,
   }
 };

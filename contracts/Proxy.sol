@@ -1,44 +1,43 @@
 pragma solidity ^0.4.13;
 
-import './lib/Ownable.sol';
+import './lib/AccessControlled.sol';
 import './interfaces/ERC20.sol';
 
-contract Proxy is Ownable {
-    address creator;
+contract Proxy is AccessControlled {
+    mapping(address => bool) public transferAuthorized;
 
-    mapping(address => bool) public authorizations;
-
-    modifier onlyCreator() {
-        require(msg.sender == creator);
+    modifier requiresTransferAuthorization() {
+        require(transferAuthorized[msg.sender]);
         _;
     }
 
     function Proxy(
-        address _owner,
-        address _creator
-    ) Ownable(_owner) {
-        creator = _creator;
+    ) AccessControlled(1 days, 8 hours) {
     }
 
-    function updateCreator(
-        address _creator
+    function grantTransferAuthorization(
+        address who
+    ) requiresAuthorization {
+        transferAuthorized[who] = true;
+    }
+
+    function revokeTransferAuthorization(
+        address who
+    ) requiresAuthorization {
+        delete transferAuthorized[who];
+    }
+
+    function ownerRevokeTransferAuthorization(
+        address who
     ) onlyOwner {
-        creator = _creator;
-    }
-
-    function authorize(
-        address option
-    ) onlyCreator {
-        authorizations[option] = true;
+        delete transferAuthorized[who];
     }
 
     function transfer(
         address token,
         address from,
         uint value
-    ) {
-        require(authorizations[msg.sender]);
-
+    ) requiresTransferAuthorization {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
 }

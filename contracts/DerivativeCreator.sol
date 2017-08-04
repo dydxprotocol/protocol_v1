@@ -40,11 +40,10 @@ contract DerivativeCreator is Ownable {
     // -------------------------
 
     function DerivativeCreator(
-        address _owner,
         address _proxy,
         address _exchange,
         address _exchangeProxy
-    ) Ownable(_owner) {
+    ) Ownable() {
         proxy = _proxy;
         exchange = _exchange;
         exchangeProxy = _exchangeProxy;
@@ -117,7 +116,7 @@ contract DerivativeCreator is Ownable {
 
         childDerivatives[optionHash] = option;
 
-        Proxy(proxy).authorize(option);
+        Proxy(proxy).grantTransferAuthorization(option);
 
         return option;
     }
