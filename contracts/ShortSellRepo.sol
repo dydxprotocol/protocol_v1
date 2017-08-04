@@ -3,8 +3,8 @@ pragma solidity ^0.4.13;
 import './lib/AccessControlled.sol';
 
 contract ShortSellRepo is AccessControlled {
-    uint constant ACCESS_DELAY = 1 days; // 1 Day
-    uint constant GRACE_PERIOD = 8 hours; // 8 hours
+    uint constant ACCESS_DELAY = 1 days;
+    uint constant GRACE_PERIOD = 8 hours;
 
     struct Short {
         bool exists;
