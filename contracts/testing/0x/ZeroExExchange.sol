@@ -131,6 +131,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         });
 
         require(order.taker == address(0) || order.taker == msg.sender);
+
         require(isValidSignature(
             order.maker,
             order.orderHash,

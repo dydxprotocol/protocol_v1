@@ -7,8 +7,12 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test"
+    "test": "truffle test",
+    "lint": "eslint --ext .js --ignore-path .gitignore ."
   },
+  "pre-commit": [
+    "lint"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AntonioJuliano/dydx-contracts.git"
@@ -24,10 +28,13 @@
   },
   "homepage": "https://github.com/AntonioJuliano/dydx-contracts#readme",
   "devDependencies": {
+    "babel-eslint": "^7.2.3",
     "babel-polyfill": "^6.23.0",
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.24.1",
     "chai": "^4.1.0",
+    "eslint": "^4.3.0",
+    "pre-commit": "^1.2.2",
     "truffle": "^3.4.7"
   },
   "dependencies": {
@@ -35,6 +42,7 @@
     "bignumber.js": "^4.0.2",
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",
+    "request-promise-native": "^1.0.4",
     "web3": "^1.0.0-beta.14"
   }
 }

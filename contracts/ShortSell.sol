@@ -263,7 +263,6 @@ contract ShortSell is Ownable, SafeMath {
             safeSub(maxLoanAmount, transaction.shortAmount);
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
-
         // Transfer deposit
         Vault(vault).transfer(
             shortId,
@@ -311,10 +310,10 @@ contract ShortSell is Ownable, SafeMath {
             ) == safeAdd(baseTokenReceived, transaction.depositAmount)
         );
 
-
         // Should hold 0 underlying token and ZRX token
         assert(Vault(vault).balances(shortId, transaction.underlyingToken) == 0);
         assert(Vault(vault).balances(shortId, ZRX_TOKEN_CONTRACT) == 0);
+
 
         ShortSellRepo(repo).addShort(
             shortId,
@@ -559,6 +558,35 @@ contract ShortSell is Ownable, SafeMath {
         return ShortSellRepo(repo).containsShort(shortId);
     }
 
+    function getShortBalance(
+        bytes32 shortId
+    ) constant public returns (
+        uint _baseTokenBalance
+    ) {
+        if (!ShortSellRepo(repo).containsShort(shortId)) {
+            return 0;
+        }
+        Short memory short = getShortObject(shortId);
+
+        return Vault(vault).balances(shortId, short.baseToken);
+    }
+
+    function getShortInterestFee(
+        bytes32 shortId
+    ) constant public returns (
+        uint _interestFeeOwed
+    ) {
+        if (!ShortSellRepo(repo).containsShort(shortId)) {
+            return 0;
+        }
+        Short memory short = getShortObject(shortId);
+
+        return calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp
+        );
+    }
+
     function getPartialAmount(
         uint numerator,
         uint denominator,
@@ -603,7 +631,7 @@ contract ShortSell is Ownable, SafeMath {
     ) internal constant returns (
         uint _maxLoanAmount
     ) {
-        require(!ShortSellRepo(repo).containsShort(shortId));
+        require(!containsShort(shortId));
 
         require(
             isValidSignature(transaction.loanOffering)
@@ -741,7 +769,7 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 orderS
     ) internal {
         uint tradeTakerFee = getPartialAmount(
-            orderValues[1],
+            short.shortAmount,
             orderValues[0],
             orderValues[3]
         );
@@ -756,7 +784,10 @@ contract ShortSell is Ownable, SafeMath {
             short.shortAmount
         );
 
-        require(safeAdd(baseTokenPrice, interestFee) <= Vault(vault).balances(shortId, short.baseToken));
+        require(
+            safeAdd(baseTokenPrice, interestFee)
+            <= Vault(vault).balances(shortId, short.baseToken)
+        );
 
         Vault(vault).trade(
             shortId,
