@@ -30,6 +30,7 @@ contract ShortSell is Ownable, SafeMath {
 
     struct LoanOffering {
         address lender;
+        address taker;
         address feeRecipient;
         LoanRates rates;
         uint expirationTimestamp;
@@ -203,10 +204,11 @@ contract ShortSell is Ownable, SafeMath {
      *  [0] = underlying token
      *  [1] = base token
      *  [2] = lender
-     *  [3] = loan fee recipient
-     *  [4] = buy order maker
-     *  [5] = buy order taker
-     *  [6] = buy order fee recipient
+     *  [3] = loan taker
+     *  [4] = loan fee recipient
+     *  [5] = buy order maker
+     *  [6] = buy order taker
+     *  [7] = buy order fee recipient
      *
      * @param  values     Values corresponding to:
      *
@@ -234,7 +236,7 @@ contract ShortSell is Ownable, SafeMath {
      * @return _shortId   unique identifier for the short sell
      */
     function short(
-        address[7] addresses,
+        address[8] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -633,6 +635,10 @@ contract ShortSell is Ownable, SafeMath {
     ) {
         require(!containsShort(shortId));
 
+        if (transaction.loanOffering.taker != address(0)) {
+            require(msg.sender == transaction.loanOffering.taker);
+        }
+
         require(
             isValidSignature(transaction.loanOffering)
         );
@@ -702,6 +708,7 @@ contract ShortSell is Ownable, SafeMath {
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.loanOffering.lender,
+            transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
             getValuesHash(transaction.loanOffering)
         );
@@ -859,7 +866,7 @@ contract ShortSell is Ownable, SafeMath {
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[7] addresses,
+        address[8] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -891,7 +898,7 @@ contract ShortSell is Ownable, SafeMath {
     }
 
     function getLoanOffering(
-        address[7] addresses,
+        address[8] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -900,7 +907,8 @@ contract ShortSell is Ownable, SafeMath {
     ) {
         LoanOffering memory loanOffering = LoanOffering({
             lender: addresses[2],
-            feeRecipient: addresses[3],
+            taker: addresses[3],
+            feeRecipient: addresses[4],
             rates: getLoanOfferRates(values),
             expirationTimestamp: values[6],
             lockoutTime: values[7],
@@ -946,7 +954,7 @@ contract ShortSell is Ownable, SafeMath {
     }
 
     function getBuyOrder(
-        address[7] addresses,
+        address[8] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -954,9 +962,9 @@ contract ShortSell is Ownable, SafeMath {
         BuyOrder _buyOrder
     ) {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[4],
-            taker: addresses[5],
-            feeRecipient: addresses[6],
+            maker: addresses[5],
+            taker: addresses[6],
+            feeRecipient: addresses[7],
             baseTokenAmount: values[10],
             underlyingTokenAmount: values[11],
             makerFee: values[12],

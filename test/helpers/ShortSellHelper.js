@@ -72,6 +72,7 @@ function callShort(shortSell, tx) {
     UnderlyingToken.address,
     BaseToken.address,
     tx.loanOffering.lender,
+    tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
     tx.buyOrder.maker,
     tx.buyOrder.taker,
@@ -302,6 +303,7 @@ async function createSigned0xBuyOrder(accounts) {
 async function createLoanOffering(accounts) {
   let loanOffering = {
     lender: accounts[1],
+    taker: ZeroEx.NULL_ADDRESS,
     feeRecipient: accounts[3],
     rates: {
       minimumDeposit: BASE_AMOUNT,
@@ -340,6 +342,7 @@ async function signLoanOffering(loanOffering) {
     UnderlyingToken.address,
     BaseToken.address,
     loanOffering.lender,
+    loanOffering.taker,
     loanOffering.feeRecipient,
     valuesHash
   );

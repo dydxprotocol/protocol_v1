@@ -32,10 +32,9 @@
     "babel-polyfill": "^6.23.0",
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.24.1",
-    "chai": "^4.1.0",
-    "eslint": "^4.3.0",
-    "pre-commit": "^1.2.2",
-    "truffle": "^3.4.7"
+    "chai": "^4.1.1",
+    "eslint": "^4.4.1",
+    "truffle": "^3.4.8"
   },
   "dependencies": {
     "0x.js": "^0.9.0",
@@ -43,6 +42,6 @@
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",
     "request-promise-native": "^1.0.4",
-    "web3": "^1.0.0-beta.14"
+    "web3": "^1.0.0-beta2"
   }
 }
