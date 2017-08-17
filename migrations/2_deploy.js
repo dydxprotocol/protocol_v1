@@ -26,7 +26,7 @@ function maybeDeploy0x(deployer, network) {
       .then(() => ZeroExExchange.deployed())
       .then( proxy => proxy.setAddresses(ZrxToken.address, ZeroExProxy.address) );
   } else {
-    Promise.resolve(() => true);
+    return Promise.resolve(true);
     // TODO
   }
 }
@@ -35,6 +35,23 @@ function maybeDeployTestTokens(deployer, network) {
   if (network === 'development' || network === 'test') {
     return deployer.deploy(TokenA)
       .then(() => deployer.deploy(TokenB));
+  }
+  return Promise.resolve(true);
+}
+
+function getAddresses(network) {
+  if (network === 'development' || network === 'test') {
+    return {
+      zeroExExchange: ZeroExExchange.address,
+      zeroExProxy: ZeroExProxy.address,
+      zrxToken: ZrxToken.address
+    };
+  } else {
+    return {
+      zeroExExchange: '0x63869171a246622ef8f9234879ce2c06cebd85f6',
+      zeroExProxy: '0x946a1c437fb5a61bd5c95416346e684c802c5d2a',
+      zrxToken: '0xae92f9459a93623241329acd6f9dc2f4d970d450'
+    }
   }
 }
 
@@ -45,15 +62,15 @@ module.exports = (deployer, network, addresses) => {
     .then(() => deployer.deploy(
       Vault,
       ProxyContract.address,
-      ZeroExExchange.address,
-      ZeroExProxy.address,
-      ZrxToken.address,
+      getAddresses(network).zeroExExchange,
+      getAddresses(network).zeroExProxy,
+      getAddresses(network).zrxToken,
     ))
     .then(() => deployer.deploy(ShortSellRepo))
     .then(() => deployer.deploy(
       ShortSell,
       Vault.address,
-      ZrxToken.address,
+      getAddresses(network).zrxToken,
       ShortSellRepo.address
     ))
     .then(() => ProxyContract.deployed())

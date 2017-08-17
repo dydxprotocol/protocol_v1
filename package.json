@@ -42,6 +42,6 @@
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",
     "request-promise-native": "^1.0.4",
-    "web3": "^1.0.0-beta2"
+    "web3": "1.0.0-beta.18"
   }
 }
