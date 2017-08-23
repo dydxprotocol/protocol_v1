@@ -6,13 +6,13 @@ const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
-const ZrxToken = artifacts.require("ZrxToken");
 
 const {
   createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   doShort,
-  callCloseShort
+  callCloseShort,
+  getPartialAmount
 } = require('../helpers/ShortSellHelper');
 
 contract('ShortSell', function(accounts) {
@@ -43,98 +43,74 @@ contract('ShortSell', function(accounts) {
 
       const ONE_DAY_IN_SECONDS = new BigNumber(60 * 60 * 24);
 
-      const [
-        baseTokenBuyCost,
-        sellTakerFee,
-        baseTokenFromSell,
-        buyTakerFee,
-        interestFee,
-        balance
-      ] = await Promise.all([
-        shortSell.getPartialAmount.call(
-          sellOrder.takerTokenAmount,
-          sellOrder.makerTokenAmount,
-          shortTx.shortAmount
-        ),
-        shortSell.getPartialAmount.call(
-          shortTx.shortAmount,
-          sellOrder.makerTokenAmount,
-          sellOrder.takerFee
-        ),
-        shortSell.getPartialAmount.call(
-          shortTx.buyOrder.makerTokenAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.shortAmount
-        ),
-        shortSell.getPartialAmount.call(
-          shortTx.shortAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.buyOrder.takerFee
-        ),
-        shortSell.getPartialAmount.call(
-          shortTx.loanOffering.rates.interestRate,
-          ONE_DAY_IN_SECONDS,
-          shortLifetime
-        ),
-        shortSell.getShortBalance.call(shortTx.id)
-      ]);
+      const balance = await shortSell.getShortBalance.call(shortTx.id);
+
+      const baseTokenFromSell = getPartialAmount(
+        shortTx.buyOrder.makerTokenAmount,
+        shortTx.buyOrder.takerTokenAmount,
+        shortTx.shortAmount
+      );
+      const buyTakerFee = getPartialAmount(
+        shortTx.shortAmount,
+        shortTx.buyOrder.takerTokenAmount,
+        shortTx.buyOrder.takerFee
+      );
+      const interestFee = getPartialAmount(
+        shortTx.loanOffering.rates.interestRate,
+        ONE_DAY_IN_SECONDS,
+        shortLifetime
+      );
+      const baseTokenBuybackCost = getPartialAmount(
+        sellOrder.takerTokenAmount,
+        sellOrder.makerTokenAmount.minus(sellOrder.takerFee),
+        shortTx.shortAmount
+      );
+      const sellOrderTakerFee = getPartialAmount(
+        baseTokenBuybackCost,
+        sellOrder.takerTokenAmount,
+        sellOrder.takerFee
+      );
 
       expect(balance.equals(new BigNumber(0))).to.be.true;
 
       const [
         underlyingToken,
-        baseToken,
-        zrxToken
+        baseToken
       ] = await Promise.all([
         UnderlyingToken.deployed(),
         BaseToken.deployed(),
-        ZrxToken.deployed()
       ]);
 
       const [
         sellerBaseToken,
-        sellerZrxToken,
         lenderBaseToken,
         lenderUnderlyingToken,
         externalSellerBaseToken,
-        externalSellerUnderlyingToken,
-        sellOrderFeeRecipientZrxToken
+        externalSellerUnderlyingToken
       ] = await Promise.all([
         baseToken.balanceOf.call(shortTx.seller),
-        zrxToken.balanceOf.call(shortTx.seller),
         baseToken.balanceOf.call(shortTx.loanOffering.lender),
         underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
         baseToken.balanceOf.call(sellOrder.maker),
-        underlyingToken.balanceOf.call(sellOrder.maker),
-        zrxToken.balanceOf.call(sellOrder.feeRecipient)
+        underlyingToken.balanceOf.call(sellOrder.maker)
       ]);
 
       expect(
         sellerBaseToken.equals(
           shortTx.depositAmount
             .plus(baseTokenFromSell)
-            .minus(baseTokenBuyCost)
+            .minus(baseTokenBuybackCost)
             .minus(interestFee)
-        )
-      ).to.be.true;
-      expect(
-        sellerZrxToken.equals(
-          shortTx.buyOrder.takerFee
-            .plus(sellOrder.takerFee)
-            .minus(sellTakerFee)
             .minus(buyTakerFee)
         )
       ).to.be.true;
       expect(lenderBaseToken.equals(interestFee)).to.be.true;
       expect(lenderUnderlyingToken.equals(shortTx.loanOffering.rates.maxAmount)).to.be.true;
-      expect(externalSellerBaseToken.equals(baseTokenBuyCost)).to.be.true;
+      expect(externalSellerBaseToken.equals(baseTokenBuybackCost)).to.be.true;
       expect(
         externalSellerUnderlyingToken.equals(
-          sellOrder.makerTokenAmount.minus(shortTx.shortAmount)
+          sellOrder.makerTokenAmount.minus(shortTx.shortAmount).minus(sellOrderTakerFee)
         )
-      ).to.be.true;
-      expect(
-        sellOrderFeeRecipientZrxToken.equals(sellTakerFee)
       ).to.be.true;
     });
   });

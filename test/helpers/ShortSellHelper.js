@@ -10,9 +10,7 @@ const ethUtil = require('ethereumjs-util');
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
-const ZrxToken = artifacts.require("ZrxToken");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -44,7 +42,7 @@ async function createShortSellTx(accounts) {
 async function createSigned0xSellOrder(accounts) {
   // 4 baseToken : 1 underlyingToken rate
   let order = {
-    exchangeContractAddress: ZeroExExchange.address,
+    exchangeContractAddress: Exchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
     maker: accounts[5],
@@ -122,10 +120,9 @@ function callShort(shortSell, tx) {
 }
 
 async function issueTokensAndSetAllowancesForShort(tx) {
-  const [underlyingToken, baseToken, zrxToken] = await Promise.all([
+  const [underlyingToken, baseToken] = await Promise.all([
     UnderlyingToken.deployed(),
-    BaseToken.deployed(),
-    ZrxToken.deployed()
+    BaseToken.deployed()
   ]);
 
   await Promise.all([
@@ -141,14 +138,6 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount
     ),
-    zrxToken.issueTo(
-      tx.seller,
-      tx.buyOrder.takerFee
-    ),
-    zrxToken.issueTo(
-      tx.buyOrder.maker,
-      tx.buyOrder.makerFee
-    )
   ]);
 
   return Promise.all([
@@ -163,18 +152,8 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       { from: tx.seller }
     ),
     baseToken.approve(
-      ZeroExProxy.address,
-      tx.buyOrder.makerTokenAmount,
-      { from: tx.buyOrder.maker }
-    ),
-    zrxToken.approve(
       ProxyContract.address,
-      tx.buyOrder.takerFee,
-      { from: tx.seller }
-    ),
-    zrxToken.approve(
-      ZeroExProxy.address,
-      tx.buyOrder.makerFee,
+      tx.buyOrder.makerTokenAmount,
       { from: tx.buyOrder.maker }
     )
   ]);
@@ -232,40 +211,21 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
 }
 
 async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
-  const [underlyingToken, zrxToken] = await Promise.all([
-    UnderlyingToken.deployed(),
-    ZrxToken.deployed()
+  const [underlyingToken] = await Promise.all([
+    UnderlyingToken.deployed()
   ]);
 
   await Promise.all([
     underlyingToken.issueTo(
       sellOrder.maker,
       sellOrder.makerTokenAmount
-    ),
-    zrxToken.issueTo(
-      shortTx.seller,
-      sellOrder.takerFee
-    ),
-    zrxToken.issueTo(
-      sellOrder.maker,
-      sellOrder.makerFee
     )
   ]);
 
   return Promise.all([
     underlyingToken.approve(
-      ZeroExProxy.address,
-      sellOrder.makerTokenAmount,
-      { from: sellOrder.maker }
-    ),
-    zrxToken.approve(
       ProxyContract.address,
-      sellOrder.takerFee,
-      { from: shortTx.seller }
-    ),
-    zrxToken.approve(
-      ZeroExProxy.address,
-      sellOrder.makerFee,
+      sellOrder.makerTokenAmount,
       { from: sellOrder.maker }
     )
   ]);
@@ -276,7 +236,7 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
 async function createSigned0xBuyOrder(accounts) {
   // 3 baseToken : 1 underlyingToken rate
   let order = {
-    exchangeContractAddress: ZeroExExchange.address,
+    exchangeContractAddress: Exchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
@@ -360,11 +320,22 @@ async function signLoanOffering(loanOffering) {
   }
 }
 
+function getPartialAmount(
+  numerator,
+  denominator,
+  target
+) {
+  return numerator.times(target).div(denominator).floor();
+}
 
-module.exports.createShortSellTx = createShortSellTx;
-module.exports.issueTokensAndSetAllowancesForShort = issueTokensAndSetAllowancesForShort;
-module.exports.callShort = callShort;
-module.exports.createSigned0xSellOrder = createSigned0xSellOrder;
-module.exports.doShort = doShort;
-module.exports.issueTokensAndSetAllowancesForClose = issueTokensAndSetAllowancesForClose;
-module.exports.callCloseShort = callCloseShort;
+
+module.exports = {
+  createShortSellTx,
+  issueTokensAndSetAllowancesForShort,
+  callShort,
+  createSigned0xSellOrder,
+  doShort,
+  issueTokensAndSetAllowancesForClose,
+  callCloseShort,
+  getPartialAmount
+};

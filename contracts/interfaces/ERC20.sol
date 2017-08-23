@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 // Token standard API
 // https://github.com/ethereum/EIPs/issues/20
