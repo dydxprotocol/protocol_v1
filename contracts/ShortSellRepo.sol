@@ -1,24 +1,22 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
 
 contract ShortSellRepo is AccessControlled {
-    uint constant ACCESS_DELAY = 1 days;
-    uint constant GRACE_PERIOD = 8 hours;
+    uint public constant ACCESS_DELAY = 1 days;
+    uint public constant GRACE_PERIOD = 8 hours;
 
     struct Short {
-        bool exists;
-        address underlyingToken;
-        address baseToken;
         uint shortAmount;
         uint interestRate;
-        uint callTimeLimit;
-        uint lockoutTime;
-        uint startTimestamp;
-        uint callTimestamp;
+        address underlyingToken;
+        address baseToken;
         address lender;
         address seller;
-        uint8 version;
+        uint32 startTimestamp;
+        uint32 callTimestamp;
+        uint32 callTimeLimit;
+        uint32 lockoutTime;
     }
 
     mapping(bytes32 => Short) public shorts;
@@ -33,13 +31,12 @@ contract ShortSellRepo is AccessControlled {
         address baseToken,
         uint shortAmount,
         uint interestRate,
-        uint callTimeLimit,
-        uint lockoutTime,
-        uint startTimestamp,
-        uint callTimestamp,
+        uint32 callTimeLimit,
+        uint32 lockoutTime,
+        uint32 startTimestamp,
+        uint32 callTimestamp,
         address lender,
-        address seller,
-        uint8 version
+        address seller
     ) {
         Short storage short = shorts[id];
 
@@ -53,8 +50,7 @@ contract ShortSellRepo is AccessControlled {
             short.startTimestamp,
             short.callTimestamp,
             short.lender,
-            short.seller,
-            short.version
+            short.seller
         );
     }
 
@@ -63,7 +59,7 @@ contract ShortSellRepo is AccessControlled {
     ) constant public returns (
         bool exists
     ) {
-        return shorts[id].exists;
+        return shorts[id].startTimestamp != 0;
     }
 
     function addShort(
@@ -72,17 +68,15 @@ contract ShortSellRepo is AccessControlled {
         address baseToken,
         uint shortAmount,
         uint interestRate,
-        uint callTimeLimit,
-        uint lockoutTime,
-        uint startTimestamp,
+        uint32 callTimeLimit,
+        uint32 lockoutTime,
+        uint32 startTimestamp,
         address lender,
-        address seller,
-        uint8 version
+        address seller
     ) requiresAuthorization {
         require(!containsShort(id));
 
         shorts[id] = Short({
-            exists: true,
             underlyingToken: underlyingToken,
             baseToken: baseToken,
             shortAmount: shortAmount,
@@ -92,14 +86,13 @@ contract ShortSellRepo is AccessControlled {
             startTimestamp: startTimestamp,
             callTimestamp: 0, // Not set until later
             lender: lender,
-            seller: seller,
-            version: version
+            seller: seller
         });
     }
 
     function setShortCallStart(
         bytes32 id,
-        uint callStart
+        uint32 callStart
     ) requiresAuthorization {
         require(containsShort(id));
         shorts[id].callTimestamp = callStart;

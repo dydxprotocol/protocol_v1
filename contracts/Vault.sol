@@ -1,49 +1,36 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
-import './external/Exchange.sol';
+import './Exchange.sol';
 
 contract Vault is AccessControlled, SafeMath {
-    uint constant ACCESS_DELAY = 1 days;
-    uint constant GRACE_PERIOD = 8 hours;
-    address public ZRX_TOKEN_CONTRACT;
+    uint public constant ACCESS_DELAY = 1 days;
+    uint public constant GRACE_PERIOD = 8 hours;
+
+    address public PROXY;
+    address public EXCHANGE;
 
     mapping(bytes32 => mapping(address => uint256)) public balances;
     mapping(address => uint256) public totalBalances;
 
-    mapping(address => bool) private authorizedTokens;
-
-    address proxy;
-
-    // Address of the 0x Exchange Contract
-    address exchange;
-
-    // Address of the 0x Proxy Contract
-    address exchangeProxy;
-
     function Vault(
         address _proxy,
-        address _exchange,
-        address _exchangeProxy,
-        address _ZRX_TOKEN_CONTRACT
+        address _exchange
     ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {
-        proxy = _proxy;
-        exchange = _exchange;
-        exchangeProxy = _exchangeProxy;
-        ZRX_TOKEN_CONTRACT = _ZRX_TOKEN_CONTRACT;
-
-        ERC20(ZRX_TOKEN_CONTRACT).approve(address(exchangeProxy), 2 ** 255);
+        PROXY = _proxy;
+        EXCHANGE = _exchange;
     }
 
+    // TODO perhaps add a delay to these changes
     function updateProxy(address _proxy) onlyOwner {
-        proxy = _proxy;
+        PROXY = _proxy;
     }
 
     function updateExchange(address _exchange) onlyOwner {
-        exchange = _exchange;
+        EXCHANGE = _exchange;
     }
 
     function transfer(
@@ -52,7 +39,7 @@ contract Vault is AccessControlled, SafeMath {
         address from,
         uint amount
     ) requiresAuthorization {
-        Proxy(proxy).transfer(token, from, amount);
+        Proxy(PROXY).transfer(token, from, amount);
 
         assert(ERC20(token).balanceOf(address(this)) == totalBalances[token] + amount);
 
@@ -89,20 +76,13 @@ contract Vault is AccessControlled, SafeMath {
         uint _filledTakerTokenAmount,
         uint _makerTokenAmount
     ) {
-        assert(balances[id][orderAddresses[3]] >= requestedFillAmount);
-        assert(totalBalances[orderAddresses[3]] >= requestedFillAmount);
-
-        balances[id][orderAddresses[3]] = safeSub(
-            balances[id][orderAddresses[3]],
+        validateAndApproveTrade(
+            id,
+            orderAddresses,
             requestedFillAmount
         );
 
-        if (!authorizedTokens[orderAddresses[3]]) {
-            ERC20(orderAddresses[3]).approve(address(exchangeProxy), 2 ** 255);
-            authorizedTokens[orderAddresses[3]] = true;
-        }
-
-        uint filledTakerTokenAmount = Exchange(exchange).fillOrder(
+        uint filledTakerTokenAmount = Exchange(EXCHANGE).fillOrder(
             orderAddresses,
             orderValues,
             requestedFillAmount,
@@ -112,32 +92,25 @@ contract Vault is AccessControlled, SafeMath {
             s
         );
 
-        if (requireFullAmount) {
-            require(requestedFillAmount == filledTakerTokenAmount);
-        }
-
-        uint makerTokenAmount = Exchange(exchange).getPartialAmount(
-            orderValues[0],
-            orderValues[1],
-            filledTakerTokenAmount
-        );
-        uint feeAmount = Exchange(exchange).getPartialAmount(
-            filledTakerTokenAmount,
-            orderValues[1],
-            orderValues[3]
-        );
-
-        updateBalancesForTrade(
+        return updateBalancesForTrade(
             id,
             orderAddresses[2],
             orderAddresses[3],
-            makerTokenAmount,
             filledTakerTokenAmount,
             requestedFillAmount,
-            feeAmount
+            orderValues,
+            requireFullAmount
         );
+    }
 
-        return (filledTakerTokenAmount, makerTokenAmount);
+    function getPartialAmount(
+        uint numerator,
+        uint denominator,
+        uint target
+    ) constant public returns (
+        uint partialValue
+    ) {
+        return safeDiv(safeMul(numerator, target), denominator);
     }
 
     function deleteBalances(
@@ -145,65 +118,93 @@ contract Vault is AccessControlled, SafeMath {
         address baseToken,
         address underlyingToken
     ) requiresAuthorization {
-        assert(balances[shortId][baseToken] == 0);
-        assert(balances[shortId][underlyingToken] == 0);
-        assert(balances[shortId][ZRX_TOKEN_CONTRACT] == 0);
+        require(balances[shortId][baseToken] == 0);
+        require(balances[shortId][underlyingToken] == 0);
 
         // ??? is it worth deleting these if they are 0 ?
         delete balances[shortId][baseToken];
         delete balances[shortId][underlyingToken];
-        delete balances[shortId][ZRX_TOKEN_CONTRACT];
+    }
+
+    function validateAndApproveTrade(
+        bytes32 id,
+        address[5] orderAddresses,
+        uint requestedFillAmount
+    ) internal {
+        // Do not allow maker token and taker token to be the same
+        require(orderAddresses[2] != orderAddresses[3]);
+        require(balances[id][orderAddresses[3]] >= requestedFillAmount);
+        assert(totalBalances[orderAddresses[3]] >= requestedFillAmount);
+
+        balances[id][orderAddresses[3]] = safeSub(
+            balances[id][orderAddresses[3]],
+            requestedFillAmount
+        );
+
+        // Approve transfer of taker token by proxy for trade
+        ERC20(orderAddresses[3]).approve(PROXY, requestedFillAmount);
     }
 
     function updateBalancesForTrade(
         bytes32 id,
         address makerToken,
         address takerToken,
-        uint makerAmount,
-        uint takerAmount,
+        uint filledTakerTokenAmount,
         uint requestedFillAmount,
-        uint feeAmount
-    ) internal {
-        assert(balances[id][ZRX_TOKEN_CONTRACT] >= feeAmount);
-        assert(
-            ERC20(ZRX_TOKEN_CONTRACT).balanceOf(address(this))
-            == safeSub(totalBalances[ZRX_TOKEN_CONTRACT], feeAmount)
+        uint[6] orderValues,
+        bool requireFullAmount
+    ) internal returns (
+        uint _filledTakerTokenAmount,
+        uint _receivedMakerTokenAmount
+    ) {
+        // 0 can indicate an error
+        require(filledTakerTokenAmount > 0);
+
+        if (requireFullAmount) {
+            require(requestedFillAmount == filledTakerTokenAmount);
+        }
+
+        uint makerTokenAmount = getPartialAmount(
+            orderValues[0],
+            orderValues[1],
+            filledTakerTokenAmount
         );
+        uint takerFee = getPartialAmount(filledTakerTokenAmount, orderValues[1], orderValues[3]);
+
+        uint receivedMakerTokenAmount = safeSub(
+            makerTokenAmount,
+            takerFee
+        );
+
         assert(
             ERC20(makerToken).balanceOf(address(this))
-            == safeAdd(totalBalances[makerToken], makerAmount)
+            == safeAdd(totalBalances[makerToken], receivedMakerTokenAmount)
         );
         assert(
             ERC20(takerToken).balanceOf(address(this))
-            == safeSub(totalBalances[takerToken], takerAmount)
+            == safeSub(totalBalances[takerToken], filledTakerTokenAmount)
         );
 
         // Update balances for id
         balances[id][takerToken] = safeAdd(
             balances[id][takerToken],
-            safeSub(requestedFillAmount, takerAmount)
+            safeSub(requestedFillAmount, filledTakerTokenAmount)
         );
         balances[id][makerToken] = safeAdd(
             balances[id][makerToken],
-            makerAmount
-        );
-        balances[id][ZRX_TOKEN_CONTRACT] = safeSub(
-            balances[id][ZRX_TOKEN_CONTRACT],
-            feeAmount
+            receivedMakerTokenAmount
         );
 
         // Update Total Balances
         totalBalances[takerToken] = safeSub(
             totalBalances[takerToken],
-            takerAmount
+            filledTakerTokenAmount
         );
         totalBalances[makerToken] = safeAdd(
             totalBalances[makerToken],
-            makerAmount
+            receivedMakerTokenAmount
         );
-        totalBalances[ZRX_TOKEN_CONTRACT] = safeSub(
-            totalBalances[ZRX_TOKEN_CONTRACT],
-            feeAmount
-        );
+
+        return (filledTakerTokenAmount, receivedMakerTokenAmount);
     }
 }

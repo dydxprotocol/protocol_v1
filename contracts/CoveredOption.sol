@@ -1,6 +1,6 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
-import './external/Exchange.sol';
+import './Exchange.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
 
@@ -130,7 +130,6 @@ contract CoveredOption {
         uint256 _underlyingTokenStrikeRate,
         uint256 _baseTokenStrikeRate,
         address _exchange,
-        address _exchangeProxy,
         address _proxy
     ) {
         underlyingToken = _underlyingToken;
@@ -140,9 +139,6 @@ contract CoveredOption {
         baseTokenStrikeRate = _baseTokenStrikeRate;
         exchange = _exchange;
         proxy = _proxy;
-
-        // TODO come up with better max uint value
-        require(ERC20(_baseToken).approve(_exchangeProxy, 2 ** 255));
     }
 
     // -----------------------------------------
@@ -206,7 +202,7 @@ contract CoveredOption {
         // Transfer the maximum baseToken premium from the sender to CoveredOption
         Proxy(proxy).transfer(baseToken, msg.sender, maximumPremium);
 
-        // Call the the 0x Exchange Contract to exchange the baseToken premium for the underlyingToken
+        // Call the the Exchange Contract to exchange the baseToken premium for the underlyingToken
         uint premium = Exchange(exchange).fillOrder(
             [
                 writer,
@@ -223,7 +219,6 @@ contract CoveredOption {
             s
         );
 
-        // TODO make sure this is right 100% of the time
         uint optionsIssued = Exchange(exchange).getPartialAmount(
             orderValues[0],
             orderValues[1],

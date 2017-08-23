@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
 import './interfaces/ERC20.sol';
@@ -39,5 +39,14 @@ contract Proxy is AccessControlled {
         uint value
     ) requiresTransferAuthorization {
         require(ERC20(token).transferFrom(from, msg.sender, value));
+    }
+
+    function transferFrom(
+        address token,
+        address from,
+        address to,
+        uint value
+    ) requiresTransferAuthorization {
+        require(ERC20(token).transferFrom(from, to, value));
     }
 }

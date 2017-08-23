@@ -7,7 +7,6 @@ const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
-const ZrxToken = artifacts.require("ZrxToken");
 const Vault = artifacts.require("Vault");
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -15,7 +14,8 @@ const web3Instance = new Web3(web3.currentProvider);
 const {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
-  callShort
+  callShort,
+  getPartialAmount
 } = require('../helpers/ShortSellHelper');
 
 contract('ShortSell', function(accounts) {
@@ -59,33 +59,30 @@ contract('ShortSell', function(accounts) {
       expect(lender).to.equal(shortTx.loanOffering.lender);
       expect(seller).to.equal(shortTx.seller);
 
-      const [
-        baseTokenFromSell,
-        buyTakerFee,
-        balance
-      ] = await Promise.all([
-        shortSell.getPartialAmount.call(
-          shortTx.buyOrder.makerTokenAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.shortAmount
-        ),
-        shortSell.getPartialAmount.call(
-          shortTx.shortAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.buyOrder.takerFee
-        ),
-        shortSell.getShortBalance.call(shortId)
-      ]);
+      const balance = await shortSell.getShortBalance.call(shortId);
 
-      expect(balance.equals(baseTokenFromSell.plus(shortTx.depositAmount))).to.equal(true);
+      const baseTokenFromSell = getPartialAmount(
+        shortTx.buyOrder.makerTokenAmount,
+        shortTx.buyOrder.takerTokenAmount,
+        shortTx.shortAmount
+      );
+      const buyTakerFee = getPartialAmount(
+        shortTx.shortAmount,
+        shortTx.buyOrder.takerTokenAmount,
+        shortTx.buyOrder.takerFee
+      );
+
+      expect(
+        balance.equals(
+          baseTokenFromSell.plus(shortTx.depositAmount).minus(buyTakerFee)
+        )
+      ).to.be.true;
       const [
         underlyingToken,
-        baseToken,
-        zrxToken
+        baseToken
       ] = await Promise.all([
         UnderlyingToken.deployed(),
-        BaseToken.deployed(),
-        ZrxToken.deployed()
+        BaseToken.deployed()
       ]);
 
       const [
@@ -94,20 +91,14 @@ contract('ShortSell', function(accounts) {
         vaultUnderlyingToken,
         sellerBaseToken,
         makerBaseToken,
-        vaultBaseToken,
-        vaultZrxToken,
-        sellerZrxToken,
-        buyOrderFeeRecipientZrxToken
+        vaultBaseToken
       ] = await Promise.all([
         underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
         underlyingToken.balanceOf.call(shortTx.buyOrder.maker),
         underlyingToken.balanceOf.call(Vault.address),
         baseToken.balanceOf.call(shortTx.seller),
         baseToken.balanceOf.call(shortTx.buyOrder.maker),
-        baseToken.balanceOf.call(Vault.address),
-        zrxToken.balanceOf.call(Vault.address),
-        zrxToken.balanceOf.call(shortTx.seller),
-        zrxToken.balanceOf.call(shortTx.buyOrder.feeRecipient)
+        baseToken.balanceOf.call(Vault.address)
       ]);
 
       expect(
@@ -124,13 +115,8 @@ contract('ShortSell', function(accounts) {
         )
       ).to.be.true;
       expect(
-        vaultBaseToken.equals(baseTokenFromSell.plus(shortTx.depositAmount))
+        vaultBaseToken.equals(baseTokenFromSell.plus(shortTx.depositAmount).minus(buyTakerFee))
       ).to.be.true;
-      expect(vaultZrxToken.equals(new BigNumber(0))).to.be.true;
-      expect(
-        sellerZrxToken.equals(shortTx.buyOrder.takerFee.minus(buyTakerFee))
-      ).to.be.true;
-      expect(buyOrderFeeRecipientZrxToken.equals(buyTakerFee)).to.be.true;
     });
   });
 });

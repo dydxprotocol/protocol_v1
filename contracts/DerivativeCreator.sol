@@ -1,4 +1,4 @@
-pragma solidity ^0.4.13;
+pragma solidity 0.4.15;
 
 import './lib/Ownable.sol';
 import './CoveredOption.sol';
@@ -29,9 +29,6 @@ contract DerivativeCreator is Ownable {
     // Address of the 0x Exchange Contract
     address public exchange;
 
-    // Address of the 0x Exchange Proxy Contract
-    address public exchangeProxy;
-
     // Mapping storing all child derivatives in existence
     mapping(bytes32 => address) childDerivatives;
 
@@ -41,12 +38,10 @@ contract DerivativeCreator is Ownable {
 
     function DerivativeCreator(
         address _proxy,
-        address _exchange,
-        address _exchangeProxy
+        address _exchange
     ) Ownable() {
         proxy = _proxy;
         exchange = _exchange;
-        exchangeProxy = _exchangeProxy;
     }
 
     // -----------------------------------------
@@ -110,7 +105,6 @@ contract DerivativeCreator is Ownable {
             underlyingTokenStrikeRate,
             baseTokenStrikeRate,
             exchange,
-            exchangeProxy,
             proxy
         );
 
@@ -168,12 +162,6 @@ contract DerivativeCreator is Ownable {
         address _exchange
     ) onlyOwner {
         exchange = _exchange;
-    }
-
-    function updateExchangeProxy(
-        address _exchangeProxy
-    ) onlyOwner {
-        exchangeProxy = _exchangeProxy;
     }
 
     function updateProxy(
