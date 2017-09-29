@@ -1,36 +1,48 @@
 pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
+import './lib/Lockable.sol';
 import './lib/SafeMath.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
 import './Exchange.sol';
 
-contract Vault is AccessControlled, SafeMath {
+/**
+ * @title Vault
+ * @author Antonio Juliano
+ *
+ * Holds and transfers tokens in vaults denominated by id
+ */
+contract Vault is AccessControlled, Lockable, SafeMath {
+    // ---------------------------
+    // ----- State Variables -----
+    // ---------------------------
+
     uint public constant ACCESS_DELAY = 1 days;
     uint public constant GRACE_PERIOD = 8 hours;
 
     address public PROXY;
-    address public EXCHANGE;
 
     mapping(bytes32 => mapping(address => uint256)) public balances;
     mapping(address => uint256) public totalBalances;
 
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
+
     function Vault(
-        address _proxy,
-        address _exchange
-    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {
+        address _proxy
+    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) Lockable() {
         PROXY = _proxy;
-        EXCHANGE = _exchange;
     }
+
+    // -----------------------------------------
+    // ---- Public State Changing Functions ----
+    // -----------------------------------------
 
     // TODO perhaps add a delay to these changes
     function updateProxy(address _proxy) onlyOwner {
         PROXY = _proxy;
-    }
-
-    function updateExchange(address _exchange) onlyOwner {
-        EXCHANGE = _exchange;
     }
 
     function transfer(
@@ -38,13 +50,16 @@ contract Vault is AccessControlled, SafeMath {
         address token,
         address from,
         uint amount
-    ) requiresAuthorization {
+    ) requiresAuthorization lockable {
+        // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
-        assert(ERC20(token).balanceOf(address(this)) == totalBalances[token] + amount);
-
+        // Increment balances
         balances[id][token] = safeAdd(balances[id][token], amount);
         totalBalances[token] = safeAdd(totalBalances[token], amount);
+
+        // Validate new balance
+        validateBalance(token);
     }
 
     function send(
@@ -52,72 +67,25 @@ contract Vault is AccessControlled, SafeMath {
         address token,
         address to,
         uint amount
-    ) requiresAuthorization {
-        uint256 balance = balances[id][token];
-        assert(balance >= amount);
+    ) requiresAuthorization lockable {
+        require(balances[id][token] >= amount);
 
+        // First decrement balances
         balances[id][token] = safeSub(balances[id][token], amount);
+        totalBalances[token] = safeSub(totalBalances[token], amount);
+
+        // Transfer tokens
         assert(ERC20(token).transfer(to, amount));
 
-        assert(ERC20(token).balanceOf(address(this)) == safeSub(totalBalances[token], amount));
-        totalBalances[token] = safeSub(totalBalances[token], amount);
-    }
-
-    function trade(
-        bytes32 id,
-        address[5] orderAddresses,
-        uint[6] orderValues,
-        uint requestedFillAmount,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        bool requireFullAmount
-    ) requiresAuthorization returns (
-        uint _filledTakerTokenAmount,
-        uint _makerTokenAmount
-    ) {
-        validateAndApproveTrade(
-            id,
-            orderAddresses,
-            requestedFillAmount
-        );
-
-        uint filledTakerTokenAmount = Exchange(EXCHANGE).fillOrder(
-            orderAddresses,
-            orderValues,
-            requestedFillAmount,
-            true,
-            v,
-            r,
-            s
-        );
-
-        return updateBalancesForTrade(
-            id,
-            orderAddresses[2],
-            orderAddresses[3],
-            filledTakerTokenAmount,
-            requestedFillAmount,
-            orderValues,
-            requireFullAmount
-        );
-    }
-
-    function getPartialAmount(
-        uint numerator,
-        uint denominator,
-        uint target
-    ) constant public returns (
-        uint partialValue
-    ) {
-        return safeDiv(safeMul(numerator, target), denominator);
+        // Validate new balance
+        validateBalance(token);
     }
 
     function deleteBalances(
         bytes32 shortId,
         address baseToken,
         address underlyingToken
-    ) requiresAuthorization {
+    ) requiresAuthorization lockable {
         require(balances[shortId][baseToken] == 0);
         require(balances[shortId][underlyingToken] == 0);
 
@@ -126,85 +94,15 @@ contract Vault is AccessControlled, SafeMath {
         delete balances[shortId][underlyingToken];
     }
 
-    function validateAndApproveTrade(
-        bytes32 id,
-        address[5] orderAddresses,
-        uint requestedFillAmount
+    // --------------------------------
+    // ------ Internal Functions ------
+    // --------------------------------
+
+    function validateBalance(
+        address token
     ) internal {
-        // Do not allow maker token and taker token to be the same
-        require(orderAddresses[2] != orderAddresses[3]);
-        require(balances[id][orderAddresses[3]] >= requestedFillAmount);
-        assert(totalBalances[orderAddresses[3]] >= requestedFillAmount);
-
-        balances[id][orderAddresses[3]] = safeSub(
-            balances[id][orderAddresses[3]],
-            requestedFillAmount
-        );
-
-        // Approve transfer of taker token by proxy for trade
-        ERC20(orderAddresses[3]).approve(PROXY, requestedFillAmount);
-    }
-
-    function updateBalancesForTrade(
-        bytes32 id,
-        address makerToken,
-        address takerToken,
-        uint filledTakerTokenAmount,
-        uint requestedFillAmount,
-        uint[6] orderValues,
-        bool requireFullAmount
-    ) internal returns (
-        uint _filledTakerTokenAmount,
-        uint _receivedMakerTokenAmount
-    ) {
-        // 0 can indicate an error
-        require(filledTakerTokenAmount > 0);
-
-        if (requireFullAmount) {
-            require(requestedFillAmount == filledTakerTokenAmount);
-        }
-
-        uint makerTokenAmount = getPartialAmount(
-            orderValues[0],
-            orderValues[1],
-            filledTakerTokenAmount
-        );
-        uint takerFee = getPartialAmount(filledTakerTokenAmount, orderValues[1], orderValues[3]);
-
-        uint receivedMakerTokenAmount = safeSub(
-            makerTokenAmount,
-            takerFee
-        );
-
-        assert(
-            ERC20(makerToken).balanceOf(address(this))
-            == safeAdd(totalBalances[makerToken], receivedMakerTokenAmount)
-        );
-        assert(
-            ERC20(takerToken).balanceOf(address(this))
-            == safeSub(totalBalances[takerToken], filledTakerTokenAmount)
-        );
-
-        // Update balances for id
-        balances[id][takerToken] = safeAdd(
-            balances[id][takerToken],
-            safeSub(requestedFillAmount, filledTakerTokenAmount)
-        );
-        balances[id][makerToken] = safeAdd(
-            balances[id][makerToken],
-            receivedMakerTokenAmount
-        );
-
-        // Update Total Balances
-        totalBalances[takerToken] = safeSub(
-            totalBalances[takerToken],
-            filledTakerTokenAmount
-        );
-        totalBalances[makerToken] = safeAdd(
-            totalBalances[makerToken],
-            receivedMakerTokenAmount
-        );
-
-        return (filledTakerTokenAmount, receivedMakerTokenAmount);
+        // The actual balance could be greater than totalBalances[token] because anyone
+        // can send tokens to the contract's address which cannot be accounted for
+        assert(ERC20(token).balanceOf(address(this)) >= totalBalances[token]);
     }
 }

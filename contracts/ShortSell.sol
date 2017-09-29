@@ -3,6 +3,7 @@ pragma solidity 0.4.15;
 import './lib/Ownable.sol';
 import './lib/SafeMath.sol';
 import './Vault.sol';
+import './Trader.sol';
 import './ShortSellRepo.sol';
 
 /**
@@ -91,6 +92,9 @@ contract ShortSell is Ownable, SafeMath {
     // Address of the Vault contract
     address public VAULT;
 
+    // Address of the Trader contract
+    address public TRADER;
+
     // Address of the ShortSellRepo contract
     address public REPO;
 
@@ -128,6 +132,7 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 indexed id,
         uint interestFee,
         uint shortSellerBaseToken,
+        uint buybackCost,
         uint timestamp
     );
 
@@ -171,11 +176,25 @@ contract ShortSell is Ownable, SafeMath {
 
     function ShortSell(
         address _vault,
-        address _repo
+        address _repo,
+        address _trader
     ) Ownable() {
         VAULT = _vault;
         REPO = _repo;
+        TRADER = _trader;
     }
+
+    // -----------------------------
+    // ------ Admin Functions ------
+    // -----------------------------
+
+    function updateTrader(
+        address _trader
+    ) onlyOwner {
+        TRADER = _trader;
+    }
+
+    // Vault and Repo are immutable
 
     // -----------------------------------------
     // ---- Public State Changing Functions ----
@@ -238,8 +257,6 @@ contract ShortSell is Ownable, SafeMath {
     ) external returns(bytes32 _shortId) {
         // TODO: lender, taker fees on loan offer
 
-        // TODO understand memory vs storage better. Should this be storage? want to just
-        // pass around a pointer to it
         ShortTx memory transaction = parseShortTx(
             addresses,
             values,
@@ -260,6 +277,7 @@ contract ShortSell is Ownable, SafeMath {
             safeSub(maxLoanAmount, transaction.shortAmount);
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
+
         // Transfer deposit
         Vault(VAULT).transfer(
             shortId,
@@ -311,8 +329,8 @@ contract ShortSell is Ownable, SafeMath {
             shortId,
             transaction.underlyingToken,
             transaction.baseToken,
-            uint128(transaction.shortAmount),
-            uint128(transaction.loanOffering.rates.interestRate),
+            transaction.shortAmount,
+            transaction.loanOffering.rates.interestRate,
             uint32(transaction.loanOffering.callTimeLimit),
             uint32(transaction.loanOffering.lockoutTime),
             uint32(block.timestamp),
@@ -373,7 +391,7 @@ contract ShortSell is Ownable, SafeMath {
 
         uint interestFee = calculateInterestFee(short.interestRate, short.startTimestamp);
 
-        buyBackUnderlyingToken(
+        uint buybackCost = buyBackUnderlyingToken(
             short,
             shortId,
             interestFee,
@@ -399,6 +417,7 @@ contract ShortSell is Ownable, SafeMath {
             shortId,
             interestFee,
             sellerBaseTokenAmount,
+            buybackCost,
             block.timestamp
         );
 
@@ -663,7 +682,7 @@ contract ShortSell is Ownable, SafeMath {
     ) internal returns (
         uint _baseTokenReceived
     ) {
-        var ( , baseTokenReceived) = Vault(VAULT).trade(
+        var ( , baseTokenReceived) = Trader(TRADER).trade(
             shortId,
             [
                 transaction.buyOrder.maker,
@@ -768,20 +787,17 @@ contract ShortSell is Ownable, SafeMath {
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
-    ) internal {
-        Vault vault = Vault(VAULT);
-
-        uint baseTokenPrice = getPartialAmount(
-            orderValues[1],
-            safeSub(orderValues[0], orderValues[3]),
-            short.shortAmount
+    ) internal returns (
+        uint _buybackCost
+    ) {
+        uint baseTokenPrice = getBaseTokenPriceForBuyback(
+            short,
+            interestFee,
+            shortId,
+            orderValues
         );
 
-        require(
-            safeAdd(baseTokenPrice, interestFee) <= vault.balances(shortId, short.baseToken)
-        );
-
-        vault.trade(
+        var (buybackCost, ) = Trader(TRADER).trade(
             shortId,
             [
                 orderAddresses[0],
@@ -798,7 +814,30 @@ contract ShortSell is Ownable, SafeMath {
             true
         );
 
-        assert(vault.balances(shortId, short.underlyingToken) == short.shortAmount);
+        assert(Vault(VAULT).balances(shortId, short.underlyingToken) == short.shortAmount);
+
+        return buybackCost;
+    }
+
+    function getBaseTokenPriceForBuyback(
+        Short short,
+        uint interestFee,
+        bytes32 shortId,
+        uint[6] orderValues
+    ) internal returns (
+        uint _baseTokenPrice
+    ) {
+        uint baseTokenPrice = getPartialAmount(
+            orderValues[1],
+            safeSub(orderValues[0], orderValues[3]),
+            short.shortAmount
+        );
+
+        require(
+            safeAdd(baseTokenPrice, interestFee) <= Vault(VAULT).balances(shortId, short.baseToken)
+        );
+
+        return baseTokenPrice;
     }
 
     function sendTokensOnClose(

@@ -366,6 +366,7 @@ contract Exchange is SafeMath {
                 s[i]
             );
         }
+
         return true;
     }
 
