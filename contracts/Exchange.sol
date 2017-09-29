@@ -68,10 +68,6 @@ contract Exchange is SafeMath {
 
     event LogError(uint8 indexed errorId, bytes32 indexed orderHash);
 
-    event LogBatchFill(
-        bytes32 indexed batchHash
-    );
-
     struct Order {
         address maker;
         address taker;
@@ -370,17 +366,6 @@ contract Exchange is SafeMath {
                 s[i]
             );
         }
-
-        /*bytes32 batchHash = sha3(
-            orderAddresses,
-            orderValues,
-            fillTakerTokenAmounts,
-            msg.sender
-        );
-
-        LogBatchFill(
-            batchHash
-        );*/
 
         return true;
     }
