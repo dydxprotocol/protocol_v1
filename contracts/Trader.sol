@@ -51,6 +51,8 @@ contract Trader is AccessControlled, SafeMath {
         PROXY = _proxy;
     }
 
+    event Test();
+
     function trade(
         bytes32 id,
         address[5] orderAddresses,
@@ -70,13 +72,8 @@ contract Trader is AccessControlled, SafeMath {
             requestedFillAmount
         );
 
-        uint startingMakerTokenBalance = ERC20(orderAddresses[2]).balanceOf(address(this));
-        uint startingTakerTokenBalance = ERC20(orderAddresses[3]).balanceOf(address(this));
-
-        Vault vault = Vault(VAULT);
-
         // Take the required amount of taker token from vault
-        vault.send(
+        Vault(VAULT).send(
             id,
             orderAddresses[3],
             address(this),
@@ -132,8 +129,8 @@ contract Trader is AccessControlled, SafeMath {
         require(orderAddresses[2] != orderAddresses[3]);
 
         Vault vault = Vault(VAULT);
-        require(vault.balances[id][orderAddresses[3]] >= requestedFillAmount);
-        assert(vault.totalBalances[orderAddresses[3]] >= requestedFillAmount);
+        require(vault.balances(id, orderAddresses[3]) >= requestedFillAmount);
+        assert(vault.totalBalances(orderAddresses[3]) >= requestedFillAmount);
 
         // Approve transfer of taker token by proxy for trade
         ERC20(orderAddresses[3]).approve(PROXY, requestedFillAmount);
@@ -146,9 +143,7 @@ contract Trader is AccessControlled, SafeMath {
         uint filledTakerTokenAmount,
         uint requestedFillAmount,
         uint[6] orderValues,
-        bool requireFullAmount,
-        uint startingMakerTokenAmount,
-        uint startingTakerTokenAmount
+        bool requireFullAmount
     ) internal returns (
         uint _filledTakerTokenAmount,
         uint _receivedMakerTokenAmount
@@ -170,20 +165,26 @@ contract Trader is AccessControlled, SafeMath {
         uint receivedMakerTokenAmount = safeSub(makerTokenAmount, takerFee);
         uint extraTakerTokenAmount = safeSub(requestedFillAmount, filledTakerTokenAmount);
 
-        ERC20 makerToken = ERC20(makerTokenAddress);
-        ERC20 takerToken = ERC20(takerTokenAddress);
-
-        assert(
-            makerToken.balanceOf(address(this))
-            == safeAdd(startingMakerTokenAmount, receivedMakerTokenAmount)
-        );
-        assert(
-            takerToken.balanceOf(address(this))
-            == safeAdd(startingTakerTokenAmount, extraTakerTokenAmount)
+        transferBackTokens(
+            id,
+            makerTokenAddress,
+            takerTokenAddress,
+            receivedMakerTokenAmount,
+            extraTakerTokenAmount
         );
 
+        return (filledTakerTokenAmount, receivedMakerTokenAmount);
+    }
+
+    function transferBackTokens(
+        bytes32 id,
+        address makerTokenAddress,
+        address takerTokenAddress,
+        uint receivedMakerTokenAmount,
+        uint extraTakerTokenAmount
+    ) internal {
         // Transfer the received maker token back to vault
-        makerToken.approve(PROXY, receivedMakerTokenAmount);
+        ERC20(makerTokenAddress).approve(PROXY, receivedMakerTokenAmount);
         Vault(VAULT).transfer(
             id,
             makerTokenAddress,
@@ -193,7 +194,7 @@ contract Trader is AccessControlled, SafeMath {
 
         // Transfer any leftover taker token back to the vault
         if (extraTakerTokenAmount != 0) {
-            takerToken.approve(PROXY, extraTakerTokenAmount);
+            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
             Vault(VAULT).transfer(
                 id,
                 takerTokenAddress,
@@ -201,7 +202,5 @@ contract Trader is AccessControlled, SafeMath {
                 extraTakerTokenAmount
             );
         }
-
-        return (filledTakerTokenAmount, receivedMakerTokenAmount);
     }
 }

@@ -2,6 +2,7 @@
 
 const Exchange = artifacts.require("Exchange");
 const Vault = artifacts.require("Vault");
+const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
 const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
@@ -22,30 +23,40 @@ module.exports = (deployer, network, addresses) => {
     .then(() => deployer.deploy(Exchange, ProxyContract.address))
     .then(() => deployer.deploy(
       Vault,
-      ProxyContract.address,
-      Exchange.address
+      ProxyContract.address
+    ))
+    .then(() => deployer.deploy(
+      Trader,
+      Exchange.address,
+      Vault.address,
+      ProxyContract.address
     ))
     .then(() => deployer.deploy(ShortSellRepo))
     .then(() => deployer.deploy(
       ShortSell,
       Vault.address,
-      ShortSellRepo.address
+      ShortSellRepo.address,
+      Trader.address
     ))
     .then(() => ProxyContract.deployed())
     .then(proxy => {
       proxy.grantAccess(addresses[0]);
       return proxy;
     })
-    .then(proxy => {
-      proxy.grantTransferAuthorization(Vault.address)
-      return proxy;
-    })
-    .then(proxy => {
-      proxy.grantTransferAuthorization(Exchange.address)
-    })
+    .then(proxy => Promise.all([
+        proxy.grantTransferAuthorization(Vault.address),
+        proxy.grantTransferAuthorization(Exchange.address),
+        proxy.grantTransferAuthorization(Trader.address),
+      ])
+    )
     .then(() => Vault.deployed())
-    .then(vault => vault.grantAccess(ShortSell.address))
+    .then(vault => Promise.all([
+      vault.grantAccess(ShortSell.address),
+      vault.grantAccess(Trader.address)
+    ]))
     .then(() => ShortSellRepo.deployed())
     .then(repo => repo.grantAccess(ShortSell.address))
+    .then(() => Trader.deployed())
+    .then(trader => trader.grantAccess(ShortSell.address))
     .then(() => maybeDeployTestTokens(deployer, network));
 };

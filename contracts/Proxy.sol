@@ -2,7 +2,7 @@ pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
 import './interfaces/ERC20.sol';
-import './lib/SafeMath.sol'
+import './lib/SafeMath.sol';
 
 contract Proxy is AccessControlled, SafeMath {
     mapping(address => bool) public transferAuthorized;

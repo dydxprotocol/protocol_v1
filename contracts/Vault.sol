@@ -1,6 +1,7 @@
 pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
+import './lib/Lockable.sol';
 import './lib/SafeMath.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
@@ -12,7 +13,7 @@ import './Exchange.sol';
  *
  * Holds and transfers tokens in vaults denominated by id
  */
-contract Vault is AccessControlled, SafeMath {
+contract Vault is AccessControlled, Lockable, SafeMath {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -31,7 +32,7 @@ contract Vault is AccessControlled, SafeMath {
 
     function Vault(
         address _proxy
-    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {
+    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) Lockable() {
         PROXY = _proxy;
     }
 
@@ -49,7 +50,7 @@ contract Vault is AccessControlled, SafeMath {
         address token,
         address from,
         uint amount
-    ) requiresAuthorization {
+    ) requiresAuthorization lockable {
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
@@ -66,8 +67,8 @@ contract Vault is AccessControlled, SafeMath {
         address token,
         address to,
         uint amount
-    ) requiresAuthorization {
-        require(balance >= balances[id][token]);
+    ) requiresAuthorization lockable {
+        require(balances[id][token] >= amount);
 
         // First decrement balances
         balances[id][token] = safeSub(balances[id][token], amount);
@@ -84,7 +85,7 @@ contract Vault is AccessControlled, SafeMath {
         bytes32 shortId,
         address baseToken,
         address underlyingToken
-    ) requiresAuthorization {
+    ) requiresAuthorization lockable {
         require(balances[shortId][baseToken] == 0);
         require(balances[shortId][underlyingToken] == 0);
 
