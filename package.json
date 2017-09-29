@@ -28,20 +28,20 @@
   },
   "homepage": "https://github.com/AntonioJuliano/dydx-contracts#readme",
   "devDependencies": {
-    "babel-eslint": "^7.2.3",
-    "babel-polyfill": "^6.23.0",
+    "babel-eslint": "^8.0.1",
+    "babel-polyfill": "^6.26.0",
     "babel-preset-es2017": "^6.24.1",
-    "babel-register": "^6.24.1",
-    "chai": "^4.1.1",
-    "eslint": "^4.4.1",
-    "truffle": "^3.4.8"
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "eslint": "^4.7.2",
+    "truffle": "^3.4.11"
   },
   "dependencies": {
-    "0x.js": "^0.9.0",
-    "bignumber.js": "^4.0.2",
+    "0x.js": "^0.19.0",
+    "bignumber.js": "^4.1.0",
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",
-    "request-promise-native": "^1.0.4",
-    "web3": "1.0.0-beta.18"
+    "request-promise-native": "^1.0.5",
+    "web3": "^1.0.0-beta.22"
   }
 }

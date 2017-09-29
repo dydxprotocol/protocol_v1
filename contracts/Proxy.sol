@@ -2,8 +2,9 @@ pragma solidity 0.4.15;
 
 import './lib/AccessControlled.sol';
 import './interfaces/ERC20.sol';
+import './lib/SafeMath.sol'
 
-contract Proxy is AccessControlled {
+contract Proxy is AccessControlled, SafeMath {
     mapping(address => bool) public transferAuthorized;
 
     modifier requiresTransferAuthorization() {
@@ -48,5 +49,17 @@ contract Proxy is AccessControlled {
         uint value
     ) requiresTransferAuthorization {
         require(ERC20(token).transferFrom(from, to, value));
+    }
+
+    function available(
+        address who,
+        address token
+    ) constant public returns (
+        uint _allowance
+    ) {
+        return min256(
+            ERC20(token).allowance(who, address(this)),
+            ERC20(token).balanceOf(who)
+        );
     }
 }
