@@ -86,6 +86,8 @@ contract Vault is AccessControlled, Lockable, SafeMath {
         address baseToken,
         address underlyingToken
     ) requiresAuthorization lockable {
+        // TODO delete the fee tokens?
+
         require(balances[shortId][baseToken] == 0);
         require(balances[shortId][underlyingToken] == 0);
 

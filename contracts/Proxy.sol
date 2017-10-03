@@ -42,7 +42,7 @@ contract Proxy is AccessControlled, SafeMath {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
 
-    function transferFrom(
+    function transferTo(
         address token,
         address from,
         address to,

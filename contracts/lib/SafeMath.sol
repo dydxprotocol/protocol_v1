@@ -1,6 +1,21 @@
 pragma solidity 0.4.15;
 
 contract SafeMath {
+    /// @dev Calculates partial value given a numerator and denominator.
+    /// @param numerator Numerator.
+    /// @param denominator Denominator.
+    /// @param target Value to calculate partial of.
+    /// @return Partial value of target.
+    function getPartialAmount(
+        uint numerator,
+        uint denominator,
+        uint target
+    ) constant public returns (
+        uint partialValue
+    ) {
+        return safeDiv(safeMul(numerator, target), denominator);
+    }
+
     function safeMul(uint a, uint b) internal constant returns (uint) {
         uint c = a * b;
         assert(a == 0 || c / a == b);

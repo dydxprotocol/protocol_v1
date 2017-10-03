@@ -10,11 +10,11 @@ const ethUtil = require('ethereumjs-util');
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
+const FeeToken = artifacts.require("TokenC");
 const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 
 const web3Instance = new Web3(web3.currentProvider);
-const zeroEx = new ZeroEx(web3.currentProvider);
 
 const BASE_AMOUNT = new BigNumber('1e18');
 
@@ -54,11 +54,15 @@ async function createSigned0xSellOrder(accounts) {
     takerFee: BASE_AMOUNT.times(new BigNumber(.1)),
     takerTokenAddress: BaseToken.address,
     takerTokenAmount: BASE_AMOUNT.times(new BigNumber(8)),
+    takerFeeTokenAddress: FeeToken.address,
+    makerFeeTokenAddress: FeeToken.address
   };
 
-  const orderHash = ZeroEx.getOrderHashHex(order);
+  const orderHash = getOrderHash(order);
 
-  const signature = await zeroEx.signOrderHashAsync(orderHash, accounts[5]);
+  console.log('Hash: ' + orderHash);
+
+  const signature = await signOrder(order);
 
   order.ecSignature = signature;
 
@@ -74,7 +78,11 @@ function callShort(shortSell, tx) {
     tx.loanOffering.feeRecipient,
     tx.buyOrder.maker,
     tx.buyOrder.taker,
-    tx.buyOrder.feeRecipient
+    tx.buyOrder.feeRecipient,
+    FeeToken.address,
+    FeeToken.address,
+    FeeToken.address,
+    FeeToken.address
   ];
 
   const values = [
@@ -120,9 +128,10 @@ function callShort(shortSell, tx) {
 }
 
 async function issueTokensAndSetAllowancesForShort(tx) {
-  const [underlyingToken, baseToken] = await Promise.all([
+  const [underlyingToken, baseToken, feeToken] = await Promise.all([
     UnderlyingToken.deployed(),
-    BaseToken.deployed()
+    BaseToken.deployed(),
+    FeeToken.deployed()
   ]);
 
   await Promise.all([
@@ -138,6 +147,18 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount
     ),
+    feeToken.issueTo(
+      tx.buyOrder.maker,
+      tx.buyOrder.makerFee
+    ),
+    feeToken.issueTo(
+      tx.loanOffering.lender,
+      tx.loanOffering.rates.lenderFee
+    ),
+    feeToken.issueTo(
+      tx.seller,
+      tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
+    )
   ]);
 
   return Promise.all([
@@ -155,6 +176,21 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       ProxyContract.address,
       tx.buyOrder.makerTokenAmount,
       { from: tx.buyOrder.maker }
+    ),
+    feeToken.approve(
+      ProxyContract.address,
+      tx.buyOrder.makerFee,
+      { from: tx.buyOrder.maker }
+    ),
+    feeToken.approve(
+      ProxyContract.address,
+      tx.loanOffering.rates.lenderFee,
+      { from: tx.loanOffering.lender }
+    ),
+    feeToken.approve(
+      ProxyContract.address,
+      tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee),
+      { from: tx.seller }
     )
   ]);
 }
@@ -211,14 +247,23 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
 }
 
 async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
-  const [underlyingToken] = await Promise.all([
-    UnderlyingToken.deployed()
+  const [underlyingToken, feeToken] = await Promise.all([
+    UnderlyingToken.deployed(),
+    FeeToken.deployed(),
   ]);
 
   await Promise.all([
     underlyingToken.issueTo(
       sellOrder.maker,
       sellOrder.makerTokenAmount
+    ),
+    feeToken.issueTo(
+      shortTx.seller,
+      sellOrder.takerFee
+    ),
+    feeToken.issueTo(
+      sellOrder.maker,
+      sellOrder.makerFee
     )
   ]);
 
@@ -227,6 +272,16 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
       ProxyContract.address,
       sellOrder.makerTokenAmount,
       { from: sellOrder.maker }
+    ),
+    feeToken.approve(
+      ProxyContract.address,
+      sellOrder.makerFee,
+      { from: sellOrder.maker }
+    ),
+    feeToken.approve(
+      ProxyContract.address,
+      sellOrder.takerFee,
+      { from: shortTx.seller }
     )
   ]);
 }
@@ -240,7 +295,7 @@ async function createSigned0xBuyOrder(accounts) {
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
-    makerFee: new BigNumber(0),
+    makerFee: BASE_AMOUNT.times(new BigNumber(.02)),
     makerTokenAddress: BaseToken.address,
     makerTokenAmount: BASE_AMOUNT.times(new BigNumber(6)),
     salt: new BigNumber(7324),
@@ -248,17 +303,17 @@ async function createSigned0xBuyOrder(accounts) {
     takerFee: BASE_AMOUNT.times(new BigNumber(.1)),
     takerTokenAddress: UnderlyingToken.address,
     takerTokenAmount: BASE_AMOUNT.times(new BigNumber(2)),
+    makerFeeTokenAddress: FeeToken.address,
+    takerFeeTokenAddress: FeeToken.address,
   };
 
-  const orderHash = ZeroEx.getOrderHashHex(order);
-
-  const signature = await zeroEx.signOrderHashAsync(orderHash, accounts[2]);
+  const orderHash = getOrderHash(order);
+  const signature = await signOrder(order);
 
   order.ecSignature = signature;
 
   return order;
 }
-
 
 async function createLoanOffering(accounts) {
   let loanOffering = {
@@ -304,6 +359,8 @@ async function signLoanOffering(loanOffering) {
     loanOffering.lender,
     loanOffering.taker,
     loanOffering.feeRecipient,
+    FeeToken.address,
+    FeeToken.address,
     valuesHash
   );
 
@@ -318,6 +375,39 @@ async function signLoanOffering(loanOffering) {
     r: ethUtil.bufferToHex(r),
     s: ethUtil.bufferToHex(s)
   }
+}
+
+async function signOrder(order) {
+  const signature = await promisify(web3Instance.eth.sign)(
+    getOrderHash(order), order.maker
+  );
+
+  const { v, r, s } = ethUtil.fromRpcSig(signature);
+
+  return {
+    v,
+    r: ethUtil.bufferToHex(r),
+    s: ethUtil.bufferToHex(s)
+  };
+}
+
+function getOrderHash(order) {
+  return web3Instance.utils.soliditySha3(
+    Exchange.address,
+    order.maker,
+    order.taker,
+    order.makerTokenAddress,
+    order.takerTokenAddress,
+    order.feeRecipient,
+    order.makerFeeTokenAddress,
+    order.takerFeeTokenAddress,
+    order.makerTokenAmount,
+    order.takerTokenAmount,
+    order.makerFee,
+    order.takerFee,
+    order.expirationUnixTimestampSec,
+    order.salt
+  )
 }
 
 function getPartialAmount(
