@@ -3,6 +3,7 @@ pragma solidity 0.4.15;
 import './Exchange.sol';
 import './interfaces/ERC20.sol';
 import './Proxy.sol';
+import './lib/SafeMath.sol';
 
 /**
  * @title CoveredOption
@@ -21,7 +22,7 @@ import './Proxy.sol';
  * Each option adheres to the ERC20 token standard to allow transfer and trading
  * of options after issuance
  */
-contract CoveredOption {
+contract CoveredOption is SafeMath{
     // ----------------------------
     // ---- Constant Variables ----
     // ----------------------------
@@ -159,16 +160,22 @@ contract CoveredOption {
      *     totalWritten is incremented by the number of options written
      * 7 - Buy event is recorded
      *
-     * @param  writer         address of the writer of this option issuance
+     * @param  orderAddresses Array of addresses corresponding to:
+     *
+     *  [0] = writer
+     *  [1] = feeRecipient
+     *  [2] = makerFeeToken
+     *  [3] = takerFeeToken
+     *
      * @param  orderValues    array containing:
-     *                        [
-     *                          underlyingTokenAmount,
-     *                          baseTokenAmount,
-     *                          writerFee,
-     *                          buyerFee,
-     *                          expirationTimestampInSec,
-     *                          salt
-     *                        ]
+     *
+     * [0] = underlyingTokenAmount
+     * [1] = baseTokenAmount
+     * [2] = writerFee
+     * [3] = buyerFee
+     * [4] = expirationTimestampInSec
+     * [5] = salt
+     *
      * @param  maximumPremium Maximum amount of premium in baseToken the the buyer wishes to pay
      *                        new options will be issued on a 1:1 basis with number of
      *                        underlyingToken transfered in by the writer as per the
@@ -179,7 +186,7 @@ contract CoveredOption {
      * @return _optionsIssued number of options issued to the buyer
      */
     function buy(
-        address writer,
+        address[4] orderAddresses,
         uint[6] orderValues,
         uint maximumPremium,
         uint8 v,
@@ -191,16 +198,18 @@ contract CoveredOption {
         require(maximumPremium > 0);
         require(block.timestamp < expirationTimestamp);
 
-        // TODO Fees
-        // TODO how to sign these?
-
-        // uint writerFee = orderValues[2];
-        // uint buyerFee = orderValues[3];
-        /*orderValues[2] = 0;
-        orderValues[3] = 0;*/
-
         // Transfer the maximum baseToken premium from the sender to CoveredOption
         Proxy(proxy).transfer(baseToken, msg.sender, maximumPremium);
+
+        address writer = orderAddresses[0];
+
+        // Transfer taker fee
+        uint takerFee = getPartialAmount(
+            maximumPremium,
+            orderValues[1],
+            orderValues[3]
+        );
+        Proxy(proxy).transfer(orderAddresses[3], msg.sender, takerFee);
 
         // Call the the Exchange Contract to exchange the baseToken premium for the underlyingToken
         uint premium = Exchange(exchange).fillOrder(
@@ -209,7 +218,9 @@ contract CoveredOption {
                 address(this),
                 underlyingToken,
                 baseToken,
-                address(0)
+                orderAddresses[1],
+                orderAddresses[2],
+                orderAddresses[3]
             ],
             orderValues,
             maximumPremium,
@@ -219,7 +230,7 @@ contract CoveredOption {
             s
         );
 
-        uint optionsIssued = Exchange(exchange).getPartialAmount(
+        uint optionsIssued = getPartialAmount(
             orderValues[0],
             orderValues[1],
             premium
@@ -229,18 +240,35 @@ contract CoveredOption {
         require(optionsIssued > 0);
 
         // Increment balances
-        balances[msg.sender] = balances[msg.sender] + optionsIssued;
-        writers[writer] = writers[writer] + optionsIssued;
+        balances[msg.sender] = safeAdd(balances[msg.sender], optionsIssued);
+        writers[writer] = safeAdd(writers[writer], optionsIssued);
 
         // Send back any excess baseToken premium taken from sender
         // TODO make sure state of token has updated from first call
         if (premium < maximumPremium) {
-            ERC20(baseToken).transfer(msg.sender, maximumPremium - premium);
+            ERC20(baseToken).transfer(
+                msg.sender,
+                safeSub(maximumPremium, premium)
+            );
+
+            // Send back extra taker fee
+            uint extraTakerTokenAmount = safeSub(
+                takerFee,
+                getPartialAmount(
+                    premium,
+                    orderValues[1],
+                    orderValues[3]
+                )
+            );
+            ERC20(orderAddresses[3]).transfer(
+                msg.sender,
+                extraTakerTokenAmount
+            );
         }
 
         // Increment totals
-        totalOptions = totalOptions + optionsIssued;
-        totalWritten = totalWritten + optionsIssued;
+        totalOptions = safeAdd(totalOptions, optionsIssued);
+        totalWritten = safeAdd(totalWritten, optionsIssued);
 
         Buy(writer, msg.sender, optionsIssued, premium, block.timestamp);
 
@@ -289,7 +317,7 @@ contract CoveredOption {
         // TODO make sure no reentrancy attack here
 
         // Deduct balance
-        balances[msg.sender] = balance - amount;
+        balances[msg.sender] = safeSub(balance, amount);
 
         // Transfer total base token price from sender
         Proxy(proxy).transfer(baseToken, msg.sender, totalBaseTokenPrice);
@@ -299,9 +327,9 @@ contract CoveredOption {
 
         // Update totals
         // TODO is it ok to set these at the end?
-        totalExercised = totalExercised + amount;
-        totalOptions = totalOptions - amount;
-        totalBaseToken = totalBaseToken + totalBaseTokenPrice;
+        totalExercised = safeAdd(totalExercised, amount);
+        totalOptions = safeSub(totalOptions, amount);
+        totalBaseToken = safeAdd(totalBaseToken, totalBaseTokenPrice);
 
         Exercise(msg.sender, amount, block.timestamp);
 
@@ -364,7 +392,7 @@ contract CoveredOption {
         }
 
         // Update totals
-        totalWithdrawn = totalWithdrawn + balance;
+        totalWithdrawn = safeAdd(totalWithdrawn, balance);
 
         Withdrawal(writer, balance, underlyingTokenAmount, baseTokenAmount);
 
@@ -397,40 +425,17 @@ contract CoveredOption {
         require(balance >= amount);
 
         // Deduct from writer balance and balances
-        writers[msg.sender] = written - amount;
-        balances[msg.sender] = balance - amount;
+        writers[msg.sender] = safeSub(written, amount);
+        balances[msg.sender] = safeSub(balance, amount);
 
         // Transfer underlyingToken to sender
         require(ERC20(underlyingToken).transfer(msg.sender, amount));
 
         // Update totals
-        totalOptions = totalOptions - amount;
-        totalWritten = totalWritten - amount;
+        totalOptions = safeSub(totalOptions, amount);
+        totalWritten = safeSub(totalWritten, amount);
 
         Recovery(msg.sender, amount, block.timestamp);
-    }
-
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
-
-    /**
-     * Divide integer values
-     *
-     * @param  numerator    numerator of division
-     * @param  denominator  denominator of division
-     * @param  target       multiplier of division
-     * @return partialValue value of the division
-     */
-    function getPartialAmount(
-        uint numerator,
-        uint denominator,
-        uint target
-    ) constant public returns (
-        uint partialValue
-    ) {
-        // NOTE this needs to be the same as used by 0x
-        return Exchange(exchange).getPartialAmount(numerator, denominator, target);
     }
 
     // ---------------------
@@ -446,8 +451,8 @@ contract CoveredOption {
         bool ok
     ) {
         if (balances[msg.sender] >= value) {
-            balances[msg.sender] -= value;
-            balances[to] += value;
+            balances[msg.sender] = safeSub(balances[msg.sender], value);
+            balances[to] = safeAdd(balances[to], value);
             Transfer(msg.sender, to, value);
             return true;
         } else {
@@ -463,9 +468,9 @@ contract CoveredOption {
         bool ok
     ) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
-            balances[to] += value;
-            balances[from] -= value;
-            allowed[from][msg.sender] -= value;
+            balances[to] = safeAdd(balances[to], value);
+            balances[from] = safeSub(balances[from], value);
+            allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], value);
             Transfer(from, to, value);
             return true;
         } else {

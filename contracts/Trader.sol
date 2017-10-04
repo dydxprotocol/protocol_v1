@@ -25,6 +25,8 @@ contract Trader is AccessControlled, SafeMath {
     address public VAULT;
     address public PROXY;
 
+    uint count;
+
     function Trader(
         address _exchange,
         address _vault,
@@ -33,6 +35,7 @@ contract Trader is AccessControlled, SafeMath {
         EXCHANGE = _exchange;
         VAULT = _vault;
         PROXY = _proxy;
+        count = 0;
     }
 
     // -----------------------------------------
@@ -64,6 +67,12 @@ contract Trader is AccessControlled, SafeMath {
         uint _filledTakerTokenAmount,
         uint _makerTokenAmount
     ) {
+        uint[3] memory startingBalances = [
+            ERC20(orderAddresses[3]).balanceOf(address(this)),
+            ERC20(orderAddresses[2]).balanceOf(address(this)),
+            ERC20(orderAddresses[6]).balanceOf(address(this))
+        ];
+
         transferTokensBeforeTrade(
             id,
             orderAddresses,
@@ -82,16 +91,19 @@ contract Trader is AccessControlled, SafeMath {
             s
         );
 
-        return updateBalancesForTrade(
+        uint makerTokenAmount = updateBalancesForTrade(
             id,
-            orderAddresses[2],
-            orderAddresses[3],
-            orderAddresses[6],
+            orderAddresses,
             filledTakerTokenAmount,
             requestedFillAmount,
             orderValues,
             requireFullAmount
         );
+
+        // Assert the token balances have not changed
+        validateBalances(startingBalances, orderAddresses);
+
+        return (filledTakerTokenAmount, makerTokenAmount);
     }
 
     // --------------------------------
@@ -149,32 +161,34 @@ contract Trader is AccessControlled, SafeMath {
                 address(this),
                 requestedFillAmount
             );
-
-            Vault(VAULT).send(
-                id,
-                orderAddresses[6],
-                address(this),
-                feeAmount
-            );
-
             ERC20(orderAddresses[3]).approve(PROXY, requestedFillAmount);
-            ERC20(orderAddresses[6]).approve(PROXY, feeAmount);
+
+            if (feeAmount > 0) {
+                Vault(VAULT).send(
+                    id,
+                    orderAddresses[6],
+                    address(this),
+                    feeAmount
+                );
+                ERC20(orderAddresses[6]).approve(PROXY, feeAmount);
+            }
         }
     }
 
     function updateBalancesForTrade(
         bytes32 id,
-        address makerTokenAddress,
-        address takerTokenAddress,
-        address takerFeeTokenAddress,
+        address[7] orderAddresses,
         uint filledTakerTokenAmount,
         uint requestedFillAmount,
         uint[6] orderValues,
         bool requireFullAmount
     ) internal returns (
-        uint _filledTakerTokenAmount,
         uint _receivedMakerTokenAmount
     ) {
+        address makerTokenAddress = orderAddresses[2];
+        address takerTokenAddress = orderAddresses[3];
+        address takerFeeTokenAddress = orderAddresses[6];
+
         // 0 can indicate an error
         require(filledTakerTokenAmount > 0);
 
@@ -211,7 +225,7 @@ contract Trader is AccessControlled, SafeMath {
             extraTakerFeeTokenAmount
         );
 
-        return (filledTakerTokenAmount, makerTokenAmount);
+        return makerTokenAmount;
     }
 
     function transferBackTokens(
@@ -232,51 +246,60 @@ contract Trader is AccessControlled, SafeMath {
             receivedMakerTokenAmount
         );
 
-        // Transfer any leftover taker token back to the vault
-        if (extraTakerTokenAmount != 0) {
-            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
-            Vault(VAULT).transfer(
-                id,
-                takerTokenAddress,
-                address(this),
-                extraTakerTokenAmount
-            );
+        // Transfer any leftover taker/fee token back to the vault
+        if (extraTakerTokenAmount > 0) {
+            if (takerFeeTokenAddress == address(0)) {
+                ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
+                Vault(VAULT).transfer(
+                    id,
+                    takerTokenAddress,
+                    address(this),
+                    extraTakerTokenAmount
+                );
+            } else if (takerTokenAddress == takerFeeTokenAddress) {
+                uint totalAmount = safeAdd(extraTakerTokenAmount, extraTakerFeeTokenAmount);
+
+                ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
+                Vault(VAULT).transfer(
+                    id,
+                    takerTokenAddress,
+                    address(this),
+                    totalAmount
+                );
+            } else {
+                ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
+                Vault(VAULT).transfer(
+                    id,
+                    takerTokenAddress,
+                    address(this),
+                    extraTakerTokenAmount
+                );
+
+                if (extraTakerFeeTokenAmount > 0) {
+                    ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
+                    Vault(VAULT).transfer(
+                        id,
+                        takerFeeTokenAddress,
+                        address(this),
+                        extraTakerFeeTokenAmount
+                    );
+                }
+            }
         }
+    }
 
-        if (takerFeeTokenAddress == address(0)) {
-            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
-            Vault(VAULT).transfer(
-                id,
-                takerTokenAddress,
-                address(this),
-                extraTakerTokenAmount
-            );
-        } else if (takerTokenAddress == takerFeeTokenAddress) {
-            uint totalAmount = safeAdd(extraTakerTokenAmount, extraTakerFeeTokenAmount);
-
-            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
-            Vault(VAULT).transfer(
-                id,
-                takerTokenAddress,
-                address(this),
-                totalAmount
-            );
-        } else {
-            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
-            Vault(VAULT).transfer(
-                id,
-                takerTokenAddress,
-                address(this),
-                extraTakerTokenAmount
-            );
-
-            ERC20(takerTokenAddress).approve(PROXY, extraTakerTokenAmount);
-            Vault(VAULT).transfer(
-                id,
-                takerFeeTokenAddress,
-                address(this),
-                extraTakerFeeTokenAmount
-            );
-        }
+    function validateBalances(
+        uint[3] startingBalances,
+        address[7] orderAddresses
+    ) internal {
+        assert(
+            ERC20(orderAddresses[3]).balanceOf(address(this)) == startingBalances[0]
+        );
+        assert(
+            ERC20(orderAddresses[2]).balanceOf(address(this)) == startingBalances[1]
+        );
+        assert(
+            ERC20(orderAddresses[6]).balanceOf(address(this)) == startingBalances[2]
+        );
     }
 }

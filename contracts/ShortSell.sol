@@ -278,6 +278,8 @@ contract ShortSell is Ownable, SafeMath {
         uint8[2] sigV,
         bytes32[4] sigRS
     ) external returns(bytes32 _shortId) {
+        // TODO implement minimum sell value on loan offering
+
         ShortTx memory transaction = parseShortTx(
             addresses,
             values,
@@ -885,12 +887,14 @@ contract ShortSell is Ownable, SafeMath {
             orderValues
         );
 
-        transferFeeForBuyback(
-            shortId,
-            orderValues,
-            orderAddresses[4],
-            baseTokenPrice
-        );
+        if (orderAddresses[2] != address(0)) {
+            transferFeeForBuyback(
+                shortId,
+                orderValues,
+                orderAddresses[4],
+                baseTokenPrice
+            );
+        }
 
         var (buybackCost, ) = Trader(TRADER).trade(
             shortId,
@@ -912,6 +916,7 @@ contract ShortSell is Ownable, SafeMath {
         );
 
         assert(Vault(VAULT).balances(shortId, short.underlyingToken) == short.shortAmount);
+        assert(Vault(VAULT).balances(shortId, orderAddresses[4]) == 0);
 
         return buybackCost;
     }
@@ -944,18 +949,20 @@ contract ShortSell is Ownable, SafeMath {
         uint baseTokenPrice
     ) internal {
         uint takerFee = getPartialAmount(
-            orderValues[3],
+            baseTokenPrice,
             orderValues[1],
-            baseTokenPrice
+            orderValues[3]
         );
 
         // Transfer taker fee for buyback
-        Vault(VAULT).transfer(
-            shortId,
-            takerFeeToken,
-            msg.sender,
-            takerFee
-        );
+        if (takerFee > 0) {
+            Vault(VAULT).transfer(
+                shortId,
+                takerFeeToken,
+                msg.sender,
+                takerFee
+            );
+        }
     }
 
     function sendTokensOnClose(
@@ -974,13 +981,16 @@ contract ShortSell is Ownable, SafeMath {
             short.lender,
             short.shortAmount
         );
+
         // Send base token interest fee to lender
-        vault.send(
-            shortId,
-            short.baseToken,
-            short.lender,
-            interestFee
-        );
+        if (interestFee > 0) {
+            vault.send(
+                shortId,
+                short.baseToken,
+                short.lender,
+                interestFee
+            );
+        }
 
         // Send remaining base token to seller
         // (= deposit + profit - interestFee - buyOrderTakerFee - sellOrderTakerFee)

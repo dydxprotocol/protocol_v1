@@ -46,7 +46,7 @@ async function createSigned0xSellOrder(accounts) {
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
     maker: accounts[5],
-    makerFee: new BigNumber(0),
+    makerFee: BASE_AMOUNT.times(new BigNumber(.01)),
     makerTokenAddress: UnderlyingToken.address,
     makerTokenAmount: BASE_AMOUNT.times(new BigNumber(2)),
     salt: new BigNumber(342),
@@ -59,9 +59,6 @@ async function createSigned0xSellOrder(accounts) {
   };
 
   const orderHash = getOrderHash(order);
-
-  console.log('Hash: ' + orderHash);
-
   const signature = await signOrder(order);
 
   order.ecSignature = signature;
@@ -225,7 +222,9 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
   const addresses = [
     sellOrder.maker,
     sellOrder.taker,
-    sellOrder.feeRecipient
+    sellOrder.feeRecipient,
+    sellOrder.makerFeeTokenAddress,
+    sellOrder.takerFeeTokenAddress
   ];
   const values = [
     sellOrder.makerTokenAmount,
