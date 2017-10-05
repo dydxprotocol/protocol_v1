@@ -15,6 +15,7 @@ Contains implementations for:
 Install
 
 ```
+npm install
 npm install -g truffle
 npm install -g ethereumjs-testrpc
 ```
