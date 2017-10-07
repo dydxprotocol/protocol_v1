@@ -3,6 +3,7 @@ pragma solidity 0.4.15;
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './interfaces/ERC20.sol';
+import './interfaces/ZeroExExchange.sol';
 import './Exchange.sol';
 import './Vault.sol';
 import './Proxy.sol';
@@ -21,29 +22,36 @@ contract Trader is AccessControlled, SafeMath {
     uint public constant ACCESS_DELAY = 1 days;
     uint public constant GRACE_PERIOD = 8 hours;
 
-    address public EXCHANGE;
+    address public DYDX_EXCHANGE;
+    address public ZERO_EX_EXCHANGE;
     address public VAULT;
     address public PROXY;
-
-    uint count;
+    address public ZERO_EX_FEE_TOKEN_CONSTANT;
 
     function Trader(
-        address _exchange,
+        address _dydxExchange,
+        address _0xExchange,
         address _vault,
-        address _proxy
+        address _proxy,
+        address _0xFeeTokenConstant
     ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {
-        EXCHANGE = _exchange;
+        DYDX_EXCHANGE = _dydxExchange;
+        ZERO_EX_EXCHANGE = _0xExchange;
         VAULT = _vault;
         PROXY = _proxy;
-        count = 0;
+        ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
     }
 
     // -----------------------------------------
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
-    function updateExchange(address _exchange) onlyOwner {
-        EXCHANGE = _exchange;
+    function updateDydxExchange(address _dydxExchange) onlyOwner {
+        DYDX_EXCHANGE = _dydxExchange;
+    }
+
+    function update0xExchange(address _0xExchange) onlyOwner {
+        ZERO_EX_EXCHANGE = _0xExchange;
     }
 
     function updateVault(address _vault) onlyOwner {
@@ -52,6 +60,10 @@ contract Trader is AccessControlled, SafeMath {
 
     function updateProxy(address _proxy) onlyOwner {
         PROXY = _proxy;
+    }
+
+    function update0xFeeTokenConstant(address _0xFeeTokenConstant) onlyOwner {
+        ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
     }
 
     function trade(
@@ -81,11 +93,10 @@ contract Trader is AccessControlled, SafeMath {
         );
 
         // Do the trade
-        uint filledTakerTokenAmount = Exchange(EXCHANGE).fillOrder(
+        uint filledTakerTokenAmount = doTrade(
             orderAddresses,
             orderValues,
             requestedFillAmount,
-            true,
             v,
             r,
             s
@@ -109,6 +120,47 @@ contract Trader is AccessControlled, SafeMath {
     // --------------------------------
     // ------ Internal Functions ------
     // --------------------------------
+
+    function doTrade(
+        address[7] orderAddresses,
+        uint[6] orderValues,
+        uint requestedFillAmount,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) internal returns (
+        uint _filledTakerTokenAmount
+    ) {
+        // If the maker fee token address is a special reserved constant then
+        // Use the official 0x exchange contract. Otherwise use dydx's general exchange contract
+        if (orderAddresses[5] == ZERO_EX_FEE_TOKEN_CONSTANT) {
+            return ZeroExExchange(ZERO_EX_EXCHANGE).fillOrder(
+                [
+                    orderAddresses[0],
+                    orderAddresses[1],
+                    orderAddresses[2],
+                    orderAddresses[3],
+                    orderAddresses[4]
+                ],
+                orderValues,
+                requestedFillAmount,
+                true,
+                v,
+                r,
+                s
+            );
+        }
+
+        return Exchange(DYDX_EXCHANGE).fillOrder(
+            orderAddresses,
+            orderValues,
+            requestedFillAmount,
+            true,
+            v,
+            r,
+            s
+        );
+    }
 
     function transferTokensBeforeTrade(
         bytes32 id,
