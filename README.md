@@ -1,14 +1,14 @@
 # dYdX Smart Contracts
 
-Source code for Ethereum Smart Contracts used by the dYdX standard
+Source code for Ethereum Smart Contracts used by the dYdX Protocol
 
 [Whitepaper](https://whitepaper.dydx.exchange)
 
 Contains implementations for:
 
-- covered option
-- short sell
-- custom 0x exchange
+- Short Sell
+- Covered Option
+- Custom 0x Exchange
 
 ### Development
 
