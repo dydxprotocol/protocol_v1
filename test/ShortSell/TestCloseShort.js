@@ -5,6 +5,7 @@ const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const Vault = artifacts.require("Vault");
+const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -91,7 +92,10 @@ contract('ShortSell', function(accounts) {
         feeRecipientFeeToken,
         vaultFeeToken,
         vaultBaseToken,
-        vaultUnderlyingToken
+        vaultUnderlyingToken,
+        traderFeeToken,
+        traderBaseToken,
+        traderUnderlyingToken
       ] = await Promise.all([
         baseToken.balanceOf.call(shortTx.seller),
         baseToken.balanceOf.call(shortTx.loanOffering.lender),
@@ -103,7 +107,10 @@ contract('ShortSell', function(accounts) {
         feeToken.balanceOf.call(sellOrder.feeRecipient),
         feeToken.balanceOf.call(Vault.address),
         baseToken.balanceOf.call(Vault.address),
-        underlyingToken.balanceOf.call(Vault.address)
+        underlyingToken.balanceOf.call(Vault.address),
+        feeToken.balanceOf.call(Trader.address),
+        baseToken.balanceOf.call(Trader.address),
+        underlyingToken.balanceOf.call(Trader.address)
       ]);
 
       expect(
@@ -122,51 +129,25 @@ contract('ShortSell', function(accounts) {
           sellOrder.makerTokenAmount.minus(shortTx.shortAmount)
         )
       ).to.be.true;
-      console.log(sellerFeeToken.toString())
-      console.log(shortTx.buyOrder.takerFee.toString())
-      console.log(shortTx.loanOffering.rates.takerFee.toString())
-      console.log(sellOrder.takerFee.toString())
-      console.log(getPartialAmount(
-        shortTx.shortAmount,
-        shortTx.loanOffering.rates.maxAmount,
-        shortTx.loanOffering.rates.takerFee
-      ).toString())
-      console.log(getPartialAmount(
-        shortTx.shortAmount,
-        shortTx.buyOrder.takerTokenAmount,
-        shortTx.buyOrder.takerFee
-      ).toString())
-      console.log(getPartialAmount(
-        shortTx.shortAmount,
-        sellOrder.takerTokenAmount,
-        sellOrder.takerFee
-      ).toString())
-      console.log(
-        shortTx.buyOrder.takerFee
-          .plus(shortTx.loanOffering.rates.takerFee)
-          .plus(sellOrder.takerFee)
-          .minus(
-            getPartialAmount(
-              shortTx.shortAmount,
-              shortTx.loanOffering.rates.maxAmount,
-              shortTx.loanOffering.rates.takerFee
-            )
+      expect(vaultFeeToken.equals(new BigNumber(0))).to.be.true;
+      expect(vaultBaseToken.equals(new BigNumber(0))).to.be.true;
+      expect(vaultUnderlyingToken.equals(new BigNumber(0))).to.be.true;
+      expect(traderFeeToken.equals(new BigNumber(0))).to.be.true;
+      expect(traderBaseToken.equals(new BigNumber(0))).to.be.true;
+      expect(traderUnderlyingToken.equals(new BigNumber(0))).to.be.true;
+      expect(feeRecipientFeeToken.equals(
+        getPartialAmount(
+          shortTx.shortAmount,
+          sellOrder.makerTokenAmount,
+          sellOrder.takerFee
+        ).plus(
+          getPartialAmount(
+            shortTx.shortAmount,
+            sellOrder.makerTokenAmount,
+            sellOrder.makerFee
           )
-          .minus(
-            getPartialAmount(
-              shortTx.shortAmount,
-              shortTx.buyOrder.takerTokenAmount,
-              shortTx.buyOrder.takerFee
-            )
-          )
-          .minus(
-            getPartialAmount(
-              shortTx.shortAmount,
-              sellOrder.takerTokenAmount,
-              sellOrder.takerFee
-            )
-          ).toString()
-      )
+        )
+      )).to.be.true;
       expect(sellerFeeToken.equals(
         shortTx.buyOrder.takerFee
           .plus(shortTx.loanOffering.rates.takerFee)
@@ -188,8 +169,18 @@ contract('ShortSell', function(accounts) {
           .minus(
             getPartialAmount(
               shortTx.shortAmount,
-              sellOrder.takerTokenAmount,
+              sellOrder.makerTokenAmount,
               sellOrder.takerFee
+            )
+          )
+      )).to.be.true;
+      expect(externalSellerFeeToken.equals(
+        sellOrder.makerFee
+          .minus(
+            getPartialAmount(
+              shortTx.shortAmount,
+              sellOrder.makerTokenAmount,
+              sellOrder.makerFee
             )
           )
       )).to.be.true;
