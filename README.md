@@ -51,6 +51,10 @@ Contains state for short sells. Holds a map of short id to short struct. Only wr
 
 Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authoized contracts to withdraw funds.
 
+##### Trader.sol
+
+Responsible for trading tokens out of vault. Uses exchange contract. Abstracts trading logic out of Vault
+
 ##### DerivativeCreator.sol
 
 Creates standard derivatives contracts. Currently creates all CoveredOption contracts
