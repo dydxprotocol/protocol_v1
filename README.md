@@ -65,7 +65,7 @@ Implements the dYdX options protocol. Allows options to be written, exercised, a
 
 ##### Exchange.sol
 
-Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol.
+Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.
 
 ## Useful Links
 
