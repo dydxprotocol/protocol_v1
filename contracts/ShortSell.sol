@@ -216,9 +216,6 @@ contract ShortSell is Ownable, SafeMath {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
-    event Test();
-
-
     /**
      * Initiate a short sell. Called by the short seller. Short seller must provide both a
      * signed loan offering as well as a signed 0x buy order for the underlying token to
