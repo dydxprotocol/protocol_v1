@@ -5,16 +5,19 @@ contract TestToken {
     mapping(address => uint) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer( address token, address from, address to, uint value);
-    event Approval( address token, address owner, address spender, uint value);
+    event Transfer(address token, address from, address to, uint value);
+    event Approval(address token, address owner, address spender, uint value);
+    event Issue(address token, address owner, uint value);
 
     // Allow anyone to get new token
     function issue(uint amount) {
         balances[msg.sender] = balances[msg.sender] + amount;
+        Issue(address(this), msg.sender, amount);
     }
 
     function issueTo(address who, uint amount) {
         balances[who] = balances[who] + amount;
+        Issue(address(this), who, amount);
     }
 
     function totalSupply() constant returns (uint _supply) {

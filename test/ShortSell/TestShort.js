@@ -7,6 +7,8 @@ const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
+const FeeToken = artifacts.require("TokenC");
+const Trader = artifacts.require("Trader");
 const Vault = artifacts.require("Vault");
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -74,15 +76,17 @@ contract('ShortSell', function(accounts) {
 
       expect(
         balance.equals(
-          baseTokenFromSell.plus(shortTx.depositAmount).minus(buyTakerFee)
+          baseTokenFromSell.plus(shortTx.depositAmount)
         )
       ).to.be.true;
       const [
         underlyingToken,
-        baseToken
+        baseToken,
+        feeToken
       ] = await Promise.all([
         UnderlyingToken.deployed(),
-        BaseToken.deployed()
+        BaseToken.deployed(),
+        FeeToken.deployed()
       ]);
 
       const [
@@ -91,14 +95,26 @@ contract('ShortSell', function(accounts) {
         vaultUnderlyingToken,
         sellerBaseToken,
         makerBaseToken,
-        vaultBaseToken
+        vaultBaseToken,
+        lenderFeeToken,
+        makerFeeToken,
+        vaultFeeToken,
+        sellerFeeToken,
+        buyOrderFeeRecipientFeeToken,
+        loanFeeRecipientFeeToken,
       ] = await Promise.all([
         underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
         underlyingToken.balanceOf.call(shortTx.buyOrder.maker),
         underlyingToken.balanceOf.call(Vault.address),
         baseToken.balanceOf.call(shortTx.seller),
         baseToken.balanceOf.call(shortTx.buyOrder.maker),
-        baseToken.balanceOf.call(Vault.address)
+        baseToken.balanceOf.call(Vault.address),
+        feeToken.balanceOf.call(shortTx.loanOffering.lender),
+        feeToken.balanceOf.call(shortTx.buyOrder.maker),
+        feeToken.balanceOf.call(Vault.address),
+        feeToken.balanceOf.call(shortTx.seller),
+        feeToken.balanceOf.call(shortTx.buyOrder.feeRecipient),
+        feeToken.balanceOf.call(shortTx.loanOffering.feeRecipient),
       ]);
 
       expect(
@@ -115,8 +131,47 @@ contract('ShortSell', function(accounts) {
         )
       ).to.be.true;
       expect(
-        vaultBaseToken.equals(baseTokenFromSell.plus(shortTx.depositAmount).minus(buyTakerFee))
+        vaultBaseToken.equals(baseTokenFromSell.plus(shortTx.depositAmount))
       ).to.be.true;
+      expect(lenderFeeToken.equals(
+        shortTx.loanOffering.rates.lenderFee
+        .minus(
+          getPartialAmount(
+            shortTx.shortAmount,
+            shortTx.loanOffering.rates.maxAmount,
+            shortTx.loanOffering.rates.lenderFee
+          )
+        )
+      )).to.be.true;
+      expect(vaultFeeToken.equals(new BigNumber(0))).to.be.true;
+      expect(makerFeeToken.equals(
+        shortTx.buyOrder.makerFee
+        .minus(
+          getPartialAmount(
+            shortTx.shortAmount,
+            shortTx.buyOrder.takerTokenAmount,
+            shortTx.buyOrder.makerFee
+          )
+        )
+      )).to.be.true;
+      expect(sellerFeeToken.equals(
+        shortTx.loanOffering.rates.takerFee
+        .plus(shortTx.buyOrder.takerFee)
+        .minus(
+          getPartialAmount(
+            shortTx.shortAmount,
+            shortTx.loanOffering.rates.maxAmount,
+            shortTx.loanOffering.rates.takerFee
+          )
+        )
+        .minus(
+          getPartialAmount(
+            shortTx.shortAmount,
+            shortTx.buyOrder.takerTokenAmount,
+            shortTx.buyOrder.takerFee
+          )
+        )
+      )).to.be.true;
     });
   });
 });

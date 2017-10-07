@@ -3,6 +3,7 @@ pragma solidity 0.4.15;
 import './lib/Ownable.sol';
 import './lib/SafeMath.sol';
 import './Vault.sol';
+import './Proxy.sol';
 import './Trader.sol';
 import './ShortSellRepo.sol';
 
@@ -30,6 +31,8 @@ contract ShortSell is Ownable, SafeMath {
         address lender;
         address taker;
         address feeRecipient;
+        address lenderFeeToken;
+        address takerFeeToken;
         LoanRates rates;
         uint expirationTimestamp;
         uint lockoutTime;
@@ -52,6 +55,8 @@ contract ShortSell is Ownable, SafeMath {
         address maker;
         address taker;
         address feeRecipient;
+        address makerFeeToken;
+        address takerFeeToken;
         uint baseTokenAmount;
         uint underlyingTokenAmount;
         uint makerFee;
@@ -97,6 +102,9 @@ contract ShortSell is Ownable, SafeMath {
 
     // Address of the ShortSellRepo contract
     address public REPO;
+
+    // Address of the Proxy contract
+    address public PROXY;
 
     mapping(bytes32 => LoanAmount) public loanAmounts;
     mapping(address => uint) public loanNumbers;
@@ -177,11 +185,13 @@ contract ShortSell is Ownable, SafeMath {
     function ShortSell(
         address _vault,
         address _repo,
-        address _trader
+        address _trader,
+        address _proxy
     ) Ownable() {
         VAULT = _vault;
         REPO = _repo;
         TRADER = _trader;
+        PROXY = _proxy;
     }
 
     // -----------------------------
@@ -192,6 +202,12 @@ contract ShortSell is Ownable, SafeMath {
         address _trader
     ) onlyOwner {
         TRADER = _trader;
+    }
+
+    function updateProxy(
+        address _proxy
+    ) onlyOwner {
+        PROXY = _proxy;
     }
 
     // Vault and Repo are immutable
@@ -223,6 +239,10 @@ contract ShortSell is Ownable, SafeMath {
      *  [5] = buy order maker
      *  [6] = buy order taker
      *  [7] = buy order fee recipient
+     *  [8] = buy order maker fee token
+     *  [9] = buy order taker fee token
+     *  [10] = loan lender fee token
+     *  [11] = loan taker fee token
      *
      * @param  values     Values corresponding to:
      *
@@ -250,12 +270,12 @@ contract ShortSell is Ownable, SafeMath {
      * @return _shortId   unique identifier for the short sell
      */
     function short(
-        address[8] addresses,
+        address[12] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
     ) external returns(bytes32 _shortId) {
-        // TODO: lender, taker fees on loan offer
+        // TODO implement minimum sell value on loan offering
 
         ShortTx memory transaction = parseShortTx(
             addresses,
@@ -267,24 +287,62 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 shortId = getNextShortId(transaction.loanOffering.lender);
 
         // Validate
+
         uint maxLoanAmount = validateShort(
             transaction,
             shortId
         );
 
         // Update global amounts for the loan and lender
+
         loanAmounts[transaction.loanOffering.loanHash].remaining =
             safeSub(maxLoanAmount, transaction.shortAmount);
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
 
-        // Transfer deposit
-        Vault(VAULT).transfer(
-            shortId,
-            transaction.baseToken,
-            msg.sender,
-            transaction.depositAmount
+        // Calculate Fees
+
+        uint buyOrderTakerFee = getPartialAmount(
+            transaction.shortAmount,
+            transaction.buyOrder.underlyingTokenAmount,
+            transaction.buyOrder.takerFee
         );
+
+        // Transfer deposit and buy taker fee
+
+        if (transaction.buyOrder.feeRecipient == address(0)) {
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+        } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
+            // If the buy order taker fee token is base token
+            // we can just transfer base token once from the short seller
+
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                safeAdd(transaction.depositAmount, buyOrderTakerFee)
+            );
+        } else {
+            // Otherwise transfer the deposit and buy order taker fee separately
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.buyOrder.takerFeeToken,
+                msg.sender,
+                buyOrderTakerFee
+            );
+        }
 
         // Transfer underlying token
         Vault(VAULT).transfer(
@@ -298,6 +356,11 @@ contract ShortSell is Ownable, SafeMath {
         uint baseTokenReceived = executeSell(
             transaction,
             shortId
+        );
+
+        // Transfer loan fees
+        transferLoanFees(
+            transaction
         );
 
         // Should hold base token == deposit amount + base token from sell
@@ -359,6 +422,8 @@ contract ShortSell is Ownable, SafeMath {
      *                              [0] = maker
      *                              [1] = taker
      *                              [2] = fee recipient
+     *                              [3] = maker fee token
+     *                              [4] = taker fee token
      * @param  orderValues          Values for the supplied 0x order:
      *                              [0] = underlying token amount
      *                              [1] = base token amount
@@ -374,7 +439,7 @@ contract ShortSell is Ownable, SafeMath {
      */
     function closeShort(
         bytes32 shortId,
-        address[3] orderAddresses,
+        address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
         bytes32 orderR,
@@ -600,16 +665,6 @@ contract ShortSell is Ownable, SafeMath {
         );
     }
 
-    function getPartialAmount(
-        uint numerator,
-        uint denominator,
-        uint target
-    ) constant public returns (
-        uint partialValue
-    ) {
-        return safeDiv(safeMul(numerator, target), denominator);
-    }
-
     // --------------------------------
     // ------ Internal Functions ------
     // --------------------------------
@@ -689,7 +744,9 @@ contract ShortSell is Ownable, SafeMath {
                 transaction.buyOrder.taker,
                 transaction.baseToken,
                 transaction.underlyingToken,
-                transaction.buyOrder.feeRecipient
+                transaction.buyOrder.feeRecipient,
+                transaction.buyOrder.makerFeeToken,
+                transaction.buyOrder.takerFeeToken
             ],
             [
                 transaction.buyOrder.baseTokenAmount,
@@ -721,6 +778,8 @@ contract ShortSell is Ownable, SafeMath {
             transaction.loanOffering.lender,
             transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
+            transaction.loanOffering.lenderFeeToken,
+            transaction.loanOffering.takerFeeToken,
             getValuesHash(transaction.loanOffering)
         );
     }
@@ -741,6 +800,34 @@ contract ShortSell is Ownable, SafeMath {
             loanOffering.lockoutTime,
             loanOffering.callTimeLimit,
             loanOffering.salt
+        );
+    }
+
+    function transferLoanFees(
+        ShortTx transaction
+    ) internal {
+        Proxy proxy = Proxy(PROXY);
+        uint lenderFee = getPartialAmount(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.lenderFee
+        );
+        proxy.transferTo(
+            transaction.loanOffering.lenderFeeToken,
+            transaction.loanOffering.lender,
+            transaction.loanOffering.feeRecipient,
+            lenderFee
+        );
+        uint takerFee = getPartialAmount(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.takerFee
+        );
+        proxy.transferTo(
+            transaction.loanOffering.takerFeeToken,
+            msg.sender,
+            transaction.loanOffering.feeRecipient,
+            takerFee
         );
     }
 
@@ -782,7 +869,7 @@ contract ShortSell is Ownable, SafeMath {
         Short short,
         bytes32 shortId,
         uint interestFee,
-        address[3] orderAddresses,
+        address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
         bytes32 orderR,
@@ -797,6 +884,15 @@ contract ShortSell is Ownable, SafeMath {
             orderValues
         );
 
+        if (orderAddresses[2] != address(0)) {
+            transferFeeForBuyback(
+                shortId,
+                orderValues,
+                orderAddresses[4],
+                baseTokenPrice
+            );
+        }
+
         var (buybackCost, ) = Trader(TRADER).trade(
             shortId,
             [
@@ -804,7 +900,9 @@ contract ShortSell is Ownable, SafeMath {
                 orderAddresses[1],
                 short.underlyingToken,
                 short.baseToken,
-                orderAddresses[2]
+                orderAddresses[2],
+                orderAddresses[3],
+                orderAddresses[4]
             ],
             orderValues,
             baseTokenPrice,
@@ -815,6 +913,7 @@ contract ShortSell is Ownable, SafeMath {
         );
 
         assert(Vault(VAULT).balances(shortId, short.underlyingToken) == short.shortAmount);
+        assert(Vault(VAULT).balances(shortId, orderAddresses[4]) == 0);
 
         return buybackCost;
     }
@@ -829,7 +928,7 @@ contract ShortSell is Ownable, SafeMath {
     ) {
         uint baseTokenPrice = getPartialAmount(
             orderValues[1],
-            safeSub(orderValues[0], orderValues[3]),
+            orderValues[0],
             short.shortAmount
         );
 
@@ -838,6 +937,29 @@ contract ShortSell is Ownable, SafeMath {
         );
 
         return baseTokenPrice;
+    }
+
+    function transferFeeForBuyback(
+        bytes32 shortId,
+        uint[6] orderValues,
+        address takerFeeToken,
+        uint baseTokenPrice
+    ) internal {
+        uint takerFee = getPartialAmount(
+            baseTokenPrice,
+            orderValues[1],
+            orderValues[3]
+        );
+
+        // Transfer taker fee for buyback
+        if (takerFee > 0) {
+            Vault(VAULT).transfer(
+                shortId,
+                takerFeeToken,
+                msg.sender,
+                takerFee
+            );
+        }
     }
 
     function sendTokensOnClose(
@@ -856,13 +978,16 @@ contract ShortSell is Ownable, SafeMath {
             short.lender,
             short.shortAmount
         );
+
         // Send base token interest fee to lender
-        vault.send(
-            shortId,
-            short.baseToken,
-            short.lender,
-            interestFee
-        );
+        if (interestFee > 0) {
+            vault.send(
+                shortId,
+                short.baseToken,
+                short.lender,
+                interestFee
+            );
+        }
 
         // Send remaining base token to seller
         // (= deposit + profit - interestFee - buyOrderTakerFee - sellOrderTakerFee)
@@ -893,7 +1018,7 @@ contract ShortSell is Ownable, SafeMath {
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[8] addresses,
+        address[12] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -925,7 +1050,7 @@ contract ShortSell is Ownable, SafeMath {
     }
 
     function getLoanOffering(
-        address[8] addresses,
+        address[12] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -936,6 +1061,8 @@ contract ShortSell is Ownable, SafeMath {
             lender: addresses[2],
             taker: addresses[3],
             feeRecipient: addresses[4],
+            lenderFeeToken: addresses[10],
+            takerFeeToken: addresses[11],
             rates: getLoanOfferRates(values),
             expirationTimestamp: values[6],
             lockoutTime: values[7],
@@ -981,7 +1108,7 @@ contract ShortSell is Ownable, SafeMath {
     }
 
     function getBuyOrder(
-        address[8] addresses,
+        address[12] addresses,
         uint[18] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -992,6 +1119,8 @@ contract ShortSell is Ownable, SafeMath {
             maker: addresses[5],
             taker: addresses[6],
             feeRecipient: addresses[7],
+            makerFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             baseTokenAmount: values[10],
             underlyingTokenAmount: values[11],
             makerFee: values[12],

@@ -8,11 +8,13 @@ const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
+const TokenC = artifacts.require("TokenC");
 
 function maybeDeployTestTokens(deployer, network) {
   if (network === 'development' || network === 'test') {
     return deployer.deploy(TokenA)
-      .then(() => deployer.deploy(TokenB));
+      .then(() => deployer.deploy(TokenB))
+      .then(() => deployer.deploy(TokenC));
   }
   return Promise.resolve(true);
 }
@@ -36,7 +38,8 @@ module.exports = (deployer, network, addresses) => {
       ShortSell,
       Vault.address,
       ShortSellRepo.address,
-      Trader.address
+      Trader.address,
+      ProxyContract.address
     ))
     .then(() => ProxyContract.deployed())
     .then(proxy => {
@@ -47,6 +50,7 @@ module.exports = (deployer, network, addresses) => {
         proxy.grantTransferAuthorization(Vault.address),
         proxy.grantTransferAuthorization(Exchange.address),
         proxy.grantTransferAuthorization(Trader.address),
+        proxy.grantTransferAuthorization(ShortSell.address),
       ])
     )
     .then(() => Vault.deployed())
