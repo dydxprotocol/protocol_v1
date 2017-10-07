@@ -8,20 +8,31 @@ const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
-const TokenC = artifacts.require("TokenC");
+const FeeToken = artifacts.require("TokenC");
+const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExProxy = artifacts.require("ZeroExProxy");
 
 function maybeDeployTestTokens(deployer, network) {
   if (network === 'development' || network === 'test') {
     return deployer.deploy(TokenA)
       .then(() => deployer.deploy(TokenB))
-      .then(() => deployer.deploy(TokenC));
+      .then(() => deployer.deploy(FeeToken));
   }
   return Promise.resolve(true);
 }
 
+function maybeDeploy0x(deployer, network) {
+  if (network === 'development' || network === 'test') {
+    return deployer.deploy(ZeroExProxy)
+      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address));
+  }
+  return Promise.resolve(true);
+}
 
 module.exports = (deployer, network, addresses) => {
-  return deployer.deploy(ProxyContract)
+  return maybeDeployTestTokens(deployer, network)
+    .then(() => maybeDeploy0x(deployer, network))
+    .then(() => deployer.deploy(ProxyContract))
     .then(() => deployer.deploy(Exchange, ProxyContract.address))
     .then(() => deployer.deploy(
       Vault,
@@ -30,8 +41,10 @@ module.exports = (deployer, network, addresses) => {
     .then(() => deployer.deploy(
       Trader,
       Exchange.address,
+      ZeroExExchange.address,
       Vault.address,
-      ProxyContract.address
+      ProxyContract.address,
+      '0x0000000000000000000000000000010'
     ))
     .then(() => deployer.deploy(ShortSellRepo))
     .then(() => deployer.deploy(
@@ -61,6 +74,5 @@ module.exports = (deployer, network, addresses) => {
     .then(() => ShortSellRepo.deployed())
     .then(repo => repo.grantAccess(ShortSell.address))
     .then(() => Trader.deployed())
-    .then(trader => trader.grantAccess(ShortSell.address))
-    .then(() => maybeDeployTestTokens(deployer, network));
+    .then(trader => trader.grantAccess(ShortSell.address));
 };
