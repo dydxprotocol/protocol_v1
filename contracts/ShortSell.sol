@@ -35,8 +35,8 @@ contract ShortSell is Ownable, SafeMath {
         address takerFeeToken;
         LoanRates rates;
         uint expirationTimestamp;
-        uint lockoutTime;
-        uint callTimeLimit;
+        uint32 lockoutTime;
+        uint32 callTimeLimit;
         uint salt;
         bytes32 loanHash;
         Signature signature;
@@ -44,6 +44,7 @@ contract ShortSell is Ownable, SafeMath {
 
     struct LoanRates {
         uint minimumDeposit;
+        uint minimumSellAmount;
         uint maxAmount;
         uint minAmount;
         uint interestRate;
@@ -82,10 +83,10 @@ contract ShortSell is Ownable, SafeMath {
         address baseToken;
         uint shortAmount;
         uint interestRate;
-        uint callTimeLimit;
-        uint lockoutTime;
-        uint startTimestamp;
-        uint callTimestamp;
+        uint32 callTimeLimit;
+        uint32 lockoutTime;
+        uint32 startTimestamp;
+        uint32 callTimestamp;
         address lender;
         address seller;
     }
@@ -127,8 +128,8 @@ contract ShortSell is Ownable, SafeMath {
         uint shortAmount,
         uint baseTokenFromSell,
         uint depositAmount,
-        uint lockoutTime,
-        uint callTimeLimit,
+        uint32 lockoutTime,
+        uint32 callTimeLimit,
         uint interestRate,
         uint timestamp
     );
@@ -236,34 +237,38 @@ contract ShortSell is Ownable, SafeMath {
      *  [2] = lender
      *  [3] = loan taker
      *  [4] = loan fee recipient
-     *  [5] = buy order maker
-     *  [6] = buy order taker
-     *  [7] = buy order fee recipient
-     *  [8] = buy order maker fee token
-     *  [9] = buy order taker fee token
-     *  [10] = loan lender fee token
-     *  [11] = loan taker fee token
+     *  [5] = loan lender fee token
+     *  [6] = loan taker fee token
+     *  [7] = buy order maker
+     *  [8] = buy order taker
+     *  [9] = buy order fee recipient
+     *  [10] = buy order maker fee token
+     *  [11] = buy order taker fee token
      *
-     * @param  values     Values corresponding to:
+     * @param  values256  Values corresponding to:
      *
-     *  [0] = loan minimum deposit
-     *  [1] = loan maximum amount
-     *  [2] = loan minimum amount
-     *  [3] = loan interest rate
-     *  [4] = loan lender fee
-     *  [5] = loan taker fee
-     *  [6] = loan expiration timestamp
-     *  [7] = loan lockout time
-     *  [8] = loan call time limit
-     *  [9] = loan salt
-     *  [10] = buy order base token amount
-     *  [11] = buy order underlying token amount
-     *  [12] = buy order maker fee
-     *  [13] = buy order taker fee
-     *  [14] = buy order expiration timestamp (in seconds)
-     *  [15] = buy order salt
-     *  [16] = short amount
-     *  [17] = deposit amount
+     *  [0]  = loan minimum deposit
+     *  [1]  = loan maximum amount
+     *  [2]  = loan minimum amount
+     *  [3]  = loan minimum sell amount
+     *  [4]  = loan interest rate
+     *  [5]  = loan lender fee
+     *  [6]  = loan taker fee
+     *  [7]  = loan expiration timestamp (in seconds)
+     *  [8]  = loan salt
+     *  [9]  = buy order base token amount
+     *  [10] = buy order underlying token amount
+     *  [11] = buy order maker fee
+     *  [12] = buy order taker fee
+     *  [13] = buy order expiration timestamp (in seconds)
+     *  [14] = buy order salt
+     *  [15] = short amount
+     *  [16] = deposit amount
+     *
+     * @param  values32  Values corresponding to:
+     *
+     *  [0] = loan lockout time (in seconds)
+     *  [1] = loan call time limit (in seconds)
      *
      * @param  sigV       ECDSA v parameters for [0] loan and [1] buy order
      * @param  sigRS      CDSA r and s parameters for [0] loan and [1] buy order
@@ -271,15 +276,15 @@ contract ShortSell is Ownable, SafeMath {
      */
     function short(
         address[12] addresses,
-        uint[18] values,
+        uint[17] values256,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     ) external returns(bytes32 _shortId) {
-        // TODO implement minimum sell value on loan offering
-
         ShortTx memory transaction = parseShortTx(
             addresses,
-            values,
+            values256,
+            values32,
             sigV,
             sigRS
         );
@@ -287,69 +292,21 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 shortId = getNextShortId(transaction.loanOffering.lender);
 
         // Validate
-
         uint maxLoanAmount = validateShort(
             transaction,
             shortId
         );
 
         // Update global amounts for the loan and lender
-
         loanAmounts[transaction.loanOffering.loanHash].remaining =
             safeSub(maxLoanAmount, transaction.shortAmount);
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
 
-        // Calculate Fees
-
-        uint buyOrderTakerFee = getPartialAmount(
-            transaction.shortAmount,
-            transaction.buyOrder.underlyingTokenAmount,
-            transaction.buyOrder.takerFee
-        );
-
-        // Transfer deposit and buy taker fee
-
-        if (transaction.buyOrder.feeRecipient == address(0)) {
-            Vault(VAULT).transfer(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-        } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
-            // If the buy order taker fee token is base token
-            // we can just transfer base token once from the short seller
-
-            Vault(VAULT).transfer(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                safeAdd(transaction.depositAmount, buyOrderTakerFee)
-            );
-        } else {
-            // Otherwise transfer the deposit and buy order taker fee separately
-            Vault(VAULT).transfer(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-
-            Vault(VAULT).transfer(
-                shortId,
-                transaction.buyOrder.takerFeeToken,
-                msg.sender,
-                buyOrderTakerFee
-            );
-        }
-
-        // Transfer underlying token
-        Vault(VAULT).transfer(
+        // Transfer tokens
+        transferTokensForShort(
             shortId,
-            transaction.underlyingToken,
-            addresses[2],
-            transaction.shortAmount
+            transaction
         );
 
         // Do the sell
@@ -358,34 +315,9 @@ contract ShortSell is Ownable, SafeMath {
             shortId
         );
 
-        // Transfer loan fees
-        transferLoanFees(
-            transaction
-        );
-
-        // Should hold base token == deposit amount + base token from sell
-        assert(
-            Vault(VAULT).balances(
-                shortId,
-                transaction.baseToken
-            ) == safeAdd(baseTokenReceived, transaction.depositAmount)
-        );
-
-        // Should hold 0 underlying token
-        assert(Vault(VAULT).balances(shortId, transaction.underlyingToken) == 0);
-
         // Check no casting errors
         require(
-            uint(uint32(transaction.loanOffering.callTimeLimit))
-            == transaction.loanOffering.callTimeLimit
-        );
-        require(
-            uint(uint32(transaction.loanOffering.lockoutTime))
-            == transaction.loanOffering.lockoutTime
-        );
-        require(
-            uint(uint32(block.timestamp))
-            == block.timestamp
+            uint(uint32(block.timestamp)) == block.timestamp
         );
 
         ShortSellRepo(REPO).addShort(
@@ -394,8 +326,8 @@ contract ShortSell is Ownable, SafeMath {
             transaction.baseToken,
             transaction.shortAmount,
             transaction.loanOffering.rates.interestRate,
-            uint32(transaction.loanOffering.callTimeLimit),
-            uint32(transaction.loanOffering.lockoutTime),
+            transaction.loanOffering.callTimeLimit,
+            transaction.loanOffering.lockoutTime,
             uint32(block.timestamp),
             transaction.loanOffering.lender,
             msg.sender
@@ -699,23 +631,28 @@ contract ShortSell is Ownable, SafeMath {
     ) internal constant returns (
         uint _maxLoanAmount
     ) {
+        // Make sure we don't already have this short id
         require(!containsShort(shortId));
 
+        // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
+        // Check Signature
         require(
             isValidSignature(transaction.loanOffering)
         );
 
+        // Calculate the maximum amount left in the loan
         uint maxLoanAmount;
-
         if (loanAmounts[transaction.loanOffering.loanHash].seen) {
             maxLoanAmount = loanAmounts[transaction.loanOffering.loanHash].remaining;
         } else {
             maxLoanAmount = transaction.loanOffering.rates.maxAmount;
         }
+
+        // Validate the short amount is <= than max and >= min
         require(transaction.shortAmount <= maxLoanAmount);
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
 
@@ -727,6 +664,29 @@ contract ShortSell is Ownable, SafeMath {
 
         require(transaction.depositAmount >= minimumDeposit);
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
+
+        /*  Validate the minimum sell price
+         *
+         *    loan min sell            buy order base token amount
+         *  -----------------  <=  -----------------------------------
+         *   loan max amount        buy order underlying token amount
+         *
+         *                      |
+         *                      V
+         *
+         *  loan min sell * buy order underlying token amount
+         *  <= buy order base token amount * loan max amount
+         */
+
+        require(
+            safeMul(
+                transaction.loanOffering.rates.minimumSellAmount,
+                transaction.buyOrder.underlyingTokenAmount
+            ) <= safeMul(
+                transaction.loanOffering.rates.maxAmount,
+                transaction.buyOrder.baseTokenAmount
+            )
+        );
 
         return maxLoanAmount;
     }
@@ -763,6 +723,19 @@ contract ShortSell is Ownable, SafeMath {
             true
         );
 
+        Vault vault = Vault(VAULT);
+
+        // Should hold base token == deposit amount + base token from sell
+        assert(
+            vault.balances(
+                shortId,
+                transaction.baseToken
+            ) == safeAdd(baseTokenReceived, transaction.depositAmount)
+        );
+
+        // Should hold 0 underlying token
+        assert(vault.balances(shortId, transaction.underlyingToken) == 0);
+
         return baseTokenReceived;
     }
 
@@ -793,6 +766,7 @@ contract ShortSell is Ownable, SafeMath {
             loanOffering.rates.minimumDeposit,
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
+            loanOffering.rates.minimumSellAmount,
             loanOffering.rates.interestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
@@ -801,6 +775,76 @@ contract ShortSell is Ownable, SafeMath {
             loanOffering.callTimeLimit,
             loanOffering.salt
         );
+    }
+
+    function transferTokensForShort(
+        bytes32 shortId,
+        ShortTx transaction
+    ) internal {
+        transferTokensFromShortSeller(
+            shortId,
+            transaction
+        );
+
+        // Transfer underlying token
+        Vault(VAULT).transfer(
+            shortId,
+            transaction.underlyingToken,
+            transaction.loanOffering.lender,
+            transaction.shortAmount
+        );
+
+        // Transfer loan fees
+        transferLoanFees(
+            transaction
+        );
+    }
+
+    function transferTokensFromShortSeller(
+        bytes32 shortId,
+        ShortTx transaction
+    ) internal {
+        // Calculate Fee
+        uint buyOrderTakerFee = getPartialAmount(
+            transaction.shortAmount,
+            transaction.buyOrder.underlyingTokenAmount,
+            transaction.buyOrder.takerFee
+        );
+
+        // Transfer deposit and buy taker fee
+        if (transaction.buyOrder.feeRecipient == address(0)) {
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+        } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
+            // If the buy order taker fee token is base token
+            // we can just transfer base token once from the short seller
+
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                safeAdd(transaction.depositAmount, buyOrderTakerFee)
+            );
+        } else {
+            // Otherwise transfer the deposit and buy order taker fee separately
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+
+            Vault(VAULT).transfer(
+                shortId,
+                transaction.buyOrder.takerFeeToken,
+                msg.sender,
+                buyOrderTakerFee
+            );
+        }
     }
 
     function transferLoanFees(
@@ -1019,7 +1063,8 @@ contract ShortSell is Ownable, SafeMath {
 
     function parseShortTx(
         address[12] addresses,
-        uint[18] values,
+        uint[17] values,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     ) internal constant returns (
@@ -1028,15 +1073,16 @@ contract ShortSell is Ownable, SafeMath {
         ShortTx memory transaction = ShortTx({
             underlyingToken: addresses[0],
             baseToken: addresses[1],
-            shortAmount: values[16],
-            depositAmount: values[17],
-            loanOffering: getLoanOffering(
+            shortAmount: values[15],
+            depositAmount: values[16],
+            loanOffering: parseLoanOffering(
                 addresses,
                 values,
+                values32,
                 sigV,
                 sigRS
             ),
-            buyOrder: getBuyOrder(
+            buyOrder: parseBuyOrder(
                 addresses,
                 values,
                 sigV,
@@ -1049,9 +1095,10 @@ contract ShortSell is Ownable, SafeMath {
         return transaction;
     }
 
-    function getLoanOffering(
+    function parseLoanOffering(
         address[12] addresses,
-        uint[18] values,
+        uint[17] values,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     ) internal constant returns (
@@ -1061,22 +1108,22 @@ contract ShortSell is Ownable, SafeMath {
             lender: addresses[2],
             taker: addresses[3],
             feeRecipient: addresses[4],
-            lenderFeeToken: addresses[10],
-            takerFeeToken: addresses[11],
-            rates: getLoanOfferRates(values),
-            expirationTimestamp: values[6],
-            lockoutTime: values[7],
-            callTimeLimit: values[8],
-            salt: values[9],
+            lenderFeeToken: addresses[5],
+            takerFeeToken: addresses[6],
+            rates: parseLoanOfferRates(values),
+            expirationTimestamp: values[7],
+            lockoutTime: values32[0],
+            callTimeLimit: values32[1],
+            salt: values[8],
             loanHash: 0, // Set this later
-            signature: getLoanOfferingSignature(sigV, sigRS)
+            signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
         return loanOffering;
     }
 
-    function getLoanOfferRates(
-        uint[18] values
+    function parseLoanOfferRates(
+        uint[17] values
     ) internal constant returns (
         LoanRates _loanRates
     ) {
@@ -1084,15 +1131,16 @@ contract ShortSell is Ownable, SafeMath {
             minimumDeposit: values[0],
             maxAmount: values[1],
             minAmount: values[2],
-            interestRate: values[3],
-            lenderFee: values[4],
-            takerFee: values[5]
+            minimumSellAmount: values[3],
+            interestRate: values[4],
+            lenderFee: values[5],
+            takerFee: values[6]
         });
 
         return rates;
     }
 
-    function getLoanOfferingSignature(
+    function parseLoanOfferingSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
     ) internal constant returns (
@@ -1107,33 +1155,33 @@ contract ShortSell is Ownable, SafeMath {
         return signature;
     }
 
-    function getBuyOrder(
+    function parseBuyOrder(
         address[12] addresses,
-        uint[18] values,
+        uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
     ) internal constant returns (
         BuyOrder _buyOrder
     ) {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[5],
-            taker: addresses[6],
-            feeRecipient: addresses[7],
-            makerFeeToken: addresses[8],
-            takerFeeToken: addresses[9],
-            baseTokenAmount: values[10],
-            underlyingTokenAmount: values[11],
-            makerFee: values[12],
-            takerFee: values[13],
-            expirationTimestamp: values[14],
-            salt: values[15],
-            signature: getBuyOrderSignature(sigV, sigRS)
+            maker: addresses[7],
+            taker: addresses[8],
+            feeRecipient: addresses[9],
+            makerFeeToken: addresses[10],
+            takerFeeToken: addresses[11],
+            baseTokenAmount: values[9],
+            underlyingTokenAmount: values[10],
+            makerFee: values[11],
+            takerFee: values[12],
+            expirationTimestamp: values[13],
+            salt: values[14],
+            signature: parseBuyOrderSignature(sigV, sigRS)
         });
 
         return order;
     }
 
-    function getBuyOrderSignature(
+    function parseBuyOrderSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
     ) internal constant returns (

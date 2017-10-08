@@ -73,25 +73,24 @@ function callShort(shortSell, tx) {
     tx.loanOffering.lender,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
+    FeeToken.address,
+    FeeToken.address,
     tx.buyOrder.maker,
     tx.buyOrder.taker,
     tx.buyOrder.feeRecipient,
     FeeToken.address,
-    FeeToken.address,
-    FeeToken.address,
     FeeToken.address
   ];
 
-  const values = [
+  const values256 = [
     tx.loanOffering.rates.minimumDeposit,
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
+    tx.loanOffering.rates.minimumSellAmount,
     tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
-    tx.loanOffering.lockoutTime,
-    tx.loanOffering.callTimeLimit,
     tx.loanOffering.salt,
     tx.buyOrder.makerTokenAmount,
     tx.buyOrder.takerTokenAmount,
@@ -101,6 +100,11 @@ function callShort(shortSell, tx) {
     tx.buyOrder.salt,
     tx.shortAmount,
     tx.depositAmount
+  ];
+
+  const values32 = [
+    tx.loanOffering.lockoutTime,
+    tx.loanOffering.callTimeLimit,
   ];
 
   const sigV = [
@@ -117,7 +121,8 @@ function callShort(shortSell, tx) {
 
   return shortSell.short(
     addresses,
-    values,
+    values256,
+    values32,
     sigV,
     sigRS,
     { from: tx.seller }
@@ -323,6 +328,7 @@ async function createLoanOffering(accounts) {
       minimumDeposit: BASE_AMOUNT,
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
       minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
+      minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
       interestRate: BASE_AMOUNT.times(new BigNumber(.1)),
       lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
@@ -343,12 +349,13 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.minimumDeposit,
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
+    loanOffering.rates.minimumSellAmount,
     loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
-    loanOffering.lockoutTime,
-    loanOffering.callTimeLimit,
+    { type: 'uint32', value: loanOffering.lockoutTime },
+    { type: 'uint32', value: loanOffering.callTimeLimit },
     loanOffering.salt
   );
   const hash = web3Instance.utils.soliditySha3(
