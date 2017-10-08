@@ -3,7 +3,7 @@ pragma solidity 0.4.15;
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './interfaces/ERC20.sol';
-import './interfaces/ZeroExExchange.sol';
+import './0x/ZeroExExchange.sol';
 import './Exchange.sol';
 import './Vault.sol';
 import './Proxy.sol';
