@@ -28,6 +28,7 @@ truffle compile
 
 Test
 ```
+testrpc
 truffle test
 ```
 
