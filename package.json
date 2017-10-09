@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test",
+    "test": "truffle test --reporter mocha-junit-reporter",
     "compile": "truffle compile",
     "testrpc": "testrpc",
     "lint": "eslint --ext .js --ignore-path .gitignore ."
