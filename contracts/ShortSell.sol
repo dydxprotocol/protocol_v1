@@ -73,11 +73,6 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 s;
     }
 
-    struct LoanAmount {
-        bool seen;
-        uint remaining;
-    }
-
     struct Short {
         address underlyingToken;
         address baseToken;
