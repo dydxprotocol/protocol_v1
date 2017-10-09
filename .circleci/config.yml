@@ -24,3 +24,6 @@ jobs:
       - run:
           name: Test
           command: npm test
+      - store_artifacts:
+          path: test-results.xml
+          prefix: tests
