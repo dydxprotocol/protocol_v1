@@ -143,7 +143,7 @@ contract('ShortSell', function(accounts) {
           )
         )
       )).to.be.true;
-      expect(vaultFeeToken.equals(new BigNumber(0))).to.be.true;
+      expect(vaultFeeToken.equals(new BigNumber(1))).to.be.true;
       expect(makerFeeToken.equals(
         shortTx.buyOrder.makerFee
         .minus(
