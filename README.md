@@ -1,4 +1,4 @@
-[![CircleCI](https://circleci.com/gh/AntonioJuliano/dydx-contracts.svg?&style=shield&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9)]()
+[![CircleCI](https://circleci.com/gh/AntonioJuliano/dydx-contracts.svg?&style=shield&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9)](https://circleci.com/gh/AntonioJuliano/dydx-contracts)
 
 # dYdX Smart Contracts
 
