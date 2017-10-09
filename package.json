@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "truffle test",
+    "compile": "truffle compile",
     "lint": "eslint --ext .js --ignore-path .gitignore ."
   },
   "pre-commit": [

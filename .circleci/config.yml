@@ -2,12 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8.4.0
+      - image: circleci/node:8.6.0
     steps:
       - checkout
       - run:
           name: Update npm
-          command: 'sudo npm install -g npm@latest'
+          command: npm -v
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
@@ -17,15 +17,21 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - restore_cache:
+          key: compilation-cache
       - run:
           name: Compile contracts
-          command: truffle compile
+          command: npm run compile
+      - save_cache:
+          key: compilation-cache
+          paths:
+            - build
   test:
     docker:
-      - image: circleci/node:8.4.0
+      - image: circleci/node:8.6.0
       - image: harshjv/testrpc
     steps:
       - checkout
       - run:
           name: Test
-          command: truffle test
+          command: npm test
