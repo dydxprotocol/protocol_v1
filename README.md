@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/AntonioJuliano/dydx-contracts.svg?&style=shield&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9)]()
+
 # dYdX Smart Contracts
 
 Source code for Ethereum Smart Contracts used by the dYdX Protocol
