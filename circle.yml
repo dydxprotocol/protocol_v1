@@ -8,7 +8,8 @@ machine:
       - npm install -g truffle
   database:
     override:
-      - testrpc &
+      - testrpc
+          background: true
   compile:
     override:
       - truffle compile --all
