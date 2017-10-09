@@ -1,0 +1,17 @@
+machine:
+  node:
+    version: 8.4.0
+  dependencies:
+    override:
+      - npm install
+      - npm install -g testrpc
+      - npm install -g truffle
+  database:
+    override:
+      - testrpc &
+  compile:
+    override:
+      - truffle compile --all
+  test:
+    override:
+      - truffle test
