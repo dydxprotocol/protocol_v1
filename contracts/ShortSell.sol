@@ -107,7 +107,8 @@ contract ShortSell is Ownable, SafeMath {
     // Address of the Proxy contract
     address public PROXY;
 
-    mapping(bytes32 => LoanAmount) public loanAmounts;
+    mapping(bytes32 => uint) public loanFills;
+    mapping(bytes32 => uint) public loanCancels;
     mapping(address => uint) public loanNumbers;
 
     // ------------------------
@@ -292,14 +293,16 @@ contract ShortSell is Ownable, SafeMath {
         bytes32 shortId = getNextShortId(transaction.loanOffering.lender);
 
         // Validate
-        uint maxLoanAmount = validateShort(
+        validateShort(
             transaction,
             shortId
         );
 
         // Update global amounts for the loan and lender
-        loanAmounts[transaction.loanOffering.loanHash].remaining =
-            safeSub(maxLoanAmount, transaction.shortAmount);
+        loanFills[transaction.loanOffering.loanHash] = safeAdd(
+            loanFills[transaction.loanOffering.loanHash],
+            transaction.shortAmount
+        );
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
 
@@ -539,6 +542,75 @@ contract ShortSell is Ownable, SafeMath {
         );
     }
 
+    /**
+     * Cancel an amount of a loan offering. Only callable by the offering's lender.
+     *
+     * @param  addresses        Array of addresses:
+     *
+     *  [0] = underlying token
+     *  [1] = base token
+     *  [2] = lender
+     *  [3] = loan taker
+     *  [4] = loan fee recipient
+     *  [5] = loan lender fee token
+     *  [6] = loan taker fee token
+     *
+     * @param  values256        Values corresponding to:
+     *
+     *  [0]  = loan minimum deposit
+     *  [1]  = loan maximum amount
+     *  [2]  = loan minimum amount
+     *  [3]  = loan minimum sell amount
+     *  [4]  = loan interest rate
+     *  [5]  = loan lender fee
+     *  [6]  = loan taker fee
+     *  [7]  = loan expiration timestamp (in seconds)
+     *  [8]  = loan salt
+     *  [9]  = buy order base token amount
+     *
+     * @param  values32         Values corresponding to:
+     *
+     *  [0] = loan lockout time (in seconds)
+     *  [1] = loan call time limit (in seconds)
+     *
+     * @param  cancelAmount     Amount to cancel
+     * @return _cancelledAmount Amount that was cancelled
+     */
+    function cancelLoanOffering(
+        address[7] addresses,
+        uint[9] values256,
+        uint32[2] values32,
+        uint cancelAmount
+    ) external returns (
+        uint _cancelledAmount
+    ) {
+        LoanOffering memory loanOffering = parseLoanOffering(
+            addresses,
+            values256,
+            values32
+        );
+
+        require(loanOffering.lender == msg.sender);
+        require(loanOffering.expirationTimestamp > block.timestamp);
+
+        uint remainingAmount = safeSub(
+            loanOffering.rates.maxAmount,
+            getUnavailableLoanOfferingAmount(loanOffering.loanHash)
+        );
+        uint amountToCancel = min256(remainingAmount, cancelAmount);
+
+        require(amountToCancel > 0);
+
+        loanCancels[loanOffering.loanHash] = safeAdd(
+            loanCancels[loanOffering.loanHash],
+            amountToCancel
+        );
+
+        // TODO Add event
+
+        return amountToCancel;
+    }
+
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
@@ -597,6 +669,14 @@ contract ShortSell is Ownable, SafeMath {
         );
     }
 
+    function getUnavailableLoanOfferingAmount(
+        bytes32 loanHash
+    ) constant public returns (
+        uint _unavailableAmount
+    ) {
+        return safeAdd(loanFills[loanHash], loanCancels[loanHash]);
+    }
+
     // --------------------------------
     // ------ Internal Functions ------
     // --------------------------------
@@ -628,9 +708,7 @@ contract ShortSell is Ownable, SafeMath {
     function validateShort(
         ShortTx transaction,
         bytes32 shortId
-    ) internal constant returns (
-        uint _maxLoanAmount
-    ) {
+    ) internal constant {
         // Make sure we don't already have this short id
         require(!containsShort(shortId));
 
@@ -644,16 +722,13 @@ contract ShortSell is Ownable, SafeMath {
             isValidSignature(transaction.loanOffering)
         );
 
-        // Calculate the maximum amount left in the loan
-        uint maxLoanAmount;
-        if (loanAmounts[transaction.loanOffering.loanHash].seen) {
-            maxLoanAmount = loanAmounts[transaction.loanOffering.loanHash].remaining;
-        } else {
-            maxLoanAmount = transaction.loanOffering.rates.maxAmount;
-        }
-
         // Validate the short amount is <= than max and >= min
-        require(transaction.shortAmount <= maxLoanAmount);
+        require(
+            safeAdd(
+                transaction.shortAmount,
+                getUnavailableLoanOfferingAmount(transaction.loanOffering.loanHash)
+            ) <= transaction.loanOffering.rates.maxAmount
+        );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
 
         uint minimumDeposit = getPartialAmount(
@@ -687,8 +762,6 @@ contract ShortSell is Ownable, SafeMath {
                 transaction.buyOrder.baseTokenAmount
             )
         );
-
-        return maxLoanAmount;
     }
 
     function executeSell(
@@ -740,20 +813,22 @@ contract ShortSell is Ownable, SafeMath {
     }
 
     function getLoanOfferingHash(
-        ShortTx transaction
+        LoanOffering loanOffering,
+        address baseToken,
+        address underlyingToken
     ) internal constant returns (
         bytes32 _hash
     ) {
         return sha3(
             address(this),
-            transaction.underlyingToken,
-            transaction.baseToken,
-            transaction.loanOffering.lender,
-            transaction.loanOffering.taker,
-            transaction.loanOffering.feeRecipient,
-            transaction.loanOffering.lenderFeeToken,
-            transaction.loanOffering.takerFeeToken,
-            getValuesHash(transaction.loanOffering)
+            underlyingToken,
+            baseToken,
+            loanOffering.lender,
+            loanOffering.taker,
+            loanOffering.feeRecipient,
+            loanOffering.lenderFeeToken,
+            loanOffering.takerFeeToken,
+            getValuesHash(loanOffering)
         );
     }
 
@@ -1090,8 +1165,6 @@ contract ShortSell is Ownable, SafeMath {
             )
         });
 
-        transaction.loanOffering.loanHash = getLoanOfferingHash(transaction);
-
         return transaction;
     }
 
@@ -1118,6 +1191,12 @@ contract ShortSell is Ownable, SafeMath {
             loanHash: 0, // Set this later
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
+
+        loanOffering.loanHash = getLoanOfferingHash(
+            loanOffering,
+            addresses[1],
+            addresses[0]
+        );
 
         return loanOffering;
     }
@@ -1153,6 +1232,59 @@ contract ShortSell is Ownable, SafeMath {
         });
 
         return signature;
+    }
+
+    function parseLoanOffering(
+        address[7] addresses,
+        uint[9] values,
+        uint32[2] values32
+    ) internal constant returns (
+        LoanOffering _loanOffering
+    ) {
+        LoanOffering memory loanOffering = LoanOffering({
+            lender: addresses[2],
+            taker: addresses[3],
+            feeRecipient: addresses[4],
+            lenderFeeToken: addresses[5],
+            takerFeeToken: addresses[6],
+            rates: parseLoanOfferRates(values),
+            expirationTimestamp: values[7],
+            lockoutTime: values32[0],
+            callTimeLimit: values32[1],
+            salt: values[8],
+            loanHash: 0,
+            signature: Signature({
+                v: 0,
+                r: "0x",
+                s: "0x"
+            })
+        });
+
+        loanOffering.loanHash = getLoanOfferingHash(
+            loanOffering,
+            addresses[1],
+            addresses[0]
+        );
+
+        return loanOffering;
+    }
+
+    function parseLoanOfferRates(
+        uint[9] values
+    ) internal constant returns (
+        LoanRates _loanRates
+    ) {
+        LoanRates memory rates = LoanRates({
+            minimumDeposit: values[0],
+            maxAmount: values[1],
+            minAmount: values[2],
+            minimumSellAmount: values[3],
+            interestRate: values[4],
+            lenderFee: values[5],
+            takerFee: values[6]
+        });
+
+        return rates;
     }
 
     function parseBuyOrder(
