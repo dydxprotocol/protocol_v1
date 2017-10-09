@@ -12,25 +12,26 @@ Contains implementations for:
 
 ### Development
 
-Install
+#### Install
 
 ```
 npm install
-npm install -g truffle
-npm install -g ethereumjs-testrpc
 ```
 
-Compile
+#### Compile
 
 ```
-truffle compile
+npm run compile
 ```
 
-Test
+#### Test
+
 ```
-testrpc
-truffle test
+npm run testrpc
+npm test
 ```
+Teestrpc will need to run in a separate terminal.
+npm test will also automatically recompile if any source files have been changed
 
 ## Architecture
 
