@@ -3,6 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/node:8.6.0
+      - image: harshjv/testrpc
     steps:
       - checkout
       - run:
@@ -17,29 +18,9 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
-      - restore_cache:
-          key: compilation-cache
       - run:
           name: Compile contracts
           command: npm run compile
-      - save_cache:
-          key: compilation-cache
-          paths:
-            - build
-  test:
-    docker:
-      - image: circleci/node:8.6.0
-      - image: harshjv/testrpc
-    steps:
-      - checkout
       - run:
           name: Test
           command: npm test
-workflows:
-  version: 2
-  build_and_test:
-    jobs:
-      - build
-      - test:
-          requires:
-            - build
