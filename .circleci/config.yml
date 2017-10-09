@@ -24,10 +24,3 @@ jobs:
       - run:
           name: Test
           command: npm test
-          environment:
-            MOCHA_FILE: reports/test-results.xml
-          when: always
-      - store_test_results:
-          path: ~/reports
-      - store_artifacts:
-          path: ~/reports
