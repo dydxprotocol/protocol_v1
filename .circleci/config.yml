@@ -6,9 +6,6 @@ jobs:
       - image: harshjv/testrpc
     steps:
       - checkout
-      - run:
-          name: Update npm
-          command: npm -v
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run:
