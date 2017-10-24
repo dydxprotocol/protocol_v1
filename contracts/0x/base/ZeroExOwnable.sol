@@ -10,7 +10,7 @@ pragma solidity 0.4.15;
 contract ZeroExOwnable {
     address public owner;
 
-    function Ownable() {
+    function ZeroExOwnable() {
         owner = msg.sender;
     }
 

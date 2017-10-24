@@ -13,7 +13,7 @@ import './ShortSellRepo.sol';
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
-contract ShortSell is Ownable, SafeMath {
+contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -183,8 +183,13 @@ contract ShortSell is Ownable, SafeMath {
         address _vault,
         address _repo,
         address _trader,
-        address _proxy
-    ) Ownable() {
+        address _proxy,
+        uint _updateDelay,
+        uint _updateExpiration
+    )
+        Ownable()
+        DelayedUpdate(_updateDelay, _updateExpiration)
+    {
         VAULT = _vault;
         REPO = _repo;
         TRADER = _trader;
@@ -197,17 +202,43 @@ contract ShortSell is Ownable, SafeMath {
 
     function updateTrader(
         address _trader
-    ) onlyOwner {
+    )
+        onlyOwner
+        delayedAddressUpdate("TRADER", _trader)
+        external
+    {
         TRADER = _trader;
     }
 
     function updateProxy(
         address _proxy
-    ) onlyOwner {
+    )
+        onlyOwner
+        delayedAddressUpdate("PROXY", _proxy)
+        external
+    {
         PROXY = _proxy;
     }
 
-    // Vault and Repo are immutable
+    function updateVault(
+        address _vault
+    )
+        onlyOwner
+        delayedAddressUpdate("VAULT", _vault)
+        external
+    {
+        VAULT = _vault;
+    }
+
+    function updateRepo(
+        address _repo
+    )
+        onlyOwner
+        delayedAddressUpdate("REPO", _repo)
+        external
+    {
+        REPO = _repo;
+    }
 
     // -----------------------------------------
     // ---- Public State Changing Functions ----
@@ -293,6 +324,8 @@ contract ShortSell is Ownable, SafeMath {
             shortId
         );
 
+        // STATE UPDATES
+
         // Update global amounts for the loan and lender
         loanFills[transaction.loanOffering.loanHash] = safeAdd(
             loanFills[transaction.loanOffering.loanHash],
@@ -300,18 +333,6 @@ contract ShortSell is Ownable, SafeMath {
         );
         loanNumbers[transaction.loanOffering.lender] =
             safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
-
-        // Transfer tokens
-        transferTokensForShort(
-            shortId,
-            transaction
-        );
-
-        // Do the sell
-        uint baseTokenReceived = executeSell(
-            transaction,
-            shortId
-        );
 
         // Check no casting errors
         require(
@@ -329,6 +350,20 @@ contract ShortSell is Ownable, SafeMath {
             uint32(block.timestamp),
             transaction.loanOffering.lender,
             msg.sender
+        );
+
+        // EXTERNAL CALLS
+
+        // Transfer tokens
+        transferTokensForShort(
+            shortId,
+            transaction
+        );
+
+        // Do the sell
+        uint baseTokenReceived = executeSell(
+            transaction,
+            shortId
         );
 
         recordShortInitiated(
@@ -386,6 +421,8 @@ contract ShortSell is Ownable, SafeMath {
 
         uint interestFee = calculateInterestFee(short.interestRate, short.startTimestamp);
 
+        // EXTERNAL CALLS
+
         uint buybackCost = buyBackUnderlyingToken(
             short,
             shortId,
@@ -396,6 +433,7 @@ contract ShortSell is Ownable, SafeMath {
             orderR,
             orderS
         );
+
 
         uint sellerBaseTokenAmount = sendTokensOnClose(
             short,
@@ -440,8 +478,7 @@ contract ShortSell is Ownable, SafeMath {
         require(block.timestamp >= safeAdd(short.startTimestamp, short.lockoutTime));
 
         require(
-            uint(uint32(block.timestamp))
-            == block.timestamp
+            uint(uint32(block.timestamp)) == block.timestamp
         );
 
         ShortSellRepo(REPO).setShortCallStart(shortId, uint32(block.timestamp));

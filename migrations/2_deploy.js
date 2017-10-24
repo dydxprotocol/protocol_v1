@@ -11,6 +11,10 @@ const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
+const BigNumber = require('bignumber.js');
+
+const ONE_HOUR = new BigNumber(60 * 60);
+const ONE_DAY = new BigNumber(60 * 60 * 24);
 
 function maybeDeployTestTokens(deployer, network) {
   if (network === 'development' || network === 'test') {
@@ -24,7 +28,9 @@ function maybeDeployTestTokens(deployer, network) {
 function maybeDeploy0x(deployer, network) {
   if (network === 'development' || network === 'test') {
     return deployer.deploy(ZeroExProxy)
-      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address));
+      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address))
+      .then(() => ZeroExProxy.deployed())
+      .then( proxy => proxy.addAuthorizedAddress(ZeroExExchange.address) );
   }
   return Promise.resolve(true);
 }
@@ -36,7 +42,11 @@ module.exports = (deployer, network, addresses) => {
     .then(() => deployer.deploy(Exchange, ProxyContract.address))
     .then(() => deployer.deploy(
       Vault,
-      ProxyContract.address
+      ProxyContract.address,
+      ONE_DAY,
+      ONE_HOUR,
+      ONE_DAY,
+      ONE_DAY
     ))
     .then(() => deployer.deploy(
       Trader,
@@ -44,7 +54,12 @@ module.exports = (deployer, network, addresses) => {
       ZeroExExchange.address,
       Vault.address,
       ProxyContract.address,
-      '0x0000000000000000000000000000010'
+      ZeroExProxy.address,
+      '0x0000000000000000000000000000010',
+      ONE_DAY,
+      ONE_HOUR,
+      ONE_DAY,
+      ONE_DAY
     ))
     .then(() => deployer.deploy(ShortSellRepo))
     .then(() => deployer.deploy(
@@ -52,7 +67,9 @@ module.exports = (deployer, network, addresses) => {
       Vault.address,
       ShortSellRepo.address,
       Trader.address,
-      ProxyContract.address
+      ProxyContract.address,
+      ONE_DAY,
+      ONE_DAY
     ))
     .then(() => ProxyContract.deployed())
     .then(proxy => {
@@ -60,12 +77,11 @@ module.exports = (deployer, network, addresses) => {
       return proxy;
     })
     .then(proxy => Promise.all([
-        proxy.grantTransferAuthorization(Vault.address),
-        proxy.grantTransferAuthorization(Exchange.address),
-        proxy.grantTransferAuthorization(Trader.address),
-        proxy.grantTransferAuthorization(ShortSell.address),
-      ])
-    )
+      proxy.grantTransferAuthorization(Vault.address),
+      proxy.grantTransferAuthorization(Exchange.address),
+      proxy.grantTransferAuthorization(Trader.address),
+      proxy.grantTransferAuthorization(ShortSell.address),
+    ]))
     .then(() => Vault.deployed())
     .then(vault => Promise.all([
       vault.grantAccess(ShortSell.address),
