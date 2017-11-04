@@ -43,7 +43,7 @@ npm test will also automatically recompile if any source files have been changed
 
 ##### Proxy.sol
 
-Used to transfer user funds. Users set token allowance for the proxy authoizing it to transfer their funds. Only allows authoized contracts to transfer funds.
+Used to transfer user funds. Users set token allowance for the proxy authorizing it to transfer their funds. Only allows authorized contracts to transfer funds.
 
 ##### ShortSell.sol
 
@@ -55,7 +55,7 @@ Contains state for short sells. Holds a map of short id to short struct. Only wr
 
 ##### Vault.sol
 
-Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authoized contracts to withdraw funds.
+Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.
 
 ##### Trader.sol
 
