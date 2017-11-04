@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import '../interfaces/ERC20.sol';
 
@@ -9,11 +9,12 @@ contract TokenInteract {
     function balanceOf(
         address token,
         address owner
-    ) internal constant returns (
+    ) internal view returns (
         uint _balance
     ) {
         // Limit gas to prevent reentrancy
-        return ERC20(token).balanceOf.gas(EXTERNAL_QUERY_GAS_LIMIT)(owner);
+        // ?? D0 I need to limit gas? compiler throws warning on limiting in view function
+        return ERC20(token).balanceOf/*.gas(EXTERNAL_QUERY_GAS_LIMIT)*/(owner);
     }
 
     function setAllowance(

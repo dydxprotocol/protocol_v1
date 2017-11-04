@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/Ownable.sol';
 import './lib/SafeMath.sol';
@@ -189,6 +189,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     )
         Ownable()
         DelayedUpdate(_updateDelay, _updateExpiration)
+        public
     {
         VAULT = _vault;
         REPO = _repo;
@@ -649,7 +650,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getShort(
         bytes32 shortId
-    ) constant public returns (
+    ) view public returns (
         address underlyingToken,
         address baseToken,
         uint shortAmount,
@@ -666,7 +667,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function containsShort(
         bytes32 shortId
-    ) constant public returns (
+    ) view public returns (
         bool exists
     ) {
         return ShortSellRepo(REPO).containsShort(shortId);
@@ -674,7 +675,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getShortBalance(
         bytes32 shortId
-    ) constant public returns (
+    ) view public returns (
         uint _baseTokenBalance
     ) {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
@@ -687,7 +688,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getShortInterestFee(
         bytes32 shortId
-    ) constant public returns (
+    ) view public returns (
         uint _interestFeeOwed
     ) {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
@@ -703,7 +704,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getUnavailableLoanOfferingAmount(
         bytes32 loanHash
-    ) constant public returns (
+    ) view public returns (
         uint _unavailableAmount
     ) {
         return safeAdd(loanFills[loanHash], loanCancels[loanHash]);
@@ -715,10 +716,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getNextShortId(
         address lender
-    ) internal constant returns (
+    ) internal view returns (
         bytes32 _shortId
     ) {
-        return sha3(
+        return keccak256(
             lender,
             loanNumbers[lender]
         );
@@ -726,11 +727,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function isValidSignature(
         LoanOffering loanOffering
-    ) constant internal returns (
+    ) pure internal returns (
         bool _isValid
     ) {
         return loanOffering.lender == ecrecover(
-            sha3("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
+            keccak256("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
             loanOffering.signature.v,
             loanOffering.signature.r,
             loanOffering.signature.s
@@ -740,7 +741,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     function validateShort(
         ShortTx transaction,
         bytes32 shortId
-    ) internal constant {
+    ) internal view {
         // Make sure we don't already have this short id
         require(!containsShort(shortId));
 
@@ -848,10 +849,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         LoanOffering loanOffering,
         address baseToken,
         address underlyingToken
-    ) internal constant returns (
+    ) internal view returns (
         bytes32 _hash
     ) {
-        return sha3(
+        return keccak256(
             address(this),
             underlyingToken,
             baseToken,
@@ -866,10 +867,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getValuesHash(
         LoanOffering loanOffering
-    ) internal constant returns (
+    ) internal pure returns (
         bytes32 _hash
     ) {
-        return sha3(
+        return keccak256(
             loanOffering.rates.minimumDeposit,
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
@@ -1009,7 +1010,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     function calculateInterestFee(
         uint interestRate,
         uint startTimestamp
-    ) internal constant returns (
+    ) internal view returns (
         uint _interestFee
     ) {
         uint timeElapsed = safeSub(block.timestamp, startTimestamp);
@@ -1074,7 +1075,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint interestFee,
         bytes32 shortId,
         uint[6] orderValues
-    ) internal returns (
+    ) internal view returns (
         uint _baseTokenPrice
     ) {
         uint baseTokenPrice = getPartialAmount(
@@ -1174,7 +1175,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns (
+    ) internal view returns (
         ShortTx _transaction
     ) {
         ShortTx memory transaction = ShortTx({
@@ -1206,7 +1207,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns (
+    ) internal view returns (
         LoanOffering _loanOffering
     ) {
         LoanOffering memory loanOffering = LoanOffering({
@@ -1235,7 +1236,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function parseLoanOfferRates(
         uint[17] values
-    ) internal constant returns (
+    ) internal pure returns (
         LoanRates _loanRates
     ) {
         LoanRates memory rates = LoanRates({
@@ -1254,7 +1255,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     function parseLoanOfferingSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns (
+    ) internal pure returns (
         Signature _signature
     ) {
         Signature memory signature = Signature({
@@ -1270,7 +1271,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         address[7] addresses,
         uint[9] values,
         uint32[2] values32
-    ) internal constant returns (
+    ) internal view returns (
         LoanOffering _loanOffering
     ) {
         LoanOffering memory loanOffering = LoanOffering({
@@ -1303,7 +1304,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function parseLoanOfferRates(
         uint[9] values
-    ) internal constant returns (
+    ) internal pure returns (
         LoanRates _loanRates
     ) {
         LoanRates memory rates = LoanRates({
@@ -1324,7 +1325,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns (
+    ) internal pure returns (
         BuyOrder _buyOrder
     ) {
         BuyOrder memory order = BuyOrder({
@@ -1348,7 +1349,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     function parseBuyOrderSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal constant returns (
+    ) internal pure returns (
         Signature _signature
     ) {
         Signature memory signature = Signature({
@@ -1362,7 +1363,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
     function getShortObject(
         bytes32 shortId
-    ) internal constant returns (
+    ) internal view returns (
         Short _short
     ) {
         var (

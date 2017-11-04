@@ -1,9 +1,9 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 contract Ownable {
     address public owner;
 
-    function Ownable() {
+    function Ownable() public {
         owner = msg.sender;
     }
 
@@ -12,7 +12,7 @@ contract Ownable {
         _;
     }
 
-    function transferOwnership(address newOwner) onlyOwner {
+    function transferOwnership(address newOwner) public onlyOwner {
         owner = newOwner;
     }
 }

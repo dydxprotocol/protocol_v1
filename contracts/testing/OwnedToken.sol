@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import '../lib/Ownable.sol';
 
@@ -11,35 +11,35 @@ contract OwnedToken is Ownable {
     event Approval( address token, address owner, address spender, uint value);
 
 
-    function issueTo(address who, uint amount) onlyOwner {
+    function issueTo(address who, uint amount) onlyOwner external {
         balances[who] = balances[who] + amount;
     }
 
-    function totalSupply() constant returns (uint _supply) {
+    function totalSupply() view public returns (uint _supply) {
         return supply;
     }
 
-    function balanceOf( address who ) constant returns (uint value) {
+    function balanceOf( address who ) view public returns (uint value) {
         return balances[who];
     }
 
-    function allowance( address owner, address spender ) constant returns (uint _allowance) {
+    function allowance( address owner, address spender ) view public returns (uint _allowance) {
         return allowed[owner][spender];
     }
 
-    function symbol() constant returns (string) {
+    function symbol() pure public returns (string) {
         return "dTest";
     }
 
-    function name() constant returns (string) {
+    function name() pure public returns (string) {
         return "dYdX Test Token";
     }
 
-    function decimals() constant returns (uint8) {
+    function decimals() pure public returns (uint8) {
         return 18;
     }
 
-    function transfer( address to, uint value) returns (bool ok) {
+    function transfer( address to, uint value) public returns (bool ok) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
@@ -50,7 +50,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function transferFrom( address from, address to, uint value) returns (bool ok) {
+    function transferFrom( address from, address to, uint value) public returns (bool ok) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] += value;
             balances[from] -= value;
@@ -62,7 +62,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function approve( address spender, uint value ) returns (bool ok) {
+    function approve( address spender, uint value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
         Approval(address(this), msg.sender, spender, value);
         return true;

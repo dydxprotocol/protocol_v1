@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/AccessControlled.sol';
 
@@ -22,11 +22,11 @@ contract ShortSellRepo is AccessControlled {
     mapping(bytes32 => Short) public shorts;
 
     function ShortSellRepo(
-    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) {}
+    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) public {}
 
     function getShort(
         bytes32 id
-    ) constant public returns (
+    ) view public returns (
         address underlyingToken,
         address baseToken,
         uint shortAmount,
@@ -56,7 +56,7 @@ contract ShortSellRepo is AccessControlled {
 
     function containsShort(
         bytes32 id
-    ) constant public returns (
+    ) view public returns (
         bool exists
     ) {
         return shorts[id].startTimestamp != 0;
@@ -73,7 +73,7 @@ contract ShortSellRepo is AccessControlled {
         uint32 startTimestamp,
         address lender,
         address seller
-    ) requiresAuthorization {
+    ) requiresAuthorization public {
         require(!containsShort(id));
 
         shorts[id] = Short({
@@ -93,14 +93,14 @@ contract ShortSellRepo is AccessControlled {
     function setShortCallStart(
         bytes32 id,
         uint32 callStart
-    ) requiresAuthorization {
+    ) requiresAuthorization public {
         require(containsShort(id));
         shorts[id].callTimestamp = callStart;
     }
 
     function deleteShort(
         bytes32 id
-    ) requiresAuthorization {
+    ) requiresAuthorization public {
         delete shorts[id];
     }
 }

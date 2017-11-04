@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/AccessControlled.sol';
 import './lib/Lockable.sol';
@@ -38,6 +38,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         AccessControlled(accessDelay, gracePeriod)
         DelayedUpdate(updateDelay, updateExpiration)
         Lockable()
+        public
     {
         PROXY = _proxy;
     }
@@ -65,7 +66,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         address token,
         address from,
         uint amount
-    ) requiresAuthorization lockable {
+    ) public requiresAuthorization lockable {
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
@@ -82,7 +83,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         address token,
         address to,
         uint amount
-    ) requiresAuthorization lockable {
+    ) public requiresAuthorization lockable {
         require(balances[id][token] >= amount);
 
         // First decrement balances
@@ -100,7 +101,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         bytes32 shortId,
         address baseToken,
         address underlyingToken
-    ) requiresAuthorization lockable {
+    ) public requiresAuthorization lockable {
         // TODO delete the fee tokens?
 
         require(balances[shortId][baseToken] == 0);
@@ -117,7 +118,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
 
     function validateBalance(
         address token
-    ) internal {
+    ) internal view {
         // The actual balance could be greater than totalBalances[token] because anyone
         // can send tokens to the contract's address which cannot be accounted for
         assert(balanceOf(token, address(this)) >= totalBalances[token]);

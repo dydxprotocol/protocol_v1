@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 /// Modified version of 0x Exchange contract. Uses dYdX proxy and no protocol token
 
@@ -53,7 +53,7 @@ contract Exchange is SafeMath {
         uint filledTakerTokenAmount,
         uint paidMakerFee,
         uint paidTakerFee,
-        bytes32 indexed tokens, // sha3(makerToken, takerToken), allows subscribing to a token pair
+        bytes32 indexed tokens, // keccak256(makerToken, takerToken), allows subscribing to a token pair
         bytes32 orderHash
     );
 
@@ -86,7 +86,7 @@ contract Exchange is SafeMath {
         bytes32 orderHash;
     }
 
-    function Exchange(address _PROXY_CONTRACT) {
+    function Exchange(address _PROXY_CONTRACT) public {
         PROXY_CONTRACT = _PROXY_CONTRACT;
     }
 
@@ -287,7 +287,7 @@ contract Exchange is SafeMath {
         address[7] orderAddresses,
         uint[6] orderValues,
         uint canceltakerTokenAmount
-    ) returns (
+    ) public returns (
         uint cancelledTakerTokenAmount
     ) {
         Order memory order = Order({
@@ -336,7 +336,7 @@ contract Exchange is SafeMath {
                 order.makerTokenAmount
             ),
             cancelledTakerTokenAmount,
-            sha3(order.makerToken, order.takerToken),
+            keccak256(order.makerToken, order.takerToken),
             order.orderHash
         );
         return cancelledTakerTokenAmount;
@@ -361,7 +361,7 @@ contract Exchange is SafeMath {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) returns (
+    ) public returns (
         bool success
     ) {
         assert(fillOrder(
@@ -393,7 +393,7 @@ contract Exchange is SafeMath {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) returns (
+    ) public returns (
         bool success
     ) {
         for (uint i = 0; i < orderAddresses.length; i++) {
@@ -426,7 +426,7 @@ contract Exchange is SafeMath {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) returns (
+    ) public returns (
         bool success
     ) {
         for (uint i = 0; i < orderAddresses.length; i++) {
@@ -459,7 +459,7 @@ contract Exchange is SafeMath {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) returns (
+    ) public returns (
         uint filledTakerTokenAmount
     ) {
         filledTakerTokenAmount = 0;
@@ -488,7 +488,7 @@ contract Exchange is SafeMath {
         address[7][] orderAddresses,
         uint[6][] orderValues,
         uint[] cancelTakerTokenAmounts
-    ) returns (
+    ) public returns (
         bool success
     ) {
         for (uint i = 0; i < orderAddresses.length; i++) {
@@ -512,10 +512,10 @@ contract Exchange is SafeMath {
     function getOrderHash(
         address[7] orderAddresses,
         uint[6] orderValues
-    ) constant returns (
+    ) public view returns (
         bytes32 orderHash
     ) {
-        return sha3(
+        return keccak256(
             address(this),
             orderAddresses[0], // maker
             orderAddresses[1], // taker
@@ -546,11 +546,11 @@ contract Exchange is SafeMath {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) constant returns (
+    ) public pure returns (
         bool isValid
     ) {
         return signer == ecrecover(
-            sha3("\x19Ethereum Signed Message:\n32", hash),
+            keccak256("\x19Ethereum Signed Message:\n32", hash),
             v,
             r,
             s
@@ -566,7 +566,7 @@ contract Exchange is SafeMath {
         uint numerator,
         uint denominator,
         uint target
-    ) constant returns (
+    ) public pure returns (
         bool isError
     ) {
         return (target < 10**3 && mulmod(target, numerator, denominator) != 0);
@@ -577,7 +577,7 @@ contract Exchange is SafeMath {
     /// @return Sum of values already filled and cancelled.
     function getUnavailableTakerTokenAmount(
         bytes32 orderHash
-    ) constant returns (
+    ) public view returns (
         uint unavailableTakerTokenAmount
     ) {
         return safeAdd(filled[orderHash], cancelled[orderHash]);
@@ -615,7 +615,7 @@ contract Exchange is SafeMath {
         uint fillTakerTokenAmount,
         uint fillMakerFee,
         uint fillTakerFee
-    ) internal constant returns (
+    ) internal view returns (
         bool _isTransferable
     ) {
         address taker = msg.sender;
@@ -679,7 +679,7 @@ contract Exchange is SafeMath {
     function getBalance(
         address token,
         address owner
-    ) internal constant returns (
+    ) internal view returns (
         uint balance
     ) {
         return ERC20(token).balanceOf(owner);
@@ -692,7 +692,7 @@ contract Exchange is SafeMath {
     function getAllowance(
         address token,
         address owner
-    ) internal constant returns (
+    ) internal view returns (
         uint allowance
     ) {
         return ERC20(token).allowance(owner, PROXY_CONTRACT);
@@ -715,7 +715,7 @@ contract Exchange is SafeMath {
             values[1],
             values[2],
             values[3],
-            sha3(order.makerToken, order.takerToken),
+            keccak256(order.makerToken, order.takerToken),
             order.orderHash
         );
     }

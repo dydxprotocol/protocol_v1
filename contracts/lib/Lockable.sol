@@ -1,11 +1,11 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './Ownable.sol';
 
 contract Lockable is Ownable {
     bool public locked;
 
-    function Lockable() Ownable() {
+    function Lockable() Ownable() public {
         locked = false;
     }
 
@@ -14,11 +14,11 @@ contract Lockable is Ownable {
         _;
     }
 
-    function lockdown() onlyOwner {
+    function lockdown() public onlyOwner {
         locked = true;
     }
 
-    function unlock() onlyOwner {
+    function unlock() public onlyOwner {
         locked = false;
     }
 }

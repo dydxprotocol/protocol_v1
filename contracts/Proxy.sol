@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/AccessControlled.sol';
 import './interfaces/ERC20.sol';
@@ -13,24 +13,24 @@ contract Proxy is AccessControlled, SafeMath {
     }
 
     function Proxy(
-    ) AccessControlled(1 days, 8 hours) {
+    ) AccessControlled(1 days, 8 hours) public {
     }
 
     function grantTransferAuthorization(
         address who
-    ) requiresAuthorization {
+    ) requiresAuthorization public {
         transferAuthorized[who] = true;
     }
 
     function revokeTransferAuthorization(
         address who
-    ) requiresAuthorization {
+    ) requiresAuthorization public {
         delete transferAuthorized[who];
     }
 
     function ownerRevokeTransferAuthorization(
         address who
-    ) onlyOwner {
+    ) onlyOwner public {
         delete transferAuthorized[who];
     }
 
@@ -38,7 +38,7 @@ contract Proxy is AccessControlled, SafeMath {
         address token,
         address from,
         uint value
-    ) requiresTransferAuthorization {
+    ) requiresTransferAuthorization public {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
 
@@ -47,14 +47,14 @@ contract Proxy is AccessControlled, SafeMath {
         address from,
         address to,
         uint value
-    ) requiresTransferAuthorization {
+    ) requiresTransferAuthorization public {
         require(ERC20(token).transferFrom(from, to, value));
     }
 
     function available(
         address who,
         address token
-    ) constant public returns (
+    ) view public returns (
         uint _allowance
     ) {
         return min256(

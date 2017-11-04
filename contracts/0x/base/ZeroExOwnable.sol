@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 /*
  * Ownable
@@ -10,7 +10,7 @@ pragma solidity 0.4.15;
 contract ZeroExOwnable {
     address public owner;
 
-    function ZeroExOwnable() {
+    function ZeroExOwnable() public {
         owner = msg.sender;
     }
 
@@ -19,7 +19,7 @@ contract ZeroExOwnable {
         _;
     }
 
-    function transferOwnership(address newOwner) onlyOwner {
+    function transferOwnership(address newOwner) public onlyOwner {
         if (newOwner != address(0)) {
             owner = newOwner;
         }

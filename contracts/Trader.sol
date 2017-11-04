@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
@@ -63,6 +63,7 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
     )
         AccessControlled(_accessDelay, _gracePeriod)
         DelayedUpdate(_updateDelay, _updateExpiration)
+        public
     {
         DYDX_EXCHANGE = _dydxExchange;
         ZERO_EX_EXCHANGE = _0xExchange;
@@ -426,7 +427,7 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
     function validateBalances(
         StartingBalances startingBalances,
         Order order
-    ) internal constant {
+    ) internal view {
         assert(
             balanceOf(order.takerToken, address(this)) == startingBalances.takerTokenBalance
         );

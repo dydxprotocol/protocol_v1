@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './lib/Ownable.sol';
 import './CoveredOption.sol';
@@ -39,7 +39,7 @@ contract DerivativeCreator is Ownable {
     function DerivativeCreator(
         address _proxy,
         address _exchange
-    ) Ownable() {
+    ) Ownable() public {
         proxy = _proxy;
         exchange = _exchange;
     }
@@ -69,7 +69,7 @@ contract DerivativeCreator is Ownable {
         uint256 expirationTimestamp,
         uint256 underlyingTokenStrikeRate,
         uint256 baseTokenStrikeRate
-    ) public returns(
+    ) public returns (
         address _option
     ) {
         // Require exchange rates for options to be in simplest form
@@ -87,7 +87,7 @@ contract DerivativeCreator is Ownable {
             );
         }
 
-        bytes32 optionHash = sha3(
+        bytes32 optionHash = keccak256(
             COVERED_OPTION_TYPE,
             underlyingToken,
             baseToken,
@@ -139,10 +139,10 @@ contract DerivativeCreator is Ownable {
         uint256 expirationTimestamp,
         uint256 underlyingTokenStrikeRate,
         uint256 baseTokenStrikeRate
-    ) constant public returns(
+    ) view public returns(
         address _option
     ) {
-        bytes32 optionHash = sha3(
+        bytes32 optionHash = keccak256(
             COVERED_OPTION_TYPE,
             underlyingToken,
             baseToken,
@@ -160,13 +160,13 @@ contract DerivativeCreator is Ownable {
 
     function updateExchange(
         address _exchange
-    ) onlyOwner {
+    ) onlyOwner public {
         exchange = _exchange;
     }
 
     function updateProxy(
         address _proxy
-    ) onlyOwner {
+    ) onlyOwner public {
         proxy = _proxy;
     }
 }

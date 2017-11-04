@@ -16,8 +16,12 @@ const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 const ONE_DAY = new BigNumber(60 * 60 * 24);
 
+function isDevNetwork(network) {
+  return network === 'development' || network === 'test' || network === 'develop';
+}
+
 function maybeDeployTestTokens(deployer, network) {
-  if (network === 'development' || network === 'test') {
+  if (isDevNetwork(network)) {
     return deployer.deploy(TokenA)
       .then(() => deployer.deploy(TokenB))
       .then(() => deployer.deploy(FeeToken));
@@ -26,7 +30,7 @@ function maybeDeployTestTokens(deployer, network) {
 }
 
 function maybeDeploy0x(deployer, network) {
-  if (network === 'development' || network === 'test') {
+  if (isDevNetwork(network)) {
     return deployer.deploy(ZeroExProxy)
       .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address))
       .then(() => ZeroExProxy.deployed())

@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
@@ -170,7 +170,7 @@ contract ZeroExExchangeInterface {
     /// @return Keccak-256 hash of order.
     function getOrderHash(address[5] orderAddresses, uint[6] orderValues)
         public
-        constant
+        view
         returns (bytes32);
 
     /// @dev Verifies that an order signature is valid.
@@ -187,7 +187,7 @@ contract ZeroExExchangeInterface {
         bytes32 r,
         bytes32 s)
         public
-        constant
+        pure
         returns (bool);
 
     /// @dev Checks if rounding error > 0.1%.
@@ -197,7 +197,7 @@ contract ZeroExExchangeInterface {
     /// @return Rounding error is present.
     function isRoundingError(uint numerator, uint denominator, uint target)
         public
-        constant
+        pure
         returns (bool);
 
     /// @dev Calculates partial value given a numerator and denominator.
@@ -207,7 +207,7 @@ contract ZeroExExchangeInterface {
     /// @return Partial value of target.
     function getPartialAmount(uint numerator, uint denominator, uint target)
         public
-        constant
+        pure
         returns (uint);
 
     /// @dev Calculates the sum of values already filled and cancelled for a given order.
@@ -215,6 +215,6 @@ contract ZeroExExchangeInterface {
     /// @return Sum of values already filled and cancelled.
     function getUnavailableTakerTokenAmount(bytes32 orderHash)
         public
-        constant
+        view
         returns (uint);
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './Ownable.sol';
 
@@ -27,7 +27,7 @@ contract AccessControlled is Ownable {
     function AccessControlled(
         uint _accessDelay,
         uint _gracePeriod
-    ) Ownable() {
+    ) Ownable() public {
         accessDelay = _accessDelay;
         gracePeriodExpiration = block.timestamp + _gracePeriod;
     }
@@ -39,7 +39,7 @@ contract AccessControlled is Ownable {
 
     function grantAccess(
         address who
-    ) onlyOwner {
+    ) onlyOwner public {
         if (block.timestamp < gracePeriodExpiration) {
             AccessGranted(address(this), who);
             authorized[who] = true;
@@ -51,7 +51,7 @@ contract AccessControlled is Ownable {
 
     function confirmAccess(
         address who
-    ) onlyOwner {
+    ) onlyOwner public {
         require(pendingAuthorizations[who] != 0);
         require(block.timestamp > pendingAuthorizations[who]);
         authorized[who] = true;
@@ -61,7 +61,7 @@ contract AccessControlled is Ownable {
 
     function revokeAccess(
         address who
-    ) onlyOwner {
+    ) onlyOwner public {
         authorized[who] = false;
         delete pendingAuthorizations[who];
         AccessRevoked(address(this), who);

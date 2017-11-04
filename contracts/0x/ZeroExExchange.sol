@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import "./ZeroExProxy.sol";
 import "./base/ZeroExToken.sol";
@@ -85,7 +85,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         bytes32 orderHash;
     }
 
-    function Exchange(address _zrxToken, address _tokenTransferProxy) {
+    function Exchange(address _zrxToken, address _tokenTransferProxy) public {
         ZRX_TOKEN_CONTRACT = _zrxToken;
         TOKEN_TRANSFER_PROXY_CONTRACT = _tokenTransferProxy;
     }
@@ -425,7 +425,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Keccak-256 hash of order.
     function getOrderHash(address[5] orderAddresses, uint[6] orderValues)
         public
-        constant
+        view
         returns (bytes32)
     {
         return keccak256(
@@ -458,7 +458,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         bytes32 r,
         bytes32 s)
         public
-        constant
+        pure
         returns (bool)
     {
         return signer == ecrecover(
@@ -476,7 +476,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Rounding error is present.
     function isRoundingError(uint numerator, uint denominator, uint target)
         public
-        constant
+        pure
         returns (bool)
     {
         uint remainder = mulmod(target, numerator, denominator);
@@ -496,7 +496,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Partial value of target.
     function getPartialAmount(uint numerator, uint denominator, uint target)
         public
-        constant
+        pure
         returns (uint)
     {
         return safeDiv(safeMul(numerator, target), denominator);
@@ -507,7 +507,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Sum of values already filled and cancelled.
     function getUnavailableTakerTokenAmount(bytes32 orderHash)
         public
-        constant
+        view
         returns (uint)
     {
         return safeAdd(filled[orderHash], cancelled[orderHash]);
@@ -541,7 +541,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Predicted result of transfers.
     function isTransferable(Order order, uint fillTakerTokenAmount)
         internal
-        constant  // The called token contracts may attempt to change state, but will not be able to due to gas limits on getBalance and getAllowance.
+        view  // The called token contracts may attempt to change state, but will not be able to due to gas limits on getBalance and getAllowance.
         returns (bool)
     {
         address taker = msg.sender;
@@ -582,10 +582,10 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Token balance of owner.
     function getBalance(address token, address owner)
         internal
-        constant  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
+        view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
         returns (uint)
     {
-        return ZeroExToken(token).balanceOf.gas(EXTERNAL_QUERY_GAS_LIMIT)(owner); // Limit gas to prevent reentrancy
+        return ZeroExToken(token).balanceOf(owner); // Limit gas to prevent reentrancy
     }
 
     /// @dev Get allowance of token given to TokenTransferProxy by an address.
@@ -594,9 +594,9 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Allowance of token given to TokenTransferProxy by owner.
     function getAllowance(address token, address owner)
         internal
-        constant  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
+        view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
         returns (uint)
     {
-        return ZeroExToken(token).allowance.gas(EXTERNAL_QUERY_GAS_LIMIT)(owner, TOKEN_TRANSFER_PROXY_CONTRACT); // Limit gas to prevent reentrancy
+        return ZeroExToken(token).allowance(owner, TOKEN_TRANSFER_PROXY_CONTRACT); // Limit gas to prevent reentrancy
     }
 }

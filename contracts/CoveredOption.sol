@@ -1,4 +1,4 @@
-pragma solidity 0.4.15;
+pragma solidity 0.4.18;
 
 import './Exchange.sol';
 import './interfaces/ERC20.sol';
@@ -132,7 +132,7 @@ contract CoveredOption is SafeMath{
         uint256 _baseTokenStrikeRate,
         address _exchange,
         address _proxy
-    ) {
+    ) public {
         underlyingToken = _underlyingToken;
         baseToken = _baseToken;
         expirationTimestamp = _expirationTimestamp;
@@ -489,7 +489,7 @@ contract CoveredOption is SafeMath{
       return true;
     }
 
-    function totalSupply() constant public returns (
+    function totalSupply() view public returns (
         uint supply
     ) {
         return totalOptions;
@@ -497,7 +497,7 @@ contract CoveredOption is SafeMath{
 
     function balanceOf(
         address who
-    ) constant public returns (
+    ) view public returns (
         uint value
     ) {
         return balances[who];
@@ -506,21 +506,21 @@ contract CoveredOption is SafeMath{
     function allowance(
         address owner,
         address spender
-    ) constant public returns (
+    ) view public returns (
         uint _allowance
     ) {
         return allowed[owner][spender];
     }
 
     // TODO make this deterministic based on option parameters
-    function name() constant public returns(
+    function name() pure public returns (
         string _name
     ) {
         return "dYdX Covered Option";
     }
 
     // TODO make this deterministic based on option parameters
-    function symbol() constant public returns(
+    function symbol() pure public returns (
         string _symbol
     ) {
         return "dYdX";
@@ -528,7 +528,7 @@ contract CoveredOption is SafeMath{
 
     // Decimals for the option will always match decimals for the underlying token
     // since options are issued on a 1:1 basis with underlyingToken
-    function decimals() constant public returns(
+    function decimals() view public returns (
         uint8 _decimals
     ) {
         return ERC20(underlyingToken).decimals();

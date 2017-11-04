@@ -7,9 +7,10 @@
     "test": "test"
   },
   "scripts": {
-    "test": "truffle test --reporter mocha-junit-reporter",
+    "test": "truffle test",
     "compile": "truffle compile",
-    "testrpc": "testrpc",
+    "migrate": "truffle migrate",
+    "develop": "truffle develop",
     "lint": "eslint --ext .js --ignore-path .gitignore ."
   },
   "pre-commit": [
@@ -35,8 +36,8 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
-    "eslint": "^4.7.2",
-    "truffle": "^3.4.11"
+    "eslint": "^4.10.0",
+    "truffle": "^4.0.1"
   },
   "dependencies": {
     "0x.js": "^0.19.0",
@@ -44,6 +45,6 @@
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",
     "request-promise-native": "^1.0.5",
-    "web3": "^1.0.0-beta.22"
+    "web3": "^1.0.0-beta.24"
   }
 }
