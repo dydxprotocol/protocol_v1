@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/node:8.6.0
-      - image: harshjv/testrpc
     steps:
       - checkout
       - restore_cache:

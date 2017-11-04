@@ -33,10 +33,8 @@ npm run compile
 #### Test
 
 ```
-npm run testrpc
 npm test
 ```
-Teestrpc will need to run in a separate terminal.
 npm test will also automatically recompile if any source files have been changed
 
 ## Architecture
