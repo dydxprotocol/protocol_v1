@@ -3,7 +3,8 @@ pragma solidity 0.4.15;
 import './lib/AccessControlled.sol';
 import './lib/Lockable.sol';
 import './lib/SafeMath.sol';
-import './interfaces/ERC20.sol';
+import './lib/TokenInteract.sol';
+import './lib/DelayedUpdate.sol';
 import './Proxy.sol';
 import './Exchange.sol';
 
@@ -13,13 +14,10 @@ import './Exchange.sol';
  *
  * Holds and transfers tokens in vaults denominated by id
  */
-contract Vault is AccessControlled, Lockable, SafeMath {
+contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInteract {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
-
-    uint public constant ACCESS_DELAY = 1 days;
-    uint public constant GRACE_PERIOD = 8 hours;
 
     address public PROXY;
 
@@ -31,19 +29,36 @@ contract Vault is AccessControlled, Lockable, SafeMath {
     // -------------------------
 
     function Vault(
+        address _proxy,
+        uint accessDelay,
+        uint gracePeriod,
+        uint updateDelay,
+        uint updateExpiration
+    )
+        AccessControlled(accessDelay, gracePeriod)
+        DelayedUpdate(updateDelay, updateExpiration)
+        Lockable()
+    {
+        PROXY = _proxy;
+    }
+
+    // -----------------------------
+    // ------ Admin Functions ------
+    // -----------------------------
+
+    function updateProxy(
         address _proxy
-    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) Lockable() {
+    )
+        onlyOwner
+        delayedAddressUpdate("PROXY", _proxy)
+        external
+    {
         PROXY = _proxy;
     }
 
     // -----------------------------------------
     // ---- Public State Changing Functions ----
     // -----------------------------------------
-
-    // TODO perhaps add a delay to these changes
-    function updateProxy(address _proxy) onlyOwner {
-        PROXY = _proxy;
-    }
 
     function transfer(
         bytes32 id,
@@ -75,7 +90,7 @@ contract Vault is AccessControlled, Lockable, SafeMath {
         totalBalances[token] = safeSub(totalBalances[token], amount);
 
         // Transfer tokens
-        assert(ERC20(token).transfer(to, amount));
+        transfer(token, to, amount);
 
         // Validate new balance
         validateBalance(token);
@@ -105,6 +120,6 @@ contract Vault is AccessControlled, Lockable, SafeMath {
     ) internal {
         // The actual balance could be greater than totalBalances[token] because anyone
         // can send tokens to the contract's address which cannot be accounted for
-        assert(ERC20(token).balanceOf(address(this)) >= totalBalances[token]);
+        assert(balanceOf(token, address(this)) >= totalBalances[token]);
     }
 }
