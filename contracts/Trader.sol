@@ -4,7 +4,7 @@ import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './lib/TokenInteract.sol';
 import './lib/DelayedUpdate.sol';
-import './0x/ZeroExExchange.sol';
+import './interfaces/ZeroExExchangeInterface.sol';
 import './Exchange.sol';
 import './Vault.sol';
 import './Proxy.sol';
@@ -211,7 +211,7 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
         // If the maker fee token address is a special reserved constant then
         // Use the official 0x exchange contract. Otherwise use dydx's general exchange contract
         if (orderAddresses[5] == ZERO_EX_FEE_TOKEN_CONSTANT) {
-            return ZeroExExchange(ZERO_EX_EXCHANGE).fillOrder(
+            return ZeroExExchangeInterface(ZERO_EX_EXCHANGE).fillOrder(
                 [
                     orderAddresses[0],
                     orderAddresses[1],
