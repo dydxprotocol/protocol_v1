@@ -36,10 +36,7 @@ contract('ShortSell', function(accounts) {
         0
       );
 
-      console.log('0')
-      console.log(shortId)
-      const contains = true//await shortSell.containsShort.call(shortId);
-      console.log('1')
+      const contains = await shortSell.containsShort.call(shortId);
       expect(contains).to.equal(true);
       const [
         underlyingTokenAddress,
@@ -53,7 +50,6 @@ contract('ShortSell', function(accounts) {
         lender,
         seller,
       ] = await shortSell.getShort.call(shortId);
-      console.log('2')
 
       expect(underlyingTokenAddress).to.equal(shortTx.underlyingToken);
       expect(baseTokenAddress).to.equal(shortTx.baseToken);
@@ -76,9 +72,6 @@ contract('ShortSell', function(accounts) {
         shortTx.buyOrder.takerTokenAmount,
         shortTx.buyOrder.takerFee
       );
-
-      console.log('3')
-
 
       expect(
         balance.equals(

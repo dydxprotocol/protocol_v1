@@ -310,7 +310,6 @@ async function createSigned0xBuyOrder(accounts) {
     takerFeeTokenAddress: FeeToken.address,
   };
 
-  const orderHash = getOrderHash(order);
   const signature = await signOrder(order);
 
   order.ecSignature = signature;
@@ -432,5 +431,6 @@ module.exports = {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  getPartialAmount
+  getPartialAmount,
+  signLoanOffering
 };
