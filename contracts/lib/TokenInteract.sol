@@ -1,6 +1,6 @@
 pragma solidity 0.4.18;
 
-import '../interfaces/ERC20.sol';
+import 'zeppelin-solidity/contracts/token/ERC20.sol';
 
 contract TokenInteract {
     // Changes to state require at least 5000 gas

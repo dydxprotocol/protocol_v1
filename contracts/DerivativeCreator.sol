@@ -1,6 +1,6 @@
 pragma solidity 0.4.18;
 
-import './lib/Ownable.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './CoveredOption.sol';
 import './Proxy.sol';
 

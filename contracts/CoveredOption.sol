@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
 import './Exchange.sol';
-import './interfaces/ERC20.sol';
+import 'zeppelin-solidity/contracts/token/ERC20.sol';
 import './Proxy.sol';
 import './lib/SafeMath.sol';
 
@@ -22,7 +22,7 @@ import './lib/SafeMath.sol';
  * Each option adheres to the ERC20 token standard to allow transfer and trading
  * of options after issuance
  */
-contract CoveredOption is SafeMath{
+contract CoveredOption is SafeMath {
     // ----------------------------
     // ---- Constant Variables ----
     // ----------------------------
@@ -240,19 +240,19 @@ contract CoveredOption is SafeMath{
         require(optionsIssued > 0);
 
         // Increment balances
-        balances[msg.sender] = safeAdd(balances[msg.sender], optionsIssued);
-        writers[writer] = safeAdd(writers[writer], optionsIssued);
+        balances[msg.sender] = add(balances[msg.sender], optionsIssued);
+        writers[writer] = add(writers[writer], optionsIssued);
 
         // Send back any excess baseToken premium taken from sender
         // TODO make sure state of token has updated from first call
         if (premium < maximumPremium) {
             ERC20(baseToken).transfer(
                 msg.sender,
-                safeSub(maximumPremium, premium)
+                sub(maximumPremium, premium)
             );
 
             // Send back extra taker fee
-            uint extraTakerTokenAmount = safeSub(
+            uint extraTakerTokenAmount = sub(
                 takerFee,
                 getPartialAmount(
                     premium,
@@ -267,8 +267,8 @@ contract CoveredOption is SafeMath{
         }
 
         // Increment totals
-        totalOptions = safeAdd(totalOptions, optionsIssued);
-        totalWritten = safeAdd(totalWritten, optionsIssued);
+        totalOptions = add(totalOptions, optionsIssued);
+        totalWritten = add(totalWritten, optionsIssued);
 
         Buy(writer, msg.sender, optionsIssued, premium, block.timestamp);
 
@@ -317,7 +317,7 @@ contract CoveredOption is SafeMath{
         // TODO make sure no reentrancy attack here
 
         // Deduct balance
-        balances[msg.sender] = safeSub(balance, amount);
+        balances[msg.sender] = sub(balance, amount);
 
         // Transfer total base token price from sender
         Proxy(proxy).transfer(baseToken, msg.sender, totalBaseTokenPrice);
@@ -327,9 +327,9 @@ contract CoveredOption is SafeMath{
 
         // Update totals
         // TODO is it ok to set these at the end?
-        totalExercised = safeAdd(totalExercised, amount);
-        totalOptions = safeSub(totalOptions, amount);
-        totalBaseToken = safeAdd(totalBaseToken, totalBaseTokenPrice);
+        totalExercised = add(totalExercised, amount);
+        totalOptions = sub(totalOptions, amount);
+        totalBaseToken = add(totalBaseToken, totalBaseTokenPrice);
 
         Exercise(msg.sender, amount, block.timestamp);
 
@@ -392,7 +392,7 @@ contract CoveredOption is SafeMath{
         }
 
         // Update totals
-        totalWithdrawn = safeAdd(totalWithdrawn, balance);
+        totalWithdrawn = add(totalWithdrawn, balance);
 
         Withdrawal(writer, balance, underlyingTokenAmount, baseTokenAmount);
 
@@ -425,15 +425,15 @@ contract CoveredOption is SafeMath{
         require(balance >= amount);
 
         // Deduct from writer balance and balances
-        writers[msg.sender] = safeSub(written, amount);
-        balances[msg.sender] = safeSub(balance, amount);
+        writers[msg.sender] = sub(written, amount);
+        balances[msg.sender] = sub(balance, amount);
 
         // Transfer underlyingToken to sender
         require(ERC20(underlyingToken).transfer(msg.sender, amount));
 
         // Update totals
-        totalOptions = safeSub(totalOptions, amount);
-        totalWritten = safeSub(totalWritten, amount);
+        totalOptions = sub(totalOptions, amount);
+        totalWritten = sub(totalWritten, amount);
 
         Recovery(msg.sender, amount, block.timestamp);
     }
@@ -451,8 +451,8 @@ contract CoveredOption is SafeMath{
         bool ok
     ) {
         if (balances[msg.sender] >= value) {
-            balances[msg.sender] = safeSub(balances[msg.sender], value);
-            balances[to] = safeAdd(balances[to], value);
+            balances[msg.sender] = sub(balances[msg.sender], value);
+            balances[to] = add(balances[to], value);
             Transfer(msg.sender, to, value);
             return true;
         } else {
@@ -468,9 +468,9 @@ contract CoveredOption is SafeMath{
         bool ok
     ) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
-            balances[to] = safeAdd(balances[to], value);
-            balances[from] = safeSub(balances[from], value);
-            allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], value);
+            balances[to] = add(balances[to], value);
+            balances[from] = sub(balances[from], value);
+            allowed[from][msg.sender] = sub(allowed[from][msg.sender], value);
             Transfer(from, to, value);
             return true;
         } else {
@@ -528,10 +528,10 @@ contract CoveredOption is SafeMath{
 
     // Decimals for the option will always match decimals for the underlying token
     // since options are issued on a 1:1 basis with underlyingToken
-    function decimals() view public returns (
+    function decimals() pure public returns (
         uint8 _decimals
     ) {
-        return ERC20(underlyingToken).decimals();
+        return 18; // TODO ERC20(underlyingToken).decimals();
     }
 
     event Transfer(address indexed from, address indexed to, uint value);

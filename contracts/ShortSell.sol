@@ -1,6 +1,8 @@
 pragma solidity 0.4.18;
 
-import './lib/Ownable.sol';
+import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
+import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './lib/SafeMath.sol';
 import './Vault.sol';
 import './Proxy.sol';
@@ -13,7 +15,7 @@ import './ShortSellRepo.sol';
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
-contract ShortSell is Ownable, SafeMath, DelayedUpdate {
+contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard {
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -308,7 +310,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) external returns(bytes32 _shortId) {
+    ) external nonReentrant returns(bytes32 _shortId) {
         ShortTx memory transaction = parseShortTx(
             addresses,
             values256,
@@ -328,12 +330,12 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         // STATE UPDATES
 
         // Update global amounts for the loan and lender
-        loanFills[transaction.loanOffering.loanHash] = safeAdd(
+        loanFills[transaction.loanOffering.loanHash] = add(
             loanFills[transaction.loanOffering.loanHash],
             transaction.shortAmount
         );
         loanNumbers[transaction.loanOffering.lender] =
-            safeAdd(loanNumbers[transaction.loanOffering.lender], 1);
+            add(loanNumbers[transaction.loanOffering.lender], 1);
 
         // Check no casting errors
         require(
@@ -410,7 +412,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
-    ) external returns (
+    ) external nonReentrant returns (
         uint _baseTokenReceived,
         uint _interestFeeAmount
     ) {
@@ -472,11 +474,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
      */
     function callInLoan(
         bytes32 shortId
-    ) external {
+    ) external nonReentrant {
         require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
-        require(block.timestamp >= safeAdd(short.startTimestamp, short.lockoutTime));
+        require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
 
         require(
             uint(uint32(block.timestamp)) == block.timestamp
@@ -497,7 +499,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
      */
     function cancelLoanCall(
         bytes32 shortId
-    ) external {
+    ) external nonReentrant {
         require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
@@ -519,7 +521,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
      */
     function forceRecoverLoan(
         bytes32 shortId
-    ) external returns (uint _baseTokenAmount) {
+    ) external nonReentrant returns (uint _baseTokenAmount) {
         // TODO decide best method to do this. Seller suplies order or auto market maker
         // for now simple implementation of giving lender all funds
 
@@ -527,7 +529,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
         require(short.callTimestamp != 0);
-        require(safeAdd(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
+        require(add(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
 
         uint baseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
         Vault(VAULT).send(
@@ -561,7 +563,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     function deposit(
         bytes32 shortId,
         uint depositAmount
-    ) external {
+    ) external nonReentrant {
         require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
@@ -614,7 +616,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         uint[9] values256,
         uint32[2] values32,
         uint cancelAmount
-    ) external returns (
+    ) external nonReentrant returns (
         uint _cancelledAmount
     ) {
         LoanOffering memory loanOffering = parseLoanOffering(
@@ -626,7 +628,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         require(loanOffering.lender == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
-        uint remainingAmount = safeSub(
+        uint remainingAmount = sub(
             loanOffering.rates.maxAmount,
             getUnavailableLoanOfferingAmount(loanOffering.loanHash)
         );
@@ -634,7 +636,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
         require(amountToCancel > 0);
 
-        loanCancels[loanOffering.loanHash] = safeAdd(
+        loanCancels[loanOffering.loanHash] = add(
             loanCancels[loanOffering.loanHash],
             amountToCancel
         );
@@ -707,7 +709,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     ) view public returns (
         uint _unavailableAmount
     ) {
-        return safeAdd(loanFills[loanHash], loanCancels[loanHash]);
+        return add(loanFills[loanHash], loanCancels[loanHash]);
     }
 
     // --------------------------------
@@ -757,7 +759,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
 
         // Validate the short amount is <= than max and >= min
         require(
-            safeAdd(
+            add(
                 transaction.shortAmount,
                 getUnavailableLoanOfferingAmount(transaction.loanOffering.loanHash)
             ) <= transaction.loanOffering.rates.maxAmount
@@ -787,10 +789,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
          */
 
         require(
-            safeMul(
+            mul(
                 transaction.loanOffering.rates.minimumSellAmount,
                 transaction.buyOrder.underlyingTokenAmount
-            ) <= safeMul(
+            ) <= mul(
                 transaction.loanOffering.rates.maxAmount,
                 transaction.buyOrder.baseTokenAmount
             )
@@ -836,7 +838,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
             vault.balances(
                 shortId,
                 transaction.baseToken
-            ) == safeAdd(baseTokenReceived, transaction.depositAmount)
+            ) == add(baseTokenReceived, transaction.depositAmount)
         );
 
         // Should hold 0 underlying token
@@ -935,7 +937,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
                 shortId,
                 transaction.baseToken,
                 msg.sender,
-                safeAdd(transaction.depositAmount, buyOrderTakerFee)
+                add(transaction.depositAmount, buyOrderTakerFee)
             );
         } else {
             // Otherwise transfer the deposit and buy order taker fee separately
@@ -1013,7 +1015,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
     ) internal view returns (
         uint _interestFee
     ) {
-        uint timeElapsed = safeSub(block.timestamp, startTimestamp);
+        uint timeElapsed = sub(block.timestamp, startTimestamp);
         return getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
@@ -1085,7 +1087,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate {
         );
 
         require(
-            safeAdd(baseTokenPrice, interestFee) <= Vault(VAULT).balances(shortId, short.baseToken)
+            add(baseTokenPrice, interestFee) <= Vault(VAULT).balances(shortId, short.baseToken)
         );
 
         return baseTokenPrice;

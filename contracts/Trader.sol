@@ -1,5 +1,7 @@
 pragma solidity 0.4.18;
 
+import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
+import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './lib/TokenInteract.sol';
@@ -15,7 +17,13 @@ import './Proxy.sol';
  *
  * This contract is used to abstract the exchange of token assets from Vault
  */
-contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
+contract Trader is
+    AccessControlled,
+    SafeMath,
+    TokenInteract,
+    DelayedUpdate,
+    HasNoEther,
+    HasNoContracts {
     struct Order {
         address maker;
         address taker;
@@ -277,7 +285,7 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
                 order.takerFee
             );
 
-            uint totalAmount = safeAdd(requestedFillAmount, feeAmount);
+            uint totalAmount = add(requestedFillAmount, feeAmount);
 
             Vault(VAULT).send(
                 id,
@@ -347,8 +355,8 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
             order.takerFee
         );
 
-        uint extraTakerTokenAmount = safeSub(requestedFillAmount, filledTakerTokenAmount);
-        uint extraTakerFeeTokenAmount = safeSub(requestedTakerFee, paidTakerFee);
+        uint extraTakerTokenAmount = sub(requestedFillAmount, filledTakerTokenAmount);
+        uint extraTakerFeeTokenAmount = sub(requestedTakerFee, paidTakerFee);
 
         transferBackTokens(
             id,
@@ -390,7 +398,7 @@ contract Trader is AccessControlled, SafeMath, TokenInteract, DelayedUpdate {
                 );
             } else if (order.takerToken == order.takerFeeToken) {
                 // If the fee token is the same as the taker token, transfer extras back together
-                uint totalAmount = safeAdd(extraTakerTokenAmount, extraTakerFeeTokenAmount);
+                uint totalAmount = add(extraTakerTokenAmount, extraTakerFeeTokenAmount);
 
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
                 Vault(VAULT).transfer(

@@ -58,7 +58,6 @@ async function createSigned0xSellOrder(accounts) {
     makerFeeTokenAddress: FeeToken.address
   };
 
-  const orderHash = getOrderHash(order);
   const signature = await signOrder(order);
 
   order.ecSignature = signature;

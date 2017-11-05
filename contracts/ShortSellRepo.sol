@@ -1,8 +1,9 @@
 pragma solidity 0.4.18;
 
+import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './lib/AccessControlled.sol';
 
-contract ShortSellRepo is AccessControlled {
+contract ShortSellRepo is AccessControlled, NoOwner {
     uint public constant ACCESS_DELAY = 1 days;
     uint public constant GRACE_PERIOD = 8 hours;
 
