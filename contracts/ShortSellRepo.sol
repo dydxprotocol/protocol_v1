@@ -4,8 +4,9 @@ import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './lib/AccessControlled.sol';
 
 contract ShortSellRepo is AccessControlled, NoOwner {
-    uint public constant ACCESS_DELAY = 1 days;
-    uint public constant GRACE_PERIOD = 8 hours;
+    // ---------------------------
+    // ----- State Variables -----
+    // ---------------------------
 
     struct Short {
         uint shortAmount;
@@ -20,48 +21,21 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         uint32 lockoutTime;
     }
 
+    mapping(bytes32 => mapping(address => bool)) public authorizedToCallLoan;
     mapping(bytes32 => Short) public shorts;
 
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
+
     function ShortSellRepo(
-    ) AccessControlled(ACCESS_DELAY, GRACE_PERIOD) public {}
+        uint _accessDelay,
+        uint _gracePeriod
+    ) AccessControlled(_accessDelay, _gracePeriod) public {}
 
-    function getShort(
-        bytes32 id
-    ) view public returns (
-        address underlyingToken,
-        address baseToken,
-        uint shortAmount,
-        uint interestRate,
-        uint32 callTimeLimit,
-        uint32 lockoutTime,
-        uint32 startTimestamp,
-        uint32 callTimestamp,
-        address lender,
-        address seller
-    ) {
-        Short storage short = shorts[id];
-
-        return (
-            short.underlyingToken,
-            short.baseToken,
-            short.shortAmount,
-            short.interestRate,
-            short.callTimeLimit,
-            short.lockoutTime,
-            short.startTimestamp,
-            short.callTimestamp,
-            short.lender,
-            short.seller
-        );
-    }
-
-    function containsShort(
-        bytes32 id
-    ) view public returns (
-        bool exists
-    ) {
-        return shorts[id].startTimestamp != 0;
-    }
+    // -----------------------------------------
+    // ---- Public State Changing Functions ----
+    // -----------------------------------------
 
     function addShort(
         bytes32 id,
@@ -103,5 +77,78 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         bytes32 id
     ) requiresAuthorization public {
         delete shorts[id];
+    }
+
+    function addAuthorizedLoanCallAddress(
+        bytes32 loanHash,
+        address authorizedAddress
+    ) requiresAuthorization public {
+        require(!isAuthorizedToCallLoan(
+            loanHash,
+            authorizedAddress
+        ));
+        authorizedToCallLoan[loanHash][authorizedAddress] = true;
+    }
+
+    function removeAuthorizedLoanCallAddress(
+        bytes32 loanHash,
+        address authorizedAddress
+    ) requiresAuthorization public {
+        require(isAuthorizedToCallLoan(
+            loanHash,
+            authorizedAddress
+        ));
+        authorizedToCallLoan[loanHash][authorizedAddress] = false;
+    }
+
+    // -------------------------------------
+    // ----- Public Constant Functions -----
+    // -------------------------------------
+
+    function getShort(
+        bytes32 id
+    ) view public returns (
+        address underlyingToken,
+        address baseToken,
+        uint shortAmount,
+        uint interestRate,
+        uint32 callTimeLimit,
+        uint32 lockoutTime,
+        uint32 startTimestamp,
+        uint32 callTimestamp,
+        address lender,
+        address seller
+    ) {
+        Short storage short = shorts[id];
+
+        return (
+            short.underlyingToken,
+            short.baseToken,
+            short.shortAmount,
+            short.interestRate,
+            short.callTimeLimit,
+            short.lockoutTime,
+            short.startTimestamp,
+            short.callTimestamp,
+            short.lender,
+            short.seller
+        );
+    }
+
+    function containsShort(
+        bytes32 id
+    ) view public returns (
+        bool exists
+    ) {
+        return shorts[id].startTimestamp != 0;
+    }
+
+    function isAuthorizedToCallLoan(
+        bytes32 loanHash,
+        address who
+    ) view public returns (
+        bool isAuthorized
+    ) {
+        return authorizedToCallLoan[loanHash][who];
     }
 }

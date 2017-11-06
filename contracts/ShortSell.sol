@@ -106,7 +106,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     mapping(bytes32 => uint) public loanFills;
     mapping(bytes32 => uint) public loanCancels;
-    mapping(address => uint) public loanNumbers;
+    mapping(bytes32 => uint) public loanNumbers;
 
     // ------------------------
     // -------- Events --------
@@ -301,7 +301,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      *  [1] = loan call time limit (in seconds)
      *
      * @param  sigV       ECDSA v parameters for [0] loan and [1] buy order
-     * @param  sigRS      CDSA r and s parameters for [0] loan and [1] buy order
+     * @param  sigRS      CDSA r and s parameters for [0] loan and [2] buy order
      * @return _shortId   unique identifier for the short sell
      */
     function short(
@@ -319,7 +319,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             sigRS
         );
 
-        bytes32 shortId = getNextShortId(transaction.loanOffering.lender);
+        bytes32 shortId = getNextShortId(transaction.loanOffering.loanHash);
 
         // Validate
         validateShort(
@@ -334,8 +334,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             loanFills[transaction.loanOffering.loanHash],
             transaction.shortAmount
         );
-        loanNumbers[transaction.loanOffering.lender] =
-            add(loanNumbers[transaction.loanOffering.lender], 1);
+        loanNumbers[transaction.loanOffering.loanHash] =
+            add(loanNumbers[transaction.loanOffering.loanHash], 1);
 
         // Check no casting errors
         require(
@@ -475,9 +475,44 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function callInLoan(
         bytes32 shortId
     ) external nonReentrant {
-        require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
+        require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
+
+        require(
+            uint(uint32(block.timestamp)) == block.timestamp
+        );
+
+        ShortSellRepo(REPO).setShortCallStart(shortId, uint32(block.timestamp));
+
+        LoanCalled(
+            shortId,
+            block.timestamp
+        );
+    }
+
+    /**
+     * Call in a short sell loan.
+     * Only callable by an address that has been authorized by the lender to
+     * perform loan calls. Same behavior as callInLoan above.
+     *
+     * @param  loanHash     Hash of the loan offering used for the short
+     * @param  loanNumber   Loan number on the loan offering used for the short
+     *                      (knowable from the ShortInitiated event)
+     */
+    function callInLoan(
+        bytes32 loanHash,
+        uint loanNumber
+    ) external nonReentrant {
+        bytes32 shortId = keccak256(
+            loanHash,
+            loanNumber
+        );
+        Short memory short = getShortObject(shortId);
+        require(isAuthorizedToCallLoan(
+            loanHash,
+            msg.sender
+        ));
         require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
 
         require(
@@ -522,9 +557,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function forceRecoverLoan(
         bytes32 shortId
     ) external nonReentrant returns (uint _baseTokenAmount) {
-        // TODO decide best method to do this. Seller suplies order or auto market maker
-        // for now simple implementation of giving lender all funds
-
         require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
@@ -646,6 +678,122 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         return amountToCancel;
     }
 
+    /**
+     * Authorize an address to perform margin calls for a loan offering.
+     * Only callable by the offering's lender or previously authorized addresses
+     *
+     * @param  addresses        Array of addresses:
+     *
+     *  [0] = underlying token
+     *  [1] = base token
+     *  [2] = lender
+     *  [3] = loan taker
+     *  [4] = loan fee recipient
+     *  [5] = loan lender fee token
+     *  [6] = loan taker fee token
+     *
+     * @param  values256        Values corresponding to:
+     *
+     *  [0]  = loan minimum deposit
+     *  [1]  = loan maximum amount
+     *  [2]  = loan minimum amount
+     *  [3]  = loan minimum sell amount
+     *  [4]  = loan interest rate
+     *  [5]  = loan lender fee
+     *  [6]  = loan taker fee
+     *  [7]  = loan expiration timestamp (in seconds)
+     *  [8]  = loan salt
+     *  [9]  = buy order base token amount
+     *
+     * @param  values32         Values corresponding to:
+     *
+     *  [0] = loan lockout time (in seconds)
+     *  [1] = loan call time limit (in seconds)
+     *
+     * @param  who              Address to authorize
+     */
+    function authorizeToCallLoan(
+        address[7] addresses,
+        uint[9] values256,
+        uint32[2] values32,
+        address who
+    ) external nonReentrant {
+        LoanOffering memory loanOffering = parseLoanOffering(
+            addresses,
+            values256,
+            values32
+        );
+
+        // Allow previously authorized addresses to add other addresses as well as lender
+        require(
+            isAuthorizedToCallLoan(loanOffering, msg.sender)
+        );
+        require(loanOffering.expirationTimestamp > block.timestamp);
+
+        ShortSellRepo(REPO).addAuthorizedLoanCallAddress(
+            loanOffering.loanHash,
+            who
+        );
+    }
+
+    /**
+     * Deauthorize an address to perform margin calls for a loan offering.
+     * Only callable by the offering's lender or previously authorized addresses
+     *
+     * @param  addresses        Array of addresses:
+     *
+     *  [0] = underlying token
+     *  [1] = base token
+     *  [2] = lender
+     *  [3] = loan taker
+     *  [4] = loan fee recipient
+     *  [5] = loan lender fee token
+     *  [6] = loan taker fee token
+     *
+     * @param  values256        Values corresponding to:
+     *
+     *  [0]  = loan minimum deposit
+     *  [1]  = loan maximum amount
+     *  [2]  = loan minimum amount
+     *  [3]  = loan minimum sell amount
+     *  [4]  = loan interest rate
+     *  [5]  = loan lender fee
+     *  [6]  = loan taker fee
+     *  [7]  = loan expiration timestamp (in seconds)
+     *  [8]  = loan salt
+     *  [9]  = buy order base token amount
+     *
+     * @param  values32         Values corresponding to:
+     *
+     *  [0] = loan lockout time (in seconds)
+     *  [1] = loan call time limit (in seconds)
+     *
+     * @param  who              Address to authorize
+     */
+    function deauthorizeToCallLoan(
+        address[7] addresses,
+        uint[9] values256,
+        uint32[2] values32,
+        address who
+    ) external nonReentrant {
+        LoanOffering memory loanOffering = parseLoanOffering(
+            addresses,
+            values256,
+            values32
+        );
+
+        // Allow previously authorized addresses to add other addresses
+        require(
+            isAuthorizedToCallLoan(loanOffering, msg.sender)
+        );
+        require(loanOffering.expirationTimestamp > block.timestamp);
+
+        ShortSellRepo(REPO).removeAuthorizedLoanCallAddress(
+            loanOffering.loanHash,
+            who
+        );
+    }
+
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
@@ -712,18 +860,30 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         return add(loanFills[loanHash], loanCancels[loanHash]);
     }
 
+    function isAuthorizedToCallLoan(
+        bytes32 loanHash,
+        address who
+    ) view public returns (
+        bool _isAuthorized
+    ) {
+        return ShortSellRepo(REPO).isAuthorizedToCallLoan(
+            loanHash,
+            who
+        );
+    }
+
     // --------------------------------
     // ------ Internal Functions ------
     // --------------------------------
 
     function getNextShortId(
-        address lender
+        bytes32 loanHash
     ) internal view returns (
         bytes32 _shortId
     ) {
         return keccak256(
-            lender,
-            loanNumbers[lender]
+            loanHash,
+            loanNumbers[loanHash]
         );
     }
 
@@ -796,6 +956,18 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
                 transaction.loanOffering.rates.maxAmount,
                 transaction.buyOrder.baseTokenAmount
             )
+        );
+    }
+
+    function isAuthorizedToCallLoan(
+        LoanOffering loanOffering,
+        address who
+    ) internal view returns (
+        bool _isAuthorized
+    ) {
+        return (
+            loanOffering.lender == who
+            || ShortSellRepo(REPO).isAuthorizedToCallLoan(loanOffering.loanHash, who)
         );
     }
 
@@ -1380,6 +1552,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             lender,
             seller
         ) =  ShortSellRepo(REPO).getShort(shortId);
+
+        // This checks that the short exists
+        require(startTimestamp != 0);
 
         return Short({
             underlyingToken: underlyingToken,

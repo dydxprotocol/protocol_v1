@@ -65,7 +65,11 @@ module.exports = (deployer, network, addresses) => {
       ONE_DAY,
       ONE_DAY
     ))
-    .then(() => deployer.deploy(ShortSellRepo))
+    .then(() => deployer.deploy(
+      ShortSellRepo,
+      ONE_DAY,
+      ONE_HOUR,
+    ))
     .then(() => deployer.deploy(
       ShortSell,
       Vault.address,
