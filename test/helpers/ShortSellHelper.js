@@ -249,6 +249,43 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
   );
 }
 
+function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
+  const addresses = [
+    UnderlyingToken.address,
+    BaseToken.address,
+    loanOffering.lender,
+    loanOffering.taker,
+    loanOffering.feeRecipient,
+    FeeToken.address,
+    FeeToken.address
+  ];
+
+  const values256 = [
+    loanOffering.rates.minimumDeposit,
+    loanOffering.rates.maxAmount,
+    loanOffering.rates.minAmount,
+    loanOffering.rates.minimumSellAmount,
+    loanOffering.rates.interestRate,
+    loanOffering.rates.lenderFee,
+    loanOffering.rates.takerFee,
+    loanOffering.expirationTimestamp,
+    loanOffering.salt,
+  ];
+
+  const values32 = [
+    loanOffering.lockoutTime,
+    loanOffering.callTimeLimit,
+  ];
+
+  return shortSell.cancelLoanOffering(
+    addresses,
+    values256,
+    values32,
+    cancelAmount,
+    { from: loanOffering.lender }
+  );
+}
+
 async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
   const [underlyingToken, feeToken] = await Promise.all([
     UnderlyingToken.deployed(),
@@ -432,5 +469,6 @@ module.exports = {
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
   getPartialAmount,
-  signLoanOffering
+  signLoanOffering,
+  callCancelLoanOffer
 };

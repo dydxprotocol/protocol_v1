@@ -67,11 +67,6 @@ contract('ShortSell', function(accounts) {
         shortTx.buyOrder.takerTokenAmount,
         shortTx.shortAmount
       );
-      const buyTakerFee = getPartialAmount(
-        shortTx.shortAmount,
-        shortTx.buyOrder.takerTokenAmount,
-        shortTx.buyOrder.takerFee
-      );
 
       expect(
         balance.equals(
@@ -98,9 +93,7 @@ contract('ShortSell', function(accounts) {
         lenderFeeToken,
         makerFeeToken,
         vaultFeeToken,
-        sellerFeeToken,
-        buyOrderFeeRecipientFeeToken,
-        loanFeeRecipientFeeToken,
+        sellerFeeToken
       ] = await Promise.all([
         underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
         underlyingToken.balanceOf.call(shortTx.buyOrder.maker),

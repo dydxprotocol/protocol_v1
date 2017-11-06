@@ -3,6 +3,7 @@ pragma solidity 0.4.18;
 import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
 import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
 import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
+import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
 import './lib/AccessControlled.sol';
 import './lib/SafeMath.sol';
 import './lib/TokenInteract.sol';
@@ -23,7 +24,8 @@ contract Vault is
     TokenInteract,
     HasNoEther,
     HasNoContracts,
-    Pausable {
+    Pausable,
+    ReentrancyGuard {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -74,7 +76,7 @@ contract Vault is
         address token,
         address from,
         uint amount
-    ) public requiresAuthorization whenNotPaused {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
@@ -91,7 +93,7 @@ contract Vault is
         address token,
         address to,
         uint amount
-    ) public requiresAuthorization whenNotPaused {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         require(balances[id][token] >= amount);
 
         // First decrement balances
@@ -109,7 +111,7 @@ contract Vault is
         bytes32 shortId,
         address baseToken,
         address underlyingToken
-    ) public requiresAuthorization whenNotPaused {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         // TODO delete the fee tokens?
 
         require(balances[shortId][baseToken] == 0);

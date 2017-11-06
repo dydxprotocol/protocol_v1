@@ -53,11 +53,6 @@ contract('ShortSell', function(accounts) {
         shortTx.buyOrder.takerTokenAmount,
         shortTx.shortAmount
       );
-      const buyTakerFee = getPartialAmount(
-        shortTx.shortAmount,
-        shortTx.buyOrder.takerTokenAmount,
-        shortTx.buyOrder.takerFee
-      );
       const interestFee = getPartialAmount(
         shortTx.loanOffering.rates.interestRate,
         ONE_DAY_IN_SECONDS,
