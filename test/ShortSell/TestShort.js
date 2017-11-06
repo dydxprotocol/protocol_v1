@@ -32,7 +32,7 @@ contract('ShortSell', function(accounts) {
       console.log('\tShortSell.short gas used: ' + tx.receipt.gasUsed);
 
       const shortId = web3Instance.utils.soliditySha3(
-        shortTx.loanOffering.lender,
+        shortTx.loanOffering.loanHash,
         0
       );
 

@@ -177,6 +177,16 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint timestamp
     );
 
+    /**
+     * A loan offering was canceled before it was used. Any amount less than the
+     * total for the loan offering can be canceled.
+     */
+    event LoanOfferingCanceled(
+        bytes32 indexed loanHash,
+        address indexed lender,
+        uint cancelAmount
+    );
+
     // -------------------------
     // ------ Constructor ------
     // -------------------------
@@ -416,8 +426,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint _baseTokenReceived,
         uint _interestFeeAmount
     ) {
-        require(ShortSellRepo(REPO).containsShort(shortId));
-
         Short memory short = getShortObject(shortId);
 
         require(short.seller == msg.sender);
@@ -535,9 +543,41 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function cancelLoanCall(
         bytes32 shortId
     ) external nonReentrant {
-        require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
+        require(short.callTimestamp != 0);
+
+        ShortSellRepo(REPO).setShortCallStart(shortId, 0);
+
+        LoanCallCanceled(
+            shortId,
+            block.timestamp
+        );
+    }
+
+    /**
+     * Cancel a loan call.
+     * Only callable by an address that has been authorized by the lender to
+     * perform loan calls. Same behavior as cancelLoanCall above.
+     *
+     * @param  loanHash     Hash of the loan offering used for the short
+     * @param  loanNumber   Loan number on the loan offering used for the short
+     *                      (knowable from the ShortInitiated event)
+     */
+    function cancelLoanCall(
+        bytes32 loanHash,
+        uint loanNumber
+    ) external nonReentrant {
+        bytes32 shortId = keccak256(
+            loanHash,
+            loanNumber
+        );
+        Short memory short = getShortObject(shortId);
+        require(isAuthorizedToCallLoan(
+            loanHash,
+            msg.sender
+        ));
+        require(short.callTimestamp != 0);
 
         ShortSellRepo(REPO).setShortCallStart(shortId, 0);
 
@@ -557,7 +597,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function forceRecoverLoan(
         bytes32 shortId
     ) external nonReentrant returns (uint _baseTokenAmount) {
-        require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
         require(short.callTimestamp != 0);
@@ -596,7 +635,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         bytes32 shortId,
         uint depositAmount
     ) external nonReentrant {
-        require(ShortSellRepo(REPO).containsShort(shortId));
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
 
@@ -673,7 +711,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             amountToCancel
         );
 
-        // TODO Add event
+        LoanOfferingCanceled(
+            loanOffering.loanHash,
+            loanOffering.lender,
+            amountToCancel
+        );
 
         return amountToCancel;
     }

@@ -202,7 +202,7 @@ async function doShort(accounts) {
     ShortSell.deployed()
   ]);
   const shortId = web3Instance.utils.soliditySha3(
-    shortTx.loanOffering.lender,
+    shortTx.loanOffering.loanHash,
     0
   );
 
@@ -404,6 +404,8 @@ async function signLoanOffering(loanOffering) {
     FeeToken.address,
     valuesHash
   );
+
+  loanOffering.loanHash = hash;
 
   const signature = await promisify(web3Instance.eth.sign)(
     hash, loanOffering.lender
