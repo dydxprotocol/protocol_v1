@@ -148,6 +148,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      */
     event LoanCalled(
         bytes32 indexed id,
+        address indexed lender,
+        address indexed shortSeller,
+        address caller,
         uint timestamp
     );
 
@@ -156,6 +159,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      */
     event LoanCallCanceled(
         bytes32 indexed id,
+        address indexed lender,
+        address indexed shortSeller,
+        address caller,
         uint timestamp
     );
 
@@ -495,6 +501,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         LoanCalled(
             shortId,
+            short.lender,
+            short.seller,
+            msg.sender,
             block.timestamp
         );
     }
@@ -531,6 +540,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         LoanCalled(
             shortId,
+            short.lender,
+            short.seller,
+            msg.sender,
             block.timestamp
         );
     }
@@ -551,6 +563,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         LoanCallCanceled(
             shortId,
+            short.lender,
+            short.seller,
+            msg.sender,
             block.timestamp
         );
     }
@@ -583,6 +598,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         LoanCallCanceled(
             shortId,
+            short.lender,
+            short.seller,
+            msg.sender,
             block.timestamp
         );
     }
