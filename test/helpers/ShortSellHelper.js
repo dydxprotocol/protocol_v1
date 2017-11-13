@@ -58,7 +58,6 @@ async function createSigned0xSellOrder(accounts) {
     makerFeeTokenAddress: FeeToken.address
   };
 
-  const orderHash = getOrderHash(order);
   const signature = await signOrder(order);
 
   order.ecSignature = signature;
@@ -203,7 +202,7 @@ async function doShort(accounts) {
     ShortSell.deployed()
   ]);
   const shortId = web3Instance.utils.soliditySha3(
-    shortTx.loanOffering.lender,
+    shortTx.loanOffering.loanHash,
     0
   );
 
@@ -246,7 +245,45 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
     values,
     sellOrder.ecSignature.v,
     sellOrder.ecSignature.r,
-    sellOrder.ecSignature.s
+    sellOrder.ecSignature.s,
+    { from: shortTx.seller }
+  );
+}
+
+function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
+  const addresses = [
+    UnderlyingToken.address,
+    BaseToken.address,
+    loanOffering.lender,
+    loanOffering.taker,
+    loanOffering.feeRecipient,
+    FeeToken.address,
+    FeeToken.address
+  ];
+
+  const values256 = [
+    loanOffering.rates.minimumDeposit,
+    loanOffering.rates.maxAmount,
+    loanOffering.rates.minAmount,
+    loanOffering.rates.minimumSellAmount,
+    loanOffering.rates.interestRate,
+    loanOffering.rates.lenderFee,
+    loanOffering.rates.takerFee,
+    loanOffering.expirationTimestamp,
+    loanOffering.salt,
+  ];
+
+  const values32 = [
+    loanOffering.lockoutTime,
+    loanOffering.callTimeLimit,
+  ];
+
+  return shortSell.cancelLoanOffering(
+    addresses,
+    values256,
+    values32,
+    cancelAmount,
+    { from: loanOffering.lender }
   );
 }
 
@@ -311,7 +348,6 @@ async function createSigned0xBuyOrder(accounts) {
     takerFeeTokenAddress: FeeToken.address,
   };
 
-  const orderHash = getOrderHash(order);
   const signature = await signOrder(order);
 
   order.ecSignature = signature;
@@ -370,6 +406,8 @@ async function signLoanOffering(loanOffering) {
     valuesHash
   );
 
+  loanOffering.loanHash = hash;
+
   const signature = await promisify(web3Instance.eth.sign)(
     hash, loanOffering.lender
   );
@@ -424,7 +462,6 @@ function getPartialAmount(
   return numerator.times(target).div(denominator).floor();
 }
 
-
 module.exports = {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
@@ -433,5 +470,8 @@ module.exports = {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  getPartialAmount
+  getPartialAmount,
+  signLoanOffering,
+  callCancelLoanOffer,
+  signOrder
 };

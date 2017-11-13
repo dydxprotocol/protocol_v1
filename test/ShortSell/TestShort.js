@@ -8,7 +8,6 @@ const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const Trader = artifacts.require("Trader");
 const Vault = artifacts.require("Vault");
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -33,7 +32,7 @@ contract('ShortSell', function(accounts) {
       console.log('\tShortSell.short gas used: ' + tx.receipt.gasUsed);
 
       const shortId = web3Instance.utils.soliditySha3(
-        shortTx.loanOffering.lender,
+        shortTx.loanOffering.loanHash,
         0
       );
 
@@ -68,11 +67,6 @@ contract('ShortSell', function(accounts) {
         shortTx.buyOrder.takerTokenAmount,
         shortTx.shortAmount
       );
-      const buyTakerFee = getPartialAmount(
-        shortTx.shortAmount,
-        shortTx.buyOrder.takerTokenAmount,
-        shortTx.buyOrder.takerFee
-      );
 
       expect(
         balance.equals(
@@ -99,9 +93,7 @@ contract('ShortSell', function(accounts) {
         lenderFeeToken,
         makerFeeToken,
         vaultFeeToken,
-        sellerFeeToken,
-        buyOrderFeeRecipientFeeToken,
-        loanFeeRecipientFeeToken,
+        sellerFeeToken
       ] = await Promise.all([
         underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
         underlyingToken.balanceOf.call(shortTx.buyOrder.maker),
@@ -135,42 +127,42 @@ contract('ShortSell', function(accounts) {
       ).to.be.true;
       expect(lenderFeeToken.equals(
         shortTx.loanOffering.rates.lenderFee
-        .minus(
-          getPartialAmount(
-            shortTx.shortAmount,
-            shortTx.loanOffering.rates.maxAmount,
-            shortTx.loanOffering.rates.lenderFee
+          .minus(
+            getPartialAmount(
+              shortTx.shortAmount,
+              shortTx.loanOffering.rates.maxAmount,
+              shortTx.loanOffering.rates.lenderFee
+            )
           )
-        )
       )).to.be.true;
       expect(vaultFeeToken.equals(new BigNumber(0))).to.be.true;
       expect(makerFeeToken.equals(
         shortTx.buyOrder.makerFee
-        .minus(
-          getPartialAmount(
-            shortTx.shortAmount,
-            shortTx.buyOrder.takerTokenAmount,
-            shortTx.buyOrder.makerFee
+          .minus(
+            getPartialAmount(
+              shortTx.shortAmount,
+              shortTx.buyOrder.takerTokenAmount,
+              shortTx.buyOrder.makerFee
+            )
           )
-        )
       )).to.be.true;
       expect(sellerFeeToken.equals(
         shortTx.loanOffering.rates.takerFee
-        .plus(shortTx.buyOrder.takerFee)
-        .minus(
-          getPartialAmount(
-            shortTx.shortAmount,
-            shortTx.loanOffering.rates.maxAmount,
-            shortTx.loanOffering.rates.takerFee
+          .plus(shortTx.buyOrder.takerFee)
+          .minus(
+            getPartialAmount(
+              shortTx.shortAmount,
+              shortTx.loanOffering.rates.maxAmount,
+              shortTx.loanOffering.rates.takerFee
+            )
           )
-        )
-        .minus(
-          getPartialAmount(
-            shortTx.shortAmount,
-            shortTx.buyOrder.takerTokenAmount,
-            shortTx.buyOrder.takerFee
+          .minus(
+            getPartialAmount(
+              shortTx.shortAmount,
+              shortTx.buyOrder.takerTokenAmount,
+              shortTx.buyOrder.takerFee
+            )
           )
-        )
       )).to.be.true;
     });
   });

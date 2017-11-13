@@ -1,10 +1,11 @@
 pragma solidity 0.4.18;
 
+import 'zeppelin-solidity/contracts/token/ERC20.sol';
+import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import './lib/AccessControlled.sol';
-import './interfaces/ERC20.sol';
 import './lib/SafeMath.sol';
 
-contract Proxy is AccessControlled, SafeMath {
+contract Proxy is AccessControlled, SafeMath, NoOwner {
     mapping(address => bool) public transferAuthorized;
 
     modifier requiresTransferAuthorization() {

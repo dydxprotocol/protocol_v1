@@ -58,12 +58,12 @@ contract DelayedUpdate is SafeMath {
         if (existingUpdate.exists) {
             // If the pending update is expired, add the new one replacing it
             if (
-                block.timestamp <= safeAdd(
+                block.timestamp <= add(
                     existingUpdate.startTimestamp,
-                    safeAdd(updateDelay, updateExpiration)
+                    add(updateDelay, updateExpiration)
                 )
             ) {
-                require(safeAdd(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
+                require(add(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
                 require(toAddress == existingUpdate.toAddress);
 
                 delete pendingAddressUpdates[id];
@@ -98,12 +98,12 @@ contract DelayedUpdate is SafeMath {
         if (existingUpdate.exists) {
             // If the pending update is expired, add the new one replacing it
             if (
-                block.timestamp <= safeAdd(
+                block.timestamp <= add(
                     existingUpdate.startTimestamp,
-                    safeAdd(updateDelay, updateExpiration)
+                    add(updateDelay, updateExpiration)
                 )
             ) {
-                require(safeAdd(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
+                require(add(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
                 require(toValue == existingUpdate.toValue);
 
                 delete pendingUintUpdates[id];

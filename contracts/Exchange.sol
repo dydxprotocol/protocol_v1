@@ -20,13 +20,14 @@ pragma solidity 0.4.18;
 
 */
 
+import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
+import 'zeppelin-solidity/contracts/token/ERC20.sol';
 import "./Proxy.sol";
-import "./interfaces/ERC20.sol";
 import "./lib/SafeMath.sol";
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract Exchange is SafeMath {
+contract Exchange is SafeMath, NoOwner {
 
     // Error Codes
     uint8 constant ERROR_ORDER_EXPIRED = 0;                     // Order has already expired
@@ -170,7 +171,7 @@ contract Exchange is SafeMath {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = safeSub(
+        uint remainingTakerTokenAmount = sub(
             order.takerTokenAmount,
             getUnavailableTakerTokenAmount(order.orderHash)
         );
@@ -225,7 +226,7 @@ contract Exchange is SafeMath {
 
         // Update filled amount
 
-        filled[order.orderHash] = safeAdd(filled[order.orderHash], filledTakerTokenAmount);
+        filled[order.orderHash] = add(filled[order.orderHash], filledTakerTokenAmount);
 
         // Transfer Tokens
 
@@ -313,7 +314,7 @@ contract Exchange is SafeMath {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = safeSub(
+        uint remainingTakerTokenAmount = sub(
             order.takerTokenAmount,
             getUnavailableTakerTokenAmount(order.orderHash)
         );
@@ -323,7 +324,7 @@ contract Exchange is SafeMath {
             return 0;
         }
 
-        cancelled[order.orderHash] = safeAdd(cancelled[order.orderHash], cancelledTakerTokenAmount);
+        cancelled[order.orderHash] = add(cancelled[order.orderHash], cancelledTakerTokenAmount);
 
         LogCancel(
             order.maker,
@@ -465,10 +466,10 @@ contract Exchange is SafeMath {
         filledTakerTokenAmount = 0;
         for (uint i = 0; i < orderAddresses.length; i++) {
             require(orderAddresses[i][3] == orderAddresses[0][3]); // takerToken must be the same for each order
-            filledTakerTokenAmount = safeAdd(filledTakerTokenAmount, fillOrder(
+            filledTakerTokenAmount = add(filledTakerTokenAmount, fillOrder(
                 orderAddresses[i],
                 orderValues[i],
-                safeSub(fillTakerTokenAmount, filledTakerTokenAmount),
+                sub(fillTakerTokenAmount, filledTakerTokenAmount),
                 shouldThrowOnInsufficientBalanceOrAllowance,
                 v[i],
                 r[i],
@@ -580,7 +581,7 @@ contract Exchange is SafeMath {
     ) public view returns (
         uint unavailableTakerTokenAmount
     ) {
-        return safeAdd(filled[orderHash], cancelled[orderHash]);
+        return add(filled[orderHash], cancelled[orderHash]);
     }
 
 
@@ -624,11 +625,11 @@ contract Exchange is SafeMath {
             bool isMakerTokenFeeToken = order.makerToken == order.makerFeeToken;
             bool isTakerTokenFeeToken = order.takerToken == order.takerFeeToken;
 
-            uint requiredMakerFeeToken = isMakerTokenFeeToken ? safeAdd(
+            uint requiredMakerFeeToken = isMakerTokenFeeToken ? add(
                 fillMakerTokenAmount,
                 fillMakerFee
             ) : fillMakerFee;
-            uint requiredTakerFeeToken = isTakerTokenFeeToken ? safeAdd(
+            uint requiredTakerFeeToken = isTakerTokenFeeToken ? add(
                 fillTakerTokenAmount,
                 fillTakerFee
             ) : fillTakerFee;

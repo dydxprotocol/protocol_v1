@@ -1,7 +1,10 @@
 pragma solidity 0.4.18;
 
+import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
+import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
+import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
+import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
 import './lib/AccessControlled.sol';
-import './lib/Lockable.sol';
 import './lib/SafeMath.sol';
 import './lib/TokenInteract.sol';
 import './lib/DelayedUpdate.sol';
@@ -14,7 +17,15 @@ import './Exchange.sol';
  *
  * Holds and transfers tokens in vaults denominated by id
  */
-contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInteract {
+contract Vault is
+    AccessControlled,
+    SafeMath,
+    DelayedUpdate,
+    TokenInteract,
+    HasNoEther,
+    HasNoContracts,
+    Pausable,
+    ReentrancyGuard {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -37,7 +48,6 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
     )
         AccessControlled(accessDelay, gracePeriod)
         DelayedUpdate(updateDelay, updateExpiration)
-        Lockable()
         public
     {
         PROXY = _proxy;
@@ -66,13 +76,13 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         address token,
         address from,
         uint amount
-    ) public requiresAuthorization lockable {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
         // Increment balances
-        balances[id][token] = safeAdd(balances[id][token], amount);
-        totalBalances[token] = safeAdd(totalBalances[token], amount);
+        balances[id][token] = add(balances[id][token], amount);
+        totalBalances[token] = add(totalBalances[token], amount);
 
         // Validate new balance
         validateBalance(token);
@@ -83,12 +93,12 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         address token,
         address to,
         uint amount
-    ) public requiresAuthorization lockable {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         require(balances[id][token] >= amount);
 
         // First decrement balances
-        balances[id][token] = safeSub(balances[id][token], amount);
-        totalBalances[token] = safeSub(totalBalances[token], amount);
+        balances[id][token] = sub(balances[id][token], amount);
+        totalBalances[token] = sub(totalBalances[token], amount);
 
         // Transfer tokens
         transfer(token, to, amount);
@@ -101,7 +111,7 @@ contract Vault is AccessControlled, Lockable, SafeMath, DelayedUpdate, TokenInte
         bytes32 shortId,
         address baseToken,
         address underlyingToken
-    ) public requiresAuthorization lockable {
+    ) external nonReentrant requiresAuthorization whenNotPaused {
         // TODO delete the fee tokens?
 
         require(balances[shortId][baseToken] == 0);
