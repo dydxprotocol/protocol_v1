@@ -41,6 +41,7 @@
   },
   "dependencies": {
     "0x.js": "^0.19.0",
+    "@digix/tempo": "^0.2.0",
     "bignumber.js": "^4.1.0",
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.2",

@@ -1,4 +1,4 @@
-/*global artifacts, contract, describe, it*/
+/*global artifacts, web3, contract, describe, it*/
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
@@ -9,7 +9,7 @@ const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-
+const { wait } = require('@digix/tempo')(web3);
 const {
   createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
@@ -35,7 +35,9 @@ contract('ShortSell', function(accounts) {
       const exists = await shortSell.containsShort.call(shortTx.id);
       expect(exists).to.be.false;
 
-      // TODO simulate time between short and close
+      // Simulate time between open and close so interest fee needs to be paid
+      await wait(10000);
+
       const shortTimestamp = shortTx.response.logs.find(
         l => l.event === 'ShortInitiated'
       ).args.timestamp;

@@ -245,7 +245,8 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
     values,
     sellOrder.ecSignature.v,
     sellOrder.ecSignature.r,
-    sellOrder.ecSignature.s
+    sellOrder.ecSignature.s,
+    { from: shortTx.seller }
   );
 }
 
@@ -461,7 +462,6 @@ function getPartialAmount(
   return numerator.times(target).div(denominator).floor();
 }
 
-
 module.exports = {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
@@ -472,5 +472,6 @@ module.exports = {
   callCloseShort,
   getPartialAmount,
   signLoanOffering,
-  callCancelLoanOffer
+  callCancelLoanOffer,
+  signOrder
 };

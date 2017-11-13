@@ -451,7 +451,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             orderS
         );
 
-
         uint sellerBaseTokenAmount = sendTokensOnClose(
             short,
             shortId,
