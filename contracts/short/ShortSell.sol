@@ -3,9 +3,9 @@ pragma solidity 0.4.18;
 import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import './lib/SafeMath.sol';
+import '../lib/SafeMath.sol';
+import '../shared/Proxy.sol';
 import './Vault.sol';
-import './Proxy.sol';
 import './Trader.sol';
 import './ShortSellRepo.sol';
 

@@ -1,9 +1,9 @@
 pragma solidity 0.4.18;
 
-import './Exchange.sol';
 import 'zeppelin-solidity/contracts/token/ERC20.sol';
-import './Proxy.sol';
-import './lib/SafeMath.sol';
+import '../shared/Exchange.sol';
+import '../shared/Proxy.sol';
+import '../lib/SafeMath.sol';
 
 /**
  * @title CoveredOption

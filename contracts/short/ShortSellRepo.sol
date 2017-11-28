@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import './lib/AccessControlled.sol';
+import '../lib/AccessControlled.sol';
 
 contract ShortSellRepo is AccessControlled, NoOwner {
     // ---------------------------

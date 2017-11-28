@@ -22,8 +22,8 @@ pragma solidity 0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
 import 'zeppelin-solidity/contracts/token/ERC20.sol';
+import "../lib/SafeMath.sol";
 import "./Proxy.sol";
-import "./lib/SafeMath.sol";
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
