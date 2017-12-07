@@ -3,7 +3,6 @@
 const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const Exchange = artifacts.require("Exchange");
-const assertInvalidOpcode = require('../helpers/assertInvalidOpcode');
 const {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
@@ -19,15 +18,7 @@ const {
 } = require('../helpers/ShortSellHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
-
-async function expectThrow(shortTx, call) {
-  try {
-    await call();
-    throw new Error('Did not throw');
-  } catch (e) {
-    assertInvalidOpcode(e);
-  }
-}
+const { expectThrow } = require('../helpers/ExpectHelper');
 
 describe('#short', () => {
   describe('Validations', () => {
