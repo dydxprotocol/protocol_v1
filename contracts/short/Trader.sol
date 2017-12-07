@@ -3,7 +3,6 @@ pragma solidity 0.4.18;
 import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
 import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
 import '../lib/AccessControlled.sol';
-import '../lib/SafeMath.sol';
 import '../lib/TokenInteract.sol';
 import '../lib/DelayedUpdate.sol';
 import '../interfaces/ZeroExExchangeInterface.sol';
@@ -19,7 +18,6 @@ import './Vault.sol';
  */
 contract Trader is
     AccessControlled,
-    SafeMath,
     TokenInteract,
     DelayedUpdate,
     HasNoEther,
