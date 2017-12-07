@@ -237,7 +237,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function updateTrader(
         address _trader
     )
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("TRADER", _trader)
         external
     {
@@ -247,7 +247,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function updateProxy(
         address _proxy
     )
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("PROXY", _proxy)
         external
     {
@@ -257,7 +257,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function updateVault(
         address _vault
     )
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("VAULT", _vault)
         external
     {
@@ -267,7 +267,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function updateRepo(
         address _repo
     )
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("REPO", _repo)
         external
     {

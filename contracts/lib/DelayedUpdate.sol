@@ -55,15 +55,25 @@ contract DelayedUpdate is SafeMath {
 
     modifier delayedAddressUpdate(bytes32 id, address toAddress) {
         AddressUpdate memory existingUpdate = pendingAddressUpdates[id];
+
         if (existingUpdate.exists) {
             // If the pending update is expired, add the new one replacing it
             if (
-                block.timestamp <= add(
+                block.timestamp >= add(
                     existingUpdate.startTimestamp,
                     add(updateDelay, updateExpiration)
                 )
             ) {
-                require(add(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
+                pendingAddressUpdates[id] = AddressUpdate({
+                    startTimestamp: block.timestamp,
+                    toAddress: toAddress,
+                    exists: true
+                });
+            } else {
+                // If the pending update is not expired, validate this update is the same
+                // then do the update
+
+                require(add(updateDelay, existingUpdate.startTimestamp) <= block.timestamp);
                 require(toAddress == existingUpdate.toAddress);
 
                 delete pendingAddressUpdates[id];
@@ -75,24 +85,32 @@ contract DelayedUpdate is SafeMath {
                 );
 
                 _;
+                return;
             }
+        } else {
+            // If no pending update exists yet, add one, and do not move onto the modified function
+
+            pendingAddressUpdates[id] = AddressUpdate({
+                startTimestamp: block.timestamp,
+                toAddress: toAddress,
+                exists: true
+            });
+
+            AddressUpdateSubmitted(
+                msg.sender,
+                toAddress,
+                id
+            );
+
+            return;
         }
-
-        pendingAddressUpdates[id] = AddressUpdate({
-            startTimestamp: block.timestamp,
-            toAddress: toAddress,
-            exists: true
-        });
-
-        AddressUpdateSubmitted(
-            msg.sender,
-            toAddress,
-            id
-        );
-
-        return;
     }
 
+    function cancelAddressUpdate(bytes32 id) internal {
+        delete pendingAddressUpdates[id];
+    }
+
+    // TODO FIX THIS
     modifier delayedUintUpdate(bytes32 id, uint toValue) {
         UintUpdate memory existingUpdate = pendingUintUpdates[id];
         if (existingUpdate.exists) {
@@ -103,7 +121,7 @@ contract DelayedUpdate is SafeMath {
                     add(updateDelay, updateExpiration)
                 )
             ) {
-                require(add(updateDelay, existingUpdate.startTimestamp) >= block.timestamp);
+                require(add(updateDelay, existingUpdate.startTimestamp) <= block.timestamp);
                 require(toValue == existingUpdate.toValue);
 
                 delete pendingUintUpdates[id];

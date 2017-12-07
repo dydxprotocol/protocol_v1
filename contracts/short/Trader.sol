@@ -86,7 +86,7 @@ contract Trader is
     // -----------------------------
 
     function updateDydxExchange(address _dydxExchange)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("DYDX_EXCHANGE", _dydxExchange)
         external
     {
@@ -94,7 +94,7 @@ contract Trader is
     }
 
     function update0xExchange(address _0xExchange)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("0X_EXCHANGE", _0xExchange)
         external
     {
@@ -102,7 +102,7 @@ contract Trader is
     }
 
     function updateVault(address _vault)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("VAULT", _vault)
         external
     {
@@ -110,7 +110,7 @@ contract Trader is
     }
 
     function updateProxy(address _proxy)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("PROXY", _proxy)
         external
     {
@@ -118,7 +118,7 @@ contract Trader is
     }
 
     function update0xProxy(address _0xProxy)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("0X_PROXY", _0xProxy)
         external
     {
@@ -126,7 +126,7 @@ contract Trader is
     }
 
     function update0xFeeTokenConstant(address _0xFeeTokenConstant)
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("0X_FEE_TOKEN_CONSTANT", _0xFeeTokenConstant)
         external
     {

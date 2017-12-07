@@ -60,7 +60,7 @@ contract Vault is
     function updateProxy(
         address _proxy
     )
-        onlyOwner
+        onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("PROXY", _proxy)
         external
     {
