@@ -1,6 +1,6 @@
 const assertInvalidOpcode = require('../helpers/assertInvalidOpcode');
 
-async function expectThrow(shortTx, call) {
+async function expectThrow(call) {
   try {
     await call();
     throw new Error('Did not throw');

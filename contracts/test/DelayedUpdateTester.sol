@@ -47,7 +47,7 @@ contract DelayedUpdateTester is DelayedUpdate {
         num1 = to;
     }
 
-    function address1Update(
+    function num2Update(
         bytes32 id,
         uint to
     )
@@ -55,5 +55,9 @@ contract DelayedUpdateTester is DelayedUpdate {
         delayedUintUpdate(id, to)
     {
         num2 = to;
+    }
+
+    function cancelNumUpdate(bytes32 id) public {
+        cancelUintUpdate(id);
     }
 }
