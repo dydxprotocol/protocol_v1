@@ -5,7 +5,6 @@ import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
 import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
 import '../lib/AccessControlled.sol';
-import '../lib/SafeMath.sol';
 import '../lib/TokenInteract.sol';
 import '../lib/DelayedUpdate.sol';
 import '../shared/Proxy.sol';
@@ -19,7 +18,6 @@ import '../shared/Exchange.sol';
  */
 contract Vault is
     AccessControlled,
-    SafeMath,
     DelayedUpdate,
     TokenInteract,
     HasNoEther,
