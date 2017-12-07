@@ -21,7 +21,6 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         uint32 lockoutTime;
     }
 
-    mapping(bytes32 => mapping(address => bool)) public authorizedToCallLoan;
     mapping(bytes32 => Short) public shorts;
 
     // -------------------------
@@ -73,32 +72,26 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         shorts[id].callTimestamp = callStart;
     }
 
+    function setShortLender(
+        bytes32 id,
+        address who
+    ) requiresAuthorization public {
+        require(containsShort(id));
+        shorts[id].lender = who;
+    }
+
+    function setShortSeller(
+        bytes32 id,
+        address who
+    ) requiresAuthorization public {
+        require(containsShort(id));
+        shorts[id].seller = who;
+    }
+
     function deleteShort(
         bytes32 id
     ) requiresAuthorization public {
         delete shorts[id];
-    }
-
-    function addAuthorizedLoanCallAddress(
-        bytes32 loanHash,
-        address authorizedAddress
-    ) requiresAuthorization public {
-        require(!isAuthorizedToCallLoan(
-            loanHash,
-            authorizedAddress
-        ));
-        authorizedToCallLoan[loanHash][authorizedAddress] = true;
-    }
-
-    function removeAuthorizedLoanCallAddress(
-        bytes32 loanHash,
-        address authorizedAddress
-    ) requiresAuthorization public {
-        require(isAuthorizedToCallLoan(
-            loanHash,
-            authorizedAddress
-        ));
-        authorizedToCallLoan[loanHash][authorizedAddress] = false;
     }
 
     // -------------------------------------
@@ -141,14 +134,5 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         bool exists
     ) {
         return shorts[id].startTimestamp != 0;
-    }
-
-    function isAuthorizedToCallLoan(
-        bytes32 loanHash,
-        address who
-    ) view public returns (
-        bool isAuthorized
-    ) {
-        return authorizedToCallLoan[loanHash][who];
     }
 }
