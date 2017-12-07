@@ -30,7 +30,7 @@ describe('#short', () => {
         shortTx.buyOrder.ecSignature.v = '0x01';
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -42,7 +42,7 @@ describe('#short', () => {
         shortTx.loanOffering.signature.v = '0x01';
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -54,7 +54,7 @@ describe('#short', () => {
         shortTx.shortAmount = new BigNumber(0);
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -67,7 +67,7 @@ describe('#short', () => {
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -80,7 +80,7 @@ describe('#short', () => {
         shortTx.shortAmount = shortTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -97,7 +97,7 @@ describe('#short', () => {
         ).minus(new BigNumber(1));
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -110,7 +110,7 @@ describe('#short', () => {
         shortTx.depositAmount = shortTx.loanOffering.rates.minAmount.minus(new BigNumber(1));
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -123,7 +123,7 @@ describe('#short', () => {
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -140,7 +140,7 @@ describe('#short', () => {
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -162,7 +162,7 @@ describe('#short', () => {
         // First should succeed
         await callShort(shortSell, shortTx);
 
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -178,7 +178,7 @@ describe('#short', () => {
           shortTx.loanOffering.rates.maxAmount
         );
 
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -195,7 +195,7 @@ describe('#short', () => {
         );
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
   });
@@ -211,7 +211,7 @@ describe('#short', () => {
         shortTx.depositAmount = storedAmount;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -225,7 +225,7 @@ describe('#short', () => {
         shortTx.depositAmount = storedAmount;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -243,7 +243,7 @@ describe('#short', () => {
         shortTx.buyOrder.makerTokenAmount = storedAmount;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -261,7 +261,7 @@ describe('#short', () => {
         shortTx.buyOrder.makerFee = storedAmount;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -279,7 +279,7 @@ describe('#short', () => {
         shortTx.loanOffering.rates.lenderFee = storedAmount;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
 
@@ -304,7 +304,7 @@ describe('#short', () => {
         shortTx.buyOrder.takerFee = storedAmount2;
 
         const shortSell = await ShortSell.deployed();
-        await expectThrow(shortTx, () => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx));
       });
     });
   });
@@ -322,7 +322,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = shortTx.loanOffering.lender;
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -336,7 +336,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = accounts[7];
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
   });
@@ -352,7 +352,7 @@ describe('#closeShort', () => {
 
         shortTx.id = "0x123";
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -369,7 +369,7 @@ describe('#closeShort', () => {
         await callCloseShort(shortSell, shortTx, sellOrder);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -385,7 +385,7 @@ describe('#closeShort', () => {
         await wait(100000000);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -400,7 +400,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature.r = "0x123";
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -416,7 +416,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
   });
@@ -434,7 +434,7 @@ describe('#closeShort', () => {
         sellOrder.makerTokenAmount = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -450,7 +450,7 @@ describe('#closeShort', () => {
         sellOrder.makerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -466,7 +466,7 @@ describe('#closeShort', () => {
         sellOrder.takerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow(shortTx, () => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
       });
     });
   });
