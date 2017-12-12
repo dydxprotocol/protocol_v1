@@ -42,7 +42,7 @@ function maybeDeploy0x(deployer, network) {
 module.exports = (deployer, network, addresses) => {
   return maybeDeployTestTokens(deployer, network)
     .then(() => maybeDeploy0x(deployer, network))
-    .then(() => deployer.deploy(ProxyContract))
+    .then(() => deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR))
     .then(() => deployer.deploy(Exchange, ProxyContract.address))
     .then(() => deployer.deploy(
       Vault,

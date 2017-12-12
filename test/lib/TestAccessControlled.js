@@ -5,12 +5,11 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 const AccessControlledTester = artifacts.require("AccessControlledTester");
-const { zeroAddr, addr1, addr2 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 contract('DelayedUpdateTester', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
-  const [num1, num2] = [new BigNumber(12), new BigNumber(145)];
+  const num1 = new BigNumber(12);
   const [addr1, addr2] = [accounts[2], accounts[3]];
   let contract;
 
