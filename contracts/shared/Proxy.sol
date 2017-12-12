@@ -2,43 +2,115 @@ pragma solidity 0.4.18;
 
 import 'zeppelin-solidity/contracts/token/ERC20.sol';
 import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
+import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 import '../lib/AccessControlled.sol';
 
-contract Proxy is AccessControlled, NoOwner {
+/**
+ * @title Proxy
+ * @author Antonio Juliano
+ *
+ * Used to transfer tokens between addresses which have set allowance on this contract
+ */
+contract Proxy is AccessControlled, NoOwner, Pausable {
+    // ---------------------------
+    // ----- State Variables -----
+    // ---------------------------
+
+    /**
+     * Only addresses that are transfer authorized can move funds.
+     * Authorized addresses through AccessControlled can add and revoke
+     * transfer authorized addresses
+     */
     mapping(address => bool) public transferAuthorized;
+
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    event TransferAuthorization(
+        address who,
+        uint timestamp
+    );
+
+    event TransferDeauthorization(
+        address who,
+        uint timestamp
+    );
+
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
+
+    function Proxy(
+        uint _accessDelay,
+        uint _gracePeriod
+    ) AccessControlled(_accessDelay, _gracePeriod) public {}
+
+    // ---------------------------
+    // -------- Modifiers --------
+    // ---------------------------
 
     modifier requiresTransferAuthorization() {
         require(transferAuthorized[msg.sender]);
         _;
     }
 
-    function Proxy(
-    ) AccessControlled(1 days, 8 hours) public {
-    }
+    // --------------------------------------------------
+    // ---- Authorized Only State Changing Functions ----
+    // --------------------------------------------------
 
     function grantTransferAuthorization(
         address who
-    ) requiresAuthorization public {
-        transferAuthorized[who] = true;
+    ) requiresAuthorization whenNotPaused public {
+        if (!transferAuthorized[who]) {
+            transferAuthorized[who] = true;
+
+            TransferAuthorization(
+                who,
+                block.timestamp
+            );
+        }
     }
 
     function revokeTransferAuthorization(
         address who
-    ) requiresAuthorization public {
-        delete transferAuthorized[who];
+    ) requiresAuthorization whenNotPaused public {
+        if (transferAuthorized[who]) {
+            delete transferAuthorized[who];
+
+            TransferDeauthorization(
+                who,
+                block.timestamp
+            );
+        }
     }
+
+    // ---------------------------------------------
+    // ---- Owner Only State Changing Functions ----
+    // ---------------------------------------------
 
     function ownerRevokeTransferAuthorization(
         address who
     ) onlyOwner public {
-        delete transferAuthorized[who];
+        if (transferAuthorized[who]) {
+            delete transferAuthorized[who];
+
+            TransferDeauthorization(
+                who,
+                block.timestamp
+            );
+        }
     }
+
+    // -----------------------------------------------------------
+    // ---- Transfer Authorized Only State Changing Functions ----
+    // -----------------------------------------------------------
 
     function transfer(
         address token,
         address from,
         uint value
-    ) requiresTransferAuthorization public {
+    ) requiresTransferAuthorization whenNotPaused public {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
 
@@ -47,9 +119,13 @@ contract Proxy is AccessControlled, NoOwner {
         address from,
         address to,
         uint value
-    ) requiresTransferAuthorization public {
+    ) requiresTransferAuthorization whenNotPaused public {
         require(ERC20(token).transferFrom(from, to, value));
     }
+
+    // -----------------------------------------
+    // ------- Public Constant Functions -------
+    // -----------------------------------------
 
     function available(
         address who,

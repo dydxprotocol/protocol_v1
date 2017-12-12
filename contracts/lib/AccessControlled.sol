@@ -4,7 +4,7 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './SafeMath.sol';
 
 /**
- * @title DelayedUpdate
+ * @title AccessControlled
  * @author Antonio Juliano
  *
  * Allows for functions to be access controled, with timelocked permissions
