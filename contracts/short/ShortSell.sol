@@ -8,6 +8,7 @@ import '../shared/Proxy.sol';
 import './Vault.sol';
 import './Trader.sol';
 import './ShortSellRepo.sol';
+import './ShortSellAuctionRepo.sol';
 
 /**
  * @title ShortSell
@@ -101,11 +102,22 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     // Address of the ShortSellRepo contract
     address public REPO;
 
+    // Address of the ShortSellAuctionRepo contract
+    address public AUCTION_REPO;
+
     // Address of the Proxy contract
     address public PROXY;
 
+    // Mapping from loanHash -> amount, which stores the amount of a loan which has
+    // already been filled
     mapping(bytes32 => uint) public loanFills;
+
+    // Mapping from loanHash -> amount, which stores the amount of a loan which has
+    // already been canceled
     mapping(bytes32 => uint) public loanCancels;
+
+    // Mapping from loanHash -> number, which stores the number of shorts taken out
+    // for a given loan
     mapping(bytes32 => uint) public loanNumbers;
 
     // ------------------------
@@ -194,6 +206,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint timestamp
     );
 
+    /**
+     * Ownership of a loan was transfered to a new address
+     */
     event LoanTransfered(
         bytes32 indexed id,
         address from,
@@ -201,6 +216,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint timestamp
     );
 
+    /**
+     * Ownership of a short was transfered to a new address
+     */
     event ShortTransfered(
         bytes32 indexed id,
         address from,
@@ -215,6 +233,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function ShortSell(
         address _vault,
         address _repo,
+        address _auction_repo,
         address _trader,
         address _proxy,
         uint _updateDelay,
@@ -228,6 +247,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         REPO = _repo;
         TRADER = _trader;
         PROXY = _proxy;
+        AUCTION_REPO = _auction_repo;
     }
 
     // -----------------------------
@@ -272,6 +292,16 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         external
     {
         REPO = _repo;
+    }
+
+    function updateAuctionRepo(
+        address _auction_repo
+    )
+        onlyOwner // Must come before delayedAddressUpdate
+        delayedAddressUpdate("AUCTION_REPO", _auction_repo)
+        external
+    {
+        AUCTION_REPO = _auction_repo;
     }
 
     // -----------------------------------------
@@ -400,6 +430,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId
         );
 
+        // LOG EVENT
+
         recordShortInitiated(
             shortId,
             msg.sender,
@@ -451,7 +483,16 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         require(short.seller == msg.sender);
 
-        uint interestFee = calculateInterestFee(short.interestRate, short.startTimestamp);
+        uint interestFee = calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp,
+            block.timestamp
+        );
+
+        payBackAuctionBidderIfExists(
+            shortId,
+            short
+        );
 
         // EXTERNAL CALLS
 
@@ -473,7 +514,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
 
         cleanupShort(
-            short,
             shortId
         );
 
@@ -544,6 +584,13 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
     }
 
+    /**
+     * Transfer ownership of a loan to a new address. This new address will be entitled
+     * to all payouts for this loan. Only callable by the lender for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the loan
+     */
     function transferLoan(
         bytes32 shortId,
         address who
@@ -561,6 +608,13 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
     }
 
+    /**
+     * Transfer ownership of a short to a new address. This new address will be entitled
+     * to all payouts for this short. Only callable by the short seller for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the short
+     */
     function transferShort(
         bytes32 shortId,
         address who
@@ -579,6 +633,79 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     /**
+     * Offer to sell back the tokens loaned for a short sell for some amount of base tokens held
+     * in this short position. Only the lowest bid amount will be accepted. On placing a bid,
+     * the full underlying token amount owed to the lender will be taken from the bidder and
+     * placed in escrow. If a bidder is outbid or the short is closed normally by the short seller,
+     * the bidder's underlying tokens will be automatically returned.
+     * Only callable for a short that has been called, but not yet closed.
+     * Callable by any address
+     *
+     * @param  shortId      ID of the short sell to bid on
+     * @param  offer        the amount of base token the bidder wants to be paid in exchange for
+     *                      the amount of underlying token in the short sell
+     * @return _wasAccepted true if the bid was successful, false otherwise
+     */
+    function placeSellbackBid(
+        bytes32 shortId,
+        uint offer
+    ) external nonReentrant returns (
+        bool _wasAccepted
+    ) {
+        Short memory short = getShortObject(shortId);
+
+        // If the short has not been called, return failure
+        if (short.callTimestamp == 0) {
+            return false;
+        }
+
+        // Maximum interest fee is what it would be if the entire call time limit elapsed
+        uint maxInterestFee = calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp,
+            add(short.callTimestamp, short.callTimeLimit)
+        );
+
+        // The offered amount must be less than the amount of base token held - max interest fee
+        require(offer <= sub(getShortBalance(shortId), maxInterestFee));
+
+        var (currentOffer, currentBidder) = getShortAuctionOffer(shortId);
+        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+
+        // If there is a current offer, the new offer must be for less
+        if (hasCurrentOffer && currentOffer < offer) {
+            return false;
+        }
+
+        // If a previous bidder has been outbid, give them their tokens back
+        if (hasCurrentOffer) {
+            Vault(VAULT).send(
+                shortId,
+                short.underlyingToken,
+                currentBidder,
+                short.shortAmount
+            );
+        }
+
+        // Transfer the full underlying token amount from the bidder
+        Vault(VAULT).transfer(
+            shortId,
+            short.underlyingToken,
+            msg.sender,
+            short.shortAmount
+        );
+
+        // Record that the bidder has placed this bid
+        ShortSellAuctionRepo(AUCTION_REPO).setAuctionOffer(
+            shortId,
+            offer,
+            msg.sender
+        );
+
+        return true;
+    }
+
+    /**
      * Function callable by a short sell lender after he has called in the loan, but the
      * short seller did not close the short sell before the call time limit. Used to recover the
      * lender's original loaned amount of underlying token as well as any owed interest fee
@@ -594,26 +721,78 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         require(msg.sender == short.lender);
         require(add(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
 
-        uint baseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
+        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+        uint lenderBaseTokenAmount;
+
+        // Delete the short
+        cleanupShort(
+            shortId
+        );
+
+        if (!hasCurrentOffer) {
+            // If there is no auction bid to sell back the underlying token owed to the lender
+            // then give the lender everything locked in the position
+            lenderBaseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
+        } else {
+            // If there is an auction bid to sell back the underlying token owed to the lender
+            // then give the lender just the owed interest fee at the end of the call time
+            lenderBaseTokenAmount = calculateInterestFee(
+                short.interestRate,
+                short.startTimestamp,
+                add(short.callTimestamp, short.callTimeLimit)
+            );
+
+            var (offer, bidder) = getShortAuctionOffer(shortId);
+            uint shortSellerBaseToken = sub(
+                sub(
+                    Vault(VAULT).balances(shortId, short.baseToken),
+                    lenderBaseTokenAmount
+                ),
+                offer
+            );
+
+            // Send the lender back the borrowed tokens
+            Vault(VAULT).send(
+                shortId,
+                short.underlyingToken,
+                short.lender,
+                short.shortAmount
+            );
+
+
+            // Send the bidder the bidded amount of base token
+            Vault(VAULT).send(
+                shortId,
+                short.baseToken,
+                bidder,
+                offer
+            );
+
+            // Send the short seller whatever is left (== margin deposit + interest fee - bid offer)
+            Vault(VAULT).send(
+                shortId,
+                short.baseToken,
+                short.seller,
+                shortSellerBaseToken
+            );
+        }
+
+        // Send the lender the owed amount of base token
         Vault(VAULT).send(
             shortId,
             short.baseToken,
             short.lender,
-            baseTokenAmount
+            lenderBaseTokenAmount
         );
 
-        cleanupShort(
-            short,
-            shortId
-        );
-
+        // Log an event
         LoanForceRecovered(
             shortId,
-            baseTokenAmount,
+            lenderBaseTokenAmount,
             block.timestamp
         );
 
-        return baseTokenAmount;
+        return lenderBaseTokenAmount;
     }
 
     /**
@@ -767,7 +946,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         return calculateInterestFee(
             short.interestRate,
-            short.startTimestamp
+            short.startTimestamp,
+            block.timestamp
         );
     }
 
@@ -777,6 +957,23 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint _unavailableAmount
     ) {
         return add(loanFills[loanHash], loanCancels[loanHash]);
+    }
+
+    function getShortAuctionOffer(
+        bytes32 shortId
+    ) view public returns (
+        uint _offer,
+        address _taker
+    ) {
+        return ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
+    }
+
+    function hasShortAuctionOffer(
+        bytes32 shortId
+    ) view public returns (
+        bool _exists
+    ) {
+        return ShortSellAuctionRepo(AUCTION_REPO).containsAuction(shortId);
     }
 
     // --------------------------------
@@ -1078,11 +1275,12 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function calculateInterestFee(
         uint interestRate,
-        uint startTimestamp
-    ) internal view returns (
+        uint startTimestamp,
+        uint endTimestamp
+    ) internal pure returns (
         uint _interestFee
     ) {
-        uint timeElapsed = sub(block.timestamp, startTimestamp);
+        uint timeElapsed = sub(endTimestamp, startTimestamp);
         return getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
@@ -1224,15 +1422,30 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     function cleanupShort(
-        Short short,
         bytes32 shortId
     ) internal {
         ShortSellRepo(REPO).deleteShort(shortId);
+    }
 
-        Vault(VAULT).deleteBalances(
+    function payBackAuctionBidderIfExists(
+        bytes32 shortId,
+        Short short
+    ) internal {
+        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+
+        if (!hasCurrentOffer) {
+            return;
+        }
+
+        var (, currentBidder) = getShortAuctionOffer(shortId);
+
+        ShortSellAuctionRepo(AUCTION_REPO).deleteAuctionOffer(shortId);
+
+        Vault(VAULT).send(
             shortId,
-            short.baseToken,
-            short.underlyingToken
+            short.underlyingToken,
+            currentBidder,
+            short.shortAmount
         );
     }
 

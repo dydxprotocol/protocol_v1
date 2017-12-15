@@ -22,6 +22,10 @@ contract Trader is
     DelayedUpdate,
     HasNoEther,
     HasNoContracts {
+    // -----------------------
+    // ------- Structs -------
+    // -----------------------
+
     struct Order {
         address maker;
         address taker;
@@ -54,6 +58,10 @@ contract Trader is
     address public PROXY;
     address public ZERO_EX_PROXY;
     address public ZERO_EX_FEE_TOKEN_CONSTANT;
+
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
 
     function Trader(
         address _dydxExchange,
@@ -131,9 +139,9 @@ contract Trader is
         ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // --------------------------------------------------
+    // ---- Authorized Only State Changing Functions ----
+    // --------------------------------------------------
 
     function trade(
         bytes32 id,

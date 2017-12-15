@@ -65,9 +65,9 @@ contract Vault is
         PROXY = _proxy;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // --------------------------------------------------
+    // ---- Authorized Only State Changing Functions ----
+    // --------------------------------------------------
 
     function transfer(
         bytes32 id,
@@ -78,9 +78,12 @@ contract Vault is
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
-        // Increment balances
+        // Then increment balances
         balances[id][token] = add(balances[id][token], amount);
         totalBalances[token] = add(totalBalances[token], amount);
+
+        // This should always be true. If not, something is very wrong
+        assert(totalBalances[token] >= balances[id][token]);
 
         // Validate new balance
         validateBalance(token);
@@ -94,30 +97,18 @@ contract Vault is
     ) external nonReentrant requiresAuthorization whenNotPaused {
         require(balances[id][token] >= amount);
 
+        // This should always be true. If not, something is very wrong
+        assert(totalBalances[token] >= amount);
+
         // First decrement balances
         balances[id][token] = sub(balances[id][token], amount);
         totalBalances[token] = sub(totalBalances[token], amount);
 
-        // Transfer tokens
+        // Then transfer tokens
         transfer(token, to, amount);
 
         // Validate new balance
         validateBalance(token);
-    }
-
-    function deleteBalances(
-        bytes32 shortId,
-        address baseToken,
-        address underlyingToken
-    ) external nonReentrant requiresAuthorization whenNotPaused {
-        // TODO delete the fee tokens?
-
-        require(balances[shortId][baseToken] == 0);
-        require(balances[shortId][underlyingToken] == 0);
-
-        // ??? is it worth deleting these if they are 0 ?
-        delete balances[shortId][baseToken];
-        delete balances[shortId][underlyingToken];
     }
 
     // --------------------------------
