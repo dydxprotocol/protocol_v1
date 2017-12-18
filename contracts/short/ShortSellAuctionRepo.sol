@@ -1,7 +1,8 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import '../lib/AccessControlled.sol';
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "../lib/AccessControlled.sol";
+
 
 /**
  * @title ShortSellRepo
@@ -33,7 +34,10 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
     function ShortSellAuctionRepo(
         uint _accessDelay,
         uint _gracePeriod
-    ) AccessControlled(_accessDelay, _gracePeriod) public {}
+    )
+        public
+        AccessControlled(_accessDelay, _gracePeriod)
+    {}
 
     // --------------------------------------------------
     // ---- Authorized Only State Changing Functions ----
@@ -43,7 +47,10 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
         bytes32 shortId,
         uint offer,
         address bidder
-    ) requiresAuthorization external {
+    )
+        requiresAuthorization
+        external
+    {
         auctionOffers[shortId] = AuctionOffer({
             offer: offer,
             bidder: bidder,
@@ -53,7 +60,10 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
 
     function deleteAuctionOffer(
         bytes32 shortId
-    ) requiresAuthorization external {
+    )
+        requiresAuthorization
+        external
+    {
         delete auctionOffers[shortId];
     }
 
@@ -63,10 +73,14 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
 
     function getAuction(
         bytes32 shortId
-    ) view public returns (
-        uint _offer,
-        address _bidder
-    ) {
+    )
+        view
+        public
+        returns (
+            uint _offer,
+            address _bidder
+        )
+    {
         AuctionOffer memory auctionOffer = auctionOffers[shortId];
 
         return (
@@ -77,9 +91,11 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
 
     function containsAuction(
         bytes32 shortId
-    ) view public returns (
-        bool exists
-    ) {
+    )
+        view
+        public
+        returns (bool exists)
+    {
         return auctionOffers[shortId].exists;
     }
 }

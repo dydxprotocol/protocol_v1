@@ -1,14 +1,15 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
-import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
-import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
-import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
-import '../lib/AccessControlled.sol';
-import '../lib/TokenInteract.sol';
-import '../lib/DelayedUpdate.sol';
-import '../shared/Proxy.sol';
-import '../shared/Exchange.sol';
+import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "../lib/AccessControlled.sol";
+import "../lib/TokenInteract.sol";
+import "../lib/DelayedUpdate.sol";
+import "../shared/Proxy.sol";
+import "../shared/Exchange.sol";
+
 
 /**
  * @title Vault
@@ -16,6 +17,7 @@ import '../shared/Exchange.sol';
  *
  * Holds and transfers tokens in vaults denominated by id
  */
+ /* solium-disable-next-line */
 contract Vault is
     AccessControlled,
     DelayedUpdate,
@@ -74,7 +76,12 @@ contract Vault is
         address token,
         address from,
         uint amount
-    ) external nonReentrant requiresAuthorization whenNotPaused {
+    )
+        external
+        nonReentrant
+        requiresAuthorization
+        whenNotPaused
+    {
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
@@ -94,7 +101,12 @@ contract Vault is
         address token,
         address to,
         uint amount
-    ) external nonReentrant requiresAuthorization whenNotPaused {
+    )
+        external
+        nonReentrant
+        requiresAuthorization
+        whenNotPaused
+    {
         require(balances[id][token] >= amount);
 
         // This should always be true. If not, something is very wrong
@@ -117,7 +129,10 @@ contract Vault is
 
     function validateBalance(
         address token
-    ) internal view {
+    )
+        internal
+        view
+    {
         // The actual balance could be greater than totalBalances[token] because anyone
         // can send tokens to the contract's address which cannot be accounted for
         assert(balanceOf(token, address(this)) >= totalBalances[token]);

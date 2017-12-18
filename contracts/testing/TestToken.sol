@@ -1,5 +1,6 @@
 pragma solidity 0.4.18;
 
+
 contract TestToken {
     uint supply;
     mapping(address => uint) balances;
@@ -48,7 +49,12 @@ contract TestToken {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
-            Transfer(address(this), msg.sender, to, value);
+            Transfer(
+                address(this),
+                msg.sender,
+                to,
+                value
+            );
             return true;
         } else {
             return false;
@@ -60,7 +66,12 @@ contract TestToken {
             balances[to] += value;
             balances[from] -= value;
             allowed[from][msg.sender] -= value;
-            Transfer(address(this), from, to, value);
+            Transfer(
+                address(this),
+                from,
+                to,
+                value
+            );
             return true;
         } else {
             return false;
@@ -69,7 +80,12 @@ contract TestToken {
 
     function approve( address spender, uint value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
-        Approval(address(this), msg.sender, spender, value);
+        Approval(
+            address(this),
+            msg.sender,
+            spender,
+            value
+        );
         return true;
     }
 }

@@ -1,8 +1,8 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import '../shared/Proxy.sol';
-import './CoveredOption.sol';
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../shared/Proxy.sol";
+import "./CoveredOption.sol";
 
 /**
  * @title DerivativeCreator

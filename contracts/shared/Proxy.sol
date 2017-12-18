@@ -1,9 +1,10 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/token/ERC20.sol';
-import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
-import '../lib/AccessControlled.sol';
+import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import "../lib/AccessControlled.sol";
+
 
 /**
  * @title Proxy
@@ -44,7 +45,10 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     function Proxy(
         uint _accessDelay,
         uint _gracePeriod
-    ) AccessControlled(_accessDelay, _gracePeriod) public {}
+    )
+        AccessControlled(_accessDelay, _gracePeriod)
+        public
+    {}
 
     // ---------------------------
     // -------- Modifiers --------
@@ -61,7 +65,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
 
     function grantTransferAuthorization(
         address who
-    ) requiresAuthorization whenNotPaused public {
+    )
+        requiresAuthorization
+        whenNotPaused
+        public
+    {
         if (!transferAuthorized[who]) {
             transferAuthorized[who] = true;
 
@@ -74,7 +82,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
 
     function revokeTransferAuthorization(
         address who
-    ) requiresAuthorization whenNotPaused public {
+    )
+        requiresAuthorization
+        whenNotPaused
+        public
+    {
         if (transferAuthorized[who]) {
             delete transferAuthorized[who];
 
@@ -91,7 +103,10 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
 
     function ownerRevokeTransferAuthorization(
         address who
-    ) onlyOwner public {
+    )
+        onlyOwner
+        public
+    {
         if (transferAuthorized[who]) {
             delete transferAuthorized[who];
 
@@ -110,7 +125,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         address token,
         address from,
         uint value
-    ) requiresTransferAuthorization whenNotPaused public {
+    )
+        requiresTransferAuthorization
+        whenNotPaused
+        public
+    {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
 
@@ -119,7 +138,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         address from,
         address to,
         uint value
-    ) requiresTransferAuthorization whenNotPaused public {
+    )
+        requiresTransferAuthorization
+        whenNotPaused
+        public
+    {
         require(ERC20(token).transferFrom(from, to, value));
     }
 
@@ -130,9 +153,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     function available(
         address who,
         address token
-    ) view public returns (
-        uint _allowance
-    ) {
+    )
+        view
+        public
+        returns (uint _allowance)
+    {
         return min256(
             ERC20(token).allowance(who, address(this)),
             ERC20(token).balanceOf(who)

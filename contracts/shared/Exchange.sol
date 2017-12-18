@@ -20,10 +20,11 @@ pragma solidity 0.4.18;
 
 */
 
-import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import 'zeppelin-solidity/contracts/token/ERC20.sol';
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "zeppelin-solidity/contracts/token/ERC20.sol";
 import "../lib/SafeMath.sol";
 import "./Proxy.sol";
+
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
@@ -133,9 +134,10 @@ contract Exchange is SafeMath, NoOwner {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (
-        uint filledTakerTokenAmount
-    ) {
+    )
+        public
+        returns (uint filledTakerTokenAmount)
+    {
         // Parse the arguments into an Order
 
         Order memory order = Order({
@@ -158,13 +160,15 @@ contract Exchange is SafeMath, NoOwner {
 
         require(order.taker == address(0) || order.taker == msg.sender);
 
-        require(isValidSignature(
-            order.maker,
-            order.orderHash,
-            v,
-            r,
-            s
-        ));
+        require(
+            isValidSignature(
+                order.maker,
+                order.orderHash,
+                v,
+                r,
+                s
+            )
+        );
 
         if (block.timestamp >= order.expirationTimestampInSec) {
             LogError(ERROR_ORDER_EXPIRED, order.orderHash);
@@ -288,9 +292,10 @@ contract Exchange is SafeMath, NoOwner {
         address[7] orderAddresses,
         uint[6] orderValues,
         uint canceltakerTokenAmount
-    ) public returns (
-        uint cancelledTakerTokenAmount
-    ) {
+    )
+        public
+        returns (uint cancelledTakerTokenAmount)
+    {
         Order memory order = Order({
             maker: orderAddresses[0],
             taker: orderAddresses[1],
@@ -362,18 +367,21 @@ contract Exchange is SafeMath, NoOwner {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public returns (
-        bool success
-    ) {
-        assert(fillOrder(
-            orderAddresses,
-            orderValues,
-            fillTakerTokenAmount,
-            false,
-            v,
-            r,
-            s
-        ) == fillTakerTokenAmount);
+    )
+        public
+        returns (bool success)
+    {
+        assert(
+            fillOrder(
+                orderAddresses,
+                orderValues,
+                fillTakerTokenAmount,
+                false,
+                v,
+                r,
+                s
+            ) == fillTakerTokenAmount
+        );
         return true;
     }
 
@@ -394,9 +402,10 @@ contract Exchange is SafeMath, NoOwner {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) public returns (
-        bool success
-    ) {
+    )
+        public
+        returns (bool success)
+    {
         for (uint i = 0; i < orderAddresses.length; i++) {
             fillOrder(
                 orderAddresses[i],
@@ -427,18 +436,21 @@ contract Exchange is SafeMath, NoOwner {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) public returns (
-        bool success
-    ) {
+    )
+        public
+        returns (bool success)
+    {
         for (uint i = 0; i < orderAddresses.length; i++) {
-            assert(fillOrKillOrder(
-                orderAddresses[i],
-                orderValues[i],
-                fillTakerTokenAmounts[i],
-                v[i],
-                r[i],
-                s[i]
-            ));
+            assert(
+                fillOrKillOrder(
+                    orderAddresses[i],
+                    orderValues[i],
+                    fillTakerTokenAmounts[i],
+                    v[i],
+                    r[i],
+                    s[i]
+                )
+            );
         }
         return true;
     }
@@ -460,22 +472,28 @@ contract Exchange is SafeMath, NoOwner {
         uint8[] v,
         bytes32[] r,
         bytes32[] s
-    ) public returns (
-        uint filledTakerTokenAmount
-    ) {
+    )
+        public
+        returns (uint filledTakerTokenAmount)
+    {
         filledTakerTokenAmount = 0;
         for (uint i = 0; i < orderAddresses.length; i++) {
             require(orderAddresses[i][3] == orderAddresses[0][3]); // takerToken must be the same for each order
-            filledTakerTokenAmount = add(filledTakerTokenAmount, fillOrder(
-                orderAddresses[i],
-                orderValues[i],
-                sub(fillTakerTokenAmount, filledTakerTokenAmount),
-                shouldThrowOnInsufficientBalanceOrAllowance,
-                v[i],
-                r[i],
-                s[i]
-            ));
-            if (filledTakerTokenAmount == fillTakerTokenAmount) break;
+            filledTakerTokenAmount = add(
+                filledTakerTokenAmount,
+                fillOrder(
+                    orderAddresses[i],
+                    orderValues[i],
+                    sub(fillTakerTokenAmount, filledTakerTokenAmount),
+                    shouldThrowOnInsufficientBalanceOrAllowance,
+                    v[i],
+                    r[i],
+                    s[i]
+                )
+            );
+            if (filledTakerTokenAmount == fillTakerTokenAmount) {
+                break;
+            }
         }
         return filledTakerTokenAmount;
     }
@@ -489,9 +507,10 @@ contract Exchange is SafeMath, NoOwner {
         address[7][] orderAddresses,
         uint[6][] orderValues,
         uint[] cancelTakerTokenAmounts
-    ) public returns (
-        bool success
-    ) {
+    )
+        public
+        returns (bool success)
+    {
         for (uint i = 0; i < orderAddresses.length; i++) {
             cancelOrder(
                 orderAddresses[i],
@@ -513,9 +532,11 @@ contract Exchange is SafeMath, NoOwner {
     function getOrderHash(
         address[7] orderAddresses,
         uint[6] orderValues
-    ) public view returns (
-        bytes32 orderHash
-    ) {
+    )
+        public
+        view
+        returns (bytes32 orderHash)
+    {
         return keccak256(
             address(this),
             orderAddresses[0], // maker
@@ -547,9 +568,11 @@ contract Exchange is SafeMath, NoOwner {
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) public pure returns (
-        bool isValid
-    ) {
+    )
+        public
+        pure
+        returns (bool isValid)
+    {
         return signer == ecrecover(
             keccak256("\x19Ethereum Signed Message:\n32", hash),
             v,
@@ -567,9 +590,11 @@ contract Exchange is SafeMath, NoOwner {
         uint numerator,
         uint denominator,
         uint target
-    ) public pure returns (
-        bool isError
-    ) {
+    )
+        public
+        pure
+        returns (bool isError)
+    {
         return (target < 10**3 && mulmod(target, numerator, denominator) != 0);
     }
 
@@ -578,16 +603,18 @@ contract Exchange is SafeMath, NoOwner {
     /// @return Sum of values already filled and cancelled.
     function getUnavailableTakerTokenAmount(
         bytes32 orderHash
-    ) public view returns (
-        uint unavailableTakerTokenAmount
-    ) {
+    )
+        public
+        view
+        returns (uint unavailableTakerTokenAmount)
+    {
         return add(filled[orderHash], cancelled[orderHash]);
     }
-
 
     /*
     * Internal functions
     */
+
     /// @dev Transfers a token using PROXY_CONTRACT transferFrom function.
     /// @param token Address of token to transferFrom.
     /// @param from Address transfering token.
@@ -599,8 +626,15 @@ contract Exchange is SafeMath, NoOwner {
         address from,
         address to,
         uint value
-    ) internal {
-        Proxy(PROXY_CONTRACT).transferTo(token, from, to, value);
+    )
+        internal
+    {
+        Proxy(PROXY_CONTRACT).transferTo(
+            token,
+            from,
+            to,
+            value
+        );
     }
 
     /// @dev Checks if any order transfers will fail.
@@ -616,9 +650,11 @@ contract Exchange is SafeMath, NoOwner {
         uint fillTakerTokenAmount,
         uint fillMakerFee,
         uint fillTakerFee
-    ) internal view returns (
-        bool _isTransferable
-    ) {
+    )
+        internal
+        view
+        returns (bool _isTransferable)
+    {
         address taker = msg.sender;
 
         if (order.feeRecipient != address(0)) {
@@ -680,9 +716,11 @@ contract Exchange is SafeMath, NoOwner {
     function getBalance(
         address token,
         address owner
-    ) internal view returns (
-        uint balance
-    ) {
+    )
+        internal
+        view
+        returns (uint balance)
+    {
         return ERC20(token).balanceOf(owner);
     }
 
@@ -693,9 +731,11 @@ contract Exchange is SafeMath, NoOwner {
     function getAllowance(
         address token,
         address owner
-    ) internal view returns (
-        uint allowance
-    ) {
+    )
+        internal
+        view
+        returns (uint allowance)
+    {
         return ERC20(token).allowance(owner, PROXY_CONTRACT);
     }
 
@@ -703,7 +743,9 @@ contract Exchange is SafeMath, NoOwner {
     function logFillEvent(
         Order order,
         uint[4] values
-    ) internal {
+    )
+        internal
+    {
         LogFill(
             order.maker,
             msg.sender,

@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+
 
 contract OwnedToken is Ownable {
     uint supply;
@@ -43,7 +44,12 @@ contract OwnedToken is Ownable {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
-            Transfer(address(this), msg.sender, to, value);
+            Transfer(
+                address(this),
+                msg.sender,
+                to,
+                value
+            );
             return true;
         } else {
             return false;
@@ -55,7 +61,12 @@ contract OwnedToken is Ownable {
             balances[to] += value;
             balances[from] -= value;
             allowed[from][msg.sender] -= value;
-            Transfer(address(this), from, to, value);
+            Transfer(
+                address(this),
+                from,
+                to,
+                value
+            );
             return true;
         } else {
             return false;
@@ -64,7 +75,12 @@ contract OwnedToken is Ownable {
 
     function approve( address spender, uint value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
-        Approval(address(this), msg.sender, spender, value);
+        Approval(
+            address(this),
+            msg.sender,
+            spender,
+            value
+        );
         return true;
     }
 }

@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
-import './SafeMath.sol';
+import "./SafeMath.sol";
+
 
 /**
  * @title DelayedUpdate
@@ -74,7 +75,9 @@ contract DelayedUpdate is SafeMath {
     function DelayedUpdate(
         uint _updateDelay,
         uint _updateExpiration
-    ) public {
+    )
+        public
+    {
         updateDelay = _updateDelay;
         updateExpiration = _updateExpiration;
     }
@@ -193,9 +196,9 @@ contract DelayedUpdate is SafeMath {
         }
     }
 
-    // --------------------------------
-    // ------ Internal Functions ------
-    // --------------------------------
+    // -----------------------------------------
+    // --- Internal State Changing Functions ---
+    // -----------------------------------------
 
     function cancelAddressUpdate(bytes32 id) internal {
         delete pendingAddressUpdates[id];

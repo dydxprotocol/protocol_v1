@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/token/ERC20.sol';
+import "zeppelin-solidity/contracts/token/ERC20.sol";
+
 
 contract TokenInteract {
     // Changes to state require at least 5000 gas
@@ -9,9 +10,11 @@ contract TokenInteract {
     function balanceOf(
         address token,
         address owner
-    ) internal view returns (
-        uint _balance
-    ) {
+    )
+        internal
+        view
+        returns (uint _balance)
+    {
         // Limit gas to prevent reentrancy
         // ?? Do I need to limit gas? compiler throws warning on limiting in view function
         return ERC20(token).balanceOf/*.gas(EXTERNAL_QUERY_GAS_LIMIT)*/(owner);
@@ -21,7 +24,9 @@ contract TokenInteract {
         address token,
         address spender,
         uint value
-    ) internal {
+    )
+        internal
+    {
         assert(ERC20(token).approve(spender, value));
     }
 
@@ -29,7 +34,9 @@ contract TokenInteract {
         address token,
         address to,
         uint amount
-    ) internal {
+    )
+        internal
+    {
         assert(ERC20(token).transfer(to, amount));
     }
 }
