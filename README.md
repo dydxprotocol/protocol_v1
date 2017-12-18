@@ -37,6 +37,19 @@ npm test
 ```
 npm test will also automatically recompile if any source files have been changed
 
+#### Lint
+
+```
+npm run lint
+```
+Lint the javascript files (tests, deploy scripts)
+
+
+```
+npm run solint
+```
+Lint the solidity files (all smart contracts)
+
 ## Architecture
 
 ### Contracts
