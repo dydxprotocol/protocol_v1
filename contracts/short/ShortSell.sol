@@ -184,6 +184,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     event LoanForceRecovered(
         bytes32 indexed id,
         uint amount,
+        bool hadAcutcionOffer,
+        uint buybackCost,
         uint timestamp
     );
 
@@ -224,6 +226,17 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         bytes32 indexed id,
         address from,
         address to,
+        uint timestamp
+    );
+
+    /**
+     * A bid was placed to sell back the underlying token required to close
+     * a short position
+     */
+    event AuctionBidPlaced(
+        bytes32 indexed id,
+        address indexed bidder,
+        uint bid,
         uint timestamp
     );
 
@@ -590,6 +603,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         ShortSellRepo(REPO).setShortCallStart(shortId, 0);
 
+        payBackAuctionBidderIfExists(
+            shortId,
+            short
+        );
+
         LoanCallCanceled(
             shortId,
             short.lender,
@@ -724,6 +742,14 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             msg.sender
         );
 
+        // Log Event
+        AuctionBidPlaced(
+            shortId,
+            msg.sender,
+            offer,
+            block.timestamp
+        );
+
         return true;
     }
 
@@ -755,6 +781,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId
         );
 
+        uint buybackCost = 0;
+
         if (!hasCurrentOffer) {
             // If there is no auction bid to sell back the underlying token owed to the lender
             // then give the lender everything locked in the position
@@ -784,7 +812,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
                 short.shortAmount
             );
 
-
             // Send the bidder the bidded amount of base token
             Vault(VAULT).send(
                 shortId,
@@ -800,6 +827,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
                 short.seller,
                 shortSellerBaseToken
             );
+
+            buybackCost = offer;
         }
 
         // Send the lender the owed amount of base token
@@ -814,6 +843,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         LoanForceRecovered(
             shortId,
             lenderBaseTokenAmount,
+            hasCurrentOffer,
+            buybackCost,
             block.timestamp
         );
 
@@ -1517,13 +1548,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     )
         internal
     {
-        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+        var (, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
 
         if (!hasCurrentOffer) {
             return;
         }
-
-        var (, currentBidder,) = getShortAuctionOffer(shortId);
 
         ShortSellAuctionRepo(AUCTION_REPO).deleteAuctionOffer(shortId);
 
