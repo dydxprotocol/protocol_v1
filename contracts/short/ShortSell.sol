@@ -796,14 +796,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
                 add(short.callTimestamp, short.callTimeLimit)
             );
 
-            uint shortSellerBaseToken = sub(
-                sub(
-                    Vault(VAULT).balances(shortId, short.baseToken),
-                    lenderBaseTokenAmount
-                ),
-                offer
-            );
-
             // Send the lender back the borrowed tokens
             Vault(VAULT).send(
                 shortId,
@@ -821,6 +813,14 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             );
 
             // Send the short seller whatever is left (== margin deposit + interest fee - bid offer)
+            uint shortSellerBaseToken = sub(
+                sub(
+                    Vault(VAULT).balances(shortId, short.baseToken),
+                    lenderBaseTokenAmount
+                ),
+                offer
+            );
+
             Vault(VAULT).send(
                 shortId,
                 short.baseToken,
