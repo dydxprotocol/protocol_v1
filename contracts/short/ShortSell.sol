@@ -335,6 +335,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      * 5 - add details of the short sell to repo
      * 6 - Short event recorded
      *
+     * Note: This function will by default use the dYdX Exchange contract (which allows fees
+     *       to be paid in any token). If you would rather use the official 0x Exchange contract,
+     *       set "buy order maker fee token" to the constant specified on Trader, and "buy order
+     *       taker fee token" to the address of the ZRX token.
+     *
      * @param  addresses  Addresses corresponding to:
      *
      *  [0] = underlying token
@@ -466,6 +471,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      * enough base token left over after the trade to pay the lender the full owed interest fee.
      * The short seller is sent base token = deposit + profit - interest fee
      *
+     * Note: This function will by default use the dYdX Exchange contract (which allows fees
+     *       to be paid in any token). If you would rather use the official 0x Exchange contract,
+     *       set "buy order maker fee token" to the constant specified on Trader, and "buy order
+     *       taker fee token" to the address of the ZRX token.
+     *
      * @param  shortId              unique id for the short sell
      * @param  orderAddresses       Addresses for the supplied 0x order:
      *                              [0] = maker
@@ -571,7 +581,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
         require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
-
+        // Ensure the loan has not already been called
+        require(short.callTimestamp == 0);
         require(
             uint(uint32(block.timestamp)) == block.timestamp
         );
@@ -600,6 +611,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
+        // Ensure the loan has been called
+        require(short.callTimestamp > 0);
 
         ShortSellRepo(REPO).setShortCallStart(shortId, 0);
 
@@ -693,6 +706,13 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         nonReentrant
         returns (bool _wasAccepted)
     {
+        // Prefer to return false vs. throw so gas is not lost on bid race condition
+
+        // If the short has already been closed, return failure
+        if (!containsShort(shortId)) {
+            return false;
+        }
+
         Short memory short = getShortObject(shortId);
 
         // If the short has not been called, return failure

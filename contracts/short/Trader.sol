@@ -293,7 +293,7 @@ contract Trader is
             // Approve transfer of taker token by proxy for trade
             setAllowance(order.takerToken, proxy, requestedFillAmount);
         } else if (order.takerToken == order.takerFeeToken) {
-            // If the taker token is the same as taker fee token, just transfer ithem together
+            // If the taker token is the same as taker fee token, just transfer them together
             feeAmount = getPartialAmount(
                 requestedFillAmount,
                 order.takerTokenAmount,
