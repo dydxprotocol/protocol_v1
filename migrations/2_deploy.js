@@ -5,6 +5,7 @@ const Vault = artifacts.require("Vault");
 const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
 const ShortSellRepo = artifacts.require("ShortSellRepo");
+const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 const ShortSell = artifacts.require("ShortSell");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
@@ -71,9 +72,15 @@ module.exports = (deployer, network, addresses) => {
       ONE_HOUR,
     ))
     .then(() => deployer.deploy(
+      ShortSellAuctionRepo,
+      ONE_DAY,
+      ONE_HOUR,
+    ))
+    .then(() => deployer.deploy(
       ShortSell,
       Vault.address,
       ShortSellRepo.address,
+      ShortSellAuctionRepo.address,
       Trader.address,
       ProxyContract.address,
       ONE_DAY,
@@ -96,6 +103,8 @@ module.exports = (deployer, network, addresses) => {
       vault.grantAccess(Trader.address)
     ]))
     .then(() => ShortSellRepo.deployed())
+    .then(repo => repo.grantAccess(ShortSell.address))
+    .then(() => ShortSellAuctionRepo.deployed())
     .then(repo => repo.grantAccess(ShortSell.address))
     .then(() => Trader.deployed())
     .then(trader => trader.grantAccess(ShortSell.address));

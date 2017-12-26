@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
-import '../lib/AccessControlled.sol';
+import "../lib/AccessControlled.sol";
+
 
 contract AccessControlledTester is AccessControlled {
     uint public num;
@@ -8,9 +9,17 @@ contract AccessControlledTester is AccessControlled {
     function AccessControlledTester(
         uint _accessDelay,
         uint _gracePeriod
-    ) AccessControlled(_accessDelay, _gracePeriod) public {}
+    )
+        AccessControlled(_accessDelay, _gracePeriod)
+        public
+    {}
 
-    function setNum(uint to) requiresAuthorization public {
+    function setNum(
+        uint to
+    )
+        requiresAuthorization
+        public
+    {
         num = to;
     }
 }

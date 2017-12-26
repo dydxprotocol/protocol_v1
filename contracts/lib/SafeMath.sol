@@ -1,5 +1,6 @@
 pragma solidity 0.4.18;
 
+
 contract SafeMath {
     /// @dev Calculates partial value given a numerator and denominator.
     /// @param numerator Numerator.
@@ -10,9 +11,13 @@ contract SafeMath {
         uint numerator,
         uint denominator,
         uint target
-    ) public pure returns (
-        uint partialValue
-    ) {
+    )
+        public
+        pure
+        returns (
+            uint partialValue
+        )
+    {
         return div(mul(numerator, target), denominator);
     }
 

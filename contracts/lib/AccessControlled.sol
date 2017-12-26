@@ -1,7 +1,8 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import './SafeMath.sol';
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./SafeMath.sol";
+
 
 /**
  * @title AccessControlled
@@ -49,7 +50,10 @@ contract AccessControlled is Ownable, SafeMath {
     function AccessControlled(
         uint _accessDelay,
         uint _gracePeriod
-    ) Ownable() public {
+    )
+        Ownable()
+        public
+    {
         accessDelay = _accessDelay;
         gracePeriodExpiration = add(block.timestamp, _gracePeriod);
     }
@@ -74,7 +78,10 @@ contract AccessControlled is Ownable, SafeMath {
 
     function grantAccess(
         address who
-    ) onlyOwner public {
+    )
+        onlyOwner
+        public
+    {
         if (block.timestamp < gracePeriodExpiration) {
             AccessGranted(address(this), who, block.timestamp);
             authorized[who] = true;
@@ -86,7 +93,10 @@ contract AccessControlled is Ownable, SafeMath {
 
     function confirmAccess(
         address who
-    ) onlyOwner public {
+    )
+        onlyOwner
+        public
+    {
         require(pendingAuthorizations[who] != 0);
         require(block.timestamp >= pendingAuthorizations[who]);
         authorized[who] = true;
@@ -96,7 +106,10 @@ contract AccessControlled is Ownable, SafeMath {
 
     function revokeAccess(
         address who
-    ) onlyOwner public {
+    )
+        onlyOwner
+        public
+    {
         authorized[who] = false;
         delete pendingAuthorizations[who];
         AccessRevoked(address(this), who, block.timestamp);

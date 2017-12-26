@@ -1,14 +1,15 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ownership/HasNoEther.sol';
-import 'zeppelin-solidity/contracts/ownership/HasNoContracts.sol';
-import '../lib/AccessControlled.sol';
-import '../lib/TokenInteract.sol';
-import '../lib/DelayedUpdate.sol';
-import '../interfaces/ZeroExExchangeInterface.sol';
-import '../shared/Exchange.sol';
-import '../shared/Proxy.sol';
-import './Vault.sol';
+import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import "../lib/AccessControlled.sol";
+import "../lib/TokenInteract.sol";
+import "../lib/DelayedUpdate.sol";
+import "../interfaces/ZeroExExchangeInterface.sol";
+import "../shared/Exchange.sol";
+import "../shared/Proxy.sol";
+import "./Vault.sol";
+
 
 /**
  * @title Trader
@@ -16,12 +17,17 @@ import './Vault.sol';
  *
  * This contract is used to abstract the exchange of token assets from Vault
  */
+/* solium-disable-next-line */
 contract Trader is
     AccessControlled,
     TokenInteract,
     DelayedUpdate,
     HasNoEther,
     HasNoContracts {
+    // -----------------------
+    // ------- Structs -------
+    // -----------------------
+
     struct Order {
         address maker;
         address taker;
@@ -54,6 +60,10 @@ contract Trader is
     address public PROXY;
     address public ZERO_EX_PROXY;
     address public ZERO_EX_FEE_TOKEN_CONSTANT;
+
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
 
     function Trader(
         address _dydxExchange,
@@ -131,9 +141,9 @@ contract Trader is
         ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // --------------------------------------------------
+    // ---- Authorized Only State Changing Functions ----
+    // --------------------------------------------------
 
     function trade(
         bytes32 id,
@@ -144,10 +154,14 @@ contract Trader is
         bytes32 r,
         bytes32 s,
         bool requireFullAmount
-    ) requiresAuthorization external returns (
-        uint _filledTakerTokenAmount,
-        uint _makerTokenAmount
-    ) {
+    )
+        requiresAuthorization
+        external
+        returns (
+            uint _filledTakerTokenAmount,
+            uint _makerTokenAmount
+        )
+    {
         Order memory order = Order({
             maker: orderAddresses[0],
             taker: orderAddresses[1],
@@ -212,9 +226,10 @@ contract Trader is
         uint8 v,
         bytes32 r,
         bytes32 s
-    ) internal returns (
-        uint _filledTakerTokenAmount
-    ) {
+    )
+        internal
+        returns (uint _filledTakerTokenAmount)
+    {
         // If the maker fee token address is a special reserved constant then
         // Use the official 0x exchange contract. Otherwise use dydx's general exchange contract
         if (orderAddresses[5] == ZERO_EX_FEE_TOKEN_CONSTANT) {
@@ -250,7 +265,9 @@ contract Trader is
         bytes32 id,
         Order order,
         uint requestedFillAmount
-    ) internal {
+    )
+        internal
+    {
         require(order.makerToken != order.takerToken);
 
         uint feeAmount;
@@ -327,9 +344,10 @@ contract Trader is
         uint filledTakerTokenAmount,
         uint requestedFillAmount,
         bool requireFullAmount
-    ) internal returns (
-        uint _receivedMakerTokenAmount
-    ) {
+    )
+        internal
+        returns (uint _receivedMakerTokenAmount)
+    {
         // 0 can indicate an error
         require(filledTakerTokenAmount > 0);
 
@@ -373,7 +391,9 @@ contract Trader is
         uint receivedMakerTokenAmount,
         uint extraTakerTokenAmount,
         uint extraTakerFeeTokenAmount
-    ) internal {
+    )
+        internal
+    {
         // Transfer the received maker token back to vault
         setAllowance(order.makerToken, PROXY, receivedMakerTokenAmount);
         Vault(VAULT).transfer(
@@ -433,7 +453,10 @@ contract Trader is
     function validateBalances(
         StartingBalances startingBalances,
         Order order
-    ) internal view {
+    )
+        internal
+        view
+    {
         assert(
             balanceOf(order.takerToken, address(this)) == startingBalances.takerTokenBalance
         );

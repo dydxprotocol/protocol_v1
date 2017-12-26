@@ -1,4 +1,4 @@
-/*global artifacts, web3*/
+/*global artifacts*/
 
 const Token = artifacts.require("TokenA");
 

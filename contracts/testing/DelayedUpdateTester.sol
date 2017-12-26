@@ -1,6 +1,7 @@
 pragma solidity 0.4.18;
 
-import '../lib/DelayedUpdate.sol';
+import "../lib/DelayedUpdate.sol";
+
 
 contract DelayedUpdateTester is DelayedUpdate {
     address public addr1;
@@ -11,7 +12,10 @@ contract DelayedUpdateTester is DelayedUpdate {
     function DelayedUpdateTester(
         uint _updateDelay,
         uint _updateExpiration
-    ) DelayedUpdate(_updateDelay, _updateExpiration) public {}
+    )
+        DelayedUpdate(_updateDelay, _updateExpiration)
+        public
+    {}
 
     function addr1Update(
         bytes32 id,
@@ -57,7 +61,11 @@ contract DelayedUpdateTester is DelayedUpdate {
         num2 = to;
     }
 
-    function cancelNumUpdate(bytes32 id) public {
+    function cancelNumUpdate(
+        bytes32 id
+    )
+        public
+    {
         cancelUintUpdate(id);
     }
 }

@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
-import './TestToken.sol';
+import "./TestToken.sol";
 
-contract TokenB is TestToken {
 
-}
+/* solium-disable-next-line */
+contract TokenB is TestToken {}

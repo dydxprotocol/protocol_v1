@@ -1,13 +1,15 @@
 pragma solidity 0.4.18;
 
-import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
-import 'zeppelin-solidity/contracts/ownership/NoOwner.sol';
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import '../lib/SafeMath.sol';
-import '../shared/Proxy.sol';
-import './Vault.sol';
-import './Trader.sol';
-import './ShortSellRepo.sol';
+import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../lib/SafeMath.sol";
+import "../shared/Proxy.sol";
+import "./Vault.sol";
+import "./Trader.sol";
+import "./ShortSellRepo.sol";
+import "./ShortSellAuctionRepo.sol";
+
 
 /**
  * @title ShortSell
@@ -101,11 +103,22 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     // Address of the ShortSellRepo contract
     address public REPO;
 
+    // Address of the ShortSellAuctionRepo contract
+    address public AUCTION_REPO;
+
     // Address of the Proxy contract
     address public PROXY;
 
+    // Mapping from loanHash -> amount, which stores the amount of a loan which has
+    // already been filled
     mapping(bytes32 => uint) public loanFills;
+
+    // Mapping from loanHash -> amount, which stores the amount of a loan which has
+    // already been canceled
     mapping(bytes32 => uint) public loanCancels;
+
+    // Mapping from loanHash -> number, which stores the number of shorts taken out
+    // for a given loan
     mapping(bytes32 => uint) public loanNumbers;
 
     // ------------------------
@@ -171,6 +184,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     event LoanForceRecovered(
         bytes32 indexed id,
         uint amount,
+        bool hadAcutcionOffer,
+        uint buybackCost,
         uint timestamp
     );
 
@@ -194,6 +209,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint timestamp
     );
 
+    /**
+     * Ownership of a loan was transfered to a new address
+     */
     event LoanTransfered(
         bytes32 indexed id,
         address from,
@@ -201,10 +219,24 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint timestamp
     );
 
+    /**
+     * Ownership of a short was transfered to a new address
+     */
     event ShortTransfered(
         bytes32 indexed id,
         address from,
         address to,
+        uint timestamp
+    );
+
+    /**
+     * A bid was placed to sell back the underlying token required to close
+     * a short position
+     */
+    event AuctionBidPlaced(
+        bytes32 indexed id,
+        address indexed bidder,
+        uint bid,
         uint timestamp
     );
 
@@ -215,6 +247,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function ShortSell(
         address _vault,
         address _repo,
+        address _auction_repo,
         address _trader,
         address _proxy,
         uint _updateDelay,
@@ -228,6 +261,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         REPO = _repo;
         TRADER = _trader;
         PROXY = _proxy;
+        AUCTION_REPO = _auction_repo;
     }
 
     // -----------------------------
@@ -272,6 +306,16 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         external
     {
         REPO = _repo;
+    }
+
+    function updateAuctionRepo(
+        address _auction_repo
+    )
+        onlyOwner // Must come before delayedAddressUpdate
+        delayedAddressUpdate("AUCTION_REPO", _auction_repo)
+        external
+    {
+        AUCTION_REPO = _auction_repo;
     }
 
     // -----------------------------------------
@@ -341,7 +385,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) external nonReentrant returns(bytes32 _shortId) {
+    )
+        external
+        nonReentrant
+        returns(bytes32 _shortId)
+    {
         ShortTx memory transaction = parseShortTx(
             addresses,
             values256,
@@ -400,6 +448,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId
         );
 
+        // LOG EVENT
+
         recordShortInitiated(
             shortId,
             msg.sender,
@@ -443,15 +493,28 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
-    ) external nonReentrant returns (
-        uint _baseTokenReceived,
-        uint _interestFeeAmount
-    ) {
+    )
+        external
+        nonReentrant
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
         Short memory short = getShortObject(shortId);
 
         require(short.seller == msg.sender);
 
-        uint interestFee = calculateInterestFee(short.interestRate, short.startTimestamp);
+        uint interestFee = calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp,
+            block.timestamp
+        );
+
+        payBackAuctionBidderIfExists(
+            shortId,
+            short
+        );
 
         // EXTERNAL CALLS
 
@@ -473,7 +536,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
 
         cleanupShort(
-            short,
             shortId
         );
 
@@ -502,7 +564,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      */
     function callInLoan(
         bytes32 shortId
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
         require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
@@ -529,11 +594,19 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      */
     function cancelLoanCall(
         bytes32 shortId
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
 
         ShortSellRepo(REPO).setShortCallStart(shortId, 0);
+
+        payBackAuctionBidderIfExists(
+            shortId,
+            short
+        );
 
         LoanCallCanceled(
             shortId,
@@ -544,10 +617,20 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
     }
 
+    /**
+     * Transfer ownership of a loan to a new address. This new address will be entitled
+     * to all payouts for this loan. Only callable by the lender for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the loan
+     */
     function transferLoan(
         bytes32 shortId,
         address who
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.lender);
 
@@ -561,10 +644,20 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         );
     }
 
+    /**
+     * Transfer ownership of a short to a new address. This new address will be entitled
+     * to all payouts for this short. Only callable by the short seller for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the short
+     */
     function transferShort(
         bytes32 shortId,
         address who
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.seller);
 
@@ -579,41 +672,183 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     /**
+     * Offer to sell back the tokens loaned for a short sell for some amount of base tokens held
+     * in this short position. Only the lowest bid amount will be accepted. On placing a bid,
+     * the full underlying token amount owed to the lender will be taken from the bidder and
+     * placed in escrow. If a bidder is outbid or the short is closed normally by the short seller,
+     * the bidder's underlying tokens will be automatically returned.
+     * Only callable for a short that has been called, but not yet closed.
+     * Callable by any address
+     *
+     * @param  shortId      ID of the short sell to bid on
+     * @param  offer        the amount of base token the bidder wants to be paid in exchange for
+     *                      the amount of underlying token in the short sell
+     * @return _wasAccepted true if the bid was successful, false otherwise
+     */
+    function placeSellbackBid(
+        bytes32 shortId,
+        uint offer
+    )
+        external
+        nonReentrant
+        returns (bool _wasAccepted)
+    {
+        Short memory short = getShortObject(shortId);
+
+        // If the short has not been called, return failure
+        if (short.callTimestamp == 0) {
+            return false;
+        }
+
+        // Maximum interest fee is what it would be if the entire call time limit elapsed
+        uint maxInterestFee = calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp,
+            add(short.callTimestamp, short.callTimeLimit)
+        );
+
+        // The offered amount must be less than the amount of base token held - max interest fee
+        require(offer <= sub(getShortBalance(shortId), maxInterestFee));
+
+        var (currentOffer, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
+
+        // If there is a current offer, the new offer must be for less
+        if (hasCurrentOffer && currentOffer < offer) {
+            return false;
+        }
+
+        // If a previous bidder has been outbid, give them their tokens back
+        if (hasCurrentOffer) {
+            Vault(VAULT).send(
+                shortId,
+                short.underlyingToken,
+                currentBidder,
+                short.shortAmount
+            );
+        }
+
+        // Transfer the full underlying token amount from the bidder
+        Vault(VAULT).transfer(
+            shortId,
+            short.underlyingToken,
+            msg.sender,
+            short.shortAmount
+        );
+
+        // Record that the bidder has placed this bid
+        ShortSellAuctionRepo(AUCTION_REPO).setAuctionOffer(
+            shortId,
+            offer,
+            msg.sender
+        );
+
+        // Log Event
+        AuctionBidPlaced(
+            shortId,
+            msg.sender,
+            offer,
+            block.timestamp
+        );
+
+        return true;
+    }
+
+    /**
      * Function callable by a short sell lender after he has called in the loan, but the
      * short seller did not close the short sell before the call time limit. Used to recover the
      * lender's original loaned amount of underlying token as well as any owed interest fee
+     * This function can also be called by the winner of a sellback auction.
      *
      * @param  shortId  unique id for the short sell
      */
     function forceRecoverLoan(
         bytes32 shortId
-    ) external nonReentrant returns (
-        uint _baseTokenAmount
-    ) {
+    )
+        external
+        nonReentrant
+        returns (uint _baseTokenAmount)
+    {
         Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
         require(add(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
 
-        uint baseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
+        var (offer, bidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
+        require(msg.sender == short.lender || msg.sender == bidder);
+
+        uint lenderBaseTokenAmount;
+
+        // Delete the short
+        cleanupShort(
+            shortId
+        );
+
+        uint buybackCost = 0;
+
+        if (!hasCurrentOffer) {
+            // If there is no auction bid to sell back the underlying token owed to the lender
+            // then give the lender everything locked in the position
+            lenderBaseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
+        } else {
+            // If there is an auction bid to sell back the underlying token owed to the lender
+            // then give the lender just the owed interest fee at the end of the call time
+            lenderBaseTokenAmount = calculateInterestFee(
+                short.interestRate,
+                short.startTimestamp,
+                add(short.callTimestamp, short.callTimeLimit)
+            );
+
+            // Send the lender back the borrowed tokens
+            Vault(VAULT).send(
+                shortId,
+                short.underlyingToken,
+                short.lender,
+                short.shortAmount
+            );
+
+            // Send the bidder the bidded amount of base token
+            Vault(VAULT).send(
+                shortId,
+                short.baseToken,
+                bidder,
+                offer
+            );
+
+            // Send the short seller whatever is left (== margin deposit + interest fee - bid offer)
+            uint shortSellerBaseToken = sub(
+                sub(
+                    Vault(VAULT).balances(shortId, short.baseToken),
+                    lenderBaseTokenAmount
+                ),
+                offer
+            );
+
+            Vault(VAULT).send(
+                shortId,
+                short.baseToken,
+                short.seller,
+                shortSellerBaseToken
+            );
+
+            buybackCost = offer;
+        }
+
+        // Send the lender the owed amount of base token
         Vault(VAULT).send(
             shortId,
             short.baseToken,
             short.lender,
-            baseTokenAmount
+            lenderBaseTokenAmount
         );
 
-        cleanupShort(
-            short,
-            shortId
-        );
-
+        // Log an event
         LoanForceRecovered(
             shortId,
-            baseTokenAmount,
+            lenderBaseTokenAmount,
+            hasCurrentOffer,
+            buybackCost,
             block.timestamp
         );
 
-        return baseTokenAmount;
+        return lenderBaseTokenAmount;
     }
 
     /**
@@ -626,11 +861,19 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function deposit(
         bytes32 shortId,
         uint depositAmount
-    ) external nonReentrant {
+    )
+        external
+        nonReentrant
+    {
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.seller);
 
-        Vault(VAULT).transfer(shortId, short.baseToken, short.seller, depositAmount);
+        Vault(VAULT).transfer(
+            shortId,
+            short.baseToken,
+            short.seller,
+            depositAmount
+        );
 
         AdditionalDeposit(
             shortId,
@@ -678,9 +921,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint[9] values256,
         uint32[2] values32,
         uint cancelAmount
-    ) external nonReentrant returns (
-        uint _cancelledAmount
-    ) {
+    )
+        external
+        nonReentrant
+        returns (uint _cancelledAmount)
+    {
         LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
             values256,
@@ -719,34 +964,42 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getShort(
         bytes32 shortId
-    ) view public returns (
-        address underlyingToken,
-        address baseToken,
-        uint shortAmount,
-        uint interestRate,
-        uint callTimeLimit,
-        uint lockoutTime,
-        uint startTimestamp,
-        uint callTimestamp,
-        address lender,
-        address seller
-    ) {
+    )
+        view
+        public
+        returns (
+            address underlyingToken,
+            address baseToken,
+            uint shortAmount,
+            uint interestRate,
+            uint callTimeLimit,
+            uint lockoutTime,
+            uint startTimestamp,
+            uint callTimestamp,
+            address lender,
+            address seller
+        )
+    {
         return ShortSellRepo(REPO).getShort(shortId);
     }
 
     function containsShort(
         bytes32 shortId
-    ) view public returns (
-        bool exists
-    ) {
+    )
+        view
+        public
+        returns (bool exists)
+    {
         return ShortSellRepo(REPO).containsShort(shortId);
     }
 
     function getShortBalance(
         bytes32 shortId
-    ) view public returns (
-        uint _baseTokenBalance
-    ) {
+    )
+        view
+        public
+        returns (uint _baseTokenBalance)
+    {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
             return 0;
         }
@@ -757,9 +1010,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getShortInterestFee(
         bytes32 shortId
-    ) view public returns (
-        uint _interestFeeOwed
-    ) {
+    )
+        view
+        public
+        returns (uint _interestFeeOwed)
+    {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
             return 0;
         }
@@ -767,16 +1022,43 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         return calculateInterestFee(
             short.interestRate,
-            short.startTimestamp
+            short.startTimestamp,
+            block.timestamp
         );
     }
 
     function getUnavailableLoanOfferingAmount(
         bytes32 loanHash
-    ) view public returns (
-        uint _unavailableAmount
-    ) {
+    )
+        view
+        public
+        returns (uint _unavailableAmount)
+    {
         return add(loanFills[loanHash], loanCancels[loanHash]);
+    }
+
+    function getShortAuctionOffer(
+        bytes32 shortId
+    )
+        view
+        public
+        returns (
+            uint _offer,
+            address _taker,
+            bool _exists
+        )
+    {
+        return ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
+    }
+
+    function hasShortAuctionOffer(
+        bytes32 shortId
+    )
+        view
+        public
+        returns (bool _exists)
+    {
+        return ShortSellAuctionRepo(AUCTION_REPO).containsAuction(shortId);
     }
 
     // --------------------------------
@@ -785,9 +1067,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getNextShortId(
         bytes32 loanHash
-    ) internal view returns (
-        bytes32 _shortId
-    ) {
+    )
+        internal
+        view
+        returns (bytes32 _shortId)
+    {
         return keccak256(
             loanHash,
             loanNumbers[loanHash]
@@ -796,9 +1080,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function isValidSignature(
         LoanOffering loanOffering
-    ) pure internal returns (
-        bool _isValid
-    ) {
+    )
+        internal
+        pure
+        returns (bool _isValid)
+    {
         return loanOffering.lender == ecrecover(
             keccak256("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
             loanOffering.signature.v,
@@ -810,7 +1096,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function validateShort(
         ShortTx transaction,
         bytes32 shortId
-    ) internal view {
+    )
+        internal
+        view
+    {
         // Make sure we don't already have this short id
         require(!containsShort(shortId));
 
@@ -869,9 +1158,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function executeSell(
         ShortTx transaction,
         bytes32 shortId
-    ) internal returns (
-        uint _baseTokenReceived
-    ) {
+    )
+        internal
+        returns (uint _baseTokenReceived)
+    {
         var ( , baseTokenReceived) = Trader(TRADER).trade(
             shortId,
             [
@@ -918,9 +1208,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         LoanOffering loanOffering,
         address baseToken,
         address underlyingToken
-    ) internal view returns (
-        bytes32 _hash
-    ) {
+    )
+        internal
+        view
+        returns (bytes32 _hash)
+    {
         return keccak256(
             address(this),
             underlyingToken,
@@ -936,9 +1228,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getValuesHash(
         LoanOffering loanOffering
-    ) internal pure returns (
-        bytes32 _hash
-    ) {
+    )
+        internal
+        pure
+        returns (bytes32 _hash)
+    {
         return keccak256(
             loanOffering.rates.minimumDeposit,
             loanOffering.rates.maxAmount,
@@ -957,7 +1251,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function transferTokensForShort(
         bytes32 shortId,
         ShortTx transaction
-    ) internal {
+    )
+        internal
+    {
         transferTokensFromShortSeller(
             shortId,
             transaction
@@ -980,7 +1276,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function transferTokensFromShortSeller(
         bytes32 shortId,
         ShortTx transaction
-    ) internal {
+    )
+        internal
+    {
         // Calculate Fee
         uint buyOrderTakerFee = getPartialAmount(
             transaction.shortAmount,
@@ -1026,7 +1324,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function transferLoanFees(
         ShortTx transaction
-    ) internal {
+    )
+        internal
+    {
         Proxy proxy = Proxy(PROXY);
         uint lenderFee = getPartialAmount(
             transaction.shortAmount,
@@ -1057,7 +1357,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         address shortSeller,
         ShortTx transaction,
         uint baseTokenReceived
-    ) internal {
+    )
+        internal
+    {
         ShortInitiated(
             shortId,
             shortSeller,
@@ -1078,11 +1380,14 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function calculateInterestFee(
         uint interestRate,
-        uint startTimestamp
-    ) internal view returns (
-        uint _interestFee
-    ) {
-        uint timeElapsed = sub(block.timestamp, startTimestamp);
+        uint startTimestamp,
+        uint endTimestamp
+    )
+        internal
+        pure
+        returns (uint _interestFee)
+    {
+        uint timeElapsed = sub(endTimestamp, startTimestamp);
         return getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
@@ -1095,9 +1400,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
-    ) internal returns (
-        uint _buybackCost
-    ) {
+    )
+        internal
+        returns (uint _buybackCost)
+    {
         uint baseTokenPrice = getBaseTokenPriceForBuyback(
             short,
             interestFee,
@@ -1144,9 +1450,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint interestFee,
         bytes32 shortId,
         uint[6] orderValues
-    ) internal view returns (
-        uint _baseTokenPrice
-    ) {
+    )
+        internal
+        view
+        returns (uint _baseTokenPrice)
+    {
         uint baseTokenPrice = getPartialAmount(
             orderValues[1],
             orderValues[0],
@@ -1165,7 +1473,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint[6] orderValues,
         address takerFeeToken,
         uint baseTokenPrice
-    ) internal {
+    )
+        internal
+    {
         uint takerFee = getPartialAmount(
             baseTokenPrice,
             orderValues[1],
@@ -1187,9 +1497,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         Short short,
         bytes32 shortId,
         uint interestFee
-    ) internal returns (
-        uint _sellerBaseTokenAmount
-    ) {
+    )
+        internal
+        returns (uint _sellerBaseTokenAmount)
+    {
         Vault vault = Vault(VAULT);
 
         // Send original loaned underlying token to lender
@@ -1224,15 +1535,32 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     function cleanupShort(
-        Short short,
         bytes32 shortId
-    ) internal {
+    )
+        internal
+    {
         ShortSellRepo(REPO).deleteShort(shortId);
+    }
 
-        Vault(VAULT).deleteBalances(
+    function payBackAuctionBidderIfExists(
+        bytes32 shortId,
+        Short short
+    )
+        internal
+    {
+        var (, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
+
+        if (!hasCurrentOffer) {
+            return;
+        }
+
+        ShortSellAuctionRepo(AUCTION_REPO).deleteAuctionOffer(shortId);
+
+        Vault(VAULT).send(
             shortId,
-            short.baseToken,
-            short.underlyingToken
+            short.underlyingToken,
+            currentBidder,
+            short.shortAmount
         );
     }
 
@@ -1244,9 +1572,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal view returns (
-        ShortTx _transaction
-    ) {
+    )
+        internal
+        view
+        returns (ShortTx _transaction)
+    {
         ShortTx memory transaction = ShortTx({
             underlyingToken: addresses[0],
             baseToken: addresses[1],
@@ -1276,9 +1606,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal view returns (
-        LoanOffering _loanOffering
-    ) {
+    )
+        internal
+        view
+        returns (LoanOffering _loanOffering)
+    {
         LoanOffering memory loanOffering = LoanOffering({
             lender: addresses[2],
             taker: addresses[3],
@@ -1290,7 +1622,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             lockoutTime: values32[0],
             callTimeLimit: values32[1],
             salt: values[8],
-            loanHash: 0, // Set this later
+            loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
@@ -1305,9 +1637,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function parseLoanOfferRates(
         uint[17] values
-    ) internal pure returns (
-        LoanRates _loanRates
-    ) {
+    )
+        internal
+        pure
+        returns (LoanRates _loanRates)
+    {
         LoanRates memory rates = LoanRates({
             minimumDeposit: values[0],
             maxAmount: values[1],
@@ -1324,9 +1658,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function parseLoanOfferingSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal pure returns (
-        Signature _signature
-    ) {
+    )
+        internal
+        pure
+        returns (Signature _signature)
+    {
         Signature memory signature = Signature({
             v: sigV[0],
             r: sigRS[0],
@@ -1340,9 +1676,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         address[7] addresses,
         uint[9] values,
         uint32[2] values32
-    ) internal view returns (
-        LoanOffering _loanOffering
-    ) {
+    )
+        internal
+        view
+        returns (LoanOffering _loanOffering)
+    {
         LoanOffering memory loanOffering = LoanOffering({
             lender: addresses[2],
             taker: addresses[3],
@@ -1373,9 +1711,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function parseLoanOfferRates(
         uint[9] values
-    ) internal pure returns (
-        LoanRates _loanRates
-    ) {
+    )
+        internal
+        pure
+        returns (LoanRates _loanRates)
+    {
         LoanRates memory rates = LoanRates({
             minimumDeposit: values[0],
             maxAmount: values[1],
@@ -1394,9 +1734,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal pure returns (
-        BuyOrder _buyOrder
-    ) {
+    )
+        internal
+        pure
+        returns (BuyOrder _buyOrder)
+    {
         BuyOrder memory order = BuyOrder({
             maker: addresses[7],
             taker: addresses[8],
@@ -1418,9 +1760,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     function parseBuyOrderSignature(
         uint8[2] sigV,
         bytes32[4] sigRS
-    ) internal pure returns (
-        Signature _signature
-    ) {
+    )
+        internal
+        pure
+        returns (Signature _signature)
+    {
         Signature memory signature = Signature({
             v: sigV[1],
             r: sigRS[2],
@@ -1432,9 +1776,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getShortObject(
         bytes32 shortId
-    ) internal view returns (
-        Short _short
-    ) {
+    )
+        internal
+        view
+        returns (Short _short)
+    {
         var (
             underlyingToken,
             baseToken,

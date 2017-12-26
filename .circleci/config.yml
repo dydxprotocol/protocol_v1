@@ -16,7 +16,10 @@ jobs:
             - node_modules
       - run:
           name: Compile contracts
-          command: npm run compile
+          command: npm run compile -- --all
+      - run:
+          name: Lint
+          command: npm run lint && npm run solint
       - run:
           name: Test
           command: npm test

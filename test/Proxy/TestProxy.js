@@ -1,7 +1,6 @@
-/*global artifacts, web3, contract, describe, it, beforeEach*/
+/*global artifacts, contract, describe, it, beforeEach*/
 
 const expect = require('chai').expect;
-const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 const Proxy = artifacts.require("Proxy");
