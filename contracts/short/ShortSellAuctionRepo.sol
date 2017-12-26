@@ -78,14 +78,16 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
         public
         returns (
             uint _offer,
-            address _bidder
+            address _bidder,
+            bool _exists
         )
     {
         AuctionOffer memory auctionOffer = auctionOffers[shortId];
 
         return (
             auctionOffer.offer,
-            auctionOffer.bidder
+            auctionOffer.bidder,
+            auctionOffer.exists
         );
     }
 

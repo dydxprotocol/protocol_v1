@@ -692,8 +692,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         // The offered amount must be less than the amount of base token held - max interest fee
         require(offer <= sub(getShortBalance(shortId), maxInterestFee));
 
-        var (currentOffer, currentBidder) = getShortAuctionOffer(shortId);
-        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+        var (currentOffer, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
 
         // If there is a current offer, the new offer must be for less
         if (hasCurrentOffer && currentOffer < offer) {
@@ -732,6 +731,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      * Function callable by a short sell lender after he has called in the loan, but the
      * short seller did not close the short sell before the call time limit. Used to recover the
      * lender's original loaned amount of underlying token as well as any owed interest fee
+     * This function can also be called by the winner of a sellback auction.
      *
      * @param  shortId  unique id for the short sell
      */
@@ -743,10 +743,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         returns (uint _baseTokenAmount)
     {
         Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
         require(add(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
 
-        bool hasCurrentOffer = hasShortAuctionOffer(shortId);
+        var (offer, bidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
+        require(msg.sender == short.lender || msg.sender == bidder);
+
         uint lenderBaseTokenAmount;
 
         // Delete the short
@@ -767,7 +768,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
                 add(short.callTimestamp, short.callTimeLimit)
             );
 
-            var (offer, bidder) = getShortAuctionOffer(shortId);
             uint shortSellerBaseToken = sub(
                 sub(
                     Vault(VAULT).balances(shortId, short.baseToken),
@@ -1013,7 +1013,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         public
         returns (
             uint _offer,
-            address _taker
+            address _taker,
+            bool _exists
         )
     {
         return ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
@@ -1522,7 +1523,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             return;
         }
 
-        var (, currentBidder) = getShortAuctionOffer(shortId);
+        var (, currentBidder,) = getShortAuctionOffer(shortId);
 
         ShortSellAuctionRepo(AUCTION_REPO).deleteAuctionOffer(shortId);
 
