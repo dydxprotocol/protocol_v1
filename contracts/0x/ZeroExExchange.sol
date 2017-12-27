@@ -170,12 +170,14 @@ contract ZeroExExchange is ZeroExSafeMath {
             msg.sender,
             filledMakerTokenAmount
         ));
+        return 1;
         require(transferViaTokenTransferProxy(
             order.takerToken,
             msg.sender,
             order.maker,
             filledTakerTokenAmount
         ));
+
         if (order.feeRecipient != address(0)) {
             if (order.makerFee > 0) {
                 paidMakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerFee);
@@ -518,6 +520,8 @@ contract ZeroExExchange is ZeroExSafeMath {
     * Internal functions
     */
 
+   event Addr(address addr1, address addr2, address addr3, uint val);
+
     /// @dev Transfers a token using TokenTransferProxy transferFrom function.
     /// @param token Address of token to transferFrom.
     /// @param from Address transfering token.
@@ -532,6 +536,8 @@ contract ZeroExExchange is ZeroExSafeMath {
         internal
         returns (bool)
     {
+        Addr(TOKEN_TRANSFER_PROXY_CONTRACT, token, from, value);
+        return true;
         return ZeroExProxy(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
     }
 

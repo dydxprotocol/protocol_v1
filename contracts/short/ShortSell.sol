@@ -453,6 +453,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId
         );
 
+        return "0x";
+
         // LOG EVENT
 
         recordShortInitiated(
@@ -1207,6 +1209,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             transaction.buyOrder.signature.s,
             true
         );
+        return 0;
 
         Vault vault = Vault(VAULT);
 

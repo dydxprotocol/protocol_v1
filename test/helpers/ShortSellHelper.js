@@ -13,6 +13,7 @@ const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
+const ZeroExExchange = artifacts.require("ZeroExExchange");
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -66,19 +67,20 @@ async function createSigned0xSellOrder(accounts) {
 }
 
 function callShort(shortSell, tx) {
+  console.log(tx)
   const addresses = [
     UnderlyingToken.address,
     BaseToken.address,
     tx.loanOffering.lender,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
-    FeeToken.address,
-    FeeToken.address,
+    tx.loanOffering.lenderFeeTokenAddress,
+    tx.loanOffering.takerFeeTokenAddress,
     tx.buyOrder.maker,
     tx.buyOrder.taker,
     tx.buyOrder.feeRecipient,
-    FeeToken.address,
-    FeeToken.address
+    tx.buyOrder.makerFeeTokenAddress,
+    tx.buyOrder.takerFeeTokenAddress
   ];
 
   const values256 = [
@@ -360,6 +362,8 @@ async function createLoanOffering(accounts) {
     lender: accounts[1],
     taker: ZeroEx.NULL_ADDRESS,
     feeRecipient: accounts[3],
+    lenderFeeTokenAddress: FeeToken.address,
+    takerFeeTokenAddress: FeeToken.address,
     rates: {
       minimumDeposit: BASE_AMOUNT,
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
@@ -401,8 +405,8 @@ async function signLoanOffering(loanOffering) {
     loanOffering.lender,
     loanOffering.taker,
     loanOffering.feeRecipient,
-    FeeToken.address,
-    FeeToken.address,
+    loanOffering.lenderFeeTokenAddress,
+    loanOffering.takerFeeTokenAddress,
     valuesHash
   );
 
@@ -435,6 +439,20 @@ async function signOrder(order) {
   };
 }
 
+async function sign0xOrder(order) {
+  const signature = await promisify(web3Instance.eth.sign)(
+    get0xOrderHash(order), order.maker
+  );
+
+  const { v, r, s } = ethUtil.fromRpcSig(signature);
+
+  return {
+    v,
+    r: ethUtil.bufferToHex(r),
+    s: ethUtil.bufferToHex(s)
+  };
+}
+
 function getOrderHash(order) {
   return web3Instance.utils.soliditySha3(
     Exchange.address,
@@ -445,6 +463,23 @@ function getOrderHash(order) {
     order.feeRecipient,
     order.makerFeeTokenAddress,
     order.takerFeeTokenAddress,
+    order.makerTokenAmount,
+    order.takerTokenAmount,
+    order.makerFee,
+    order.takerFee,
+    order.expirationUnixTimestampSec,
+    order.salt
+  )
+}
+
+function get0xOrderHash(order) {
+  return web3Instance.utils.soliditySha3(
+    ZeroExExchange.address,
+    order.maker,
+    order.taker,
+    order.makerTokenAddress,
+    order.takerTokenAddress,
+    order.feeRecipient,
     order.makerTokenAmount,
     order.takerTokenAmount,
     order.makerFee,
@@ -473,5 +508,6 @@ module.exports = {
   getPartialAmount,
   signLoanOffering,
   callCancelLoanOffer,
-  signOrder
+  signOrder,
+  sign0xOrder
 };

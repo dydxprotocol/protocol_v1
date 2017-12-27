@@ -33,7 +33,10 @@ function maybeDeployTestTokens(deployer, network) {
 function maybeDeploy0x(deployer, network) {
   if (isDevNetwork(network)) {
     return deployer.deploy(ZeroExProxy)
-      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address))
+      .then(() => {
+        console.log(ZeroExProxy.address)
+        return deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address)
+      })
       .then(() => ZeroExProxy.deployed())
       .then( proxy => proxy.addAuthorizedAddress(ZeroExExchange.address) );
   }

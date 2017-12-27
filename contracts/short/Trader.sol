@@ -145,6 +145,17 @@ contract Trader is
     // ---- Authorized Only State Changing Functions ----
     // --------------------------------------------------
 
+    event Log(
+        bytes32 id,
+        address[7] orderAddresses,
+        uint[6] orderValues,
+        uint requestedFillAmount,
+        uint8 v,
+        bytes32 r,
+        bytes32 s,
+        bool requireFullAmount
+    );
+
     function trade(
         bytes32 id,
         address[7] orderAddresses,
@@ -191,6 +202,17 @@ contract Trader is
             requestedFillAmount
         );
 
+        Log(
+            id,
+            orderAddresses,
+            orderValues,
+            requestedFillAmount,
+            v,
+            r,
+            s,
+            requireFullAmount
+        );
+
         // Do the trade
         uint filledTakerTokenAmount = doTrade(
             orderAddresses,
@@ -200,6 +222,7 @@ contract Trader is
             r,
             s
         );
+        return (0,0);
 
         uint makerTokenAmount = returnTokens(
             id,

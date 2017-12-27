@@ -9,6 +9,10 @@ const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
+const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ProxyContract = artifacts.require("Proxy");
+const { zeroExFeeTokenConstant } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -16,12 +20,13 @@ const {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
-  getPartialAmount
+  getPartialAmount,
+  sign0xOrder
 } = require('../helpers/ShortSellHelper');
 
-contract('ShortSell', function(accounts) {
-  describe('#short', () => {
-    it('short succeeds on valid inputs', async () => {
+describe('#short', () => {
+  contract('ShortSell', function(accounts) {
+    it('succeeds on valid inputs', async () => {
       const shortTx = await createShortSellTx(accounts);
       const shortSell = await ShortSell.deployed();
 
@@ -164,6 +169,56 @@ contract('ShortSell', function(accounts) {
             )
           )
       )).to.be.true;
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it.only('succeeds when using 0x exchange contract', async () => {
+      const shortTx = await createShortSellTx(accounts);
+      const [shortSell, feeToken, baseToken] = await Promise.all([
+        ShortSell.deployed(),
+        FeeToken.deployed(),
+        BaseToken.deployed()
+      ]);
+
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      shortTx.buyOrder.makerFeeTokenAddress = zeroExFeeTokenConstant;
+      shortTx.buyOrder.ecSignature = await sign0xOrder(shortTx.buyOrder);
+
+      // Set allowances on the 0x proxy, not the dYdX proxy
+      await Promise.all([
+        feeToken.approve(
+          ProxyContract.address,
+          new BigNumber(0),
+          { from: shortTx.buyOrder.maker }
+        ),
+        feeToken.approve(
+          ZeroExProxy.address,
+          shortTx.buyOrder.makerFee,
+          { from: shortTx.buyOrder.maker }
+        ),
+        baseToken.approve(
+          ProxyContract.address,
+          new BigNumber(0),
+          { from: shortTx.buyOrder.maker }
+        ),
+        baseToken.approve(
+          ZeroExProxy.address,
+          shortTx.buyOrder.makerTokenAmount,
+          { from: shortTx.buyOrder.maker }
+        ),
+      ]);
+
+      console.log(zeroExFeeTokenConstant)
+
+      await callShort(shortSell, shortTx);
+
+      const shortId = web3Instance.utils.soliditySha3(
+        shortTx.loanOffering.loanHash,
+        0
+      );
+
+      expect(true).to.be.false;
     });
   });
 });
