@@ -85,7 +85,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         bytes32 orderHash;
     }
 
-    function Exchange(address _zrxToken, address _tokenTransferProxy) public {
+    function ZeroExExchange(address _zrxToken, address _tokenTransferProxy) public {
         ZRX_TOKEN_CONTRACT = _zrxToken;
         TOKEN_TRANSFER_PROXY_CONTRACT = _tokenTransferProxy;
     }
@@ -176,6 +176,7 @@ contract ZeroExExchange is ZeroExSafeMath {
             order.maker,
             filledTakerTokenAmount
         ));
+
         if (order.feeRecipient != address(0)) {
             if (order.makerFee > 0) {
                 paidMakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerFee);
