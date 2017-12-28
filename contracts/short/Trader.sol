@@ -145,17 +145,6 @@ contract Trader is
     // ---- Authorized Only State Changing Functions ----
     // --------------------------------------------------
 
-    event Log(
-        bytes32 id,
-        address[7] orderAddresses,
-        uint[6] orderValues,
-        uint requestedFillAmount,
-        uint8 v,
-        bytes32 r,
-        bytes32 s,
-        bool requireFullAmount
-    );
-
     function trade(
         bytes32 id,
         address[7] orderAddresses,
@@ -200,17 +189,6 @@ contract Trader is
             id,
             order,
             requestedFillAmount
-        );
-
-        Log(
-            id,
-            orderAddresses,
-            orderValues,
-            requestedFillAmount,
-            v,
-            r,
-            s,
-            requireFullAmount
         );
 
         // Do the trade
