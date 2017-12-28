@@ -81,12 +81,6 @@ contract ZeroExProxy is ZeroExOwnable {
         LogAuthorizedAddressRemoved(target, msg.sender);
     }
 
-    event AttemptedTransfer(
-        address token,
-        address from,
-        address to,
-        uint value
-    );
     /// @dev Calls into ERC20 Token contract, invoking transferFrom.
     /// @param token Address of token to transfer.
     /// @param from Address to transfer token from.
@@ -102,13 +96,6 @@ contract ZeroExProxy is ZeroExOwnable {
         onlyAuthorized
         returns (bool)
     {
-        AttemptedTransfer(
-            token,
-            from,
-            to,
-            value
-        );
-        return true;
         return ZeroExToken(token).transferFrom(from, to, value);
     }
 

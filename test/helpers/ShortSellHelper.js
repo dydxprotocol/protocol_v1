@@ -67,7 +67,6 @@ async function createSigned0xSellOrder(accounts) {
 }
 
 function callShort(shortSell, tx) {
-  console.log(tx)
   const addresses = [
     UnderlyingToken.address,
     BaseToken.address,

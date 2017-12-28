@@ -85,7 +85,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         bytes32 orderHash;
     }
 
-    function Exchange(address _zrxToken, address _tokenTransferProxy) public {
+    function ZeroExExchange(address _zrxToken, address _tokenTransferProxy) public {
         ZRX_TOKEN_CONTRACT = _zrxToken;
         TOKEN_TRANSFER_PROXY_CONTRACT = _tokenTransferProxy;
     }
@@ -170,7 +170,6 @@ contract ZeroExExchange is ZeroExSafeMath {
             msg.sender,
             filledMakerTokenAmount
         ));
-        return 1;
         require(transferViaTokenTransferProxy(
             order.takerToken,
             msg.sender,
@@ -520,8 +519,6 @@ contract ZeroExExchange is ZeroExSafeMath {
     * Internal functions
     */
 
-   event Addr(address addr1, address addr2, address addr3, uint val);
-
     /// @dev Transfers a token using TokenTransferProxy transferFrom function.
     /// @param token Address of token to transferFrom.
     /// @param from Address transfering token.
@@ -536,8 +533,6 @@ contract ZeroExExchange is ZeroExSafeMath {
         internal
         returns (bool)
     {
-        Addr(TOKEN_TRANSFER_PROXY_CONTRACT, token, from, value);
-        return true;
         return ZeroExProxy(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
     }
 

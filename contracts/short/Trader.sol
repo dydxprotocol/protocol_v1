@@ -222,7 +222,6 @@ contract Trader is
             r,
             s
         );
-        return (0,0);
 
         uint makerTokenAmount = returnTokens(
             id,
