@@ -696,7 +696,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      * @param  shortId      ID of the short sell to bid on
      * @param  offer        the amount of base token the bidder wants to be paid in exchange for
      *                      the amount of underlying token in the short sell
-     * @return _wasAccepted true if the bid was successful, false otherwise
      */
     function placeSellbackBid(
         bytes32 shortId,
@@ -704,20 +703,17 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     )
         external
         nonReentrant
-        returns (bool _wasAccepted)
     {
-        // Prefer to return false vs. throw so gas is not lost on bid race condition
-
-        // If the short has already been closed, return failure
-        if (!containsShort(shortId)) {
-            return false;
-        }
-
         Short memory short = getShortObject(shortId);
 
         // If the short has not been called, return failure
-        if (short.callTimestamp == 0) {
-            return false;
+        require(short.callTimestamp > 0);
+
+        var (currentOffer, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
+
+        // If there is a current offer, the new offer must be for less
+        if (hasCurrentOffer) {
+            require(offer < currentOffer);
         }
 
         // Maximum interest fee is what it would be if the entire call time limit elapsed
@@ -729,13 +725,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         // The offered amount must be less than the amount of base token held - max interest fee
         require(offer <= sub(getShortBalance(shortId), maxInterestFee));
-
-        var (currentOffer, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
-
-        // If there is a current offer, the new offer must be for less
-        if (hasCurrentOffer && currentOffer < offer) {
-            return false;
-        }
 
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
@@ -769,8 +758,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             offer,
             block.timestamp
         );
-
-        return true;
     }
 
     /**
@@ -926,7 +913,6 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      *  [6]  = loan taker fee
      *  [7]  = loan expiration timestamp (in seconds)
      *  [8]  = loan salt
-     *  [9]  = buy order base token amount
      *
      * @param  values32         Values corresponding to:
      *
