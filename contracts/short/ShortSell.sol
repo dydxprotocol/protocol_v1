@@ -564,6 +564,72 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     /**
+     * Close a short sell. Only callable by short seller. This method to close a short transfers
+     * the borrowed underlying tokens directly from the short seller, and does not use a 0x order
+     * to buy them back. To use this, the short seller must own the shortAmount of underlyingToken
+     *
+     * @param  shortId              unique id for the short sell
+     * @return _baseTokenReceived   amount of base token received by the short seller after closing
+     * @return _interestFeeAmount   interest fee in base token paid to the lender
+     */
+    function closeShortDirectly(
+        bytes32 shortId
+    )
+        external
+        nonReentrant
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        Short memory short = getShortObject(shortId);
+
+        require(short.seller == msg.sender);
+
+        uint interestFee = calculateInterestFee(
+            short.interestRate,
+            short.startTimestamp,
+            block.timestamp
+        );
+
+        payBackAuctionBidderIfExists(
+            shortId,
+            short
+        );
+
+        // EXTERNAL CALLS
+        Vault(VAULT).transfer(
+            shortId,
+            short.underlyingToken,
+            msg.sender,
+            short.shortAmount
+        );
+
+        uint sellerBaseTokenAmount = sendTokensOnClose(
+            short,
+            shortId,
+            interestFee
+        );
+
+        cleanupShort(
+            shortId
+        );
+
+        ShortClosed(
+            shortId,
+            interestFee,
+            sellerBaseTokenAmount,
+            0,
+            block.timestamp
+        );
+
+        return (
+            sellerBaseTokenAmount,
+            interestFee
+        );
+    }
+
+    /**
      * Call in a short sell loan.
      * Only callable by the lender for a short sell. After loan is called in, the short seller
      * will have time equal to the call time limit specified on the original short sell to
