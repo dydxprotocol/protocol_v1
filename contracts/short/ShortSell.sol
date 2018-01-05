@@ -81,6 +81,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         address underlyingToken;
         address baseToken;
         uint shortAmount;
+        uint closedAmount;
         uint interestRate;
         uint32 callTimeLimit;
         uint32 lockoutTime;
@@ -498,6 +499,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      */
     function closeShort(
         bytes32 shortId,
+        uint closeAmount,
         address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
@@ -514,13 +516,21 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         Short memory short = getShortObject(shortId);
 
         require(short.seller == msg.sender);
+        require(closeAmount <= sub(short.shortAmount, short.closedAmount));
+
+        uint interestRate = getPartialAmount(
+            closeAmount,
+            short.shortAmount,
+            short.interestRate
+        );
 
         uint interestFee = calculateInterestFee(
-            short.interestRate,
+            interestRate,
             short.startTimestamp,
             block.timestamp
         );
 
+        // TODO
         payBackAuctionBidderIfExists(
             shortId,
             short
@@ -1044,10 +1054,11 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             address baseToken,
             uint shortAmount,
             uint interestRate,
-            uint callTimeLimit,
-            uint lockoutTime,
-            uint startTimestamp,
-            uint callTimestamp,
+            uint closedAmount,
+            uint32 callTimeLimit,
+            uint32 lockoutTime,
+            uint32 startTimestamp,
+            uint32 callTimestamp,
             address lender,
             address seller
         )
@@ -1465,6 +1476,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function buyBackUnderlyingToken(
         Short short,
+        uint buybackAmount,
         bytes32 shortId,
         uint interestFee,
         address[5] orderAddresses,
@@ -1478,6 +1490,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     {
         uint baseTokenPrice = getBaseTokenPriceForBuyback(
             short,
+            buybackAmount,
             interestFee,
             shortId,
             orderValues
@@ -1519,6 +1532,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function getBaseTokenPriceForBuyback(
         Short short,
+        uint buybackAmount,
         uint interestFee,
         bytes32 shortId,
         uint[6] orderValues
@@ -1530,7 +1544,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         uint baseTokenPrice = getPartialAmount(
             orderValues[1],
             orderValues[0],
-            short.shortAmount
+            buybackAmount
         );
 
         require(
@@ -1857,6 +1871,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             underlyingToken,
             baseToken,
             shortAmount,
+            closedAmount,
             interestRate,
             callTimeLimit,
             lockoutTime,
@@ -1873,6 +1888,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             underlyingToken: underlyingToken,
             baseToken: baseToken,
             shortAmount: shortAmount,
+            closedAmount: closedAmount,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
             lockoutTime: lockoutTime,

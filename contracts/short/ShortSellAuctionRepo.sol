@@ -20,6 +20,7 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
         address bidder;
         bool exists;
     }
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------

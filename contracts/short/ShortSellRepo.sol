@@ -17,6 +17,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
 
     struct Short {
         uint shortAmount;
+        uint closedAmount;
         uint interestRate;
         address underlyingToken;    // Immutable
         address baseToken;          // Immutable
@@ -73,6 +74,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             underlyingToken: underlyingToken,
             baseToken: baseToken,
             shortAmount: shortAmount,
+            closedAmount: 0,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
             lockoutTime: lockoutTime,
@@ -114,6 +116,17 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     {
         require(containsShort(id));
         shorts[id].seller = who;
+    }
+
+    function setShortClosedAmount(
+        bytes32 id,
+        uint closedAmount
+    )
+        requiresAuthorization
+        external
+    {
+        require(containsShort(id));
+        shorts[id].closedAmount = closedAmount;
     }
 
     /**
@@ -194,6 +207,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             address underlyingToken,
             address baseToken,
             uint shortAmount,
+            uint closedAmount,
             uint interestRate,
             uint32 callTimeLimit,
             uint32 lockoutTime,
@@ -209,6 +223,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             short.underlyingToken,
             short.baseToken,
             short.shortAmount,
+            short.closedAmount,
             short.interestRate,
             short.callTimeLimit,
             short.lockoutTime,
