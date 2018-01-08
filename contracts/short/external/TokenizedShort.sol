@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
+import { StandardToken } from 'zeppelin-solidity/contracts/token/StandardToken.sol';
 import '../ShortSell.sol';
-import 'zeppelin-solidity/contracts/token/StandardToken.sol';
 import '../../lib/SafeMath.sol';
 import '../../lib/TokenInteract.sol';
 
@@ -12,6 +12,7 @@ contract TokenizedShort is StandardToken, SafeMath {
         address baseToken;
         uint shortAmount;
         uint interestRate;
+        uint closedAmount;
         uint32 callTimeLimit;
         uint32 lockoutTime;
         uint32 startTimestamp;
@@ -61,7 +62,7 @@ contract TokenizedShort is StandardToken, SafeMath {
 
     function initialize() external {
         require(state == State.CLOSED);
-        require(ShortSell(SHORT_SELL).getShort(shortId).seller == address(this));
+        require(getShortObject().seller == address(this));
 
         // Set to READY state
         state = State.READY;
@@ -81,7 +82,7 @@ contract TokenizedShort is StandardToken, SafeMath {
     {
         require(value <= balances[msg.sender]);
 
-        Short memore short = getShortObject(shortId);
+        Short memory short = getShortObject();
 
         // Destroy the tokens
         balances[msg.sender] = sub(balances[msg.sender], value);
@@ -101,9 +102,7 @@ contract TokenizedShort is StandardToken, SafeMath {
         );
     }
 
-    function getShortObject(
-        bytes32 shortId
-    )
+    function getShortObject()
         internal
         view
         returns (Short _short)
@@ -113,6 +112,7 @@ contract TokenizedShort is StandardToken, SafeMath {
             baseToken,
             shortAmount,
             interestRate,
+            closedAmount,
             callTimeLimit,
             lockoutTime,
             startTimestamp,
@@ -129,6 +129,7 @@ contract TokenizedShort is StandardToken, SafeMath {
             baseToken: baseToken,
             shortAmount: shortAmount,
             interestRate: interestRate,
+            closedAmount: closedAmount,
             callTimeLimit: callTimeLimit,
             lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,

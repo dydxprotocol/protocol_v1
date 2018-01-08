@@ -123,6 +123,29 @@ contract Vault is
         validateBalance(token);
     }
 
+    function transferBetweenVaults(
+        bytes32 fromId,
+        bytes32 toId,
+        address token,
+        uint amount
+    )
+        external
+        nonReentrant
+        requiresAuthorization
+        whenNotPaused
+    {
+        require(balances[fromId][token] >= amount);
+
+        // This should always be true. If not, something is very wrong
+        assert(totalBalances[token] >= amount);
+
+        // First decrement the balance of the from vault
+        balances[fromId][token] = sub(balances[fromId][token], amount);
+
+        // Then increment the balance of the to vault
+        balances[toId][token] = add(balances[toId][token], amount);
+    }
+
     // --------------------------------
     // ------ Internal Functions ------
     // --------------------------------

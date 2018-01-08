@@ -3,7 +3,7 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../lib/SafeMath.sol";
+import '../lib/SafeMath.sol';
 import "../shared/Proxy.sol";
 import "./Vault.sol";
 import "./Trader.sol";
@@ -158,6 +158,19 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     );
 
     /**
+     * A short sell was partially closed
+     */
+    event ShortPartiallyClosed(
+        bytes32 indexed id,
+        uint closeAmount,
+        uint remainingAmount,
+        uint interestFee,
+        uint shortSellerBaseToken,
+        uint buybackCost,
+        uint timestamp
+    );
+
+    /**
      * The loan for a short sell was called in
      */
     event LoanCalled(
@@ -238,6 +251,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         bytes32 indexed id,
         address indexed bidder,
         uint bid,
+        uint currentShortAmount,
         uint timestamp
     );
 
@@ -506,7 +520,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         bytes32 orderR,
         bytes32 orderS
     )
-        external
+        public // Used by closeEntireShort
         nonReentrant
         returns (
             uint _baseTokenReceived,
@@ -514,33 +528,49 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         )
     {
         Short memory short = getShortObject(shortId);
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
 
         require(short.seller == msg.sender);
-        require(closeAmount <= sub(short.shortAmount, short.closedAmount));
+        require(closeAmount <= currentShortAmount);
 
-        uint interestRate = getPartialAmount(
-            closeAmount,
-            short.shortAmount,
-            short.interestRate
-        );
-
+        // The amount of interest fee owed to close this proportion of the position
         uint interestFee = calculateInterestFee(
-            interestRate,
-            short.startTimestamp,
+            short,
+            closeAmount,
             block.timestamp
         );
 
-        // TODO
-        payBackAuctionBidderIfExists(
+        // First transfer base token used for close into new vault. Vault will then validate
+        // this is the maximum base token that can be used by this close
+        // Prefer to use a new vault, so this close cannot touch the rest of the
+        // funds held in the original short vault
+        bytes32 closeId = transferToCloseVault(
+            short,
             shortId,
-            short
+            closeAmount
         );
+
+        // STATE UPDATES
+
+        // If the whole short is closed, remove it from repo
+        if (closeAmount == currentShortAmount) {
+            cleanupShort(
+                shortId
+            );
+        } else {
+            // Otherwise increment the closed amount on the short
+            ShortSellRepo(REPO).setShortClosedAmount(
+                shortId,
+                add(short.closedAmount, closeAmount)
+            );
+        }
 
         // EXTERNAL CALLS
 
         uint buybackCost = buyBackUnderlyingToken(
             short,
-            shortId,
+            closeId,
+            closeAmount,
             interestFee,
             orderAddresses,
             orderValues,
@@ -551,25 +581,72 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         uint sellerBaseTokenAmount = sendTokensOnClose(
             short,
-            shortId,
+            closeId,
+            closeAmount,
             interestFee
         );
 
-        cleanupShort(
-            shortId
-        );
+        uint remainingShortAmount = sub(currentShortAmount, closeAmount);
 
-        ShortClosed(
-            shortId,
-            interestFee,
-            sellerBaseTokenAmount,
-            buybackCost,
-            block.timestamp
-        );
+        if (closeAmount == currentShortAmount) {
+            // If the whole short is closed and there is an auction offer, send it back
+            payBackAuctionBidderIfExists(
+                shortId,
+                short
+            );
+
+            ShortClosed(
+                shortId,
+                interestFee,
+                sellerBaseTokenAmount,
+                buybackCost,
+                block.timestamp
+            );
+        } else {
+            ShortPartiallyClosed(
+                shortId,
+                closeAmount,
+                sub(currentShortAmount, closeAmount),
+                interestFee,
+                sellerBaseTokenAmount,
+                buybackCost,
+                block.timestamp
+            );
+        }
 
         return (
             sellerBaseTokenAmount,
             interestFee
+        );
+    }
+
+    /**
+     * Close the entire short position. Follows closeShort documentation.
+     */
+    function closeEntireShort(
+        bytes32 shortId,
+        address[5] orderAddresses,
+        uint[6] orderValues,
+        uint8 orderV,
+        bytes32 orderR,
+        bytes32 orderS
+    )
+        external
+        // nonReentrant not needed because closeShort uses the non-reentrant state variable
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        Short memory short = getShortObject(shortId);
+        return closeShort(
+            shortId,
+            short.shortAmount,
+            orderAddresses,
+            orderValues,
+            orderV,
+            orderR,
+            orderS
         );
     }
 
@@ -583,7 +660,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      * @return _interestFeeAmount   interest fee in base token paid to the lender
      */
     function closeShortDirectly(
-        bytes32 shortId
+        bytes32 shortId,
+        uint closeAmount
     )
         external
         nonReentrant
@@ -593,45 +671,83 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         )
     {
         Short memory short = getShortObject(shortId);
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
 
         require(short.seller == msg.sender);
+        require(closeAmount <= currentShortAmount);
 
+        // The amount of interest fee owed to close this proportion of the position
         uint interestFee = calculateInterestFee(
-            short.interestRate,
-            short.startTimestamp,
+            short,
+            closeAmount,
             block.timestamp
         );
 
-        payBackAuctionBidderIfExists(
+        // First transfer base token used for close into new vault. Vault will then validate
+        // this is the maximum base token that can be used by this close
+        // Prefer to use a new vault, so this close cannot touch the rest of the
+        // funds held in the original short vault
+        bytes32 closeId = transferToCloseVault(
+            short,
             shortId,
-            short
+            closeAmount
         );
+
+        // STATE UPDATES
+
+        // If the whole short is closed, remove it from repo
+        if (closeAmount == currentShortAmount) {
+            cleanupShort(
+                shortId
+            );
+        } else {
+            // Otherwise increment the closed amount on the short
+            ShortSellRepo(REPO).setShortClosedAmount(
+                shortId,
+                add(short.closedAmount, closeAmount)
+            );
+        }
 
         // EXTERNAL CALLS
         Vault(VAULT).transfer(
-            shortId,
+            closeId,
             short.underlyingToken,
             msg.sender,
-            short.shortAmount
+            closeAmount
         );
 
         uint sellerBaseTokenAmount = sendTokensOnClose(
             short,
-            shortId,
+            closeId,
+            closeAmount,
             interestFee
         );
 
-        cleanupShort(
-            shortId
-        );
+        if (closeAmount == currentShortAmount) {
+            // If the whole short is closed and there is an auction offer, send it back
+            payBackAuctionBidderIfExists(
+                shortId,
+                short
+            );
 
-        ShortClosed(
-            shortId,
-            interestFee,
-            sellerBaseTokenAmount,
-            0,
-            block.timestamp
-        );
+            ShortClosed(
+                shortId,
+                interestFee,
+                sellerBaseTokenAmount,
+                0,
+                block.timestamp
+            );
+        } else {
+            ShortPartiallyClosed(
+                shortId,
+                closeAmount,
+                sub(currentShortAmount, closeAmount),
+                interestFee,
+                sellerBaseTokenAmount,
+                0,
+                block.timestamp
+            );
+        }
 
         return (
             sellerBaseTokenAmount,
@@ -771,7 +887,10 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
      *
      * @param  shortId      ID of the short sell to bid on
      * @param  offer        the amount of base token the bidder wants to be paid in exchange for
-     *                      the amount of underlying token in the short sell
+     *                      the amount of underlying token in the short sell. The price paid per
+     *                      underlying token is: offer / shortAmount (the opening amount
+     *                      of the short). Even if the short is partially closed, this amount is
+     *                      still relative to the opening short amount
      */
     function placeSellbackBid(
         bytes32 shortId,
@@ -794,7 +913,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         // Maximum interest fee is what it would be if the entire call time limit elapsed
         uint maxInterestFee = calculateInterestFee(
-            short.interestRate,
+            short,
             short.startTimestamp,
             add(short.callTimestamp, short.callTimeLimit)
         );
@@ -802,22 +921,28 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         // The offered amount must be less than the amount of base token held - max interest fee
         require(offer <= sub(getShortBalance(shortId), maxInterestFee));
 
+        // Store auction funds in a separate vault for isolation
+        bytes32 auctionVaultId = getAuctionVaultId(shortId);
+
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
             Vault(VAULT).send(
-                shortId,
+                auctionVaultId,
                 short.underlyingToken,
                 currentBidder,
-                short.shortAmount
+                Vault(VAULT).balances(auctionVaultId, short.underlyingToken)
             );
         }
 
+
         // Transfer the full underlying token amount from the bidder
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+
         Vault(VAULT).transfer(
-            shortId,
+            auctionVaultId,
             short.underlyingToken,
             msg.sender,
-            short.shortAmount
+            currentShortAmount
         );
 
         // Record that the bidder has placed this bid
@@ -832,6 +957,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId,
             msg.sender,
             offer,
+            currentShortAmount,
             block.timestamp
         );
     }
@@ -851,8 +977,9 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         nonReentrant
         returns (uint _baseTokenAmount)
     {
+        Vault vault = Vault(VAULT);
         Short memory short = getShortObject(shortId);
-        require(add(uint(short.callTimestamp), uint(short.callTimeLimit)) < block.timestamp);
+        require(block.timestamp > add(uint(short.callTimestamp), uint(short.callTimeLimit)));
 
         var (offer, bidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
         require(msg.sender == short.lender || msg.sender == bidder);
@@ -864,63 +991,83 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId
         );
 
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
         uint buybackCost = 0;
 
         if (!hasCurrentOffer) {
             // If there is no auction bid to sell back the underlying token owed to the lender
             // then give the lender everything locked in the position
-            lenderBaseTokenAmount = Vault(VAULT).balances(shortId, short.baseToken);
+            vault.send(
+                shortId,
+                short.baseToken,
+                short.lender,
+                vault.balances(shortId, short.baseToken)
+            );
         } else {
             // If there is an auction bid to sell back the underlying token owed to the lender
             // then give the lender just the owed interest fee at the end of the call time
             lenderBaseTokenAmount = calculateInterestFee(
-                short.interestRate,
-                short.startTimestamp,
+                short,
+                currentShortAmount,
                 add(short.callTimestamp, short.callTimeLimit)
             );
 
-            // Send the lender back the borrowed tokens
-            Vault(VAULT).send(
+            vault.send(
                 shortId,
-                short.underlyingToken,
+                short.baseToken,
                 short.lender,
-                short.shortAmount
+                lenderBaseTokenAmount
             );
 
+            // Send the lender back the borrowed tokens (out of the auction vault)
+            bytes32 auctionVaultId = getAuctionVaultId(shortId);
+
+            vault.send(
+                auctionVaultId,
+                short.underlyingToken,
+                short.lender,
+                currentShortAmount
+            );
+
+            // If there is extra underlying token leftover, send it back to the bidder
+            uint remainingAuctionVaultBalance = vault.balances(
+                auctionVaultId, short.underlyingToken
+            );
+
+            if (remainingAuctionVaultBalance > 0) {
+                vault.send(
+                    auctionVaultId,
+                    short.underlyingToken,
+                    bidder,
+                    remainingAuctionVaultBalance
+                );
+            }
+
             // Send the bidder the bidded amount of base token
-            Vault(VAULT).send(
+            uint auctionAmount = getPartialAmount(
+                currentShortAmount,
+                short.shortAmount,
+                offer
+            );
+
+            vault.send(
                 shortId,
                 short.baseToken,
                 bidder,
-                offer
+                auctionAmount
             );
 
-            // Send the short seller whatever is left (== margin deposit + interest fee - bid offer)
-            uint shortSellerBaseToken = sub(
-                sub(
-                    Vault(VAULT).balances(shortId, short.baseToken),
-                    lenderBaseTokenAmount
-                ),
-                offer
-            );
-
-            Vault(VAULT).send(
+            // Send the short seller whatever is left
+            // (== margin deposit + interest fee - bid offer)
+            vault.send(
                 shortId,
                 short.baseToken,
                 short.seller,
-                shortSellerBaseToken
+                vault.balances(shortId, short.baseToken)
             );
 
             buybackCost = offer;
         }
-
-        // Send the lender the owed amount of base token
-        Vault(VAULT).send(
-            shortId,
-            short.baseToken,
-            short.lender,
-            lenderBaseTokenAmount
-        );
 
         // Log an event
         LoanForceRecovered(
@@ -1103,10 +1250,21 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         }
         Short memory short = getShortObject(shortId);
 
+        uint endTimestamp;
+
+        if (
+            short.callTimestamp > 0
+            && block.timestamp > add(short.callTimestamp, short.callTimeLimit)
+        ) {
+            endTimestamp = add(short.callTimestamp, short.callTimeLimit);
+        } else {
+            endTimestamp = block.timestamp;
+        }
+
         return calculateInterestFee(
-            short.interestRate,
-            short.startTimestamp,
-            block.timestamp
+            short,
+            sub(short.shortAmount, short.closedAmount),
+            endTimestamp
         );
     }
 
@@ -1142,6 +1300,18 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         returns (bool _exists)
     {
         return ShortSellAuctionRepo(AUCTION_REPO).containsAuction(shortId);
+    }
+
+    function isShortCalled(
+        bytes32 shortId
+    )
+        view
+        public
+        returns(bool _isCalled)
+    {
+        Short memory short = getShortObject(shortId);
+
+        return (short.callTimestamp > 0);
     }
 
     // --------------------------------
@@ -1462,22 +1632,60 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     }
 
     function calculateInterestFee(
-        uint interestRate,
-        uint startTimestamp,
+        Short short,
+        uint closeAmount,
         uint endTimestamp
     )
         internal
         pure
         returns (uint _interestFee)
     {
-        uint timeElapsed = sub(endTimestamp, startTimestamp);
+        // The interest rate for the proportion of the position being closed
+        uint interestRate = getPartialAmount(
+            closeAmount,
+            short.shortAmount,
+            short.interestRate
+        );
+
+        uint timeElapsed = sub(endTimestamp, short.startTimestamp);
+        // TODO implement more complex interest rates
         return getPartialAmount(timeElapsed, 1 days, interestRate);
+    }
+
+    // ----- Close Short Internal Functions -----
+
+    function transferToCloseVault(
+        Short short,
+        bytes32 shortId,
+        uint closeAmount
+    )
+        internal
+        returns (bytes32 _closeId)
+    {
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+
+        // The maximum amount of base token that can be used by this close
+        uint baseTokenShare = getPartialAmount(
+            closeAmount,
+            currentShortAmount,
+            Vault(VAULT).balances(shortId, short.baseToken)
+        );
+
+        bytes32 closeId = keccak256(shortId, "CLOSE");
+        Vault(VAULT).transferBetweenVaults(
+            shortId,
+            closeId,
+            short.baseToken,
+            baseTokenShare
+        );
+
+        return closeId;
     }
 
     function buyBackUnderlyingToken(
         Short short,
-        uint buybackAmount,
-        bytes32 shortId,
+        bytes32 closeId,
+        uint closeAmount,
         uint interestFee,
         address[5] orderAddresses,
         uint[6] orderValues,
@@ -1490,15 +1698,15 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
     {
         uint baseTokenPrice = getBaseTokenPriceForBuyback(
             short,
-            buybackAmount,
+            closeAmount,
             interestFee,
-            shortId,
+            closeId,
             orderValues
         );
 
         if (orderAddresses[2] != address(0)) {
             transferFeeForBuyback(
-                shortId,
+                closeId,
                 orderValues,
                 orderAddresses[4],
                 baseTokenPrice
@@ -1506,7 +1714,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         }
 
         var (buybackCost, ) = Trader(TRADER).trade(
-            shortId,
+            closeId,
             [
                 orderAddresses[0],
                 orderAddresses[1],
@@ -1524,44 +1732,50 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             true
         );
 
-        assert(Vault(VAULT).balances(shortId, short.underlyingToken) == short.shortAmount);
-        assert(Vault(VAULT).balances(shortId, orderAddresses[4]) == 0);
+        assert(Vault(VAULT).balances(closeId, short.underlyingToken) == closeAmount);
+
+        // Assert fee token balance is 0 (orderAddresses[4] is the takerFeeToken)
+        assert(Vault(VAULT).balances(closeId, orderAddresses[4]) == 0);
 
         return buybackCost;
     }
 
     function getBaseTokenPriceForBuyback(
         Short short,
-        uint buybackAmount,
+        uint closeAmount,
         uint interestFee,
-        bytes32 shortId,
+        bytes32 closeId,
         uint[6] orderValues
     )
         internal
         view
         returns (uint _baseTokenPrice)
     {
+        // baseTokenPrice = closeAmount * (buyOrderBaseTokenAmount / buyOrderUnderlyingTokenAmount)
         uint baseTokenPrice = getPartialAmount(
             orderValues[1],
             orderValues[0],
-            buybackAmount
+            closeAmount
         );
 
+        // We need to have enough base token locked in the the close's vault to pay
+        // for both the buyback and the interest fee
         require(
-            add(baseTokenPrice, interestFee) <= Vault(VAULT).balances(shortId, short.baseToken)
+            add(baseTokenPrice, interestFee) <= Vault(VAULT).balances(closeId, short.baseToken)
         );
 
         return baseTokenPrice;
     }
 
     function transferFeeForBuyback(
-        bytes32 shortId,
+        bytes32 closeId,
         uint[6] orderValues,
         address takerFeeToken,
         uint baseTokenPrice
     )
         internal
     {
+        // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
         uint takerFee = getPartialAmount(
             baseTokenPrice,
             orderValues[1],
@@ -1571,7 +1785,7 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
         // Transfer taker fee for buyback
         if (takerFee > 0) {
             Vault(VAULT).transfer(
-                shortId,
+                closeId,
                 takerFeeToken,
                 msg.sender,
                 takerFee
@@ -1581,7 +1795,8 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
     function sendTokensOnClose(
         Short short,
-        bytes32 shortId,
+        bytes32 closeId,
+        uint closeAmount,
         uint interestFee
     )
         internal
@@ -1591,31 +1806,34 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
 
         // Send original loaned underlying token to lender
         vault.send(
-            shortId,
+            closeId,
             short.underlyingToken,
             short.lender,
-            short.shortAmount
+            closeAmount
         );
 
         // Send base token interest fee to lender
         if (interestFee > 0) {
             vault.send(
-                shortId,
+                closeId,
                 short.baseToken,
                 short.lender,
                 interestFee
             );
         }
 
-        // Send remaining base token to seller
-        // (= deposit + profit - interestFee - buyOrderTakerFee - sellOrderTakerFee)
-        uint sellerBaseTokenAmount = Vault(vault).balances(shortId, short.baseToken);
+        // Send remaining base token to seller (= deposit + profit - interestFee)
+        uint sellerBaseTokenAmount = vault.balances(closeId, short.baseToken);
         vault.send(
-            shortId,
+            closeId,
             short.baseToken,
             short.seller,
             sellerBaseTokenAmount
         );
+
+        // Should now hold no balance of base or underlying token
+        assert(vault.balances(closeId, short.underlyingToken) == 0);
+        assert(vault.balances(closeId, short.baseToken) == 0);
 
         return sellerBaseTokenAmount;
     }
@@ -1646,8 +1864,18 @@ contract ShortSell is Ownable, SafeMath, DelayedUpdate, NoOwner, ReentrancyGuard
             shortId,
             short.underlyingToken,
             currentBidder,
-            short.shortAmount
+            Vault(VAULT).balances(getAuctionVaultId(shortId), short.underlyingToken)
         );
+    }
+
+    function getAuctionVaultId(
+        bytes32 shortId
+    )
+        internal
+        pure
+        returns (bytes32 _auctionVaultId)
+    {
+        return keccak256(shortId, "AUCTION_VAULT");
     }
 
     // -------- Parsing Functions -------
