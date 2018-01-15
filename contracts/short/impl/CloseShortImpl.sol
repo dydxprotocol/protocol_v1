@@ -1,9 +1,11 @@
 pragma solidity 0.4.18;
 
 import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "./ShortCommonHelperFunctions.sol";
 import "./ShortSellState.sol";
 import "./ShortSellEvents.sol";
 import "../Vault.sol";
+import "../Trader.sol";
 
 
 /**
@@ -12,7 +14,9 @@ import "../Vault.sol";
  *
  * This contract contains the implementation for the closeShort function of ShortSell
  */
+ /* solium-disable-next-line */
 contract CloseShortImpl is
+    SafeMath,
     ShortSellState,
     ShortSellEvents,
     ReentrancyGuard,
@@ -100,6 +104,10 @@ contract CloseShortImpl is
     )
         internal
         // nonReentrant not needed as closeShortImpl uses state variable
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
     {
         Short memory short = getShortObject(shortId);
 
@@ -118,7 +126,7 @@ contract CloseShortImpl is
         bytes32 shortId,
         uint closeAmount
     )
-        external
+        internal
         nonReentrant
         returns (
             uint _baseTokenReceived,
@@ -208,6 +216,24 @@ contract CloseShortImpl is
         return (
             sellerBaseTokenAmount,
             interestFee
+        );
+    }
+
+    function closeEntireShortDirectlyImpl(
+        bytes32 shortId
+    )
+        internal
+        // nonReentrant not needed as closeShortDirectlyImpl uses state variable
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        Short memory short = getShortObject(shortId);
+
+        return closeShortDirectlyImpl(
+            shortId,
+            short.shortAmount
         );
     }
 

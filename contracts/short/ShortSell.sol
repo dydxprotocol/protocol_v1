@@ -1,12 +1,19 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../lib/DelayedUpdate.sol";
-import "impl/ShortSellState.sol";
-import "impl/ShortSellEvents.sol";
-import "impl/ShortSellAdmin.sol";
-import "impl/ShortImpl.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
+import { ShortSellState } from "./impl/ShortSellState.sol";
+import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
+import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
+import { ShortImpl } from "./impl/ShortImpl.sol";
+import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
+import { LoanImpl } from "./impl/LoanImpl.sol";
+import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
+import { PlaceSellBackBidImpl } from "./impl/PlaceSellBackBidImpl.sol";
+import { ShortSellRepo } from "./ShortSellRepo.sol";
+import { Vault } from "./Vault.sol";
+import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
 
 /**
@@ -15,14 +22,18 @@ import "impl/ShortImpl.sol";
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
+ /* solium-disable-next-line */
 contract ShortSell is
-    ShortSellState,
-    ShortSellAdmin,
-    ShortImpl,
     Ownable,
     DelayedUpdate,
     NoOwner,
-    ReentrancyGuard {
+    ShortSellState,
+    ShortSellAdmin,
+    ShortImpl,
+    CloseShortImpl,
+    LoanImpl,
+    ForceRecoverLoanImpl,
+    PlaceSellBackBidImpl {
 
     // -------------------------
     // ------ Constructor ------
@@ -237,89 +248,26 @@ contract ShortSell is
             uint _interestFeeAmount
         )
     {
-        Short memory short = getShortObject(shortId);
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-
-        require(short.seller == msg.sender);
-        require(closeAmount <= currentShortAmount);
-
-        // The amount of interest fee owed to close this proportion of the position
-        uint interestFee = calculateInterestFee(
-            short,
-            closeAmount,
-            block.timestamp
-        );
-
-        // First transfer base token used for close into new vault. Vault will then validate
-        // this is the maximum base token that can be used by this close
-        // Prefer to use a new vault, so this close cannot touch the rest of the
-        // funds held in the original short vault
-        bytes32 closeId = transferToCloseVault(
-            short,
+        return closeShortDirectlyImpl(
             shortId,
             closeAmount
         );
+    }
 
-        // STATE UPDATES
-
-        // If the whole short is closed, remove it from repo
-        if (closeAmount == currentShortAmount) {
-            cleanupShort(
-                shortId
-            );
-        } else {
-            // Otherwise increment the closed amount on the short
-            ShortSellRepo(REPO).setShortClosedAmount(
-                shortId,
-                add(short.closedAmount, closeAmount)
-            );
-        }
-
-        // EXTERNAL CALLS
-        Vault(VAULT).transfer(
-            closeId,
-            short.underlyingToken,
-            msg.sender,
-            closeAmount
-        );
-
-        uint sellerBaseTokenAmount = sendTokensOnClose(
-            short,
-            closeId,
-            closeAmount,
-            interestFee
-        );
-
-        if (closeAmount == currentShortAmount) {
-            // If the whole short is closed and there is an auction offer, send it back
-            payBackAuctionBidderIfExists(
-                shortId,
-                short
-            );
-
-            ShortClosed(
-                shortId,
-                interestFee,
-                closeAmount,
-                sellerBaseTokenAmount,
-                0,
-                block.timestamp
-            );
-        } else {
-            ShortPartiallyClosed(
-                shortId,
-                closeAmount,
-                sub(currentShortAmount, closeAmount),
-                interestFee,
-                sellerBaseTokenAmount,
-                0,
-                block.timestamp
-            );
-        }
-
-        return (
-            sellerBaseTokenAmount,
-            interestFee
+    /**
+     * Close the entire short position. Follows closeShort documentation.
+     */
+    function closeEntireShortDirectly(
+        bytes32 shortId
+    )
+        external
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        return closeEntireShortDirectlyImpl(
+            shortId
         );
     }
 
@@ -336,26 +284,8 @@ contract ShortSell is
         bytes32 shortId
     )
         external
-        nonReentrant
     {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
-        require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
-        // Ensure the loan has not already been called
-        require(short.callTimestamp == 0);
-        require(
-            uint(uint32(block.timestamp)) == block.timestamp
-        );
-
-        ShortSellRepo(REPO).setShortCallStart(shortId, uint32(block.timestamp));
-
-        LoanCalled(
-            shortId,
-            short.lender,
-            short.seller,
-            msg.sender,
-            block.timestamp
-        );
+        callInLoanImpl(shortId);
     }
 
     /**
@@ -367,27 +297,8 @@ contract ShortSell is
         bytes32 shortId
     )
         external
-        nonReentrant
     {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
-        // Ensure the loan has been called
-        require(short.callTimestamp > 0);
-
-        ShortSellRepo(REPO).setShortCallStart(shortId, 0);
-
-        payBackAuctionBidderIfExists(
-            shortId,
-            short
-        );
-
-        LoanCallCanceled(
-            shortId,
-            short.lender,
-            short.seller,
-            msg.sender,
-            block.timestamp
-        );
+        cancelLoanCallImpl(shortId);
     }
 
     /**
@@ -465,67 +376,10 @@ contract ShortSell is
         uint offer
     )
         external
-        nonReentrant
     {
-        Short memory short = getShortObject(shortId);
-
-        // If the short has not been called, return failure
-        require(short.callTimestamp > 0);
-
-        var (currentOffer, currentBidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
-
-        // If there is a current offer, the new offer must be for less
-        if (hasCurrentOffer) {
-            require(offer < currentOffer);
-        }
-
-        // Maximum interest fee is what it would be if the entire call time limit elapsed
-        uint maxInterestFee = calculateInterestFee(
-            short,
-            short.startTimestamp,
-            add(short.callTimestamp, short.callTimeLimit)
-        );
-
-        // The offered amount must be less than the amount of base token held - max interest fee
-        require(offer <= sub(getShortBalance(shortId), maxInterestFee));
-
-        // Store auction funds in a separate vault for isolation
-        bytes32 auctionVaultId = getAuctionVaultId(shortId);
-
-        // If a previous bidder has been outbid, give them their tokens back
-        if (hasCurrentOffer) {
-            Vault(VAULT).send(
-                auctionVaultId,
-                short.underlyingToken,
-                currentBidder,
-                Vault(VAULT).balances(auctionVaultId, short.underlyingToken)
-            );
-        }
-
-        // Transfer the full underlying token amount from the bidder
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-
-        Vault(VAULT).transfer(
-            auctionVaultId,
-            short.underlyingToken,
-            msg.sender,
-            currentShortAmount
-        );
-
-        // Record that the bidder has placed this bid
-        ShortSellAuctionRepo(AUCTION_REPO).setAuctionOffer(
+        placeSellbackBidImpl(
             shortId,
-            offer,
-            msg.sender
-        );
-
-        // Log Event
-        AuctionBidPlaced(
-            shortId,
-            msg.sender,
-            offer,
-            currentShortAmount,
-            block.timestamp
+            offer
         );
     }
 
@@ -541,42 +395,9 @@ contract ShortSell is
         bytes32 shortId
     )
         external
-        nonReentrant
         returns (uint _baseTokenAmount)
     {
-        Short memory short = getShortObject(shortId);
-        var (offer, bidder, hasCurrentOffer) = getShortAuctionOffer(shortId);
-
-        // Can only force recover after the entire call period has elapsed
-        require(block.timestamp > add(uint(short.callTimestamp), uint(short.callTimeLimit)));
-
-        // Only the lender or the winning bidder can call recover the loan
-        require(msg.sender == short.lender || msg.sender == bidder);
-
-        // Delete the short
-        cleanupShort(
-            shortId
-        );
-
-        // Send the tokens
-        var (lenderBaseTokenAmount, buybackCost) = sendTokensOnForceRecover(
-            short,
-            shortId,
-            offer,
-            bidder,
-            hasCurrentOffer
-        );
-
-        // Log an event
-        LoanForceRecovered(
-            shortId,
-            lenderBaseTokenAmount,
-            hasCurrentOffer,
-            buybackCost,
-            block.timestamp
-        );
-
-        return lenderBaseTokenAmount;
+        return forceRecoverLoanImpl(shortId);
     }
 
     /**
@@ -650,39 +471,14 @@ contract ShortSell is
         uint cancelAmount
     )
         external
-        nonReentrant
         returns (uint _cancelledAmount)
     {
-        LoanOffering memory loanOffering = parseLoanOffering(
+        return cancelLoanOfferingImpl(
             addresses,
             values256,
-            values32
+            values32,
+            cancelAmount
         );
-
-        require(loanOffering.lender == msg.sender);
-        require(loanOffering.expirationTimestamp > block.timestamp);
-
-        uint remainingAmount = sub(
-            loanOffering.rates.maxAmount,
-            getUnavailableLoanOfferingAmount(loanOffering.loanHash)
-        );
-        uint amountToCancel = min256(remainingAmount, cancelAmount);
-
-        require(amountToCancel > 0);
-
-        loanCancels[loanOffering.loanHash] = add(
-            loanCancels[loanOffering.loanHash],
-            amountToCancel
-        );
-
-        LoanOfferingCanceled(
-            loanOffering.loanHash,
-            loanOffering.lender,
-            amountToCancel,
-            block.timestamp
-        );
-
-        return amountToCancel;
     }
 
     // -------------------------------------
@@ -698,8 +494,8 @@ contract ShortSell is
             address underlyingToken,
             address baseToken,
             uint shortAmount,
-            uint interestRate,
             uint closedAmount,
+            uint interestRate,
             uint32 callTimeLimit,
             uint32 lockoutTime,
             uint32 startTimestamp,
@@ -773,7 +569,7 @@ contract ShortSell is
         public
         returns (uint _unavailableAmount)
     {
-        return add(loanFills[loanHash], loanCancels[loanHash]);
+        return getUnavailableLoanOfferingAmountImpl(loanHash);
     }
 
     function getShortAuctionOffer(
@@ -810,211 +606,5 @@ contract ShortSell is
         Short memory short = getShortObject(shortId);
 
         return (short.callTimestamp > 0);
-    }
-
-    // --------------------------------
-    // ------ Internal Functions ------
-    // --------------------------------
-
-    function calculateInterestFee(
-        Short short,
-        uint closeAmount,
-        uint endTimestamp
-    )
-        internal
-        pure
-        returns (uint _interestFee)
-    {
-        // The interest rate for the proportion of the position being closed
-        uint interestRate = getPartialAmount(
-            closeAmount,
-            short.shortAmount,
-            short.interestRate
-        );
-
-        uint timeElapsed = sub(endTimestamp, short.startTimestamp);
-        // TODO implement more complex interest rates
-        return getPartialAmount(timeElapsed, 1 days, interestRate);
-    }
-
-    // ----- forceRecoverLoan Internal Functions -----
-
-    function sendTokensOnForceRecover(
-        Short short,
-        bytes32 shortId,
-        uint offer,
-        address bidder,
-        bool hasCurrentOffer
-    )
-        internal
-        returns (
-            uint _lenderBaseTokenAmount,
-            uint _buybackCost
-        )
-    {
-        Vault vault = Vault(VAULT);
-
-        if (!hasCurrentOffer) {
-            // If there is no auction bid to sell back the underlying token owed to the lender
-            // then give the lender everything locked in the position
-            vault.send(
-                shortId,
-                short.baseToken,
-                short.lender,
-                vault.balances(shortId, short.baseToken)
-            );
-
-            return (0, 0);
-        } else {
-            return sendTokensOnForceRecoverWithAuctionBid(
-                short,
-                shortId,
-                offer,
-                bidder
-            );
-        }
-    }
-
-    function sendTokensOnForceRecoverWithAuctionBid(
-        Short short,
-        bytes32 shortId,
-        uint offer,
-        address bidder
-    )
-        internal
-        returns (
-            uint _lenderBaseTokenAmount,
-            uint _buybackCost
-        )
-    {
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-        bytes32 auctionVaultId = getAuctionVaultId(shortId);
-
-        // Send the lender underlying tokens + interest fee
-        uint lenderBaseTokenAmount = sendToLenderOnForceCloseWithAuctionBid(
-            short,
-            shortId,
-            currentShortAmount,
-            auctionVaultId
-        );
-
-        // Send the auction bidder any leftover underlying token, and base token proportional
-        // to what he bid
-        uint buybackCost = sendToBidderOnForceCloseWithAuctionBid(
-            short,
-            shortId,
-            currentShortAmount,
-            bidder,
-            offer,
-            auctionVaultId
-        );
-
-        // Send the short seller whatever is left
-        sendToShortSellerOnForceCloseWithAuctionBid(
-            short,
-            shortId
-        );
-
-        return (lenderBaseTokenAmount, buybackCost);
-    }
-
-    function sendToLenderOnForceCloseWithAuctionBid(
-        Short short,
-        bytes32 shortId,
-        uint currentShortAmount,
-        bytes32 auctionVaultId
-    )
-        internal
-        returns (uint _lenderBaseTokenAmount)
-    {
-        Vault vault = Vault(VAULT);
-
-        // If there is an auction bid to sell back the underlying token owed to the lender
-        // then give the lender just the owed interest fee at the end of the call time
-        uint lenderBaseTokenAmount = calculateInterestFee(
-            short,
-            currentShortAmount,
-            add(short.callTimestamp, short.callTimeLimit)
-        );
-
-        vault.send(
-            shortId,
-            short.baseToken,
-            short.lender,
-            lenderBaseTokenAmount
-        );
-
-        // Send the lender back the borrowed tokens (out of the auction vault)
-
-        vault.send(
-            auctionVaultId,
-            short.underlyingToken,
-            short.lender,
-            currentShortAmount
-        );
-
-        return lenderBaseTokenAmount;
-    }
-
-    function sendToBidderOnForceCloseWithAuctionBid(
-        Short short,
-        bytes32 shortId,
-        uint currentShortAmount,
-        address bidder,
-        uint offer,
-        bytes32 auctionVaultId
-    )
-        internal
-        returns (uint _buybackCost)
-    {
-        Vault vault = Vault(VAULT);
-
-        // If there is extra underlying token leftover, send it back to the bidder
-        uint remainingAuctionVaultBalance = vault.balances(
-            auctionVaultId, short.underlyingToken
-        );
-
-        if (remainingAuctionVaultBalance > 0) {
-            vault.send(
-                auctionVaultId,
-                short.underlyingToken,
-                bidder,
-                remainingAuctionVaultBalance
-            );
-        }
-
-        // Send the bidder the bidded amount of base token
-        uint auctionAmount = getPartialAmount(
-            currentShortAmount,
-            short.shortAmount,
-            offer
-        );
-
-        vault.send(
-            shortId,
-            short.baseToken,
-            bidder,
-            auctionAmount
-        );
-
-        return auctionAmount;
-    }
-
-    function sendToShortSellerOnForceCloseWithAuctionBid(
-        Short short,
-        bytes32 shortId
-    )
-        internal
-    {
-        Vault vault = Vault(VAULT);
-
-        // Send the short seller whatever is left
-        // (== margin deposit + interest fee - bid offer)
-        vault.send(
-            shortId,
-            short.baseToken,
-            short.seller,
-            vault.balances(shortId, short.baseToken)
-        );
     }
 }

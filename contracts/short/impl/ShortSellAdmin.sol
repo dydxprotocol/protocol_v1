@@ -5,7 +5,17 @@ import "../../lib/DelayedUpdate.sol";
 import "./ShortSellState.sol";
 
 
-contract ShortSellAdmin is ShortSellState, DelayedUpdate, Ownable {
+/**
+ * @title ShortSellAdmin
+ * @author Antonio Juliano
+ *
+ * This contract contains the owner only admin functions of ShortSell
+ */
+contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
+    // --------------------------------
+    // ----- Owner Only Functions -----
+    // --------------------------------
+
     function updateTrader(
         address _trader
     )

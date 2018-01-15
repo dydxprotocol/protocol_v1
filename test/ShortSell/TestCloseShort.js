@@ -14,12 +14,12 @@ const {
   createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   doShort,
-  callCloseShort,
+  callCloseEntireShort,
   getPartialAmount
 } = require('../helpers/ShortSellHelper');
 
 contract('ShortSell', function(accounts) {
-  describe('#closeShort', () => {
+  describe('#closeEntireShort', () => {
     it('successfully closes a short', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
@@ -28,7 +28,7 @@ contract('ShortSell', function(accounts) {
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
-      const tx = await callCloseShort(shortSell, shortTx, sellOrder);
+      const tx = await callCloseEntireShort(shortSell, shortTx, sellOrder);
 
       console.log('\tShortSell.closeShort gas used: ' + tx.receipt.gasUsed);
 

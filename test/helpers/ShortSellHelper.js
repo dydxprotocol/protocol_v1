@@ -223,7 +223,7 @@ async function doShort(accounts) {
   return shortTx;
 }
 
-function callCloseShort(shortSell, shortTx, sellOrder) {
+function callCloseEntireShort(shortSell, shortTx, sellOrder) {
   const addresses = [
     sellOrder.maker,
     sellOrder.taker,
@@ -240,7 +240,7 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
     sellOrder.salt
   ];
 
-  return shortSell.closeShort(
+  return shortSell.closeEntireShort(
     shortTx.id,
     addresses,
     values,
@@ -503,7 +503,7 @@ module.exports = {
   createSigned0xSellOrder,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort,
+  callCloseEntireShort,
   getPartialAmount,
   signLoanOffering,
   callCancelLoanOffer,

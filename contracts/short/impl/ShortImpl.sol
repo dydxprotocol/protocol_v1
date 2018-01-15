@@ -3,9 +3,12 @@ pragma solidity 0.4.18;
 import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "./ShortSellState.sol";
 import "./ShortSellEvents.sol";
+import "./ShortCommonHelperFunctions.sol";
 import "../ShortSellRepo.sol";
 import "../Vault.sol";
+import "../Trader.sol";
 import "../ShortSellAuctionRepo.sol";
+import "../../lib/SafeMath.sol";
 
 /**
  * @title ShortImpl
@@ -13,7 +16,14 @@ import "../ShortSellAuctionRepo.sol";
  *
  * This contract contains the implementation for the short function of ShortSell
  */
-contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
+ /* solium-disable-next-line */
+contract ShortImpl is
+    SafeMath,
+    ShortSellState,
+    ShortSellEvents,
+    ReentrancyGuard,
+    ShortCommonHelperFunctions {
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -25,31 +35,6 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
         uint depositAmount;
         LoanOffering loanOffering;
         BuyOrder buyOrder;
-    }
-
-    struct LoanOffering {
-        address lender;
-        address taker;
-        address feeRecipient;
-        address lenderFeeToken;
-        address takerFeeToken;
-        LoanRates rates;
-        uint expirationTimestamp;
-        uint32 lockoutTime;
-        uint32 callTimeLimit;
-        uint salt;
-        bytes32 loanHash;
-        Signature signature;
-    }
-
-    struct LoanRates {
-        uint minimumDeposit;
-        uint minimumSellAmount;
-        uint maxAmount;
-        uint minAmount;
-        uint interestRate;
-        uint lenderFee;
-        uint takerFee;
     }
 
     struct BuyOrder {
@@ -65,12 +50,6 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
         uint expirationTimestamp;
         uint salt;
         Signature signature;
-    }
-
-    struct Signature {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
     }
 
     // -------------------------------------------
@@ -179,7 +158,7 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
         view
     {
         // Make sure we don't already have this short id
-        require(!containsShort(shortId));
+        require(!ShortSellRepo(REPO).containsShort(shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -195,7 +174,7 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
         require(
             add(
                 transaction.shortAmount,
-                getUnavailableLoanOfferingAmount(transaction.loanOffering.loanHash)
+                getUnavailableLoanOfferingAmountImpl(transaction.loanOffering.loanHash)
             ) <= transaction.loanOffering.rates.maxAmount
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
@@ -245,50 +224,6 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
             loanOffering.signature.v,
             loanOffering.signature.r,
             loanOffering.signature.s
-        );
-    }
-
-    function getLoanOfferingHash(
-        LoanOffering loanOffering,
-        address baseToken,
-        address underlyingToken
-    )
-        internal
-        view
-        returns (bytes32 _hash)
-    {
-        return keccak256(
-            address(this),
-            underlyingToken,
-            baseToken,
-            loanOffering.lender,
-            loanOffering.taker,
-            loanOffering.feeRecipient,
-            loanOffering.lenderFeeToken,
-            loanOffering.takerFeeToken,
-            getValuesHash(loanOffering)
-        );
-    }
-
-    function getValuesHash(
-        LoanOffering loanOffering
-    )
-        internal
-        pure
-        returns (bytes32 _hash)
-    {
-        return keccak256(
-            loanOffering.rates.minimumDeposit,
-            loanOffering.rates.maxAmount,
-            loanOffering.rates.minAmount,
-            loanOffering.rates.minimumSellAmount,
-            loanOffering.rates.interestRate,
-            loanOffering.rates.lenderFee,
-            loanOffering.rates.takerFee,
-            loanOffering.expirationTimestamp,
-            loanOffering.lockoutTime,
-            loanOffering.callTimeLimit,
-            loanOffering.salt
         );
     }
 
@@ -577,63 +512,6 @@ contract ShortImpl is ShortSellState, ShortSellEvents, ReentrancyGuard {
         });
 
         return signature;
-    }
-
-    function parseLoanOffering(
-        address[7] addresses,
-        uint[9] values,
-        uint32[2] values32
-    )
-        internal
-        view
-        returns (LoanOffering _loanOffering)
-    {
-        LoanOffering memory loanOffering = LoanOffering({
-            lender: addresses[2],
-            taker: addresses[3],
-            feeRecipient: addresses[4],
-            lenderFeeToken: addresses[5],
-            takerFeeToken: addresses[6],
-            rates: parseLoanOfferRates(values),
-            expirationTimestamp: values[7],
-            lockoutTime: values32[0],
-            callTimeLimit: values32[1],
-            salt: values[8],
-            loanHash: 0,
-            signature: Signature({
-                v: 0,
-                r: "0x",
-                s: "0x"
-            })
-        });
-
-        loanOffering.loanHash = getLoanOfferingHash(
-            loanOffering,
-            addresses[1],
-            addresses[0]
-        );
-
-        return loanOffering;
-    }
-
-    function parseLoanOfferRates(
-        uint[9] values
-    )
-        internal
-        pure
-        returns (LoanRates _loanRates)
-    {
-        LoanRates memory rates = LoanRates({
-            minimumDeposit: values[0],
-            maxAmount: values[1],
-            minAmount: values[2],
-            minimumSellAmount: values[3],
-            interestRate: values[4],
-            lenderFee: values[5],
-            takerFee: values[6]
-        });
-
-        return rates;
     }
 
     function parseBuyOrder(

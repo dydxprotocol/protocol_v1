@@ -1,12 +1,19 @@
 pragma solidity 0.4.18;
 
+import "./ShortSellState.sol";
 import "../Vault.sol";
 import "../ShortSellRepo.sol";
 import "../ShortSellAuctionRepo.sol";
 import "../../lib/SafeMath.sol";
 
 
-contract ShortCommonHelperFunctions is SafeMath {
+/**
+ * @title ShortCommonHelperFunctions
+ * @author Antonio Juliano
+ *
+ * This contract contains common functions for implementations of public facing ShortSell functions
+ */
+contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -23,6 +30,51 @@ contract ShortCommonHelperFunctions is SafeMath {
         uint32 callTimestamp;
         address lender;
         address seller;
+    }
+
+    struct LoanOffering {
+        address lender;
+        address taker;
+        address feeRecipient;
+        address lenderFeeToken;
+        address takerFeeToken;
+        LoanRates rates;
+        uint expirationTimestamp;
+        uint32 lockoutTime;
+        uint32 callTimeLimit;
+        uint salt;
+        bytes32 loanHash;
+        Signature signature;
+    }
+
+    struct LoanRates {
+        uint minimumDeposit;
+        uint minimumSellAmount;
+        uint maxAmount;
+        uint minAmount;
+        uint interestRate;
+        uint lenderFee;
+        uint takerFee;
+    }
+
+    struct Signature {
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
+
+    // -------------------------------------------
+    // ---- Internal Implementation Functions ----
+    // -------------------------------------------
+
+    function getUnavailableLoanOfferingAmountImpl(
+        bytes32 loanHash
+    )
+        view
+        internal
+        returns (uint _unavailableAmount)
+    {
+        return add(loanFills[loanHash], loanCancels[loanHash]);
     }
 
     function transferToCloseVault(
@@ -94,6 +146,71 @@ contract ShortCommonHelperFunctions is SafeMath {
         returns (bytes32 _auctionVaultId)
     {
         return keccak256(shortId, "AUCTION_VAULT");
+    }
+
+    function calculateInterestFee(
+        Short short,
+        uint closeAmount,
+        uint endTimestamp
+    )
+        internal
+        pure
+        returns (uint _interestFee)
+    {
+        // The interest rate for the proportion of the position being closed
+        uint interestRate = getPartialAmount(
+            closeAmount,
+            short.shortAmount,
+            short.interestRate
+        );
+
+        uint timeElapsed = sub(endTimestamp, short.startTimestamp);
+        // TODO implement more complex interest rates
+        return getPartialAmount(timeElapsed, 1 days, interestRate);
+    }
+
+    function getLoanOfferingHash(
+        LoanOffering loanOffering,
+        address baseToken,
+        address underlyingToken
+    )
+        internal
+        view
+        returns (bytes32 _hash)
+    {
+        return keccak256(
+            address(this),
+            underlyingToken,
+            baseToken,
+            loanOffering.lender,
+            loanOffering.taker,
+            loanOffering.feeRecipient,
+            loanOffering.lenderFeeToken,
+            loanOffering.takerFeeToken,
+            getValuesHash(loanOffering)
+        );
+    }
+
+    function getValuesHash(
+        LoanOffering loanOffering
+    )
+        internal
+        pure
+        returns (bytes32 _hash)
+    {
+        return keccak256(
+            loanOffering.rates.minimumDeposit,
+            loanOffering.rates.maxAmount,
+            loanOffering.rates.minAmount,
+            loanOffering.rates.minimumSellAmount,
+            loanOffering.rates.interestRate,
+            loanOffering.rates.lenderFee,
+            loanOffering.rates.takerFee,
+            loanOffering.expirationTimestamp,
+            loanOffering.lockoutTime,
+            loanOffering.callTimeLimit,
+            loanOffering.salt
+        );
     }
 
     // -------- Parsing Functions -------

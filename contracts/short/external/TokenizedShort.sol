@@ -1,9 +1,9 @@
 pragma solidity 0.4.18;
 
-import { StandardToken } from 'zeppelin-solidity/contracts/token/StandardToken.sol';
-import '../ShortSell.sol';
-import '../../lib/SafeMath.sol';
-import '../../lib/TokenInteract.sol';
+import { StandardToken } from "zeppelin-solidity/contracts/token/StandardToken.sol";
+import "../ShortSell.sol";
+import "../../lib/SafeMath.sol";
+import "../../lib/TokenInteract.sol";
 
 
 contract TokenizedShort is StandardToken, SafeMath {

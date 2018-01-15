@@ -1,7 +1,17 @@
 pragma solidity 0.4.18;
 
 
+/**
+ * @title ShortSellEvents
+ * @author Antonio Juliano
+ *
+ * This contract contains the events for the ShortSell contract
+ */
 contract ShortSellEvents {
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
     /**
      * A short sell occurred
      */

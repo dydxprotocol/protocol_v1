@@ -1,7 +1,17 @@
 pragma solidity 0.4.18;
 
 
+/**
+ * @title ShortSellState
+ * @author Antonio Juliano
+ *
+ * This contract contains the state for the ShortSell contract
+ */
 contract ShortSellState {
+    // ---------------------------
+    // ----- State Variables -----
+    // ---------------------------
+
     // Address of the Vault contract
     address public VAULT;
 
