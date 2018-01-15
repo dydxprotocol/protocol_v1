@@ -10,7 +10,7 @@ import { ShortImpl } from "./impl/ShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
-import { PlaceSellBackBidImpl } from "./impl/PlaceSellBackBidImpl.sol";
+import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
 import { ShortSellRepo } from "./ShortSellRepo.sol";
 import { Vault } from "./Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
@@ -33,7 +33,7 @@ contract ShortSell is
     CloseShortImpl,
     LoanImpl,
     ForceRecoverLoanImpl,
-    PlaceSellBackBidImpl {
+    PlaceSellbackBidImpl {
 
     // -------------------------
     // ------ Constructor ------

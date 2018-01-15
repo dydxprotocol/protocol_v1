@@ -10,13 +10,13 @@ import { Vault } from "../Vault.sol";
 
 
 /**
- * @title PlaceSellBackBidImpl
+ * @title PlaceSellbackBidImpl
  * @author Antonio Juliano
  *
  * This contract contains the implementation for the placeSellbackBid function of ShortSell
  */
  /* solium-disable-next-line */
-contract PlaceSellBackBidImpl is
+contract PlaceSellbackBidImpl is
     SafeMath,
     ShortSellState,
     ShortSellEvents,
