@@ -1,10 +1,10 @@
 pragma solidity 0.4.18;
 
-import "./ShortSellState.sol";
-import "../Vault.sol";
-import "../ShortSellRepo.sol";
-import "../ShortSellAuctionRepo.sol";
-import "../../lib/SafeMath.sol";
+import { ShortSellState } from "./ShortSellState.sol";
+import { Vault } from "../Vault.sol";
+import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
+import { SafeMath } from "../../lib/SafeMath.sol";
 
 
 /**

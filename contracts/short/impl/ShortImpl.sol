@@ -1,14 +1,16 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "./ShortSellState.sol";
-import "./ShortSellEvents.sol";
-import "./ShortCommonHelperFunctions.sol";
-import "../ShortSellRepo.sol";
-import "../Vault.sol";
-import "../Trader.sol";
-import "../ShortSellAuctionRepo.sol";
-import "../../lib/SafeMath.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { ShortSellState } from "./ShortSellState.sol";
+import { ShortSellEvents } from "./ShortSellEvents.sol";
+import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { Vault } from "../Vault.sol";
+import { Trader } from "../Trader.sol";
+import { Proxy } from "../../shared/Proxy.sol";
+import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
+import { SafeMath } from "../../lib/SafeMath.sol";
+
 
 /**
  * @title ShortImpl
@@ -157,6 +159,9 @@ contract ShortImpl is
         internal
         view
     {
+        // Disallow 0 value shorts
+        require(transaction.shortAmount > 0);
+
         // Make sure we don't already have this short id
         require(!ShortSellRepo(REPO).containsShort(shortId));
 

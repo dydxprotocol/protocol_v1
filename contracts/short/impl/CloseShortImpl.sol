@@ -1,11 +1,13 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "./ShortCommonHelperFunctions.sol";
-import "./ShortSellState.sol";
-import "./ShortSellEvents.sol";
-import "../Vault.sol";
-import "../Trader.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { ShortSellState } from "./ShortSellState.sol";
+import { ShortSellEvents } from "./ShortSellEvents.sol";
+import { Vault } from "../Vault.sol";
+import { Trader } from "../Trader.sol";
+import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { SafeMath } from "../../lib/SafeMath.sol";
 
 
 /**
@@ -67,6 +69,8 @@ contract CloseShortImpl is
             orderR,
             orderS
         );
+
+        require(closeAmount > 0);
 
         validateCloseShort(transaction);
 
@@ -138,6 +142,7 @@ contract CloseShortImpl is
 
         require(short.seller == msg.sender);
         require(closeAmount <= currentShortAmount);
+        require(closeAmount > 0);
 
         // The amount of interest fee owed to close this proportion of the position
         uint interestFee = calculateInterestFee(

@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "../lib/AccessControlled.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { AccessControlled } from "../lib/AccessControlled.sol";
 
 
 /**

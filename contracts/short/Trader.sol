@@ -1,14 +1,14 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import "../lib/AccessControlled.sol";
-import "../lib/TokenInteract.sol";
-import "../lib/DelayedUpdate.sol";
-import "../interfaces/ZeroExExchangeInterface.sol";
-import "../shared/Exchange.sol";
-import "../shared/Proxy.sol";
-import "./Vault.sol";
+import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import { AccessControlled } from "../lib/AccessControlled.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
+import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
+import { ZeroExExchangeInterface } from "../interfaces/ZeroExExchangeInterface.sol";
+import { Exchange } from "../shared/Exchange.sol";
+import { Proxy } from "../shared/Proxy.sol";
+import { Vault } from "./Vault.sol";
 
 
 /**

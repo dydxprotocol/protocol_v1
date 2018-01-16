@@ -1,8 +1,8 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import "../../lib/DelayedUpdate.sol";
-import "./ShortSellState.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import { DelayedUpdate } from "../../lib/DelayedUpdate.sol";
+import { ShortSellState } from "./ShortSellState.sol";
 
 
 /**
