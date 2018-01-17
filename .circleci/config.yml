@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  install:
     docker:
       - image: circleci/node:8.6.0
     steps:
@@ -14,12 +14,38 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+  build:
+    docker:
+      - image: circleci/node:8.6.0
+    steps:
       - run:
           name: Compile contracts
           command: npm run compile -- --all
+  lint:
+    docker:
+      - image: circleci/node:8.6.0
+    steps:
       - run:
           name: Lint
           command: npm run lint && npm run solint
+  test:
+    docker:
+      - image: circleci/node:8.6.0
+    steps:
       - run:
           name: Test
           command: npm test
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - install
+      - build
+        requires:
+          - install
+      - lint
+        requires:
+          - install
+      - test
+        requires:
+          - build
