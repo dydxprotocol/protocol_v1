@@ -607,4 +607,14 @@ contract ShortSell is
 
         return (short.callTimestamp > 0);
     }
+
+    function isShortClosed(
+        bytes32 shortId
+    )
+        view
+        public
+        returns (bool _isClosed)
+    {
+        return ShortSellRepo(REPO).closedShorts(shortId);
+    }
 }

@@ -35,6 +35,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
 
     // Mapping that contains all short sells. Mapped by: shortId -> Short
     mapping(bytes32 => Short) public shorts;
+    mapping(bytes32 => bool) public closedShorts;
 
     // -------------------------
     // ------ Constructor ------
@@ -192,6 +193,27 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         external
     {
         delete shorts[id];
+    }
+
+    function markShortClosed(
+        bytes32 id
+    )
+        requiresAuthorization
+        external
+    {
+        closedShorts[id] = true;
+    }
+
+    /**
+     * NOTE: Currently unused, added as a utility for later versions of ShortSell
+     */
+    function unmarkShortClosed(
+        bytes32 id
+    )
+        requiresAuthorization
+        external
+    {
+        closedShorts[id] = false;
     }
 
     // -------------------------------------

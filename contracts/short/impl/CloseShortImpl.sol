@@ -346,9 +346,8 @@ contract CloseShortImpl is
 
         if (transaction.orderAddresses[2] != address(0)) {
             transferFeeForBuyback(
+                transaction,
                 closeId,
-                transaction.orderValues,
-                transaction.orderAddresses[4],
                 baseTokenPrice
             );
         }
@@ -372,14 +371,23 @@ contract CloseShortImpl is
             true
         );
 
+        // Should now hold exactly closeAmount of underlying token
         assert(
             Vault(VAULT).balances(
                 closeId, transaction.short.underlyingToken
             ) == transaction.closeAmount
         );
 
-        // Assert fee token balance is 0 (orderAddresses[4] is the takerFeeToken)
-        assert(Vault(VAULT).balances(closeId, transaction.orderAddresses[4]) == 0);
+        address takerFeeToken = transaction.orderAddresses[4];
+
+        // Assert take fee token balance is 0. The only cases where it should not be 0
+        // is if it is either baseToken or underlyingToken
+        if (
+            takerFeeToken != transaction.short.baseToken
+            && takerFeeToken != transaction.short.underlyingToken
+        ) {
+            assert(Vault(VAULT).balances(closeId, takerFeeToken) == 0);
+        }
 
         return buybackCost;
     }
@@ -412,18 +420,28 @@ contract CloseShortImpl is
     }
 
     function transferFeeForBuyback(
+        CloseShortTx transaction,
         bytes32 closeId,
-        uint[6] orderValues,
-        address takerFeeToken,
         uint baseTokenPrice
     )
         internal
     {
+        address takerFeeToken = transaction.orderAddresses[4];
+
+        // If the taker fee token is base token, then just pay it out of what is held in Vault
+        // and do not transfer it in from the short seller
+        if (transaction.short.baseToken == takerFeeToken) {
+            return;
+        }
+
+        uint buyOrderTakerFee = transaction.orderValues[3];
+        uint buyOrderTakerTokenAmount = transaction.orderValues[1];
+
         // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
         uint takerFee = getPartialAmount(
             baseTokenPrice,
-            orderValues[1],
-            orderValues[3]
+            buyOrderTakerTokenAmount,
+            buyOrderTakerFee
         );
 
         // Transfer taker fee for buyback
@@ -467,6 +485,8 @@ contract CloseShortImpl is
         }
 
         // Send remaining base token to seller (= deposit + profit - interestFee)
+        // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
+        // have been paid out of the vault balance
         uint sellerBaseTokenAmount = vault.balances(closeId, short.baseToken);
         vault.send(
             closeId,

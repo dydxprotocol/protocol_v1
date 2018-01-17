@@ -110,7 +110,9 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
     )
         internal
     {
-        ShortSellRepo(REPO).deleteShort(shortId);
+        ShortSellRepo repo = ShortSellRepo(REPO);
+        repo.deleteShort(shortId);
+        repo.markShortClosed(shortId);
     }
 
     function payBackAuctionBidderIfExists(
