@@ -1,7 +1,7 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "../lib/AccessControlled.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { AccessControlled } from "../lib/AccessControlled.sol";
 
 
 /**
@@ -17,6 +17,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
 
     struct Short {
         uint shortAmount;
+        uint closedAmount;
         uint interestRate;
         address underlyingToken;    // Immutable
         address baseToken;          // Immutable
@@ -34,6 +35,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
 
     // Mapping that contains all short sells. Mapped by: shortId -> Short
     mapping(bytes32 => Short) public shorts;
+    mapping(bytes32 => bool) public closedShorts;
 
     // -------------------------
     // ------ Constructor ------
@@ -73,6 +75,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             underlyingToken: underlyingToken,
             baseToken: baseToken,
             shortAmount: shortAmount,
+            closedAmount: 0,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
             lockoutTime: lockoutTime,
@@ -114,6 +117,17 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     {
         require(containsShort(id));
         shorts[id].seller = who;
+    }
+
+    function setShortClosedAmount(
+        bytes32 id,
+        uint closedAmount
+    )
+        requiresAuthorization
+        external
+    {
+        require(containsShort(id));
+        shorts[id].closedAmount = closedAmount;
     }
 
     /**
@@ -181,6 +195,27 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         delete shorts[id];
     }
 
+    function markShortClosed(
+        bytes32 id
+    )
+        requiresAuthorization
+        external
+    {
+        closedShorts[id] = true;
+    }
+
+    /**
+     * NOTE: Currently unused, added as a utility for later versions of ShortSell
+     */
+    function unmarkShortClosed(
+        bytes32 id
+    )
+        requiresAuthorization
+        external
+    {
+        closedShorts[id] = false;
+    }
+
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
@@ -194,6 +229,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             address underlyingToken,
             address baseToken,
             uint shortAmount,
+            uint closedAmount,
             uint interestRate,
             uint32 callTimeLimit,
             uint32 lockoutTime,
@@ -209,6 +245,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             short.underlyingToken,
             short.baseToken,
             short.shortAmount,
+            short.closedAmount,
             short.interestRate,
             short.callTimeLimit,
             short.lockoutTime,

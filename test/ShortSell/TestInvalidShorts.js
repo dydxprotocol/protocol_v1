@@ -13,7 +13,7 @@ const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   createSigned0xSellOrder,
-  callCloseShort,
+  callCloseEntireShort,
   signOrder
 } = require('../helpers/ShortSellHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
@@ -322,7 +322,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = shortTx.loanOffering.lender;
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -336,7 +336,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = accounts[7];
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
   });
@@ -352,7 +352,7 @@ describe('#closeShort', () => {
 
         shortTx.id = "0x123";
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -366,10 +366,10 @@ describe('#closeShort', () => {
 
         // First should succeed
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await callCloseShort(shortSell, shortTx, sellOrder);
+        await callCloseEntireShort(shortSell, shortTx, sellOrder);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -385,7 +385,7 @@ describe('#closeShort', () => {
         await wait(100000000);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -400,7 +400,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature.r = "0x123";
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -416,7 +416,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
   });
@@ -434,7 +434,7 @@ describe('#closeShort', () => {
         sellOrder.makerTokenAmount = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -450,7 +450,7 @@ describe('#closeShort', () => {
         sellOrder.makerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
 
@@ -466,7 +466,7 @@ describe('#closeShort', () => {
         sellOrder.takerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
       });
     });
   });

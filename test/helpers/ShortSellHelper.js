@@ -223,24 +223,10 @@ async function doShort(accounts) {
   return shortTx;
 }
 
-function callCloseShort(shortSell, shortTx, sellOrder) {
-  const addresses = [
-    sellOrder.maker,
-    sellOrder.taker,
-    sellOrder.feeRecipient,
-    sellOrder.makerFeeTokenAddress,
-    sellOrder.takerFeeTokenAddress
-  ];
-  const values = [
-    sellOrder.makerTokenAmount,
-    sellOrder.takerTokenAmount,
-    sellOrder.makerFee,
-    sellOrder.takerFee,
-    sellOrder.expirationUnixTimestampSec,
-    sellOrder.salt
-  ];
+function callCloseEntireShort(shortSell, shortTx, sellOrder) {
+  const { addresses, values } = getOrderTxFields(sellOrder);
 
-  return shortSell.closeShort(
+  return shortSell.closeEntireShort(
     shortTx.id,
     addresses,
     values,
@@ -249,6 +235,41 @@ function callCloseShort(shortSell, shortTx, sellOrder) {
     sellOrder.ecSignature.s,
     { from: shortTx.seller }
   );
+}
+
+function callCloseShort(shortSell, shortTx, sellOrder, closeAmount) {
+  const { addresses, values } = getOrderTxFields(sellOrder);
+
+  return shortSell.closeShort(
+    shortTx.id,
+    closeAmount,
+    addresses,
+    values,
+    sellOrder.ecSignature.v,
+    sellOrder.ecSignature.r,
+    sellOrder.ecSignature.s,
+    { from: shortTx.seller }
+  );
+}
+
+function getOrderTxFields(order) {
+  const addresses = [
+    order.maker,
+    order.taker,
+    order.feeRecipient,
+    order.makerFeeTokenAddress,
+    order.takerFeeTokenAddress
+  ];
+  const values = [
+    order.makerTokenAmount,
+    order.takerTokenAmount,
+    order.makerFee,
+    order.takerFee,
+    order.expirationUnixTimestampSec,
+    order.salt
+  ];
+
+  return { addresses, values };
 }
 
 function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
@@ -503,10 +524,11 @@ module.exports = {
   createSigned0xSellOrder,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort,
+  callCloseEntireShort,
   getPartialAmount,
   signLoanOffering,
   callCancelLoanOffer,
   signOrder,
-  sign0xOrder
+  sign0xOrder,
+  callCloseShort
 };

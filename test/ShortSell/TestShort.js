@@ -33,7 +33,7 @@ describe('#short', () => {
 
       const tx = await callShort(shortSell, shortTx);
 
-      console.log('\tShortSell.short gas used: ' + tx.receipt.gasUsed);
+      console.log('\tShortSell.short (dYdX Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
       await checkSuccess(shortSell, shortTx);
     });
@@ -76,7 +76,9 @@ describe('#short', () => {
         ),
       ]);
 
-      await callShort(shortSell, shortTx);
+      const tx = await callShort(shortSell, shortTx);
+
+      console.log('\tShortSell.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
       await checkSuccess(shortSell, shortTx);
     });
@@ -95,11 +97,12 @@ async function checkSuccess(shortSell, shortTx) {
     underlyingTokenAddress,
     baseTokenAddress,
     shortAmount,
+    closedAmount,
     interestRate,
     callTimeLimit,
     lockoutTime,
     ,
-    ,
+    callTimestamp,
     lender,
     seller,
   ] = await shortSell.getShort.call(shortId);
@@ -112,6 +115,8 @@ async function checkSuccess(shortSell, shortTx) {
   expect(lockoutTime.equals(shortTx.loanOffering.lockoutTime)).to.equal(true);
   expect(lender).to.equal(shortTx.loanOffering.lender);
   expect(seller).to.equal(shortTx.seller);
+  expect(closedAmount.equals(new BigNumber(0))).to.be.true;
+  expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
 
   const balance = await shortSell.getShortBalance.call(shortId);
 

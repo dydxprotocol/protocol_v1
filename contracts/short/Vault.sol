@@ -1,14 +1,14 @@
 pragma solidity 0.4.18;
 
-import "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
-import "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "../lib/AccessControlled.sol";
-import "../lib/TokenInteract.sol";
-import "../lib/DelayedUpdate.sol";
-import "../shared/Proxy.sol";
-import "../shared/Exchange.sol";
+import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { AccessControlled } from "../lib/AccessControlled.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
+import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
+import { Proxy } from "../shared/Proxy.sol";
+import { Exchange } from "../shared/Exchange.sol";
 
 
 /**
@@ -121,6 +121,29 @@ contract Vault is
 
         // Validate new balance
         validateBalance(token);
+    }
+
+    function transferBetweenVaults(
+        bytes32 fromId,
+        bytes32 toId,
+        address token,
+        uint amount
+    )
+        external
+        nonReentrant
+        requiresAuthorization
+        whenNotPaused
+    {
+        require(balances[fromId][token] >= amount);
+
+        // This should always be true. If not, something is very wrong
+        assert(totalBalances[token] >= amount);
+
+        // First decrement the balance of the from vault
+        balances[fromId][token] = sub(balances[fromId][token], amount);
+
+        // Then increment the balance of the to vault
+        balances[toId][token] = add(balances[toId][token], amount);
     }
 
     // --------------------------------

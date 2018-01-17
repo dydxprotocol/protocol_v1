@@ -14,12 +14,14 @@ const {
   createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   doShort,
-  callCloseShort,
-  getPartialAmount
+  callCloseEntireShort,
+  getPartialAmount,
+  callCloseShort
 } = require('../helpers/ShortSellHelper');
+const ProxyContract = artifacts.require("Proxy");
 
-contract('ShortSell', function(accounts) {
-  describe('#closeShort', () => {
+describe('#closeEntireShort', () => {
+  contract('ShortSell', function(accounts) {
     it('successfully closes a short', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
@@ -28,7 +30,7 @@ contract('ShortSell', function(accounts) {
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
-      const tx = await callCloseShort(shortSell, shortTx, sellOrder);
+      const tx = await callCloseEntireShort(shortSell, shortTx, sellOrder);
 
       console.log('\tShortSell.closeShort gas used: ' + tx.receipt.gasUsed);
 
@@ -181,6 +183,86 @@ contract('ShortSell', function(accounts) {
             )
           )
       )).to.be.true;
+    });
+  });
+});
+
+describe('#closeShort', () => {
+  contract('ShortSell', function(accounts) {
+    it('Successfully closes a short in increments', async () => {
+      const shortTx = await doShort(accounts);
+      const [sellOrder, shortSell] = await Promise.all([
+        createSigned0xSellOrder(accounts),
+        ShortSell.deployed()
+      ]);
+      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
+
+      // Close half the short at a time
+      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+
+      // Simulate time between open and close so interest fee needs to be paid
+      await wait(10000);
+
+      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+
+      let exists = await shortSell.containsShort.call(shortTx.id);
+      expect(exists).to.be.true;
+
+      const [
+        ,
+        ,
+        ,
+        closedAmount,
+        ,
+        ,
+        ,
+        ,
+        ,
+        ,
+        ,
+      ] = await shortSell.getShort.call(shortTx.id);
+
+      expect(closedAmount.equals(closeAmount)).to.be.true;
+
+      // Simulate time between open and close so interest fee needs to be paid
+      await wait(10000);
+
+      // Close the rest of the short
+      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      exists = await shortSell.containsShort.call(shortTx.id);
+      expect(exists).to.be.false;
+
+      // TODO check balances, rest of stuff
+    });
+  });
+});
+
+describe('#closeEntireShortDirectly', () => {
+  contract('ShortSell', function(accounts) {
+    it('Successfully closes a short', async () => {
+      const shortTx = await doShort(accounts);
+      const underlyingToken = await UnderlyingToken.deployed();
+
+      // Give the short seller enough underlying token to close
+      await Promise.all([
+        underlyingToken.issueTo(
+          shortTx.seller,
+          shortTx.shortAmount
+        ),
+        underlyingToken.approve(
+          ProxyContract.address,
+          shortTx.shortAmount,
+          { from: shortTx.seller }
+        )
+      ]);
+
+      const shortSell = await ShortSell.deployed();
+      await shortSell.closeEntireShortDirectly(shortTx.id);
+
+      const exists = await shortSell.containsShort.call(shortTx.id);
+      expect(exists).to.be.false;
+
+      // TODO check balances, rest of stuff
     });
   });
 });

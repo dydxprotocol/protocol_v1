@@ -12,6 +12,7 @@ const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
+const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const BigNumber = require('bignumber.js');
 
 const ONE_HOUR = new BigNumber(60 * 60);
@@ -107,5 +108,14 @@ module.exports = (deployer, network, addresses) => {
     .then(() => ShortSellAuctionRepo.deployed())
     .then(repo => repo.grantAccess(ShortSell.address))
     .then(() => Trader.deployed())
-    .then(trader => trader.grantAccess(ShortSell.address));
+    .then(trader => trader.grantAccess(ShortSell.address))
+    .then(() => deployer.deploy(
+      TokenizedShortCreator,
+      ShortSell.address,
+      ProxyContract.address,
+      ONE_DAY,
+      ONE_DAY
+    ))
+    .then(() => ProxyContract.deployed() )
+    .then( proxy => proxy.grantAccess(TokenizedShortCreator.address) );
 };
