@@ -1,8 +1,8 @@
 <p align="center"><img src="https://dydx.exchange/images/logo.png" width="256" /></p>
 
 <p align="center">
-  <a href="https://circleci.com/gh/AntonioJuliano/dydx-contracts">
-    <img src="https://circleci.com/gh/AntonioJuliano/dydx-contracts.svg?&style=shield&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9" />
+  <a href="https://circleci.com/gh/dydxexchange/protocol">
+    <img src="https://circleci.com/gh/dydxexchange/protocol/tree/master.svg?style=svg&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9" />
   </a>
 </p>
 
