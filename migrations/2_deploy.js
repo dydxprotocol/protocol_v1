@@ -117,5 +117,5 @@ module.exports = (deployer, network, addresses) => {
       ONE_DAY
     ))
     .then(() => ProxyContract.deployed() )
-    .then( proxy => proxy.grantAuthorization(TokenizedShortCreator.address) );
+    .then( proxy => proxy.grantAccess(TokenizedShortCreator.address) );
 };
