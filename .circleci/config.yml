@@ -3,6 +3,7 @@ jobs:
   install:
     docker:
       - image: circleci/node:8.6.0
+    working_directory: ~/protocol
     steps:
       - checkout
       - restore_cache:
@@ -17,6 +18,7 @@ jobs:
   build:
     docker:
       - image: circleci/node:8.6.0
+    working_directory: ~/protocol
     steps:
       - run:
           name: Compile contracts
@@ -24,6 +26,7 @@ jobs:
   lint:
     docker:
       - image: circleci/node:8.6.0
+    working_directory: ~/protocol
     steps:
       - run:
           name: Lint
@@ -31,6 +34,7 @@ jobs:
   test:
     docker:
       - image: circleci/node:8.6.0
+    working_directory: ~/protocol
     steps:
       - run:
           name: Test
