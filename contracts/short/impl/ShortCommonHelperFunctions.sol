@@ -28,6 +28,7 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
         uint32 lockoutTime;
         uint32 startTimestamp;
         uint32 callTimestamp;
+        uint32 maxDuration;
         address lender;
         address seller;
     }
@@ -42,6 +43,7 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
         uint expirationTimestamp;
         uint32 lockoutTime;
         uint32 callTimeLimit;
+        uint32 maxDuration;
         uint salt;
         bytes32 loanHash;
         Signature signature;
@@ -211,8 +213,24 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
             loanOffering.expirationTimestamp,
             loanOffering.lockoutTime,
             loanOffering.callTimeLimit,
+            loanOffering.maxDuration,
             loanOffering.salt
         );
+    }
+
+    function getShortEndTimestamp(
+        Short short
+    )
+        internal
+        pure
+        returns (uint _endTimestamp)
+    {
+        // If the maxDuration is 0, then this short should never expire so return maximum int
+        if (short.maxDuration == 0) {
+            return 2 ** 255;
+        }
+
+        return add(uint(short.startTimestamp), uint(short.maxDuration));
     }
 
     // -------- Parsing Functions -------
@@ -234,6 +252,7 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
             lockoutTime,
             startTimestamp,
             callTimestamp,
+            maxDuration,
             lender,
             seller
         ) =  ShortSellRepo(REPO).getShort(shortId);
@@ -251,6 +270,7 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
             lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: callTimestamp,
+            maxDuration: maxDuration,
             lender: lender,
             seller: seller
         });

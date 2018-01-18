@@ -24,6 +24,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         uint32 lockoutTime;
         uint32 startTimestamp;
         uint32 callTimestamp;
+        uint32 maxDuration;
         address lender;
         address seller;
     }
@@ -377,6 +378,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
             lockoutTime,
             startTimestamp,
             callTimestamp,
+            maxDuration,
             lender,
             seller
         ) =  ShortSell(SHORT_SELL).getShort(shortId);
@@ -394,6 +396,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
             lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: callTimestamp,
+            maxDuration: maxDuration,
             lender: lender,
             seller: seller
         });

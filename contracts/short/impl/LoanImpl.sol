@@ -85,7 +85,7 @@ contract LoanImpl is
     function cancelLoanOfferingImpl(
         address[7] addresses,
         uint[9] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint cancelAmount
     )
         internal
@@ -129,7 +129,7 @@ contract LoanImpl is
     function parseLoanOffering(
         address[7] addresses,
         uint[9] values,
-        uint32[2] values32
+        uint32[3] values32
     )
         internal
         view
@@ -145,6 +145,7 @@ contract LoanImpl is
             expirationTimestamp: values[7],
             lockoutTime: values32[0],
             callTimeLimit: values32[1],
+            maxDuration: values32[2],
             salt: values[8],
             loanHash: 0,
             signature: Signature({

@@ -27,6 +27,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         uint32 callTimestamp;
         uint32 callTimeLimit;
         uint32 lockoutTime;
+        uint32 maxDuration;
     }
 
     // ---------------------------
@@ -62,6 +63,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         uint32 callTimeLimit,
         uint32 lockoutTime,
         uint32 startTimestamp,
+        uint32 maxDuration,
         address lender,
         address seller
     )
@@ -81,6 +83,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: 0,
+            maxDuration: maxDuration,
             lender: lender,
             seller: seller
         });
@@ -186,6 +189,20 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         shorts[id].lockoutTime = time;
     }
 
+    /**
+     * NOTE: Currently unused, added as a utility for later versions of ShortSell
+     */
+    function setShortMaxDuration(
+        bytes32 id,
+        uint32 maxDuration
+    )
+        requiresAuthorization
+        external
+    {
+        require(containsShort(id));
+        shorts[id].maxDuration = maxDuration;
+    }
+
     function deleteShort(
         bytes32 id
     )
@@ -235,6 +252,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             uint32 lockoutTime,
             uint32 startTimestamp,
             uint32 callTimestamp,
+            uint32 maxDuration,
             address lender,
             address seller
         )
@@ -251,6 +269,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             short.lockoutTime,
             short.startTimestamp,
             short.callTimestamp,
+            short.maxDuration,
             short.lender,
             short.seller
         );

@@ -105,6 +105,7 @@ function callShort(shortSell, tx) {
   const values32 = [
     tx.loanOffering.lockoutTime,
     tx.loanOffering.callTimeLimit,
+    tx.loanOffering.maxDuration
   ];
 
   const sigV = [
@@ -396,6 +397,7 @@ async function createLoanOffering(accounts) {
     expirationTimestamp: 1000000000000,
     lockoutTime: 100000,
     callTimeLimit: 100000,
+    maxDuration: 100000000,
     salt: 123
   };
 
@@ -416,6 +418,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.expirationTimestamp,
     { type: 'uint32', value: loanOffering.lockoutTime },
     { type: 'uint32', value: loanOffering.callTimeLimit },
+    { type: 'uint32', value: loanOffering.maxDuration },
     loanOffering.salt
   );
   const hash = web3Instance.utils.soliditySha3(
