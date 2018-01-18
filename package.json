@@ -12,7 +12,8 @@
     "migrate": "truffle migrate",
     "develop": "truffle develop",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
-    "solint": "solium -d contracts/"
+    "solint": "solium -d contracts/",
+    "coverage": "./node_modules/.bin/solidity-coverage"
   },
   "pre-commit": [
     "lint",
@@ -38,7 +39,9 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
+    "coveralls": "^3.0.0",
     "eslint": "^4.14.0",
+    "solidity-coverage": "^0.4.8",
     "solium": "^1.1.0",
     "truffle": "4.0.1"
   },

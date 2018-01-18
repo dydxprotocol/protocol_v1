@@ -1,8 +1,9 @@
 version: 2
 jobs:
-  build:
+  checkout_and_install:
     docker:
       - image: circleci/node:8.6.0
+    working_directory: ~/protocol
     steps:
       - checkout
       - restore_cache:
@@ -14,12 +15,61 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+      - save_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  build:
+    docker:
+      - image: circleci/node:8.6.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
       - run:
           name: Compile contracts
           command: npm run compile -- --all
+      - save_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  lint:
+    docker:
+      - image: circleci/node:8.6.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
       - run:
           name: Lint
           command: npm run lint && npm run solint
+  test:
+    docker:
+      - image: circleci/node:8.6.0
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
       - run:
           name: Test
           command: npm test
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - build:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - test:
+          requires:
+            - build
