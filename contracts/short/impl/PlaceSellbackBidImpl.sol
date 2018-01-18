@@ -68,7 +68,7 @@ contract PlaceSellbackBidImpl is
 
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
-            Vault(VAULT).send(
+            Vault(VAULT).sendFromVault(
                 auctionVaultId,
                 short.underlyingToken,
                 currentBidder,
@@ -77,7 +77,7 @@ contract PlaceSellbackBidImpl is
         }
 
         // Transfer the full underlying token amount from the bidder
-        Vault(VAULT).transfer(
+        Vault(VAULT).transferToVault(
             auctionVaultId,
             short.underlyingToken,
             msg.sender,

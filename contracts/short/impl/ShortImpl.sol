@@ -245,7 +245,7 @@ contract ShortImpl is
         );
 
         // Transfer underlying token
-        Vault(VAULT).transfer(
+        Vault(VAULT).transferToVault(
             shortId,
             transaction.underlyingToken,
             transaction.loanOffering.lender,
@@ -273,7 +273,7 @@ contract ShortImpl is
 
         // Transfer deposit and buy taker fee
         if (transaction.buyOrder.feeRecipient == address(0)) {
-            Vault(VAULT).transfer(
+            Vault(VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
@@ -283,7 +283,7 @@ contract ShortImpl is
             // If the buy order taker fee token is base token
             // we can just transfer base token once from the short seller
 
-            Vault(VAULT).transfer(
+            Vault(VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
@@ -291,14 +291,14 @@ contract ShortImpl is
             );
         } else {
             // Otherwise transfer the deposit and buy order taker fee separately
-            Vault(VAULT).transfer(
+            Vault(VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
                 transaction.depositAmount
             );
 
-            Vault(VAULT).transfer(
+            Vault(VAULT).transferToVault(
                 shortId,
                 transaction.buyOrder.takerFeeToken,
                 msg.sender,

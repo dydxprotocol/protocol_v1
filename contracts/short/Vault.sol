@@ -71,7 +71,7 @@ contract Vault is
     // ---- Authorized Only State Changing Functions ----
     // --------------------------------------------------
 
-    function transfer(
+    function transferToVault(
         bytes32 id,
         address token,
         address from,
@@ -96,7 +96,7 @@ contract Vault is
         validateBalance(token);
     }
 
-    function send(
+    function sendFromVault(
         bytes32 id,
         address token,
         address to,
