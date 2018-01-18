@@ -192,7 +192,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     /**
      * NOTE: Currently unused, added as a utility for later versions of ShortSell
      */
-    function setShortDuration(
+    function setShortMaxDuration(
         bytes32 id,
         uint32 maxDuration
     )
