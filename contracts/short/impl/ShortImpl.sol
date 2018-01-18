@@ -61,7 +61,7 @@ contract ShortImpl is
     function shortImpl(
         address[12] addresses,
         uint[17] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -109,6 +109,7 @@ contract ShortImpl is
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.lockoutTime,
             uint32(block.timestamp),
+            transaction.loanOffering.maxDuration,
             transaction.loanOffering.lender,
             msg.sender
         );
@@ -406,6 +407,7 @@ contract ShortImpl is
             transaction.depositAmount,
             transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
+            transaction.loanOffering.maxDuration,
             transaction.loanOffering.rates.interestRate,
             block.timestamp
         );
@@ -416,7 +418,7 @@ contract ShortImpl is
     function parseShortTx(
         address[12] addresses,
         uint[17] values,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -450,7 +452,7 @@ contract ShortImpl is
     function parseLoanOffering(
         address[12] addresses,
         uint[17] values,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -468,6 +470,7 @@ contract ShortImpl is
             expirationTimestamp: values[7],
             lockoutTime: values32[0],
             callTimeLimit: values32[1],
+            maxDuration: values32[2],
             salt: values[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)

@@ -32,8 +32,8 @@ contract PlaceSellbackBidImpl is
     {
         Short memory short = getShortObject(shortId);
 
-        // The short must have been called
-        require(short.callTimestamp > 0);
+        // The short must either have been called or must be over the maximum duration
+        require(short.callTimestamp > 0 || block.timestamp > getShortEndTimestamp(short));
 
         var (currentOffer, currentBidder, hasCurrentOffer) =
             ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);

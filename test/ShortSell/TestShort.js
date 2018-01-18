@@ -103,6 +103,7 @@ async function checkSuccess(shortSell, shortTx) {
     lockoutTime,
     ,
     callTimestamp,
+    maxDuration,
     lender,
     seller,
   ] = await shortSell.getShort.call(shortId);
@@ -117,6 +118,7 @@ async function checkSuccess(shortSell, shortTx) {
   expect(seller).to.equal(shortTx.seller);
   expect(closedAmount.equals(new BigNumber(0))).to.be.true;
   expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+  expect(maxDuration.equals(shortTx.loanOffering.maxDuration)).to.be.true;
 
   const balance = await shortSell.getShortBalance.call(shortId);
 
