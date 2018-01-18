@@ -283,7 +283,7 @@ contract Trader is
         // These transfers will fail on insufficient vault balance
         if (order.feeRecipient == address(0)) {
             // If the fee recipient is 0, no fee is required so just transfer the taker token
-            Vault(VAULT).send(
+            Vault(VAULT).sendFromVault(
                 id,
                 order.takerToken,
                 address(this),
@@ -302,7 +302,7 @@ contract Trader is
 
             uint totalAmount = add(requestedFillAmount, feeAmount);
 
-            Vault(VAULT).send(
+            Vault(VAULT).sendFromVault(
                 id,
                 order.takerToken,
                 address(this),
@@ -318,7 +318,7 @@ contract Trader is
                 order.takerFee
             );
 
-            Vault(VAULT).send(
+            Vault(VAULT).sendFromVault(
                 id,
                 order.takerToken,
                 address(this),
@@ -327,7 +327,7 @@ contract Trader is
             setAllowance(order.takerToken, proxy, requestedFillAmount);
 
             if (feeAmount > 0) {
-                Vault(VAULT).send(
+                Vault(VAULT).sendFromVault(
                     id,
                     order.takerFeeToken,
                     address(this),
@@ -396,7 +396,7 @@ contract Trader is
     {
         // Transfer the received maker token back to vault
         setAllowance(order.makerToken, PROXY, receivedMakerTokenAmount);
-        Vault(VAULT).transfer(
+        Vault(VAULT).transferToVault(
             id,
             order.makerToken,
             address(this),
@@ -408,7 +408,7 @@ contract Trader is
             if (order.takerFeeToken == address(0)) {
                 // If there is no fee, just transfer the extra taker token back
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
-                Vault(VAULT).transfer(
+                Vault(VAULT).transferToVault(
                     id,
                     order.takerToken,
                     address(this),
@@ -419,7 +419,7 @@ contract Trader is
                 uint totalAmount = add(extraTakerTokenAmount, extraTakerFeeTokenAmount);
 
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
-                Vault(VAULT).transfer(
+                Vault(VAULT).transferToVault(
                     id,
                     order.takerToken,
                     address(this),
@@ -430,7 +430,7 @@ contract Trader is
                 // transfer extras back separately
 
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
-                Vault(VAULT).transfer(
+                Vault(VAULT).transferToVault(
                     id,
                     order.takerToken,
                     address(this),
@@ -439,7 +439,7 @@ contract Trader is
 
                 if (extraTakerFeeTokenAmount > 0) {
                     setAllowance(order.takerFeeToken, PROXY, extraTakerFeeTokenAmount);
-                    Vault(VAULT).transfer(
+                    Vault(VAULT).transferToVault(
                         id,
                         order.takerFeeToken,
                         address(this),

@@ -418,7 +418,7 @@ contract ShortSell is
         Short memory short = getShortObject(shortId);
         require(msg.sender == short.seller);
 
-        Vault(VAULT).transfer(
+        Vault(VAULT).transferToVault(
             shortId,
             short.baseToken,
             short.seller,

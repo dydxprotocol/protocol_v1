@@ -177,7 +177,7 @@ contract CloseShortImpl is
         }
 
         // EXTERNAL CALLS
-        Vault(VAULT).transfer(
+        Vault(VAULT).transferToVault(
             closeId,
             short.underlyingToken,
             msg.sender,
@@ -446,7 +446,7 @@ contract CloseShortImpl is
 
         // Transfer taker fee for buyback
         if (takerFee > 0) {
-            Vault(VAULT).transfer(
+            Vault(VAULT).transferToVault(
                 closeId,
                 takerFeeToken,
                 msg.sender,
@@ -467,7 +467,7 @@ contract CloseShortImpl is
         Vault vault = Vault(VAULT);
 
         // Send original loaned underlying token to lender
-        vault.send(
+        vault.sendFromVault(
             closeId,
             short.underlyingToken,
             short.lender,
@@ -476,7 +476,7 @@ contract CloseShortImpl is
 
         // Send base token interest fee to lender
         if (interestFee > 0) {
-            vault.send(
+            vault.sendFromVault(
                 closeId,
                 short.baseToken,
                 short.lender,
@@ -488,7 +488,7 @@ contract CloseShortImpl is
         // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
         // have been paid out of the vault balance
         uint sellerBaseTokenAmount = vault.balances(closeId, short.baseToken);
-        vault.send(
+        vault.sendFromVault(
             closeId,
             short.baseToken,
             short.seller,

@@ -68,7 +68,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     )
         requiresAuthorization
         whenNotPaused
-        public
+        external
     {
         if (!transferAuthorized[who]) {
             transferAuthorized[who] = true;
@@ -85,7 +85,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     )
         requiresAuthorization
         whenNotPaused
-        public
+        external
     {
         if (transferAuthorized[who]) {
             delete transferAuthorized[who];
@@ -105,7 +105,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         address who
     )
         onlyOwner
-        public
+        external
     {
         if (transferAuthorized[who]) {
             delete transferAuthorized[who];
@@ -141,7 +141,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     )
         requiresTransferAuthorization
         whenNotPaused
-        public
+        external
     {
         require(ERC20(token).transferFrom(from, to, value));
     }
@@ -155,7 +155,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         address token
     )
         view
-        public
+        external
         returns (uint _allowance)
     {
         return min256(
