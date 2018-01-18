@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  install:
+  checkout_and_install:
     docker:
       - image: circleci/node:8.6.0
     working_directory: ~/protocol
@@ -43,13 +43,13 @@ workflows:
   version: 2
   build_and_test:
     jobs:
-      - install
+      - checkout_and_install
       - build:
-        requires:
-          - install
+          requires:
+            - checkout_and_install
       - lint:
-        requires:
-          - install
+          requires:
+            - checkout_and_install
       - test:
-        requires:
-          - build
+          requires:
+            - build
