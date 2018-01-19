@@ -303,60 +303,6 @@ contract ShortSell is
     }
 
     /**
-     * Transfer ownership of a loan to a new address. This new address will be entitled
-     * to all payouts for this loan. Only callable by the lender for a short
-     *
-     * @param  shortId  unique id for the short sell
-     * @param  who      new owner of the loan
-     */
-    function transferLoan(
-        bytes32 shortId,
-        address who
-    )
-        external
-        nonReentrant
-    {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
-
-        ShortSellRepo(REPO).setShortLender(shortId, who);
-
-        LoanTransfered(
-            shortId,
-            short.lender,
-            who,
-            block.timestamp
-        );
-    }
-
-    /**
-     * Transfer ownership of a short to a new address. This new address will be entitled
-     * to all payouts for this short. Only callable by the short seller for a short
-     *
-     * @param  shortId  unique id for the short sell
-     * @param  who      new owner of the short
-     */
-    function transferShort(
-        bytes32 shortId,
-        address who
-    )
-        external
-        nonReentrant
-    {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.seller);
-
-        ShortSellRepo(REPO).setShortSeller(shortId, who);
-
-        ShortTransfered(
-            shortId,
-            short.lender,
-            who,
-            block.timestamp
-        );
-    }
-
-    /**
      * Offer to sell back the tokens loaned for a short sell for some amount of base tokens held
      * in this short position. Only the lowest bid amount will be accepted. On placing a bid,
      * the full underlying token amount owed to the lender will be taken from the bidder and
@@ -482,6 +428,60 @@ contract ShortSell is
         );
     }
 
+    /**
+     * Transfer ownership of a loan to a new address. This new address will be entitled
+     * to all payouts for this loan. Only callable by the lender for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the loan
+     */
+    function transferLoan(
+        bytes32 shortId,
+        address who
+    )
+        external
+        nonReentrant
+    {
+        Short memory short = getShortObject(shortId);
+        require(msg.sender == short.lender);
+
+        ShortSellRepo(REPO).setShortLender(shortId, who);
+
+        LoanTransfered(
+            shortId,
+            short.lender,
+            who,
+            block.timestamp
+        );
+    }
+
+    /**
+     * Transfer ownership of a short to a new address. This new address will be entitled
+     * to all payouts for this short. Only callable by the short seller for a short
+     *
+     * @param  shortId  unique id for the short sell
+     * @param  who      new owner of the short
+     */
+    function transferShort(
+        bytes32 shortId,
+        address who
+    )
+        external
+        nonReentrant
+    {
+        Short memory short = getShortObject(shortId);
+        require(msg.sender == short.seller);
+
+        ShortSellRepo(REPO).setShortSeller(shortId, who);
+
+        ShortTransfered(
+            shortId,
+            short.lender,
+            who,
+            block.timestamp
+        );
+    }
+
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
@@ -581,7 +581,7 @@ contract ShortSell is
         public
         returns (
             uint _offer,
-            address _taker,
+            address _bidder,
             bool _exists
         )
     {
