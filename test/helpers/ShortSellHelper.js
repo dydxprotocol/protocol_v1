@@ -512,6 +512,38 @@ function get0xOrderHash(order) {
   )
 }
 
+async function getShort(shortSell, id) {
+  const [
+    underlyingToken,
+    baseToken,
+    shortAmount,
+    closedAmount,
+    interestRate,
+    callTimeLimit,
+    lockoutTime,
+    startTimestamp,
+    callTimestamp,
+    maxDuration,
+    lender,
+    seller
+  ] = await shortSell.getShort.call(id);
+
+  return {
+    underlyingToken,
+    baseToken,
+    shortAmount,
+    closedAmount,
+    interestRate,
+    callTimeLimit,
+    lockoutTime,
+    startTimestamp,
+    callTimestamp,
+    maxDuration,
+    lender,
+    seller
+  };
+}
+
 function getPartialAmount(
   numerator,
   denominator,
@@ -533,5 +565,6 @@ module.exports = {
   callCancelLoanOffer,
   signOrder,
   sign0xOrder,
-  callCloseShort
+  callCloseShort,
+  getShort
 };
