@@ -19,7 +19,7 @@ function getCallTimestamp(tx) {
 
 describe('#callInLoan', () => {
   contract('ShortSell', function(accounts) {
-    it('sets callTimestamp on the short', async () => {
+    it.only('sets callTimestamp on the short', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 

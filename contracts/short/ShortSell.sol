@@ -243,7 +243,6 @@ contract ShortSell is
         uint closeAmount
     )
         external
-        nonReentrant
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount

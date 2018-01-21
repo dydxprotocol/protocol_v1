@@ -32,36 +32,16 @@ contract PlaceSellbackBidImpl is
     {
         Short memory short = getShortObject(shortId);
 
-        // The short must either have been called or must be over the maximum duration
-        require(short.callTimestamp > 0 || block.timestamp > getShortEndTimestamp(short));
-
         var (currentOffer, currentBidder, hasCurrentOffer) =
             ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
 
-        // If there is a current offer, the new offer must be for less
-        if (hasCurrentOffer) {
-            require(offer < currentOffer);
-        }
-
-        // Maximum interest fee is what it would be if the entire call time limit elapsed
-        uint maxInterestFee = calculateInterestFee(
+        uint currentShortAmount = validate(
             short,
-            short.shortAmount,
-            add(short.callTimestamp, short.callTimeLimit)
+            shortId,
+            offer,
+            hasCurrentOffer,
+            currentOffer
         );
-
-        // The offered amount must be less than the initia amount of
-        // base token held - max interest fee. Recall offer is denominated in terms of closing
-        // the entire shortAmount
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-
-        uint initialBaseToken = getPartialAmount(
-            short.shortAmount,
-            currentShortAmount,
-            Vault(VAULT).balances(shortId, short.baseToken)
-        );
-
-        require(offer <= sub(initialBaseToken, maxInterestFee));
 
         // Store auction funds in a separate vault for isolation
         bytes32 auctionVaultId = getAuctionVaultId(shortId);
@@ -99,5 +79,67 @@ contract PlaceSellbackBidImpl is
             currentShortAmount,
             block.timestamp
         );
+    }
+
+
+    function validate(
+        Short short,
+        bytes32 shortId,
+        uint offer,
+        bool hasCurrentOffer,
+        uint currentOffer
+    )
+        internal
+        view
+        returns (uint _currentShortAmount)
+    {
+        uint closePeriodStart = getClosePeriodStart(short);
+
+        // The short must either have been called or must be over the maximum duration
+        require(block.timestamp >= closePeriodStart);
+
+        // If there is a current offer, the new offer must be for less
+        if (hasCurrentOffer) {
+            require(offer < currentOffer);
+        }
+
+        // Maximum interest fee is what it would be if the entire call time limit elapsed
+        uint maxInterestFee = calculateInterestFee(
+            short,
+            short.shortAmount,
+            add(closePeriodStart, short.callTimeLimit)
+        );
+
+        // The offered amount must be less than the initia amount of
+        // base token held - max interest fee. Recall offer is denominated in terms of closing
+        // the entire shortAmount
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+
+        uint initialBaseToken = getPartialAmount(
+            short.shortAmount,
+            currentShortAmount,
+            Vault(VAULT).balances(shortId, short.baseToken)
+        );
+
+        require(offer <= sub(initialBaseToken, maxInterestFee));
+
+        return currentShortAmount;
+    }
+
+    function getClosePeriodStart(
+        Short short
+    )
+        internal
+        pure
+        returns (uint _timestamp)
+    {
+        // If the short has been called then the start of the close period is the timestamp of
+        // the call. If not, then the start of the close period is the end of the duration of the
+        // short.
+        if (short.callTimestamp > 0) {
+            return short.callTimestamp;
+        } else {
+            return getShortEndTimestamp(short);
+        }
     }
 }
