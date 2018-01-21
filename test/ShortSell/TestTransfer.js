@@ -16,11 +16,12 @@ describe('#transferShort', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await shortSell.transferShort(
+      const tx = await shortSell.transferShort(
         shortTx.id,
         toAddress,
         { from: shortTx.seller }
       );
+      console.log('\tShortSell.transferShort gas used: ' + tx.receipt.gasUsed);
 
       const { seller } = await getShort(shortSell, shortTx.id);
 
@@ -54,11 +55,12 @@ describe('#transferLoan', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await shortSell.transferLoan(
+      const tx = await shortSell.transferLoan(
         shortTx.id,
         toAddress,
         { from: shortTx.loanOffering.lender }
       );
+      console.log('\tShortSell.transferLoan gas used: ' + tx.receipt.gasUsed);
 
       const { lender } = await getShort(shortSell, shortTx.id);
 

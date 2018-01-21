@@ -395,9 +395,9 @@ async function createLoanOffering(accounts) {
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
     expirationTimestamp: 1000000000000,
-    lockoutTime: 100000,
-    callTimeLimit: 100000,
-    maxDuration: 100000000,
+    lockoutTime: 10000,
+    callTimeLimit: 10000,
+    maxDuration: 1000000,
     salt: 123
   };
 
@@ -544,6 +544,38 @@ async function getShort(shortSell, id) {
   };
 }
 
+async function getShortAuctionOffer(shortSell, id) {
+  const [
+    offer,
+    bidder,
+    exists
+  ] = await shortSell.getShortAuctionOffer.call(id);
+
+  return {
+    offer,
+    bidder,
+    exists
+  };
+}
+
+async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid) {
+  await underlyingToken.issue(
+    shortTx.shortAmount,
+    { from: bidder }
+  );
+  await underlyingToken.approve(
+    ProxyContract.address,
+    shortTx.shortAmount,
+    { from: bidder }
+  );
+
+  return shortSell.placeSellbackBid(
+    shortTx.id,
+    bid,
+    { from: bidder }
+  );
+}
+
 function getPartialAmount(
   numerator,
   denominator,
@@ -566,5 +598,7 @@ module.exports = {
   signOrder,
   sign0xOrder,
   callCloseShort,
-  getShort
+  getShort,
+  getShortAuctionOffer,
+  placeAuctionBid
 };
