@@ -552,6 +552,8 @@ contract ShortSell is
             && block.timestamp > add(short.callTimestamp, short.callTimeLimit)
         ) {
             endTimestamp = add(short.callTimestamp, short.callTimeLimit);
+        } else if (block.timestamp > add(short.startTimestamp, short.maxDuration)) {
+            endTimestamp = add(short.startTimestamp, short.maxDuration);
         } else {
             endTimestamp = block.timestamp;
         }

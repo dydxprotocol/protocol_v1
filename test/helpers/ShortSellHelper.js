@@ -14,6 +14,8 @@ const FeeToken = artifacts.require("TokenC");
 const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
+const Vault = artifacts.require("Vault");
+const { wait } = require('@digix/tempo')(web3);
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -558,6 +560,24 @@ async function getShortAuctionOffer(shortSell, id) {
   };
 }
 
+async function doShortAndCall(accounts) {
+  const [shortSell, vault, underlyingToken] = await Promise.all([
+    ShortSell.deployed(),
+    Vault.deployed(),
+    UnderlyingToken.deployed()
+  ]);
+
+  const shortTx = await doShort(accounts);
+
+  await wait(shortTx.loanOffering.lockoutTime);
+  await shortSell.callInLoan(
+    shortTx.id,
+    { from: shortTx.loanOffering.lender }
+  );
+
+  return { shortSell, vault, underlyingToken, shortTx };
+}
+
 async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid) {
   await underlyingToken.issue(
     shortTx.shortAmount,
@@ -600,5 +620,6 @@ module.exports = {
   callCloseShort,
   getShort,
   getShortAuctionOffer,
-  placeAuctionBid
+  placeAuctionBid,
+  doShortAndCall
 };

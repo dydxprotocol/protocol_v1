@@ -41,8 +41,8 @@ contract ForceRecoverLoanImpl is
         // This can either be after the loan was called or after the maxDuration of the short
         // position has elapsed (plus the call time)
         require(
-            block.timestamp > add(uint(short.callTimestamp), uint(short.callTimeLimit))
-            || block.timestamp > add(getShortEndTimestamp(short), uint(short.callTimeLimit))
+            block.timestamp >= add(uint(short.callTimestamp), uint(short.callTimeLimit))
+            || block.timestamp >= add(getShortEndTimestamp(short), uint(short.callTimeLimit))
         );
 
         // Only the lender or the winning bidder can call recover the loan
@@ -65,6 +65,7 @@ contract ForceRecoverLoanImpl is
         // Log an event
         LoanForceRecovered(
             shortId,
+            bidder,
             lenderBaseTokenAmount,
             hasCurrentOffer,
             buybackCost,
