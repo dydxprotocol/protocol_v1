@@ -85,6 +85,7 @@ contract ShortSellEvents {
      */
     event LoanForceRecovered(
         bytes32 indexed id,
+        address indexed winningBidder,
         uint amount,
         bool hadAcutcionOffer,
         uint buybackCost,

@@ -134,11 +134,13 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
 
         repo.deleteAuctionOffer(shortId);
 
+        bytes32 auctionVaultId = getAuctionVaultId(shortId);
+
         vault.sendFromVault(
-            shortId,
+            auctionVaultId,
             short.underlyingToken,
             currentBidder,
-            vault.balances(getAuctionVaultId(shortId), short.underlyingToken)
+            vault.balances(auctionVaultId, short.underlyingToken)
         );
     }
 

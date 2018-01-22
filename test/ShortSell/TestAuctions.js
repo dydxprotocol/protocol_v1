@@ -4,34 +4,13 @@ const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
-const ShortSell = artifacts.require("ShortSell");
-const UnderlyingToken = artifacts.require("TokenB");
-const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const {
-  doShort,
   getShortAuctionOffer,
-  placeAuctionBid
+  placeAuctionBid,
+  doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
-
-async function doShortAndCall(accounts) {
-  const [shortSell, vault, underlyingToken] = await Promise.all([
-    ShortSell.deployed(),
-    Vault.deployed(),
-    UnderlyingToken.deployed()
-  ]);
-
-  const shortTx = await doShort(accounts);
-
-  await wait(shortTx.loanOffering.lockoutTime);
-  await shortSell.callInLoan(
-    shortTx.id,
-    { from: shortTx.loanOffering.lender }
-  );
-
-  return { shortSell, vault, underlyingToken, shortTx };
-}
 
 describe('#placeSellbackBid', () => {
   contract('ShortSell', function(accounts) {

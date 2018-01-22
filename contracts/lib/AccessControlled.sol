@@ -71,11 +71,6 @@ contract AccessControlled is Ownable, SafeMath {
     // --- Owner Only State Changing Functions ---
     // -------------------------------------------
 
-    event Test(
-        uint ts,
-        bytes32 id
-    );
-
     function grantAccess(
         address who
     )

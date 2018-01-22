@@ -7,7 +7,9 @@ const { wait } = require('@digix/tempo')(web3);
 const ShortSell = artifacts.require("ShortSell");
 const {
   doShort,
-  getShort
+  getShort,
+  doShortAndCall,
+  placeAuctionBid
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
@@ -19,7 +21,7 @@ function getCallTimestamp(tx) {
 
 describe('#callInLoan', () => {
   contract('ShortSell', function(accounts) {
-    it.only('sets callTimestamp on the short', async () => {
+    it('sets callTimestamp on the short', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
@@ -164,5 +166,37 @@ describe('#cancelLoanCall', () => {
     });
   });
 
-  // TODO test it sends auction bid tokens back
+  contract('ShortSell', function(accounts) {
+    it('unsets callTimestamp on the short', async () => {
+      const bidder = accounts[6];
+      const bid = new BigNumber(100);
+      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+
+      await shortSell.cancelLoanCall(
+        shortTx.id,
+        { from: shortTx.loanOffering.lender }
+      );
+
+      const { callTimestamp } = await getShort(shortSell, shortTx.id);
+
+      const [
+        auctionExists,
+        vaultUnderlyingTokenBalance,
+        tokenBalanceOfVault,
+        bidderTokenBalance
+      ] = await Promise.all([
+        shortSell.hasShortAuctionOffer.call(shortTx.id),
+        vault.totalBalances.call(underlyingToken.address),
+        underlyingToken.balanceOf.call(vault.address),
+        underlyingToken.balanceOf.call(bidder),
+      ]);
+
+      expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+      expect(auctionExists).to.be.false;
+      expect(vaultUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
+      expect(tokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
+      expect(bidderTokenBalance.equals(shortTx.shortAmount)).to.be.true;
+    });
+  });
 });
