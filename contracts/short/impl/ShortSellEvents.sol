@@ -19,10 +19,10 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed shortSeller,
         address indexed lender,
+        bytes32 loanHash,
         address underlyingToken,
         address baseToken,
         address loanFeeRecipient,
-        address buyOrderFeeRecipient,
         uint shortAmount,
         uint baseTokenFromSell,
         uint depositAmount,
@@ -108,6 +108,7 @@ contract ShortSellEvents {
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
         address indexed lender,
+        address indexed feeRecipient,
         uint cancelAmount,
         uint timestamp
     );

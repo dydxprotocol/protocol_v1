@@ -107,7 +107,10 @@ contract LoanImpl is
         );
         uint amountToCancel = min256(remainingAmount, cancelAmount);
 
-        require(amountToCancel > 0);
+        // If the loan was already fully canceled, then just return 0 amount was canceled
+        if (amountToCancel == 0) {
+            return 0;
+        }
 
         loanCancels[loanOffering.loanHash] = add(
             loanCancels[loanOffering.loanHash],
@@ -117,6 +120,7 @@ contract LoanImpl is
         LoanOfferingCanceled(
             loanOffering.loanHash,
             loanOffering.lender,
+            loanOffering.feeRecipient,
             amountToCancel,
             block.timestamp
         );

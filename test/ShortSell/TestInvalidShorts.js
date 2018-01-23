@@ -170,6 +170,7 @@ describe('#short', () => {
       it('fails if loan offer canceled', async () => {
         const shortTx = await createShortSellTx(accounts);
 
+        await issueTokensAndSetAllowancesForShort(shortTx);
         const shortSell = await ShortSell.deployed();
 
         await callCancelLoanOffer(
@@ -186,6 +187,7 @@ describe('#short', () => {
       it('fails if buy order canceled', async () => {
         const shortTx = await createShortSellTx(accounts);
 
+        await issueTokensAndSetAllowancesForShort(shortTx);
         const exchange = await Exchange.deployed();
 
         await callCancelOrder(
