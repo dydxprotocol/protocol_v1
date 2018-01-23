@@ -275,7 +275,7 @@ function getOrderTxFields(order) {
   return { addresses, values };
 }
 
-function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
+function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
   const addresses = [
     UnderlyingToken.address,
     BaseToken.address,
@@ -301,6 +301,7 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
   const values32 = [
     loanOffering.lockoutTime,
     loanOffering.callTimeLimit,
+    loanOffering.maxDuration
   ];
 
   return shortSell.cancelLoanOffering(
@@ -308,7 +309,7 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount) {
     values256,
     values32,
     cancelAmount,
-    { from: loanOffering.lender }
+    { from: from || loanOffering.lender }
   );
 }
 
