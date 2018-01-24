@@ -408,8 +408,7 @@ contract ShortImpl is
             transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.interestRate,
-            block.timestamp
+            transaction.loanOffering.rates.interestRate
         );
     }
 

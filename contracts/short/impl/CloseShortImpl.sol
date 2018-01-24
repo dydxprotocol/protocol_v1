@@ -203,8 +203,7 @@ contract CloseShortImpl is
                 interestFee,
                 closeAmount,
                 sellerBaseTokenAmount,
-                0,
-                block.timestamp
+                0
             );
         } else {
             ShortPartiallyClosed(
@@ -213,8 +212,7 @@ contract CloseShortImpl is
                 sub(currentShortAmount, closeAmount),
                 interestFee,
                 sellerBaseTokenAmount,
-                0,
-                block.timestamp
+                0
             );
         }
 
@@ -516,8 +514,7 @@ contract CloseShortImpl is
                 transaction.closeAmount,
                 interestFee,
                 sellerBaseTokenAmount,
-                buybackCost,
-                block.timestamp
+                buybackCost
             );
         } else {
             ShortPartiallyClosed(
@@ -526,8 +523,7 @@ contract CloseShortImpl is
                 sub(transaction.currentShortAmount, transaction.closeAmount),
                 interestFee,
                 sellerBaseTokenAmount,
-                buybackCost,
-                block.timestamp
+                buybackCost
             );
         }
     }

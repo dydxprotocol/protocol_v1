@@ -12,11 +12,10 @@ const {
   placeAuctionBid
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { getBlockTimestamp } = require('../helpers/NodeHelper');
 
 function getCallTimestamp(tx) {
-  return tx.logs.find(
-    l => l.event === 'LoanCalled'
-  ).args.timestamp;
+  return getBlockTimestamp(tx.receipt.blockNumber)
 }
 
 describe('#callInLoan', () => {
@@ -34,7 +33,7 @@ describe('#callInLoan', () => {
 
       console.log('\tShortSell.callInLoan gas used: ' + tx.receipt.gasUsed);
 
-      const shortCalledTimestamp = getCallTimestamp(tx);
+      const shortCalledTimestamp = await getCallTimestamp(tx);
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
@@ -93,7 +92,7 @@ describe('#callInLoan', () => {
         { from: shortTx.loanOffering.lender }
       ));
 
-      const shortCalledTimestamp = getCallTimestamp(tx);
+      const shortCalledTimestamp = await getCallTimestamp(tx);
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
@@ -139,7 +138,7 @@ describe('#cancelLoanCall', () => {
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       );
-      const shortCalledTimestamp = getCallTimestamp(tx);
+      const shortCalledTimestamp = await getCallTimestamp(tx);
 
       await expectThrow( () => shortSell.cancelLoanCall(
         shortTx.id,

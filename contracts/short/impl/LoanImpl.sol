@@ -50,8 +50,7 @@ contract LoanImpl is
             shortId,
             short.lender,
             short.seller,
-            msg.sender,
-            block.timestamp
+            msg.sender
         );
     }
 
@@ -77,8 +76,7 @@ contract LoanImpl is
             shortId,
             short.lender,
             short.seller,
-            msg.sender,
-            block.timestamp
+            msg.sender
         );
     }
 
@@ -121,8 +119,7 @@ contract LoanImpl is
             loanOffering.loanHash,
             loanOffering.lender,
             loanOffering.feeRecipient,
-            amountToCancel,
-            block.timestamp
+            amountToCancel
         );
 
         return amountToCancel;

@@ -226,7 +226,7 @@ async function doShort(accounts) {
   return shortTx;
 }
 
-function callCloseEntireShort(shortSell, shortTx, sellOrder) {
+function callCloseEntireShort(shortSell, shortTx, sellOrder, from ) {
   const { addresses, values } = getOrderTxFields(sellOrder);
 
   return shortSell.closeEntireShort(
@@ -236,11 +236,11 @@ function callCloseEntireShort(shortSell, shortTx, sellOrder) {
     sellOrder.ecSignature.v,
     sellOrder.ecSignature.r,
     sellOrder.ecSignature.s,
-    { from: shortTx.seller }
+    { from: from || shortTx.seller }
   );
 }
 
-function callCloseShort(shortSell, shortTx, sellOrder, closeAmount) {
+function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
   const { addresses, values } = getOrderTxFields(sellOrder);
 
   return shortSell.closeShort(
@@ -251,7 +251,7 @@ function callCloseShort(shortSell, shortTx, sellOrder, closeAmount) {
     sellOrder.ecSignature.v,
     sellOrder.ecSignature.r,
     sellOrder.ecSignature.s,
-    { from: shortTx.seller }
+    { from: from || shortTx.seller }
   );
 }
 
