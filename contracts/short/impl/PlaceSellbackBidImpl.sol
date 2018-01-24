@@ -76,11 +76,9 @@ contract PlaceSellbackBidImpl is
             shortId,
             msg.sender,
             offer,
-            currentShortAmount,
-            block.timestamp
+            currentShortAmount
         );
     }
-
 
     function validate(
         Short short,

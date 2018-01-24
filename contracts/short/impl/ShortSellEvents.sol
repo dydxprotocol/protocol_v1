@@ -29,8 +29,7 @@ contract ShortSellEvents {
         uint32 lockoutTime,
         uint32 callTimeLimit,
         uint32 maxDuration,
-        uint interestRate,
-        uint timestamp
+        uint interestRate
     );
 
     /**
@@ -41,8 +40,7 @@ contract ShortSellEvents {
         uint closeAmount,
         uint interestFee,
         uint shortSellerBaseToken,
-        uint buybackCost,
-        uint timestamp
+        uint buybackCost
     );
 
     /**
@@ -54,8 +52,7 @@ contract ShortSellEvents {
         uint remainingAmount,
         uint interestFee,
         uint shortSellerBaseToken,
-        uint buybackCost,
-        uint timestamp
+        uint buybackCost
     );
 
     /**
@@ -65,8 +62,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller,
-        uint timestamp
+        address caller
     );
 
     /**
@@ -76,8 +72,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller,
-        uint timestamp
+        address caller
     );
 
     /**
@@ -88,8 +83,7 @@ contract ShortSellEvents {
         address indexed winningBidder,
         uint amount,
         bool hadAcutcionOffer,
-        uint buybackCost,
-        uint timestamp
+        uint buybackCost
     );
 
     /**
@@ -97,8 +91,7 @@ contract ShortSellEvents {
      */
     event AdditionalDeposit(
         bytes32 indexed id,
-        uint amount,
-        uint timestamp
+        uint amount
     );
 
     /**
@@ -109,8 +102,7 @@ contract ShortSellEvents {
         bytes32 indexed loanHash,
         address indexed lender,
         address indexed feeRecipient,
-        uint cancelAmount,
-        uint timestamp
+        uint cancelAmount
     );
 
     /**
@@ -119,8 +111,7 @@ contract ShortSellEvents {
     event LoanTransfered(
         bytes32 indexed id,
         address from,
-        address to,
-        uint timestamp
+        address to
     );
 
     /**
@@ -129,8 +120,7 @@ contract ShortSellEvents {
     event ShortTransfered(
         bytes32 indexed id,
         address from,
-        address to,
-        uint timestamp
+        address to
     );
 
     /**
@@ -141,7 +131,6 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed bidder,
         uint bid,
-        uint currentShortAmount,
-        uint timestamp
+        uint currentShortAmount
     );
 }

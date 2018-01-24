@@ -372,8 +372,7 @@ contract ShortSell is
 
         AdditionalDeposit(
             shortId,
-            depositAmount,
-            block.timestamp
+            depositAmount
         );
     }
 
@@ -449,8 +448,7 @@ contract ShortSell is
         LoanTransfered(
             shortId,
             short.lender,
-            who,
-            block.timestamp
+            who
         );
     }
 
@@ -476,8 +474,7 @@ contract ShortSell is
         ShortTransfered(
             shortId,
             short.lender,
-            who,
-            block.timestamp
+            who
         );
     }
 

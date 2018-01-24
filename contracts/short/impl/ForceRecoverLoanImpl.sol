@@ -68,8 +68,7 @@ contract ForceRecoverLoanImpl is
             bidder,
             lenderBaseTokenAmount,
             hasCurrentOffer,
-            buybackCost,
-            block.timestamp
+            buybackCost
         );
 
         return lenderBaseTokenAmount;
