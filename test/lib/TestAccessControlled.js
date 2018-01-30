@@ -7,7 +7,7 @@ const BigNumber = require('bignumber.js');
 const AccessControlledTester = artifacts.require("AccessControlledTester");
 const { expectThrow } = require('../helpers/ExpectHelper');
 
-contract('DelayedUpdateTester', function(accounts) {
+contract('AccessControlledTester', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
   const num1 = new BigNumber(12);
   const [addr1, addr2] = [accounts[2], accounts[3]];
