@@ -6,8 +6,10 @@ const BigNumber = require('bignumber.js');
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
-const { expectThrow } = require('../helpers/ExpectHelper');
+
 const { wait } = require('@digix/tempo')(web3);
+const { expectThrow } = require('../helpers/ExpectHelper');
+const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 contract('Vault', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -27,25 +29,20 @@ contract('Vault', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
+      await validateAccessControlledConstants(proxy, delay, gracePeriod);
+      await validateAccessControlledConstants(vault, delay, gracePeriod);
       const [
-        contractDelay,
-        contractGracePeriodExpiration,
         contractUpdateDelay,
         contractUpdateExpiration,
         owner,
         contractProxy
       ] = await Promise.all([
-        vault.accessDelay.call(),
-        vault.gracePeriodExpiration.call(),
         vault.updateDelay.call(),
         vault.updateExpiration.call(),
         vault.owner.call(),
         vault.PROXY.call()
       ]);
 
-      expect(contractDelay.equals(delay)).to.be.true;
-      // ?? How to check this? Don't know block timestamp of contract creation
-      expect(contractGracePeriodExpiration.gt(new BigNumber(0))).to.be.true;
       expect(contractUpdateDelay.equals(delay)).to.be.true;
       expect(contractUpdateExpiration.equals(delay)).to.be.true;
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());

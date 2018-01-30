@@ -6,6 +6,7 @@ const BigNumber = require('bignumber.js');
 const Proxy = artifacts.require("Proxy");
 const TestToken = artifacts.require("TestToken");
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 contract('Proxy', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -22,15 +23,10 @@ contract('Proxy', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const [contractDelay, contractGracePeriodExpiration, owner] = await Promise.all([
-        contract.accessDelay.call(),
-        contract.gracePeriodExpiration.call(),
+      validateAccessControlledConstants(contract, delay, gracePeriod);
+      const [owner] = await Promise.all([
         contract.owner.call()
       ]);
-
-      expect(contractDelay.equals(delay)).to.be.true;
-      // ?? How to check this? Don't know block timestamp of contract creation
-      expect(contractGracePeriodExpiration.gt(new BigNumber(0))).to.be.true;
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
     });
   });
