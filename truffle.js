@@ -23,7 +23,7 @@ module.exports = {
   solc: {
     optimizer: {
       enabled: true,
-      runs: 1 // TODO increase this
+      runs: 10000
     }
   }
 };

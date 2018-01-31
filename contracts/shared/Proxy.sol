@@ -24,19 +24,22 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
      * transfer authorized addresses
      */
     mapping(address => bool) public transferAuthorized;
+    mapping(address => uint256) public pendingTransferAuthorizations;
 
     // ------------------------
     // -------- Events --------
     // ------------------------
 
     event TransferAuthorization(
-        address who,
-        uint timestamp
+        address who
+    );
+
+    event PendingTransferAuthorization(
+        address who
     );
 
     event TransferDeauthorization(
-        address who,
-        uint timestamp
+        address who
     );
 
     // -------------------------
@@ -75,8 +78,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             transferAuthorized[who] = true;
 
             TransferAuthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }
@@ -92,8 +94,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             delete transferAuthorized[who];
 
             TransferDeauthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }
@@ -101,6 +102,42 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     // ---------------------------------------------
     // ---- Owner Only State Changing Functions ----
     // ---------------------------------------------
+
+    function ownerGrantTransferAuthorization(
+        address who
+    )
+        onlyOwner
+        external
+    {
+        if (block.timestamp < gracePeriodExpiration) {
+            transferAuthorized[who] = true;
+
+            TransferAuthorization(
+                who
+            );
+        } else {
+            pendingTransferAuthorizations[who] = add(block.timestamp, accessDelay);
+
+            PendingTransferAuthorization(
+                who
+            );
+        }
+    }
+
+    function ownerConfirmTransferAuthorization(
+        address who
+    )
+        onlyOwner
+        external
+    {
+        require(pendingTransferAuthorizations[who] != 0);
+        require(block.timestamp >= pendingTransferAuthorizations[who]);
+        transferAuthorized[who] = true;
+        delete pendingTransferAuthorizations[who];
+        TransferAuthorization(
+            who
+        );
+    }
 
     function ownerRevokeTransferAuthorization(
         address who
@@ -112,8 +149,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             delete transferAuthorized[who];
 
             TransferDeauthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }

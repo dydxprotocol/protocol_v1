@@ -27,12 +27,15 @@ const {
 describe('#short', () => {
   contract('ShortSell', function(accounts) {
     it('succeeds on valid inputs', async () => {
+      console.log('0')
       const shortTx = await createShortSellTx(accounts);
       const shortSell = await ShortSell.deployed();
 
       await issueTokensAndSetAllowancesForShort(shortTx);
 
+      console.log('A')
       const tx = await callShort(shortSell, shortTx);
+      console.log('B')
 
       console.log('\tShortSell.short (dYdX Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
