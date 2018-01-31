@@ -1,5 +1,3 @@
-/*global web3*/
-
 const expect = require('chai').expect;
 
 const { getBlockTimestamp } = require("./NodeHelper");
