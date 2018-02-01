@@ -5,10 +5,10 @@ import { AccessControlled } from "../lib/AccessControlled.sol";
 
 
 /**
- * @title ShortSellRepo
+ * @title ShortSellAuctionRepo
  * @author Antonio Juliano
  *
- * This contract is used to store state for short sells
+ * This contract is used to store state for short sell auctions
  */
 contract ShortSellAuctionRepo is AccessControlled, NoOwner {
     // -----------------------
