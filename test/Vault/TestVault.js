@@ -3,7 +3,7 @@
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
-const Proxy = artifacts.require("Proxy");
+const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
 
@@ -17,7 +17,7 @@ contract('Vault', function(accounts) {
   let proxy, vault, tokenA, tokenB;
 
   beforeEach(async () => {
-    proxy = await Proxy.new(delay, gracePeriod);
+    proxy = await ProxyContract.new(delay, gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
       Vault.new(proxy.address, delay, gracePeriod, delay, delay),
       TestToken.new(),
