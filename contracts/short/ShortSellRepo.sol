@@ -284,14 +284,4 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     {
         return shorts[id].startTimestamp != 0;
     }
-
-    function shortIsClosed(
-        bytes32 id
-    )
-        view
-        public
-        returns (bool closed)
-    {
-        return closedShorts[id] == true;
-    }
 }
