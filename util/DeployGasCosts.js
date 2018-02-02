@@ -7,8 +7,8 @@ const Vault = artifacts.require("Vault");
 const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 const ProxyContract = artifacts.require("Proxy");
-const { getGasCost } = require('./helpers/NodeHelper');
-const { testAddrs, ONE_DAY_IN_SECONDS } = require('./helpers/Constants');
+const { getGasCost } = require('../test/helpers/NodeHelper');
+const { testAddrs, ONE_DAY_IN_SECONDS } = require('../test/helpers/Constants');
 
 contract('Deploy Costs', () => {
   describe('ShortSell', () => {

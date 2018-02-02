@@ -13,7 +13,8 @@
     "develop": "truffle develop",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
     "solint": "solium -d contracts/",
-    "coverage": "./node_modules/.bin/solidity-coverage"
+    "coverage": "./node_modules/.bin/solidity-coverage",
+    "deploycosts": "truffle test util/DeployGasCosts.js"
   },
   "pre-commit": [
     "lint",
