@@ -410,37 +410,110 @@ async function createLoanOffering(accounts) {
 }
 
 async function signLoanOffering(loanOffering) {
-  const valuesHash = web3Instance.utils.soliditySha3(
-    loanOffering.rates.minimumDeposit,
-    loanOffering.rates.maxAmount,
-    loanOffering.rates.minAmount,
-    loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
-    loanOffering.rates.lenderFee,
-    loanOffering.rates.takerFee,
-    loanOffering.expirationTimestamp,
-    { type: 'uint32', value: loanOffering.lockoutTime },
-    { type: 'uint32', value: loanOffering.callTimeLimit },
-    { type: 'uint32', value: loanOffering.maxDuration },
-    loanOffering.salt
-  );
-  const hash = web3Instance.utils.soliditySha3(
-    ShortSell.address,
-    UnderlyingToken.address,
-    BaseToken.address,
-    loanOffering.lender,
-    loanOffering.taker,
-    loanOffering.feeRecipient,
-    loanOffering.lenderFeeTokenAddress,
-    loanOffering.takerFeeTokenAddress,
-    valuesHash
-  );
+  const loanTypedData = [
+    {
+      'type': 'address',
+      'name': 'shortSellContract',
+      'value': ShortSell.address
+    },
+    {
+      'type': 'address',
+      'name': 'underlyingToken',
+      'value': UnderlyingToken.address
+    },
+    {
+      'type': 'address',
+      'name': 'baseToken',
+      'value': BaseToken.address
+    },
+    {
+      'type': 'address',
+      'name': 'lender',
+      'value': loanOffering.lender
+    },
+    {
+      'type': 'address',
+      'name': 'taker',
+      'value': loanOffering.taker
+    },
+    {
+      'type': 'address',
+      'name': 'feeRecipient',
+      'value': loanOffering.feeRecipient
+    },
+    {
+      'type': 'address',
+      'name': 'lenderFeeToken',
+      'value': loanOffering.lenderFeeTokenAddress
+    },
+    {
+      'type': 'address',
+      'name': 'takerFeeToken',
+      'value': loanOffering.lenderFeeTokenAddress
+    },
+    {
+      'type': 'uint256',
+      'name': 'minimumDeposit',
+      'value': loanOffering.rates.minimumDeposit
+    },
+    {
+      'type': 'uint256',
+      'name': 'maxAmount',
+      'value': loanOffering.rates.maxAmount
+    },
+    {
+      'type': 'uint256',
+      'name': 'minAmount',
+      'value': loanOffering.rates.minAmount
+    },
+    {
+      'type': 'uint256',
+      'name': 'minimumSellAmount',
+      'value': loanOffering.rates.minimumSellAmount
+    },
+    {
+      'type': 'uint256',
+      'name': 'interestRate',
+      'value': loanOffering.rates.interestRate
+    },
+    {
+      'type': 'uint256',
+      'name': 'lenderFee',
+      'value': loanOffering.rates.lenderFee
+    },
+    {
+      'type': 'uint256',
+      'name': 'takerFee',
+      'value': loanOffering.rates.takerFee
+    },
+    {
+      'type': 'uint256',
+      'name': 'expirationTimestamp',
+      'value': loanOffering.rates.expirationTimestamp
+    },
+    {
+      'type': 'uint32',
+      'name': 'lockoutTime',
+      'value': loanOffering.lockoutTime
+    },
+    {
+      'type': 'uint32',
+      'name': 'callTimeLimit',
+      'value': loanOffering.callTimeLimit
+    },
+    {
+      'type': 'uint32',
+      'name': 'maxDuration',
+      'value': loanOffering.maxDuration
+    },
+    {
+      'type': 'uint256',
+      'name': 'salt',
+      'value': loanOffering.salt
+    },
+  ];
 
-  loanOffering.loanHash = hash;
-
-  const signature = await promisify(web3Instance.eth.sign)(
-    hash, loanOffering.lender
-  );
+  const signature = await promisify(web3Instance.eth.signTypedData)(loanTypedData);
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
 

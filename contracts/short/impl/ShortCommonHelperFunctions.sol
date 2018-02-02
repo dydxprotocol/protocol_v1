@@ -14,6 +14,30 @@ import { SafeMath } from "../../lib/SafeMath.sol";
  * This contract contains common functions for implementations of public facing ShortSell functions
  */
 contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
+
+    bytes32 public constant loanOfferSchemaHash = keccak256(
+        "address shortSellContract",
+        "address underlyingToken",
+        "address baseToken",
+        "address lender",
+        "address taker",
+        "address feeRecipient",
+        "address lenderFeeToken",
+        "address takerFeeToken",
+        "uint256 minimumDeposit",
+        "uint256 maxAmount",
+        "uint256 minAmount",
+        "uint256 minimumSellAmount",
+        "uint256 interestRate",
+        "uint256 lenderFee",
+        "uint256 takerFee",
+        "uint256 expirationTimestamp",
+        "uint32 lockoutTime",
+        "uint32 callTimeLimit",
+        "uint32 maxDuration",
+        "uint256 salt",
+    );
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -185,38 +209,29 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
         returns (bytes32 _hash)
     {
         return keccak256(
-            address(this),
-            underlyingToken,
-            baseToken,
-            loanOffering.lender,
-            loanOffering.taker,
-            loanOffering.feeRecipient,
-            loanOffering.lenderFeeToken,
-            loanOffering.takerFeeToken,
-            getValuesHash(loanOffering)
-        );
-    }
-
-    function getValuesHash(
-        LoanOffering loanOffering
-    )
-        internal
-        pure
-        returns (bytes32 _hash)
-    {
-        return keccak256(
-            loanOffering.rates.minimumDeposit,
-            loanOffering.rates.maxAmount,
-            loanOffering.rates.minAmount,
-            loanOffering.rates.minimumSellAmount,
-            loanOffering.rates.interestRate,
-            loanOffering.rates.lenderFee,
-            loanOffering.rates.takerFee,
-            loanOffering.expirationTimestamp,
-            loanOffering.lockoutTime,
-            loanOffering.callTimeLimit,
-            loanOffering.maxDuration,
-            loanOffering.salt
+            loanOfferSchemaHash
+            keccak256(
+                address(this),
+                underlyingToken,
+                baseToken,
+                loanOffering.lender,
+                loanOffering.taker,
+                loanOffering.feeRecipient,
+                loanOffering.lenderFeeToken,
+                loanOffering.takerFeeToken,
+                loanOffering.rates.minimumDeposit,
+                loanOffering.rates.maxAmount,
+                loanOffering.rates.minAmount,
+                loanOffering.rates.minimumSellAmount,
+                loanOffering.rates.interestRate,
+                loanOffering.rates.lenderFee,
+                loanOffering.rates.takerFee,
+                loanOffering.expirationTimestamp,
+                loanOffering.lockoutTime,
+                loanOffering.callTimeLimit,
+                loanOffering.maxDuration,
+                loanOffering.salt
+            )
         );
     }
 
