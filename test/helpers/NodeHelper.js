@@ -7,6 +7,11 @@ async function getBlockNumber(transactionHash) {
   return transaction.blockNumber;
 }
 
+async function getGasCost(transactionHash) {
+  const transaction = await promisify(web3.eth.getTransactionReceipt)(transactionHash);
+  return transaction.gasUsed;
+}
+
 async function getBlockTimestamp(blockNumber) {
   const block = await promisify(web3.eth.getBlock)(blockNumber);
   return block.timestamp;
@@ -14,5 +19,6 @@ async function getBlockTimestamp(blockNumber) {
 
 module.exports = {
   getBlockNumber,
-  getBlockTimestamp
+  getBlockTimestamp,
+  getGasCost
 };
