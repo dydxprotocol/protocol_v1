@@ -13,7 +13,7 @@ const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   createSigned0xSellOrder,
-  callCloseEntireShort,
+  callCloseShort,
   signOrder
 } = require('../helpers/ShortSellHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
@@ -324,7 +324,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = shortTx.loanOffering.lender;
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -338,7 +338,7 @@ describe('#closeShort', () => {
 
         shortTx.seller = accounts[7];
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
   });
@@ -354,12 +354,12 @@ describe('#closeShort', () => {
 
         shortTx.id = "0x123";
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
     contract('ShortSell', accounts => {
-      it('Only allows short to be closed once', async() => {
+      it('Only allows short to be entirely closed once', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
           createSigned0xSellOrder(accounts),
@@ -368,10 +368,10 @@ describe('#closeShort', () => {
 
         // First should succeed
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await callCloseEntireShort(shortSell, shortTx, sellOrder);
+        await callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -386,8 +386,8 @@ describe('#closeShort', () => {
         // Wait for interest fee to accrue
         await wait(100000000);
 
-        await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);;
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -402,7 +402,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature.r = "0x123";
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -418,7 +418,7 @@ describe('#closeShort', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
   });
@@ -436,7 +436,7 @@ describe('#closeShort', () => {
         sellOrder.makerTokenAmount = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -452,7 +452,7 @@ describe('#closeShort', () => {
         sellOrder.makerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
 
@@ -468,7 +468,7 @@ describe('#closeShort', () => {
         sellOrder.takerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow(() => callCloseEntireShort(shortSell, shortTx, sellOrder));
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });
     });
   });

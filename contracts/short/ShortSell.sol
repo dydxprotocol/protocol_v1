@@ -157,6 +157,8 @@ contract ShortSell is
      *       taker fee token" to the address of the ZRX token.
      *
      * @param  shortId              unique id for the short sell
+     * @param  requestedCloseAmount amount of the short position to close. The amount closed will
+     *                              be: min(requestedCloseAmount, currentShortAmount)
      * @param  orderAddresses       Addresses for the supplied 0x order:
      *                              [0] = maker
      *                              [1] = taker
@@ -178,7 +180,7 @@ contract ShortSell is
      */
     function closeShort(
         bytes32 shortId,
-        uint closeAmount,
+        uint requestedCloseAmount,
         address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
@@ -193,34 +195,7 @@ contract ShortSell is
     {
         return closeShortImpl(
             shortId,
-            closeAmount,
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
-    }
-
-    /**
-     * Close the entire short position. Follows closeShort documentation.
-     */
-    function closeEntireShort(
-        bytes32 shortId,
-        address[5] orderAddresses,
-        uint[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
-    )
-        external
-        returns (
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
-        )
-    {
-        return closeEntireShortImpl(
-            shortId,
+            requestedCloseAmount,
             orderAddresses,
             orderValues,
             orderV,
@@ -235,12 +210,14 @@ contract ShortSell is
      * to buy them back. To use this, the short seller must own the shortAmount of underlyingToken
      *
      * @param  shortId              unique id for the short sell
+     * @param  requestedCloseAmount amount of the short position to close. The amount closed will
+     *                              be: min(requestedCloseAmount, currentShortAmount)
      * @return _baseTokenReceived   amount of base token received by the short seller after closing
      * @return _interestFeeAmount   interest fee in base token paid to the lender
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint closeAmount
+        uint requestedCloseAmount
     )
         external
         returns (
@@ -250,24 +227,7 @@ contract ShortSell is
     {
         return closeShortDirectlyImpl(
             shortId,
-            closeAmount
-        );
-    }
-
-    /**
-     * Close the entire short position. Follows closeShort documentation.
-     */
-    function closeEntireShortDirectly(
-        bytes32 shortId
-    )
-        external
-        returns (
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
-        )
-    {
-        return closeEntireShortDirectlyImpl(
-            shortId
+            requestedCloseAmount
         );
     }
 

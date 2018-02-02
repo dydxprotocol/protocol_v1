@@ -226,20 +226,6 @@ async function doShort(accounts) {
   return shortTx;
 }
 
-function callCloseEntireShort(shortSell, shortTx, sellOrder, from ) {
-  const { addresses, values } = getOrderTxFields(sellOrder);
-
-  return shortSell.closeEntireShort(
-    shortTx.id,
-    addresses,
-    values,
-    sellOrder.ecSignature.v,
-    sellOrder.ecSignature.r,
-    sellOrder.ecSignature.s,
-    { from: from || shortTx.seller }
-  );
-}
-
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
   const { addresses, values } = getOrderTxFields(sellOrder);
 
@@ -612,7 +598,6 @@ module.exports = {
   createSigned0xSellOrder,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseEntireShort,
   getPartialAmount,
   signLoanOffering,
   callCancelLoanOffer,

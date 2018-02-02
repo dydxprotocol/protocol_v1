@@ -33,11 +33,14 @@ contract CloseShortImpl is
         uint currentShortAmount;
         bytes32 shortId;
         uint closeAmount;
-        address[5] orderAddresses;
-        uint[6] orderValues;
-        uint8 orderV;
-        bytes32 orderR;
-        bytes32 orderS;
+    }
+
+    struct Order {
+        address[5] addresses;
+        uint[6] values;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
     }
 
     // -------------------------------------------
@@ -46,7 +49,7 @@ contract CloseShortImpl is
 
     function closeShortImpl(
         bytes32 shortId,
-        uint closeAmount,
+        uint requestedCloseAmount,
         address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
@@ -62,15 +65,15 @@ contract CloseShortImpl is
     {
         CloseShortTx memory transaction = parseCloseShortTx(
             shortId,
-            closeAmount,
+            requestedCloseAmount
+        );
+        Order memory order = parseOrder(
             orderAddresses,
             orderValues,
             orderV,
             orderR,
             orderS
         );
-
-        require(closeAmount > 0);
 
         validateCloseShort(transaction);
 
@@ -79,10 +82,11 @@ contract CloseShortImpl is
         // Remove short if it's fully closed, or update the closed amount
         updateStateForCloseShort(transaction);
 
-        // EXTERNAL CALLS
 
+        // EXTERNAL CALLS
         var (interestFee, buybackCost, sellerBaseTokenAmount) = buybackAndSendOnClose(
-            transaction
+            transaction,
+            order
         );
 
         logEventOnClose(
@@ -98,37 +102,9 @@ contract CloseShortImpl is
         );
     }
 
-    function closeEntireShortImpl(
-        bytes32 shortId,
-        address[5] orderAddresses,
-        uint[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
-    )
-        internal
-        // nonReentrant not needed as closeShortImpl uses state variable
-        returns (
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
-        )
-    {
-        Short memory short = getShortObject(shortId);
-
-        return closeShortImpl(
-            shortId,
-            short.shortAmount,
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
-    }
-
     function closeShortDirectlyImpl(
         bytes32 shortId,
-        uint closeAmount
+        uint requestedCloseAmount
     )
         internal
         nonReentrant
@@ -137,106 +113,42 @@ contract CloseShortImpl is
             uint _interestFeeAmount
         )
     {
-        Short memory short = getShortObject(shortId);
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-
-        require(short.seller == msg.sender);
-        require(closeAmount <= currentShortAmount);
-        require(closeAmount > 0);
-
-        // The amount of interest fee owed to close this proportion of the position
-        uint interestFee = calculateInterestFee(
-            short,
-            closeAmount,
-            block.timestamp
-        );
-
-        // First transfer base token used for close into new vault. Vault will then validate
-        // this is the maximum base token that can be used by this close
-        // Prefer to use a new vault, so this close cannot touch the rest of the
-        // funds held in the original short vault
-        bytes32 closeId = transferToCloseVault(
-            short,
+        CloseShortTx memory transaction = parseCloseShortTx(
             shortId,
-            closeAmount
+            requestedCloseAmount
         );
+
+        validateCloseShort(transaction);
 
         // STATE UPDATES
 
-        // If the whole short is closed, remove it from repo
-        if (closeAmount == currentShortAmount) {
-            cleanupShort(
-                shortId
-            );
-        } else {
-            // Otherwise increment the closed amount on the short
-            ShortSellRepo(REPO).setShortClosedAmount(
-                shortId,
-                add(short.closedAmount, closeAmount)
-            );
-        }
+        updateStateForCloseShort(transaction);
+        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(transaction);
 
         // EXTERNAL CALLS
         Vault(VAULT).transferToVault(
             closeId,
-            short.underlyingToken,
+            transaction.short.underlyingToken,
             msg.sender,
-            closeAmount
+            transaction.closeAmount
         );
 
         uint sellerBaseTokenAmount = sendTokensOnClose(
-            short,
+            transaction,
             closeId,
-            closeAmount,
             interestFee
         );
 
-        if (closeAmount == currentShortAmount) {
-            // If the whole short is closed and there is an auction offer, send it back
-            payBackAuctionBidderIfExists(
-                shortId,
-                short
-            );
-
-            ShortClosed(
-                shortId,
-                interestFee,
-                closeAmount,
-                sellerBaseTokenAmount,
-                0
-            );
-        } else {
-            ShortPartiallyClosed(
-                shortId,
-                closeAmount,
-                sub(currentShortAmount, closeAmount),
-                interestFee,
-                sellerBaseTokenAmount,
-                0
-            );
-        }
+        logEventOnClose(
+            transaction,
+            interestFee,
+            0,
+            sellerBaseTokenAmount
+        );
 
         return (
             sellerBaseTokenAmount,
             interestFee
-        );
-    }
-
-    function closeEntireShortDirectlyImpl(
-        bytes32 shortId
-    )
-        internal
-        // nonReentrant not needed as closeShortDirectlyImpl uses state variable
-        returns (
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
-        )
-    {
-        Short memory short = getShortObject(shortId);
-
-        return closeShortDirectlyImpl(
-            shortId,
-            short.shortAmount
         );
     }
 
@@ -248,8 +160,8 @@ contract CloseShortImpl is
         internal
         view
     {
+        require(transaction.closeAmount > 0);
         require(transaction.short.seller == msg.sender);
-        require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
     function updateStateForCloseShort(
@@ -262,17 +174,51 @@ contract CloseShortImpl is
             cleanupShort(
                 transaction.shortId
             );
+
+            // EXTERNAL CALL (comes after state update)
+            // If the whole short is closed and there is an auction offer, send it back
+            payBackAuctionBidderIfExists(
+                transaction.shortId,
+                transaction.short
+            );
         } else {
+            uint newClosedAmount = add(transaction.short.closedAmount, transaction.closeAmount);
+            assert(newClosedAmount < transaction.short.shortAmount);
+
             // Otherwise increment the closed amount on the short
             ShortSellRepo(REPO).setShortClosedAmount(
                 transaction.shortId,
-                add(transaction.short.closedAmount, transaction.closeAmount)
+                newClosedAmount
             );
         }
     }
 
-    function buybackAndSendOnClose(
+    function getInterestFeeAndTransferToCloseVault(
         CloseShortTx transaction
+    )
+        internal
+        returns (
+            uint _interestFee,
+            bytes32 _closeId
+        )
+    {
+        return (
+            calculateInterestFee(
+                transaction.short,
+                transaction.closeAmount,
+                block.timestamp
+            ),
+            transferToCloseVault(
+                transaction.short,
+                transaction.shortId,
+                transaction.closeAmount
+            )
+        );
+    }
+
+    function buybackAndSendOnClose(
+        CloseShortTx transaction,
+        Order order
     )
         internal
         returns (
@@ -281,43 +227,25 @@ contract CloseShortImpl is
             uint _sellerBaseTokenAmount
         )
     {
-        // The amount of interest fee owed to close this proportion of the position
-        uint interestFee = calculateInterestFee(
-            transaction.short,
-            transaction.closeAmount,
-            block.timestamp
-        );
-
         // First transfer base token used for close into new vault. Vault will then validate
         // this is the maximum base token that can be used by this close
         // Prefer to use a new vault, so this close cannot touch the rest of the
         // funds held in the original short vault
-        bytes32 closeId = transferToCloseVault(
-            transaction.short,
-            transaction.shortId,
-            transaction.closeAmount
-        );
+
+        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(transaction);
 
         uint buybackCost = buyBackUnderlyingToken(
             transaction,
+            order,
             closeId,
             interestFee
         );
 
         uint sellerBaseTokenAmount = sendTokensOnClose(
-            transaction.short,
+            transaction,
             closeId,
-            transaction.closeAmount,
             interestFee
         );
-
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            // If the whole short is closed and there is an auction offer, send it back
-            payBackAuctionBidderIfExists(
-                transaction.shortId,
-                transaction.short
-            );
-        }
 
         return (
             interestFee,
@@ -328,6 +256,7 @@ contract CloseShortImpl is
 
     function buyBackUnderlyingToken(
         CloseShortTx transaction,
+        Order order,
         bytes32 closeId,
         uint interestFee
     )
@@ -335,16 +264,16 @@ contract CloseShortImpl is
         returns (uint _buybackCost)
     {
         uint baseTokenPrice = getBaseTokenPriceForBuyback(
-            transaction.short,
-            transaction.closeAmount,
+            transaction,
+            order,
             interestFee,
-            closeId,
-            transaction.orderValues
+            closeId
         );
 
-        if (transaction.orderAddresses[2] != address(0)) {
+        if (order.addresses[2] != address(0)) {
             transferFeeForBuyback(
                 transaction,
+                order,
                 closeId,
                 baseTokenPrice
             );
@@ -353,19 +282,19 @@ contract CloseShortImpl is
         var (buybackCost, ) = Trader(TRADER).trade(
             closeId,
             [
-                transaction.orderAddresses[0],
-                transaction.orderAddresses[1],
+                order.addresses[0],
+                order.addresses[1],
                 transaction.short.underlyingToken,
                 transaction.short.baseToken,
-                transaction.orderAddresses[2],
-                transaction.orderAddresses[3],
-                transaction.orderAddresses[4]
+                order.addresses[2],
+                order.addresses[3],
+                order.addresses[4]
             ],
-            transaction.orderValues,
+            order.values,
             baseTokenPrice,
-            transaction.orderV,
-            transaction.orderR,
-            transaction.orderS,
+            order.v,
+            order.r,
+            order.s,
             true
         );
 
@@ -376,7 +305,7 @@ contract CloseShortImpl is
             ) == transaction.closeAmount
         );
 
-        address takerFeeToken = transaction.orderAddresses[4];
+        address takerFeeToken = order.addresses[4];
 
         // Assert take fee token balance is 0. The only cases where it should not be 0
         // is if it is either baseToken or underlyingToken
@@ -391,11 +320,10 @@ contract CloseShortImpl is
     }
 
     function getBaseTokenPriceForBuyback(
-        Short short,
-        uint closeAmount,
+        CloseShortTx transaction,
+        Order order,
         uint interestFee,
-        bytes32 closeId,
-        uint[6] orderValues
+        bytes32 closeId
     )
         internal
         view
@@ -403,15 +331,16 @@ contract CloseShortImpl is
     {
         // baseTokenPrice = closeAmount * (buyOrderBaseTokenAmount / buyOrderUnderlyingTokenAmount)
         uint baseTokenPrice = getPartialAmount(
-            orderValues[1],
-            orderValues[0],
-            closeAmount
+            order.values[1],
+            order.values[0],
+            transaction.closeAmount
         );
 
         // We need to have enough base token locked in the the close's vault to pay
         // for both the buyback and the interest fee
         require(
-            add(baseTokenPrice, interestFee) <= Vault(VAULT).balances(closeId, short.baseToken)
+            add(baseTokenPrice, interestFee)
+            <= Vault(VAULT).balances(closeId, transaction.short.baseToken)
         );
 
         return baseTokenPrice;
@@ -419,12 +348,13 @@ contract CloseShortImpl is
 
     function transferFeeForBuyback(
         CloseShortTx transaction,
+        Order order,
         bytes32 closeId,
         uint baseTokenPrice
     )
         internal
     {
-        address takerFeeToken = transaction.orderAddresses[4];
+        address takerFeeToken = order.addresses[4];
 
         // If the taker fee token is base token, then just pay it out of what is held in Vault
         // and do not transfer it in from the short seller
@@ -432,8 +362,8 @@ contract CloseShortImpl is
             return;
         }
 
-        uint buyOrderTakerFee = transaction.orderValues[3];
-        uint buyOrderTakerTokenAmount = transaction.orderValues[1];
+        uint buyOrderTakerFee = order.values[3];
+        uint buyOrderTakerTokenAmount = order.values[1];
 
         // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
         uint takerFee = getPartialAmount(
@@ -454,9 +384,8 @@ contract CloseShortImpl is
     }
 
     function sendTokensOnClose(
-        Short short,
+        CloseShortTx transaction,
         bytes32 closeId,
-        uint closeAmount,
         uint interestFee
     )
         internal
@@ -467,17 +396,17 @@ contract CloseShortImpl is
         // Send original loaned underlying token to lender
         vault.sendFromVault(
             closeId,
-            short.underlyingToken,
-            short.lender,
-            closeAmount
+            transaction.short.underlyingToken,
+            transaction.short.lender,
+            transaction.closeAmount
         );
 
         // Send base token interest fee to lender
         if (interestFee > 0) {
             vault.sendFromVault(
                 closeId,
-                short.baseToken,
-                short.lender,
+                transaction.short.baseToken,
+                transaction.short.lender,
                 interestFee
             );
         }
@@ -485,17 +414,17 @@ contract CloseShortImpl is
         // Send remaining base token to seller (= deposit + profit - interestFee)
         // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
         // have been paid out of the vault balance
-        uint sellerBaseTokenAmount = vault.balances(closeId, short.baseToken);
+        uint sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
         vault.sendFromVault(
             closeId,
-            short.baseToken,
-            short.seller,
+            transaction.short.baseToken,
+            transaction.short.seller,
             sellerBaseTokenAmount
         );
 
         // Should now hold no balance of base or underlying token
-        assert(vault.balances(closeId, short.underlyingToken) == 0);
-        assert(vault.balances(closeId, short.baseToken) == 0);
+        assert(vault.balances(closeId, transaction.short.underlyingToken) == 0);
+        assert(vault.balances(closeId, transaction.short.baseToken) == 0);
 
         return sellerBaseTokenAmount;
     }
@@ -532,7 +461,23 @@ contract CloseShortImpl is
 
     function parseCloseShortTx(
         bytes32 shortId,
-        uint closeAmount,
+        uint requestedCloseAmount
+    )
+        internal
+        view
+        returns (CloseShortTx _tx)
+    {
+        Short memory short = getShortObject(shortId);
+        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+        return CloseShortTx({
+            short: short,
+            currentShortAmount: currentShortAmount,
+            shortId: shortId,
+            closeAmount: min256(requestedCloseAmount, currentShortAmount)
+        });
+    }
+
+    function parseOrder(
         address[5] orderAddresses,
         uint[6] orderValues,
         uint8 orderV,
@@ -540,20 +485,15 @@ contract CloseShortImpl is
         bytes32 orderS
     )
         internal
-        view
-        returns (CloseShortTx _tx)
+        pure
+        returns (Order _order)
     {
-        Short memory short = getShortObject(shortId);
-        return CloseShortTx({
-            short: short,
-            currentShortAmount: sub(short.shortAmount, short.closedAmount),
-            shortId: shortId,
-            closeAmount: closeAmount,
-            orderAddresses: orderAddresses,
-            orderValues: orderValues,
-            orderV: orderV,
-            orderR: orderR,
-            orderS: orderS
+        return Order({
+            addresses: orderAddresses,
+            values: orderValues,
+            v: orderV,
+            r: orderR,
+            s: orderS
         });
     }
 }
