@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -400,14 +400,16 @@ contract ShortSell is
         external
         nonReentrant
     {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.lender);
+        // This address will be address(0) if the short does not exist. This is fine because
+        // we validate msg.sender == lender right after, and msg.sender can't be address(0)
+        address lender = ShortSellRepo(REPO).getShortLender(shortId);
+        require(msg.sender == lender);
 
         ShortSellRepo(REPO).setShortLender(shortId, who);
 
         LoanTransfered(
             shortId,
-            short.lender,
+            lender,
             who
         );
     }
@@ -426,14 +428,16 @@ contract ShortSell is
         external
         nonReentrant
     {
-        Short memory short = getShortObject(shortId);
-        require(msg.sender == short.seller);
+        // This address will be address(0) if the short does not exist. This is fine because
+        // we validate msg.sender == seller right after, and msg.sender can't be address(0)
+        address seller = ShortSellRepo(REPO).getShortSeller(shortId);
+        require(msg.sender == seller);
 
         ShortSellRepo(REPO).setShortSeller(shortId, who);
 
         ShortTransfered(
             shortId,
-            short.lender,
+            seller,
             who
         );
     }
@@ -446,7 +450,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (
             address underlyingToken,
             address baseToken,
@@ -469,7 +473,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (bool exists)
     {
         return ShortSellRepo(REPO).containsShort(shortId);
@@ -479,7 +483,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (uint _baseTokenBalance)
     {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
@@ -494,7 +498,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (uint _interestFeeOwed)
     {
         if (!ShortSellRepo(REPO).containsShort(shortId)) {
@@ -526,7 +530,7 @@ contract ShortSell is
         bytes32 loanHash
     )
         view
-        public
+        external
         returns (uint _unavailableAmount)
     {
         return getUnavailableLoanOfferingAmountImpl(loanHash);
@@ -536,7 +540,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (
             uint _offer,
             address _bidder,
@@ -550,7 +554,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (bool _exists)
     {
         return ShortSellAuctionRepo(AUCTION_REPO).containsAuction(shortId);
@@ -560,7 +564,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns(bool _isCalled)
     {
         Short memory short = getShortObject(shortId);
@@ -572,7 +576,7 @@ contract ShortSell is
         bytes32 shortId
     )
         view
-        public
+        external
         returns (bool _isClosed)
     {
         return ShortSellRepo(REPO).closedShorts(shortId);

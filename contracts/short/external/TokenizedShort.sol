@@ -1,8 +1,8 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { StandardToken } from "zeppelin-solidity/contracts/token/StandardToken.sol";
-import { DetailedERC20 } from "zeppelin-solidity/contracts/token/DetailedERC20.sol";
+import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { SafeMath } from "../../lib/SafeMath.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
@@ -135,7 +135,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         // Give the creator the entire balance, which is equal to the current amount of the short
         balances[creator] = currentShortAmount;
 
-        totalSupply = currentShortAmount;
+        totalSupply_ = currentShortAmount;
 
         baseToken = short.baseToken;
     }
@@ -236,13 +236,13 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         // NOTE the payout must be calculated before decrementing the totalSupply below
         uint baseTokenPayout = getPartialAmount(
             value,
-            totalSupply,
+            totalSupply_,
             baseTokenBalance
         );
 
         // Destroy the tokens
         balances[msg.sender] = 0;
-        totalSupply = sub(totalSupply, value);
+        totalSupply_ = sub(totalSupply_, value);
 
         // Increment redeemed counter
         redeemed = add(redeemed, value);
@@ -290,7 +290,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
 
         // Destroy the tokens
         balances[msg.sender] = sub(balances[msg.sender], value);
-        totalSupply = sub(totalSupply, value);
+        totalSupply_ = sub(totalSupply_, value);
 
         // Increment redeemed counter
         redeemed = add(redeemed, value);

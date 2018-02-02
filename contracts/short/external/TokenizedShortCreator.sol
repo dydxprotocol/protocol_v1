@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";

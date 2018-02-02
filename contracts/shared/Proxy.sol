@@ -1,6 +1,6 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import "../lib/AccessControlled.sol";
