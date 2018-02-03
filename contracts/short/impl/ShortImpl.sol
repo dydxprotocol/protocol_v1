@@ -1,15 +1,12 @@
 pragma solidity 0.4.19;
 
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellEvents } from "./ShortSellEvents.sol";
-import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { ShortCommonHelperFunctionsLib } from "./ShortCommonHelperFunctionsLib.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
+import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
 /**
@@ -19,12 +16,55 @@ import { SafeMath } from "../../lib/SafeMath.sol";
  * This contract contains the implementation for the short function of ShortSell
  */
  /* solium-disable-next-line */
-contract ShortImpl is
-    SafeMath,
-    ShortSellState,
-    ShortSellEvents,
-    ReentrancyGuard,
-    ShortCommonHelperFunctions {
+library ShortImpl {
+    struct State {
+        // Address of the Vault contract
+        address public VAULT;
+
+        // Address of the Trader contract
+        address public TRADER;
+
+        // Address of the ShortSellRepo contract
+        address public REPO;
+
+        // Address of the ShortSellAuctionRepo contract
+        address public AUCTION_REPO;
+
+        // Address of the Proxy contract
+        address public PROXY;
+
+        // Mapping from loanHash -> amount, which stores the amount of a loan which has
+        // already been filled
+        mapping(bytes32 => uint) public loanFills;
+
+        // Mapping from loanHash -> amount, which stores the amount of a loan which has
+        // already been canceled
+        mapping(bytes32 => uint) public loanCancels;
+
+        // Mapping from loanHash -> number, which stores the number of shorts taken out
+        // for a given loan
+        mapping(bytes32 => uint) public loanNumbers;
+    }
+
+    /**
+     * A short sell occurred
+     */
+    event ShortInitiated(
+        bytes32 indexed id,
+        address indexed shortSeller,
+        address indexed lender,
+        bytes32 loanHash,
+        address underlyingToken,
+        address baseToken,
+        address loanFeeRecipient,
+        uint shortAmount,
+        uint baseTokenFromSell,
+        uint depositAmount,
+        uint32 lockoutTime,
+        uint32 callTimeLimit,
+        uint32 maxDuration,
+        uint interestRate
+    );
 
     // -----------------------
     // ------- Structs -------
@@ -35,7 +75,7 @@ contract ShortImpl is
         address baseToken;
         uint shortAmount;
         uint depositAmount;
-        LoanOffering loanOffering;
+        ShortCommonHelperFunctionsLib.LoanOffering loanOffering;
         BuyOrder buyOrder;
     }
 
@@ -51,7 +91,7 @@ contract ShortImpl is
         uint takerFee;
         uint expirationTimestamp;
         uint salt;
-        Signature signature;
+        ShortCommonHelperFunctionsLib.Signature signature;
     }
 
     // -------------------------------------------
@@ -65,8 +105,8 @@ contract ShortImpl is
         uint8[2] sigV,
         bytes32[4] sigRS
     )
-        internal
-        nonReentrant
+        public //!!!
+        /* TODO nonReentrant */
         returns(bytes32 _shortId)
     {
         ShortTx memory transaction = parseShortTx(
@@ -88,12 +128,12 @@ contract ShortImpl is
         // STATE UPDATES
 
         // Update global amounts for the loan and lender
-        loanFills[transaction.loanOffering.loanHash] = add(
+        loanFills[transaction.loanOffering.loanHash] = SafeMathLib.add(
             loanFills[transaction.loanOffering.loanHash],
             transaction.shortAmount
         );
         loanNumbers[transaction.loanOffering.loanHash] =
-            add(loanNumbers[transaction.loanOffering.loanHash], 1);
+            SafeMathLib.add(loanNumbers[transaction.loanOffering.loanHash], 1);
 
         // Check no casting errors
         require(
@@ -178,14 +218,14 @@ contract ShortImpl is
 
         // Validate the short amount is <= than max and >= min
         require(
-            add(
+            SafeMathLib.add(
                 transaction.shortAmount,
-                getUnavailableLoanOfferingAmountImpl(transaction.loanOffering.loanHash)
+                ShortCommonHelperFunctionsLib.getUnavailableLoanOfferingAmountImpl(transaction.loanOffering.loanHash)
             ) <= transaction.loanOffering.rates.maxAmount
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
 
-        uint minimumDeposit = getPartialAmount(
+        uint minimumDeposit = SafeMathLib.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minimumDeposit
@@ -208,10 +248,10 @@ contract ShortImpl is
          */
 
         require(
-            mul(
+            SafeMathLib.mul(
                 transaction.loanOffering.rates.minimumSellAmount,
                 transaction.buyOrder.underlyingTokenAmount
-            ) <= mul(
+            ) <= SafeMathLib.mul(
                 transaction.loanOffering.rates.maxAmount,
                 transaction.buyOrder.baseTokenAmount
             )
@@ -219,7 +259,7 @@ contract ShortImpl is
     }
 
     function isValidSignature(
-        LoanOffering loanOffering
+        ShortCommonHelperFunctionsLib.LoanOffering loanOffering
     )
         internal
         pure
@@ -265,7 +305,7 @@ contract ShortImpl is
         internal
     {
         // Calculate Fee
-        uint buyOrderTakerFee = getPartialAmount(
+        uint buyOrderTakerFee = SafeMathLib.getPartialAmount(
             transaction.shortAmount,
             transaction.buyOrder.underlyingTokenAmount,
             transaction.buyOrder.takerFee
@@ -287,7 +327,7 @@ contract ShortImpl is
                 shortId,
                 transaction.baseToken,
                 msg.sender,
-                add(transaction.depositAmount, buyOrderTakerFee)
+                SafeMathLib.add(transaction.depositAmount, buyOrderTakerFee)
             );
         } else {
             // Otherwise transfer the deposit and buy order taker fee separately
@@ -313,7 +353,7 @@ contract ShortImpl is
         internal
     {
         Proxy proxy = Proxy(PROXY);
-        uint lenderFee = getPartialAmount(
+        uint lenderFee = SafeMathLib.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.lenderFee
@@ -324,7 +364,7 @@ contract ShortImpl is
             transaction.loanOffering.feeRecipient,
             lenderFee
         );
-        uint takerFee = getPartialAmount(
+        uint takerFee = SafeMathLib.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.takerFee
@@ -377,7 +417,7 @@ contract ShortImpl is
             vault.balances(
                 shortId,
                 transaction.baseToken
-            ) == add(baseTokenReceived, transaction.depositAmount)
+            ) == SafeMathLib.add(baseTokenReceived, transaction.depositAmount)
         );
 
         // Should hold 0 underlying token
@@ -457,9 +497,9 @@ contract ShortImpl is
     )
         internal
         view
-        returns (LoanOffering _loanOffering)
+        returns (ShortCommonHelperFunctionsLib.LoanOffering _loanOffering)
     {
-        LoanOffering memory loanOffering = LoanOffering({
+        ShortCommonHelperFunctionsLib.LoanOffering memory loanOffering = ShortCommonHelperFunctionsLib.LoanOffering({
             lender: addresses[2],
             taker: addresses[3],
             feeRecipient: addresses[4],
@@ -475,7 +515,7 @@ contract ShortImpl is
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = getLoanOfferingHash(
+        loanOffering.loanHash = ShortCommonHelperFunctionsLib.getLoanOfferingHash(
             loanOffering,
             addresses[1],
             addresses[0]
@@ -489,9 +529,9 @@ contract ShortImpl is
     )
         internal
         pure
-        returns (LoanRates _loanRates)
+        returns (ShortCommonHelperFunctionsLib.LoanRates _loanRates)
     {
-        LoanRates memory rates = LoanRates({
+        ShortCommonHelperFunctionsLib.LoanRates memory rates = ShortCommonHelperFunctionsLib.LoanRates({
             minimumDeposit: values[0],
             maxAmount: values[1],
             minAmount: values[2],
@@ -510,9 +550,9 @@ contract ShortImpl is
     )
         internal
         pure
-        returns (Signature _signature)
+        returns (ShortCommonHelperFunctionsLib.Signature _signature)
     {
-        Signature memory signature = Signature({
+        ShortCommonHelperFunctionsLib.Signature memory signature = ShortCommonHelperFunctionsLib.Signature({
             v: sigV[0],
             r: sigRS[0],
             s: sigRS[1]
@@ -555,9 +595,9 @@ contract ShortImpl is
     )
         internal
         pure
-        returns (Signature _signature)
+        returns (ShortCommonHelperFunctionsLib.Signature _signature)
     {
-        Signature memory signature = Signature({
+        ShortCommonHelperFunctionsLib.Signature memory signature = ShortCommonHelperFunctionsLib.Signature({
             v: sigV[1],
             r: sigRS[2],
             s: sigRS[3]

@@ -29,7 +29,6 @@ contract ShortSell is
     NoOwner,
     ShortSellState,
     ShortSellAdmin,
-    ShortImpl,
     CloseShortImpl,
     LoanImpl,
     ForceRecoverLoanImpl,
@@ -136,7 +135,7 @@ contract ShortSell is
         external
         returns(bytes32 _shortId)
     {
-        return shortImpl(
+        return ShortImpl.shortImpl(
             addresses,
             values256,
             values32,
