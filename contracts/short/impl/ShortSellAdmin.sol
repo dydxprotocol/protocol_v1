@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { DelayedUpdate } from "../../lib/DelayedUpdate.sol";

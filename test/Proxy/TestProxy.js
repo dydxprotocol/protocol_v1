@@ -33,7 +33,9 @@ contract('Proxy', function(accounts) {
 
   describe('#grantTransferAuthorization', () => {
     it('requires access to grant transfer authorization', async () => {
-      expectThrow(() => contract.grantTransferAuthorization(accounts[2], { from: accounts[1] }));
+      await expectThrow(
+        () => contract.grantTransferAuthorization(accounts[2], { from: accounts[1] })
+      );
 
       const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
       expect(hasTransferAuth).to.be.false;
@@ -66,11 +68,15 @@ contract('Proxy', function(accounts) {
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
 
       // A random address should not work
-      expectThrow(() => contract.revokeTransferAuthorization(accounts[2], { from: accounts[3] }));
+      await expectThrow(
+        () => contract.revokeTransferAuthorization(accounts[2], { from: accounts[3] })
+      );
       // Nor should the contract owner work
-      expectThrow(() => contract.revokeTransferAuthorization(accounts[2]));
+      await expectThrow(() => contract.revokeTransferAuthorization(accounts[2]));
       // Nor should an address with transfer authorization work
-      expectThrow(() => contract.revokeTransferAuthorization(accounts[4], { from: accounts[2] }));
+      await expectThrow(
+        () => contract.revokeTransferAuthorization(accounts[4], { from: accounts[2] })
+      );
 
       const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
       expect(hasTransferAuth).to.be.true;
@@ -99,11 +105,11 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[1]);
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
       // An address with access should not be able to call
-      expectThrow(
+      await expectThrow(
         () => contract.ownerRevokeTransferAuthorization(accounts[2], { from: accounts[1] })
       );
       // Nor should a random address
-      expectThrow(
+      await expectThrow(
         () => contract.ownerRevokeTransferAuthorization(accounts[2], { from: accounts[3] })
       );
 
@@ -135,15 +141,15 @@ contract('Proxy', function(accounts) {
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.grantAccess(accounts[1]);
       // An address with access should not be able to call
-      expectThrow(
+      await expectThrow(
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[1] })
       );
       // Nor should a random address
-      expectThrow(
+      await expectThrow(
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[3] })
       );
       // Nor should the owner
-      expectThrow(
+      await expectThrow(
         () => contract.transfer(tokenA.address, holder1, num1,)
       );
 
@@ -154,13 +160,17 @@ contract('Proxy', function(accounts) {
     it('fails on insufficient holder balance or allowance', async () => {
       await contract.grantAccess(accounts[1]);
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      expectThrow(() => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] }));
+      await expectThrow(
+        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
+      );
 
       let balance = await tokenA.balanceOf(holder1);
       expect(balance.equals(new BigNumber(0))).to.be.true;
 
       await tokenA.issue(num1, { from: holder1 });
-      expectThrow(() => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] }));
+      await expectThrow(
+        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
+      );
 
       balance = await tokenA.balanceOf(holder1);
       expect(balance.equals(num1)).to.be.true;
@@ -199,7 +209,9 @@ contract('Proxy', function(accounts) {
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.pause();
-      expectThrow(() => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] }));
+      await expectThrow(
+        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
+      );
 
       const balance = await tokenA.balanceOf(holder1);
       expect(balance.equals(num1)).to.be.true;
@@ -214,15 +226,15 @@ contract('Proxy', function(accounts) {
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.grantAccess(accounts[1]);
       // An address with access should not be able to call
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[1] })
       );
       // Nor should a random address
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
       );
       // Nor should the owner
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1,)
       );
 
@@ -237,7 +249,7 @@ contract('Proxy', function(accounts) {
     it('fails on insufficient holder balance or allowance', async () => {
       await contract.grantAccess(accounts[1]);
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
@@ -245,7 +257,7 @@ contract('Proxy', function(accounts) {
       expect(balance.equals(new BigNumber(0))).to.be.true;
 
       await tokenA.issue(num1, { from: holder1 });
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
@@ -286,7 +298,7 @@ contract('Proxy', function(accounts) {
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.pause();
-      expectThrow(
+      await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 

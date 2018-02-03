@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { AccessControlled } from "../lib/AccessControlled.sol";
@@ -237,11 +237,15 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     // ----- Public Constant Functions -----
     // -------------------------------------
 
+    /**
+     * Get a Short by id. This does not validate the short exists. If the short does not exist
+     * all 0's will be returned.
+     */
     function getShort(
         bytes32 id
     )
         view
-        public
+        external
         returns (
             address underlyingToken,
             address baseToken,
@@ -275,11 +279,131 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         );
     }
 
+    function getShortLender(
+        bytes32 id
+    )
+        view
+        external
+        returns (address _lender)
+    {
+        return shorts[id].lender;
+    }
+
+    function getShortSeller(
+        bytes32 id
+    )
+        view
+        external
+        returns (address _seller)
+    {
+        return shorts[id].seller;
+    }
+
+    function getShortBaseToken(
+        bytes32 id
+    )
+        view
+        external
+        returns (address _baseToken)
+    {
+        return shorts[id].baseToken;
+    }
+
+    function getShortUnderlyingToken(
+        bytes32 id
+    )
+        view
+        external
+        returns (address _underlyingToken)
+    {
+        return shorts[id].underlyingToken;
+    }
+
+    function getShortAmount(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint _shortAmount)
+    {
+        return shorts[id].shortAmount;
+    }
+
+    function getShortClosedAmount(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint _closedAmount)
+    {
+        return shorts[id].closedAmount;
+    }
+
+    function getShortInterestRate(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint _interestRate)
+    {
+        return shorts[id].interestRate;
+    }
+
+    function getShortStartTimestamp(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _startTimestamp)
+    {
+        return shorts[id].startTimestamp;
+    }
+
+    function getShortCallTimestamp(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _callTimestamp)
+    {
+        return shorts[id].callTimestamp;
+    }
+
+    function getShortCallTimeLimit(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _callTimeLimit)
+    {
+        return shorts[id].callTimeLimit;
+    }
+
+    function getShortLockoutTime(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _lockoutTime)
+    {
+        return shorts[id].lockoutTime;
+    }
+
+    function getShortMaxDuration(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _maxDuration)
+    {
+        return shorts[id].maxDuration;
+    }
+
     function containsShort(
         bytes32 id
     )
         view
-        public
+        public // Used by other ShortSellRepo functions
         returns (bool exists)
     {
         return shorts[id].startTimestamp != 0;

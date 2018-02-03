@@ -1,4 +1,4 @@
-pragma solidity 0.4.18;
+pragma solidity 0.4.19;
 
 /// Modified version of 0x Exchange contract. Uses dYdX proxy and no protocol token
 
@@ -21,7 +21,7 @@ pragma solidity 0.4.18;
 */
 
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "zeppelin-solidity/contracts/token/ERC20.sol";
+import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "../lib/SafeMath.sol";
 import "./Proxy.sol";
 
