@@ -1,60 +1,74 @@
 pragma solidity 0.4.19;
 
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellEvents } from "./ShortSellEvents.sol";
-import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
+import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
+import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+
 
 /**
  * @title ForceRecoverLoanImpl
  * @author Antonio Juliano
  *
- * This contract contains the implementation for the forceRecoverLoan function of ShortSell
+ * This library contains the implementation for the forceRecoverLoan function of ShortSell
  */
- /* solium-disable-next-line */
-contract ForceRecoverLoanImpl is
-    SafeMath,
-    ShortSellState,
-    ShortSellEvents,
-    ReentrancyGuard,
-    ShortCommonHelperFunctions {
+library ForceRecoverLoanImpl {
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    /**
+     * A short sell loan was forcibly recovered by the lender
+     */
+    event LoanForceRecovered(
+        bytes32 indexed id,
+        address indexed winningBidder,
+        uint amount,
+        bool hadAcutcionOffer,
+        uint buybackCost
+    );
 
     // -------------------------------------------
-    // ---- Internal Implementation Functions ----
+    // ----- Public Implementation Functions -----
     // -------------------------------------------
 
     function forceRecoverLoanImpl(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
-        internal
-        nonReentrant
+        public
         returns (uint _baseTokenAmount)
     {
-        Short memory short = getShortObject(shortId);
+        LibraryReentrancyGuard.start(state);
+
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         var (offer, bidder, hasCurrentOffer) =
-            ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
+            ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
 
         // Can only force recover after the entire call period has elapsed
         // This can either be after the loan was called or after the maxDuration of the short
         // position has elapsed (plus the call time)
         require(
-            block.timestamp >= add(uint(short.callTimestamp), uint(short.callTimeLimit))
-            || block.timestamp >= add(getShortEndTimestamp(short), uint(short.callTimeLimit))
+            block.timestamp >= SafeMathLib.add(uint(short.callTimestamp), uint(short.callTimeLimit))
+            || block.timestamp >= SafeMathLib.add(
+                ShortSellCommon.getShortEndTimestamp(short), uint(short.callTimeLimit)
+            )
         );
 
         // Only the lender or the winning bidder can call recover the loan
         require(msg.sender == short.lender || msg.sender == bidder);
 
         // Delete the short
-        cleanupShort(
+        ShortSellCommon.cleanupShort(
+            state,
             shortId
         );
 
         // Send the tokens
         var (lenderBaseTokenAmount, buybackCost) = sendTokensOnForceRecover(
+            state,
             short,
             shortId,
             offer,
@@ -71,11 +85,16 @@ contract ForceRecoverLoanImpl is
             buybackCost
         );
 
+        LibraryReentrancyGuard.end(state);
+
         return lenderBaseTokenAmount;
     }
 
+    // --------- Helper Functions ---------
+
     function sendTokensOnForceRecover(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId,
         uint offer,
         address bidder,
@@ -87,7 +106,7 @@ contract ForceRecoverLoanImpl is
             uint _buybackCost
         )
     {
-        Vault vault = Vault(VAULT);
+        Vault vault = Vault(state.VAULT);
 
         if (!hasCurrentOffer) {
             // If there is no auction bid to sell back the underlying token owed to the lender
@@ -102,6 +121,7 @@ contract ForceRecoverLoanImpl is
             return (0, 0);
         } else {
             return sendTokensOnForceRecoverWithAuctionBid(
+                state,
                 short,
                 shortId,
                 offer,
@@ -111,7 +131,8 @@ contract ForceRecoverLoanImpl is
     }
 
     function sendTokensOnForceRecoverWithAuctionBid(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId,
         uint offer,
         address bidder
@@ -122,11 +143,12 @@ contract ForceRecoverLoanImpl is
             uint _buybackCost
         )
     {
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
-        bytes32 auctionVaultId = getAuctionVaultId(shortId);
+        uint currentShortAmount = SafeMathLib.sub(short.shortAmount, short.closedAmount);
+        bytes32 auctionVaultId = ShortSellCommon.getAuctionVaultId(shortId);
 
         // Send the lender underlying tokens + interest fee
         uint lenderBaseTokenAmount = sendToLenderOnForceCloseWithAuctionBid(
+            state,
             short,
             shortId,
             currentShortAmount,
@@ -136,6 +158,7 @@ contract ForceRecoverLoanImpl is
         // Send the auction bidder any leftover underlying token, and base token proportional
         // to what he bid
         uint buybackCost = sendToBidderOnForceCloseWithAuctionBid(
+            state,
             short,
             shortId,
             currentShortAmount,
@@ -146,6 +169,7 @@ contract ForceRecoverLoanImpl is
 
         // Send the short seller whatever is left
         sendToShortSellerOnForceCloseWithAuctionBid(
+            state,
             short,
             shortId
         );
@@ -154,7 +178,8 @@ contract ForceRecoverLoanImpl is
     }
 
     function sendToLenderOnForceCloseWithAuctionBid(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId,
         uint currentShortAmount,
         bytes32 auctionVaultId
@@ -162,14 +187,14 @@ contract ForceRecoverLoanImpl is
         internal
         returns (uint _lenderBaseTokenAmount)
     {
-        Vault vault = Vault(VAULT);
+        Vault vault = Vault(state.VAULT);
 
         // If there is an auction bid to sell back the underlying token owed to the lender
         // then give the lender just the owed interest fee at the end of the call time
-        uint lenderBaseTokenAmount = calculateInterestFee(
+        uint lenderBaseTokenAmount = ShortSellCommon.calculateInterestFee(
             short,
             currentShortAmount,
-            add(short.callTimestamp, short.callTimeLimit)
+            SafeMathLib.add(short.callTimestamp, short.callTimeLimit)
         );
 
         vault.sendFromVault(
@@ -192,7 +217,8 @@ contract ForceRecoverLoanImpl is
     }
 
     function sendToBidderOnForceCloseWithAuctionBid(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId,
         uint currentShortAmount,
         address bidder,
@@ -202,7 +228,7 @@ contract ForceRecoverLoanImpl is
         internal
         returns (uint _buybackCost)
     {
-        Vault vault = Vault(VAULT);
+        Vault vault = Vault(state.VAULT);
 
         // If there is extra underlying token leftover, send it back to the bidder
         uint remainingAuctionVaultBalance = vault.balances(
@@ -219,7 +245,7 @@ contract ForceRecoverLoanImpl is
         }
 
         // Send the bidder the bidded amount of base token
-        uint auctionAmount = getPartialAmount(
+        uint auctionAmount = SafeMathLib.getPartialAmount(
             currentShortAmount,
             short.shortAmount,
             offer
@@ -236,12 +262,13 @@ contract ForceRecoverLoanImpl is
     }
 
     function sendToShortSellerOnForceCloseWithAuctionBid(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId
     )
         internal
     {
-        Vault vault = Vault(VAULT);
+        Vault vault = Vault(state.VAULT);
 
         // Send the short seller whatever is left
         // (== margin deposit + interest fee - bid offer)

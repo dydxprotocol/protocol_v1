@@ -1,50 +1,80 @@
 pragma solidity 0.4.19;
 
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
-import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellEvents } from "./ShortSellEvents.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
+import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+
 
 /**
  * @title LoanImpl
  * @author Antonio Juliano
  *
- * This contract contains the implementation for the following functions of ShortSell:
+ * This library contains the implementation for the following functions of ShortSell:
  *
  *      - callInLoan
  *      - cancelLoanCall
  *      - cancelLoanOffering
  */
- /* solium-disable-next-line */
-contract LoanImpl is
-    SafeMath,
-    ShortSellState,
-    ShortSellEvents,
-    ReentrancyGuard,
-    ShortCommonHelperFunctions {
+library LoanImpl {
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    /**
+     * The loan for a short sell was called in
+     */
+    event LoanCalled(
+        bytes32 indexed id,
+        address indexed lender,
+        address indexed shortSeller,
+        address caller
+    );
+
+    /**
+     * A loan call was canceled
+     */
+    event LoanCallCanceled(
+        bytes32 indexed id,
+        address indexed lender,
+        address indexed shortSeller,
+        address caller
+    );
+
+    /**
+     * A loan offering was canceled before it was used. Any amount less than the
+     * total for the loan offering can be canceled.
+     */
+    event LoanOfferingCanceled(
+        bytes32 indexed loanHash,
+        address indexed lender,
+        address indexed feeRecipient,
+        uint cancelAmount
+    );
 
     // -------------------------------------------
     // ---- Internal Implementation Functions ----
     // -------------------------------------------
 
     function callInLoanImpl(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
-        internal
-        nonReentrant
+        public
     {
-        Short memory short = getShortObject(shortId);
+        LibraryReentrancyGuard.start(state);
+
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
-        require(block.timestamp >= add(short.startTimestamp, short.lockoutTime));
+        require(block.timestamp >= SafeMathLib.add(short.startTimestamp, short.lockoutTime));
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
         require(
             uint(uint32(block.timestamp)) == block.timestamp
         );
 
-        ShortSellRepo(REPO).setShortCallStart(shortId, uint32(block.timestamp));
+        ShortSellRepo(state.REPO).setShortCallStart(shortId, uint32(block.timestamp));
 
         LoanCalled(
             shortId,
@@ -52,22 +82,27 @@ contract LoanImpl is
             short.seller,
             msg.sender
         );
+
+        LibraryReentrancyGuard.end(state);
     }
 
     function cancelLoanCallImpl(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
-        internal
-        nonReentrant
+        public
     {
-        Short memory short = getShortObject(shortId);
+        LibraryReentrancyGuard.start(state);
+
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
 
-        ShortSellRepo(REPO).setShortCallStart(shortId, 0);
+        ShortSellRepo(state.REPO).setShortCallStart(shortId, 0);
 
-        payBackAuctionBidderIfExists(
+        ShortSellCommon.payBackAuctionBidderIfExists(
+            state,
             shortId,
             short
         );
@@ -78,19 +113,23 @@ contract LoanImpl is
             short.seller,
             msg.sender
         );
+
+        LibraryReentrancyGuard.end(state);
     }
 
     function cancelLoanOfferingImpl(
+        ShortSellState.State storage state,
         address[7] addresses,
         uint[9] values256,
         uint32[3] values32,
         uint cancelAmount
     )
-        internal
-        nonReentrant
+        public
         returns (uint _cancelledAmount)
     {
-        LoanOffering memory loanOffering = parseLoanOffering(
+        LibraryReentrancyGuard.start(state);
+
+        ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
             values256,
             values32
@@ -99,19 +138,19 @@ contract LoanImpl is
         require(loanOffering.lender == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
-        uint remainingAmount = sub(
+        uint remainingAmount = SafeMathLib.sub(
             loanOffering.rates.maxAmount,
-            getUnavailableLoanOfferingAmountImpl(loanOffering.loanHash)
+            ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
         );
-        uint amountToCancel = min256(remainingAmount, cancelAmount);
+        uint amountToCancel = SafeMathLib.min256(remainingAmount, cancelAmount);
 
         // If the loan was already fully canceled, then just return 0 amount was canceled
         if (amountToCancel == 0) {
             return 0;
         }
 
-        loanCancels[loanOffering.loanHash] = add(
-            loanCancels[loanOffering.loanHash],
+        state.loanCancels[loanOffering.loanHash] = SafeMathLib.add(
+            state.loanCancels[loanOffering.loanHash],
             amountToCancel
         );
 
@@ -121,6 +160,8 @@ contract LoanImpl is
             loanOffering.feeRecipient,
             amountToCancel
         );
+
+        LibraryReentrancyGuard.end(state);
 
         return amountToCancel;
     }
@@ -134,9 +175,9 @@ contract LoanImpl is
     )
         internal
         view
-        returns (LoanOffering _loanOffering)
+        returns (ShortSellCommon.LoanOffering _loanOffering)
     {
-        LoanOffering memory loanOffering = LoanOffering({
+        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[2],
             taker: addresses[3],
             feeRecipient: addresses[4],
@@ -149,14 +190,14 @@ contract LoanImpl is
             maxDuration: values32[2],
             salt: values[8],
             loanHash: 0,
-            signature: Signature({
+            signature: ShortSellCommon.Signature({
                 v: 0,
                 r: "0x",
                 s: "0x"
             })
         });
 
-        loanOffering.loanHash = getLoanOfferingHash(
+        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
             addresses[1],
             addresses[0]
@@ -170,9 +211,9 @@ contract LoanImpl is
     )
         internal
         pure
-        returns (LoanRates _loanRates)
+        returns (ShortSellCommon.LoanRates _loanRates)
     {
-        LoanRates memory rates = LoanRates({
+        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             minimumDeposit: values[0],
             maxAmount: values[1],
             minAmount: values[2],

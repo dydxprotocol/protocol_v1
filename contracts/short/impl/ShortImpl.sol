@@ -1,50 +1,26 @@
 pragma solidity 0.4.19;
 
-import { ShortCommonHelperFunctionsLib } from "./ShortCommonHelperFunctionsLib.sol";
+import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { ShortSellState } from "./ShortSellState.sol";
+import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 
 
 /**
  * @title ShortImpl
  * @author Antonio Juliano
  *
- * This contract contains the implementation for the short function of ShortSell
+ * This library contains the implementation for the short function of ShortSell
  */
- /* solium-disable-next-line */
 library ShortImpl {
-    struct State {
-        // Address of the Vault contract
-        address public VAULT;
-
-        // Address of the Trader contract
-        address public TRADER;
-
-        // Address of the ShortSellRepo contract
-        address public REPO;
-
-        // Address of the ShortSellAuctionRepo contract
-        address public AUCTION_REPO;
-
-        // Address of the Proxy contract
-        address public PROXY;
-
-        // Mapping from loanHash -> amount, which stores the amount of a loan which has
-        // already been filled
-        mapping(bytes32 => uint) public loanFills;
-
-        // Mapping from loanHash -> amount, which stores the amount of a loan which has
-        // already been canceled
-        mapping(bytes32 => uint) public loanCancels;
-
-        // Mapping from loanHash -> number, which stores the number of shorts taken out
-        // for a given loan
-        mapping(bytes32 => uint) public loanNumbers;
-    }
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
 
     /**
      * A short sell occurred
@@ -75,7 +51,7 @@ library ShortImpl {
         address baseToken;
         uint shortAmount;
         uint depositAmount;
-        ShortCommonHelperFunctionsLib.LoanOffering loanOffering;
+        ShortSellCommon.LoanOffering loanOffering;
         BuyOrder buyOrder;
     }
 
@@ -91,24 +67,26 @@ library ShortImpl {
         uint takerFee;
         uint expirationTimestamp;
         uint salt;
-        ShortCommonHelperFunctionsLib.Signature signature;
+        ShortSellCommon.Signature signature;
     }
 
     // -------------------------------------------
-    // ---- Internal Implementation Functions ----
+    // ----- Public Implementation Functions -----
     // -------------------------------------------
 
     function shortImpl(
+        ShortSellState.State storage state,
         address[12] addresses,
         uint[17] values256,
         uint32[3] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
-        public //!!!
-        /* TODO nonReentrant */
+        public
         returns(bytes32 _shortId)
     {
+        LibraryReentrancyGuard.start(state);
+
         ShortTx memory transaction = parseShortTx(
             addresses,
             values256,
@@ -117,10 +95,11 @@ library ShortImpl {
             sigRS
         );
 
-        bytes32 shortId = getNextShortId(transaction.loanOffering.loanHash);
+        bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
 
         // Validate
         validateShort(
+            state,
             transaction,
             shortId
         );
@@ -128,19 +107,19 @@ library ShortImpl {
         // STATE UPDATES
 
         // Update global amounts for the loan and lender
-        loanFills[transaction.loanOffering.loanHash] = SafeMathLib.add(
-            loanFills[transaction.loanOffering.loanHash],
+        state.loanFills[transaction.loanOffering.loanHash] = SafeMathLib.add(
+            state.loanFills[transaction.loanOffering.loanHash],
             transaction.shortAmount
         );
-        loanNumbers[transaction.loanOffering.loanHash] =
-            SafeMathLib.add(loanNumbers[transaction.loanOffering.loanHash], 1);
+        state.loanNumbers[transaction.loanOffering.loanHash] =
+            SafeMathLib.add(state.loanNumbers[transaction.loanOffering.loanHash], 1);
 
         // Check no casting errors
         require(
             uint(uint32(block.timestamp)) == block.timestamp
         );
 
-        ShortSellRepo(REPO).addShort(
+        ShortSellRepo(state.REPO).addShort(
             shortId,
             transaction.underlyingToken,
             transaction.baseToken,
@@ -158,12 +137,14 @@ library ShortImpl {
 
         // Transfer tokens
         transferTokensForShort(
+            state,
             shortId,
             transaction
         );
 
         // Do the sell
         uint baseTokenReceived = executeSell(
+            state,
             transaction,
             shortId
         );
@@ -177,10 +158,15 @@ library ShortImpl {
             baseTokenReceived
         );
 
+        LibraryReentrancyGuard.end(state);
+
         return shortId;
     }
 
+    // --------- Helper Functions ---------
+
     function getNextShortId(
+        ShortSellState.State storage state,
         bytes32 loanHash
     )
         internal
@@ -189,11 +175,12 @@ library ShortImpl {
     {
         return keccak256(
             loanHash,
-            loanNumbers[loanHash]
+            state.loanNumbers[loanHash]
         );
     }
 
     function validateShort(
+        ShortSellState.State storage state,
         ShortTx transaction,
         bytes32 shortId
     )
@@ -204,7 +191,7 @@ library ShortImpl {
         require(transaction.shortAmount > 0);
 
         // Make sure we don't already have this short id
-        require(!ShortSellRepo(REPO).containsShort(shortId));
+        require(!ShortSellRepo(state.REPO).containsShort(shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -220,7 +207,10 @@ library ShortImpl {
         require(
             SafeMathLib.add(
                 transaction.shortAmount,
-                ShortCommonHelperFunctionsLib.getUnavailableLoanOfferingAmountImpl(transaction.loanOffering.loanHash)
+                ShortSellCommon.getUnavailableLoanOfferingAmountImpl(
+                    state,
+                    transaction.loanOffering.loanHash
+                )
             ) <= transaction.loanOffering.rates.maxAmount
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
@@ -259,7 +249,7 @@ library ShortImpl {
     }
 
     function isValidSignature(
-        ShortCommonHelperFunctionsLib.LoanOffering loanOffering
+        ShortSellCommon.LoanOffering loanOffering
     )
         internal
         pure
@@ -274,18 +264,20 @@ library ShortImpl {
     }
 
     function transferTokensForShort(
+        ShortSellState.State storage state,
         bytes32 shortId,
         ShortTx transaction
     )
         internal
     {
         transferTokensFromShortSeller(
+            state,
             shortId,
             transaction
         );
 
         // Transfer underlying token
-        Vault(VAULT).transferToVault(
+        Vault(state.VAULT).transferToVault(
             shortId,
             transaction.underlyingToken,
             transaction.loanOffering.lender,
@@ -294,11 +286,13 @@ library ShortImpl {
 
         // Transfer loan fees
         transferLoanFees(
+            state,
             transaction
         );
     }
 
     function transferTokensFromShortSeller(
+        ShortSellState.State storage state,
         bytes32 shortId,
         ShortTx transaction
     )
@@ -313,7 +307,7 @@ library ShortImpl {
 
         // Transfer deposit and buy taker fee
         if (transaction.buyOrder.feeRecipient == address(0)) {
-            Vault(VAULT).transferToVault(
+            Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
@@ -323,7 +317,7 @@ library ShortImpl {
             // If the buy order taker fee token is base token
             // we can just transfer base token once from the short seller
 
-            Vault(VAULT).transferToVault(
+            Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
@@ -331,14 +325,14 @@ library ShortImpl {
             );
         } else {
             // Otherwise transfer the deposit and buy order taker fee separately
-            Vault(VAULT).transferToVault(
+            Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
                 msg.sender,
                 transaction.depositAmount
             );
 
-            Vault(VAULT).transferToVault(
+            Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.buyOrder.takerFeeToken,
                 msg.sender,
@@ -348,11 +342,12 @@ library ShortImpl {
     }
 
     function transferLoanFees(
+        ShortSellState.State storage state,
         ShortTx transaction
     )
         internal
     {
-        Proxy proxy = Proxy(PROXY);
+        Proxy proxy = Proxy(state.PROXY);
         uint lenderFee = SafeMathLib.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
@@ -378,13 +373,14 @@ library ShortImpl {
     }
 
     function executeSell(
+        ShortSellState.State storage state,
         ShortTx transaction,
         bytes32 shortId
     )
         internal
         returns (uint _baseTokenReceived)
     {
-        var ( , baseTokenReceived) = Trader(TRADER).trade(
+        var ( , baseTokenReceived) = Trader(state.TRADER).trade(
             shortId,
             [
                 transaction.buyOrder.maker,
@@ -410,7 +406,7 @@ library ShortImpl {
             true
         );
 
-        Vault vault = Vault(VAULT);
+        Vault vault = Vault(state.VAULT);
 
         // Should hold base token == deposit amount + base token from sell
         assert(
@@ -497,9 +493,9 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortCommonHelperFunctionsLib.LoanOffering _loanOffering)
+        returns (ShortSellCommon.LoanOffering _loanOffering)
     {
-        ShortCommonHelperFunctionsLib.LoanOffering memory loanOffering = ShortCommonHelperFunctionsLib.LoanOffering({
+        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[2],
             taker: addresses[3],
             feeRecipient: addresses[4],
@@ -515,7 +511,7 @@ library ShortImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = ShortCommonHelperFunctionsLib.getLoanOfferingHash(
+        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
             addresses[1],
             addresses[0]
@@ -529,9 +525,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortCommonHelperFunctionsLib.LoanRates _loanRates)
+        returns (ShortSellCommon.LoanRates _loanRates)
     {
-        ShortCommonHelperFunctionsLib.LoanRates memory rates = ShortCommonHelperFunctionsLib.LoanRates({
+        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             minimumDeposit: values[0],
             maxAmount: values[1],
             minAmount: values[2],
@@ -550,9 +546,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortCommonHelperFunctionsLib.Signature _signature)
+        returns (ShortSellCommon.Signature _signature)
     {
-        ShortCommonHelperFunctionsLib.Signature memory signature = ShortCommonHelperFunctionsLib.Signature({
+        ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
             v: sigV[0],
             r: sigRS[0],
             s: sigRS[1]
@@ -595,9 +591,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortCommonHelperFunctionsLib.Signature _signature)
+        returns (ShortSellCommon.Signature _signature)
     {
-        ShortCommonHelperFunctionsLib.Signature memory signature = ShortCommonHelperFunctionsLib.Signature({
+        ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
             v: sigV[1],
             r: sigRS[2],
             s: sigRS[3]

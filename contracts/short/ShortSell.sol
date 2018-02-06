@@ -2,15 +2,16 @@ pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
-import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
+import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellRepo } from "./ShortSellRepo.sol";
 import { Vault } from "./Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
@@ -27,12 +28,46 @@ contract ShortSell is
     Ownable,
     DelayedUpdate,
     NoOwner,
-    ShortSellState,
     ShortSellAdmin,
-    CloseShortImpl,
-    LoanImpl,
-    ForceRecoverLoanImpl,
-    PlaceSellbackBidImpl {
+    ReentrancyGuard {
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    /**
+     * Additional deposit for a short sell was posted by the short seller
+     */
+    event AdditionalDeposit(
+        bytes32 indexed id,
+        uint amount
+    );
+
+    /**
+     * Ownership of a loan was transfered to a new address
+     */
+    event LoanTransfered(
+        bytes32 indexed id,
+        address from,
+        address to
+    );
+
+    /**
+     * Ownership of a short was transfered to a new address
+     */
+    event ShortTransfered(
+        bytes32 indexed id,
+        address from,
+        address to
+    );
+
+    // ---------------------------
+    // ----- State Variables -----
+    // ---------------------------
+
+    /**
+     * Struct holding the entire state of ShortSell
+     */
+    ShortSellState.State state;
 
     // -------------------------
     // ------ Constructor ------
@@ -51,11 +86,14 @@ contract ShortSell is
         DelayedUpdate(_updateDelay, _updateExpiration)
         public
     {
-        VAULT = _vault;
-        REPO = _repo;
-        TRADER = _trader;
-        PROXY = _proxy;
-        AUCTION_REPO = _auction_repo;
+        state = ShortSellState.State({
+            VAULT: _vault,
+            REPO: _repo,
+            TRADER: _trader,
+            PROXY: _proxy,
+            AUCTION_REPO: _auction_repo,
+            reentrancyGuard: false
+        });
     }
 
     // -----------------------------------------
@@ -136,6 +174,7 @@ contract ShortSell is
         returns(bytes32 _shortId)
     {
         return ShortImpl.shortImpl(
+            state,
             addresses,
             values256,
             values32,
@@ -192,7 +231,8 @@ contract ShortSell is
             uint _interestFeeAmount
         )
     {
-        return closeShortImpl(
+        return CloseShortImpl.closeShortImpl(
+            state,
             shortId,
             requestedCloseAmount,
             orderAddresses,
@@ -224,7 +264,8 @@ contract ShortSell is
             uint _interestFeeAmount
         )
     {
-        return closeShortDirectlyImpl(
+        return CloseShortImpl.closeShortDirectlyImpl(
+            state,
             shortId,
             requestedCloseAmount
         );
@@ -244,7 +285,7 @@ contract ShortSell is
     )
         external
     {
-        callInLoanImpl(shortId);
+        LoanImpl.callInLoanImpl(state, shortId);
     }
 
     /**
@@ -257,7 +298,7 @@ contract ShortSell is
     )
         external
     {
-        cancelLoanCallImpl(shortId);
+        LoanImpl.cancelLoanCallImpl(state, shortId);
     }
 
     /**
@@ -282,7 +323,8 @@ contract ShortSell is
     )
         external
     {
-        placeSellbackBidImpl(
+        PlaceSellbackBidImpl.placeSellbackBidImpl(
+            state,
             shortId,
             offer
         );
@@ -302,7 +344,7 @@ contract ShortSell is
         external
         returns (uint _baseTokenAmount)
     {
-        return forceRecoverLoanImpl(shortId);
+        return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, shortId);
     }
 
     /**
@@ -319,10 +361,10 @@ contract ShortSell is
         external
         nonReentrant
     {
-        Short memory short = getShortObject(shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.seller);
 
-        Vault(VAULT).transferToVault(
+        Vault(state.VAULT).transferToVault(
             shortId,
             short.baseToken,
             short.seller,
@@ -377,7 +419,8 @@ contract ShortSell is
         external
         returns (uint _cancelledAmount)
     {
-        return cancelLoanOfferingImpl(
+        return LoanImpl.cancelLoanOfferingImpl(
+            state,
             addresses,
             values256,
             values32,
@@ -401,10 +444,10 @@ contract ShortSell is
     {
         // This address will be address(0) if the short does not exist. This is fine because
         // we validate msg.sender == lender right after, and msg.sender can't be address(0)
-        address lender = ShortSellRepo(REPO).getShortLender(shortId);
+        address lender = ShortSellRepo(state.REPO).getShortLender(shortId);
         require(msg.sender == lender);
 
-        ShortSellRepo(REPO).setShortLender(shortId, who);
+        ShortSellRepo(state.REPO).setShortLender(shortId, who);
 
         LoanTransfered(
             shortId,
@@ -429,10 +472,10 @@ contract ShortSell is
     {
         // This address will be address(0) if the short does not exist. This is fine because
         // we validate msg.sender == seller right after, and msg.sender can't be address(0)
-        address seller = ShortSellRepo(REPO).getShortSeller(shortId);
+        address seller = ShortSellRepo(state.REPO).getShortSeller(shortId);
         require(msg.sender == seller);
 
-        ShortSellRepo(REPO).setShortSeller(shortId, who);
+        ShortSellRepo(state.REPO).setShortSeller(shortId, who);
 
         ShortTransfered(
             shortId,
@@ -465,7 +508,7 @@ contract ShortSell is
             address seller
         )
     {
-        return ShortSellRepo(REPO).getShort(shortId);
+        return ShortSellRepo(state.REPO).getShort(shortId);
     }
 
     function containsShort(
@@ -475,7 +518,7 @@ contract ShortSell is
         external
         returns (bool exists)
     {
-        return ShortSellRepo(REPO).containsShort(shortId);
+        return ShortSellRepo(state.REPO).containsShort(shortId);
     }
 
     function getShortBalance(
@@ -485,12 +528,12 @@ contract ShortSell is
         external
         returns (uint _baseTokenBalance)
     {
-        if (!ShortSellRepo(REPO).containsShort(shortId)) {
+        if (!ShortSellRepo(state.REPO).containsShort(shortId)) {
             return 0;
         }
-        Short memory short = getShortObject(shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
 
-        return Vault(VAULT).balances(shortId, short.baseToken);
+        return Vault(state.VAULT).balances(shortId, short.baseToken);
     }
 
     function getShortInterestFee(
@@ -500,10 +543,10 @@ contract ShortSell is
         external
         returns (uint _interestFeeOwed)
     {
-        if (!ShortSellRepo(REPO).containsShort(shortId)) {
+        if (!ShortSellRepo(state.REPO).containsShort(shortId)) {
             return 0;
         }
-        Short memory short = getShortObject(shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
 
         uint endTimestamp;
 
@@ -518,7 +561,7 @@ contract ShortSell is
             endTimestamp = block.timestamp;
         }
 
-        return calculateInterestFee(
+        return ShortSellCommon.calculateInterestFee(
             short,
             sub(short.shortAmount, short.closedAmount),
             endTimestamp
@@ -532,7 +575,7 @@ contract ShortSell is
         external
         returns (uint _unavailableAmount)
     {
-        return getUnavailableLoanOfferingAmountImpl(loanHash);
+        return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
     }
 
     function getShortAuctionOffer(
@@ -546,7 +589,7 @@ contract ShortSell is
             bool _exists
         )
     {
-        return ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
+        return ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
     }
 
     function hasShortAuctionOffer(
@@ -556,7 +599,7 @@ contract ShortSell is
         external
         returns (bool _exists)
     {
-        return ShortSellAuctionRepo(AUCTION_REPO).containsAuction(shortId);
+        return ShortSellAuctionRepo(state.AUCTION_REPO).containsAuction(shortId);
     }
 
     function isShortCalled(
@@ -566,7 +609,7 @@ contract ShortSell is
         external
         returns(bool _isCalled)
     {
-        Short memory short = getShortObject(shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
 
         return (short.callTimestamp > 0);
     }
@@ -578,6 +621,86 @@ contract ShortSell is
         external
         returns (bool _isClosed)
     {
-        return ShortSellRepo(REPO).closedShorts(shortId);
+        return ShortSellRepo(state.REPO).closedShorts(shortId);
+    }
+
+    // ----- Public State Variable Getters -----
+
+    function VAULT()
+        view
+        external
+        returns (address _VAULT)
+    {
+        return state.VAULT;
+    }
+
+    function TRADER()
+        view
+        external
+        returns (address _TRADER)
+    {
+        return state.TRADER;
+    }
+
+    function REPO()
+        view
+        external
+        returns (address _REPO)
+    {
+        return state.REPO;
+    }
+
+    function AUCTION_REPO()
+        view
+        external
+        returns (address _AUCTION_REPO)
+    {
+        return state.AUCTION_REPO;
+    }
+
+    function PROXY()
+        view
+        external
+        returns (address _PROXY)
+    {
+        return state.PROXY;
+    }
+
+    function loanFills(
+        bytes32 loanHash
+    )
+        view
+        external
+        returns (uint _filledAmount)
+    {
+        return state.loanFills[loanHash];
+    }
+
+    function loanCancels(
+        bytes32 loanHash
+    )
+        view
+        external
+        returns (uint _cancelledAmount)
+    {
+        return state.loanCancels[loanHash];
+    }
+
+    function loanNumbers(
+        bytes32 loanHash
+    )
+        view
+        external
+        returns (uint _cancelledAmount)
+    {
+        return state.loanCancels[loanHash];
+    }
+
+    function reentrancyGuard()
+        view
+        external
+        returns (bool _reentrancyGuard)
+    {
+        return state.reentrancyGuard;
     }
 }

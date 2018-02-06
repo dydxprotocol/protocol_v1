@@ -8,38 +8,12 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
 /**
- * @title ShortCommonHelperFunctions
+ * @title ShortSellCommon
  * @author Antonio Juliano
  *
  * This contract contains common functions for implementations of public facing ShortSell functions
  */
-library ShortCommonHelperFunctionsLib {
-    // Address of the Vault contract
-    address public VAULT;
-
-    // Address of the Trader contract
-    address public TRADER;
-
-    // Address of the ShortSellRepo contract
-    address public REPO;
-
-    // Address of the ShortSellAuctionRepo contract
-    address public AUCTION_REPO;
-
-    // Address of the Proxy contract
-    address public PROXY;
-
-    // Mapping from loanHash -> amount, which stores the amount of a loan which has
-    // already been filled
-    mapping(bytes32 => uint) public loanFills;
-
-    // Mapping from loanHash -> amount, which stores the amount of a loan which has
-    // already been canceled
-    mapping(bytes32 => uint) public loanCancels;
-
-    // Mapping from loanHash -> number, which stores the number of shorts taken out
-    // for a given loan
-    mapping(bytes32 => uint) public loanNumbers;
+library ShortSellCommon {
 
     // -----------------------
     // ------- Structs -------
@@ -97,16 +71,18 @@ library ShortCommonHelperFunctionsLib {
     // -------------------------------------------
 
     function getUnavailableLoanOfferingAmountImpl(
+        ShortSellState.State storage state,
         bytes32 loanHash
     )
         view
         internal
         returns (uint _unavailableAmount)
     {
-        return SafeMathLib.add(loanFills[loanHash], loanCancels[loanHash]);
+        return SafeMathLib.add(state.loanFills[loanHash], state.loanCancels[loanHash]);
     }
 
     function transferToCloseVault(
+        ShortSellState.State storage state,
         Short short,
         bytes32 shortId,
         uint closeAmount
@@ -120,11 +96,11 @@ library ShortCommonHelperFunctionsLib {
         uint baseTokenShare = SafeMathLib.getPartialAmount(
             closeAmount,
             currentShortAmount,
-            Vault(VAULT).balances(shortId, short.baseToken)
+            Vault(state.VAULT).balances(shortId, short.baseToken)
         );
 
         bytes32 closeId = keccak256(shortId, "CLOSE");
-        Vault(VAULT).transferBetweenVaults(
+        Vault(state.VAULT).transferBetweenVaults(
             shortId,
             closeId,
             short.baseToken,
@@ -135,23 +111,25 @@ library ShortCommonHelperFunctionsLib {
     }
 
     function cleanupShort(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
         internal
     {
-        ShortSellRepo repo = ShortSellRepo(REPO);
+        ShortSellRepo repo = ShortSellRepo(state.REPO);
         repo.deleteShort(shortId);
         repo.markShortClosed(shortId);
     }
 
     function payBackAuctionBidderIfExists(
+        ShortSellState.State storage state,
         bytes32 shortId,
         Short short
     )
         internal
     {
-        ShortSellAuctionRepo repo = ShortSellAuctionRepo(AUCTION_REPO);
-        Vault vault = Vault(VAULT);
+        ShortSellAuctionRepo repo = ShortSellAuctionRepo(state.AUCTION_REPO);
+        Vault vault = Vault(state.VAULT);
 
         var (, currentBidder, hasCurrentOffer) = repo.getAuction(shortId);
 
@@ -265,6 +243,7 @@ library ShortCommonHelperFunctionsLib {
     // -------- Parsing Functions -------
 
     function getShortObject(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
         internal
@@ -284,7 +263,7 @@ library ShortCommonHelperFunctionsLib {
             maxDuration,
             lender,
             seller
-        ) =  ShortSellRepo(REPO).getShort(shortId);
+        ) =  ShortSellRepo(state.REPO).getShort(shortId);
 
         // This checks that the short exists
         require(startTimestamp != 0);
