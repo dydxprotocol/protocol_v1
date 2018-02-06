@@ -5,7 +5,6 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
-import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
@@ -82,8 +81,6 @@ library CloseShortImpl {
             uint _interestFeeAmount
         )
     {
-        LibraryReentrancyGuard.start(state);
-
         CloseShortTx memory transaction = parseCloseShortTx(
             state,
             shortId,
@@ -119,8 +116,6 @@ library CloseShortImpl {
             sellerBaseTokenAmount
         );
 
-        LibraryReentrancyGuard.end(state);
-
         return (
             sellerBaseTokenAmount,
             interestFee
@@ -138,8 +133,6 @@ library CloseShortImpl {
             uint _interestFeeAmount
         )
     {
-        LibraryReentrancyGuard.start(state);
-
         CloseShortTx memory transaction = parseCloseShortTx(
             state,
             shortId,
@@ -174,8 +167,6 @@ library CloseShortImpl {
             0,
             sellerBaseTokenAmount
         );
-
-        LibraryReentrancyGuard.end(state);
 
         return (
             sellerBaseTokenAmount,

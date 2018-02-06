@@ -12,6 +12,7 @@ import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
+import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellRepo } from "./ShortSellRepo.sol";
 import { Vault } from "./Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
@@ -29,37 +30,8 @@ contract ShortSell is
     DelayedUpdate,
     NoOwner,
     ShortSellAdmin,
-    ReentrancyGuard {
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
-
-    /**
-     * Additional deposit for a short sell was posted by the short seller
-     */
-    event AdditionalDeposit(
-        bytes32 indexed id,
-        uint amount
-    );
-
-    /**
-     * Ownership of a loan was transfered to a new address
-     */
-    event LoanTransfered(
-        bytes32 indexed id,
-        address from,
-        address to
-    );
-
-    /**
-     * Ownership of a short was transfered to a new address
-     */
-    event ShortTransfered(
-        bytes32 indexed id,
-        address from,
-        address to
-    );
-
+    ReentrancyGuard,
+    ShortSellEvents {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -91,8 +63,7 @@ contract ShortSell is
             REPO: _repo,
             TRADER: _trader,
             PROXY: _proxy,
-            AUCTION_REPO: _auction_repo,
-            reentrancyGuard: false
+            AUCTION_REPO: _auction_repo
         });
     }
 
@@ -171,6 +142,7 @@ contract ShortSell is
         bytes32[4] sigRS
     )
         external
+        nonReentrant
         returns(bytes32 _shortId)
     {
         return ShortImpl.shortImpl(
@@ -226,6 +198,7 @@ contract ShortSell is
         bytes32 orderS
     )
         external
+        nonReentrant
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -259,6 +232,7 @@ contract ShortSell is
         uint requestedCloseAmount
     )
         external
+        nonReentrant
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -284,6 +258,7 @@ contract ShortSell is
         bytes32 shortId
     )
         external
+        nonReentrant
     {
         LoanImpl.callInLoanImpl(state, shortId);
     }
@@ -297,6 +272,7 @@ contract ShortSell is
         bytes32 shortId
     )
         external
+        nonReentrant
     {
         LoanImpl.cancelLoanCallImpl(state, shortId);
     }
@@ -322,6 +298,7 @@ contract ShortSell is
         uint offer
     )
         external
+        nonReentrant
     {
         PlaceSellbackBidImpl.placeSellbackBidImpl(
             state,
@@ -342,6 +319,7 @@ contract ShortSell is
         bytes32 shortId
     )
         external
+        nonReentrant
         returns (uint _baseTokenAmount)
     {
         return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, shortId);
@@ -417,6 +395,7 @@ contract ShortSell is
         uint cancelAmount
     )
         external
+        nonReentrant
         returns (uint _cancelledAmount)
     {
         return LoanImpl.cancelLoanOfferingImpl(
@@ -694,13 +673,5 @@ contract ShortSell is
         returns (uint _cancelledAmount)
     {
         return state.loanCancels[loanHash];
-    }
-
-    function reentrancyGuard()
-        view
-        external
-        returns (bool _reentrancyGuard)
-    {
-        return state.reentrancyGuard;
     }
 }

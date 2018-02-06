@@ -1,6 +1,12 @@
 pragma solidity 0.4.19;
 
-
+/**
+ * @title ShortSellState
+ * @author Antonio Juliano
+ *
+ * Contains state for the ShortSell contract. Also used by libraries that implement
+ * ShortSell functions
+ */
 library ShortSellState {
     struct State {
         // Address of the Vault contract
@@ -29,9 +35,5 @@ library ShortSellState {
         // Mapping from loanHash -> number, which stores the number of shorts taken out
         // for a given loan
         mapping(bytes32 => uint) loanNumbers;
-
-        // Flag used to guard against reentrancy. If set to true, no non-reentrant will
-        // be able to be called
-        bool reentrancyGuard;
     }
 }

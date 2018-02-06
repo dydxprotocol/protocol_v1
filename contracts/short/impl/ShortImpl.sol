@@ -8,7 +8,6 @@ import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 
 
 /**
@@ -85,8 +84,6 @@ library ShortImpl {
         public
         returns(bytes32 _shortId)
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortTx memory transaction = parseShortTx(
             addresses,
             values256,
@@ -157,8 +154,6 @@ library ShortImpl {
             transaction,
             baseTokenReceived
         );
-
-        LibraryReentrancyGuard.end(state);
 
         return shortId;
     }

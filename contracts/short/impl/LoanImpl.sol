@@ -3,7 +3,6 @@ pragma solidity 0.4.19;
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
-import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
@@ -63,8 +62,6 @@ library LoanImpl {
     )
         public
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
         require(block.timestamp >= SafeMathLib.add(short.startTimestamp, short.lockoutTime));
@@ -82,8 +79,6 @@ library LoanImpl {
             short.seller,
             msg.sender
         );
-
-        LibraryReentrancyGuard.end(state);
     }
 
     function cancelLoanCallImpl(
@@ -92,8 +87,6 @@ library LoanImpl {
     )
         public
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
@@ -113,8 +106,6 @@ library LoanImpl {
             short.seller,
             msg.sender
         );
-
-        LibraryReentrancyGuard.end(state);
     }
 
     function cancelLoanOfferingImpl(
@@ -127,8 +118,6 @@ library LoanImpl {
         public
         returns (uint _cancelledAmount)
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
             values256,
@@ -160,8 +149,6 @@ library LoanImpl {
             loanOffering.feeRecipient,
             amountToCancel
         );
-
-        LibraryReentrancyGuard.end(state);
 
         return amountToCancel;
     }

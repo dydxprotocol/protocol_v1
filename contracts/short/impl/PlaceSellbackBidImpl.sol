@@ -4,7 +4,6 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { Vault } from "../Vault.sol";
-import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
@@ -41,8 +40,6 @@ library PlaceSellbackBidImpl {
     )
         public
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
 
         var (currentOffer, currentBidder, hasCurrentOffer) =
@@ -92,9 +89,9 @@ library PlaceSellbackBidImpl {
             offer,
             currentShortAmount
         );
-
-        LibraryReentrancyGuard.end(state);
     }
+
+    // ----- Helper Functions -----
 
     function validate(
         ShortSellState.State storage state,

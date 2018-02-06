@@ -4,7 +4,6 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { LibraryReentrancyGuard } from "./LibraryReentrancyGuard.sol";
 import { SafeMathLib } from "../../lib/SafeMathLib.sol";
 
 
@@ -41,8 +40,6 @@ library ForceRecoverLoanImpl {
         public
         returns (uint _baseTokenAmount)
     {
-        LibraryReentrancyGuard.start(state);
-
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         var (offer, bidder, hasCurrentOffer) =
             ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
@@ -84,8 +81,6 @@ library ForceRecoverLoanImpl {
             hasCurrentOffer,
             buybackCost
         );
-
-        LibraryReentrancyGuard.end(state);
 
         return lenderBaseTokenAmount;
     }
