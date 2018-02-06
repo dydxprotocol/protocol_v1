@@ -2,7 +2,6 @@ pragma solidity 0.4.19;
 
 
 library ShortSellState {
-    // TODO public
     struct State {
         // Address of the Vault contract
         address VAULT;

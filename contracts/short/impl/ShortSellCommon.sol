@@ -11,7 +11,7 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  * @title ShortSellCommon
  * @author Antonio Juliano
  *
- * This contract contains common functions for implementations of public facing ShortSell functions
+ * This library contains common functions for implementations of public facing ShortSell functions
  */
 library ShortSellCommon {
 
