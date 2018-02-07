@@ -1,5 +1,6 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
@@ -26,6 +27,8 @@ contract Vault is
     HasNoContracts,
     Pausable,
     ReentrancyGuard {
+    using SafeMath for uint;
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -86,8 +89,8 @@ contract Vault is
         Proxy(PROXY).transfer(token, from, amount);
 
         // Then increment balances
-        balances[id][token] = add(balances[id][token], amount);
-        totalBalances[token] = add(totalBalances[token], amount);
+        balances[id][token] = balances[id][token].add(amount);
+        totalBalances[token] = totalBalances[token].add(amount);
 
         // This should always be true. If not, something is very wrong
         assert(totalBalances[token] >= balances[id][token]);
@@ -113,8 +116,8 @@ contract Vault is
         assert(totalBalances[token] >= amount);
 
         // First decrement balances
-        balances[id][token] = sub(balances[id][token], amount);
-        totalBalances[token] = sub(totalBalances[token], amount);
+        balances[id][token] = balances[id][token].sub(amount);
+        totalBalances[token] = totalBalances[token].sub(amount);
 
         // Then transfer tokens
         transfer(token, to, amount);
@@ -140,10 +143,10 @@ contract Vault is
         assert(totalBalances[token] >= amount);
 
         // First decrement the balance of the from vault
-        balances[fromId][token] = sub(balances[fromId][token], amount);
+        balances[fromId][token] = balances[fromId][token].sub(amount);
 
         // Then increment the balance of the to vault
-        balances[toId][token] = add(balances[toId][token], amount);
+        balances[toId][token] = balances[toId][token].add(amount);
     }
 
     // --------------------------------

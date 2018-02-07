@@ -1,15 +1,18 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ShortSell } from "../ShortSell.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { Proxy } from "../../shared/Proxy.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
-contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
+contract TokenizedShort is StandardToken, ReentrancyGuard {
+    using SafeMath for uint;
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -128,7 +131,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         // Set to OPEN state
         state = State.OPEN;
 
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         require(currentShortAmount > 0);
 
@@ -234,7 +237,7 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
 
         uint baseTokenBalance = StandardToken(baseToken).balanceOf(address(this));
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        uint baseTokenPayout = getPartialAmount(
+        uint baseTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
             baseTokenBalance
@@ -242,10 +245,10 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
 
         // Destroy the tokens
         balances[msg.sender] = 0;
-        totalSupply_ = sub(totalSupply_, value);
+        totalSupply_ = totalSupply_.sub(value);
 
         // Increment redeemed counter
-        redeemed = add(redeemed, value);
+        redeemed = redeemed.add(value);
 
         // Send the redeemer their proportion of base token held by this contract
         // NOTE: It is possible that this contract could be sent base token by external sources
@@ -289,15 +292,15 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         require(value > 0);
 
         // Destroy the tokens
-        balances[msg.sender] = sub(balances[msg.sender], value);
-        totalSupply_ = sub(totalSupply_, value);
+        balances[msg.sender] = balances[msg.sender].sub(value);
+        totalSupply_ = totalSupply_.sub(value);
 
         // Increment redeemed counter
-        redeemed = add(redeemed, value);
+        redeemed = redeemed.add(value);
 
         Short memory short = getShortObject();
 
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // This should always be true
         assert(currentShortAmount >= value);
@@ -342,14 +345,14 @@ contract TokenizedShort is StandardToken, SafeMath, ReentrancyGuard {
         // automatically use funds it has locked in Vault to pay the fee. Otherwise it
         // needs to be transfered in
         if (takerFeeToken != short.baseToken) {
-            uint baseTokenPrice = getPartialAmount(
+            uint baseTokenPrice = MathHelpers.getPartialAmount(
                 orderValues[1],
                 orderValues[0],
                 value
             );
 
             // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
-            uint takerFee = getPartialAmount(
+            uint takerFee = MathHelpers.getPartialAmount(
                 baseTokenPrice,
                 orderValues[1],
                 orderValues[3]

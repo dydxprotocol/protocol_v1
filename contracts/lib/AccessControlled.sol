@@ -1,7 +1,7 @@
 pragma solidity 0.4.19;
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { SafeMath } from "./SafeMath.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -10,7 +10,9 @@ import { SafeMath } from "./SafeMath.sol";
  *
  * Allows for functions to be access controled, with timelocked permissions
  */
-contract AccessControlled is Ownable, SafeMath {
+contract AccessControlled is Ownable {
+    using SafeMath for uint;
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -55,7 +57,7 @@ contract AccessControlled is Ownable, SafeMath {
         public
     {
         accessDelay = _accessDelay;
-        gracePeriodExpiration = add(block.timestamp, _gracePeriod);
+        gracePeriodExpiration = block.timestamp.add(_gracePeriod);
     }
 
     // ---------------------------
@@ -82,7 +84,7 @@ contract AccessControlled is Ownable, SafeMath {
             authorized[who] = true;
         } else {
             AccessRequested(address(this), who, block.timestamp);
-            pendingAuthorizations[who] = add(block.timestamp, accessDelay);
+            pendingAuthorizations[who] = block.timestamp.add(accessDelay);
         }
     }
 

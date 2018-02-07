@@ -1,19 +1,22 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
- * @title ShortCommonHelperFunctions
+ * @title ShortSellCommon
  * @author Antonio Juliano
  *
- * This contract contains common functions for implementations of public facing ShortSell functions
+ * This library contains common functions for implementations of public facing ShortSell functions
  */
-contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
+library ShortSellCommon {
+    using SafeMath for uint;
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -70,16 +73,18 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
     // -------------------------------------------
 
     function getUnavailableLoanOfferingAmountImpl(
+        ShortSellState.State storage state,
         bytes32 loanHash
     )
         view
         internal
         returns (uint _unavailableAmount)
     {
-        return add(loanFills[loanHash], loanCancels[loanHash]);
+        return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
 
     function transferToCloseVault(
+        ShortSellState.State storage state,
         Short short,
         bytes32 shortId,
         uint closeAmount
@@ -87,17 +92,17 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
         internal
         returns (bytes32 _closeId)
     {
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The maximum amount of base token that can be used by this close
-        uint baseTokenShare = getPartialAmount(
+        uint baseTokenShare = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
-            Vault(VAULT).balances(shortId, short.baseToken)
+            Vault(state.VAULT).balances(shortId, short.baseToken)
         );
 
         bytes32 closeId = keccak256(shortId, "CLOSE");
-        Vault(VAULT).transferBetweenVaults(
+        Vault(state.VAULT).transferBetweenVaults(
             shortId,
             closeId,
             short.baseToken,
@@ -108,23 +113,25 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
     }
 
     function cleanupShort(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
         internal
     {
-        ShortSellRepo repo = ShortSellRepo(REPO);
+        ShortSellRepo repo = ShortSellRepo(state.REPO);
         repo.deleteShort(shortId);
         repo.markShortClosed(shortId);
     }
 
     function payBackAuctionBidderIfExists(
+        ShortSellState.State storage state,
         bytes32 shortId,
         Short short
     )
         internal
     {
-        ShortSellAuctionRepo repo = ShortSellAuctionRepo(AUCTION_REPO);
-        Vault vault = Vault(VAULT);
+        ShortSellAuctionRepo repo = ShortSellAuctionRepo(state.AUCTION_REPO);
+        Vault vault = Vault(state.VAULT);
 
         var (, currentBidder, hasCurrentOffer) = repo.getAuction(shortId);
 
@@ -164,15 +171,15 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
         returns (uint _interestFee)
     {
         // The interest rate for the proportion of the position being closed
-        uint interestRate = getPartialAmount(
+        uint interestRate = MathHelpers.getPartialAmount(
             closeAmount,
             short.shortAmount,
             short.interestRate
         );
 
-        uint timeElapsed = sub(endTimestamp, short.startTimestamp);
+        uint timeElapsed = endTimestamp.sub(short.startTimestamp);
         // TODO implement more complex interest rates
-        return getPartialAmount(timeElapsed, 1 days, interestRate);
+        return MathHelpers.getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
     function getLoanOfferingHash(
@@ -232,12 +239,13 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
             return 2 ** 255;
         }
 
-        return add(uint(short.startTimestamp), uint(short.maxDuration));
+        return uint(short.startTimestamp).add(uint(short.maxDuration));
     }
 
     // -------- Parsing Functions -------
 
     function getShortObject(
+        ShortSellState.State storage state,
         bytes32 shortId
     )
         internal
@@ -257,7 +265,7 @@ contract ShortCommonHelperFunctions is SafeMath, ShortSellState {
             maxDuration,
             lender,
             seller
-        ) =  ShortSellRepo(REPO).getShort(shortId);
+        ) =  ShortSellRepo(state.REPO).getShort(shortId);
 
         // This checks that the short exists
         require(startTimestamp != 0);

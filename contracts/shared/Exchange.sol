@@ -22,13 +22,13 @@ pragma solidity 0.4.19;
 
 import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "../lib/SafeMath.sol";
+import "../0x/base/ZeroExSafeMath.sol";
 import "./Proxy.sol";
 
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract Exchange is SafeMath, NoOwner {
+contract Exchange is ZeroExSafeMath, NoOwner {
 
     // Error Codes
     uint8 constant ERROR_ORDER_EXPIRED = 0;                     // Order has already expired
@@ -175,7 +175,7 @@ contract Exchange is SafeMath, NoOwner {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = sub(
+        uint remainingTakerTokenAmount = safeSub(
             order.takerTokenAmount,
             getUnavailableTakerTokenAmount(order.orderHash)
         );
@@ -230,7 +230,7 @@ contract Exchange is SafeMath, NoOwner {
 
         // Update filled amount
 
-        filled[order.orderHash] = add(filled[order.orderHash], filledTakerTokenAmount);
+        filled[order.orderHash] = safeAdd(filled[order.orderHash], filledTakerTokenAmount);
 
         // Transfer Tokens
 
@@ -319,7 +319,7 @@ contract Exchange is SafeMath, NoOwner {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = sub(
+        uint remainingTakerTokenAmount = safeSub(
             order.takerTokenAmount,
             getUnavailableTakerTokenAmount(order.orderHash)
         );
@@ -329,7 +329,7 @@ contract Exchange is SafeMath, NoOwner {
             return 0;
         }
 
-        cancelled[order.orderHash] = add(cancelled[order.orderHash], cancelledTakerTokenAmount);
+        cancelled[order.orderHash] = safeAdd(cancelled[order.orderHash], cancelledTakerTokenAmount);
 
         LogCancel(
             order.maker,
@@ -479,12 +479,12 @@ contract Exchange is SafeMath, NoOwner {
         filledTakerTokenAmount = 0;
         for (uint i = 0; i < orderAddresses.length; i++) {
             require(orderAddresses[i][3] == orderAddresses[0][3]); // takerToken must be the same for each order
-            filledTakerTokenAmount = add(
+            filledTakerTokenAmount = safeAdd(
                 filledTakerTokenAmount,
                 fillOrder(
                     orderAddresses[i],
                     orderValues[i],
-                    sub(fillTakerTokenAmount, filledTakerTokenAmount),
+                    safeSub(fillTakerTokenAmount, filledTakerTokenAmount),
                     shouldThrowOnInsufficientBalanceOrAllowance,
                     v[i],
                     r[i],
@@ -598,6 +598,19 @@ contract Exchange is SafeMath, NoOwner {
         return (target < 10**3 && mulmod(target, numerator, denominator) != 0);
     }
 
+    /// @dev Calculates partial value given a numerator and denominator.
+    /// @param numerator Numerator.
+    /// @param denominator Denominator.
+    /// @param target Value to calculate partial of.
+    /// @return Partial value of target.
+    function getPartialAmount(uint numerator, uint denominator, uint target)
+        public
+        pure
+        returns (uint)
+    {
+        return safeDiv(safeMul(numerator, target), denominator);
+    }
+
     /// @dev Calculates the sum of values already filled and cancelled for a given order.
     /// @param orderHash The Keccak-256 hash of the given order.
     /// @return Sum of values already filled and cancelled.
@@ -608,7 +621,7 @@ contract Exchange is SafeMath, NoOwner {
         view
         returns (uint unavailableTakerTokenAmount)
     {
-        return add(filled[orderHash], cancelled[orderHash]);
+        return safeAdd(filled[orderHash], cancelled[orderHash]);
     }
 
     /*
@@ -661,11 +674,11 @@ contract Exchange is SafeMath, NoOwner {
             bool isMakerTokenFeeToken = order.makerToken == order.makerFeeToken;
             bool isTakerTokenFeeToken = order.takerToken == order.takerFeeToken;
 
-            uint requiredMakerFeeToken = isMakerTokenFeeToken ? add(
+            uint requiredMakerFeeToken = isMakerTokenFeeToken ? safeAdd(
                 fillMakerTokenAmount,
                 fillMakerFee
             ) : fillMakerFee;
-            uint requiredTakerFeeToken = isTakerTokenFeeToken ? add(
+            uint requiredTakerFeeToken = isTakerTokenFeeToken ? safeAdd(
                 fillTakerTokenAmount,
                 fillTakerFee
             ) : fillTakerFee;

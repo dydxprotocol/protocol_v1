@@ -5,7 +5,9 @@ pragma solidity 0.4.19;
  * @title ShortSellEvents
  * @author Antonio Juliano
  *
- * This contract contains the events for the ShortSell contract
+ * Contains events for the ShortSell contract.
+ * NOTE: Any ShortSell function libraries that use events will need to both define the event here
+ *       and copy the event intothe library itself as libraries don't support sharing events
  */
 contract ShortSellEvents {
     // ------------------------
@@ -32,6 +34,7 @@ contract ShortSellEvents {
         uint interestRate
     );
 
+
     /**
      * A short sell was closed
      */
@@ -56,6 +59,17 @@ contract ShortSellEvents {
     );
 
     /**
+     * A short sell loan was forcibly recovered by the lender
+     */
+    event LoanForceRecovered(
+        bytes32 indexed id,
+        address indexed winningBidder,
+        uint amount,
+        bool hadAcutcionOffer,
+        uint buybackCost
+    );
+
+    /**
      * The loan for a short sell was called in
      */
     event LoanCalled(
@@ -76,25 +90,6 @@ contract ShortSellEvents {
     );
 
     /**
-     * A short sell loan was forcibly recovered by the lender
-     */
-    event LoanForceRecovered(
-        bytes32 indexed id,
-        address indexed winningBidder,
-        uint amount,
-        bool hadAcutcionOffer,
-        uint buybackCost
-    );
-
-    /**
-     * Additional deposit for a short sell was posted by the short seller
-     */
-    event AdditionalDeposit(
-        bytes32 indexed id,
-        uint amount
-    );
-
-    /**
      * A loan offering was canceled before it was used. Any amount less than the
      * total for the loan offering can be canceled.
      */
@@ -103,6 +98,25 @@ contract ShortSellEvents {
         address indexed lender,
         address indexed feeRecipient,
         uint cancelAmount
+    );
+
+    /**
+     * A bid was placed to sell back the underlying token required to close
+     * a short position
+     */
+    event AuctionBidPlaced(
+        bytes32 indexed id,
+        address indexed bidder,
+        uint bid,
+        uint currentShortAmount
+    );
+
+    /**
+     * Additional deposit for a short sell was posted by the short seller
+     */
+    event AdditionalDeposit(
+        bytes32 indexed id,
+        uint amount
     );
 
     /**
@@ -121,16 +135,5 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address from,
         address to
-    );
-
-    /**
-     * A bid was placed to sell back the underlying token required to close
-     * a short position
-     */
-    event AuctionBidPlaced(
-        bytes32 indexed id,
-        address indexed bidder,
-        uint bid,
-        uint currentShortAmount
     );
 }

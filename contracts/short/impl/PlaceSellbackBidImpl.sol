@@ -1,41 +1,55 @@
 pragma solidity 0.4.19;
 
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { SafeMath } from "../../lib/SafeMath.sol";
-import { ShortCommonHelperFunctions } from "./ShortCommonHelperFunctions.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellEvents } from "./ShortSellEvents.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { Vault } from "../Vault.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
  * @title PlaceSellbackBidImpl
  * @author Antonio Juliano
  *
- * This contract contains the implementation for the placeSellbackBid function of ShortSell
+ * This library contains the implementation for the placeSellbackBid function of ShortSell
  */
- /* solium-disable-next-line */
-contract PlaceSellbackBidImpl is
-    SafeMath,
-    ShortSellState,
-    ShortSellEvents,
-    ReentrancyGuard,
-    ShortCommonHelperFunctions {
+library PlaceSellbackBidImpl {
+    using SafeMath for uint;
+
+    // ------------------------
+    // -------- Events --------
+    // ------------------------
+
+    /**
+     * A bid was placed to sell back the underlying token required to close
+     * a short position
+     */
+    event AuctionBidPlaced(
+        bytes32 indexed id,
+        address indexed bidder,
+        uint bid,
+        uint currentShortAmount
+    );
+
+    // -------------------------------------------
+    // ----- Public Implementation Functions -----
+    // -------------------------------------------
 
     function placeSellbackBidImpl(
+        ShortSellState.State storage state,
         bytes32 shortId,
         uint offer
     )
-        internal
-        nonReentrant
+        public
     {
-        Short memory short = getShortObject(shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
 
         var (currentOffer, currentBidder, hasCurrentOffer) =
-            ShortSellAuctionRepo(AUCTION_REPO).getAuction(shortId);
+            ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
 
         uint currentShortAmount = validate(
+            state,
             short,
             shortId,
             offer,
@@ -44,20 +58,20 @@ contract PlaceSellbackBidImpl is
         );
 
         // Store auction funds in a separate vault for isolation
-        bytes32 auctionVaultId = getAuctionVaultId(shortId);
+        bytes32 auctionVaultId = ShortSellCommon.getAuctionVaultId(shortId);
 
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
-            Vault(VAULT).sendFromVault(
+            Vault(state.VAULT).sendFromVault(
                 auctionVaultId,
                 short.underlyingToken,
                 currentBidder,
-                Vault(VAULT).balances(auctionVaultId, short.underlyingToken)
+                Vault(state.VAULT).balances(auctionVaultId, short.underlyingToken)
             );
         }
 
         // Transfer the full underlying token amount from the bidder
-        Vault(VAULT).transferToVault(
+        Vault(state.VAULT).transferToVault(
             auctionVaultId,
             short.underlyingToken,
             msg.sender,
@@ -65,7 +79,7 @@ contract PlaceSellbackBidImpl is
         );
 
         // Record that the bidder has placed this bid
-        ShortSellAuctionRepo(AUCTION_REPO).setAuctionOffer(
+        ShortSellAuctionRepo(state.AUCTION_REPO).setAuctionOffer(
             shortId,
             offer,
             msg.sender
@@ -80,8 +94,11 @@ contract PlaceSellbackBidImpl is
         );
     }
 
+    // ----- Helper Functions -----
+
     function validate(
-        Short short,
+        ShortSellState.State storage state,
+        ShortSellCommon.Short short,
         bytes32 shortId,
         uint offer,
         bool hasCurrentOffer,
@@ -102,30 +119,30 @@ contract PlaceSellbackBidImpl is
         }
 
         // Maximum interest fee is what it would be if the entire call time limit elapsed
-        uint maxInterestFee = calculateInterestFee(
+        uint maxInterestFee = ShortSellCommon.calculateInterestFee(
             short,
             short.shortAmount,
-            add(closePeriodStart, short.callTimeLimit)
+            closePeriodStart.add(short.callTimeLimit)
         );
 
         // The offered amount must be less than the initia amount of
         // base token held - max interest fee. Recall offer is denominated in terms of closing
         // the entire shortAmount
-        uint currentShortAmount = sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
-        uint initialBaseToken = getPartialAmount(
+        uint initialBaseToken = MathHelpers.getPartialAmount(
             short.shortAmount,
             currentShortAmount,
-            Vault(VAULT).balances(shortId, short.baseToken)
+            Vault(state.VAULT).balances(shortId, short.baseToken)
         );
 
-        require(offer <= sub(initialBaseToken, maxInterestFee));
+        require(offer <= initialBaseToken.sub(maxInterestFee));
 
         return currentShortAmount;
     }
 
     function getClosePeriodStart(
-        Short short
+        ShortSellCommon.Short short
     )
         internal
         pure
@@ -137,7 +154,7 @@ contract PlaceSellbackBidImpl is
         if (short.callTimestamp > 0) {
             return short.callTimestamp;
         } else {
-            return getShortEndTimestamp(short);
+            return ShortSellCommon.getShortEndTimestamp(short);
         }
     }
 }

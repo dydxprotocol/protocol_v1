@@ -11,7 +11,11 @@ import { ShortSellState } from "./ShortSellState.sol";
  *
  * This contract contains the owner only admin functions of ShortSell
  */
-contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
+contract ShortSellAdmin is Ownable, DelayedUpdate {
+
+    // Copy of state variable defined on ShortSell, so we can reference it
+    ShortSellState.State state;
+
     // --------------------------------
     // ----- Owner Only Functions -----
     // --------------------------------
@@ -23,7 +27,7 @@ contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
         delayedAddressUpdate("TRADER", _trader)
         external
     {
-        TRADER = _trader;
+        state.TRADER = _trader;
     }
 
     function updateProxy(
@@ -33,7 +37,7 @@ contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
         delayedAddressUpdate("PROXY", _proxy)
         external
     {
-        PROXY = _proxy;
+        state.PROXY = _proxy;
     }
 
     function updateVault(
@@ -43,7 +47,7 @@ contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
         delayedAddressUpdate("VAULT", _vault)
         external
     {
-        VAULT = _vault;
+        state.VAULT = _vault;
     }
 
     function updateRepo(
@@ -53,7 +57,7 @@ contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
         delayedAddressUpdate("REPO", _repo)
         external
     {
-        REPO = _repo;
+        state.REPO = _repo;
     }
 
     function updateAuctionRepo(
@@ -63,6 +67,6 @@ contract ShortSellAdmin is Ownable, DelayedUpdate, ShortSellState {
         delayedAddressUpdate("AUCTION_REPO", _auction_repo)
         external
     {
-        AUCTION_REPO = _auction_repo;
+        state.AUCTION_REPO = _auction_repo;
     }
 }

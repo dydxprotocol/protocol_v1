@@ -1,6 +1,6 @@
 pragma solidity 0.4.19;
 
-import { SafeMath } from "./SafeMath.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -9,7 +9,9 @@ import { SafeMath } from "./SafeMath.sol";
  *
  * Allows for timelocked updates on address and uint fields
  */
-contract DelayedUpdate is SafeMath {
+contract DelayedUpdate {
+    using SafeMath for uint;
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -114,10 +116,8 @@ contract DelayedUpdate is SafeMath {
         if (existingUpdate.exists) {
             // If the pending update is expired, add the new one replacing it
             if (
-                block.timestamp >= add(
-                    existingUpdate.startTimestamp,
-                    add(updateDelay, updateExpiration)
-                )
+                block.timestamp >=
+                    existingUpdate.startTimestamp.add(updateDelay).add(updateExpiration)
             ) {
                 pendingAddressUpdates[id] = AddressUpdate({
                     startTimestamp: block.timestamp,
@@ -128,7 +128,7 @@ contract DelayedUpdate is SafeMath {
                 // If the pending update is not expired, validate this update is the same
                 // then do the update
 
-                require(add(updateDelay, existingUpdate.startTimestamp) <= block.timestamp);
+                require(updateDelay.add(existingUpdate.startTimestamp) <= block.timestamp);
                 require(toAddress == existingUpdate.toAddress);
 
                 delete pendingAddressUpdates[id];
@@ -179,10 +179,8 @@ contract DelayedUpdate is SafeMath {
         if (existingUpdate.exists) {
             // If the pending update is expired, add the new one replacing it
             if (
-                block.timestamp >= add(
-                    existingUpdate.startTimestamp,
-                    add(updateDelay, updateExpiration)
-                )
+                block.timestamp >=
+                    existingUpdate.startTimestamp.add(updateDelay).add(updateExpiration)
             ) {
                 pendingUintUpdates[id] = UintUpdate({
                     startTimestamp: block.timestamp,
@@ -193,7 +191,7 @@ contract DelayedUpdate is SafeMath {
                 // If the pending update is not expired, validate this update is the same
                 // then do the update
 
-                require(add(updateDelay, existingUpdate.startTimestamp) <= block.timestamp);
+                require(updateDelay.add(existingUpdate.startTimestamp) <= block.timestamp);
                 require(toValue == existingUpdate.toValue);
 
                 delete pendingUintUpdates[id];

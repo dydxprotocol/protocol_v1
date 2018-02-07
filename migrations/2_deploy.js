@@ -13,6 +13,11 @@ const FeeToken = artifacts.require("TokenC");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
+const ShortImpl = artifacts.require("ShortImpl");
+const CloseShortImpl = artifacts.require("CloseShortImpl");
+const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
+const LoanImpl = artifacts.require("LoanImpl");
+const PlaceSellbackBidImpl = artifacts.require("PlaceSellbackBidImpl");
 const BigNumber = require('bignumber.js');
 
 const ONE_HOUR = new BigNumber(60 * 60);
@@ -77,6 +82,16 @@ module.exports = (deployer, network, addresses) => {
       ONE_DAY,
       ONE_HOUR,
     ))
+    .then(() => deployer.deploy(ShortImpl))
+    .then(() => ShortSell.link('ShortImpl', ShortImpl.address))
+    .then(() => deployer.deploy(CloseShortImpl))
+    .then(() => ShortSell.link('CloseShortImpl', CloseShortImpl.address))
+    .then(() => deployer.deploy(ForceRecoverLoanImpl))
+    .then(() => ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address))
+    .then(() => deployer.deploy(LoanImpl))
+    .then(() => ShortSell.link('LoanImpl', LoanImpl.address))
+    .then(() => deployer.deploy(PlaceSellbackBidImpl))
+    .then(() => ShortSell.link('PlaceSellbackBidImpl', PlaceSellbackBidImpl.address))
     .then(() => deployer.deploy(
       ShortSell,
       Vault.address,

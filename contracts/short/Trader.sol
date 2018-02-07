@@ -1,5 +1,6 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { AccessControlled } from "../lib/AccessControlled.sol";
@@ -9,6 +10,7 @@ import { ZeroExExchangeInterface } from "../interfaces/ZeroExExchangeInterface.s
 import { Exchange } from "../shared/Exchange.sol";
 import { Proxy } from "../shared/Proxy.sol";
 import { Vault } from "./Vault.sol";
+import { MathHelpers } from "../lib/MathHelpers.sol";
 
 
 /**
@@ -24,6 +26,8 @@ contract Trader is
     DelayedUpdate,
     HasNoEther,
     HasNoContracts {
+    using SafeMath for uint;
+
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -294,13 +298,13 @@ contract Trader is
             setAllowance(order.takerToken, proxy, requestedFillAmount);
         } else if (order.takerToken == order.takerFeeToken) {
             // If the taker token is the same as taker fee token, just transfer them together
-            feeAmount = getPartialAmount(
+            feeAmount = MathHelpers.getPartialAmount(
                 requestedFillAmount,
                 order.takerTokenAmount,
                 order.takerFee
             );
 
-            uint totalAmount = add(requestedFillAmount, feeAmount);
+            uint totalAmount = requestedFillAmount.add(feeAmount);
 
             Vault(VAULT).sendFromVault(
                 id,
@@ -312,7 +316,7 @@ contract Trader is
             setAllowance(order.takerToken, proxy, totalAmount);
         } else {
             // If the taker token and taker fee token are different, transfer them separately
-            feeAmount = getPartialAmount(
+            feeAmount = MathHelpers.getPartialAmount(
                 requestedFillAmount,
                 order.takerTokenAmount,
                 order.takerFee
@@ -355,24 +359,24 @@ contract Trader is
             require(requestedFillAmount == filledTakerTokenAmount);
         }
 
-        uint makerTokenAmount = getPartialAmount(
+        uint makerTokenAmount = MathHelpers.getPartialAmount(
             order.makerTokenAmount,
             order.takerTokenAmount,
             filledTakerTokenAmount
         );
-        uint paidTakerFee = getPartialAmount(
+        uint paidTakerFee = MathHelpers.getPartialAmount(
             filledTakerTokenAmount,
             order.takerTokenAmount,
             order.takerFee
         );
-        uint requestedTakerFee = getPartialAmount(
+        uint requestedTakerFee = MathHelpers.getPartialAmount(
             requestedFillAmount,
             order.takerTokenAmount,
             order.takerFee
         );
 
-        uint extraTakerTokenAmount = sub(requestedFillAmount, filledTakerTokenAmount);
-        uint extraTakerFeeTokenAmount = sub(requestedTakerFee, paidTakerFee);
+        uint extraTakerTokenAmount = requestedFillAmount.sub(filledTakerTokenAmount);
+        uint extraTakerFeeTokenAmount = requestedTakerFee.sub(paidTakerFee);
 
         transferBackTokens(
             id,
@@ -416,7 +420,7 @@ contract Trader is
                 );
             } else if (order.takerToken == order.takerFeeToken) {
                 // If the fee token is the same as the taker token, transfer extras back together
-                uint totalAmount = add(extraTakerTokenAmount, extraTakerFeeTokenAmount);
+                uint totalAmount = extraTakerTokenAmount.add(extraTakerFeeTokenAmount);
 
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
                 Vault(VAULT).transferToVault(
