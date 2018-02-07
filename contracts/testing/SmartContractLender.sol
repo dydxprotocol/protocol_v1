@@ -17,10 +17,11 @@ contract SmartContractLender {
     function verifyLoanOffering(
         address[8],
         uint[9],
-        uint32[3]
+        uint32[3],
+        bytes32
     )
         external
-        /* view */
+        view
         returns (bool _isValid)
     {
         return shouldAllow;

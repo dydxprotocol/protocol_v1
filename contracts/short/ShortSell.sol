@@ -95,17 +95,17 @@ contract ShortSell is
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0] = underlying token
-     *  [1] = base token
-     *  [2] = lender
-     *  [3] = loan offering signer (if 0, lender will be the signer - otherwise lender must be a
-     *                              smart contract that implements LoanOfferingVerifier)
-     *  [4] = loan taker
-     *  [5] = loan fee recipient
-     *  [6] = loan lender fee token
-     *  [7] = loan taker fee token
-     *  [8] = buy order maker
-     *  [9] = buy order taker
+     *  [0]  = underlying token
+     *  [1]  = base token
+     *  [2]  = lender
+     *  [3]  = loan offering signer (if 0, lender will be the signer - otherwise lender must be a
+     *                               smart contract that implements LoanOfferingVerifier)
+     *  [4]  = loan taker
+     *  [5]  = loan fee recipient
+     *  [6]  = loan lender fee token
+     *  [7]  = loan taker fee token
+     *  [8]  = buy order maker
+     *  [9]  = buy order taker
      *  [10] = buy order fee recipient
      *  [11] = buy order maker fee token
      *  [12] = buy order taker fee token
@@ -377,15 +377,15 @@ contract ShortSell is
      *
      * @param  values256        Values corresponding to:
      *
-     *  [0]  = loan minimum deposit
-     *  [1]  = loan maximum amount
-     *  [2]  = loan minimum amount
-     *  [3]  = loan minimum sell amount
-     *  [4]  = loan interest rate
-     *  [5]  = loan lender fee
-     *  [6]  = loan taker fee
-     *  [7]  = loan expiration timestamp (in seconds)
-     *  [8]  = loan salt
+     *  [0] = loan minimum deposit
+     *  [1] = loan maximum amount
+     *  [2] = loan minimum amount
+     *  [3] = loan minimum sell amount
+     *  [4] = loan interest rate
+     *  [5] = loan lender fee
+     *  [6] = loan taker fee
+     *  [7] = loan expiration timestamp (in seconds)
+     *  [8] = loan salt
      *
      * @param  values32         Values corresponding to:
      *

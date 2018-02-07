@@ -138,7 +138,7 @@ library ShortImpl {
         // This is done after other validations/state updates as it is an external call
         // NOTE: The short will exist in the Repo for this call
         //       (possible other contract calls back into ShortSell)
-        getConsentIfSmartContractLender(transaction);
+        getConsentIfSmartContractLender(transaction, shortId);
 
         // Transfer tokens
         transferTokensForShort(
@@ -272,7 +272,8 @@ library ShortImpl {
     }
 
     function getConsentIfSmartContractLender(
-        ShortTx transaction
+        ShortTx transaction,
+        bytes32 shortId
     )
         internal
     {
@@ -281,7 +282,8 @@ library ShortImpl {
                 LoanOfferingVerifier(transaction.loanOffering.lender).verifyLoanOffering(
                     getLoanOfferingAddresses(transaction),
                     getLoanOfferingValues256(transaction),
-                    getLoanOfferingValues32(transaction)
+                    getLoanOfferingValues32(transaction),
+                    shortId
                 )
             );
         }

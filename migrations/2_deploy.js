@@ -100,7 +100,6 @@ async function deployShortSellContracts(deployer) {
     ONE_DAY
   );
 
-  // TODO this fails - over gas limit
   await deployer.deploy(
     ShortSell,
     Vault.address,
