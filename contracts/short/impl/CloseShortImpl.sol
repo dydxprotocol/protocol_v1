@@ -146,7 +146,6 @@ library CloseShortImpl {
         validateCloseShort(transaction);
 
         // STATE UPDATES
-
         updateStateForCloseShort(state, transaction);
         var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 

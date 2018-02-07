@@ -20,7 +20,7 @@ const {
   doShortAndCall,
   placeAuctionBid
 } = require('../helpers/ShortSellHelper');
-const { ONE_DAY_IN_SECONDS } = require('../helpers/Constants');
+const { BIGNUMBERS } = require('../helpers/Constants');
 const ProxyContract = artifacts.require("Proxy");
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -440,7 +440,7 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
     shortTx.shortAmount,
     getPartialAmount(
       shortTx.loanOffering.rates.interestRate,
-      ONE_DAY_IN_SECONDS,
+      BIGNUMBERS.ONE_DAY_IN_SECONDS,
       shortLifetime
     )
   );

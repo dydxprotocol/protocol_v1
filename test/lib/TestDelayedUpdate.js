@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 const DelayedUpdateTester = artifacts.require("DelayedUpdateTester");
 const { zeroAddr, addr1, addr2 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 
 contract('DelayedUpdateTester', function() {
   const [delay, expiration] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -19,13 +20,7 @@ contract('DelayedUpdateTester', function() {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const [contractDelay, contractExpiration] = await Promise.all([
-        contract.updateDelay.call(),
-        contract.updateExpiration.call()
-      ]);
-
-      expect(contractDelay.equals(delay)).to.be.true;
-      expect(contractExpiration.equals(expiration)).to.be.true;
+      await validateDelayedUpdateConstants(contract, delay, expiration);
     });
   });
 

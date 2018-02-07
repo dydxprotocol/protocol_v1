@@ -70,8 +70,8 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // Symbol of this token (as ERC20 standard)
     string public symbol;
 
-    // Creator of this contract. All tokens will initially be allocated to this address
-    address public creator;
+    // Once intialized, all tokens will initially be allocated to this address
+    address public initialTokenHolder;
 
     // Amount of tokens that have been redeemed
     uint public redeemed;
@@ -99,7 +99,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     function TokenizedShort(
         address _shortSell,
         address _proxy,
-        address _creator,
+        address _initialTokenHolder,
         bytes32 _shortId,
         string _name,
         string _symbol
@@ -113,7 +113,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         // total supply is 0 before initialization
         name = _name;
         symbol = _symbol;
-        creator = _creator;
+        initialTokenHolder = _initialTokenHolder;
     }
 
     // -----------------------------------------
@@ -126,17 +126,21 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         external
     {
         Short memory short = getShortObject();
+
+        // The ownership of the short must be transferred to this contract before intialization
+        // Once ownership is transferred, there is no way to have this contract transfer it back
+        // to the original short seller. Therefore, the short seller transferring ownership should
+        // verify that the initialTokenHolder field is properly set so that they recieve the tokens.
         require(short.seller == address(this));
 
-        // Set to OPEN state
         state = State.OPEN;
 
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         require(currentShortAmount > 0);
 
-        // Give the creator the entire balance, which is equal to the current amount of the short
-        balances[creator] = currentShortAmount;
+        // Give the specified address the entire balance, equal to the current amount of the short
+        balances[initialTokenHolder] = currentShortAmount;
 
         totalSupply_ = currentShortAmount;
 
@@ -307,6 +311,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
 
         // If we are closing the rest of the short, set this contract's state to CLOSED
         if (currentShortAmount == value) {
+            assert(totalSupply_ == 0);
             state = State.CLOSED;
         }
 
@@ -384,7 +389,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
             maxDuration,
             lender,
             seller
-        ) =  ShortSell(SHORT_SELL).getShort(shortId);
+        ) = ShortSell(SHORT_SELL).getShort(shortId);
 
         // This checks that the short exists
         require(startTimestamp != 0);
