@@ -36,9 +36,6 @@ describe('#short', () => {
 
       console.log('\tShortSell.short (dYdX Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
-      console.log(tx)
-      expect(true).to.be.false;
-
       await checkSuccess(shortSell, shortTx);
     });
   });

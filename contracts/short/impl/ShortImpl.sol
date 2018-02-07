@@ -1,12 +1,13 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 
 
@@ -17,6 +18,8 @@ import { ShortSellState } from "./ShortSellState.sol";
  * This library contains the implementation for the short function of ShortSell
  */
 library ShortImpl {
+    using SafeMath for uint;
+
     // ------------------------
     // -------- Events --------
     // ------------------------
@@ -104,12 +107,10 @@ library ShortImpl {
         // STATE UPDATES
 
         // Update global amounts for the loan and lender
-        state.loanFills[transaction.loanOffering.loanHash] = SafeMathLib.add(
-            state.loanFills[transaction.loanOffering.loanHash],
-            transaction.shortAmount
-        );
+        state.loanFills[transaction.loanOffering.loanHash] =
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.shortAmount);
         state.loanNumbers[transaction.loanOffering.loanHash] =
-            SafeMathLib.add(state.loanNumbers[transaction.loanOffering.loanHash], 1);
+            state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
         // Check no casting errors
         require(
@@ -200,8 +201,7 @@ library ShortImpl {
 
         // Validate the short amount is <= than max and >= min
         require(
-            SafeMathLib.add(
-                transaction.shortAmount,
+            transaction.shortAmount.add(
                 ShortSellCommon.getUnavailableLoanOfferingAmountImpl(
                     state,
                     transaction.loanOffering.loanHash
@@ -210,7 +210,7 @@ library ShortImpl {
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
 
-        uint minimumDeposit = SafeMathLib.getPartialAmount(
+        uint minimumDeposit = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minimumDeposit
@@ -233,11 +233,9 @@ library ShortImpl {
          */
 
         require(
-            SafeMathLib.mul(
-                transaction.loanOffering.rates.minimumSellAmount,
+            transaction.loanOffering.rates.minimumSellAmount.mul(
                 transaction.buyOrder.underlyingTokenAmount
-            ) <= SafeMathLib.mul(
-                transaction.loanOffering.rates.maxAmount,
+            ) <= transaction.loanOffering.rates.maxAmount.mul(
                 transaction.buyOrder.baseTokenAmount
             )
         );
@@ -294,7 +292,7 @@ library ShortImpl {
         internal
     {
         // Calculate Fee
-        uint buyOrderTakerFee = SafeMathLib.getPartialAmount(
+        uint buyOrderTakerFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.buyOrder.underlyingTokenAmount,
             transaction.buyOrder.takerFee
@@ -316,7 +314,7 @@ library ShortImpl {
                 shortId,
                 transaction.baseToken,
                 msg.sender,
-                SafeMathLib.add(transaction.depositAmount, buyOrderTakerFee)
+                transaction.depositAmount.add(buyOrderTakerFee)
             );
         } else {
             // Otherwise transfer the deposit and buy order taker fee separately
@@ -343,7 +341,7 @@ library ShortImpl {
         internal
     {
         Proxy proxy = Proxy(state.PROXY);
-        uint lenderFee = SafeMathLib.getPartialAmount(
+        uint lenderFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.lenderFee
@@ -354,7 +352,7 @@ library ShortImpl {
             transaction.loanOffering.feeRecipient,
             lenderFee
         );
-        uint takerFee = SafeMathLib.getPartialAmount(
+        uint takerFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.takerFee
@@ -408,7 +406,7 @@ library ShortImpl {
             vault.balances(
                 shortId,
                 transaction.baseToken
-            ) == SafeMathLib.add(baseTokenReceived, transaction.depositAmount)
+            ) == baseTokenReceived.add(transaction.depositAmount)
         );
 
         // Should hold 0 underlying token

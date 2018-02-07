@@ -1,9 +1,11 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -17,6 +19,8 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  *      - cancelLoanOffering
  */
 library LoanImpl {
+    using SafeMath for uint;
+
     // ------------------------
     // -------- Events --------
     // ------------------------
@@ -64,7 +68,7 @@ library LoanImpl {
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
-        require(block.timestamp >= SafeMathLib.add(short.startTimestamp, short.lockoutTime));
+        require(block.timestamp >= uint(short.startTimestamp).add(short.lockoutTime));
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
         require(
@@ -127,21 +131,18 @@ library LoanImpl {
         require(loanOffering.lender == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
-        uint remainingAmount = SafeMathLib.sub(
-            loanOffering.rates.maxAmount,
+        uint remainingAmount = loanOffering.rates.maxAmount.sub(
             ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
         );
-        uint amountToCancel = SafeMathLib.min256(remainingAmount, cancelAmount);
+        uint amountToCancel = Math.min256(remainingAmount, cancelAmount);
 
         // If the loan was already fully canceled, then just return 0 amount was canceled
         if (amountToCancel == 0) {
             return 0;
         }
 
-        state.loanCancels[loanOffering.loanHash] = SafeMathLib.add(
-            state.loanCancels[loanOffering.loanHash],
-            amountToCancel
-        );
+        state.loanCancels[loanOffering.loanHash] =
+            state.loanCancels[loanOffering.loanHash].add(amountToCancel);
 
         LoanOfferingCanceled(
             loanOffering.loanHash,

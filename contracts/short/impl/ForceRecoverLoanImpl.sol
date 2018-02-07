@@ -1,10 +1,11 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -14,6 +15,8 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  * This library contains the implementation for the forceRecoverLoan function of ShortSell
  */
 library ForceRecoverLoanImpl {
+    using SafeMath for uint;
+
     // ------------------------
     // -------- Events --------
     // ------------------------
@@ -48,9 +51,10 @@ library ForceRecoverLoanImpl {
         // This can either be after the loan was called or after the maxDuration of the short
         // position has elapsed (plus the call time)
         require(
-            block.timestamp >= SafeMathLib.add(uint(short.callTimestamp), uint(short.callTimeLimit))
-            || block.timestamp >= SafeMathLib.add(
-                ShortSellCommon.getShortEndTimestamp(short), uint(short.callTimeLimit)
+            block.timestamp >= uint(short.callTimestamp).add(uint(short.callTimeLimit))
+            || (
+                block.timestamp
+                >= ShortSellCommon.getShortEndTimestamp(short).add(uint(short.callTimeLimit))
             )
         );
 
@@ -138,7 +142,7 @@ library ForceRecoverLoanImpl {
             uint _buybackCost
         )
     {
-        uint currentShortAmount = SafeMathLib.sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
         bytes32 auctionVaultId = ShortSellCommon.getAuctionVaultId(shortId);
 
         // Send the lender underlying tokens + interest fee
@@ -189,7 +193,7 @@ library ForceRecoverLoanImpl {
         uint lenderBaseTokenAmount = ShortSellCommon.calculateInterestFee(
             short,
             currentShortAmount,
-            SafeMathLib.add(short.callTimestamp, short.callTimeLimit)
+            uint(short.callTimestamp).add(short.callTimeLimit)
         );
 
         vault.sendFromVault(
@@ -240,7 +244,7 @@ library ForceRecoverLoanImpl {
         }
 
         // Send the bidder the bidded amount of base token
-        uint auctionAmount = SafeMathLib.getPartialAmount(
+        uint auctionAmount = MathHelpers.getPartialAmount(
             currentShortAmount,
             short.shortAmount,
             offer

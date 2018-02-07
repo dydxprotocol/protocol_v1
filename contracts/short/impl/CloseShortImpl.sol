@@ -1,11 +1,13 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -15,6 +17,8 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  * This library contains the implementation for the closeShort function of ShortSell
  */
 library CloseShortImpl {
+    using SafeMath for uint;
+
     // ------------------------
     // -------- Events --------
     // ------------------------
@@ -207,10 +211,7 @@ library CloseShortImpl {
                 transaction.short
             );
         } else {
-            uint newClosedAmount = SafeMathLib.add(
-                transaction.short.closedAmount,
-                transaction.closeAmount
-            );
+            uint newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
             assert(newClosedAmount < transaction.short.shortAmount);
 
             // Otherwise increment the closed amount on the short
@@ -367,7 +368,7 @@ library CloseShortImpl {
         returns (uint _baseTokenPrice)
     {
         // baseTokenPrice = closeAmount * (buyOrderBaseTokenAmount / buyOrderUnderlyingTokenAmount)
-        uint baseTokenPrice = SafeMathLib.getPartialAmount(
+        uint baseTokenPrice = MathHelpers.getPartialAmount(
             order.values[1],
             order.values[0],
             transaction.closeAmount
@@ -376,7 +377,7 @@ library CloseShortImpl {
         // We need to have enough base token locked in the the close's vault to pay
         // for both the buyback and the interest fee
         require(
-            SafeMathLib.add(baseTokenPrice, interestFee)
+            baseTokenPrice.add(interestFee)
             <= Vault(state.VAULT).balances(closeId, transaction.short.baseToken)
         );
 
@@ -404,7 +405,7 @@ library CloseShortImpl {
         uint buyOrderTakerTokenAmount = order.values[1];
 
         // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
-        uint takerFee = SafeMathLib.getPartialAmount(
+        uint takerFee = MathHelpers.getPartialAmount(
             baseTokenPrice,
             buyOrderTakerTokenAmount,
             buyOrderTakerFee
@@ -488,7 +489,7 @@ library CloseShortImpl {
             ShortPartiallyClosed(
                 transaction.shortId,
                 transaction.closeAmount,
-                SafeMathLib.sub(transaction.currentShortAmount, transaction.closeAmount),
+                transaction.currentShortAmount.sub(transaction.closeAmount),
                 interestFee,
                 sellerBaseTokenAmount,
                 buybackCost
@@ -508,12 +509,12 @@ library CloseShortImpl {
         returns (CloseShortTx _tx)
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
-        uint currentShortAmount = SafeMathLib.sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,
             shortId: shortId,
-            closeAmount: SafeMathLib.min256(requestedCloseAmount, currentShortAmount)
+            closeAmount: Math.min256(requestedCloseAmount, currentShortAmount)
         });
     }
 

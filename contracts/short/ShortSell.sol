@@ -1,5 +1,6 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -32,6 +33,9 @@ contract ShortSell is
     ShortSellAdmin,
     ReentrancyGuard,
     ShortSellEvents {
+
+    using SafeMath for uint;
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -531,18 +535,18 @@ contract ShortSell is
 
         if (
             short.callTimestamp > 0
-            && block.timestamp > add(short.callTimestamp, short.callTimeLimit)
+            && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
         ) {
-            endTimestamp = add(short.callTimestamp, short.callTimeLimit);
-        } else if (block.timestamp > add(short.startTimestamp, short.maxDuration)) {
-            endTimestamp = add(short.startTimestamp, short.maxDuration);
+            endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
+        } else if (block.timestamp > uint(short.startTimestamp).add(short.maxDuration)) {
+            endTimestamp = uint(short.startTimestamp).add(short.maxDuration);
         } else {
             endTimestamp = block.timestamp;
         }
 
         return ShortSellCommon.calculateInterestFee(
             short,
-            sub(short.shortAmount, short.closedAmount),
+            short.shortAmount.sub(short.closedAmount),
             endTimestamp
         );
     }

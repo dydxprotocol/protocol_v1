@@ -1,9 +1,10 @@
 pragma solidity 0.4.19;
 
-import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "../shared/Exchange.sol";
-import "../shared/Proxy.sol";
-import "../lib/SafeMath.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { Exchange } from "../shared/Exchange.sol";
+import { Proxy } from "../shared/Proxy.sol";
+import { MathHelpers } from "../lib/MathHelpers.sol";
 
 /**
  * @title CoveredOption
@@ -22,7 +23,9 @@ import "../lib/SafeMath.sol";
  * Each option adheres to the ERC20 token standard to allow transfer and trading
  * of options after issuance
  */
-contract CoveredOption is SafeMath {
+contract CoveredOption {
+    using SafeMath for uint;
+
     // ----------------------------
     // ---- Constant Variables ----
     // ----------------------------
@@ -204,7 +207,7 @@ contract CoveredOption is SafeMath {
         address writer = orderAddresses[0];
 
         // Transfer taker fee
-        uint takerFee = getPartialAmount(
+        uint takerFee = MathHelpers.getPartialAmount(
             maximumPremium,
             orderValues[1],
             orderValues[3]
@@ -230,7 +233,7 @@ contract CoveredOption is SafeMath {
             s
         );
 
-        uint optionsIssued = getPartialAmount(
+        uint optionsIssued = MathHelpers.getPartialAmount(
             orderValues[0],
             orderValues[1],
             premium
@@ -240,21 +243,20 @@ contract CoveredOption is SafeMath {
         require(optionsIssued > 0);
 
         // Increment balances
-        balances[msg.sender] = add(balances[msg.sender], optionsIssued);
-        writers[writer] = add(writers[writer], optionsIssued);
+        balances[msg.sender] = balances[msg.sender].add(optionsIssued);
+        writers[writer] = writers[writer].add(optionsIssued);
 
         // Send back any excess baseToken premium taken from sender
         // TODO make sure state of token has updated from first call
         if (premium < maximumPremium) {
             ERC20(baseToken).transfer(
                 msg.sender,
-                sub(maximumPremium, premium)
+                maximumPremium.sub(premium)
             );
 
             // Send back extra taker fee
-            uint extraTakerTokenAmount = sub(
-                takerFee,
-                getPartialAmount(
+            uint extraTakerTokenAmount = takerFee.sub(
+                MathHelpers.getPartialAmount(
                     premium,
                     orderValues[1],
                     orderValues[3]
@@ -267,8 +269,8 @@ contract CoveredOption is SafeMath {
         }
 
         // Increment totals
-        totalOptions = add(totalOptions, optionsIssued);
-        totalWritten = add(totalWritten, optionsIssued);
+        totalOptions = totalOptions.add(optionsIssued);
+        totalWritten = totalWritten.add(optionsIssued);
 
         Buy(writer, msg.sender, optionsIssued, premium, block.timestamp);
 
@@ -306,7 +308,7 @@ contract CoveredOption is SafeMath {
 
         // Calculate total exercise price in baseToken
         // TODO make sure there is no rounding error weirdness
-        uint totalBaseTokenPrice = getPartialAmount(
+        uint totalBaseTokenPrice = MathHelpers.getPartialAmount(
             baseTokenStrikeRate,
             underlyingTokenStrikeRate,
             amount
@@ -317,7 +319,7 @@ contract CoveredOption is SafeMath {
         // TODO make sure no reentrancy attack here
 
         // Deduct balance
-        balances[msg.sender] = sub(balance, amount);
+        balances[msg.sender] = balance.sub(amount);
 
         // Transfer total base token price from sender
         Proxy(proxy).transfer(baseToken, msg.sender, totalBaseTokenPrice);
@@ -327,9 +329,9 @@ contract CoveredOption is SafeMath {
 
         // Update totals
         // TODO is it ok to set these at the end?
-        totalExercised = add(totalExercised, amount);
-        totalOptions = sub(totalOptions, amount);
-        totalBaseToken = add(totalBaseToken, totalBaseTokenPrice);
+        totalExercised = totalExercised.add(amount);
+        totalOptions = totalOptions.sub(amount);
+        totalBaseToken = totalBaseToken.add(totalBaseTokenPrice);
 
         Exercise(msg.sender, amount, block.timestamp);
 
@@ -371,12 +373,12 @@ contract CoveredOption is SafeMath {
         // Calculate amount of each token the writer can withdraw
         // TODO understand rounding errors
         // TODO make sure this is right
-        uint underlyingTokenAmount = getPartialAmount(
+        uint underlyingTokenAmount = MathHelpers.getPartialAmount(
             balance,
             totalWritten,
             totalOptions
         );
-        uint baseTokenAmount = getPartialAmount(
+        uint baseTokenAmount = MathHelpers.getPartialAmount(
             balance,
             totalWritten,
             totalBaseToken
@@ -392,7 +394,7 @@ contract CoveredOption is SafeMath {
         }
 
         // Update totals
-        totalWithdrawn = add(totalWithdrawn, balance);
+        totalWithdrawn = totalWithdrawn.add(balance);
 
         Withdrawal(writer, balance, underlyingTokenAmount, baseTokenAmount);
 
@@ -425,15 +427,15 @@ contract CoveredOption is SafeMath {
         require(balance >= amount);
 
         // Deduct from writer balance and balances
-        writers[msg.sender] = sub(written, amount);
-        balances[msg.sender] = sub(balance, amount);
+        writers[msg.sender] = written.sub(amount);
+        balances[msg.sender] = balance.sub(amount);
 
         // Transfer underlyingToken to sender
         require(ERC20(underlyingToken).transfer(msg.sender, amount));
 
         // Update totals
-        totalOptions = sub(totalOptions, amount);
-        totalWritten = sub(totalWritten, amount);
+        totalOptions = totalOptions.sub(amount);
+        totalWritten = totalWritten.sub(amount);
 
         Recovery(msg.sender, amount, block.timestamp);
     }
@@ -451,8 +453,8 @@ contract CoveredOption is SafeMath {
         bool ok
     ) {
         if (balances[msg.sender] >= value) {
-            balances[msg.sender] = sub(balances[msg.sender], value);
-            balances[to] = add(balances[to], value);
+            balances[msg.sender] = balances[msg.sender].sub(value);
+            balances[to] = balances[to].add(value);
             Transfer(msg.sender, to, value);
             return true;
         } else {
@@ -468,9 +470,9 @@ contract CoveredOption is SafeMath {
         bool ok
     ) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
-            balances[to] = add(balances[to], value);
-            balances[from] = sub(balances[from], value);
-            allowed[from][msg.sender] = sub(allowed[from][msg.sender], value);
+            balances[to] = balances[to].add(value);
+            balances[from] = balances[from].sub(value);
+            allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             Transfer(from, to, value);
             return true;
         } else {

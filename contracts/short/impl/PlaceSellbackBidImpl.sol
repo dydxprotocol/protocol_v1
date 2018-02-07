@@ -1,10 +1,11 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { Vault } from "../Vault.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -14,6 +15,8 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  * This library contains the implementation for the placeSellbackBid function of ShortSell
  */
 library PlaceSellbackBidImpl {
+    using SafeMath for uint;
+
     // ------------------------
     // -------- Events --------
     // ------------------------
@@ -119,21 +122,21 @@ library PlaceSellbackBidImpl {
         uint maxInterestFee = ShortSellCommon.calculateInterestFee(
             short,
             short.shortAmount,
-            SafeMathLib.add(closePeriodStart, short.callTimeLimit)
+            closePeriodStart.add(short.callTimeLimit)
         );
 
         // The offered amount must be less than the initia amount of
         // base token held - max interest fee. Recall offer is denominated in terms of closing
         // the entire shortAmount
-        uint currentShortAmount = SafeMathLib.sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
-        uint initialBaseToken = SafeMathLib.getPartialAmount(
+        uint initialBaseToken = MathHelpers.getPartialAmount(
             short.shortAmount,
             currentShortAmount,
             Vault(state.VAULT).balances(shortId, short.baseToken)
         );
 
-        require(offer <= SafeMathLib.sub(initialBaseToken, maxInterestFee));
+        require(offer <= initialBaseToken.sub(maxInterestFee));
 
         return currentShortAmount;
     }

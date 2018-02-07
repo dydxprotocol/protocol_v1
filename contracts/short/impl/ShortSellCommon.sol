@@ -1,10 +1,11 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { SafeMathLib } from "../../lib/SafeMathLib.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -14,6 +15,7 @@ import { SafeMathLib } from "../../lib/SafeMathLib.sol";
  * This library contains common functions for implementations of public facing ShortSell functions
  */
 library ShortSellCommon {
+    using SafeMath for uint;
 
     // -----------------------
     // ------- Structs -------
@@ -78,7 +80,7 @@ library ShortSellCommon {
         internal
         returns (uint _unavailableAmount)
     {
-        return SafeMathLib.add(state.loanFills[loanHash], state.loanCancels[loanHash]);
+        return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
 
     function transferToCloseVault(
@@ -90,10 +92,10 @@ library ShortSellCommon {
         internal
         returns (bytes32 _closeId)
     {
-        uint currentShortAmount = SafeMathLib.sub(short.shortAmount, short.closedAmount);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The maximum amount of base token that can be used by this close
-        uint baseTokenShare = SafeMathLib.getPartialAmount(
+        uint baseTokenShare = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
             Vault(state.VAULT).balances(shortId, short.baseToken)
@@ -169,15 +171,15 @@ library ShortSellCommon {
         returns (uint _interestFee)
     {
         // The interest rate for the proportion of the position being closed
-        uint interestRate = SafeMathLib.getPartialAmount(
+        uint interestRate = MathHelpers.getPartialAmount(
             closeAmount,
             short.shortAmount,
             short.interestRate
         );
 
-        uint timeElapsed = SafeMathLib.sub(endTimestamp, short.startTimestamp);
+        uint timeElapsed = endTimestamp.sub(short.startTimestamp);
         // TODO implement more complex interest rates
-        return SafeMathLib.getPartialAmount(timeElapsed, 1 days, interestRate);
+        return MathHelpers.getPartialAmount(timeElapsed, 1 days, interestRate);
     }
 
     function getLoanOfferingHash(
@@ -237,7 +239,7 @@ library ShortSellCommon {
             return 2 ** 255;
         }
 
-        return SafeMathLib.add(uint(short.startTimestamp), uint(short.maxDuration));
+        return uint(short.startTimestamp).add(uint(short.maxDuration));
     }
 
     // -------- Parsing Functions -------

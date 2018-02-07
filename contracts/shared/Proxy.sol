@@ -1,9 +1,10 @@
 pragma solidity 0.4.19;
 
-import "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
-import "../lib/AccessControlled.sol";
+import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { AccessControlled } from "../lib/AccessControlled.sol";
 
 
 /**
@@ -158,7 +159,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         external
         returns (uint _allowance)
     {
-        return min256(
+        return Math.min256(
             ERC20(token).allowance(who, address(this)),
             ERC20(token).balanceOf(who)
         );
