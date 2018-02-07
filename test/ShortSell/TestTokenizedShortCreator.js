@@ -75,7 +75,6 @@ contract('TokenizedShortCreator', function(accounts) {
 
   describe('#updateProxy', () => {
     const newAddress = accounts[7];
-    console.log(accounts);
 
     it('allows owner to update the PROXY field after a delay', async () => {
       await tokenizedShortCreatorContract.updateProxy(newAddress);
