@@ -1,0 +1,39 @@
+pragma solidity 0.4.19;
+
+import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+
+
+contract SmartContractLender {
+    bool shouldAllow;
+
+    function SmartContractLender(
+        bool _shouldAllow
+    )
+        public
+    {
+        shouldAllow = _shouldAllow;
+    }
+
+    function verifyLoanOffering(
+        address[8],
+        uint[9],
+        uint32[3]
+    )
+        external
+        /* view */
+        returns (bool _isValid)
+    {
+        return shouldAllow;
+    }
+
+    function allow(
+        address token,
+        address spender,
+        uint amount
+    )
+        external
+        returns (bool _success)
+    {
+        return ERC20(token).approve(spender, amount);
+    }
+}

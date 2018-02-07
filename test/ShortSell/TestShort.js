@@ -11,6 +11,7 @@ const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
+const SmartContractLender = artifacts.require("SmartContractLender");
 const { zeroExFeeTokenConstant } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -21,7 +22,8 @@ const {
   callShort,
   getPartialAmount,
   sign0xOrder,
-  getShort
+  getShort,
+  signLoanOffering
 } = require('../helpers/ShortSellHelper');
 
 describe('#short', () => {
@@ -80,6 +82,67 @@ describe('#short', () => {
       const tx = await callShort(shortSell, shortTx);
 
       console.log('\tShortSell.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
+
+      await checkSuccess(shortSell, shortTx);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('allows smart contracts to be lenders', async () => {
+      const shortTx = await createShortSellTx(accounts);
+      const [
+        shortSell,
+        feeToken,
+        underlyingToken,
+        smartContractLender
+      ] = await Promise.all([
+        ShortSell.deployed(),
+        FeeToken.deployed(),
+        UnderlyingToken.deployed(),
+        SmartContractLender.new(true)
+      ]);
+
+      await issueTokensAndSetAllowancesForShort(shortTx);
+
+      const [
+        lenderFeeTokenBalance,
+        lenderUnderlyingTokenBalance
+      ] = await Promise.all([
+        feeToken.balanceOf.call(shortTx.loanOffering.lender),
+        underlyingToken.balanceOf.call(shortTx.loanOffering.lender)
+      ]);
+      await Promise.all([
+        feeToken.transfer(
+          smartContractLender.address,
+          lenderFeeTokenBalance,
+          { from: shortTx.loanOffering.lender }
+        ),
+        underlyingToken.transfer(
+          smartContractLender.address,
+          lenderUnderlyingTokenBalance,
+          { from: shortTx.loanOffering.lender }
+        )
+      ]);
+      await Promise.all([
+        smartContractLender.allow(
+          feeToken.address,
+          ProxyContract.address,
+          lenderFeeTokenBalance
+        ),
+        smartContractLender.allow(
+          underlyingToken.address,
+          ProxyContract.address,
+          lenderUnderlyingTokenBalance
+        )
+      ]);
+
+      shortTx.loanOffering.signer = shortTx.loanOffering.lender;
+      shortTx.loanOffering.lender = smartContractLender.address;
+      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+
+      const tx = await callShort(shortSell, shortTx);
+
+      console.log('\tShortSell.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
       await checkSuccess(shortSell, shortTx);
     });
