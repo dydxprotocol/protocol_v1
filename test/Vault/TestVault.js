@@ -10,16 +10,18 @@ const TestToken = artifacts.require("TestToken");
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
+const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 
 contract('Vault', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
+  const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   const num1 = new BigNumber(12);
   let proxy, vault, tokenA, tokenB;
 
   beforeEach(async () => {
     proxy = await ProxyContract.new(delay, gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
-      Vault.new(proxy.address, delay, gracePeriod, delay, delay),
+      Vault.new(proxy.address, delay, gracePeriod, updateDelay, updateExpiration),
       TestToken.new(),
       TestToken.new()
     ]);
@@ -31,20 +33,15 @@ contract('Vault', function(accounts) {
     it('sets constants correctly', async () => {
       await validateAccessControlledConstants(proxy, delay, gracePeriod);
       await validateAccessControlledConstants(vault, delay, gracePeriod);
+      await validateDelayedUpdateConstants(vault, updateDelay, updateExpiration);
       const [
-        contractUpdateDelay,
-        contractUpdateExpiration,
         owner,
         contractProxy
       ] = await Promise.all([
-        vault.updateDelay.call(),
-        vault.updateExpiration.call(),
         vault.owner.call(),
         vault.PROXY.call()
       ]);
 
-      expect(contractUpdateDelay.equals(delay)).to.be.true;
-      expect(contractUpdateExpiration.equals(delay)).to.be.true;
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
       expect(contractProxy.toLowerCase()).to.eq(proxy.address);
     });
