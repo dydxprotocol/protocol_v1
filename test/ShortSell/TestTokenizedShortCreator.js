@@ -10,7 +10,7 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 
 const { wait } = require('@digix/tempo')(web3);
-const { zeroAddr } = require('../helpers/Constants');
+const { zeroAddr, BIGNUMBERS } = require('../helpers/Constants');
 const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
@@ -22,18 +22,16 @@ const {
   callShort,
 } = require('../helpers/ShortSellHelper');
 
-contract('TokenizedShort', function(accounts) {
+contract('TokenizedShortCreator', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
   const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   let shortSellContract, proxyContract, tokenizedShortCreatorContract;
-  let shortId;
   let shortTx;
 
   before('create a short', async () => {
     shortSellContract = await ShortSell.deployed();
     shortTx = await createShortSellTx(accounts);
     await issueTokensAndSetAllowancesForShort(shortTx);
-    shortId = web3Instance.utils.soliditySha3(shortTx.loanOffering.loanHash, 0);
     await callShort(shortSellContract, shortTx);
   });
 
@@ -117,6 +115,7 @@ contract('TokenizedShort', function(accounts) {
     const symbol = "NAM";
     const initialTokenHolder = accounts[1];
     const creator = accounts[2];
+    const shortId = shortTx.id;
 
     it('succeeds for arbitrary caller', async () => {
       await proxyContract.grantAccess(tokenizedShortCreatorContract.address);
@@ -129,7 +128,7 @@ contract('TokenizedShort', function(accounts) {
         initialTokenHolder, shortId, name, symbol, { from: creator });
 
       // Get the TokenizedShort on the blockchain and make sure that it was created correctly
-      const shortTokenContract = TokenizedShort.at(tokenAddress);
+      const shortTokenContract = await TokenizedShort.at(tokenAddress);
       const [
         tokenShortSell,
         tokenProxy,
@@ -154,15 +153,14 @@ contract('TokenizedShort', function(accounts) {
         proxyContract.transferAuthorized.call(tokenAddress)
       ]);
 
-      const ZERO = new BigNumber(0);
       expect(tokenShortSell).to.equal(shortSellContract.address);
       expect(tokenProxy).to.equal(proxyContract.address);
       expect(tokenShortId).to.equal(shortId);
-      expect(tokenState.equals(ZERO)).to.be.true;  // UNINITIALIZED
+      expect(tokenState.equals(BIGNUMBERS.ZERO)).to.be.true;  // UNINITIALIZED
       expect(tokenName).to.equal(name);
       expect(tokenSymbol).to.equal(symbol);
       expect(tokenHolder).to.equal(initialTokenHolder);
-      expect(tokenRedeemed.equals(ZERO)).to.be.true;
+      expect(tokenRedeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
       expect(tokenBaseToken).to.equal(zeroAddr);
       expect(authorized).to.be.true;
     });
