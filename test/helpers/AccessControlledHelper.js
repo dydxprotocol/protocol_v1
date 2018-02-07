@@ -9,7 +9,7 @@ module.exports = {
 /**
  * Validates that the constructor for any contract of type AccessControlled has correctly set
  * accessDelay and gracePeriodExpiration
- * @param  {contract} contract             the deployed contract that extends AccessControlled
+ * @param  {Contract} contract             the deployed contract that extends AccessControlled
  * @param  {BigNumber} expectedAccessDelay the expected value of accessDelay
  * @param  {BigNumber} expectedGracePeriod the expected value of gracePeriodExpiration
  * @return {bool}                          returns true unless it throws an error due to expect()

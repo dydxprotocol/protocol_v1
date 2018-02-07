@@ -7,7 +7,7 @@ module.exports = {
 /**
  * Validates that the constructor for any contract of type DelayedUpdate has correctly set
  * updateDelay and updateExpiration
- * @param  {contract} contract            the deployed contract that extends DelayedUpdate
+ * @param  {Contract} contract            the deployed contract that extends DelayedUpdate
  * @param  {BigNumber} expectedDelay      the expected value of updateDelay
  * @param  {BigNumber} expectedExpiration the expected value of updateExpiration
  * @return {bool}                         returns true unless it throws an error due to expect()
