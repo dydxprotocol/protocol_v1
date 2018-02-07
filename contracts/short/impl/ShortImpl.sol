@@ -9,7 +9,7 @@ import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { LoanOfferingVerifier } from '../interfaces/LoanOfferingVerifier.sol';
+import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**

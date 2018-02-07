@@ -23,9 +23,9 @@ contract LoanOfferingVerifier {
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(
-         address[8] addresses,
-         uint[9] values256,
-         uint32[3] values32
+        address[8] addresses,
+        uint[9] values256,
+        uint32[3] values32
     )
         external
         returns (bool _isValid);

@@ -168,7 +168,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     )
         requiresTransferAuthorization
         whenNotPaused
-        public
+        external
     {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }
