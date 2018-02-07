@@ -9,6 +9,7 @@ import { Proxy } from "../../shared/Proxy.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
+import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**
@@ -78,7 +79,7 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[12] addresses,
+        address[13] addresses,
         uint[17] values256,
         uint32[3] values32,
         uint8[2] sigV,
@@ -132,6 +133,12 @@ library ShortImpl {
         );
 
         // EXTERNAL CALLS
+
+        // If the lender is a smart contract, call out to it to get its consent for this loan
+        // This is done after other validations/state updates as it is an external call
+        // NOTE: The short will exist in the Repo for this call
+        //       (possible other contract calls back into ShortSell)
+        getConsentIfSmartContractLender(transaction, shortId);
 
         // Transfer tokens
         transferTokensForShort(
@@ -248,12 +255,38 @@ library ShortImpl {
         pure
         returns (bool _isValid)
     {
-        return loanOffering.lender == ecrecover(
+        address recoveredSigner = ecrecover(
             keccak256("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
             loanOffering.signature.v,
             loanOffering.signature.r,
             loanOffering.signature.s
         );
+
+        // If the signer field is 0, then the lender should have signed it
+        if (loanOffering.signer == address(0)) {
+            return loanOffering.lender == recoveredSigner;
+        } else {
+            // Otherwise the signer should have signed it
+            return loanOffering.signer == recoveredSigner;
+        }
+    }
+
+    function getConsentIfSmartContractLender(
+        ShortTx transaction,
+        bytes32 shortId
+    )
+        internal
+    {
+        if (transaction.loanOffering.signer != address(0)) {
+            require(
+                LoanOfferingVerifier(transaction.loanOffering.lender).verifyLoanOffering(
+                    getLoanOfferingAddresses(transaction),
+                    getLoanOfferingValues256(transaction),
+                    getLoanOfferingValues32(transaction),
+                    shortId
+                )
+            );
+        }
     }
 
     function transferTokensForShort(
@@ -444,7 +477,7 @@ library ShortImpl {
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[12] addresses,
+        address[13] addresses,
         uint[17] values,
         uint32[3] values32,
         uint8[2] sigV,
@@ -478,7 +511,7 @@ library ShortImpl {
     }
 
     function parseLoanOffering(
-        address[12] addresses,
+        address[13] addresses,
         uint[17] values,
         uint32[3] values32,
         uint8[2] sigV,
@@ -490,10 +523,11 @@ library ShortImpl {
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[2],
-            taker: addresses[3],
-            feeRecipient: addresses[4],
-            lenderFeeToken: addresses[5],
-            takerFeeToken: addresses[6],
+            signer: addresses[3],
+            taker: addresses[4],
+            feeRecipient: addresses[5],
+            lenderFeeToken: addresses[6],
+            takerFeeToken: addresses[7],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             lockoutTime: values32[0],
@@ -551,7 +585,7 @@ library ShortImpl {
     }
 
     function parseBuyOrder(
-        address[12] addresses,
+        address[13] addresses,
         uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -561,11 +595,11 @@ library ShortImpl {
         returns (BuyOrder _buyOrder)
     {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[7],
-            taker: addresses[8],
-            feeRecipient: addresses[9],
-            makerFeeToken: addresses[10],
-            takerFeeToken: addresses[11],
+            maker: addresses[8],
+            taker: addresses[9],
+            feeRecipient: addresses[10],
+            makerFeeToken: addresses[11],
+            takerFeeToken: addresses[12],
             baseTokenAmount: values[9],
             underlyingTokenAmount: values[10],
             makerFee: values[11],
@@ -593,5 +627,58 @@ library ShortImpl {
         });
 
         return signature;
+    }
+
+    function getLoanOfferingAddresses(
+        ShortTx transaction
+    )
+        internal
+        pure
+        returns (address[8] _addresses)
+    {
+        return [
+            transaction.underlyingToken,
+            transaction.baseToken,
+            transaction.loanOffering.lender,
+            transaction.loanOffering.signer,
+            transaction.loanOffering.taker,
+            transaction.loanOffering.feeRecipient,
+            transaction.loanOffering.lenderFeeToken,
+            transaction.loanOffering.takerFeeToken
+        ];
+    }
+
+    function getLoanOfferingValues256(
+        ShortTx transaction
+    )
+        internal
+        pure
+        returns (uint[9] _values)
+    {
+        return [
+            transaction.loanOffering.rates.minimumDeposit,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.minAmount,
+            transaction.loanOffering.rates.minimumSellAmount,
+            transaction.loanOffering.rates.interestRate,
+            transaction.loanOffering.rates.lenderFee,
+            transaction.loanOffering.rates.takerFee,
+            transaction.loanOffering.expirationTimestamp,
+            transaction.loanOffering.salt
+        ];
+    }
+
+    function getLoanOfferingValues32(
+        ShortTx transaction
+    )
+        internal
+        pure
+        returns (uint32[3] _values)
+    {
+        return [
+            transaction.loanOffering.lockoutTime,
+            transaction.loanOffering.callTimeLimit,
+            transaction.loanOffering.maxDuration
+        ];
     }
 }

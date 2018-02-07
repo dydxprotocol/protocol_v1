@@ -73,6 +73,7 @@ function callShort(shortSell, tx) {
     UnderlyingToken.address,
     BaseToken.address,
     tx.loanOffering.lender,
+    tx.loanOffering.signer,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
@@ -266,6 +267,7 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     UnderlyingToken.address,
     BaseToken.address,
     loanOffering.lender,
+    loanOffering.signer,
     loanOffering.taker,
     loanOffering.feeRecipient,
     FeeToken.address,
@@ -370,6 +372,7 @@ async function createSigned0xBuyOrder(accounts) {
 async function createLoanOffering(accounts) {
   let loanOffering = {
     lender: accounts[1],
+    signer: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
     feeRecipient: accounts[3],
     lenderFeeTokenAddress: FeeToken.address,
@@ -415,6 +418,7 @@ async function signLoanOffering(loanOffering) {
     UnderlyingToken.address,
     BaseToken.address,
     loanOffering.lender,
+    loanOffering.signer,
     loanOffering.taker,
     loanOffering.feeRecipient,
     loanOffering.lenderFeeTokenAddress,
@@ -424,8 +428,11 @@ async function signLoanOffering(loanOffering) {
 
   loanOffering.loanHash = hash;
 
+  const signer = loanOffering.signer === ZeroEx.NULL_ADDRESS
+    ? loanOffering.lender : loanOffering.signer;
+
   const signature = await promisify(web3Instance.eth.sign)(
-    hash, loanOffering.lender
+    hash, signer
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);

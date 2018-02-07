@@ -46,91 +46,127 @@ function maybeDeploy0x(deployer, network) {
   return Promise.resolve(true);
 }
 
-module.exports = (deployer, network, addresses) => {
-  return maybeDeployTestTokens(deployer, network)
-    .then(() => maybeDeploy0x(deployer, network))
-    .then(() => deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR))
-    .then(() => deployer.deploy(Exchange, ProxyContract.address))
-    .then(() => deployer.deploy(
+async function deployShortSellContracts(deployer) {
+  await Promise.all([
+    deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR),
+    deployer.deploy(
+      ShortSellRepo,
+      ONE_DAY,
+      ONE_HOUR,
+    ),
+    deployer.deploy(
+      ShortSellAuctionRepo,
+      ONE_DAY,
+      ONE_HOUR,
+    ),
+    deployer.deploy(ShortImpl),
+    deployer.deploy(CloseShortImpl),
+    deployer.deploy(ForceRecoverLoanImpl),
+    deployer.deploy(LoanImpl),
+    deployer.deploy(PlaceSellbackBidImpl)
+  ]);
+
+  // Link ShortSell function libraries
+  await Promise.all([
+    ShortSell.link('ShortImpl', ShortImpl.address),
+    ShortSell.link('CloseShortImpl', CloseShortImpl.address),
+    ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
+    ShortSell.link('LoanImpl', LoanImpl.address),
+    ShortSell.link('PlaceSellbackBidImpl', PlaceSellbackBidImpl.address)
+  ]);
+
+  await Promise.all([
+    deployer.deploy(Exchange, ProxyContract.address),
+    deployer.deploy(
       Vault,
       ProxyContract.address,
       ONE_DAY,
       ONE_HOUR,
       ONE_DAY,
       ONE_DAY
-    ))
-    .then(() => deployer.deploy(
-      Trader,
-      Exchange.address,
-      ZeroExExchange.address,
-      Vault.address,
-      ProxyContract.address,
-      ZeroExProxy.address,
-      '0x0000000000000000000000000000010',
-      ONE_DAY,
-      ONE_HOUR,
-      ONE_DAY,
-      ONE_DAY
-    ))
-    .then(() => deployer.deploy(
-      ShortSellRepo,
-      ONE_DAY,
-      ONE_HOUR,
-    ))
-    .then(() => deployer.deploy(
-      ShortSellAuctionRepo,
-      ONE_DAY,
-      ONE_HOUR,
-    ))
-    .then(() => deployer.deploy(ShortImpl))
-    .then(() => ShortSell.link('ShortImpl', ShortImpl.address))
-    .then(() => deployer.deploy(CloseShortImpl))
-    .then(() => ShortSell.link('CloseShortImpl', CloseShortImpl.address))
-    .then(() => deployer.deploy(ForceRecoverLoanImpl))
-    .then(() => ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address))
-    .then(() => deployer.deploy(LoanImpl))
-    .then(() => ShortSell.link('LoanImpl', LoanImpl.address))
-    .then(() => deployer.deploy(PlaceSellbackBidImpl))
-    .then(() => ShortSell.link('PlaceSellbackBidImpl', PlaceSellbackBidImpl.address))
-    .then(() => deployer.deploy(
-      ShortSell,
-      Vault.address,
-      ShortSellRepo.address,
-      ShortSellAuctionRepo.address,
-      Trader.address,
-      ProxyContract.address,
-      ONE_DAY,
-      ONE_DAY
-    ))
-    .then(() => ProxyContract.deployed())
-    .then(proxy => {
-      proxy.grantAccess(addresses[0]);
-      return proxy;
-    })
-    .then(proxy => Promise.all([
-      proxy.grantTransferAuthorization(Vault.address),
-      proxy.grantTransferAuthorization(Exchange.address),
-      proxy.grantTransferAuthorization(Trader.address),
-      proxy.grantTransferAuthorization(ShortSell.address),
-    ]))
-    .then(() => Vault.deployed())
-    .then(vault => Promise.all([
-      vault.grantAccess(ShortSell.address),
-      vault.grantAccess(Trader.address)
-    ]))
-    .then(() => ShortSellRepo.deployed())
-    .then(repo => repo.grantAccess(ShortSell.address))
-    .then(() => ShortSellAuctionRepo.deployed())
-    .then(repo => repo.grantAccess(ShortSell.address))
-    .then(() => Trader.deployed())
-    .then(trader => trader.grantAccess(ShortSell.address))
-    .then(() => deployer.deploy(
-      TokenizedShortCreator,
-      ShortSell.address,
-      ProxyContract.address,
-      ONE_DAY,
-      ONE_DAY
-    ))
-    .then(() => ProxyContract.deployed() )
-    .then( proxy => proxy.grantAccess(TokenizedShortCreator.address) );
+    )
+  ]);
+  await deployer.deploy(
+    Trader,
+    Exchange.address,
+    ZeroExExchange.address,
+    Vault.address,
+    ProxyContract.address,
+    ZeroExProxy.address,
+    '0x0000000000000000000000000000010',
+    ONE_DAY,
+    ONE_HOUR,
+    ONE_DAY,
+    ONE_DAY
+  );
+
+  await deployer.deploy(
+    ShortSell,
+    Vault.address,
+    ShortSellRepo.address,
+    ShortSellAuctionRepo.address,
+    Trader.address,
+    ProxyContract.address,
+    ONE_DAY,
+    ONE_DAY
+  );
+
+  await deployer.deploy(
+    TokenizedShortCreator,
+    ShortSell.address,
+    ProxyContract.address,
+    ONE_DAY,
+    ONE_DAY
+  );
+}
+
+async function authorizeOnProxy() {
+  const proxy = await ProxyContract.deployed();
+  await Promise.all([
+    proxy.ownerGrantTransferAuthorization(Vault.address),
+    proxy.ownerGrantTransferAuthorization(Exchange.address),
+    proxy.ownerGrantTransferAuthorization(Trader.address),
+    proxy.ownerGrantTransferAuthorization(ShortSell.address),
+    proxy.grantAccess(TokenizedShortCreator.address)
+  ]);
+}
+
+async function grantAccessToVault() {
+  const vault = await Vault.deployed();
+  return Promise.all([
+    vault.grantAccess(ShortSell.address),
+    vault.grantAccess(Trader.address)
+  ]);
+}
+
+async function grantAccessToRepo() {
+  const repo = await ShortSellRepo.deployed();
+  return repo.grantAccess(ShortSell.address);
+}
+
+async function grantAccessToAuctionRepo() {
+  const auctionRepo = await ShortSellAuctionRepo.deployed();
+  return auctionRepo.grantAccess(ShortSell.address);
+}
+
+async function grantAccessToTrader() {
+  const trader = await Trader.deployed();
+  return trader.grantAccess(ShortSell.address);
+}
+
+async function doMigration(deployer, network) {
+  await maybeDeployTestTokens(deployer, network);
+  await maybeDeploy0x(deployer, network);
+  await deployShortSellContracts(deployer);
+  await Promise.all([
+    authorizeOnProxy(),
+    grantAccessToVault(),
+    grantAccessToRepo(),
+    grantAccessToAuctionRepo(),
+    grantAccessToTrader()
+  ]);
+}
+
+module.exports = (deployer, network, _addresses) => {
+  deployer.then(() => doMigration(deployer, network));
 };

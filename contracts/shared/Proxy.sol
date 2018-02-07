@@ -3,6 +3,7 @@ pragma solidity 0.4.19;
 import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { AccessControlled } from "../lib/AccessControlled.sol";
 
@@ -14,6 +15,8 @@ import { AccessControlled } from "../lib/AccessControlled.sol";
  * Used to transfer tokens between addresses which have set allowance on this contract
  */
 contract Proxy is AccessControlled, NoOwner, Pausable {
+    using SafeMath for uint;
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -24,19 +27,22 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
      * transfer authorized addresses
      */
     mapping(address => bool) public transferAuthorized;
+    mapping(address => uint256) public pendingTransferAuthorizations;
 
     // ------------------------
     // -------- Events --------
     // ------------------------
 
     event TransferAuthorization(
-        address who,
-        uint timestamp
+        address who
+    );
+
+    event PendingTransferAuthorization(
+        address who
     );
 
     event TransferDeauthorization(
-        address who,
-        uint timestamp
+        address who
     );
 
     // -------------------------
@@ -75,8 +81,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             transferAuthorized[who] = true;
 
             TransferAuthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }
@@ -92,8 +97,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             delete transferAuthorized[who];
 
             TransferDeauthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }
@@ -101,6 +105,42 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     // ---------------------------------------------
     // ---- Owner Only State Changing Functions ----
     // ---------------------------------------------
+
+    function ownerGrantTransferAuthorization(
+        address who
+    )
+        onlyOwner
+        external
+    {
+        if (block.timestamp < gracePeriodExpiration) {
+            transferAuthorized[who] = true;
+
+            TransferAuthorization(
+                who
+            );
+        } else {
+            pendingTransferAuthorizations[who] = block.timestamp.add(accessDelay);
+
+            PendingTransferAuthorization(
+                who
+            );
+        }
+    }
+
+    function ownerConfirmTransferAuthorization(
+        address who
+    )
+        onlyOwner
+        external
+    {
+        require(pendingTransferAuthorizations[who] != 0);
+        require(block.timestamp >= pendingTransferAuthorizations[who]);
+        transferAuthorized[who] = true;
+        delete pendingTransferAuthorizations[who];
+        TransferAuthorization(
+            who
+        );
+    }
 
     function ownerRevokeTransferAuthorization(
         address who
@@ -112,8 +152,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
             delete transferAuthorized[who];
 
             TransferDeauthorization(
-                who,
-                block.timestamp
+                who
             );
         }
     }
@@ -129,7 +168,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     )
         requiresTransferAuthorization
         whenNotPaused
-        public
+        external
     {
         require(ERC20(token).transferFrom(from, msg.sender, value));
     }

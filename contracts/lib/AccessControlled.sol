@@ -28,21 +28,15 @@ contract AccessControlled is Ownable {
     // ------------------------
 
     event AccessGranted(
-        address thisAddress,
-        address who,
-        uint timestamp
+        address who
     );
 
     event AccessRevoked(
-        address thisAddress,
-        address who,
-        uint timestamp
+        address who
     );
 
     event AccessRequested(
-        address thisAddress,
-        address who,
-        uint timestamp
+        address who
     );
 
     // -------------------------
@@ -77,13 +71,13 @@ contract AccessControlled is Ownable {
         address who
     )
         onlyOwner
-        public
+        external
     {
         if (block.timestamp < gracePeriodExpiration) {
-            AccessGranted(address(this), who, block.timestamp);
+            AccessGranted(who);
             authorized[who] = true;
         } else {
-            AccessRequested(address(this), who, block.timestamp);
+            AccessRequested(who);
             pendingAuthorizations[who] = block.timestamp.add(accessDelay);
         }
     }
@@ -92,23 +86,23 @@ contract AccessControlled is Ownable {
         address who
     )
         onlyOwner
-        public
+        external
     {
         require(pendingAuthorizations[who] != 0);
         require(block.timestamp >= pendingAuthorizations[who]);
         authorized[who] = true;
         delete pendingAuthorizations[who];
-        AccessGranted(address(this), who, block.timestamp);
+        AccessGranted(who);
     }
 
     function revokeAccess(
         address who
     )
         onlyOwner
-        public
+        external
     {
         authorized[who] = false;
         delete pendingAuthorizations[who];
-        AccessRevoked(address(this), who, block.timestamp);
+        AccessRevoked(who);
     }
 }
