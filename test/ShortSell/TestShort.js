@@ -1,4 +1,4 @@
-/*global artifacts, web3, contract, describe, it*/
+/*global artifacts, web3, contract, describe, it, before, beforeEach*/
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -28,6 +28,38 @@ const {
   signLoanOffering,
   callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
+
+contract('TokenizedShort', function(accounts) {
+  before();
+
+  beforeEach();
+
+  describe('Constructor', () => {
+    beforeEach();
+
+    it('sets constrants correctly', async () => {
+      const [
+
+      ] = await
+    })
+  });
+
+  describe('#redeemDirectly', () => {
+    beforeEach();
+  });
+
+  describe('#redeem', () => {
+    beforeEach();
+  });
+
+  describe('#claimPayout', () => {
+    beforeEach();
+  });
+
+  describe('#decimals', () => {
+    beforeEach();
+  });
+});
 
 describe('#short', () => {
   contract('ShortSell', function(accounts) {
