@@ -43,7 +43,7 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
         SHORT_SELL = _shortSell;
     }
 
-    // If changed, the new proxy needs to grant access
+    // If changed, the new proxy will need to grant access to this contract
     function updateProxy(address _proxy)
         onlyOwner // Must come before delayedAddressUpdate
         delayedAddressUpdate("PROXY", _proxy)

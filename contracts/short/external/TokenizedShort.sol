@@ -179,27 +179,6 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         return baseTokenPayout;
     }
 
-    /**
-     * Close out part or all of a short order
-     *
-     * @param value  Amount of short to close
-     * @param  orderAddresses  Addresses corresponding to:
-     *  [0] = buy order maker
-     *  [1] = buy order taker
-     *  [2] = buy order fee recipient
-     *  [3] = buy order maker fee token
-     *  [4] = buy order taker fee token
-     * @param  orderValues  Values corresponding to:
-     *  [0]  = buy order base token amount
-     *  [1] = buy order underlying token amount
-     *  [2] = buy order maker fee
-     *  [3] = buy order taker fee
-     *  [4] = buy order expiration timestamp (in seconds)
-     *  [5] = buy order salt
-     * @param  orderV  ECDSA v parameters for buy order
-     * @param  orderR  CDSA r and s parameters for buy order
-     * @return _payout TODO
-     */
     function redeem(
         uint value,
         address[5] orderAddresses,
