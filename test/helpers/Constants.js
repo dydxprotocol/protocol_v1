@@ -15,8 +15,8 @@ module.exports = {
     '0x06012c8cf97bead5deae237070f9587f8e7a2666',
     '0x06012c8cf97bead5deae237070f9587f8e7a2667',
   ],
-  BIGNUMBER: {
+  BIGNUMBERS: {
     ZERO: new BigNumber(0),
-  ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24)
+    ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24)
   }
 };

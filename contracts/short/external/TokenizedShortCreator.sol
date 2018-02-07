@@ -18,7 +18,7 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
     address public PROXY;
 
     // ------------------------
-    // ------ Functions -------
+    // ------ Constructor -----
     // ------------------------
 
     function TokenizedShortCreator(
@@ -34,6 +34,10 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
         SHORT_SELL = _shortSell;
         PROXY = _proxy;
     }
+
+    // -----------------------------
+    // ------ Public functions -----
+    // -----------------------------
 
     function updateShortSell(address _shortSell)
         onlyOwner // Must come before delayedAddressUpdate

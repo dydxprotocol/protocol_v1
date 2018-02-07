@@ -2,7 +2,6 @@
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
-const Web3 = require('web3');
 
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const TokenizedShort = artifacts.require("TokenizedShort");
@@ -13,14 +12,7 @@ const { wait } = require('@digix/tempo')(web3);
 const { zeroAddr, BIGNUMBERS } = require('../helpers/Constants');
 const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
-
-const web3Instance = new Web3(web3.currentProvider);
-
-const {
-  createShortSellTx,
-  issueTokensAndSetAllowancesForShort,
-  callShort,
-} = require('../helpers/ShortSellHelper');
+const { doShort } = require('../helpers/ShortSellHelper');
 
 contract('TokenizedShortCreator', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -30,9 +22,7 @@ contract('TokenizedShortCreator', function(accounts) {
 
   before('create a short', async () => {
     shortSellContract = await ShortSell.deployed();
-    shortTx = await createShortSellTx(accounts);
-    await issueTokensAndSetAllowancesForShort(shortTx);
-    await callShort(shortSellContract, shortTx);
+    shortTx = await doShort(accounts);
   });
 
   beforeEach('set up TokenizedShortCreator contract', async () => {
@@ -57,7 +47,7 @@ contract('TokenizedShortCreator', function(accounts) {
   });
 
   describe('#updateShortSell', () => {
-    const newAddress = accounts[3];
+    const newAddress = accounts[7];
 
     it('allows owner to update the SHORT_SELL field after a delay', async () => {
       await tokenizedShortCreatorContract.updateShortSell(newAddress);
@@ -84,7 +74,8 @@ contract('TokenizedShortCreator', function(accounts) {
   });
 
   describe('#updateProxy', () => {
-    const newAddress = accounts[3];
+    const newAddress = accounts[7];
+    console.log(accounts);
 
     it('allows owner to update the PROXY field after a delay', async () => {
       await tokenizedShortCreatorContract.updateProxy(newAddress);
@@ -113,9 +104,8 @@ contract('TokenizedShortCreator', function(accounts) {
   describe('#tokenizeShort', () => {
     const name = "Name";
     const symbol = "NAM";
-    const initialTokenHolder = accounts[1];
-    const creator = accounts[2];
-    const shortId = shortTx.id;
+    const initialTokenHolder = accounts[9];
+    const transactionSender = accounts[8];
 
     it('succeeds for arbitrary caller', async () => {
       await proxyContract.grantAccess(tokenizedShortCreatorContract.address);
@@ -123,9 +113,9 @@ contract('TokenizedShortCreator', function(accounts) {
       // Get the return value of the tokenizeShort function by first using call()
       const tokenAddress =
         await tokenizedShortCreatorContract.tokenizeShort.call(
-          initialTokenHolder, shortId, name, symbol, { from: creator });
+          initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
       await tokenizedShortCreatorContract.tokenizeShort(
-        initialTokenHolder, shortId, name, symbol, { from: creator });
+        initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
 
       // Get the TokenizedShort on the blockchain and make sure that it was created correctly
       const shortTokenContract = await TokenizedShort.at(tokenAddress);
@@ -155,7 +145,7 @@ contract('TokenizedShortCreator', function(accounts) {
 
       expect(tokenShortSell).to.equal(shortSellContract.address);
       expect(tokenProxy).to.equal(proxyContract.address);
-      expect(tokenShortId).to.equal(shortId);
+      expect(tokenShortId).to.equal(shortTx.id);
       expect(tokenState.equals(BIGNUMBERS.ZERO)).to.be.true;  // UNINITIALIZED
       expect(tokenName).to.equal(name);
       expect(tokenSymbol).to.equal(symbol);
@@ -167,7 +157,7 @@ contract('TokenizedShortCreator', function(accounts) {
 
     it('fails when proxy has not granted access to TokenizedShortCreator', async () => {
       await expectThrow(() => tokenizedShortCreatorContract.tokenizeShort(
-        initialTokenHolder, shortId, name, symbol, { from: creator }));
+        initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender }));
     });
   });
 });
