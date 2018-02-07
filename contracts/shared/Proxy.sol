@@ -3,6 +3,7 @@ pragma solidity 0.4.19;
 import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { AccessControlled } from "../lib/AccessControlled.sol";
 
@@ -14,6 +15,8 @@ import { AccessControlled } from "../lib/AccessControlled.sol";
  * Used to transfer tokens between addresses which have set allowance on this contract
  */
 contract Proxy is AccessControlled, NoOwner, Pausable {
+    using SafeMath for uint;
+
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -116,7 +119,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
                 who
             );
         } else {
-            pendingTransferAuthorizations[who] = add(block.timestamp, accessDelay);
+            pendingTransferAuthorizations[who] = block.timestamp.add(accessDelay);
 
             PendingTransferAuthorization(
                 who

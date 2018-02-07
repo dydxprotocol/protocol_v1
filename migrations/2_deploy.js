@@ -99,7 +99,6 @@ async function deployShortSellContracts(deployer) {
     ONE_DAY,
     ONE_DAY
   );
-  console.log('3')
 
   // TODO this fails - over gas limit
   await deployer.deploy(
@@ -113,7 +112,6 @@ async function deployShortSellContracts(deployer) {
     ONE_DAY
   );
 
-  console.log('B')
   await deployer.deploy(
     TokenizedShortCreator,
     ShortSell.address,
