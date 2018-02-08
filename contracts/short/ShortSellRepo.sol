@@ -2,7 +2,7 @@ pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { AccessControlled } from "../lib/AccessControlled.sol";
-
+import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 
 /**
  * @title ShortSellRepo
@@ -11,31 +11,13 @@ import { AccessControlled } from "../lib/AccessControlled.sol";
  * This contract is used to store state for short sells
  */
 contract ShortSellRepo is AccessControlled, NoOwner {
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
-
-    struct Short {
-        uint shortAmount;
-        uint closedAmount;
-        uint interestRate;
-        address underlyingToken;    // Immutable
-        address baseToken;          // Immutable
-        address lender;
-        address seller;
-        uint32 startTimestamp;      // Immutable, Cannot be 0
-        uint32 callTimestamp;
-        uint32 callTimeLimit;
-        uint32 lockoutTime;
-        uint32 maxDuration;
-    }
 
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
 
     // Mapping that contains all short sells. Mapped by: shortId -> Short
-    mapping(bytes32 => Short) public shorts;
+    mapping(bytes32 => ShortSellCommon.Short) public shorts;
     mapping(bytes32 => bool) public closedShorts;
 
     // -------------------------
@@ -73,7 +55,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         require(!containsShort(id));
         require(startTimestamp != 0);
 
-        shorts[id] = Short({
+        shorts[id] = ShortSellCommon.Short({
             underlyingToken: underlyingToken,
             baseToken: baseToken,
             shortAmount: shortAmount,
@@ -261,7 +243,7 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             address seller
         )
     {
-        Short storage short = shorts[id];
+        ShortSellCommon.Short storage short = shorts[id];
 
         return (
             short.underlyingToken,

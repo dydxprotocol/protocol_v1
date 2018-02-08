@@ -22,14 +22,14 @@ library ShortSellCommon {
     // -----------------------
 
     struct Short {
-        address underlyingToken;
-        address baseToken;
+        address underlyingToken; // Immutable
+        address baseToken;       // Immutable
         uint shortAmount;
         uint closedAmount;
         uint interestRate;
         uint32 callTimeLimit;
         uint32 lockoutTime;
-        uint32 startTimestamp;
+        uint32 startTimestamp;   // Immutable, cannot be 0
         uint32 callTimestamp;
         uint32 maxDuration;
         address lender;

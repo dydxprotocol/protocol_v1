@@ -5,6 +5,7 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ShortSell } from "../ShortSell.sol";
+import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -12,25 +13,6 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 contract TokenizedShort is StandardToken, ReentrancyGuard {
     using SafeMath for uint;
-
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
-
-    struct Short {
-        address underlyingToken;
-        address baseToken;
-        uint shortAmount;
-        uint closedAmount;
-        uint interestRate;
-        uint32 callTimeLimit;
-        uint32 lockoutTime;
-        uint32 startTimestamp;
-        uint32 callTimestamp;
-        uint32 maxDuration;
-        address lender;
-        address seller;
-    }
 
     enum State {
         UNINITIALIZED,
@@ -125,7 +107,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         nonReentrant
         external
     {
-        Short memory short = getShortObject();
+        ShortSellCommon.Short memory short = getShortObject();
 
         // The ownership of the short must be transferred to this contract before intialization
         // Once ownership is transferred, there is no way to have this contract transfer it back
@@ -155,7 +137,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         external
         returns (uint _payout)
     {
-        Short memory short = validateAndUpdateStateForRedeem(value);
+        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
 
         // Transfer the share of underlying token from the redeemer to this contract
         Proxy(PROXY).transfer(
@@ -192,7 +174,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         external
         returns (uint _payout)
     {
-        Short memory short = validateAndUpdateStateForRedeem(value);
+        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
 
         // Transfer the taker fee for the order from the redeemer
         address takerFeeToken = orderAddresses[4];
@@ -278,7 +260,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         public
         returns (uint8 _decimals)
     {
-        Short memory short = getShortObject();
+        ShortSellCommon.Short memory short = getShortObject();
         return DetailedERC20(short.underlyingToken).decimals();
     }
 
@@ -290,7 +272,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         uint value
     )
         internal
-        returns (Short _short)
+        returns (ShortSellCommon.Short _short)
     {
         require(value <= balances[msg.sender]);
         require(value > 0);
@@ -302,7 +284,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         // Increment redeemed counter
         redeemed = redeemed.add(value);
 
-        Short memory short = getShortObject();
+        ShortSellCommon.Short memory short = getShortObject();
 
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
@@ -339,7 +321,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     }
 
     function transferTakerFeeForRedeem(
-        Short short,
+        ShortSellCommon.Short short,
         uint value,
         address takerFeeToken,
         uint[6] orderValues
@@ -374,7 +356,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     function getShortObject()
         internal
         view
-        returns (Short _short)
+        returns (ShortSellCommon.Short _short)
     {
         var (
             underlyingToken,
@@ -394,7 +376,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         // This checks that the short exists
         require(startTimestamp != 0);
 
-        return Short({
+        return ShortSellCommon.Short({
             underlyingToken: underlyingToken,
             baseToken: _baseToken,
             shortAmount: shortAmount,
