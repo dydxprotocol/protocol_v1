@@ -1,16 +1,15 @@
-/*global artifacts, contract, describe, it, beforeEach*/
+ADDRESSES.TEST/*global artifacts, contract, describe, it, beforeEach*/
 
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('chai-bignumber')());
+const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
 const ShortSellRepo = artifacts.require("ShortSellRepo");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { ADDRESSES } = require('../helpers/Constants');
-const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
+const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
+const accessDelay =    new BigNumber('1234')
 const gracePeriod =    new BigNumber('12345');
 const id =             '1234567';
 const badId =          '7654321';
@@ -80,12 +79,12 @@ contract('ShortSellRepo', function(accounts) {
   let contract;
 
   beforeEach('create new contracts', async () => {
-    contract = await ShortSellRepo.new(gracePeriod);
+    contract = await ShortSellRepo.new(accessDelay, gracePeriod);
   });
 
   describe('#Constructor', () => {
     it('sets constants correctly', async () => {
-      await validateStaticAccessControlledConstants(contract, gracePeriod);
+      await validateAccessControlledConstants(contract, accessDelay, gracePeriod);
     });
   });
 
@@ -107,8 +106,8 @@ contract('ShortSellRepo', function(accounts) {
       const containsAfter = await contract.containsShort.call(id);
       expect(containsAfter).to.be.true
       const s = await getShort(contract, id);
-      expect(s.shortAmount).to.be.bignumber.equal(shortAmount);
-      expect(s.closedAmount).to.be.bignumber.equal(0);
+      expect(s.shortAmount.equals(shortAmount)).to.be.true;
+      expect(s.closedAmount.equals(0)).to.be.true;
       expect(s.underlyingToken).to.equal(token1Address);
       expect(s.baseToken).to.equal(token2Address);
       expect(s.lender).to.equal(lender1);
@@ -116,6 +115,7 @@ contract('ShortSellRepo', function(accounts) {
       expect(s.startTimestamp).to.be.bignumber.not.equal(0);
       expect(s.callTimestamp).to.be.bignumber.equal(0);
       expect(s.callTimeLimit).to.be.bignumber.equal(callTimeLimit);
+      expect(s.lockoutTime).to.be.bignumber.equal(lockoutTime);
       expect(s.maxDuration).to.be.bignumber.equal(maxDuration);
     });
 
@@ -160,7 +160,7 @@ contract('ShortSellRepo', function(accounts) {
         await contract[functionName](id, valueToSet, { from: accounts[1] });
         const short = await getShort(contract, id);
         if (typeof valueToSet === 'object') { // assume to be BigNumber
-          expect(short[checkingValue]).to.be.bignumber.equal(valueToSet);
+          expect(short[checkingValue].equals(valueToSet)).to.be.true;
         } else { // assume to be string
           expect(short[checkingValue]).to.equal(valueToSet);
         }
@@ -179,6 +179,21 @@ contract('ShortSellRepo', function(accounts) {
 
   describe('#setShortClosedAmount',
     createDescribe('setShortClosedAmount', shortAmount.div(2), 'closedAmount'));
+
+  describe('#setShortAmount',
+    createDescribe('setShortAmount', shortAmount.mul(2), 'shortAmount'));
+
+  describe('#setShortInterestRate',
+    createDescribe('setShortInterestRate', interestRate.mul(2), 'interestRate'));
+
+  describe('#setShortCallTimeLimit',
+    createDescribe('setShortCallTimeLimit', callTimeLimit.mul(2), 'callTimeLimit'));
+
+  describe('#setShortLockoutTime',
+    createDescribe('setShortLockoutTime', lockoutTime.mul(2), 'lockoutTime'));
+
+  describe('#setShortMaxDuration',
+    createDescribe('setShortMaxDuration', maxDuration.mul(2), 'maxDuration'));
 
   // We do this one separately since it should succeed even if the id doesn't match a valid short
   describe('#deleteShort', () => {
@@ -235,6 +250,39 @@ contract('ShortSellRepo', function(accounts) {
       await contract.markShortClosed(id, { from: accounts[1] });
       await contract.markShortClosed(id, { from: accounts[1] });
       await expectShortIsClosed(contract, id, true);
+    });
+  });
+
+  describe('#unmarkShortClosed', () => {
+    beforeEach('grant access to one account and create one short', async () => {
+      await contract.grantAccess(accounts[1]);
+      await createAddShort(contract, id, accounts[1]);
+      await contract.markShortClosed(id, { from: accounts[1] });
+    });
+
+    it('fails for a non-approved account', async () => {
+      await expectShortIsClosed(contract, id, true);
+      await expectThrow(() => contract.unmarkShortClosed(id, { from: accounts[2] }));
+      await expectShortIsClosed(contract, id, true);
+    });
+
+    it('succeeds for non-existing id', async () => {
+      await expectShortIsClosed(contract, badId, false);
+      await contract.unmarkShortClosed(badId, { from: accounts[1] });
+      await expectShortIsClosed(contract, badId, false);
+    });
+
+    it('succeeds for existing id', async () => {
+      await expectShortIsClosed(contract, id, true);
+      await contract.unmarkShortClosed(id, { from: accounts[1] });
+      await expectShortIsClosed(contract, id, false);
+    });
+
+    it('succeeds when called twice', async () => {
+      await expectShortIsClosed(contract, id, true);
+      await contract.unmarkShortClosed(id, { from: accounts[1] });
+      await contract.unmarkShortClosed(id, { from: accounts[1] });
+      await expectShortIsClosed(contract, id, false);
     });
   });
 });

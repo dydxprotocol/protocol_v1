@@ -5,8 +5,6 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ShortSell } from "../ShortSell.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
-import { ShortSellState } from "../impl/ShortSellState.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -14,6 +12,25 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 contract TokenizedShort is StandardToken, ReentrancyGuard {
     using SafeMath for uint;
+
+    // -----------------------
+    // ------- Structs -------
+    // -----------------------
+
+    struct Short {
+        address underlyingToken;
+        address baseToken;
+        uint shortAmount;
+        uint closedAmount;
+        uint interestRate;
+        uint32 callTimeLimit;
+        uint32 lockoutTime;
+        uint32 startTimestamp;
+        uint32 callTimestamp;
+        uint32 maxDuration;
+        address lender;
+        address seller;
+    }
 
     enum State {
         UNINITIALIZED,
@@ -40,9 +57,6 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
 
     // Address of the Proxy contract
     address public PROXY;
-
-    // Address of the Repo contract
-    address public REPO;
 
     // id of the short this contract is tokenizing
     bytes32 public shortId;
@@ -85,7 +99,6 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     function TokenizedShort(
         address _shortSell,
         address _proxy,
-        address _repo,
         address _initialTokenHolder,
         bytes32 _shortId,
         string _name,
@@ -95,7 +108,6 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     {
         SHORT_SELL = _shortSell;
         PROXY = _proxy;
-        REPO = _repo;
         shortId = _shortId;
         state = State.UNINITIALIZED;
         // total supply is 0 before initialization
@@ -108,32 +120,42 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
+    /**
+     * Validates that this contract owns the short in shortId and mints tokens that are given to
+     * initialTokenHolder.
+     */
     function initialize()
         onlyWhileUninitialized
         nonReentrant
         external
     {
-        ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        Short memory short = getShortObject();
 
         // The ownership of the short must be transferred to this contract before intialization
         // Once ownership is transferred, there is no way to have this contract transfer it back
         // to the original short seller. Therefore, the short seller transferring ownership should
         // verify that the initialTokenHolder field is properly set so that they recieve the tokens.
         require(short.seller == address(this));
+        state = State.OPEN;
+
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
+
         require(currentShortAmount > 0);
 
         // Give the specified address the entire balance, equal to the current amount of the short
         balances[initialTokenHolder] = currentShortAmount;
-        totalSupply_ = currentShortAmount;
-        baseToken = short.baseToken;
-        state = State.OPEN;
 
-        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        Transfer(address(0), initialTokenHolder, currentShortAmount);
+        totalSupply_ = currentShortAmount;
+
+        baseToken = short.baseToken;
     }
 
+    /**
+     * [redeemDirectly description]
+     *
+     * @param  value   TODO
+     * @return _payout TODO
+     */
     function redeemDirectly(
         uint value
     )
@@ -142,7 +164,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         external
         returns (uint _payout)
     {
-        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
+        Short memory short = validateAndUpdateStateForRedeem(value);
 
         // Transfer the share of underlying token from the redeemer to this contract
         Proxy(PROXY).transfer(
@@ -166,6 +188,27 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         return baseTokenPayout;
     }
 
+    /**
+     * Close out part or all of a short order
+     *
+     * @param  value           Amount of short to close
+     * @param  orderAddresses  Addresses corresponding to:
+     *  [0] = buy order maker
+     *  [1] = buy order taker
+     *  [2] = buy order fee recipient
+     *  [3] = buy order maker fee token
+     *  [4] = buy order taker fee token
+     * @param  orderValues     Values corresponding to:
+     *  [0]  = buy order base token amount
+     *  [1] = buy order underlying token amount
+     *  [2] = buy order maker fee
+     *  [3] = buy order taker fee
+     *  [4] = buy order expiration timestamp (in seconds)
+     *  [5] = buy order salt
+     * @param  orderV  ECDSA v parameters for buy order
+     * @param  orderR  CDSA r and s parameters for buy order
+     * @return _payout TODO
+     */
     function redeem(
         uint value,
         address[5] orderAddresses,
@@ -179,7 +222,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         external
         returns (uint _payout)
     {
-        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
+        Short memory short = validateAndUpdateStateForRedeem(value);
 
         // Transfer the taker fee for the order from the redeemer
         address takerFeeToken = orderAddresses[4];
@@ -265,8 +308,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         public
         returns (uint8 _decimals)
     {
-        ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
+        Short memory short = getShortObject();
         return DetailedERC20(short.underlyingToken).decimals();
     }
 
@@ -278,7 +320,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         uint value
     )
         internal
-        returns (ShortSellCommon.Short _short)
+        returns (Short _short)
     {
         require(value <= balances[msg.sender]);
         require(value > 0);
@@ -290,8 +332,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         // Increment redeemed counter
         redeemed = redeemed.add(value);
 
-        ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
+        Short memory short = getShortObject();
 
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
@@ -328,7 +369,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     }
 
     function transferTakerFeeForRedeem(
-        ShortSellCommon.Short short,
+        Short short,
         uint value,
         address takerFeeToken,
         uint[6] orderValues
@@ -358,5 +399,44 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
                 takerFee
             );
         }
+    }
+
+    function getShortObject()
+        internal
+        view
+        returns (Short _short)
+    {
+        var (
+            underlyingToken,
+            _baseToken,
+            shortAmount,
+            closedAmount,
+            interestRate,
+            callTimeLimit,
+            lockoutTime,
+            startTimestamp,
+            callTimestamp,
+            maxDuration,
+            lender,
+            seller
+        ) = ShortSell(SHORT_SELL).getShort(shortId);
+
+        // This checks that the short exists
+        require(startTimestamp != 0);
+
+        return Short({
+            underlyingToken: underlyingToken,
+            baseToken: _baseToken,
+            shortAmount: shortAmount,
+            closedAmount: closedAmount,
+            interestRate: interestRate,
+            callTimeLimit: callTimeLimit,
+            lockoutTime: lockoutTime,
+            startTimestamp: startTimestamp,
+            callTimestamp: callTimestamp,
+            maxDuration: maxDuration,
+            lender: lender,
+            seller: seller
+        });
     }
 }
