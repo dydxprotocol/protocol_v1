@@ -9,10 +9,11 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 
 const { wait } = require('@digix/tempo')(web3);
-const { zeroAddr, BIGNUMBERS } = require('../helpers/Constants');
+const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
 const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { doShort } = require('../helpers/ShortSellHelper');
+const { transact } = require('../helpers/ContractHelper');
 
 contract('TokenizedShortCreator', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -109,11 +110,8 @@ contract('TokenizedShortCreator', function(accounts) {
     it('succeeds for arbitrary caller', async () => {
       await proxyContract.grantAccess(tokenizedShortCreatorContract.address);
 
-      // Get the return value of the tokenizeShort function by first using call()
-      const tokenAddress =
-        await tokenizedShortCreatorContract.tokenizeShort.call(
-          initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
-      await tokenizedShortCreatorContract.tokenizeShort(
+      // Get the return value of the tokenizeShort function
+      const tokenAddress = await transact(tokenizedShortCreatorContract.tokenizeShort,
         initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
 
       // Get the TokenizedShort on the blockchain and make sure that it was created correctly
@@ -150,7 +148,7 @@ contract('TokenizedShortCreator', function(accounts) {
       expect(tokenSymbol).to.equal(symbol);
       expect(tokenHolder).to.equal(initialTokenHolder);
       expect(tokenRedeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
-      expect(tokenBaseToken).to.equal(zeroAddr);
+      expect(tokenBaseToken).to.equal(ADDRESSES.ZERO);
       expect(authorized).to.be.true;
     });
 
