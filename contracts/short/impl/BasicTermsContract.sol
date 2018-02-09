@@ -14,8 +14,8 @@ contract BasicTermsContract is TermsContract {
         uint256 amount,
         bytes32 parameters
     )
-        pure
         external
+        pure
         returns (uint256 _interestOwed)
     {
         return 100;
