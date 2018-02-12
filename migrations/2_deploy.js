@@ -125,7 +125,6 @@ async function authorizeOnProxy() {
   await Promise.all([
     proxy.ownerGrantTransferAuthorization(Vault.address),
     proxy.ownerGrantTransferAuthorization(Exchange.address),
-    proxy.ownerGrantTransferAuthorization(Trader.address),
     proxy.ownerGrantTransferAuthorization(ShortSell.address),
     proxy.grantAccess(TokenizedShortCreator.address)
   ]);
