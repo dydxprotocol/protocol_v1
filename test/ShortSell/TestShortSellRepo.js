@@ -1,9 +1,10 @@
-/*global artifacts, contract, describe, it, beforeEach*/
+/*global artifacts, contract, describe, it, before, beforeEach*/
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
 const ShortSellRepo = artifacts.require("ShortSellRepo");
+const LinearTermsContract = artifacts.require("LinearTermsContract");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { testAddrs } = require('../helpers/Constants');
@@ -15,8 +16,9 @@ const id =             '1234567';
 const badId =          '7654321';
 const token1Address =  testAddrs[6];
 const token2Address =  testAddrs[7];
+let termsContract;
 const shortAmount =    new BigNumber('1000');
-const interestRate =   new BigNumber('1');
+const termsParameter = new BigNumber('1');
 const callTimestamp =  new BigNumber('444');
 const callTimeLimit =  new BigNumber('222');
 const lockoutTime =    new BigNumber('333');
@@ -31,15 +33,16 @@ async function createAddShort(shortRepo, shortId, account) {
   await shortRepo.addShort(
     shortId,
     token1Address, // underlyingToken address
-    token2Address, // baseToken address
+    token2Address, // baseToken address,
+    lender1,
+    seller1,
+    termsContract,
     shortAmount,
-    interestRate,
+    termsParameter,
     callTimeLimit,
     lockoutTime,
     startTimestamp,
     maxDuration,
-    lender1,
-    seller1,
     { from: account });
 }
 
@@ -47,30 +50,32 @@ async function getShort(shortRepo, shortId) {
   const [
     underlyingToken,
     baseToken,
+    lender,
+    seller,
+    termsContract,
     shortAmount,
     closedAmount,
-    interestRate,
+    termsParameters,
     callTimeLimit,
     lockoutTime,
     startTimestamp,
     callTimestamp,
-    maxDuration,
-    lender,
-    seller
+    maxDuration
   ] = await shortRepo.getShort.call(shortId);
   return {
     underlyingToken,
     baseToken,
+    lender,
+    seller,
+    termsContract,
     shortAmount,
     closedAmount,
-    interestRate,
+    termsParameters,
     callTimeLimit,
     lockoutTime,
     startTimestamp,
     callTimestamp,
-    maxDuration,
-    lender,
-    seller
+    maxDuration
   };
 }
 
@@ -81,6 +86,10 @@ async function expectShortIsClosed(shortRepo, id, expectClosed) {
 
 contract('ShortSellRepo', function(accounts) {
   let contract;
+
+  before('get LinearTermsContract', async () => {
+    termsContract = await LinearTermsContract.deployed();
+  });
 
   beforeEach('create new contracts', async () => {
     contract = await ShortSellRepo.new(accessDelay, gracePeriod);
@@ -133,14 +142,15 @@ contract('ShortSellRepo', function(accounts) {
         id,
         token1Address,
         token2Address,
+        lender1,
+        seller1,
+        termsContract,
         shortAmount,
-        interestRate,
+        termsParameter,
         callTimeLimit,
         lockoutTime,
         0, /* startTimestamp */
         maxDuration,
-        lender1,
-        seller1,
         { from: accounts[1] }));
     });
   });
@@ -188,8 +198,11 @@ contract('ShortSellRepo', function(accounts) {
   describe('#setShortAmount',
     createDescribe('setShortAmount', shortAmount.mul(2), 'shortAmount'));
 
-  describe('#setShortInterestRate',
-    createDescribe('setShortInterestRate', interestRate.mul(2), 'interestRate'));
+  describe('#setShortTermsContract',
+    createDescribe('setShortTermsContract', accounts[8], 'termsContract'));
+
+  describe('#setShortTermsParameters',
+    createDescribe('setShortTermsParameters', termsParameter.mul(2), 'termsParameters'));
 
   describe('#setShortCallTimeLimit',
     createDescribe('setShortCallTimeLimit', callTimeLimit.mul(2), 'callTimeLimit'));

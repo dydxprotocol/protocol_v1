@@ -66,7 +66,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
         require(block.timestamp >= uint(short.startTimestamp).add(short.lockoutTime));
         // Ensure the loan has not already been called
@@ -91,7 +91,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
@@ -128,7 +128,7 @@ library LoanImpl {
             values32
         );
 
-        require(loanOffering.s == msg.sender);
+        require(loanOffering.lender == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
         uint remainingAmount = loanOffering.rates.maxAmount.sub(

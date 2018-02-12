@@ -7,6 +7,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { TermsContract } from "../interfaces/TermsContract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -147,7 +148,20 @@ library CloseShortImpl {
 
         // STATE UPDATES
         updateStateForCloseShort(state, transaction);
-        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
+        uint interestFee = TermsContract(transaction.short.termsContract).calculateInterestFee(
+            transaction.short.startTimestamp,
+            block.timestamp,
+            transaction.closeAmount,
+            transaction.short.shortAmount,
+            transaction.short.termsParameters
+        );
+
+        bytes32 closeId = ShortSellCommon.transferToCloseVault(
+            state,
+            transaction.short,
+            transaction.shortId,
+            transaction.closeAmount
+        );
 
         // EXTERNAL CALLS
         Vault(state. VAULT).transferToVault(
@@ -221,31 +235,6 @@ library CloseShortImpl {
         }
     }
 
-    function getInterestFeeAndTransferToCloseVault(
-        ShortSellState.State storage state,
-        CloseShortTx transaction
-    )
-        internal
-        returns (
-            uint _interestFee,
-            bytes32 _closeId
-        )
-    {
-        return (
-            ShortSellCommon.calculateInterestFee(
-                transaction.short,
-                transaction.closeAmount,
-                block.timestamp
-            ),
-            ShortSellCommon.transferToCloseVault(
-                state,
-                transaction.short,
-                transaction.shortId,
-                transaction.closeAmount
-            )
-        );
-    }
-
     function buybackAndSendOnClose(
         ShortSellState.State storage state,
         CloseShortTx transaction,
@@ -262,8 +251,20 @@ library CloseShortImpl {
         // this is the maximum base token that can be used by this close
         // Prefer to use a new vault, so this close cannot touch the rest of the
         // funds held in the original short vault
+        uint interestFee = TermsContract(transaction.short.termsContract).calculateInterestFee(
+            transaction.short.startTimestamp,
+            block.timestamp,
+            transaction.closeAmount,
+            transaction.short.shortAmount,
+            transaction.short.termsParameters
+        );
 
-        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
+        bytes32 closeId = ShortSellCommon.transferToCloseVault(
+            state,
+            transaction.short,
+            transaction.shortId,
+            transaction.closeAmount
+        );
 
         uint buybackCost = buyBackUnderlyingToken(
             state,
@@ -507,7 +508,7 @@ library CloseShortImpl {
         view
         returns (CloseShortTx _tx)
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
         return CloseShortTx({
             short: short,

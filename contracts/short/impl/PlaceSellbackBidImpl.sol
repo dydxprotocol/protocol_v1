@@ -5,6 +5,7 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { Vault } from "../Vault.sol";
+import { TermsContract } from "../interfaces/TermsContract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -43,7 +44,7 @@ library PlaceSellbackBidImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 
         var (currentOffer, currentBidder, hasCurrentOffer) =
             ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
@@ -119,10 +120,12 @@ library PlaceSellbackBidImpl {
         }
 
         // Maximum interest fee is what it would be if the entire call time limit elapsed
-        uint maxInterestFee = ShortSellCommon.calculateInterestFee(
-            short,
+        uint maxInterestFee = TermsContract(short.termsContract).calculateInterestFee(
+            short.startTimestamp,
+            closePeriodStart.add(short.callTimeLimit),
             short.shortAmount,
-            closePeriodStart.add(short.callTimeLimit)
+            short.shortAmount,
+            short.termsParameters
         );
 
         // The offered amount must be less than the initia amount of

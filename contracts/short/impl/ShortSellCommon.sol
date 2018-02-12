@@ -5,6 +5,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
+import { TermsContract } from "../interfaces/TermsContract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -26,7 +27,7 @@ library ShortSellCommon {
         address baseToken;       // Immutable
         uint shortAmount;
         uint closedAmount;
-        uint interestRate;
+        uint termsParameters;
         uint32 callTimeLimit;
         uint32 lockoutTime;
         uint32 startTimestamp;   // Immutable, cannot be 0
@@ -34,6 +35,7 @@ library ShortSellCommon {
         uint32 maxDuration;
         address lender;
         address seller;
+        address termsContract;
     }
 
     struct LoanOffering {
@@ -43,12 +45,14 @@ library ShortSellCommon {
         address feeRecipient;
         address lenderFeeToken;
         address takerFeeToken;
+        address termsContract;
         LoanRates rates;
         uint expirationTimestamp;
         uint32 lockoutTime;
         uint32 callTimeLimit;
         uint32 maxDuration;
         uint salt;
+        uint termsParameters;
         bytes32 loanHash;
         Signature signature;
     }
@@ -58,7 +62,6 @@ library ShortSellCommon {
         uint minimumSellAmount;
         uint maxAmount;
         uint minAmount;
-        uint interestRate;
         uint lenderFee;
         uint takerFee;
     }
@@ -162,27 +165,6 @@ library ShortSellCommon {
         return keccak256(shortId, "AUCTION_VAULT");
     }
 
-    function calculateInterestFee(
-        Short short,
-        uint closeAmount,
-        uint endTimestamp
-    )
-        internal
-        pure
-        returns (uint _interestFee)
-    {
-        // The interest rate for the proportion of the position being closed
-        uint interestRate = MathHelpers.getPartialAmount(
-            closeAmount,
-            short.shortAmount,
-            short.interestRate
-        );
-
-        uint timeElapsed = endTimestamp.sub(short.startTimestamp);
-        // TODO implement more complex interest rates
-        return MathHelpers.getPartialAmount(timeElapsed, 1 days, interestRate);
-    }
-
     function getLoanOfferingHash(
         LoanOffering loanOffering,
         address baseToken,
@@ -218,7 +200,6 @@ library ShortSellCommon {
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
             loanOffering.rates.minimumSellAmount,
-            loanOffering.rates.interestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,
@@ -247,7 +228,7 @@ library ShortSellCommon {
     // -------- Parsing Functions -------
 
     function getShortObject(
-        ShortSellState.State storage state,
+        address repo,
         bytes32 shortId
     )
         internal
@@ -255,36 +236,28 @@ library ShortSellCommon {
         returns (Short _short)
     {
         var (
-            underlyingToken,
-            baseToken,
-            shortAmount,
-            closedAmount,
-            interestRate,
-            callTimeLimit,
-            lockoutTime,
-            startTimestamp,
-            callTimestamp,
-            maxDuration,
-            lender,
-            seller
-        ) =  ShortSellRepo(state.REPO).getShort(shortId);
+            addresses,
+            values256,
+            values32
+        ) =  ShortSellRepo(repo).getShort(shortId);
 
         // This checks that the short exists
-        require(startTimestamp != 0);
+        require(values32[2] != 0); // startTimestamp is not zero
 
         return Short({
-            underlyingToken: underlyingToken,
-            baseToken: baseToken,
-            shortAmount: shortAmount,
-            closedAmount: closedAmount,
-            interestRate: interestRate,
-            callTimeLimit: callTimeLimit,
-            lockoutTime: lockoutTime,
-            startTimestamp: startTimestamp,
-            callTimestamp: callTimestamp,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
+            underlyingToken: addresses[0],
+            baseToken:       addresses[1],
+            lender:          addresses[2],
+            seller:          addresses[3],
+            termsContract:   addresses[4],
+            shortAmount:     values256[0],
+            closedAmount:    values256[1],
+            termsParameters: values256[2],
+            callTimeLimit:   values32[0],
+            lockoutTime:     values32[1],
+            startTimestamp:  values32[2],
+            callTimestamp:   values32[3],
+            maxDuration:     values32[4]
         });
     }
 }

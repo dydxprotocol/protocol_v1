@@ -15,7 +15,7 @@ contract SmartContractLender {
     }
 
     function verifyLoanOffering(
-        address[8],
+        address[9],
         uint[9],
         uint32[3],
         bytes32

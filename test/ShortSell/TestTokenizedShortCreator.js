@@ -30,7 +30,6 @@ contract('TokenizedShortCreator', function(accounts) {
     proxyContract = await ProxyContract.new(delay, gracePeriod);
     tokenizedShortCreatorContract = await TokenizedShortCreator.new(
       shortSellContract.address,
-      proxyContract.address,
       updateDelay,
       updateExpiration);
   });
@@ -110,8 +109,11 @@ contract('TokenizedShortCreator', function(accounts) {
     it('succeeds for arbitrary caller', async () => {
       await proxyContract.grantAccess(tokenizedShortCreatorContract.address);
 
-      // Get the return value of the tokenizeShort function
-      const tokenAddress = await transact(tokenizedShortCreatorContract.tokenizeShort,
+      // Get the return value of the tokenizeShort function by first using call()
+      const tokenAddress =
+        await tokenizedShortCreatorContract.tokenizeShort.call(
+          initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
+      await tokenizedShortCreatorContract.tokenizeShort(
         initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
 
       // Get the TokenizedShort on the blockchain and make sure that it was created correctly

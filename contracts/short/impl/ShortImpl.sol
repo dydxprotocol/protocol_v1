@@ -10,6 +10,7 @@ import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
+import { TermsContract } from "../interfaces/TermsContract.sol";
 
 
 /**
@@ -41,8 +42,7 @@ library ShortImpl {
         uint depositAmount,
         uint32 lockoutTime,
         uint32 callTimeLimit,
-        uint32 maxDuration,
-        uint interestRate
+        uint32 maxDuration
     );
 
     // -----------------------
@@ -79,7 +79,7 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[13] addresses,
+        address[14] addresses,
         uint[17] values256,
         uint32[3] values32,
         uint8[2] sigV,
@@ -122,14 +122,15 @@ library ShortImpl {
             shortId,
             transaction.underlyingToken,
             transaction.baseToken,
+            transaction.loanOffering.lender,
+            msg.sender,
+            transaction.loanOffering.termsContract,
             transaction.shortAmount,
-            transaction.loanOffering.rates.interestRate,
+            transaction.loanOffering.termsParameters,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.lockoutTime,
             uint32(block.timestamp),
-            transaction.loanOffering.maxDuration,
-            transaction.loanOffering.lender,
-            msg.sender
+            transaction.loanOffering.maxDuration
         );
 
         // EXTERNAL CALLS
@@ -469,15 +470,14 @@ library ShortImpl {
             transaction.depositAmount,
             transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.interestRate
+            transaction.loanOffering.maxDuration
         );
     }
 
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[13] addresses,
+        address[14] addresses,
         uint[17] values,
         uint32[3] values32,
         uint8[2] sigV,
@@ -511,7 +511,7 @@ library ShortImpl {
     }
 
     function parseLoanOffering(
-        address[13] addresses,
+        address[14] addresses,
         uint[17] values,
         uint32[3] values32,
         uint8[2] sigV,
@@ -528,12 +528,14 @@ library ShortImpl {
             feeRecipient: addresses[5],
             lenderFeeToken: addresses[6],
             takerFeeToken: addresses[7],
+            termsContract: addresses[8],
             rates: parseLoanOfferRates(values),
+            termsParameters: values[6],
             expirationTimestamp: values[7],
+            salt: values[8],
             lockoutTime: values32[0],
             callTimeLimit: values32[1],
             maxDuration: values32[2],
-            salt: values[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
@@ -559,9 +561,8 @@ library ShortImpl {
             maxAmount: values[1],
             minAmount: values[2],
             minimumSellAmount: values[3],
-            interestRate: values[4],
-            lenderFee: values[5],
-            takerFee: values[6]
+            lenderFee: values[4],
+            takerFee: values[5]
         });
 
         return rates;
@@ -585,7 +586,7 @@ library ShortImpl {
     }
 
     function parseBuyOrder(
-        address[13] addresses,
+        address[14] addresses,
         uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -595,11 +596,11 @@ library ShortImpl {
         returns (BuyOrder _buyOrder)
     {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[8],
-            taker: addresses[9],
-            feeRecipient: addresses[10],
-            makerFeeToken: addresses[11],
-            takerFeeToken: addresses[12],
+            maker: addresses[9],
+            taker: addresses[10],
+            feeRecipient: addresses[11],
+            makerFeeToken: addresses[12],
+            takerFeeToken: addresses[13],
             baseTokenAmount: values[9],
             underlyingTokenAmount: values[10],
             makerFee: values[11],
@@ -634,7 +635,7 @@ library ShortImpl {
     )
         internal
         pure
-        returns (address[8] _addresses)
+        returns (address[9] _addresses)
     {
         return [
             transaction.underlyingToken,
@@ -644,7 +645,8 @@ library ShortImpl {
             transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
             transaction.loanOffering.lenderFeeToken,
-            transaction.loanOffering.takerFeeToken
+            transaction.loanOffering.takerFeeToken,
+            transaction.loanOffering.termsContract
         ];
     }
 
@@ -660,10 +662,10 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minimumSellAmount,
-            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,
+            transaction.loanOffering.termsParameters,
             transaction.loanOffering.salt
         ];
     }

@@ -18,6 +18,7 @@ const CloseShortImpl = artifacts.require("CloseShortImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const PlaceSellbackBidImpl = artifacts.require("PlaceSellbackBidImpl");
+const LinearTermsContract = artifacts.require("LinearTermsContract");
 const BigNumber = require('bignumber.js');
 
 const ONE_HOUR = new BigNumber(60 * 60);
@@ -63,7 +64,8 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(CloseShortImpl),
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
-    deployer.deploy(PlaceSellbackBidImpl)
+    deployer.deploy(PlaceSellbackBidImpl),
+    deployer.deploy(LinearTermsContract)
   ]);
 
   // Link ShortSell function libraries
@@ -114,7 +116,6 @@ async function deployShortSellContracts(deployer) {
   await deployer.deploy(
     TokenizedShortCreator,
     ShortSell.address,
-    ProxyContract.address,
     ONE_DAY,
     ONE_DAY
   );

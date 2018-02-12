@@ -439,7 +439,7 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
     closeAmount,
     shortTx.shortAmount,
     getPartialAmount(
-      shortTx.loanOffering.rates.interestRate,
+      shortTx.loanOffering.termsParameters,
       BIGNUMBERS.ONE_DAY_IN_SECONDS,
       shortLifetime
     )

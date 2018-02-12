@@ -5,6 +5,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
+import { TermsContract } from "../interfaces/TermsContract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -43,7 +44,7 @@ library ForceRecoverLoanImpl {
         public
         returns (uint _baseTokenAmount)
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         var (offer, bidder, hasCurrentOffer) =
             ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
 
@@ -190,10 +191,12 @@ library ForceRecoverLoanImpl {
 
         // If there is an auction bid to sell back the underlying token owed to the lender
         // then give the lender just the owed interest fee at the end of the call time
-        uint lenderBaseTokenAmount = ShortSellCommon.calculateInterestFee(
-            short,
+        uint lenderBaseTokenAmount = TermsContract(short.termsContract).calculateInterestFee(
+            short.startTimestamp,
+            uint(short.callTimestamp).add(short.callTimeLimit),
             currentShortAmount,
-            uint(short.callTimestamp).add(short.callTimeLimit)
+            short.shortAmount,
+            short.termsParameters
         );
 
         vault.sendFromVault(
