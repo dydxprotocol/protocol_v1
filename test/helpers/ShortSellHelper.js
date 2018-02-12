@@ -273,8 +273,8 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     loanOffering.signer,
     loanOffering.taker,
     loanOffering.feeRecipient,
-    FeeToken.address,
-    FeeToken.address,
+    loanOffering.lenderFeeTokenAddress,
+    loanOffering.takerFeeTokenAddress,
     loanOffering.termsContract
   ];
 
@@ -418,6 +418,7 @@ async function signLoanOffering(loanOffering) {
     { type: 'uint32', value: loanOffering.maxDuration },
     loanOffering.salt
   );
+  console.log("valuesHash", valuesHash);
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
     UnderlyingToken.address,
@@ -431,6 +432,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.termsContract,
     valuesHash
   );
+  console.log("allHash", hash);
 
   loanOffering.loanHash = hash;
 

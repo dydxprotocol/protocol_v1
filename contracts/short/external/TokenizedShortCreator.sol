@@ -56,6 +56,7 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
     {
         address PROXY = ShortSell(SHORT_SELL).PROXY();
         address REPO = ShortSell(SHORT_SELL).REPO();
+
         address token = new TokenizedShort(
             SHORT_SELL,
             PROXY,
@@ -66,6 +67,7 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
             _symbol
         );
 
+        Proxy(PROXY).grantTransferAuthorization(token);
 
         return token;
     }

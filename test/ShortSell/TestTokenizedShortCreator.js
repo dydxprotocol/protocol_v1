@@ -18,52 +18,67 @@ const { transact } = require('../helpers/ContractHelper');
 contract('TokenizedShortCreator', function(accounts) {
   const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   let shortSellContract, tokenizedShortCreatorContract, proxyContract;
-  let shortTx;
 
-  before('create a short', async () => {
-    shortSellContract = await ShortSell.deployed();
-    proxyContract = await ProxyContract.deployed();
-    shortTx = await doShort(accounts);
-  });
-
-  beforeEach('set up TokenizedShortCreator contract', async () => {
-    tokenizedShortCreatorContract = await TokenizedShortCreator.new(
-      shortSellContract.address,
-      updateDelay,
-      updateExpiration);
+  before('retrieve deployed contracts', async () => {
+    [
+      shortSellContract,
+      proxyContract,
+      tokenizedShortCreatorContract
+    ] = await Promise.all([
+      ShortSell.deployed(),
+      ProxyContract.deployed(),
+      TokenizedShortCreator.deployed()
+    ]);
   });
 
   describe('Constructor', () => {
+    let contract;
+
+    beforeEach('set up new TokenizedShortCreator contract', async () => {
+      contract = await TokenizedShortCreator.new(
+        shortSellContract.address,
+        updateDelay,
+        updateExpiration);
+    });
+
     it('sets constants correctly', async () => {
-      validateDelayedUpdateConstants(tokenizedShortCreatorContract, updateDelay, updateExpiration);
-      const shortSellContractAddress = await tokenizedShortCreatorContract.SHORT_SELL.call();
+      validateDelayedUpdateConstants(contract, updateDelay, updateExpiration);
+      const shortSellContractAddress = await contract.SHORT_SELL.call();
       expect(shortSellContractAddress).to.equal(shortSellContract.address);
     });
   });
 
   describe('#updateShortSell', () => {
     const newAddress = accounts[7];
+    let contract;
+
+    beforeEach('set up new TokenizedShortCreator contract', async () => {
+      contract = await TokenizedShortCreator.new(
+        shortSellContract.address,
+        updateDelay,
+        updateExpiration);
+    });
 
     it('allows owner to update the SHORT_SELL field after a delay', async () => {
-      await tokenizedShortCreatorContract.updateShortSell(newAddress);
+      await contract.updateShortSell(newAddress);
 
       // Expect SHORT_SELL not to have changed
-      let shortSellAddress = await tokenizedShortCreatorContract.SHORT_SELL.call();
+      let shortSellAddress = await contract.SHORT_SELL.call();
       expect(shortSellAddress.toLowerCase()).to.eq(shortSellContract.address.toLowerCase());
 
       // Should not be able to update it without waiting
-      await expectThrow(() => tokenizedShortCreatorContract.updateShortSell(newAddress));
+      await expectThrow(() => contract.updateShortSell(newAddress));
 
       await wait(updateDelay.toNumber());
-      await tokenizedShortCreatorContract.updateShortSell(newAddress);
+      await contract.updateShortSell(newAddress);
 
       // Now it should have changed
-      shortSellAddress = await tokenizedShortCreatorContract.SHORT_SELL.call();
+      shortSellAddress = await contract.SHORT_SELL.call();
       expect(shortSellAddress.toLowerCase()).to.eq(newAddress.toLowerCase());
     });
 
     it('fails for non-owner accounts', async () => {
-      await expectThrow(() => tokenizedShortCreatorContract.updateShortSell(
+      await expectThrow(() => contract.updateShortSell(
         newAddress, { from: accounts[2] }));
     });
   });
@@ -73,13 +88,13 @@ contract('TokenizedShortCreator', function(accounts) {
     const symbol = "NAM";
     const initialTokenHolder = accounts[9];
     const transactionSender = accounts[8];
+    let shortTx;
+
+    before('set up short', async () => {
+      shortTx = await doShort(accounts);
+    });
 
     it('succeeds for arbitrary caller', async () => {
-      console.log(initialTokenHolder);
-      console.log(shortTx.id);
-      console.log(name);
-      console.log(symbol);
-
       // Get the return value of the tokenizeShort function
       const tokenAddress = await transact(tokenizedShortCreatorContract.tokenizeShort,
         initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender });
@@ -120,7 +135,14 @@ contract('TokenizedShortCreator', function(accounts) {
     });
 
     it('fails when proxy has not granted access to TokenizedShortCreator', async () => {
-      await expectThrow(() => tokenizedShortCreatorContract.tokenizeShort(
+      const contract = await TokenizedShortCreator.new(
+        shortSellContract.address,
+        updateDelay,
+        updateExpiration);
+
+      // no access granted by proxy
+
+      await expectThrow(() => contract.tokenizeShort(
         initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender }));
     });
   });
