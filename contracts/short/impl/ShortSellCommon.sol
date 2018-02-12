@@ -184,6 +184,7 @@ library ShortSellCommon {
             loanOffering.feeRecipient,
             loanOffering.lenderFeeToken,
             loanOffering.takerFeeToken,
+            loanOffering.termsContract,
             getValuesHash(loanOffering)
         );
     }
@@ -202,6 +203,7 @@ library ShortSellCommon {
             loanOffering.rates.minimumSellAmount,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
+            loanOffering.termsParameters,
             loanOffering.expirationTimestamp,
             loanOffering.lockoutTime,
             loanOffering.callTimeLimit,

@@ -66,7 +66,6 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
             _symbol
         );
 
-        Proxy(PROXY).grantTransferAuthorization(token);
 
         return token;
     }

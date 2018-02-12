@@ -1,4 +1,4 @@
-/*global artifacts, contract, describe, it, before, beforeEach*/
+/*global artifacts, contract, describe, it, beforeEach*/
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
@@ -16,7 +16,6 @@ const id =             '1234567';
 const badId =          '7654321';
 const token1Address =  testAddrs[6];
 const token2Address =  testAddrs[7];
-let termsContract;
 const shortAmount =    new BigNumber('1000');
 const termsParameter = new BigNumber('1');
 const callTimestamp =  new BigNumber('444');
@@ -36,7 +35,7 @@ async function createAddShort(shortRepo, shortId, account) {
     token2Address, // baseToken address,
     lender1,
     seller1,
-    termsContract,
+    LinearTermsContract.address,
     shortAmount,
     termsParameter,
     callTimeLimit,
@@ -48,19 +47,25 @@ async function createAddShort(shortRepo, shortId, account) {
 
 async function getShort(shortRepo, shortId) {
   const [
-    underlyingToken,
-    baseToken,
-    lender,
-    seller,
-    termsContract,
-    shortAmount,
-    closedAmount,
-    termsParameters,
-    callTimeLimit,
-    lockoutTime,
-    startTimestamp,
-    callTimestamp,
-    maxDuration
+    [
+      underlyingToken,
+      baseToken,
+      lender,
+      seller,
+      termsContract
+    ],
+    [
+      shortAmount,
+      closedAmount,
+      termsParameters
+    ],
+    [
+      callTimeLimit,
+      lockoutTime,
+      startTimestamp,
+      callTimestamp,
+      maxDuration
+    ],
   ] = await shortRepo.getShort.call(shortId);
   return {
     underlyingToken,
@@ -86,10 +91,6 @@ async function expectShortIsClosed(shortRepo, id, expectClosed) {
 
 contract('ShortSellRepo', function(accounts) {
   let contract;
-
-  before('get LinearTermsContract', async () => {
-    termsContract = await LinearTermsContract.deployed();
-  });
 
   beforeEach('create new contracts', async () => {
     contract = await ShortSellRepo.new(accessDelay, gracePeriod);
@@ -144,7 +145,7 @@ contract('ShortSellRepo', function(accounts) {
         token2Address,
         lender1,
         seller1,
-        termsContract,
+        LinearTermsContract.address,
         shortAmount,
         termsParameter,
         callTimeLimit,

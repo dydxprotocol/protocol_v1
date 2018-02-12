@@ -7,6 +7,7 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const ethUtil = require('ethereumjs-util');
 
+const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
@@ -514,21 +515,28 @@ function get0xOrderHash(order) {
 }
 
 async function getShort(shortSell, id) {
+  const repo = await ShortSellRepo.deployed();
   const [
-    underlyingToken,
-    baseToken,
-    lender,
-    seller,
-    termsContract,
-    shortAmount,
-    closedAmount,
-    termsParameters,
-    callTimeLimit,
-    lockoutTime,
-    startTimestamp,
-    callTimestamp,
-    maxDuration,
-  ] = await shortSell.getShort.call(id);
+    [
+      underlyingToken,
+      baseToken,
+      lender,
+      seller,
+      termsContract
+    ],
+    [
+      shortAmount,
+      closedAmount,
+      termsParameters
+    ],
+    [
+      callTimeLimit,
+      lockoutTime,
+      startTimestamp,
+      callTimestamp,
+      maxDuration
+    ]
+  ] = await repo.getShort.call(id);
 
   return {
     underlyingToken,
