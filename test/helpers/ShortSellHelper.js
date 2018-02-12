@@ -418,7 +418,6 @@ async function signLoanOffering(loanOffering) {
     { type: 'uint32', value: loanOffering.maxDuration },
     loanOffering.salt
   );
-  console.log("valuesHash", valuesHash);
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
     UnderlyingToken.address,
@@ -432,7 +431,6 @@ async function signLoanOffering(loanOffering) {
     loanOffering.termsContract,
     valuesHash
   );
-  console.log("allHash", hash);
 
   loanOffering.loanHash = hash;
 
