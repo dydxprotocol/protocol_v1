@@ -6,6 +6,7 @@ import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardT
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { ShortSellState } from "../impl/ShortSellState.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -39,6 +40,9 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
 
     // Address of the Proxy contract
     address public PROXY;
+
+    // Address of the Repo contract
+    address public REPO;
 
     // id of the short this contract is tokenizing
     bytes32 public shortId;
@@ -81,6 +85,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     function TokenizedShort(
         address _shortSell,
         address _proxy,
+        address _repo,
         address _initialTokenHolder,
         bytes32 _shortId,
         string _name,
@@ -90,6 +95,7 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     {
         SHORT_SELL = _shortSell;
         PROXY = _proxy;
+        REPO = _repo;
         shortId = _shortId;
         state = State.UNINITIALIZED;
         // total supply is 0 before initialization
@@ -107,7 +113,8 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         nonReentrant
         external
     {
-        ShortSellCommon.Short memory short = getShortObject();
+        ShortSellCommon.Short memory short =
+            ShortSellCommon.getShortObject(REPO, shortId);
 
         // The ownership of the short must be transferred to this contract before intialization
         // Once ownership is transferred, there is no way to have this contract transfer it back
@@ -260,7 +267,8 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         public
         returns (uint8 _decimals)
     {
-        ShortSellCommon.Short memory short = getShortObject();
+        ShortSellCommon.Short memory short =
+            ShortSellCommon.getShortObject(REPO, shortId);
         return DetailedERC20(short.underlyingToken).decimals();
     }
 
@@ -284,7 +292,8 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         // Increment redeemed counter
         redeemed = redeemed.add(value);
 
-        ShortSellCommon.Short memory short = getShortObject();
+        ShortSellCommon.Short memory short =
+            ShortSellCommon.getShortObject(REPO, shortId);
 
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
@@ -351,44 +360,5 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
                 takerFee
             );
         }
-    }
-
-    function getShortObject()
-        internal
-        view
-        returns (ShortSellCommon.Short _short)
-    {
-        var (
-            underlyingToken,
-            _baseToken,
-            shortAmount,
-            interestRate,
-            closedAmount,
-            callTimeLimit,
-            lockoutTime,
-            startTimestamp,
-            callTimestamp,
-            maxDuration,
-            lender,
-            seller
-        ) = ShortSell(SHORT_SELL).getShort(shortId);
-
-        // This checks that the short exists
-        require(startTimestamp != 0);
-
-        return ShortSellCommon.Short({
-            underlyingToken: underlyingToken,
-            baseToken: _baseToken,
-            shortAmount: shortAmount,
-            closedAmount: closedAmount,
-            interestRate: interestRate,
-            callTimeLimit: callTimeLimit,
-            lockoutTime: lockoutTime,
-            startTimestamp: startTimestamp,
-            callTimestamp: callTimestamp,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
-        });
     }
 }

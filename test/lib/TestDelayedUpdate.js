@@ -5,9 +5,10 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 const DelayedUpdateTester = artifacts.require("DelayedUpdateTester");
-const { zeroAddr, addr1, addr2 } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
+const [addr1, addr2] = [ADDRESSES.TEST[8], ADDRESSES.TEST[9]];
 
 contract('DelayedUpdateTester', function() {
   const [delay, expiration] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -29,7 +30,7 @@ contract('DelayedUpdateTester', function() {
       await contract.addr1Update('TEST', addr1);
 
       const addr1Value = await contract.addr1.call();
-      expect(addr1Value).to.eq(zeroAddr);
+      expect(addr1Value).to.eq(ADDRESSES.ZERO);
     });
 
     it('does not update the value if confirmed before timelock', async () => {
@@ -37,7 +38,7 @@ contract('DelayedUpdateTester', function() {
       await expectThrow(() => contract.addr1Update('TEST', addr1));
 
       const addr1Value = await contract.addr1.call();
-      expect(addr1Value).to.eq(zeroAddr);
+      expect(addr1Value).to.eq(ADDRESSES.ZERO);
     });
 
     it('updates the value after the timelock and before the expiration', async () => {
@@ -55,7 +56,7 @@ contract('DelayedUpdateTester', function() {
       await contract.addr1Update('TEST', addr1);
 
       const addr1Value = await contract.addr1.call();
-      expect(addr1Value.toLowerCase()).to.eq(zeroAddr.toLowerCase());
+      expect(addr1Value.toLowerCase()).to.eq(ADDRESSES.ZERO.toLowerCase());
     });
 
     it('adds a new pending update if the previous one is expired', async () => {
@@ -97,7 +98,7 @@ contract('DelayedUpdateTester', function() {
       await contract.addr1Update('TEST', addr1);
 
       const addr1Value = await contract.addr1.call();
-      expect(addr1Value.toLowerCase()).to.eq(zeroAddr.toLowerCase());
+      expect(addr1Value.toLowerCase()).to.eq(ADDRESSES.ZERO.toLowerCase());
     });
   });
 

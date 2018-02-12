@@ -6,7 +6,7 @@ const BigNumber = require('bignumber.js');
 const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { testAddrs } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 const accessDelay = new BigNumber('1234')
@@ -15,8 +15,8 @@ const id1 =         '1234567';
 const id2 =         '7654321';
 const offer1 =      new BigNumber('1777111');
 const offer2 =      new BigNumber('2777222');
-const bidder1 =     testAddrs[1];
-const bidder2 =     testAddrs[2];
+const bidder1 =     ADDRESSES.TEST[1];
+const bidder2 =     ADDRESSES.TEST[2];
 
 contract('ShortSellAuctionRepo', function(accounts) {
   let shortSellAuctionRepo;

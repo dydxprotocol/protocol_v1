@@ -114,7 +114,6 @@ async function deployShortSellContracts(deployer) {
   await deployer.deploy(
     TokenizedShortCreator,
     ShortSell.address,
-    ProxyContract.address,
     ONE_DAY,
     ONE_DAY
   );
