@@ -71,8 +71,8 @@ async function createSigned0xSellOrder(accounts) {
 
 function callShort(shortSell, tx) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    tx.loanOffering.underlyingToken,
+    tx.loanOffering.baseToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
     tx.loanOffering.taker,
@@ -265,8 +265,8 @@ function getOrderTxFields(order) {
 
 function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
@@ -372,6 +372,8 @@ async function createSigned0xBuyOrder(accounts) {
 
 async function createLoanOffering(accounts) {
   let loanOffering = {
+    underlyingToken: UnderlyingToken.address,
+    baseToken: BaseToken.address,
     lender: accounts[1],
     signer: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
@@ -416,8 +418,8 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
