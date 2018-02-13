@@ -172,8 +172,12 @@ library ShortSellCommon {
         returns (uint _interestFee)
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
+        if (timeElapsed > short.maxDuration) {
+            timeElapsed = short.maxDuration
+        }
 
         // We multiply everything before dividing to reduce rounding error as much as possible.
+        // Overflow should have been prevented by the loan verification already.
         // const proratedInterest = interestRate * (close Amount / short.shortAmount)
         // return proratedInterest * (timeElapsed / 1 days);
         uint numerator = short.interestRate.mul(closeAmount).mul(timeElapsed);

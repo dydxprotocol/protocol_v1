@@ -512,15 +512,12 @@ contract ShortSell is
         }
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 
+        // In both branches of the conditional, endTimestamp may end up being past the maximum
+        // duration of the short, but calculateInterestFee() will bound it
         uint endTimestamp;
-
-        if (
-            short.callTimestamp > 0
-            && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
-        ) {
-            endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
-        } else if (block.timestamp > uint(short.startTimestamp).add(short.maxDuration)) {
-            endTimestamp = uint(short.startTimestamp).add(short.maxDuration);
+        uint callExpiryTime = uint(short.callTimestamp).add(short.callTimeLimit);
+        if (short.callTimestamp > 0 && block.timestamp > callExpiryTime) {
+            endTimestamp = callExpiryTime;
         } else {
             endTimestamp = block.timestamp;
         }
