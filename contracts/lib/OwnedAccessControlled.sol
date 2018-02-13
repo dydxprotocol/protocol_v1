@@ -1,7 +1,7 @@
 pragma solidity 0.4.19;
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { AccessControlledBase } from "/AccessControlledBase.sol";
+import { AccessControlledBase } from "./AccessControlledBase.sol";
 
 
 /**

@@ -9,7 +9,6 @@ const TestToken = artifacts.require("TestToken");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
-  validateAccessControlledConstants,
   validateStaticAccessControlledConstants
 } = require('../helpers/AccessControlledHelper');
 
@@ -31,7 +30,6 @@ contract('Vault', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      await validateAccessControlledConstants(proxy, delay, gracePeriod);
       await validateStaticAccessControlledConstants(vault, gracePeriod);
       const [
         owner,
