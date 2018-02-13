@@ -518,7 +518,7 @@ contract ShortSell is
         if (
             short.callTimestamp > 0
             && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
-        ){
+        ) {
             endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
         } else {
             endTimestamp = block.timestamp;
