@@ -66,7 +66,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
         require(block.timestamp >= uint(short.startTimestamp).add(short.lockoutTime));
         // Ensure the loan has not already been called
@@ -91,7 +91,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
@@ -114,7 +114,7 @@ library LoanImpl {
 
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[3] values32,
         uint cancelAmount
@@ -157,7 +157,7 @@ library LoanImpl {
     // ------ Parsing Functions ------
 
     function parseLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values,
         uint32[3] values32
     )
@@ -172,12 +172,14 @@ library LoanImpl {
             feeRecipient: addresses[5],
             lenderFeeToken: addresses[6],
             takerFeeToken: addresses[7],
+            termsContract: addresses[8],
             rates: parseLoanOfferRates(values),
+            termsParameters: values[6],
             expirationTimestamp: values[7],
+            salt: values[8],
             lockoutTime: values32[0],
             callTimeLimit: values32[1],
             maxDuration: values32[2],
-            salt: values[8],
             loanHash: 0,
             signature: ShortSellCommon.Signature({
                 v: 0,
@@ -207,9 +209,8 @@ library LoanImpl {
             maxAmount: values[1],
             minAmount: values[2],
             minimumSellAmount: values[3],
-            interestRate: values[4],
-            lenderFee: values[5],
-            takerFee: values[6]
+            lenderFee: values[4],
+            takerFee: values[5]
         });
 
         return rates;

@@ -29,6 +29,7 @@ contract LoanOfferingVerifier {
      *  [5] = loan fee recipient
      *  [6] = loan lender fee token
      *  [7] = loan taker fee token
+     *  [8] = terms contract
      *
      * @param  values256        Values corresponding to:
      *
@@ -36,9 +37,9 @@ contract LoanOfferingVerifier {
      *  [1] = loan maximum amount
      *  [2] = loan minimum amount
      *  [3] = loan minimum sell amount
-     *  [4] = loan interest rate
-     *  [5] = loan lender fee
-     *  [6] = loan taker fee
+     *  [4] = loan lender fee
+     *  [5] = loan taker fee
+     *  [6] = loan terms parameters
      *  [7] = loan expiration timestamp (in seconds)
      *  [8] = loan salt
      *
@@ -52,7 +53,7 @@ contract LoanOfferingVerifier {
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[3] values32,
         bytes32 shortId

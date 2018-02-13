@@ -40,14 +40,15 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         bytes32 id,
         address underlyingToken,
         address baseToken,
+        address lender,
+        address seller,
+        address termsContract,
         uint shortAmount,
-        uint interestRate,
+        uint termsParameters,
         uint32 callTimeLimit,
         uint32 lockoutTime,
         uint32 startTimestamp,
-        uint32 maxDuration,
-        address lender,
-        address seller
+        uint32 maxDuration
     )
         requiresAuthorization
         external
@@ -60,14 +61,15 @@ contract ShortSellRepo is AccessControlled, NoOwner {
             baseToken: baseToken,
             shortAmount: shortAmount,
             closedAmount: 0,
-            interestRate: interestRate,
             callTimeLimit: callTimeLimit,
             lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: 0,
             maxDuration: maxDuration,
             lender: lender,
-            seller: seller
+            seller: seller,
+            termsContract: termsContract,
+            termsParameters: termsParameters
         });
     }
 
@@ -132,20 +134,6 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     /**
      * NOTE: Currently unused, added as a utility for later versions of ShortSell
      */
-    function setShortInterestRate(
-        bytes32 id,
-        uint rate
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].interestRate = rate;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
     function setShortCallTimeLimit(
         bytes32 id,
         uint32 limit
@@ -183,6 +171,34 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     {
         require(containsShort(id));
         shorts[id].maxDuration = maxDuration;
+    }
+
+    /**
+     * NOTE: Currently unused, added as a utility for later versions of ShortSell
+     */
+    function setShortTermsContract(
+        bytes32 id,
+        address termsContract
+    )
+        requiresAuthorization
+        external
+    {
+        require(containsShort(id));
+        shorts[id].termsContract = termsContract;
+    }
+
+    /**
+     * NOTE: Currently unused, added as a utility for later versions of ShortSell
+     */
+    function setShortTermsParameters(
+        bytes32 id,
+        uint parameters
+    )
+        requiresAuthorization
+        external
+    {
+        require(containsShort(id));
+        shorts[id].termsParameters = parameters;
     }
 
     function deleteShort(
@@ -229,35 +245,33 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         view
         external
         returns (
-            address underlyingToken,
-            address baseToken,
-            uint shortAmount,
-            uint closedAmount,
-            uint interestRate,
-            uint32 callTimeLimit,
-            uint32 lockoutTime,
-            uint32 startTimestamp,
-            uint32 callTimestamp,
-            uint32 maxDuration,
-            address lender,
-            address seller
+            address[5] _addresses,
+            uint256[3] _values256,
+            uint32[5] _values32
         )
     {
         ShortSellCommon.Short storage short = shorts[id];
 
         return (
-            short.underlyingToken,
-            short.baseToken,
-            short.shortAmount,
-            short.closedAmount,
-            short.interestRate,
-            short.callTimeLimit,
-            short.lockoutTime,
-            short.startTimestamp,
-            short.callTimestamp,
-            short.maxDuration,
-            short.lender,
-            short.seller
+            [
+                short.underlyingToken,
+                short.baseToken,
+                short.lender,
+                short.seller,
+                short.termsContract
+            ],
+            [
+                short.shortAmount,
+                short.closedAmount,
+                short.termsParameters
+            ],
+            [
+                short.callTimeLimit,
+                short.lockoutTime,
+                short.startTimestamp,
+                short.callTimestamp,
+                short.maxDuration
+            ]
         );
     }
 
@@ -321,16 +335,6 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         return shorts[id].closedAmount;
     }
 
-    function getShortInterestRate(
-        bytes32 id
-    )
-        view
-        external
-        returns (uint _interestRate)
-    {
-        return shorts[id].interestRate;
-    }
-
     function getShortStartTimestamp(
         bytes32 id
     )
@@ -379,6 +383,26 @@ contract ShortSellRepo is AccessControlled, NoOwner {
         returns (uint32 _maxDuration)
     {
         return shorts[id].maxDuration;
+    }
+
+    function getShortTermsContract(
+        bytes32 id
+    )
+        view
+        external
+        returns (address _termsContract)
+    {
+        return shorts[id].termsContract;
+    }
+
+    function getShortTermsParameters(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint _termsParameters)
+    {
+        return shorts[id].termsParameters;
     }
 
     function containsShort(

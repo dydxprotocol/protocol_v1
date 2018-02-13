@@ -7,12 +7,14 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const ethUtil = require('ethereumjs-util');
 
+const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
+const LinearTermsContract = artifacts.require("LinearTermsContract");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const { wait } = require('@digix/tempo')(web3);
@@ -78,6 +80,7 @@ function callShort(shortSell, tx) {
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
+    tx.loanOffering.termsContract,
     tx.buyOrder.maker,
     tx.buyOrder.taker,
     tx.buyOrder.feeRecipient,
@@ -90,9 +93,9 @@ function callShort(shortSell, tx) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minimumSellAmount,
-    tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
+    tx.loanOffering.termsParameters,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
     tx.buyOrder.makerTokenAmount,
@@ -270,8 +273,9 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     loanOffering.signer,
     loanOffering.taker,
     loanOffering.feeRecipient,
-    FeeToken.address,
-    FeeToken.address
+    loanOffering.lenderFeeTokenAddress,
+    loanOffering.takerFeeTokenAddress,
+    loanOffering.termsContract
   ];
 
   const values256 = [
@@ -279,9 +283,9 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
+    loanOffering.termsParameters,
     loanOffering.expirationTimestamp,
     loanOffering.salt,
   ];
@@ -377,15 +381,16 @@ async function createLoanOffering(accounts) {
     feeRecipient: accounts[3],
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
+    termsContract: LinearTermsContract.address,
     rates: {
       minimumDeposit: BASE_AMOUNT,
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
       minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
       minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
-      interestRate: BASE_AMOUNT.times(new BigNumber(.1)),
       lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
+    termsParameters: BASE_AMOUNT.times(new BigNumber(.1)),
     expirationTimestamp: 1000000000000,
     lockoutTime: 10000,
     callTimeLimit: 10000,
@@ -404,9 +409,9 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
+    loanOffering.termsParameters,
     loanOffering.expirationTimestamp,
     { type: 'uint32', value: loanOffering.lockoutTime },
     { type: 'uint32', value: loanOffering.callTimeLimit },
@@ -423,6 +428,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.feeRecipient,
     loanOffering.lenderFeeTokenAddress,
     loanOffering.takerFeeTokenAddress,
+    loanOffering.termsContract,
     valuesHash
   );
 
@@ -509,34 +515,43 @@ function get0xOrderHash(order) {
 }
 
 async function getShort(shortSell, id) {
+  const repo = await ShortSellRepo.deployed();
   const [
-    underlyingToken,
-    baseToken,
-    shortAmount,
-    closedAmount,
-    interestRate,
-    callTimeLimit,
-    lockoutTime,
-    startTimestamp,
-    callTimestamp,
-    maxDuration,
-    lender,
-    seller
-  ] = await shortSell.getShort.call(id);
+    [
+      underlyingToken,
+      baseToken,
+      lender,
+      seller,
+      termsContract
+    ],
+    [
+      shortAmount,
+      closedAmount,
+      termsParameters
+    ],
+    [
+      callTimeLimit,
+      lockoutTime,
+      startTimestamp,
+      callTimestamp,
+      maxDuration
+    ]
+  ] = await repo.getShort.call(id);
 
   return {
     underlyingToken,
     baseToken,
+    lender,
+    seller,
+    termsContract,
     shortAmount,
     closedAmount,
-    interestRate,
+    termsParameters,
     callTimeLimit,
     lockoutTime,
     startTimestamp,
     callTimestamp,
     maxDuration,
-    lender,
-    seller
   };
 }
 
