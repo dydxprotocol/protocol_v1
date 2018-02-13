@@ -515,9 +515,11 @@ contract ShortSell is
         // In both branches of the conditional, endTimestamp may end up being past the maximum
         // duration of the short, but calculateInterestFee() will bound it
         uint endTimestamp;
-        uint callExpiryTime = uint(short.callTimestamp).add(short.callTimeLimit);
-        if (short.callTimestamp > 0 && block.timestamp > callExpiryTime) {
-            endTimestamp = callExpiryTime;
+        if (
+            short.callTimestamp > 0
+            && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
+        ){
+            endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
         } else {
             endTimestamp = block.timestamp;
         }

@@ -204,7 +204,7 @@ library ShortImpl {
         // Prevent overflows when calculating interest fees. Unused variable, throws on overflow
         uint(transaction.loanOffering.maxDuration)
             .mul(transaction.loanOffering.rates.interestRate)
-            .mul(transaction.loanOffering.rates.maxAmount);
+            .mul(transaction.shortAmount);
 
         // Check Signature
         require(
