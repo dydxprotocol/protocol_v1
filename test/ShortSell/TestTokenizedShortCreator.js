@@ -10,7 +10,6 @@ const ProxyContract = artifacts.require("Proxy");
 
 const { wait } = require('@digix/tempo')(web3);
 const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
-const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { doShort } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
@@ -42,7 +41,6 @@ contract('TokenizedShortCreator', function(accounts) {
     });
 
     it('sets constants correctly', async () => {
-      validateDelayedUpdateConstants(contract, updateDelay, updateExpiration);
       const shortSellContractAddress = await contract.SHORT_SELL.call();
       expect(shortSellContractAddress).to.equal(shortSellContract.address);
     });

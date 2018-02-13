@@ -5,9 +5,8 @@ import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { AccessControlled } from "../lib/AccessControlled.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
-import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
 import { Proxy } from "../shared/Proxy.sol";
 import { Exchange } from "../shared/Exchange.sol";
 
@@ -20,8 +19,7 @@ import { Exchange } from "../shared/Exchange.sol";
  */
  /* solium-disable-next-line */
 contract Vault is
-    AccessControlled,
-    DelayedUpdate,
+    StaticAccessControlled,
     TokenInteract,
     HasNoEther,
     HasNoContracts,
@@ -44,28 +42,10 @@ contract Vault is
 
     function Vault(
         address _proxy,
-        uint accessDelay,
-        uint gracePeriod,
-        uint updateDelay,
-        uint updateExpiration
+        uint gracePeriod
     )
-        AccessControlled(accessDelay, gracePeriod)
-        DelayedUpdate(updateDelay, updateExpiration)
+        StaticAccessControlled(gracePeriod)
         public
-    {
-        PROXY = _proxy;
-    }
-
-    // -----------------------------
-    // ------ Admin Functions ------
-    // -----------------------------
-
-    function updateProxy(
-        address _proxy
-    )
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("PROXY", _proxy)
-        external
     {
         PROXY = _proxy;
     }

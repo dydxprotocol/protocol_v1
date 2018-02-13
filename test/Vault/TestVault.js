@@ -10,7 +10,6 @@ const TestToken = artifacts.require("TestToken");
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
-const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 
 contract('Vault', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -33,7 +32,6 @@ contract('Vault', function(accounts) {
     it('sets constants correctly', async () => {
       await validateAccessControlledConstants(proxy, delay, gracePeriod);
       await validateAccessControlledConstants(vault, delay, gracePeriod);
-      await validateDelayedUpdateConstants(vault, updateDelay, updateExpiration);
       const [
         owner,
         contractProxy
