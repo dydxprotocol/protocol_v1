@@ -173,7 +173,7 @@ library ShortSellCommon {
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
         if (timeElapsed > short.maxDuration) {
-            timeElapsed = short.maxDuration
+            timeElapsed = short.maxDuration;
         }
 
         // We multiply everything before dividing to reduce rounding error as much as possible.
