@@ -51,13 +51,11 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR),
     deployer.deploy(
       ShortSellRepo,
-      ONE_DAY,
       ONE_HOUR,
     ),
     deployer.deploy(
       ShortSellAuctionRepo,
-      ONE_DAY,
-      ONE_HOUR,
+      ONE_HOUR
     ),
     deployer.deploy(ShortImpl),
     deployer.deploy(CloseShortImpl),
@@ -80,10 +78,7 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(
       Vault,
       ProxyContract.address,
-      ONE_DAY,
-      ONE_HOUR,
-      ONE_DAY,
-      ONE_DAY
+      ONE_HOUR
     )
   ]);
   await deployer.deploy(
@@ -94,10 +89,7 @@ async function deployShortSellContracts(deployer) {
     ProxyContract.address,
     ZeroExProxy.address,
     '0x0000000000000000000000000000010',
-    ONE_DAY,
-    ONE_HOUR,
-    ONE_DAY,
-    ONE_DAY
+    ONE_HOUR
   );
 
   await deployer.deploy(
@@ -106,16 +98,12 @@ async function deployShortSellContracts(deployer) {
     ShortSellRepo.address,
     ShortSellAuctionRepo.address,
     Trader.address,
-    ProxyContract.address,
-    ONE_DAY,
-    ONE_DAY
+    ProxyContract.address
   );
 
   await deployer.deploy(
     TokenizedShortCreator,
-    ShortSell.address,
-    ONE_DAY,
-    ONE_DAY
+    ShortSell.address
   );
 }
 

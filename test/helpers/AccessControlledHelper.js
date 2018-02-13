@@ -3,7 +3,8 @@ const expect = require('chai').expect;
 const { getBlockNumber, getBlockTimestamp } = require("./NodeHelper");
 
 module.exports = {
-  validateAccessControlledConstants
+  validateAccessControlledConstants,
+  validateStaticAccessControlledConstants
 };
 
 /**
@@ -31,5 +32,17 @@ async function validateAccessControlledConstants(
   const expectedGracePeriodExpiration = expectedGracePeriod.plus(creationTimeStamp);
   expect(contractGracePeriodExpiration.equals(expectedGracePeriodExpiration)).to.be.true;
   expect(contractDelay.equals(expectedAccessDelay)).to.be.true;
+  return true;
+}
+
+async function validateStaticAccessControlledConstants(
+  contract,
+  expectedGracePeriod) {
+  const contractGracePeriodExpiration = await contract.gracePeriodExpiration.call();
+
+  const blockNumber = await getBlockNumber(contract.transactionHash);
+  const creationTimeStamp = await getBlockTimestamp(blockNumber);
+  const expectedGracePeriodExpiration = expectedGracePeriod.plus(creationTimeStamp);
+  expect(contractGracePeriodExpiration.equals(expectedGracePeriodExpiration)).to.be.true;
   return true;
 }

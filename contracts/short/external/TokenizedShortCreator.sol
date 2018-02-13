@@ -7,7 +7,6 @@ import { TokenizedShort } from "./TokenizedShort.sol";
 
 
 contract TokenizedShortCreator is NoOwner {
-
     // ------------------------
     // ------ Constants -------
     // ------------------------
@@ -19,9 +18,7 @@ contract TokenizedShortCreator is NoOwner {
     // ------------------------
 
     function TokenizedShortCreator(
-        address _shortSell,
-        uint _updateDelay,
-        uint _updateExpiration
+        address _shortSell
     )
         public
     {

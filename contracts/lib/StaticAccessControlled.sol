@@ -34,7 +34,7 @@ contract StaticAccessControlled is Ownable {
     // ------ Constructor ------
     // -------------------------
 
-    function AccessControlled(
+    function StaticAccessControlled(
         uint _gracePeriod
     )
         Ownable()

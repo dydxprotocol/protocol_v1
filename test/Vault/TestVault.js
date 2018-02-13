@@ -1,4 +1,4 @@
-/*global artifacts, web3, contract, describe, it, beforeEach*/
+/*global artifacts, contract, describe, it, beforeEach*/
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
@@ -7,20 +7,21 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
 
-const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
+const {
+  validateAccessControlledConstants,
+  validateStaticAccessControlledConstants
+} = require('../helpers/AccessControlledHelper');
 
 contract('Vault', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
-  const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   const num1 = new BigNumber(12);
   let proxy, vault, tokenA, tokenB;
 
   beforeEach(async () => {
     proxy = await ProxyContract.new(delay, gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
-      Vault.new(proxy.address, delay, gracePeriod, updateDelay, updateExpiration),
+      Vault.new(proxy.address, gracePeriod),
       TestToken.new(),
       TestToken.new()
     ]);
@@ -31,7 +32,7 @@ contract('Vault', function(accounts) {
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
       await validateAccessControlledConstants(proxy, delay, gracePeriod);
-      await validateAccessControlledConstants(vault, delay, gracePeriod);
+      await validateStaticAccessControlledConstants(vault, gracePeriod);
       const [
         owner,
         contractProxy
@@ -42,32 +43,6 @@ contract('Vault', function(accounts) {
 
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
       expect(contractProxy.toLowerCase()).to.eq(proxy.address);
-    });
-  });
-
-  describe('#updateProxy', () => {
-    it('allows owner to update the PROXY field after a delay', async () => {
-      const newAddress = accounts[3];
-      await vault.updateProxy(newAddress);
-
-      // Expect proxy not to have changed
-      let proxyAddress = await vault.PROXY.call();
-      expect(proxyAddress.toLowerCase()).to.eq(proxy.address.toLowerCase());
-
-      // Should not be able to update it without waiting
-      await expectThrow(() => vault.updateProxy(newAddress));
-
-      await wait(delay.toNumber());
-      await vault.updateProxy(newAddress);
-
-      // Now it should have changed
-      proxyAddress = await vault.PROXY.call();
-      expect(proxyAddress.toLowerCase()).to.eq(newAddress.toLowerCase());
-    });
-
-    it('does not allow non-owner addresses to update', async () => {
-      const newAddress = accounts[3];
-      await expectThrow(() => vault.updateProxy(newAddress, { from: accounts[2] }));
     });
   });
 
