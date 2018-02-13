@@ -589,7 +589,7 @@ async function doShortAndCall(accounts) {
     UnderlyingToken.deployed()
   ]);
 
-  const shortTx = await doShort(accounts);
+  const shortTx = await doShort(accounts, _salt);
 
   await shortSell.callInLoan(
     shortTx.id,

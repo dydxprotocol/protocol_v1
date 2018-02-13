@@ -42,7 +42,7 @@ contract TestToken {
     }
 
     function decimals() public pure returns (uint8) {
-        return 18;
+        return 15;
     }
 
     function transfer( address to, uint value) public returns (bool ok) {
