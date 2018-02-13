@@ -201,6 +201,11 @@ library ShortImpl {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
+        // Prevent overflows when calculating interest fees. Unused variable, throws on overflow
+        uint(transaction.loanOffering.maxDuration)
+            .mul(transaction.loanOffering.rates.interestRate)
+            .mul(transaction.shortAmount);
+
         // Check Signature
         require(
             isValidSignature(transaction.loanOffering)

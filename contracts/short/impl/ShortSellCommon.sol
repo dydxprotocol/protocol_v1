@@ -171,16 +171,18 @@ library ShortSellCommon {
         pure
         returns (uint _interestFee)
     {
-        // The interest rate for the proportion of the position being closed
-        uint interestRate = MathHelpers.getPartialAmount(
-            closeAmount,
-            short.shortAmount,
-            short.interestRate
-        );
-
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
-        // TODO implement more complex interest rates
-        return MathHelpers.getPartialAmount(timeElapsed, 1 days, interestRate);
+        if (timeElapsed > short.maxDuration) {
+            timeElapsed = short.maxDuration;
+        }
+
+        // We multiply everything before dividing to reduce rounding error as much as possible.
+        // Overflow should have been prevented by the loan verification already.
+        // const proratedInterest = interestRate * (close Amount / short.shortAmount)
+        // return proratedInterest * (timeElapsed / 1 days);
+        uint numerator = short.interestRate.mul(closeAmount).mul(timeElapsed);
+        uint denominator = short.shortAmount.mul(1 days);
+        return numerator.div(denominator);
     }
 
     function getLoanOfferingHash(
@@ -247,7 +249,7 @@ library ShortSellCommon {
     // -------- Parsing Functions -------
 
     function getShortObject(
-        ShortSellState.State storage state,
+        address repo,
         bytes32 shortId
     )
         internal
@@ -267,7 +269,7 @@ library ShortSellCommon {
             maxDuration,
             lender,
             seller
-        ) =  ShortSellRepo(state.REPO).getShort(shortId);
+        ) =  ShortSellRepo(repo).getShort(shortId);
 
         // This checks that the short exists
         require(startTimestamp != 0);

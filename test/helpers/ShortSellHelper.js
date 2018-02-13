@@ -7,6 +7,7 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const ethUtil = require('ethereumjs-util');
 
+const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
@@ -70,8 +71,8 @@ async function createSigned0xSellOrder(accounts) {
 
 function callShort(shortSell, tx) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    tx.loanOffering.underlyingToken,
+    tx.loanOffering.baseToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
     tx.loanOffering.taker,
@@ -264,8 +265,8 @@ function getOrderTxFields(order) {
 
 function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
@@ -371,6 +372,8 @@ async function createSigned0xBuyOrder(accounts) {
 
 async function createLoanOffering(accounts) {
   let loanOffering = {
+    underlyingToken: UnderlyingToken.address,
+    baseToken: BaseToken.address,
     lender: accounts[1],
     signer: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
@@ -415,8 +418,8 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
@@ -509,6 +512,7 @@ function get0xOrderHash(order) {
 }
 
 async function getShort(shortSell, id) {
+  const repo = await ShortSellRepo.deployed();
   const [
     underlyingToken,
     baseToken,
@@ -522,7 +526,7 @@ async function getShort(shortSell, id) {
     maxDuration,
     lender,
     seller
-  ] = await shortSell.getShort.call(id);
+  ] = await repo.getShort.call(id);
 
   return {
     underlyingToken,

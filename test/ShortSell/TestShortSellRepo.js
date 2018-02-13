@@ -6,15 +6,15 @@ const BigNumber = require('bignumber.js');
 const ShortSellRepo = artifacts.require("ShortSellRepo");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { testAddrs } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 const accessDelay =    new BigNumber('1234')
 const gracePeriod =    new BigNumber('12345');
 const id =             '1234567';
 const badId =          '7654321';
-const token1Address =  testAddrs[6];
-const token2Address =  testAddrs[7];
+const token1Address =  ADDRESSES.TEST[6];
+const token2Address =  ADDRESSES.TEST[7];
 const shortAmount =    new BigNumber('1000');
 const interestRate =   new BigNumber('1');
 const callTimestamp =  new BigNumber('444');
@@ -22,10 +22,10 @@ const callTimeLimit =  new BigNumber('222');
 const lockoutTime =    new BigNumber('333');
 const startTimestamp = new BigNumber('4444');
 const maxDuration =    new BigNumber('6666');
-const lender1 =        testAddrs[0];
-const seller1 =        testAddrs[1];
-const lender2 =        testAddrs[2];
-const seller2 =        testAddrs[3];
+const lender1 =        ADDRESSES.TEST[0];
+const seller1 =        ADDRESSES.TEST[1];
+const lender2 =        ADDRESSES.TEST[2];
+const seller2 =        ADDRESSES.TEST[3];
 
 async function createAddShort(shortRepo, shortId, account) {
   await shortRepo.addShort(

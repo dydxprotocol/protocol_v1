@@ -116,7 +116,7 @@ contract ShortSell is
      *  [1]  = loan maximum amount
      *  [2]  = loan minimum amount
      *  [3]  = loan minimum sell amount
-     *  [4]  = loan interest rate
+     *  [4]  = loan interest rate (amount of base tokens per day)
      *  [5]  = loan lender fee
      *  [6]  = loan taker fee
      *  [7]  = loan expiration timestamp (in seconds)
@@ -345,7 +345,7 @@ contract ShortSell is
         external
         nonReentrant
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.seller);
 
         Vault(state.VAULT).transferToVault(
@@ -475,29 +475,6 @@ contract ShortSell is
     // ----- Public Constant Functions -----
     // -------------------------------------
 
-    function getShort(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (
-            address underlyingToken,
-            address baseToken,
-            uint shortAmount,
-            uint closedAmount,
-            uint interestRate,
-            uint32 callTimeLimit,
-            uint32 lockoutTime,
-            uint32 startTimestamp,
-            uint32 callTimestamp,
-            uint32 maxDuration,
-            address lender,
-            address seller
-        )
-    {
-        return ShortSellRepo(state.REPO).getShort(shortId);
-    }
-
     function containsShort(
         bytes32 shortId
     )
@@ -518,7 +495,7 @@ contract ShortSell is
         if (!ShortSellRepo(state.REPO).containsShort(shortId)) {
             return 0;
         }
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 
         return Vault(state.VAULT).balances(shortId, short.baseToken);
     }
@@ -533,17 +510,16 @@ contract ShortSell is
         if (!ShortSellRepo(state.REPO).containsShort(shortId)) {
             return 0;
         }
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 
+        // In both branches of the conditional, endTimestamp may end up being past the maximum
+        // duration of the short, but calculateInterestFee() will bound it
         uint endTimestamp;
-
         if (
             short.callTimestamp > 0
             && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
         ) {
             endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
-        } else if (block.timestamp > uint(short.startTimestamp).add(short.maxDuration)) {
-            endTimestamp = uint(short.startTimestamp).add(short.maxDuration);
         } else {
             endTimestamp = block.timestamp;
         }
@@ -596,7 +572,7 @@ contract ShortSell is
         external
         returns(bool _isCalled)
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 
         return (short.callTimestamp > 0);
     }

@@ -43,7 +43,7 @@ library ForceRecoverLoanImpl {
         public
         returns (uint _baseTokenAmount)
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         var (offer, bidder, hasCurrentOffer) =
             ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
 
