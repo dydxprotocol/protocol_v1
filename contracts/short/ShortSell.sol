@@ -19,7 +19,7 @@ import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
 /**
  * @title ShortSell
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */

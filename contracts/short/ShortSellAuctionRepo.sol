@@ -6,7 +6,7 @@ import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 
 /**
  * @title ShortSellAuctionRepo
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to store state for short sell auctions
  */

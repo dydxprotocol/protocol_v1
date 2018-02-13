@@ -3,7 +3,7 @@ pragma solidity 0.4.19;
 
 /**
  * @title ShortSellState
- * @author Antonio Juliano
+ * @author dYdX
  *
  * Contains state for the ShortSell contract. Also used by libraries that implement
  * ShortSell functions

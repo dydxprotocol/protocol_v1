@@ -14,7 +14,7 @@ import { MathHelpers } from "../lib/MathHelpers.sol";
 
 /**
  * @title Trader
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to abstract the exchange of token assets from Vault
  */

@@ -5,16 +5,16 @@ import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { AccessControlled } from "../lib/AccessControlled.sol";
+import { OwnedAccessControlled } from "../lib/OwnedAccessControlled.sol";
 
 
 /**
  * @title Proxy
- * @author Antonio Juliano
+ * @author dYdX
  *
  * Used to transfer tokens between addresses which have set allowance on this contract
  */
-contract Proxy is AccessControlled, NoOwner, Pausable {
+contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
     using SafeMath for uint;
 
     // ---------------------------
@@ -27,7 +27,6 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
      * transfer authorized addresses
      */
     mapping(address => bool) public transferAuthorized;
-    mapping(address => uint256) public pendingTransferAuthorizations;
 
     // ------------------------
     // -------- Events --------
@@ -37,25 +36,9 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         address who
     );
 
-    event PendingTransferAuthorization(
-        address who
-    );
-
     event TransferDeauthorization(
         address who
     );
-
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
-
-    function Proxy(
-        uint _accessDelay,
-        uint _gracePeriod
-    )
-        AccessControlled(_accessDelay, _gracePeriod)
-        public
-    {}
 
     // ---------------------------
     // -------- Modifiers --------
@@ -66,6 +49,11 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
         _;
     }
 
+    modifier requiresAuthorizationOrOwner() {
+        require(authorized[msg.sender] || owner == msg.sender);
+        _;
+    }
+
     // --------------------------------------------------
     // ---- Authorized Only State Changing Functions ----
     // --------------------------------------------------
@@ -73,8 +61,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     function grantTransferAuthorization(
         address who
     )
-        requiresAuthorization
-        whenNotPaused
+        requiresAuthorizationOrOwner
         external
     {
         if (!transferAuthorized[who]) {
@@ -89,63 +76,7 @@ contract Proxy is AccessControlled, NoOwner, Pausable {
     function revokeTransferAuthorization(
         address who
     )
-        requiresAuthorization
-        whenNotPaused
-        external
-    {
-        if (transferAuthorized[who]) {
-            delete transferAuthorized[who];
-
-            TransferDeauthorization(
-                who
-            );
-        }
-    }
-
-    // ---------------------------------------------
-    // ---- Owner Only State Changing Functions ----
-    // ---------------------------------------------
-
-    function ownerGrantTransferAuthorization(
-        address who
-    )
-        onlyOwner
-        external
-    {
-        if (block.timestamp < gracePeriodExpiration) {
-            transferAuthorized[who] = true;
-
-            TransferAuthorization(
-                who
-            );
-        } else {
-            pendingTransferAuthorizations[who] = block.timestamp.add(accessDelay);
-
-            PendingTransferAuthorization(
-                who
-            );
-        }
-    }
-
-    function ownerConfirmTransferAuthorization(
-        address who
-    )
-        onlyOwner
-        external
-    {
-        require(pendingTransferAuthorizations[who] != 0);
-        require(block.timestamp >= pendingTransferAuthorizations[who]);
-        transferAuthorized[who] = true;
-        delete pendingTransferAuthorizations[who];
-        TransferAuthorization(
-            who
-        );
-    }
-
-    function ownerRevokeTransferAuthorization(
-        address who
-    )
-        onlyOwner
+        requiresAuthorizationOrOwner
         external
     {
         if (transferAuthorized[who]) {

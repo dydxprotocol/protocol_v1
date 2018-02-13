@@ -10,7 +10,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 /**
  * @title ShortSellCommon
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains common functions for implementations of public facing ShortSell functions
  */

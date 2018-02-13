@@ -13,7 +13,7 @@ import { Exchange } from "../shared/Exchange.sol";
 
 /**
  * @title Vault
- * @author Antonio Juliano
+ * @author dYdX
  *
  * Holds and transfers tokens in vaults denominated by id
  */

@@ -10,7 +10,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 /**
  * @title PlaceSellbackBidImpl
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains the implementation for the placeSellbackBid function of ShortSell
  */

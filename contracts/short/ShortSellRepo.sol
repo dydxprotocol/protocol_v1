@@ -7,7 +7,7 @@ import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 
 /**
  * @title ShortSellRepo
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to store state for short sells
  */

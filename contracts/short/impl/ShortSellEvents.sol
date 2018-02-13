@@ -3,7 +3,7 @@ pragma solidity 0.4.19;
 
 /**
  * @title ShortSellEvents
- * @author Antonio Juliano
+ * @author dYdX
  *
  * Contains events for the ShortSell contract.
  * NOTE: Any ShortSell function libraries that use events will need to both define the event here

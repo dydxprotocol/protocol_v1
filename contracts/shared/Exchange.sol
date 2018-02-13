@@ -28,6 +28,7 @@ import "./Proxy.sol";
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
+/// @author dYdX [modified from 0x version]
 contract Exchange is ZeroExSafeMath, NoOwner {
 
     // Error Codes

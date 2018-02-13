@@ -21,7 +21,6 @@ const PlaceSellbackBidImpl = artifacts.require("PlaceSellbackBidImpl");
 const BigNumber = require('bignumber.js');
 
 const ONE_HOUR = new BigNumber(60 * 60);
-const ONE_DAY = new BigNumber(60 * 60 * 24);
 
 function isDevNetwork(network) {
   return network === 'development' || network === 'test' || network === 'develop';
@@ -48,7 +47,7 @@ function maybeDeploy0x(deployer, network) {
 
 async function deployShortSellContracts(deployer) {
   await Promise.all([
-    deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR),
+    deployer.deploy(ProxyContract),
     deployer.deploy(
       ShortSellRepo,
       ONE_HOUR,
@@ -110,9 +109,9 @@ async function deployShortSellContracts(deployer) {
 async function authorizeOnProxy() {
   const proxy = await ProxyContract.deployed();
   await Promise.all([
-    proxy.ownerGrantTransferAuthorization(Vault.address),
-    proxy.ownerGrantTransferAuthorization(Exchange.address),
-    proxy.ownerGrantTransferAuthorization(ShortSell.address),
+    proxy.grantTransferAuthorization(Vault.address),
+    proxy.grantTransferAuthorization(Exchange.address),
+    proxy.grantTransferAuthorization(ShortSell.address),
     proxy.grantAccess(TokenizedShortCreator.address)
   ]);
 }

@@ -2,7 +2,7 @@ pragma solidity 0.4.19;
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-
+import { AccessControlledBase } from "./AccessControlledBase.sol";
 
 /**
  * @title StaticAccessControlled
@@ -11,24 +11,10 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
  * Allows for functions to be access controled
  * Permissions cannot be changed
  */
-contract StaticAccessControlled is Ownable {
+contract StaticAccessControlled is AccessControlledBase, Ownable {
     using SafeMath for uint;
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
-
     uint public gracePeriodExpiration;
-
-    mapping(address => bool) public authorized;
-
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
-
-    event AccessGranted(
-        address who
-    );
 
     // -------------------------
     // ------ Constructor ------
@@ -41,15 +27,6 @@ contract StaticAccessControlled is Ownable {
         public
     {
         gracePeriodExpiration = block.timestamp.add(_gracePeriod);
-    }
-
-    // ---------------------------
-    // -------- Modifiers --------
-    // ---------------------------
-
-    modifier requiresAuthorization() {
-        require(authorized[msg.sender]);
-        _;
     }
 
     // -------------------------------------------

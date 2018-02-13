@@ -10,7 +10,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 /**
  * @title ForceRecoverLoanImpl
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains the implementation for the forceRecoverLoan function of ShortSell
  */

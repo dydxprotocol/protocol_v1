@@ -6,7 +6,7 @@ import "./CoveredOption.sol";
 
 /**
  * @title DerivativeCreator
- * @author Antonio Juliano
+ * @author dYdX
  *
  * DerivativeCreator creates and maps derivatives corresponding to the dYdX protocol standards.
  * Current derivatives include:

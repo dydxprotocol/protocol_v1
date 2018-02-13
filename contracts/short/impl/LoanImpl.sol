@@ -10,7 +10,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 /**
  * @title LoanImpl
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains the implementation for the following functions of ShortSell:
  *
