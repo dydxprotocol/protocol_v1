@@ -142,7 +142,6 @@ describe('#placeSellbackBid', () => {
       const bidder = accounts[6];
       const bid = new BigNumber(100);
       const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
-
       await shortSell.cancelLoanCall(shortTx.id, { from: shortTx.loanOffering.lender });
       await wait(shortTx.loanOffering.maxDuration);
 

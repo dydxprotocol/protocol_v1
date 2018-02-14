@@ -154,7 +154,7 @@ library ShortImpl {
         );
 
         // LOG EVENT
-        // one level of indirection in order to reduce variable stack size for solidity compiler
+        // one level of indirection in order to number of variables for solidity compiler
         recordShortInitiated(
             shortId,
             msg.sender,

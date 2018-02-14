@@ -443,9 +443,9 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
     closeAmount,
     shortTx.shortAmount,
     getPartialAmount(
-      shortLifetime,
+      interestFee,
       BIGNUMBERS.ONE_DAY_IN_SECONDS,
-      interestFee
+      shortLifetime
     )
   );
 }

@@ -163,12 +163,12 @@ async function checkSuccess(shortSell, shortTx) {
   const proratedInterestRate =
     shortTx.loanOffering.rates.maxDailyInterest
       .mul(short.shortAmount)
-      .div(shortTx.loanOffering.rates.maxAmount);
+      .idiv(shortTx.loanOffering.rates.maxAmount); // idiv rounds down
 
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
   expect(short.baseToken).to.equal(shortTx.baseToken);
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
-  expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate, 0, BigNumber.ROUND_DOWN);
+  expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate);
   expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
   expect(short.lockoutTime).to.be.bignumber.equal(shortTx.loanOffering.lockoutTime);
   expect(short.lender).to.equal(shortTx.loanOffering.lender);

@@ -587,6 +587,7 @@ async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid)
     shortTx.shortAmount,
     { from: bidder }
   );
+
   return shortSell.placeSellbackBid(
     shortTx.id,
     bid,
