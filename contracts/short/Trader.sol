@@ -3,9 +3,8 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { AccessControlled } from "../lib/AccessControlled.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
-import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
 import { ZeroExExchangeInterface } from "../interfaces/ZeroExExchangeInterface.sol";
 import { Exchange } from "../shared/Exchange.sol";
 import { Proxy } from "../shared/Proxy.sol";
@@ -15,15 +14,14 @@ import { MathHelpers } from "../lib/MathHelpers.sol";
 
 /**
  * @title Trader
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to abstract the exchange of token assets from Vault
  */
 /* solium-disable-next-line */
 contract Trader is
-    AccessControlled,
+    StaticAccessControlled,
     TokenInteract,
-    DelayedUpdate,
     HasNoEther,
     HasNoContracts {
     using SafeMath for uint;
@@ -76,13 +74,9 @@ contract Trader is
         address _proxy,
         address _0xProxy,
         address _0xFeeTokenConstant,
-        uint _accessDelay,
-        uint _gracePeriod,
-        uint _updateDelay,
-        uint _updateExpiration
+        uint _gracePeriod
     )
-        AccessControlled(_accessDelay, _gracePeriod)
-        DelayedUpdate(_updateDelay, _updateExpiration)
+        StaticAccessControlled(_gracePeriod)
         public
     {
         DYDX_EXCHANGE = _dydxExchange;
@@ -90,58 +84,6 @@ contract Trader is
         VAULT = _vault;
         PROXY = _proxy;
         ZERO_EX_PROXY = _0xProxy;
-        ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
-    }
-
-    // -----------------------------
-    // ------ Admin Functions ------
-    // -----------------------------
-
-    function updateDydxExchange(address _dydxExchange)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("DYDX_EXCHANGE", _dydxExchange)
-        external
-    {
-        DYDX_EXCHANGE = _dydxExchange;
-    }
-
-    function update0xExchange(address _0xExchange)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("0X_EXCHANGE", _0xExchange)
-        external
-    {
-        ZERO_EX_EXCHANGE = _0xExchange;
-    }
-
-    function updateVault(address _vault)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("VAULT", _vault)
-        external
-    {
-        VAULT = _vault;
-    }
-
-    function updateProxy(address _proxy)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("PROXY", _proxy)
-        external
-    {
-        PROXY = _proxy;
-    }
-
-    function update0xProxy(address _0xProxy)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("0X_PROXY", _0xProxy)
-        external
-    {
-        ZERO_EX_PROXY = _0xProxy;
-    }
-
-    function update0xFeeTokenConstant(address _0xFeeTokenConstant)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("0X_FEE_TOKEN_CONSTANT", _0xFeeTokenConstant)
-        external
-    {
         ZERO_EX_FEE_TOKEN_CONSTANT = _0xFeeTokenConstant;
     }
 

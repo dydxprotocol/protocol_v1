@@ -1,18 +1,17 @@
 pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { AccessControlled } from "../lib/AccessControlled.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 
 
 /**
  * @title ShortSellRepo
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to store state for short sells
  */
-contract ShortSellRepo is AccessControlled, NoOwner {
-
+contract ShortSellRepo is StaticAccessControlled, NoOwner {
     // ---------------------------
     // ----- State Variables -----
     // ---------------------------
@@ -26,11 +25,10 @@ contract ShortSellRepo is AccessControlled, NoOwner {
     // -------------------------
 
     function ShortSellRepo(
-        uint _accessDelay,
         uint _gracePeriod
     )
         public
-        AccessControlled(_accessDelay, _gracePeriod)
+        StaticAccessControlled(_gracePeriod)
     {}
 
     // --------------------------------------------------

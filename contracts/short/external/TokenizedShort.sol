@@ -115,25 +115,23 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     {
         ShortSellCommon.Short memory short =
             ShortSellCommon.getShortObject(REPO, shortId);
+        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The ownership of the short must be transferred to this contract before intialization
         // Once ownership is transferred, there is no way to have this contract transfer it back
         // to the original short seller. Therefore, the short seller transferring ownership should
         // verify that the initialTokenHolder field is properly set so that they recieve the tokens.
         require(short.seller == address(this));
-
-        state = State.OPEN;
-
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
-
         require(currentShortAmount > 0);
 
         // Give the specified address the entire balance, equal to the current amount of the short
         balances[initialTokenHolder] = currentShortAmount;
-
         totalSupply_ = currentShortAmount;
-
         baseToken = short.baseToken;
+        state = State.OPEN;
+
+        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
+        Transfer(address(0), initialTokenHolder, currentShortAmount);
     }
 
     function redeemDirectly(

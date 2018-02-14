@@ -1,15 +1,12 @@
 pragma solidity 0.4.19;
 
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { DelayedUpdate } from "../../lib/DelayedUpdate.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { TokenizedShort } from "./TokenizedShort.sol";
 
 
-contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
-
+contract TokenizedShortCreator is NoOwner {
     // ------------------------
     // ------ Constants -------
     // ------------------------
@@ -21,12 +18,8 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
     // ------------------------
 
     function TokenizedShortCreator(
-        address _shortSell,
-        uint _updateDelay,
-        uint _updateExpiration
+        address _shortSell
     )
-        Ownable()
-        DelayedUpdate(_updateDelay, _updateExpiration)
         public
     {
         SHORT_SELL = _shortSell;
@@ -35,15 +28,6 @@ contract TokenizedShortCreator is Ownable, DelayedUpdate, NoOwner {
     // -----------------------------
     // ------ Public functions -----
     // -----------------------------
-
-    // If changed, the new proxy will need to grant access to this contract
-    function updateShortSell(address _shortSell)
-        onlyOwner // Must come before delayedAddressUpdate
-        delayedAddressUpdate("SHORT_SELL", _shortSell)
-        external
-    {
-        SHORT_SELL = _shortSell;
-    }
 
     function tokenizeShort(
         address _initialTokenHolder,

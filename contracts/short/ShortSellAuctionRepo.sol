@@ -1,16 +1,16 @@
 pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { AccessControlled } from "../lib/AccessControlled.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 
 
 /**
  * @title ShortSellAuctionRepo
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to store state for short sell auctions
  */
-contract ShortSellAuctionRepo is AccessControlled, NoOwner {
+contract ShortSellAuctionRepo is StaticAccessControlled, NoOwner {
     // -----------------------
     // ------- Structs -------
     // -----------------------
@@ -33,11 +33,10 @@ contract ShortSellAuctionRepo is AccessControlled, NoOwner {
     // -------------------------
 
     function ShortSellAuctionRepo(
-        uint _accessDelay,
         uint _gracePeriod
     )
         public
-        AccessControlled(_accessDelay, _gracePeriod)
+        StaticAccessControlled(_gracePeriod)
     {}
 
     // --------------------------------------------------

@@ -4,9 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { DelayedUpdate } from "../lib/DelayedUpdate.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
-import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
@@ -21,16 +19,14 @@ import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
 /**
  * @title ShortSell
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
  /* solium-disable-next-line */
 contract ShortSell is
     Ownable,
-    DelayedUpdate,
     NoOwner,
-    ShortSellAdmin,
     ReentrancyGuard,
     ShortSellEvents {
 
@@ -54,12 +50,9 @@ contract ShortSell is
         address _repo,
         address _auction_repo,
         address _trader,
-        address _proxy,
-        uint _updateDelay,
-        uint _updateExpiration
+        address _proxy
     )
         Ownable()
-        DelayedUpdate(_updateDelay, _updateExpiration)
         public
     {
         state = ShortSellState.State({

@@ -7,9 +7,8 @@ const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { ADDRESSES } = require('../helpers/Constants');
-const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
+const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
-const accessDelay = new BigNumber('1234')
 const gracePeriod = new BigNumber('12345');
 const id1 =         '1234567';
 const id2 =         '7654321';
@@ -22,13 +21,13 @@ contract('ShortSellAuctionRepo', function(accounts) {
   let shortSellAuctionRepo;
 
   beforeEach(async () => {
-    shortSellAuctionRepo = await ShortSellAuctionRepo.new(accessDelay, gracePeriod);
+    shortSellAuctionRepo = await ShortSellAuctionRepo.new(gracePeriod);
     await shortSellAuctionRepo.grantAccess(accounts[1]);
   });
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      await validateAccessControlledConstants(shortSellAuctionRepo, accessDelay, gracePeriod);
+      await validateStaticAccessControlledConstants(shortSellAuctionRepo, gracePeriod);
     });
   });
 

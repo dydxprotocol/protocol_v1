@@ -21,7 +21,6 @@ const PlaceSellbackBidImpl = artifacts.require("PlaceSellbackBidImpl");
 const BigNumber = require('bignumber.js');
 
 const ONE_HOUR = new BigNumber(60 * 60);
-const ONE_DAY = new BigNumber(60 * 60 * 24);
 
 function isDevNetwork(network) {
   return network === 'development' || network === 'test' || network === 'develop';
@@ -48,16 +47,14 @@ function maybeDeploy0x(deployer, network) {
 
 async function deployShortSellContracts(deployer) {
   await Promise.all([
-    deployer.deploy(ProxyContract, ONE_DAY, ONE_HOUR),
+    deployer.deploy(ProxyContract),
     deployer.deploy(
       ShortSellRepo,
-      ONE_DAY,
       ONE_HOUR,
     ),
     deployer.deploy(
       ShortSellAuctionRepo,
-      ONE_DAY,
-      ONE_HOUR,
+      ONE_HOUR
     ),
     deployer.deploy(ShortImpl),
     deployer.deploy(CloseShortImpl),
@@ -80,10 +77,7 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(
       Vault,
       ProxyContract.address,
-      ONE_DAY,
-      ONE_HOUR,
-      ONE_DAY,
-      ONE_DAY
+      ONE_HOUR
     )
   ]);
   await deployer.deploy(
@@ -94,10 +88,7 @@ async function deployShortSellContracts(deployer) {
     ProxyContract.address,
     ZeroExProxy.address,
     '0x0000000000000000000000000000010',
-    ONE_DAY,
-    ONE_HOUR,
-    ONE_DAY,
-    ONE_DAY
+    ONE_HOUR
   );
 
   await deployer.deploy(
@@ -106,25 +97,21 @@ async function deployShortSellContracts(deployer) {
     ShortSellRepo.address,
     ShortSellAuctionRepo.address,
     Trader.address,
-    ProxyContract.address,
-    ONE_DAY,
-    ONE_DAY
+    ProxyContract.address
   );
 
   await deployer.deploy(
     TokenizedShortCreator,
-    ShortSell.address,
-    ONE_DAY,
-    ONE_DAY
+    ShortSell.address
   );
 }
 
 async function authorizeOnProxy() {
   const proxy = await ProxyContract.deployed();
   await Promise.all([
-    proxy.ownerGrantTransferAuthorization(Vault.address),
-    proxy.ownerGrantTransferAuthorization(Exchange.address),
-    proxy.ownerGrantTransferAuthorization(ShortSell.address),
+    proxy.grantTransferAuthorization(Vault.address),
+    proxy.grantTransferAuthorization(Exchange.address),
+    proxy.grantTransferAuthorization(ShortSell.address),
     proxy.grantAccess(TokenizedShortCreator.address)
   ]);
 }

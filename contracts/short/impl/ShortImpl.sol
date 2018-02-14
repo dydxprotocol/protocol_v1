@@ -14,7 +14,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 /**
  * @title ShortImpl
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains the implementation for the short function of ShortSell
  */

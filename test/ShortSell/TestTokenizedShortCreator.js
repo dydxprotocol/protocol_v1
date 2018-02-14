@@ -1,22 +1,18 @@
-/*global artifacts, contract, describe, it, before, beforeEach, web3*/
+/*global artifacts, contract, describe, it, before, beforeEach,*/
 
 const expect = require('chai').expect;
-const BigNumber = require('bignumber.js');
 
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 
-const { wait } = require('@digix/tempo')(web3);
 const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
-const { validateDelayedUpdateConstants } = require('../helpers/DelayedUpdateHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { doShort } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
 
 contract('TokenizedShortCreator', function(accounts) {
-  const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   let shortSellContract, tokenizedShortCreatorContract, proxyContract;
 
   before('retrieve deployed contracts', async () => {
@@ -35,51 +31,12 @@ contract('TokenizedShortCreator', function(accounts) {
     let contract;
 
     beforeEach('set up new TokenizedShortCreator contract', async () => {
-      contract = await TokenizedShortCreator.new(
-        shortSellContract.address,
-        updateDelay,
-        updateExpiration);
+      contract = await TokenizedShortCreator.new(shortSellContract.address);
     });
 
     it('sets constants correctly', async () => {
-      validateDelayedUpdateConstants(contract, updateDelay, updateExpiration);
       const shortSellContractAddress = await contract.SHORT_SELL.call();
       expect(shortSellContractAddress).to.equal(shortSellContract.address);
-    });
-  });
-
-  describe('#updateShortSell', () => {
-    const newAddress = accounts[7];
-    let contract;
-
-    beforeEach('set up new TokenizedShortCreator contract', async () => {
-      contract = await TokenizedShortCreator.new(
-        shortSellContract.address,
-        updateDelay,
-        updateExpiration);
-    });
-
-    it('allows owner to update the SHORT_SELL field after a delay', async () => {
-      await contract.updateShortSell(newAddress);
-
-      // Expect SHORT_SELL not to have changed
-      let shortSellAddress = await contract.SHORT_SELL.call();
-      expect(shortSellAddress.toLowerCase()).to.eq(shortSellContract.address.toLowerCase());
-
-      // Should not be able to update it without waiting
-      await expectThrow(() => contract.updateShortSell(newAddress));
-
-      await wait(updateDelay.toNumber());
-      await contract.updateShortSell(newAddress);
-
-      // Now it should have changed
-      shortSellAddress = await contract.SHORT_SELL.call();
-      expect(shortSellAddress.toLowerCase()).to.eq(newAddress.toLowerCase());
-    });
-
-    it('fails for non-owner accounts', async () => {
-      await expectThrow(() => contract.updateShortSell(
-        newAddress, { from: accounts[2] }));
     });
   });
 
@@ -137,8 +94,7 @@ contract('TokenizedShortCreator', function(accounts) {
     it('fails when proxy has not granted access to TokenizedShortCreator', async () => {
       const contract = await TokenizedShortCreator.new(
         shortSellContract.address,
-        updateDelay,
-        updateExpiration);
+      );
 
       // no access granted by proxy
 

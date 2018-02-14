@@ -6,7 +6,6 @@ const BigNumber = require('bignumber.js');
 const Proxy = artifacts.require("Proxy");
 const TestToken = artifacts.require("TestToken");
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { validateAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 contract('Proxy', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
@@ -23,10 +22,7 @@ contract('Proxy', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      validateAccessControlledConstants(contract, delay, gracePeriod);
-      const [owner] = await Promise.all([
-        contract.owner.call()
-      ]);
+      const owner = await contract.owner.call();
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
     });
   });
@@ -48,7 +44,17 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[1]);
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
 
-      hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
+      expect(hasTransferAuth).to.be.true;
+    });
+
+    it('allows owner to grant transfer authorization', async () => {
+      let hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      expect(hasTransferAuth).to.be.false;
+
+      await contract.grantTransferAuthorization(accounts[2]);
+
+      hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
       expect(hasTransferAuth).to.be.true;
     });
 
@@ -57,7 +63,7 @@ contract('Proxy', function(accounts) {
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
 
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
       expect(hasTransferAuth).to.be.true;
     });
   });
@@ -71,14 +77,12 @@ contract('Proxy', function(accounts) {
       await expectThrow(
         () => contract.revokeTransferAuthorization(accounts[2], { from: accounts[3] })
       );
-      // Nor should the contract owner work
-      await expectThrow(() => contract.revokeTransferAuthorization(accounts[2]));
       // Nor should an address with transfer authorization work
       await expectThrow(
         () => contract.revokeTransferAuthorization(accounts[4], { from: accounts[2] })
       );
 
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
       expect(hasTransferAuth).to.be.true;
     });
 
@@ -87,7 +91,15 @@ contract('Proxy', function(accounts) {
       await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
       await contract.revokeTransferAuthorization(accounts[2], { from: accounts[1] });
 
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
+      expect(hasTransferAuth).to.be.false;
+    });
+
+    it('allows owner to revoke transfer authorization', async () => {
+      await contract.grantTransferAuthorization(accounts[2]);
+      await contract.revokeTransferAuthorization(accounts[2]);
+
+      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
       expect(hasTransferAuth).to.be.false;
     });
 
@@ -95,41 +107,7 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[1]);
       await contract.revokeTransferAuthorization(accounts[2], { from: accounts[1] });
 
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-    });
-  });
-
-  describe('#ownerRevokeTransferAuthorization', () => {
-    it('only allows owner to call', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      // An address with access should not be able to call
-      await expectThrow(
-        () => contract.ownerRevokeTransferAuthorization(accounts[2], { from: accounts[1] })
-      );
-      // Nor should a random address
-      await expectThrow(
-        () => contract.ownerRevokeTransferAuthorization(accounts[2], { from: accounts[3] })
-      );
-
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.true;
-    });
-
-    it('immediately revokes transfer authorization', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      await contract.ownerRevokeTransferAuthorization(accounts[2]);
-
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-    });
-
-    it('does nothing if address is not authorized', async () => {
-      await contract.ownerRevokeTransferAuthorization(accounts[2]);
-
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
+      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
       expect(hasTransferAuth).to.be.false;
     });
   });
@@ -153,7 +131,7 @@ contract('Proxy', function(accounts) {
         () => contract.transfer(tokenA.address, holder1, num1,)
       );
 
-      const balance = await tokenA.balanceOf(holder1);
+      const balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(num1)).to.be.true;
     });
 
@@ -164,7 +142,7 @@ contract('Proxy', function(accounts) {
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
       );
 
-      let balance = await tokenA.balanceOf(holder1);
+      let balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(new BigNumber(0))).to.be.true;
 
       await tokenA.issue(num1, { from: holder1 });
@@ -172,7 +150,7 @@ contract('Proxy', function(accounts) {
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
       );
 
-      balance = await tokenA.balanceOf(holder1);
+      balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(num1)).to.be.true;
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
@@ -180,8 +158,8 @@ contract('Proxy', function(accounts) {
 
       let balance2;
       [balance, balance2] = await Promise.all([
-        tokenA.balanceOf(holder1),
-        tokenA.balanceOf(accounts[2])
+        tokenA.balanceOf.call(holder1),
+        tokenA.balanceOf.call(accounts[2])
       ]);
       expect(balance.equals(new BigNumber(0))).to.be.true;
       expect(balance2.equals(num1)).to.be.true;
@@ -196,8 +174,8 @@ contract('Proxy', function(accounts) {
 
       let balance2, balance;
       [balance, balance2] = await Promise.all([
-        tokenA.balanceOf(holder1),
-        tokenA.balanceOf(accounts[2])
+        tokenA.balanceOf.call(holder1),
+        tokenA.balanceOf.call(accounts[2])
       ]);
       expect(balance.equals(new BigNumber(0))).to.be.true;
       expect(balance2.equals(num1)).to.be.true;
@@ -213,7 +191,7 @@ contract('Proxy', function(accounts) {
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
       );
 
-      const balance = await tokenA.balanceOf(holder1);
+      const balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(num1)).to.be.true;
     });
   });
@@ -239,8 +217,8 @@ contract('Proxy', function(accounts) {
       );
 
       const [balance, balance2] = await Promise.all([
-        tokenA.balanceOf(holder1),
-        tokenA.balanceOf(recipient)
+        tokenA.balanceOf.call(holder1),
+        tokenA.balanceOf.call(recipient)
       ]);
       expect(balance.equals(num1)).to.be.true;
       expect(balance2.equals(new BigNumber(0))).to.be.true;
@@ -253,7 +231,7 @@ contract('Proxy', function(accounts) {
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
-      let balance = await tokenA.balanceOf(holder1);
+      let balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(new BigNumber(0))).to.be.true;
 
       await tokenA.issue(num1, { from: holder1 });
@@ -261,7 +239,7 @@ contract('Proxy', function(accounts) {
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
-      balance = await tokenA.balanceOf(holder1);
+      balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(num1)).to.be.true;
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
@@ -269,8 +247,8 @@ contract('Proxy', function(accounts) {
 
       let balance2;
       [balance, balance2] = await Promise.all([
-        tokenA.balanceOf(holder1),
-        tokenA.balanceOf(recipient)
+        tokenA.balanceOf.call(holder1),
+        tokenA.balanceOf.call(recipient)
       ]);
       expect(balance.equals(new BigNumber(0))).to.be.true;
       expect(balance2.equals(num1)).to.be.true;
@@ -285,8 +263,8 @@ contract('Proxy', function(accounts) {
 
       let balance2, balance;
       [balance, balance2] = await Promise.all([
-        tokenA.balanceOf(holder1),
-        tokenA.balanceOf(recipient)
+        tokenA.balanceOf.call(holder1),
+        tokenA.balanceOf.call(recipient)
       ]);
       expect(balance.equals(new BigNumber(0))).to.be.true;
       expect(balance2.equals(num1)).to.be.true;
@@ -302,7 +280,7 @@ contract('Proxy', function(accounts) {
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
-      const balance = await tokenA.balanceOf(holder1);
+      const balance = await tokenA.balanceOf.call(holder1);
       expect(balance.equals(num1)).to.be.true;
     });
   });

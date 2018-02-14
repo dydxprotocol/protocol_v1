@@ -18,9 +18,7 @@ contract('Deploy Costs', () => {
         ADDRESSES.TEST[1],
         ADDRESSES.TEST[2],
         ADDRESSES.TEST[3],
-        ADDRESSES.TEST[4],
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
-        BIGNUMBERS.ONE_DAY_IN_SECONDS
+        ADDRESSES.TEST[4]
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
@@ -37,9 +35,6 @@ contract('Deploy Costs', () => {
         ADDRESSES.TEST[3],
         ADDRESSES.TEST[4],
         ADDRESSES.TEST[6],
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -52,9 +47,6 @@ contract('Deploy Costs', () => {
     it('', async () => {
       const contract = await Vault.new(
         ADDRESSES.TEST[0],
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -66,7 +58,6 @@ contract('Deploy Costs', () => {
   describe('ShortSellRepo', () => {
     it('', async () => {
       const contract = await ShortSellRepo.new(
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -78,7 +69,6 @@ contract('Deploy Costs', () => {
   describe('ShortSellAuctionRepo', () => {
     it('', async () => {
       const contract = await ShortSellAuctionRepo.new(
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -90,7 +80,6 @@ contract('Deploy Costs', () => {
   describe('Proxy', () => {
     it('', async () => {
       const contract = await ProxyContract.new(
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 

@@ -8,7 +8,7 @@ import { MathHelpers } from "../lib/MathHelpers.sol";
 
 /**
  * @title CoveredOption
- * @author Antonio Juliano
+ * @author dYdX
  *
  * CoveredOption represents a specific type of covered option corresponding to
  * a unique combination of:

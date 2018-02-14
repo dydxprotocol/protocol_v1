@@ -3,7 +3,7 @@ pragma solidity 0.4.19;
 
 /**
  * @title LoanOfferingVerifier
- * @author Antonio Juliano
+ * @author dYdX
  *
  * Interface that smart contracts must implement to be able to make off-chain generated
  * loan offerings

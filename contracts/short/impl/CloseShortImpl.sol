@@ -12,7 +12,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 /**
  * @title CloseShortImpl
- * @author Antonio Juliano
+ * @author dYdX
  *
  * This library contains the implementation for the closeShort function of ShortSell
  */
