@@ -185,11 +185,8 @@ async function checkSuccess(shortSell, shortTx) {
     shortTx.shortAmount
   );
 
-  expect(
-    balance.equals(
-      baseTokenFromSell.plus(shortTx.depositAmount)
-    )
-  ).to.be.true;
+  expect(balance).to.be.bignumber.equal(baseTokenFromSell.plus(shortTx.depositAmount));
+
   const [
     underlyingToken,
     baseToken,
@@ -226,23 +223,17 @@ async function checkSuccess(shortSell, shortTx) {
     feeToken.balanceOf.call(shortTx.loanOffering.feeRecipient),
   ]);
 
-  expect(
-    lenderUnderlyingToken.equals(
-      shortTx.loanOffering.rates.maxAmount.minus(shortTx.shortAmount)
-    )
-  ).to.be.true;
+  expect(lenderUnderlyingToken).to.be.bignumber.equal(
+    shortTx.loanOffering.rates.maxAmount.minus(shortTx.shortAmount)
+  );
   expect(makerUnderlyingToken).to.be.bignumber.equal(shortTx.shortAmount);
   expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
   expect(sellerBaseToken).to.be.bignumber.equal(0);
-  expect(
-    makerBaseToken.equals(
-      shortTx.buyOrder.makerTokenAmount.minus(baseTokenFromSell)
-    )
-  ).to.be.true;
-  expect(
-    vaultBaseToken.equals(baseTokenFromSell.plus(shortTx.depositAmount))
-  ).to.be.true;
-  expect(lenderFeeToken.equals(
+  expect(makerBaseToken).to.be.bignumber.equal(
+    shortTx.buyOrder.makerTokenAmount.minus(baseTokenFromSell)
+  );
+  expect(vaultBaseToken).to.be.bignumber.equal(baseTokenFromSell.plus(shortTx.depositAmount));
+  expect(lenderFeeToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.lenderFee
       .minus(
         getPartialAmount(
@@ -251,9 +242,9 @@ async function checkSuccess(shortSell, shortTx) {
           shortTx.loanOffering.rates.lenderFee
         )
       )
-  )).to.be.true;
+  );
   expect(vaultFeeToken).to.be.bignumber.equal(0);
-  expect(makerFeeToken.equals(
+  expect(makerFeeToken).to.be.bignumber.equal(
     shortTx.buyOrder.makerFee
       .minus(
         getPartialAmount(
@@ -262,8 +253,8 @@ async function checkSuccess(shortSell, shortTx) {
           shortTx.buyOrder.makerFee
         )
       )
-  )).to.be.true;
-  expect(sellerFeeToken.equals(
+  );
+  expect(sellerFeeToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.takerFee
       .plus(shortTx.buyOrder.takerFee)
       .minus(
@@ -280,5 +271,5 @@ async function checkSuccess(shortSell, shortTx) {
           shortTx.buyOrder.takerFee
         )
       )
-  )).to.be.true;
+  );
 }
