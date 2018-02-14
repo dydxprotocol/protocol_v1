@@ -48,10 +48,10 @@ describe('#forceRecoverLoan', () => {
         baseToken.balanceOf.call(shortTx.loanOffering.lender)
       ]);
 
-      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
-      expect(vaultBaseTokenBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
+      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
       expect(lenderBaseTokenBalance).to.be.bignumber.equal(baseTokenBalance);
@@ -113,16 +113,16 @@ describe('#forceRecoverLoan', () => {
         .minus(interestFee)
         .minus(bid);
 
-      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
-      expect(vaultBaseTokenBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
+      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
       expect(lenderBaseTokenBalance).to.be.bignumber.equal(interestFee);
       expect(shortSellerBaseTokenBalance).to.be.bignumber.equal(expectedShortSellerBaseToken);
       expect(bidderBaseTokenBalance).to.be.bignumber.equal(bid);
-      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(0);
     });
   });
 

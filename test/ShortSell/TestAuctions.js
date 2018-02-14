@@ -82,7 +82,7 @@ describe('#placeSellbackBid', () => {
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
       expect(bidderBalance).to.be.bignumber.equal(shortTx.shortAmount);
-      expect(bidder2Balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(bidder2Balance).to.be.bignumber.equal(0);
     });
   });
 
@@ -121,7 +121,7 @@ describe('#placeSellbackBid', () => {
       expect(auctionOffer.exists).to.be.true;
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
-      expect(bidderBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(bidderBalance).to.be.bignumber.equal(0);
       expect(bidder2Balance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });

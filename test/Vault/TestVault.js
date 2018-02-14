@@ -155,9 +155,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
-      expect(totalBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(tokenBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
+      expect(tokenBalance).to.be.bignumber.equal(0);
     });
 
     it('throws on insufficient balance or proxy allowance', async () => {
@@ -177,9 +177,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
-      expect(totalBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(tokenBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
+      expect(tokenBalance).to.be.bignumber.equal(0);
     });
   });
 
@@ -204,8 +204,8 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(receiver)
       ]);
 
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
-      expect(totalBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
       expect(receiverBalance).to.be.bignumber.equal(num1);
     });
 
@@ -276,7 +276,7 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance1).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance1).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
       expect(totalBalance).to.be.bignumber.equal(num1);
       expect(tokenBalance).to.be.bignumber.equal(num1);
@@ -301,7 +301,7 @@ contract('Vault', function(accounts) {
       ]);
 
       expect(balance1).to.be.bignumber.equal(num1);
-      expect(balance2).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(0);
       expect(totalBalance).to.be.bignumber.equal(num1);
       expect(tokenBalance).to.be.bignumber.equal(num1);
     });
@@ -325,7 +325,7 @@ contract('Vault', function(accounts) {
       ]);
 
       expect(balance1).to.be.bignumber.equal(num1);
-      expect(balance2).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(0);
       expect(totalBalance).to.be.bignumber.equal(num1);
       expect(tokenBalance).to.be.bignumber.equal(num1);
     });

@@ -99,7 +99,7 @@ describe('#closeShort', () => {
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
       let bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(0);
 
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
@@ -223,7 +223,7 @@ describe('#closeShortDirectly', () => {
       checkSmartContractBalances(balances, shortTx, closeAmount);
       checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
-      expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
+      expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(0);
       expect(balances.sellerBaseToken.equals(
         shortTx.depositAmount
           .plus(baseTokenFromSell)
@@ -412,12 +412,12 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
     shortBalance
   } = balances;
 
-  expect(vaultFeeToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(vaultFeeToken).to.be.bignumber.equal(0);
   expect(vaultBaseToken).to.be.bignumber.equal(expectedShortBalance);
-  expect(vaultUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
-  expect(traderFeeToken).to.be.bignumber.equal(new BigNumber(0));
-  expect(traderBaseToken).to.be.bignumber.equal(new BigNumber(0));
-  expect(traderUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
+  expect(traderFeeToken).to.be.bignumber.equal(0);
+  expect(traderBaseToken).to.be.bignumber.equal(0);
+  expect(traderUnderlyingToken).to.be.bignumber.equal(0);
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 

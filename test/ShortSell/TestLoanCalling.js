@@ -55,7 +55,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
+      expect(callTimestamp).to.be.bignumber.equal(0);
     });
   });
 
@@ -73,7 +73,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
+      expect(callTimestamp).to.be.bignumber.equal(0);
     });
   });
 
@@ -125,7 +125,7 @@ describe('#cancelLoanCall', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
+      expect(callTimestamp).to.be.bignumber.equal(0);
     });
   });
 
@@ -193,10 +193,10 @@ describe('#cancelLoanCall', () => {
         underlyingToken.balanceOf.call(bidder),
       ]);
 
-      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
+      expect(callTimestamp).to.be.bignumber.equal(0);
       expect(auctionExists).to.be.false;
-      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
-      expect(tokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(bidderTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });

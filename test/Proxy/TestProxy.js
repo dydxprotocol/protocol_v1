@@ -145,7 +145,7 @@ contract('Proxy', function(accounts) {
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
 
       await tokenA.issue(num1, { from: holder1 });
       await expectThrow(
@@ -163,7 +163,7 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(accounts[2])
       ]);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
     });
 
@@ -179,7 +179,7 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(accounts[2])
       ]);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
     });
 
@@ -223,7 +223,7 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(recipient)
       ]);
       expect(balance).to.be.bignumber.equal(num1);
-      expect(balance2).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(0);
     });
 
     it('fails on insufficient holder balance or allowance', async () => {
@@ -234,7 +234,7 @@ contract('Proxy', function(accounts) {
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
 
       await tokenA.issue(num1, { from: holder1 });
       await expectThrow(
@@ -252,7 +252,7 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(recipient)
       ]);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
     });
 
@@ -268,7 +268,7 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(recipient)
       ]);
-      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
     });
 

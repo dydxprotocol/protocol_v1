@@ -92,7 +92,7 @@ describe('#cancelLoanOffering', () => {
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
 
-      expect(canceledAmount).to.be.bignumber.equal(new BigNumber(0));
+      expect(canceledAmount).to.be.bignumber.equal(0);
     });
   });
 });
