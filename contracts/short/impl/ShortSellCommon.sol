@@ -58,7 +58,7 @@ library ShortSellCommon {
         uint minimumSellAmount;
         uint maxAmount;
         uint minAmount;
-        uint maxDailyInterest;
+        uint dailyInterestFee;
         uint lenderFee;
         uint takerFee;
     }
@@ -225,7 +225,7 @@ library ShortSellCommon {
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
             loanOffering.rates.minimumSellAmount,
-            loanOffering.rates.maxDailyInterest,
+            loanOffering.rates.dailyInterestFee,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,

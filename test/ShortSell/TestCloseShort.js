@@ -437,7 +437,7 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
   const interestFee = getPartialAmount(
     shortTx.shortAmount,
     shortTx.loanOffering.rates.maxAmount,
-    shortTx.loanOffering.rates.maxDailyInterest
+    shortTx.loanOffering.rates.dailyInterestFee
   );
   return getPartialAmount(
     closeAmount,

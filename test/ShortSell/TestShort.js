@@ -161,7 +161,7 @@ async function checkSuccess(shortSell, shortTx) {
   expect(contains).to.equal(true);
   const short = await getShort(shortSell, shortId);
   const proratedInterestRate =
-    shortTx.loanOffering.rates.maxDailyInterest
+    shortTx.loanOffering.rates.dailyInterestFee
       .mul(short.shortAmount)
       .dividedToIntegerBy(shortTx.loanOffering.rates.maxAmount); // rounds down
 

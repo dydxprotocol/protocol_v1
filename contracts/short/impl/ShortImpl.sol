@@ -181,19 +181,6 @@ library ShortImpl {
         );
     }
 
-    function getPartialInterestFee(
-        ShortTx transaction
-    )
-        internal
-        pure
-        returns (uint _interestFee)
-    {
-        return MathHelpers.getPartialAmount(
-            transaction.shortAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.maxDailyInterest);
-    }
-
     function validateShort(
         ShortSellState.State storage state,
         ShortTx transaction,
@@ -490,6 +477,19 @@ library ShortImpl {
         );
     }
 
+    function getPartialInterestFee(
+        ShortTx transaction
+    )
+        internal
+        pure
+        returns (uint _interestFee)
+    {
+        return MathHelpers.getPartialAmount(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.dailyInterestFee);
+    }
+
     // -------- Parsing Functions -------
 
     function parseShortTx(
@@ -575,7 +575,7 @@ library ShortImpl {
             maxAmount: values[1],
             minAmount: values[2],
             minimumSellAmount: values[3],
-            maxDailyInterest: values[4],
+            dailyInterestFee: values[4],
             lenderFee: values[5],
             takerFee: values[6]
         });
@@ -676,7 +676,7 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minimumSellAmount,
-            transaction.loanOffering.rates.maxDailyInterest,
+            transaction.loanOffering.rates.dailyInterestFee,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,
