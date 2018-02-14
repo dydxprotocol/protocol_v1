@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it, beforeEach*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSellRepo = artifacts.require("ShortSellRepo");
@@ -109,17 +111,17 @@ contract('ShortSellRepo', function(accounts) {
       const containsAfter = await contract.containsShort.call(id);
       expect(containsAfter).to.be.true
       const s = await getShort(contract, id);
-      expect(s.shortAmount.equals(shortAmount)).to.be.true;
-      expect(s.closedAmount.equals(0)).to.be.true;
+      expect(s.shortAmount).to.be.bignumber.equal(shortAmount);
+      expect(s.closedAmount).to.be.bignumber.equal(0);
       expect(s.underlyingToken).to.equal(token1Address);
       expect(s.baseToken).to.equal(token2Address);
       expect(s.lender).to.equal(lender1);
       expect(s.seller).to.equal(seller1);
-      expect(s.startTimestamp.equals(0)).to.be.false;
-      expect(s.callTimestamp.equals(0)).to.be.true;
-      expect(s.callTimeLimit.equals(callTimeLimit)).to.be.true;
-      expect(s.lockoutTime.equals(lockoutTime)).to.be.true;
-      expect(s.maxDuration.equals(maxDuration)).to.be.true;
+      expect(s.startTimestamp).to.be.bignumber.not.equal(0);
+      expect(s.callTimestamp).to.be.bignumber.equal(0);
+      expect(s.callTimeLimit).to.be.bignumber.equal(callTimeLimit);
+      expect(s.lockoutTime).to.be.bignumber.equal(lockoutTime);
+      expect(s.maxDuration).to.be.bignumber.equal(maxDuration);
     });
 
     it('fails when called twice for the same ID', async () => {
@@ -164,7 +166,7 @@ contract('ShortSellRepo', function(accounts) {
         await contract[functionName](id, valueToSet, { from: accounts[1] });
         const short = await getShort(contract, id);
         if (typeof valueToSet === 'object') { // assume to be BigNumber
-          expect(short[checkingValue].equals(valueToSet)).to.be.true;
+          expect(short[checkingValue]).to.be.bignumber.equal(valueToSet);
         } else { // assume to be string
           expect(short[checkingValue]).to.equal(valueToSet);
         }

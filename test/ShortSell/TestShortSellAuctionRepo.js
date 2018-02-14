@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it, beforeEach*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
@@ -40,7 +42,7 @@ contract('ShortSellAuctionRepo', function(accounts) {
     it('succeeds for an approved account', async () => {
       await shortSellAuctionRepo.setAuctionOffer(id1, offer1, bidder1, { from: accounts[1] });
       const [offer, bidder, exists] = await shortSellAuctionRepo.getAuction.call(id1);
-      expect(offer.equals(offer1)).to.be.true;
+      expect(offer).to.be.bignumber.equal(offer1);
       expect(bidder).to.equal(bidder1);
       expect(exists).to.be.true;
     });
@@ -49,7 +51,7 @@ contract('ShortSellAuctionRepo', function(accounts) {
       await shortSellAuctionRepo.setAuctionOffer(id1, offer1, bidder1, { from: accounts[1] });
       await shortSellAuctionRepo.setAuctionOffer(id1, offer2, bidder2, { from: accounts[1] });
       const [offer, bidder, exists] = await shortSellAuctionRepo.getAuction.call(id1);
-      expect(offer.equals(offer2)).to.be.true;
+      expect(offer).to.be.bignumber.equal(offer2);
       expect(bidder).to.equal(bidder2);
       expect(exists).to.be.true;
     });

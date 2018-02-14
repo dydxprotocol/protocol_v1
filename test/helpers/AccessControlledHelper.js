@@ -1,4 +1,6 @@
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 
 const { getBlockNumber, getBlockTimestamp } = require("./NodeHelper");
 
@@ -21,6 +23,6 @@ async function validateStaticAccessControlledConstants(
   const blockNumber = await getBlockNumber(contract.transactionHash);
   const creationTimeStamp = await getBlockTimestamp(blockNumber);
   const expectedGracePeriodExpiration = expectedGracePeriod.plus(creationTimeStamp);
-  expect(contractGracePeriodExpiration.equals(expectedGracePeriodExpiration)).to.be.true;
+  expect(contractGracePeriodExpiration).to.be.bignumber.equal(expectedGracePeriodExpiration);
   return true;
 }

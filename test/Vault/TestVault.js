@@ -61,9 +61,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(num1)).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(tokenBalance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(tokenBalance).to.be.bignumber.equal(num1);
     });
 
     it('successfully transfers into different vaults', async () => {
@@ -89,10 +89,10 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(num1)).to.be.true;
-      expect(balance2.equals(num1.times(new BigNumber(2)))).to.be.true;
-      expect(totalBalance.equals(num1.times(new BigNumber(3)))).to.be.true;
-      expect(tokenBalance.equals(num1.times(new BigNumber(3)))).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
+      expect(balance2).to.be.bignumber.equal(num1.times(new BigNumber(2)));
+      expect(totalBalance).to.be.bignumber.equal(num1.times(new BigNumber(3)));
+      expect(tokenBalance).to.be.bignumber.equal(num1.times(new BigNumber(3)));
     });
 
     it('successfully accounts for different tokens', async () => {
@@ -133,12 +133,12 @@ contract('Vault', function(accounts) {
         tokenB.balanceOf.call(vault.address)
       ]);
 
-      expect(balanceA.equals(num1)).to.be.true;
-      expect(balanceB.equals(num1.times(new BigNumber(2)))).to.be.true;
-      expect(totalBalanceA.equals(num1)).to.be.true;
-      expect(totalBalanceB.equals(num1.times(new BigNumber(2)))).to.be.true;
-      expect(tokenBalanceA.equals(num1)).to.be.true;
-      expect(tokenBalanceB.equals(num1.times(new BigNumber(2)))).to.be.true;
+      expect(balanceA).to.be.bignumber.equal(num1);
+      expect(balanceB).to.be.bignumber.equal(num1.times(new BigNumber(2)));
+      expect(totalBalanceA).to.be.bignumber.equal(num1);
+      expect(totalBalanceB).to.be.bignumber.equal(num1.times(new BigNumber(2)));
+      expect(tokenBalanceA).to.be.bignumber.equal(num1);
+      expect(tokenBalanceB).to.be.bignumber.equal(num1.times(new BigNumber(2)));
     });
 
     it('does not allow unauthorized addresses to call', async () => {
@@ -155,9 +155,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(totalBalance.equals(new BigNumber(0))).to.be.true;
-      expect(tokenBalance.equals(new BigNumber(0))).to.be.true;
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
+      expect(tokenBalance).to.be.bignumber.equal(0);
     });
 
     it('throws on insufficient balance or proxy allowance', async () => {
@@ -177,9 +177,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(totalBalance.equals(new BigNumber(0))).to.be.true;
-      expect(tokenBalance.equals(new BigNumber(0))).to.be.true;
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
+      expect(tokenBalance).to.be.bignumber.equal(0);
     });
   });
 
@@ -204,9 +204,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(receiver)
       ]);
 
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(totalBalance.equals(new BigNumber(0))).to.be.true;
-      expect(receiverBalance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(0);
+      expect(receiverBalance).to.be.bignumber.equal(num1);
     });
 
     it('Does not send tokens if vault does not have balance', async () => {
@@ -226,9 +226,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(num1)).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(vaultTokenBalance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(vaultTokenBalance).to.be.bignumber.equal(num1);
     });
 
     it('Does not allow unauthorized addresses to send', async () => {
@@ -248,9 +248,9 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance.equals(num1)).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(vaultTokenBalance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(vaultTokenBalance).to.be.bignumber.equal(num1);
     });
   });
 
@@ -276,10 +276,10 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance1.equals(new BigNumber(0))).to.be.true;
-      expect(balance2.equals(num1)).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(tokenBalance.equals(num1)).to.be.true;
+      expect(balance1).to.be.bignumber.equal(0);
+      expect(balance2).to.be.bignumber.equal(num1);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(tokenBalance).to.be.bignumber.equal(num1);
     });
 
     it('Does not transfer tokens if vault does not have balance', async () => {
@@ -300,10 +300,10 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance1.equals(num1)).to.be.true;
-      expect(balance2.equals(new BigNumber(0))).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(tokenBalance.equals(num1)).to.be.true;
+      expect(balance1).to.be.bignumber.equal(num1);
+      expect(balance2).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(tokenBalance).to.be.bignumber.equal(num1);
     });
 
     it('Does not allow unauthorized addresses to transfer', async () => {
@@ -324,10 +324,10 @@ contract('Vault', function(accounts) {
         tokenA.balanceOf.call(vault.address)
       ]);
 
-      expect(balance1.equals(num1)).to.be.true;
-      expect(balance2.equals(new BigNumber(0))).to.be.true;
-      expect(totalBalance.equals(num1)).to.be.true;
-      expect(tokenBalance.equals(num1)).to.be.true;
+      expect(balance1).to.be.bignumber.equal(num1);
+      expect(balance2).to.be.bignumber.equal(0);
+      expect(totalBalance).to.be.bignumber.equal(num1);
+      expect(tokenBalance).to.be.bignumber.equal(num1);
     });
   });
 });

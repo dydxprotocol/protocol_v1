@@ -1,6 +1,8 @@
 /*global artifacts, web3, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
@@ -36,11 +38,11 @@ describe('#placeSellbackBid', () => {
       ]);
 
       expect(auctionExists).to.be.true;
-      expect(auctionOffer.offer.equals(bid)).to.be.true;
+      expect(auctionOffer.offer).to.be.bignumber.equal(bid);
       expect(auctionOffer.bidder.toLowerCase()).to.eq(bidder.toLowerCase());
       expect(auctionOffer.exists).to.be.true;
-      expect(vaultUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
-      expect(tokenBalanceOfVault.equals(shortTx.shortAmount)).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -74,13 +76,13 @@ describe('#placeSellbackBid', () => {
       ]);
 
       expect(auctionExists).to.be.true;
-      expect(auctionOffer.offer.equals(bid2)).to.be.true;
+      expect(auctionOffer.offer).to.be.bignumber.equal(bid2);
       expect(auctionOffer.bidder.toLowerCase()).to.eq(bidder2.toLowerCase());
       expect(auctionOffer.exists).to.be.true;
-      expect(vaultUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
-      expect(tokenBalanceOfVault.equals(shortTx.shortAmount)).to.be.true;
-      expect(bidderBalance.equals(shortTx.shortAmount)).to.be.true;
-      expect(bidder2Balance.equals(new BigNumber(0))).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(bidderBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(bidder2Balance).to.be.bignumber.equal(0);
     });
   });
 
@@ -114,13 +116,13 @@ describe('#placeSellbackBid', () => {
       ]);
 
       expect(auctionExists).to.be.true;
-      expect(auctionOffer.offer.equals(bid)).to.be.true;
+      expect(auctionOffer.offer).to.be.bignumber.equal(bid);
       expect(auctionOffer.bidder.toLowerCase()).to.eq(bidder.toLowerCase());
       expect(auctionOffer.exists).to.be.true;
-      expect(vaultUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
-      expect(tokenBalanceOfVault.equals(shortTx.shortAmount)).to.be.true;
-      expect(bidderBalance.equals(new BigNumber(0))).to.be.true;
-      expect(bidder2Balance.equals(shortTx.shortAmount)).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(bidderBalance).to.be.bignumber.equal(0);
+      expect(bidder2Balance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -160,11 +162,11 @@ describe('#placeSellbackBid', () => {
       ]);
 
       expect(auctionExists).to.be.true;
-      expect(auctionOffer.offer.equals(bid)).to.be.true;
+      expect(auctionOffer.offer).to.be.bignumber.equal(bid);
       expect(auctionOffer.bidder.toLowerCase()).to.eq(bidder.toLowerCase());
       expect(auctionOffer.exists).to.be.true;
-      expect(vaultUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
-      expect(tokenBalanceOfVault.equals(shortTx.shortAmount)).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -199,12 +201,12 @@ describe('#placeSellbackBid', () => {
       ]);
 
       expect(auctionExists).to.be.true;
-      expect(auctionOffer.offer.equals(bid)).to.be.true;
+      expect(auctionOffer.offer).to.be.bignumber.equal(bid);
       expect(auctionOffer.bidder.toLowerCase()).to.eq(bidder.toLowerCase());
       expect(auctionOffer.exists).to.be.true;
-      expect(vaultUnderlyingTokenBalance.equals(currentShortAmount)).to.be.true;
-      expect(tokenBalanceOfVault.equals(currentShortAmount)).to.be.true;
-      expect(bidderTokenBalance.equals(closeAmount)).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(currentShortAmount);
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(currentShortAmount);
+      expect(bidderTokenBalance).to.be.bignumber.equal(closeAmount);
     });
   });
 

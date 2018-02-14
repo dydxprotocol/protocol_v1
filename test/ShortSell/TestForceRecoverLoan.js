@@ -1,6 +1,8 @@
 /*global artifacts, web3, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
@@ -46,13 +48,13 @@ describe('#forceRecoverLoan', () => {
         baseToken.balanceOf.call(shortTx.loanOffering.lender)
       ]);
 
-      expect(vaultUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
-      expect(underlyingTokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
-      expect(vaultBaseTokenBalance.equals(new BigNumber(0))).to.be.true;
-      expect(baseTokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
+      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
-      expect(lenderBaseTokenBalance.equals(baseTokenBalance)).to.be.true;
+      expect(lenderBaseTokenBalance).to.be.bignumber.equal(baseTokenBalance);
     });
   });
 
@@ -111,16 +113,16 @@ describe('#forceRecoverLoan', () => {
         .minus(interestFee)
         .minus(bid);
 
-      expect(vaultUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
-      expect(underlyingTokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
-      expect(vaultBaseTokenBalance.equals(new BigNumber(0))).to.be.true;
-      expect(baseTokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
+      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
-      expect(lenderBaseTokenBalance.equals(interestFee)).to.be.true;
-      expect(shortSellerBaseTokenBalance.equals(expectedShortSellerBaseToken)).to.be.true;
-      expect(bidderBaseTokenBalance.equals(bid)).to.be.true;
-      expect(bidderUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
+      expect(lenderBaseTokenBalance).to.be.bignumber.equal(interestFee);
+      expect(shortSellerBaseTokenBalance).to.be.bignumber.equal(expectedShortSellerBaseToken);
+      expect(bidderBaseTokenBalance).to.be.bignumber.equal(bid);
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(0);
     });
   });
 
