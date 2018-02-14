@@ -18,10 +18,10 @@ const {
   callCloseShort,
   getShort,
   doShortAndCall,
-  placeAuctionBid
+  placeAuctionBid,
+  issueForDirectClose
 } = require('../helpers/ShortSellHelper');
 const { BIGNUMBERS } = require('../helpers/Constants');
-const ProxyContract = artifacts.require("Proxy");
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
@@ -278,21 +278,6 @@ describe('#closeShortDirectly', () => {
     });
   });
 });
-
-async function issueForDirectClose(shortTx) {
-  const underlyingToken = await UnderlyingToken.deployed();
-  await Promise.all([
-    underlyingToken.issueTo(
-      shortTx.seller,
-      shortTx.shortAmount
-    ),
-    underlyingToken.approve(
-      ProxyContract.address,
-      shortTx.shortAmount,
-      { from: shortTx.seller }
-    )
-  ]);
-}
 
 async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
   const baseTokenFromSell = getPartialAmount(
