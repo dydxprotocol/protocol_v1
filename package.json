@@ -36,6 +36,7 @@
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
+    "chai-bignumber": "^2.0.2",
     "coveralls": "^3.0.0",
     "eslint": "^4.16.0",
     "solidity-coverage": "^0.4.9",

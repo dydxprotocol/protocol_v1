@@ -41,8 +41,7 @@ library ShortImpl {
         uint depositAmount,
         uint32 lockoutTime,
         uint32 callTimeLimit,
-        uint32 maxDuration,
-        uint interestRate
+        uint32 maxDuration
     );
 
     // -----------------------
@@ -123,7 +122,7 @@ library ShortImpl {
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.shortAmount,
-            transaction.loanOffering.rates.interestRate,
+            getPartialInterestFee(transaction),
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.lockoutTime,
             uint32(block.timestamp),
@@ -155,7 +154,7 @@ library ShortImpl {
         );
 
         // LOG EVENT
-
+        // one level of indirection in order to number of variables for solidity compiler
         recordShortInitiated(
             shortId,
             msg.sender,
@@ -203,7 +202,7 @@ library ShortImpl {
 
         // Prevent overflows when calculating interest fees. Unused variable, throws on overflow
         uint(transaction.loanOffering.maxDuration)
-            .mul(transaction.loanOffering.rates.interestRate)
+            .mul(getPartialInterestFee(transaction))
             .mul(transaction.shortAmount);
 
         // Check Signature
@@ -474,9 +473,21 @@ library ShortImpl {
             transaction.depositAmount,
             transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.interestRate
+            transaction.loanOffering.maxDuration
         );
+    }
+
+    function getPartialInterestFee(
+        ShortTx transaction
+    )
+        internal
+        pure
+        returns (uint _interestFee)
+    {
+        return MathHelpers.getPartialAmount(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.dailyInterestFee);
     }
 
     // -------- Parsing Functions -------
@@ -564,7 +575,7 @@ library ShortImpl {
             maxAmount: values[1],
             minAmount: values[2],
             minimumSellAmount: values[3],
-            interestRate: values[4],
+            dailyInterestFee: values[4],
             lenderFee: values[5],
             takerFee: values[6]
         });
@@ -665,7 +676,7 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minimumSellAmount,
-            transaction.loanOffering.rates.interestRate,
+            transaction.loanOffering.rates.dailyInterestFee,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,

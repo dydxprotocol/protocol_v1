@@ -58,7 +58,7 @@ library ShortSellCommon {
         uint minimumSellAmount;
         uint maxAmount;
         uint minAmount;
-        uint interestRate;
+        uint dailyInterestFee;
         uint lenderFee;
         uint takerFee;
     }
@@ -172,6 +172,11 @@ library ShortSellCommon {
         returns (uint _interestFee)
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
+        if (short.callTimestamp > 0 &&
+            timeElapsed > uint(short.callTimestamp).add(short.callTimeLimit)
+        ) {
+            timeElapsed = uint(short.callTimestamp).add(short.callTimeLimit);
+        }
         if (timeElapsed > short.maxDuration) {
             timeElapsed = short.maxDuration;
         }
@@ -220,7 +225,7 @@ library ShortSellCommon {
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
             loanOffering.rates.minimumSellAmount,
-            loanOffering.rates.interestRate,
+            loanOffering.rates.dailyInterestFee,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,

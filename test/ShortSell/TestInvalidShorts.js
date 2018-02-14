@@ -19,6 +19,7 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { BIGNUMBERS } = require('../helpers/Constants');
 
 describe('#short', () => {
   describe('Validations', () => {
@@ -384,7 +385,7 @@ describe('#closeShort', () => {
         ]);
 
         // Wait for interest fee to accrue
-        await wait(100000000);
+        await wait(shortTx.loanOffering.maxDuration);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
