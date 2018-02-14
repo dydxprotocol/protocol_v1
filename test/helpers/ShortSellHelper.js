@@ -386,7 +386,7 @@ async function createLoanOffering(accounts) {
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
       minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
       minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
-      maxDailyInterest: BASE_AMOUNT.times(new BigNumber(.1)),
+      maxDailyInterest: BASE_AMOUNT.times(new BigNumber(.01)),
       lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
@@ -587,7 +587,6 @@ async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid)
     shortTx.shortAmount,
     { from: bidder }
   );
-
   return shortSell.placeSellbackBid(
     shortTx.id,
     bid,

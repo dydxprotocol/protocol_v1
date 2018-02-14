@@ -167,10 +167,10 @@ async function checkSuccess(shortSell, shortTx) {
 
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
   expect(short.baseToken).to.equal(shortTx.baseToken);
-  expect(short.shortAmount.equals(shortTx.shortAmount)).to.equal(true);
-  expect(short.interestRate.equals(proratedInterestRate)).to.equal(true);
-  expect(short.callTimeLimit.equals(shortTx.loanOffering.callTimeLimit)).to.equal(true);
-  expect(short.lockoutTime.equals(shortTx.loanOffering.lockoutTime)).to.equal(true);
+  expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
+  expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate, 0, BigNumber.ROUND_DOWN);
+  expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
+  expect(short.lockoutTime).to.be.bignumber.equal(shortTx.loanOffering.lockoutTime);
   expect(short.lender).to.equal(shortTx.loanOffering.lender);
   expect(short.seller).to.equal(shortTx.seller);
   expect(short.closedAmount).to.be.bignumber.equal(0);
