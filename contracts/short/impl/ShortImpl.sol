@@ -116,7 +116,7 @@ library ShortImpl {
         require(
             uint(uint32(block.timestamp)) == block.timestamp
         );
-        
+
         ShortSellRepo(state.REPO).addShort(
             shortId,
             transaction.underlyingToken,
