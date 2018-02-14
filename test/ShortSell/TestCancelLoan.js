@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
@@ -26,7 +28,7 @@ describe('#cancelLoanOffering', () => {
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
 
-      expect(canceledAmount.equals(cancelAmount)).to.be.true;
+      expect(canceledAmount).to.be.bignumber.equal(cancelAmount);
     });
   });
 
@@ -50,7 +52,7 @@ describe('#cancelLoanOffering', () => {
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
 
-      expect(canceledAmount.equals(cancelAmount.plus(cancelAmount2))).to.be.true;
+      expect(canceledAmount).to.be.bignumber.equal(cancelAmount.plus(cancelAmount2));
     });
   });
 
@@ -72,7 +74,7 @@ describe('#cancelLoanOffering', () => {
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
 
-      expect(canceledAmount.equals(shortTx.loanOffering.rates.maxAmount)).to.be.true;
+      expect(canceledAmount).to.be.bignumber.equal(shortTx.loanOffering.rates.maxAmount);
     });
   });
 
@@ -90,7 +92,7 @@ describe('#cancelLoanOffering', () => {
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
 
-      expect(canceledAmount.equals(new BigNumber(0))).to.be.true;
+      expect(canceledAmount).to.be.bignumber.equal(new BigNumber(0));
     });
   });
 });

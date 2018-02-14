@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
@@ -33,7 +35,7 @@ describe('#deposit', () => {
 
       const newBalance = await shortSell.getShortBalance.call(shortTx.id);
 
-      expect(newBalance.equals(initialBalance.plus(amount))).to.be.true;
+      expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
     });
   });
 

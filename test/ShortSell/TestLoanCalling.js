@@ -1,6 +1,8 @@
 /*global artifacts, web3, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
@@ -37,7 +39,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(shortCalledTimestamp)).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(shortCalledTimestamp);
     });
   });
 
@@ -53,7 +55,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
     });
   });
 
@@ -71,7 +73,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
     });
   });
 
@@ -96,7 +98,7 @@ describe('#callInLoan', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(shortCalledTimestamp)).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(shortCalledTimestamp);
     });
   });
 });
@@ -123,7 +125,7 @@ describe('#cancelLoanCall', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
     });
   });
 
@@ -147,7 +149,7 @@ describe('#cancelLoanCall', () => {
 
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
-      expect(callTimestamp.equals(shortCalledTimestamp)).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(shortCalledTimestamp);
     });
   });
 
@@ -191,11 +193,11 @@ describe('#cancelLoanCall', () => {
         underlyingToken.balanceOf.call(bidder),
       ]);
 
-      expect(callTimestamp.equals(new BigNumber(0))).to.be.true;
+      expect(callTimestamp).to.be.bignumber.equal(new BigNumber(0));
       expect(auctionExists).to.be.false;
-      expect(vaultUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
-      expect(tokenBalanceOfVault.equals(new BigNumber(0))).to.be.true;
-      expect(bidderTokenBalance.equals(shortTx.shortAmount)).to.be.true;
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
+      expect(tokenBalanceOfVault).to.be.bignumber.equal(new BigNumber(0));
+      expect(bidderTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 });

@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it, beforeEach*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Proxy = artifacts.require("Proxy");
@@ -132,7 +134,7 @@ contract('Proxy', function(accounts) {
       );
 
       const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
     });
 
     it('fails on insufficient holder balance or allowance', async () => {
@@ -143,7 +145,7 @@ contract('Proxy', function(accounts) {
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
 
       await tokenA.issue(num1, { from: holder1 });
       await expectThrow(
@@ -151,7 +153,7 @@ contract('Proxy', function(accounts) {
       );
 
       balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] });
@@ -161,8 +163,8 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(accounts[2])
       ]);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(balance2.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(num1);
     });
 
     it('sends tokens on sufficient balance/allowance when authorized', async () => {
@@ -177,8 +179,8 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(accounts[2])
       ]);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(balance2.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(num1);
     });
 
     it('does not transfer if paused', async () => {
@@ -192,7 +194,7 @@ contract('Proxy', function(accounts) {
       );
 
       const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
     });
   });
 
@@ -220,8 +222,8 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(recipient)
       ]);
-      expect(balance.equals(num1)).to.be.true;
-      expect(balance2.equals(new BigNumber(0))).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
+      expect(balance2).to.be.bignumber.equal(new BigNumber(0));
     });
 
     it('fails on insufficient holder balance or allowance', async () => {
@@ -232,7 +234,7 @@ contract('Proxy', function(accounts) {
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
 
       await tokenA.issue(num1, { from: holder1 });
       await expectThrow(
@@ -240,7 +242,7 @@ contract('Proxy', function(accounts) {
       );
 
       balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] });
@@ -250,8 +252,8 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(recipient)
       ]);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(balance2.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(num1);
     });
 
     it('sends tokens on sufficient balance/allowance when authorized', async () => {
@@ -266,8 +268,8 @@ contract('Proxy', function(accounts) {
         tokenA.balanceOf.call(holder1),
         tokenA.balanceOf.call(recipient)
       ]);
-      expect(balance.equals(new BigNumber(0))).to.be.true;
-      expect(balance2.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(new BigNumber(0));
+      expect(balance2).to.be.bignumber.equal(num1);
     });
 
     it('does not transfer if paused', async () => {
@@ -281,7 +283,7 @@ contract('Proxy', function(accounts) {
       );
 
       const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance.equals(num1)).to.be.true;
+      expect(balance).to.be.bignumber.equal(num1);
     });
   });
 });

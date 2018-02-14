@@ -1,6 +1,8 @@
 /*global artifacts, contract, describe, it, before, beforeEach,*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const TokenizedShort = artifacts.require("TokenizedShort");
@@ -82,11 +84,11 @@ contract('TokenizedShortCreator', function(accounts) {
 
       expect(tokenShortSell).to.equal(shortSellContract.address);
       expect(tokenShortId).to.equal(shortTx.id);
-      expect(tokenState.equals(BIGNUMBERS.ZERO)).to.be.true;  // UNINITIALIZED
+      expect(tokenState).to.be.bignumber.equal(BIGNUMBERS.ZERO);  // UNINITIALIZED
       expect(tokenName).to.equal(name);
       expect(tokenSymbol).to.equal(symbol);
       expect(tokenHolder).to.equal(initialTokenHolder);
-      expect(tokenRedeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
+      expect(tokenRedeemed).to.be.bignumber.equal(BIGNUMBERS.ZERO);
       expect(tokenBaseToken).to.equal(ADDRESSES.ZERO);
       expect(authorized).to.be.true;
     });

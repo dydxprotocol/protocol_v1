@@ -1,6 +1,8 @@
 /*global artifacts, web3, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
@@ -50,7 +52,7 @@ describe('#closeShort', () => {
 
       const { closedAmount } = await getShort(shortSell, shortTx.id);
 
-      expect(closedAmount.equals(closeAmount)).to.be.true;
+      expect(closedAmount).to.be.bignumber.equal(closeAmount);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
@@ -97,12 +99,12 @@ describe('#closeShort', () => {
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
       let bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance.equals(new BigNumber(0))).to.be.true;
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(new BigNumber(0));
 
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
       bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -221,7 +223,7 @@ describe('#closeShortDirectly', () => {
       checkSmartContractBalances(balances, shortTx, closeAmount);
       checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
-      expect(balances.sellerUnderlyingToken.equals(new BigNumber(0))).to.be.true;
+      expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
       expect(balances.sellerBaseToken.equals(
         shortTx.depositAmount
           .plus(baseTokenFromSell)
@@ -229,7 +231,7 @@ describe('#closeShortDirectly', () => {
       )).to.be.true;
 
       const bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance.equals(shortTx.shortAmount)).to.be.true;
+      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -331,7 +333,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
         .minus(interestFee)
     )
   ).to.be.true;
-  expect(externalSellerBaseToken.equals(baseTokenBuybackCost)).to.be.true;
+  expect(externalSellerBaseToken).to.be.bignumber.equal(baseTokenBuybackCost);
   expect(
     externalSellerUnderlyingToken.equals(
       sellOrder.makerTokenAmount.minus(closeAmount)
@@ -410,13 +412,13 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
     shortBalance
   } = balances;
 
-  expect(vaultFeeToken.equals(new BigNumber(0))).to.be.true;
-  expect(vaultBaseToken.equals(expectedShortBalance)).to.be.true;
-  expect(vaultUnderlyingToken.equals(new BigNumber(0))).to.be.true;
-  expect(traderFeeToken.equals(new BigNumber(0))).to.be.true;
-  expect(traderBaseToken.equals(new BigNumber(0))).to.be.true;
-  expect(traderUnderlyingToken.equals(new BigNumber(0))).to.be.true;
-  expect(shortBalance.equals(expectedShortBalance)).to.be.true;
+  expect(vaultFeeToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(vaultBaseToken).to.be.bignumber.equal(expectedShortBalance);
+  expect(vaultUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(traderFeeToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(traderBaseToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(traderUnderlyingToken).to.be.bignumber.equal(new BigNumber(0));
+  expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
 function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
@@ -424,7 +426,7 @@ function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
     lenderBaseToken,
     lenderUnderlyingToken
   } = balances;
-  expect(lenderBaseToken.equals(interestFee)).to.be.true;
+  expect(lenderBaseToken).to.be.bignumber.equal(interestFee);
   expect(lenderUnderlyingToken.equals(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
