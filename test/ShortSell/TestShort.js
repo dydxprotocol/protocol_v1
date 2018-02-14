@@ -1,6 +1,8 @@
 /*global artifacts, web3, contract, describe, it*/
 
-const expect = require('chai').expect;
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 
@@ -158,16 +160,20 @@ async function checkSuccess(shortSell, shortTx) {
   const contains = await shortSell.containsShort.call(shortId);
   expect(contains).to.equal(true);
   const short = await getShort(shortSell, shortId);
+  const proratedInterestRate =
+    shortTx.loanOffering.rates.maxDailyInterest
+      .mul(short.shortAmount)
+      .div(shortTx.loanOffering.rates.maxAmount);
 
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
   expect(short.baseToken).to.equal(shortTx.baseToken);
   expect(short.shortAmount.equals(shortTx.shortAmount)).to.equal(true);
-  expect(short.interestRate.equals(shortTx.loanOffering.rates.interestRate)).to.equal(true);
+  expect(short.interestRate.equals(proratedInterestRate)).to.equal(true);
   expect(short.callTimeLimit.equals(shortTx.loanOffering.callTimeLimit)).to.equal(true);
   expect(short.lockoutTime.equals(shortTx.loanOffering.lockoutTime)).to.equal(true);
   expect(short.lender).to.equal(shortTx.loanOffering.lender);
   expect(short.seller).to.equal(shortTx.seller);
-  expect(short.closedAmount.equals(new BigNumber(0))).to.be.true;
+  expect(short.closedAmount).to.be.bignumber.equal(0);
   expect(short.callTimestamp.equals(new BigNumber(0))).to.be.true;
   expect(short.maxDuration.equals(shortTx.loanOffering.maxDuration)).to.be.true;
 

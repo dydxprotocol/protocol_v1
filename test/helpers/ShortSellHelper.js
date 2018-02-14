@@ -17,6 +17,7 @@ const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const { wait } = require('@digix/tempo')(web3);
+const { BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -91,7 +92,7 @@ function callShort(shortSell, tx) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minimumSellAmount,
-    tx.loanOffering.rates.interestRate,
+    tx.loanOffering.rates.maxDailyInterest,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -280,7 +281,7 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
+    loanOffering.rates.maxDailyInterest,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -385,14 +386,14 @@ async function createLoanOffering(accounts) {
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
       minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
       minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
-      interestRate: BASE_AMOUNT.times(new BigNumber(.1)),
+      maxDailyInterest: BASE_AMOUNT.times(new BigNumber(.1)),
       lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
     expirationTimestamp: 1000000000000,
     lockoutTime: 10000,
     callTimeLimit: 10000,
-    maxDuration: 1000000,
+    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: 123
   };
 
@@ -407,7 +408,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
+    loanOffering.rates.maxDailyInterest,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -599,6 +600,9 @@ function getPartialAmount(
   denominator,
   target
 ) {
+  if (!(numerator instanceof BigNumber)) {
+    numerator = new BigNumber(numerator);
+  }
   return numerator.times(target).div(denominator).floor();
 }
 

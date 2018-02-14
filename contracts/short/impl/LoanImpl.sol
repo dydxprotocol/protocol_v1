@@ -207,7 +207,7 @@ library LoanImpl {
             maxAmount: values[1],
             minAmount: values[2],
             minimumSellAmount: values[3],
-            interestRate: values[4],
+            maxDailyInterest: values[4],
             lenderFee: values[5],
             takerFee: values[6]
         });

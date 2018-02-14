@@ -434,14 +434,18 @@ function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
 
 async function getInterestFee(shortTx, closeTx, closeAmount) {
   const shortLifetime = await getShortLifetime(shortTx, closeTx);
-
+  const interestFee = getPartialAmount(
+    shortTx.shortAmount,
+    shortTx.loanOffering.rates.maxAmount,
+    shortTx.loanOffering.rates.maxDailyInterest
+  );
   return getPartialAmount(
     closeAmount,
     shortTx.shortAmount,
     getPartialAmount(
-      shortTx.loanOffering.rates.interestRate,
+      shortLifetime,
       BIGNUMBERS.ONE_DAY_IN_SECONDS,
-      shortLifetime
+      interestFee
     )
   );
 }
@@ -529,6 +533,10 @@ async function getShortLifetime(shortTx, closeTx) {
     getBlockTimestamp(shortTx.response.receipt.blockNumber),
     getBlockTimestamp(closeTx.receipt.blockNumber)
   ]);
-
-  return shortClosedTimestamp - shortTimestamp;
+  const maxDuration = shortTx.loanOffering.maxDuration;
+  let duration = shortClosedTimestamp - shortTimestamp;
+  if (duration > maxDuration) {
+    duration = maxDuration;
+  }
+  return duration;
 }
