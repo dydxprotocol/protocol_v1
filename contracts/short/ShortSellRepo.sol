@@ -114,76 +114,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
         shorts[id].closedAmount = closedAmount;
     }
 
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function setShortAmount(
-        bytes32 id,
-        uint amount
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].shortAmount = amount;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function setShortInterestRate(
-        bytes32 id,
-        uint rate
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].interestRate = rate;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function setShortCallTimeLimit(
-        bytes32 id,
-        uint32 limit
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].callTimeLimit = limit;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function setShortLockoutTime(
-        bytes32 id,
-        uint32 time
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].lockoutTime = time;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function setShortMaxDuration(
-        bytes32 id,
-        uint32 maxDuration
-    )
-        requiresAuthorization
-        external
-    {
-        require(containsShort(id));
-        shorts[id].maxDuration = maxDuration;
-    }
-
     function deleteShort(
         bytes32 id
     )
@@ -200,18 +130,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
         external
     {
         closedShorts[id] = true;
-    }
-
-    /**
-     * NOTE: Currently unused, added as a utility for later versions of ShortSell
-     */
-    function unmarkShortClosed(
-        bytes32 id
-    )
-        requiresAuthorization
-        external
-    {
-        closedShorts[id] = false;
     }
 
     // -------------------------------------
