@@ -68,7 +68,6 @@ library LoanImpl {
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
-        require(block.timestamp >= uint(short.startTimestamp).add(short.lockoutTime));
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
         require(
@@ -116,7 +115,7 @@ library LoanImpl {
         ShortSellState.State storage state,
         address[8] addresses,
         uint[9] values256,
-        uint32[3] values32,
+        uint32[2] values32,
         uint cancelAmount
     )
         public
@@ -159,7 +158,7 @@ library LoanImpl {
     function parseLoanOffering(
         address[8] addresses,
         uint[9] values,
-        uint32[3] values32
+        uint32[2] values32
     )
         internal
         view
@@ -174,9 +173,8 @@ library LoanImpl {
             takerFeeToken: addresses[7],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
-            lockoutTime: values32[0],
-            callTimeLimit: values32[1],
-            maxDuration: values32[2],
+            callTimeLimit: values32[0],
+            maxDuration: values32[1],
             salt: values[8],
             loanHash: 0,
             signature: ShortSellCommon.Signature({

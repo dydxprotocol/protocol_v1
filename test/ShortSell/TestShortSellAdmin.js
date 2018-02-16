@@ -111,8 +111,6 @@ describe('#onlyWhileOperational', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await wait(shortTx.loanOffering.lockoutTime);
-
       await shortSell.callInLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }

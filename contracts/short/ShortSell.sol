@@ -128,9 +128,8 @@ contract ShortSell is
      *
      * @param  values32  Values corresponding to:
      *
-     *  [0] = loan lockout time     (in seconds)
-     *  [1] = loan call time limit  (in seconds)
-     *  [2] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit  (in seconds)
+     *  [1] = loan maxDuration      (in seconds)
      *
      * @param  sigV       ECDSA v parameters for [0] loan and [1] buy order
      * @param  sigRS      CDSA r and s parameters for [0] loan and [2] buy order
@@ -139,7 +138,7 @@ contract ShortSell is
     function short(
         address[13] addresses,
         uint[17] values256,
-        uint32[3] values32,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -391,9 +390,8 @@ contract ShortSell is
      *
      * @param  values32         Values corresponding to:
      *
-     *  [0] = loan lockout time     (in seconds)
-     *  [1] = loan call time limit  (in seconds)
-     *  [2] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit  (in seconds)
+     *  [1] = loan maxDuration      (in seconds)
      *
      * @param  cancelAmount     Amount to cancel
      * @return _cancelledAmount Amount that was cancelled
@@ -401,7 +399,7 @@ contract ShortSell is
     function cancelLoanOffering(
         address[8] addresses,
         uint[9] values256,
-        uint32[3] values32,
+        uint32[2] values32,
         uint cancelAmount
     )
         external

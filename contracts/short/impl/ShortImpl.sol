@@ -39,7 +39,6 @@ library ShortImpl {
         uint shortAmount,
         uint baseTokenFromSell,
         uint depositAmount,
-        uint32 lockoutTime,
         uint32 callTimeLimit,
         uint32 maxDuration
     );
@@ -80,7 +79,7 @@ library ShortImpl {
         ShortSellState.State storage state,
         address[13] addresses,
         uint[17] values256,
-        uint32[3] values32,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -124,7 +123,6 @@ library ShortImpl {
             transaction.shortAmount,
             getPartialInterestFee(transaction),
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.lockoutTime,
             uint32(block.timestamp),
             transaction.loanOffering.maxDuration,
             transaction.loanOffering.lender,
@@ -471,7 +469,6 @@ library ShortImpl {
             transaction.shortAmount,
             baseTokenReceived,
             transaction.depositAmount,
-            transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration
         );
@@ -495,7 +492,7 @@ library ShortImpl {
     function parseShortTx(
         address[13] addresses,
         uint[17] values,
-        uint32[3] values32,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -529,7 +526,7 @@ library ShortImpl {
     function parseLoanOffering(
         address[13] addresses,
         uint[17] values,
-        uint32[3] values32,
+        uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -546,9 +543,8 @@ library ShortImpl {
             takerFeeToken: addresses[7],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
-            lockoutTime: values32[0],
-            callTimeLimit: values32[1],
-            maxDuration: values32[2],
+            callTimeLimit: values32[0],
+            maxDuration: values32[1],
             salt: values[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
@@ -689,10 +685,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint32[3] _values)
+        returns (uint32[2] _values)
     {
         return [
-            transaction.loanOffering.lockoutTime,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration
         ];

@@ -44,9 +44,8 @@ contract LoanOfferingVerifier {
      *
      * @param  values32         Values corresponding to:
      *
-     *  [0] = loan lockout time     (in seconds)
-     *  [1] = loan call time limit  (in seconds)
-     *  [2] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit  (in seconds)
+     *  [1] = loan maxDuration      (in seconds)
      *
      * @return _isValid     true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
@@ -54,7 +53,7 @@ contract LoanOfferingVerifier {
     function verifyLoanOffering(
         address[8] addresses,
         uint[9] values256,
-        uint32[3] values32,
+        uint32[2] values32,
         bytes32 shortId
     )
         external

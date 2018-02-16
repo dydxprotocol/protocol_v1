@@ -28,7 +28,6 @@ library ShortSellCommon {
         uint closedAmount;
         uint interestRate;
         uint32 callTimeLimit;
-        uint32 lockoutTime;
         uint32 startTimestamp;   // Immutable, cannot be 0
         uint32 callTimestamp;
         uint32 maxDuration;
@@ -45,7 +44,6 @@ library ShortSellCommon {
         address takerFeeToken;
         LoanRates rates;
         uint expirationTimestamp;
-        uint32 lockoutTime;
         uint32 callTimeLimit;
         uint32 maxDuration;
         uint salt;
@@ -229,7 +227,6 @@ library ShortSellCommon {
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,
-            loanOffering.lockoutTime,
             loanOffering.callTimeLimit,
             loanOffering.maxDuration,
             loanOffering.salt
@@ -268,7 +265,6 @@ library ShortSellCommon {
             closedAmount,
             interestRate,
             callTimeLimit,
-            lockoutTime,
             startTimestamp,
             callTimestamp,
             maxDuration,
@@ -286,7 +282,6 @@ library ShortSellCommon {
             closedAmount: closedAmount,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
-            lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: callTimestamp,
             maxDuration: maxDuration,

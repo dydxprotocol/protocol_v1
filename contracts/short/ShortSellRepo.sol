@@ -42,7 +42,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
         uint shortAmount,
         uint interestRate,
         uint32 callTimeLimit,
-        uint32 lockoutTime,
         uint32 startTimestamp,
         uint32 maxDuration,
         address lender,
@@ -61,7 +60,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
             closedAmount: 0,
             interestRate: interestRate,
             callTimeLimit: callTimeLimit,
-            lockoutTime: lockoutTime,
             startTimestamp: startTimestamp,
             callTimestamp: 0,
             maxDuration: maxDuration,
@@ -152,7 +150,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
             uint closedAmount,
             uint interestRate,
             uint32 callTimeLimit,
-            uint32 lockoutTime,
             uint32 startTimestamp,
             uint32 callTimestamp,
             uint32 maxDuration,
@@ -169,7 +166,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
             short.closedAmount,
             short.interestRate,
             short.callTimeLimit,
-            short.lockoutTime,
             short.startTimestamp,
             short.callTimestamp,
             short.maxDuration,
@@ -276,16 +272,6 @@ contract ShortSellRepo is StaticAccessControlled, NoOwner {
         returns (uint32 _callTimeLimit)
     {
         return shorts[id].callTimeLimit;
-    }
-
-    function getShortLockoutTime(
-        bytes32 id
-    )
-        view
-        external
-        returns (uint32 _lockoutTime)
-    {
-        return shorts[id].lockoutTime;
     }
 
     function getShortMaxDuration(

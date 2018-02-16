@@ -17,7 +17,7 @@ contract SmartContractLender {
     function verifyLoanOffering(
         address[8],
         uint[9],
-        uint32[3],
+        uint32[2],
         bytes32
     )
         external

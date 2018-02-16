@@ -170,7 +170,6 @@ async function checkSuccess(shortSell, shortTx) {
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
   expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate);
   expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
-  expect(short.lockoutTime).to.be.bignumber.equal(shortTx.loanOffering.lockoutTime);
   expect(short.lender).to.equal(shortTx.loanOffering.lender);
   expect(short.seller).to.equal(shortTx.seller);
   expect(short.closedAmount).to.be.bignumber.equal(0);

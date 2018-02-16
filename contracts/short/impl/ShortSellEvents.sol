@@ -28,7 +28,6 @@ contract ShortSellEvents {
         uint shortAmount,
         uint baseTokenFromSell,
         uint depositAmount,
-        uint32 lockoutTime,
         uint32 callTimeLimit,
         uint32 maxDuration,
         uint interestRate
