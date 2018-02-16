@@ -52,20 +52,26 @@ contract SafetyDepositBox is
     /**
      * Allow any account to withdraw token funds from their personal safety deposit box
      * @param  token  ERC20 token to withdraw
-     * @return true if successful, throws otherwise
+     * @return Number of tokens withdrawn
      */
     function withdraw(
         address token
     )
         external
         nonReentrant
-        returns (bool _success)
+        returns (uint256 _tokensWithdrawn)
     {
-        uint256 totalTokens = withdrawableBalances[msg.sender][token];
-        require(totalTokens > 0);
-        delete withdrawableBalances[msg.sender][token];
-        transfer(token, msg.sender, totalTokens); // asserts transfer worked
-        return true;
+        // make sure there are tokens to withdraw
+        uint256 numTokens = withdrawableBalances[msg.sender][token];
+        require(numTokens > 0);
+
+        // subtract from mappings
+        withdrawableBalances[msg.sender][token] = 0;
+        totalBalances[token] = totalBalances[token].sub(numTokens); // asserts no underflow
+
+        // everything looks good, lets send
+        transfer(token, msg.sender, numTokens); // asserts transfer worked
+        return numTokens;
     }
 
     // --------------------------------------------------
@@ -90,6 +96,7 @@ contract SafetyDepositBox is
         nonReentrant
         requiresAuthorization
     {
+        require(amount > 0);
         totalBalances[token] = totalBalances[token].add(amount);
         withdrawableBalances[account][token] = withdrawableBalances[account][token].add(amount);
         validateBalance(token);

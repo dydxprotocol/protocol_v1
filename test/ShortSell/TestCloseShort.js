@@ -306,7 +306,6 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
     externalSellerBaseToken,
     externalSellerUnderlyingToken,
     sellerFeeToken,
-    sellerFeeTokenInSafe,
     externalSellerFeeToken,
     feeRecipientFeeToken
   } = balances;
