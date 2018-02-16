@@ -108,7 +108,6 @@ function callShort(shortSell, tx) {
   ];
 
   const values32 = [
-    tx.loanOffering.lockoutTime,
     tx.loanOffering.callTimeLimit,
     tx.loanOffering.maxDuration
   ];
@@ -289,7 +288,6 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
   ];
 
   const values32 = [
-    loanOffering.lockoutTime,
     loanOffering.callTimeLimit,
     loanOffering.maxDuration
   ];
@@ -391,7 +389,6 @@ async function createLoanOffering(accounts) {
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
     expirationTimestamp: 1000000000000,
-    lockoutTime: 10000,
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: 123
@@ -412,7 +409,6 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
-    { type: 'uint32', value: loanOffering.lockoutTime },
     { type: 'uint32', value: loanOffering.callTimeLimit },
     { type: 'uint32', value: loanOffering.maxDuration },
     loanOffering.salt
@@ -521,7 +517,6 @@ async function getShort(shortSell, id) {
     closedAmount,
     interestRate,
     callTimeLimit,
-    lockoutTime,
     startTimestamp,
     callTimestamp,
     maxDuration,
@@ -536,7 +531,6 @@ async function getShort(shortSell, id) {
     closedAmount,
     interestRate,
     callTimeLimit,
-    lockoutTime,
     startTimestamp,
     callTimestamp,
     maxDuration,
@@ -568,7 +562,6 @@ async function doShortAndCall(accounts) {
 
   const shortTx = await doShort(accounts);
 
-  await wait(shortTx.loanOffering.lockoutTime);
   await shortSell.callInLoan(
     shortTx.id,
     { from: shortTx.loanOffering.lender }

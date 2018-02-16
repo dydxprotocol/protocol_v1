@@ -26,8 +26,6 @@ describe('#callInLoan', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await wait(shortTx.loanOffering.lockoutTime);
-
       const tx = await shortSell.callInLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
@@ -44,27 +42,9 @@ describe('#callInLoan', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('enforces the lender waits the lockoutTime before calling', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-
-      await expectThrow(() => shortSell.callInLoan(
-        shortTx.id,
-        { from: shortTx.loanOffering.lender }
-      ));
-
-      const { callTimestamp } = await getShort(shortSell, shortTx.id);
-
-      expect(callTimestamp).to.be.bignumber.equal(0);
-    });
-  });
-
-  contract('ShortSell', function(accounts) {
     it('only allows the lender to call', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-
-      await wait(shortTx.loanOffering.lockoutTime);
 
       await expectThrow(() => shortSell.callInLoan(
         shortTx.id,
@@ -81,8 +61,6 @@ describe('#callInLoan', () => {
     it('fails if the loan has already been called', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-
-      await wait(shortTx.loanOffering.lockoutTime);
 
       const tx = await shortSell.callInLoan(
         shortTx.id,
@@ -109,8 +87,6 @@ describe('#cancelLoanCall', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await wait(shortTx.loanOffering.lockoutTime);
-
       await shortSell.callInLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
@@ -134,8 +110,6 @@ describe('#cancelLoanCall', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await wait(shortTx.loanOffering.lockoutTime);
-
       const tx = await shortSell.callInLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
@@ -157,8 +131,6 @@ describe('#cancelLoanCall', () => {
     it('fails if the loan has not been called', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-
-      await wait(shortTx.loanOffering.lockoutTime);
 
       await expectThrow(() => shortSell.cancelLoanCall(
         shortTx.id,

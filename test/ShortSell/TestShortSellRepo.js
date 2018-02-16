@@ -20,7 +20,6 @@ const shortAmount =    new BigNumber('1000');
 const interestRate =   new BigNumber('1');
 const callTimestamp =  new BigNumber('444');
 const callTimeLimit =  new BigNumber('222');
-const lockoutTime =    new BigNumber('333');
 const startTimestamp = new BigNumber('4444');
 const maxDuration =    new BigNumber('6666');
 const lender1 =        ADDRESSES.TEST[0];
@@ -36,7 +35,6 @@ async function createAddShort(shortRepo, shortId, account) {
     shortAmount,
     interestRate,
     callTimeLimit,
-    lockoutTime,
     startTimestamp,
     maxDuration,
     lender1,
@@ -52,7 +50,6 @@ async function getShort(shortRepo, shortId) {
     closedAmount,
     interestRate,
     callTimeLimit,
-    lockoutTime,
     startTimestamp,
     callTimestamp,
     maxDuration,
@@ -66,7 +63,6 @@ async function getShort(shortRepo, shortId) {
     closedAmount,
     interestRate,
     callTimeLimit,
-    lockoutTime,
     startTimestamp,
     callTimestamp,
     maxDuration,
@@ -120,7 +116,6 @@ contract('ShortSellRepo', function(accounts) {
       expect(s.startTimestamp).to.be.bignumber.not.equal(0);
       expect(s.callTimestamp).to.be.bignumber.equal(0);
       expect(s.callTimeLimit).to.be.bignumber.equal(callTimeLimit);
-      expect(s.lockoutTime).to.be.bignumber.equal(lockoutTime);
       expect(s.maxDuration).to.be.bignumber.equal(maxDuration);
     });
 
@@ -137,7 +132,6 @@ contract('ShortSellRepo', function(accounts) {
         shortAmount,
         interestRate,
         callTimeLimit,
-        lockoutTime,
         0, /* startTimestamp */
         maxDuration,
         lender1,
