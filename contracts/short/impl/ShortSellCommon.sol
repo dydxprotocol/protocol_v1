@@ -142,7 +142,7 @@ library ShortSellCommon {
 
         bytes32 auctionVaultId = getAuctionVaultId(shortId);
 
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             auctionVaultId,
             short.underlyingToken,
             currentBidder,

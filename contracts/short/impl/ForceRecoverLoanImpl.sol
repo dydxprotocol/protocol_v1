@@ -110,7 +110,7 @@ library ForceRecoverLoanImpl {
         if (!hasCurrentOffer) {
             // If there is no auction bid to sell back the underlying token owed to the lender
             // then give the lender everything locked in the position
-            vault.sendFromVault(
+            vault.transferToSafetyDepositBox(
                 shortId,
                 short.baseToken,
                 short.lender,
@@ -196,7 +196,7 @@ library ForceRecoverLoanImpl {
             uint(short.callTimestamp).add(short.callTimeLimit)
         );
 
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             shortId,
             short.baseToken,
             short.lender,
@@ -205,7 +205,7 @@ library ForceRecoverLoanImpl {
 
         // Send the lender back the borrowed tokens (out of the auction vault)
 
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             auctionVaultId,
             short.underlyingToken,
             short.lender,
@@ -235,7 +235,7 @@ library ForceRecoverLoanImpl {
         );
 
         if (remainingAuctionVaultBalance > 0) {
-            vault.sendFromVault(
+            vault.transferToSafetyDepositBox(
                 auctionVaultId,
                 short.underlyingToken,
                 bidder,
@@ -250,7 +250,7 @@ library ForceRecoverLoanImpl {
             offer
         );
 
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             shortId,
             short.baseToken,
             bidder,
@@ -271,7 +271,7 @@ library ForceRecoverLoanImpl {
 
         // Send the short seller whatever is left
         // (== margin deposit + interest fee - bid offer)
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             shortId,
             short.baseToken,
             short.seller,

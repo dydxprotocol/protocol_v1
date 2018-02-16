@@ -62,7 +62,7 @@ library PlaceSellbackBidImpl {
 
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
-            Vault(state.VAULT).sendFromVault(
+            Vault(state.VAULT).transferToSafetyDepositBox(
                 auctionVaultId,
                 short.underlyingToken,
                 currentBidder,

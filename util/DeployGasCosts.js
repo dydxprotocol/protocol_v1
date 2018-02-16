@@ -47,6 +47,7 @@ contract('Deploy Costs', () => {
     it('', async () => {
       const contract = await Vault.new(
         ADDRESSES.TEST[0],
+        ADDRESSES.TEST[1],
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 

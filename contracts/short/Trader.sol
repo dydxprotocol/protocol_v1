@@ -229,10 +229,9 @@ contract Trader is
         // These transfers will fail on insufficient vault balance
         if (order.feeRecipient == address(0)) {
             // If the fee recipient is 0, no fee is required so just transfer the taker token
-            Vault(VAULT).sendFromVault(
+            Vault(VAULT).withdrawFromVault(
                 id,
                 order.takerToken,
-                address(this),
                 requestedFillAmount
             );
 
@@ -248,10 +247,9 @@ contract Trader is
 
             uint totalAmount = requestedFillAmount.add(feeAmount);
 
-            Vault(VAULT).sendFromVault(
+            Vault(VAULT).withdrawFromVault(
                 id,
                 order.takerToken,
-                address(this),
                 totalAmount
             );
 
@@ -264,19 +262,17 @@ contract Trader is
                 order.takerFee
             );
 
-            Vault(VAULT).sendFromVault(
+            Vault(VAULT).withdrawFromVault(
                 id,
                 order.takerToken,
-                address(this),
                 requestedFillAmount
             );
             setAllowance(order.takerToken, proxy, requestedFillAmount);
 
             if (feeAmount > 0) {
-                Vault(VAULT).sendFromVault(
+                Vault(VAULT).withdrawFromVault(
                     id,
                     order.takerFeeToken,
-                    address(this),
                     feeAmount
                 );
                 setAllowance(order.takerFeeToken, proxy, feeAmount);
