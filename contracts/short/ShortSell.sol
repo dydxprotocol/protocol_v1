@@ -405,7 +405,7 @@ contract ShortSell is
         uint cancelAmount
     )
         external
-        onlyWhileOperational
+        cancelLoanOfferingStateControl
         nonReentrant
         returns (uint _cancelledAmount)
     {

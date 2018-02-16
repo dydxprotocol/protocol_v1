@@ -20,10 +20,15 @@ contract ShortSellAdmin is Ownable {
      * Enum containing the possible operation states of ShortSell:
      *
      * OPERATIONAL                      - All functionality enabled
+     * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
+     *                                    (callInLoan, closeShort, cancelLoanOffering
+     *                                    closeShortDirectly, placeSellbackBid, forceRecoverLoan)
      * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closeShort,
      *                                    closeShortDirectly, placeSellbackBid, forceRecoverLoan)
      * AUCTION_CLOSE_ONLY               - Only auction closing functions allowed
      *                                    (callInLoan, placeSellbackBid, forceRecoverLoan)
+     * AUCTION_AND_DIRECT_CLOSE_ONLY    - Only auction + direct closing functions allowed
+     *                                    (callInLoan, placeSellbackBid, closeShortDirectlyforceRecoverLoan)
      * SHORT_SELLER_CLOSE_ONLY          - Only closing by the short seller is allowed (callInLoan,
      *                                    closeShort, closeShortDirectly, forceRecoverLoan)
      * SHORT_SELLER_CLOSE_DIRECTLY_ONLY - Only direct closing by the short seller is allowed
@@ -33,6 +38,7 @@ contract ShortSellAdmin is Ownable {
      */
     enum OperationState {
         OPERATIONAL,
+        CLOSE_AND_CANCEL_LOAN_ONLY,
         CLOSE_ONLY,
         AUCTION_CLOSE_ONLY,
         SHORT_SELLER_CLOSE_ONLY,
@@ -77,11 +83,20 @@ contract ShortSellAdmin is Ownable {
         _;
     }
 
+    modifier cancelLoanOfferingStateControl() {
+        require(
+            operationState == OperationState.OPERATIONAL
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
+        );
+        _;
+    }
+
     modifier auctionStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_ONLY
             || operationState == OperationState.AUCTION_CLOSE_ONLY
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
         );
         _;
     }
@@ -92,6 +107,7 @@ contract ShortSellAdmin is Ownable {
             || operationState == OperationState.CLOSE_ONLY
             || operationState == OperationState.SHORT_SELLER_CLOSE_ONLY
             || operationState == OperationState.SHORT_SELLER_CLOSE_0X_ONLY
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
         );
         _;
     }
@@ -102,6 +118,7 @@ contract ShortSellAdmin is Ownable {
             || operationState == OperationState.CLOSE_ONLY
             || operationState == OperationState.SHORT_SELLER_CLOSE_ONLY
             || operationState == OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
         );
         _;
     }

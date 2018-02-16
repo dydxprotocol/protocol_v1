@@ -23,11 +23,12 @@ const {
 
 const OperationState = {
   OPERATIONAL: 0,
-  CLOSE_ONLY: 1,
-  AUCTION_CLOSE_ONLY: 2,
-  SHORT_SELLER_CLOSE_ONLY: 3,
-  SHORT_SELLER_CLOSE_DIRECTLY_ONLY: 4,
-  SHORT_SELLER_CLOSE_0X_ONLY: 5
+  CLOSE_AND_CANCEL_LOAN_ONLY: 1,
+  CLOSE_ONLY: 2,
+  AUCTION_CLOSE_ONLY: 3,
+  SHORT_SELLER_CLOSE_ONLY: 4,
+  SHORT_SELLER_CLOSE_DIRECTLY_ONLY: 5,
+  SHORT_SELLER_CLOSE_0X_ONLY: 6
 };
 
 describe('Constructor', () => {
@@ -63,7 +64,7 @@ describe('#setOperationState', () => {
     it('Does not allow invalid OperationStates', async () => {
       const shortSell = await ShortSell.deployed();
 
-      await expectAssertFailure(() => shortSell.setOperationState(6));
+      await expectAssertFailure(() => shortSell.setOperationState(7));
       await expectOperationState(shortSell, OperationState.OPERATIONAL);
     });
   });
@@ -132,7 +133,7 @@ describe('#onlyWhileOperational', () => {
   });
 
   contract('ShortSell', accounts => {
-    it('Only allows #deposit while OPERATIONAL', async () => {
+    it('Allows #deposit while OPERATIONAL', async () => {
       const [shortSell, baseToken] = await Promise.all([
         ShortSell.deployed(),
         BaseToken.deployed()
@@ -183,34 +184,53 @@ describe('#onlyWhileOperational', () => {
 
 describe('#auctionStateControl', () => {
   contract('ShortSell', accounts => {
-    it('Allows #placeSellbackBid while OPERATIONAL', async () => {
-      const bidder = accounts[6];
-      const bid = new BigNumber(100);
-      const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
+    it('Allows #cancelLoanOffering while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await createShortSellTx(accounts);
+      const cancelAmount = new BigNumber(1000);
 
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+      await shortSell.setOperationState(OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
+      await callCancelLoanOffer(
+        shortSell,
+        shortTx.loanOffering,
+        cancelAmount
+      );
+    });
+  });
+});
+
+describe('#auctionStateControl', () => {
+  async function test(accounts, state) {
+    const bidder = accounts[6];
+    const bid = new BigNumber(100);
+    const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
+
+    await shortSell.setOperationState(state);
+    await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+  }
+
+  contract('ShortSell', accounts => {
+    it('Allows #placeSellbackBid while OPERATIONAL', async () => {
+      await test(accounts, OperationState.OPERATIONAL);
+
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #placeSellbackBid while CLOSE_ONLY', async () => {
-      const bidder = accounts[6];
-      const bid = new BigNumber(100);
-      const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
-
-      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+      await test(accounts, OperationState.CLOSE_ONLY);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #placeSellbackBid while AUCTION_CLOSE_ONLY', async () => {
-      const bidder = accounts[6];
-      const bid = new BigNumber(100);
-      const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      await test(accounts, OperationState.AUCTION_CLOSE_ONLY);
+    });
+  });
 
-      await shortSell.setOperationState(OperationState.AUCTION_CLOSE_ONLY);
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+  contract('ShortSell', accounts => {
+    it('Allows #placeSellbackBid while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
     });
   });
 
@@ -234,58 +254,45 @@ describe('#auctionStateControl', () => {
 
 describe('#closeShortStateControl', () => {
   const closeAmount = new BigNumber(100);
+  async function test(accounts, state) {
+    const shortTx = await doShort(accounts);
+    const [sellOrder, shortSell] = await Promise.all([
+      createSigned0xSellOrder(accounts),
+      ShortSell.deployed()
+    ]);
+    await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
+
+    await shortSell.setOperationState(state);
+    await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+  }
 
   contract('ShortSell', accounts => {
     it('Allows #closeShort while OPERATIONAL', async () => {
-      const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
-        ShortSell.deployed()
-      ]);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      await test(accounts, OperationState.OPERATIONAL);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShort while CLOSE_ONLY', async () => {
-      const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
-        ShortSell.deployed()
-      ]);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-
-      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      await test(accounts, OperationState.CLOSE_ONLY);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShort while SHORT_SELLER_CLOSE_ONLY', async () => {
-      const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
-        ShortSell.deployed()
-      ]);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_ONLY);
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      await test(accounts, OperationState.SHORT_SELLER_CLOSE_ONLY);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShort while SHORT_SELLER_CLOSE_0X_ONLY', async () => {
-      const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
-        ShortSell.deployed()
-      ]);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
+      await test(accounts, OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
+    });
+  });
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+  contract('ShortSell', accounts => {
+    it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
     });
   });
 
@@ -309,63 +316,47 @@ describe('#closeShortStateControl', () => {
 
 describe('#closeShortDirectlyStateControl', () => {
   const closeAmount = new BigNumber(100);
+  async function test(accounts, state) {
+    const shortSell = await ShortSell.deployed();
+    const shortTx = await doShort(accounts);
+    await issueForDirectClose(shortTx);
+
+    await shortSell.setOperationState(state);
+    await shortSell.closeShortDirectly(
+      shortTx.id,
+      closeAmount,
+      { from: shortTx.seller }
+    );
+  }
 
   contract('ShortSell', accounts => {
     it('Allows #closeShortDirectly while OPERATIONAL', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
+      await test(accounts, OperationState.OPERATIONAL);
 
-      await shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      );
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShortDirectly while CLOSE_ONLY', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
-
-      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-      await shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      );
+      await test(accounts, OperationState.CLOSE_ONLY);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_ONLY', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
-
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_ONLY);
-      await shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      );
+      await test(accounts, OperationState.SHORT_SELLER_CLOSE_ONLY);
     });
   });
 
   contract('ShortSell', accounts => {
     it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_DIRECTLY_ONLY', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
+      await test(accounts, OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
+    });
+  });
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
-      await shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      );
+  contract('ShortSell', accounts => {
+    it('Allows #closeShortDirectly while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
     });
   });
 
