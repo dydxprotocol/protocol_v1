@@ -16,7 +16,7 @@ async function expectAssertFailure(call) {
     await call();
     throw new Error('Did not throw');
   } catch (e) {
-    assertCertainError(e, 'VM Exception while processing transaction: invalid opcode');
+    assertCertainError(e, 'Exception while processing transaction: invalid opcode');
   }
 }
 
