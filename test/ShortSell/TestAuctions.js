@@ -7,18 +7,12 @@ const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
 const ProxyContract = artifacts.require("Proxy");
-const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const {
   getShortAuctionOffer,
   placeAuctionBid,
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
-
-async function getSafetyDepositBox() {
-  const safe = await SafetyDepositBox.deployed();
-  return safe;
-}
 
 describe('#placeSellbackBid', () => {
   contract('ShortSell', function(accounts) {
@@ -58,8 +52,7 @@ describe('#placeSellbackBid', () => {
       const bidder2 = accounts[7];
       const bid = new BigNumber(200);
       const bid2 = new BigNumber(100);
-      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
-      const safe = await getSafetyDepositBox();
+      const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
 
       await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
       const tx = await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder2, bid2);
@@ -190,7 +183,7 @@ describe('#placeSellbackBid', () => {
       const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
 
       // Partially close short
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(3)).floor();
+      const closeAmount = shortTx.shortAmount.div(3).floor();
       await underlyingToken.issue(closeAmount, { from: shortTx.seller });
       await underlyingToken.approve(ProxyContract.address, closeAmount, { from: shortTx.seller });
       await shortSell.closeShortDirectly(shortTx.id, closeAmount, { from: shortTx.seller });
