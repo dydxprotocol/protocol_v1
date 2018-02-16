@@ -595,6 +595,21 @@ async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid)
   );
 }
 
+async function issueForDirectClose(shortTx) {
+  const underlyingToken = await UnderlyingToken.deployed();
+  await Promise.all([
+    underlyingToken.issueTo(
+      shortTx.seller,
+      shortTx.shortAmount
+    ),
+    underlyingToken.approve(
+      ProxyContract.address,
+      shortTx.shortAmount,
+      { from: shortTx.seller }
+    )
+  ]);
+}
+
 function getPartialAmount(
   numerator,
   denominator,
@@ -622,5 +637,6 @@ module.exports = {
   getShort,
   getShortAuctionOffer,
   placeAuctionBid,
-  doShortAndCall
+  doShortAndCall,
+  issueForDirectClose
 };

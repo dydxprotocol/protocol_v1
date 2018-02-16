@@ -12,6 +12,7 @@ import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
+import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellRepo } from "./ShortSellRepo.sol";
 import { Vault } from "./Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
@@ -28,7 +29,8 @@ contract ShortSell is
     Ownable,
     NoOwner,
     ReentrancyGuard,
-    ShortSellEvents {
+    ShortSellEvents,
+    ShortSellAdmin {
 
     using SafeMath for uint;
 
@@ -53,6 +55,7 @@ contract ShortSell is
         address _proxy
     )
         Ownable()
+        ShortSellAdmin()
         public
     {
         state = ShortSellState.State({
@@ -141,6 +144,7 @@ contract ShortSell is
         bytes32[4] sigRS
     )
         external
+        onlyWhileOperational
         nonReentrant
         returns (bytes32 _shortId)
     {
@@ -197,6 +201,7 @@ contract ShortSell is
         bytes32 orderS
     )
         external
+        closeShortStateControl
         nonReentrant
         returns (
             uint _baseTokenReceived,
@@ -231,6 +236,7 @@ contract ShortSell is
         uint requestedCloseAmount
     )
         external
+        closeShortDirectlyStateControl
         nonReentrant
         returns (
             uint _baseTokenReceived,
@@ -271,6 +277,7 @@ contract ShortSell is
         bytes32 shortId
     )
         external
+        onlyWhileOperational
         nonReentrant
     {
         LoanImpl.cancelLoanCallImpl(state, shortId);
@@ -297,6 +304,7 @@ contract ShortSell is
         uint offer
     )
         external
+        auctionStateControl
         nonReentrant
     {
         PlaceSellbackBidImpl.placeSellbackBidImpl(
@@ -336,6 +344,7 @@ contract ShortSell is
         uint depositAmount
     )
         external
+        onlyWhileOperational
         nonReentrant
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
@@ -396,6 +405,7 @@ contract ShortSell is
         uint cancelAmount
     )
         external
+        cancelLoanOfferingStateControl
         nonReentrant
         returns (uint _cancelledAmount)
     {
