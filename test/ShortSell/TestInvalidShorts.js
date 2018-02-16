@@ -19,7 +19,6 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { BIGNUMBERS } = require('../helpers/Constants');
 
 describe('#short', () => {
   describe('Validations', () => {

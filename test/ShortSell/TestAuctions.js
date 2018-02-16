@@ -7,12 +7,18 @@ const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
 const ProxyContract = artifacts.require("Proxy");
+const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const {
   getShortAuctionOffer,
   placeAuctionBid,
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+
+async function getSafetyDepositBox() {
+  const safe = await SafetyDepositBox.deployed();
+  return safe;
+}
 
 describe('#placeSellbackBid', () => {
   contract('ShortSell', function(accounts) {
@@ -53,6 +59,7 @@ describe('#placeSellbackBid', () => {
       const bid = new BigNumber(200);
       const bid2 = new BigNumber(100);
       const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const safe = await getSafetyDepositBox();
 
       await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
       const tx = await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder2, bid2);
@@ -65,7 +72,9 @@ describe('#placeSellbackBid', () => {
         vaultUnderlyingTokenBalance,
         tokenBalanceOfVault,
         bidderBalance,
-        bidder2Balance
+        bidder2Balance,
+        bidderSafeBalance,
+        bidder2SafeBalance
       ] = await Promise.all([
         getShortAuctionOffer(shortSell, shortTx.id),
         shortSell.hasShortAuctionOffer.call(shortTx.id),
@@ -73,6 +82,8 @@ describe('#placeSellbackBid', () => {
         underlyingToken.balanceOf.call(vault.address),
         underlyingToken.balanceOf.call(bidder),
         underlyingToken.balanceOf.call(bidder2),
+        safe.withdrawableBalances.call(bidder, underlyingToken.address),
+        safe.withdrawableBalances.call(bidder2, underlyingToken.address)
       ]);
 
       expect(auctionExists).to.be.true;
@@ -81,8 +92,10 @@ describe('#placeSellbackBid', () => {
       expect(auctionOffer.exists).to.be.true;
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
-      expect(bidderBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(bidderBalance).to.be.bignumber.equal(0);
+      expect(bidderSafeBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(bidder2Balance).to.be.bignumber.equal(0);
+      expect(bidder2SafeBalance).to.be.bignumber.equal(0);
     });
   });
 
