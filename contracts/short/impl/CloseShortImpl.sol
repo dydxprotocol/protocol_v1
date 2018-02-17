@@ -4,7 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../Vault.sol";
+import { Vault } from "../vault/Vault.sol";
 import { Trader } from "../Trader.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";

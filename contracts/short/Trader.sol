@@ -8,7 +8,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
 import { ZeroExExchangeInterface } from "../interfaces/ZeroExExchangeInterface.sol";
 import { Exchange } from "../shared/Exchange.sol";
 import { Proxy } from "../shared/Proxy.sol";
-import { Vault } from "./Vault.sol";
+import { Vault } from "./vault/Vault.sol";
 import { MathHelpers } from "../lib/MathHelpers.sol";
 
 

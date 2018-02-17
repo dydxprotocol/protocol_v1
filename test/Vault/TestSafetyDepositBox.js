@@ -6,13 +6,14 @@ const BigNumber = require('bignumber.js');
 const TestToken = artifacts.require("TestToken");
 const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 
+const { transact } = require('../helpers/ContractHelper');
 const { expectThrow, expectAssertFailure } = require('../helpers/ExpectHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 const {
   validateStaticAccessControlledConstants
 } = require('../helpers/AccessControlledHelper');
 
-contract('Vault', function(accounts) {
+contract('SafetyDepositBox', function(accounts) {
   const gracePeriod = new BigNumber('1234567');
   let safetyDepositBox;
 
@@ -31,6 +32,26 @@ contract('Vault', function(accounts) {
       safetyDepositBox.withdrawableBalances.call(act1, tokenB.address),
       safetyDepositBox.withdrawableBalances.call(act2, tokenA.address),
       safetyDepositBox.withdrawableBalances.call(act2, tokenB.address)
+    ]);
+    return {
+      act1TokenA,
+      act1TokenB,
+      act2TokenA,
+      act2TokenB
+    }
+  }
+
+  async function withdrawAssignedTokens() {
+    const [
+      act1TokenA,
+      act1TokenB,
+      act2TokenA,
+      act2TokenB
+    ] = await Promise.all([
+      transact(safetyDepositBox.withdraw, tokenA.address, { from: act1 }),
+      transact(safetyDepositBox.withdraw, tokenB.address, { from: act1 }),
+      transact(safetyDepositBox.withdraw, tokenA.address, { from: act2 }),
+      transact(safetyDepositBox.withdraw, tokenB.address, { from: act2 })
     ]);
     return {
       act1TokenA,
@@ -112,23 +133,25 @@ contract('Vault', function(accounts) {
       expect(assignedTokens.act2TokenB).to.be.bignumber.equal(0);
     });
 
-    it('fails if there are zero funds', async () => {
-      await expectThrow(() =>
-        safetyDepositBox.withdraw(tokenB.address, { from: act2 }));
+    it('succeeds but returns zero if there are no funds', async () => {
+      const retValue = await transact(safetyDepositBox.withdraw, tokenB.address, { from: act2 });
+      expect(retValue).to.be.bignumber.equal(0);
+
       const ownedTokens = await getOwnedTokens();
       expect(ownedTokens.act1TokenA).to.be.bignumber.equal(0);
       expect(ownedTokens.act1TokenB).to.be.bignumber.equal(0);
       expect(ownedTokens.act2TokenA).to.be.bignumber.equal(0);
       expect(ownedTokens.act2TokenB).to.be.bignumber.equal(0);
     });
-    it('fails if called twice in a row', async () => {
-      await safetyDepositBox.withdraw(tokenA.address, { from: act1 });
-      await safetyDepositBox.withdraw(tokenB.address, { from: act1 });
-      await safetyDepositBox.withdraw(tokenA.address, { from: act2 });
-      await expectThrow(() => safetyDepositBox.withdraw(tokenA.address, { from: act2 }));
-      await expectThrow(() => safetyDepositBox.withdraw(tokenB.address, { from: act1 }));
-      await expectThrow(() => safetyDepositBox.withdraw(tokenA.address, { from: act1 }));
-      const ownedTokens = await getOwnedTokens();
+    it('succeeds but if called twice in a row, but the second call has no effect', async () => {
+      let withdrawnTokens = await withdrawAssignedTokens();
+      withdrawnTokens = await withdrawAssignedTokens();
+      expect(withdrawnTokens.act1TokenA).to.be.bignumber.equal(0);
+      expect(withdrawnTokens.act1TokenB).to.be.bignumber.equal(0);
+      expect(withdrawnTokens.act2TokenA).to.be.bignumber.equal(0);
+      expect(withdrawnTokens.act2TokenB).to.be.bignumber.equal(0);
+
+      let ownedTokens = await getOwnedTokens();
       expect(ownedTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
       expect(ownedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
       expect(ownedTokens.act2TokenA).to.be.bignumber.equal(amountA.div(4));
@@ -136,9 +159,12 @@ contract('Vault', function(accounts) {
 
     });
     it('succeeds if there are non-zero funds', async () => {
-      await safetyDepositBox.withdraw(tokenA.address, { from: act1 });
-      await safetyDepositBox.withdraw(tokenB.address, { from: act1 });
-      await safetyDepositBox.withdraw(tokenA.address, { from: act2 });
+      let withdrawnTokens = await withdrawAssignedTokens();
+      expect(withdrawnTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
+      expect(withdrawnTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
+      expect(withdrawnTokens.act2TokenA).to.be.bignumber.equal(amountA.div(4));
+      expect(withdrawnTokens.act2TokenB).to.be.bignumber.equal(0);
+
       const ownedTokens = await getOwnedTokens();
       expect(ownedTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
       expect(ownedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));

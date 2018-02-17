@@ -8,7 +8,7 @@ const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
 
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { expectThrow, expectAssertFailure } = require('../helpers/ExpectHelper');
 const {
   validateStaticAccessControlledConstants
 } = require('../helpers/AccessControlledHelper');
@@ -286,13 +286,13 @@ contract('Vault', function(accounts) {
         { from: accounts[1] });
 
       // not okay to overtransfer, even though those tokens are technically credited to the vault
-      await expectThrow(
+      await expectAssertFailure(
         () => vault.transferToSafetyDepositBox(id, tokenA.address, receiver, num1,
           { from: accounts[1] })
       );
 
       // not okay to transfer from a bad id
-      await expectThrow(
+      await expectAssertFailure(
         () => vault.transferToSafetyDepositBox(id2, tokenA.address, receiver, num1,
           { from: accounts[1] })
       );
@@ -400,12 +400,12 @@ contract('Vault', function(accounts) {
       await vault.withdrawFromVault(id, tokenA.address, halfNum1, { from: receiver });
 
       // not okay to overwithdraw, even though those tokens are technically credited to the vault
-      await expectThrow(
+      await expectAssertFailure(
         () => vault.withdrawFromVault(id, tokenA.address, num1, { from: receiver })
       );
 
       // not okay to withdraw from a bad id
-      await expectThrow(
+      await expectAssertFailure(
         () => vault.withdrawFromVault(id2, tokenA.address, num1, { from: receiver })
       );
 
@@ -464,7 +464,7 @@ contract('Vault', function(accounts) {
     });
 
     it('Does not transfer tokens if vault does not have balance', async () => {
-      await expectThrow(
+      await expectAssertFailure(
         () => vault.transferBetweenVaults(id3, id2, tokenA.address, num1, { from: accounts[1] })
       );
 
