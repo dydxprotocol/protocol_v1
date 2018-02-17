@@ -60,14 +60,11 @@ contract SafetyDepositBox is
         address[] tokens
     )
         external
-        // not nonReentrant, but withdraw() is
-        returns (uint256[] _tokensWithdrawn)
+        // not nonReentrant, but withdraw() is nonReentrant
     {
-        uint256[] memory tokensWithdrawn;
         for (uint256 i = 0; i < tokens.length; i++) {
-            tokensWithdrawn[i] = withdraw(tokens[i]);
+            withdraw(tokens[i]);
         }
-        return tokensWithdrawn;
     }
 
     /**

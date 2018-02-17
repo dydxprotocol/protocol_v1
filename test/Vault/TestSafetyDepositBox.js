@@ -173,6 +173,84 @@ contract('SafetyDepositBox', function(accounts) {
     });
   });
 
+  describe('#withdrawEach', () => {
+    const amountA = new BigNumber(10000);
+    const amountB = new BigNumber(5000);
+
+    beforeEach('create tokens and put into the safetyDepositBox', async () => {
+      [tokenA, tokenB] = await Promise.all([
+        TestToken.new(),
+        TestToken.new()
+      ]);
+      expect(tokenA.address).to.not.equal(tokenB.address);
+      await Promise.all([
+        tokenA.issueTo(safetyDepositBox.address, amountA),
+        tokenB.issueTo(safetyDepositBox.address, amountB)
+      ]);
+
+      const [tokenAInSafe, tokenBInSafe] = await Promise.all([
+        tokenA.balanceOf.call(safetyDepositBox.address),
+        tokenB.balanceOf.call(safetyDepositBox.address),
+      ]);
+      expect(tokenAInSafe).to.be.bignumber.equal(amountA);
+      expect(tokenBInSafe).to.be.bignumber.equal(amountB);
+
+      await Promise.all([
+        safetyDepositBox.assignTokensToUser(tokenA.address, act1, amountA.div(2)),
+        safetyDepositBox.assignTokensToUser(tokenB.address, act1, amountB.div(2)),
+        safetyDepositBox.assignTokensToUser(tokenA.address, act2, amountA.div(4))
+      ]);
+      const assignedTokens = await getAssignedTokens();
+      expect(assignedTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
+      expect(assignedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
+      expect(assignedTokens.act2TokenA).to.be.bignumber.equal(amountA.div(4));
+      expect(assignedTokens.act2TokenB).to.be.bignumber.equal(0);
+    });
+
+    it('succeeds for single token', async () => {
+      await Promise.all([
+        transact(safetyDepositBox.withdrawEach, [tokenB.address], { from: act1 }),
+        transact(safetyDepositBox.withdrawEach, [tokenB.address], { from: act2 })
+      ]);
+
+      const ownedTokens = await getOwnedTokens();
+      expect(ownedTokens.act1TokenA).to.be.bignumber.equal(0);
+      expect(ownedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
+      expect(ownedTokens.act2TokenA).to.be.bignumber.equal(0);
+      expect(ownedTokens.act2TokenB).to.be.bignumber.equal(0);
+    });
+
+    it('succeeds for multiple tokens', async () => {
+      const bothTokens = [tokenA.address, tokenB.address];
+
+      await Promise.all([
+        transact(safetyDepositBox.withdrawEach, bothTokens, { from: act1 }),
+        transact(safetyDepositBox.withdrawEach, bothTokens, { from: act2 })
+      ]);
+
+      const ownedTokens = await getOwnedTokens();
+      expect(ownedTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
+      expect(ownedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
+      expect(ownedTokens.act2TokenA).to.be.bignumber.equal(amountA.div(4));
+      expect(ownedTokens.act2TokenB).to.be.bignumber.equal(0);
+    });
+
+    it('succeeds for repeated tokens', async () => {
+      const repeatedTokens = [tokenA.address, tokenB.address, tokenB.address, tokenA.address];
+
+      await Promise.all([
+        transact(safetyDepositBox.withdrawEach, repeatedTokens, { from: act1 }),
+        transact(safetyDepositBox.withdrawEach, repeatedTokens, { from: act2 })
+      ]);
+
+      const ownedTokens = await getOwnedTokens();
+      expect(ownedTokens.act1TokenA).to.be.bignumber.equal(amountA.div(2));
+      expect(ownedTokens.act1TokenB).to.be.bignumber.equal(amountB.div(2));
+      expect(ownedTokens.act2TokenA).to.be.bignumber.equal(amountA.div(4));
+      expect(ownedTokens.act2TokenB).to.be.bignumber.equal(0);
+    });
+  });
+
   describe('#assignTokensToUser', () => {
     const amountA = new BigNumber(10000);
     const amountB = new BigNumber(20000);
