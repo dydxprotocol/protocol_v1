@@ -54,47 +54,46 @@ contract SafetyDepositBox is
     /**
      * Allow any account to withdraw all specified tokens
      * @param  tokens  Array of ERC20 tokens to withdraw
+     * @param  who     Address of account to withdraw tokens for
      * @return Number of tokens withdrawn for each token address
      */
     function withdrawEach(
-        address[] tokens
+        address[] tokens,
+        address who
     )
         external
         // not nonReentrant, but withdraw() is nonReentrant
     {
         for (uint256 i = 0; i < tokens.length; i++) {
-            withdraw(tokens[i]);
+            withdraw(tokens[i], who);
         }
     }
 
     /**
      * Allow any account to withdraw all tokens of a certain type
      * @param  token  ERC20 token to withdraw
+     * @param  who    Address of account to withdraw tokens for
      * @return Number of tokens withdrawn
      */
     function withdraw(
-        address token
+        address token,
+        address who
     )
         public
         nonReentrant
         returns (uint256 _tokensWithdrawn)
     {
         // make sure there are tokens to withdraw
-        uint256 numTokens = withdrawableBalances[msg.sender][token];
+        uint256 numTokens = withdrawableBalances[who][token];
         if (numTokens == 0) {
             return numTokens;
         }
 
         // subtract from mappings
-        delete withdrawableBalances[msg.sender][token];
-        assert(withdrawableBalances[msg.sender][token] == 0);
-        totalBalances[token] = totalBalances[token].sub(numTokens); // asserts no underflow
+        delete withdrawableBalances[who][token];
 
         // everything looks good, lets send
-        transfer(token, msg.sender, numTokens); // asserts transfer worked
-
-        // final validation
-        validateBalance(token);
+        sendTokensExternally(token, who, numTokens);
 
         return numTokens;
     }
@@ -123,8 +122,8 @@ contract SafetyDepositBox is
     {
         require(amount > 0);
 
-        totalBalances[token] = totalBalances[token].add(amount);
-        validateBalance(token);
+        // validate that we recieved the tokens
+        recieveTokensExternally(token, amount);
 
         withdrawableBalances[account][token] = withdrawableBalances[account][token].add(amount);
     }

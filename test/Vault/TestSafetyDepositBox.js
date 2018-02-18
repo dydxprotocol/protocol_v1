@@ -21,6 +21,10 @@ contract('SafetyDepositBox', function(accounts) {
   const act2 = accounts[9];
   let tokenA, tokenB;
 
+  function randomAccount() {
+    return accounts[Math.floor(Math.random() * accounts.length)];
+  }
+
   async function getAssignedTokens() {
     const [
       act1TokenA,
@@ -48,10 +52,11 @@ contract('SafetyDepositBox', function(accounts) {
       act2TokenA,
       act2TokenB
     ] = await Promise.all([
-      transact(safetyDepositBox.withdraw, tokenA.address, { from: act1 }),
-      transact(safetyDepositBox.withdraw, tokenB.address, { from: act1 }),
-      transact(safetyDepositBox.withdraw, tokenA.address, { from: act2 }),
-      transact(safetyDepositBox.withdraw, tokenB.address, { from: act2 })
+      // call withdraw from random accounts since it shouldn't matter who calls it
+      transact(safetyDepositBox.withdraw, tokenA.address, act1, { from: randomAccount() }),
+      transact(safetyDepositBox.withdraw, tokenB.address, act1, { from: randomAccount() }),
+      transact(safetyDepositBox.withdraw, tokenA.address, act2, { from: randomAccount() }),
+      transact(safetyDepositBox.withdraw, tokenB.address, act2, { from: randomAccount() })
     ]);
     return {
       act1TokenA,
@@ -134,7 +139,8 @@ contract('SafetyDepositBox', function(accounts) {
     });
 
     it('succeeds but returns zero if there are no funds', async () => {
-      const retValue = await transact(safetyDepositBox.withdraw, tokenB.address, { from: act2 });
+      const retValue = await transact(safetyDepositBox.withdraw, tokenB.address, act2,
+        { from: randomAccount() });
       expect(retValue).to.be.bignumber.equal(0);
 
       const ownedTokens = await getOwnedTokens();
@@ -209,8 +215,8 @@ contract('SafetyDepositBox', function(accounts) {
 
     it('succeeds for single token', async () => {
       await Promise.all([
-        transact(safetyDepositBox.withdrawEach, [tokenB.address], { from: act1 }),
-        transact(safetyDepositBox.withdrawEach, [tokenB.address], { from: act2 })
+        transact(safetyDepositBox.withdrawEach, [tokenB.address], act1, { from: randomAccount() }),
+        transact(safetyDepositBox.withdrawEach, [tokenB.address], act2, { from: randomAccount() })
       ]);
 
       const ownedTokens = await getOwnedTokens();
@@ -224,8 +230,8 @@ contract('SafetyDepositBox', function(accounts) {
       const bothTokens = [tokenA.address, tokenB.address];
 
       await Promise.all([
-        transact(safetyDepositBox.withdrawEach, bothTokens, { from: act1 }),
-        transact(safetyDepositBox.withdrawEach, bothTokens, { from: act2 })
+        transact(safetyDepositBox.withdrawEach, bothTokens, act1, { from: randomAccount() }),
+        transact(safetyDepositBox.withdrawEach, bothTokens, act2, { from: randomAccount() })
       ]);
 
       const ownedTokens = await getOwnedTokens();
@@ -239,8 +245,8 @@ contract('SafetyDepositBox', function(accounts) {
       const repeatedTokens = [tokenA.address, tokenB.address, tokenB.address, tokenA.address];
 
       await Promise.all([
-        transact(safetyDepositBox.withdrawEach, repeatedTokens, { from: act1 }),
-        transact(safetyDepositBox.withdrawEach, repeatedTokens, { from: act2 })
+        transact(safetyDepositBox.withdrawEach, repeatedTokens, act1, { from: randomAccount() }),
+        transact(safetyDepositBox.withdrawEach, repeatedTokens, act2, { from: randomAccount() })
       ]);
 
       const ownedTokens = await getOwnedTokens();

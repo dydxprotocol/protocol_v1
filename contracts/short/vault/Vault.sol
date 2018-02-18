@@ -79,15 +79,14 @@ contract Vault is
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
+        // Verify that the tokens were actually sent
+        recieveTokensExternally(token, amount);
+
         // Then increment balances
         balances[id][token] = balances[id][token].add(amount);
-        totalBalances[token] = totalBalances[token].add(amount);
 
         // This should always be true. If not, something is very wrong
         assert(totalBalances[token] >= balances[id][token]);
-
-        // Validate new balance
-        validateBalance(token);
     }
 
     /**
@@ -108,12 +107,11 @@ contract Vault is
         external
         nonReentrant
         requiresAuthorization
-        sendsTokensExternally(token, amount)
     {
-        // Due to underflow-catching, this also catches require(balances[id][token] >= amount);
+        assert(balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
-        transfer(token, SAFETY_DEPOSIT_BOX, amount);
+        sendTokensExternally(token, SAFETY_DEPOSIT_BOX, amount);
         SafetyDepositBox(SAFETY_DEPOSIT_BOX).assignTokensToUser(token, onBehalfOf, amount);
     }
 
@@ -132,12 +130,11 @@ contract Vault is
         external
         nonReentrant
         requiresAuthorization
-        sendsTokensExternally(token, amount)
     {
-        // Due to underflow-catching, this also catches require(balances[id][token] >= amount);
+        assert(balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
-        transfer(token, msg.sender, amount);
+        sendTokensExternally(token, msg.sender, amount);
     }
 
     /**
@@ -158,7 +155,7 @@ contract Vault is
         requiresAuthorization
     {
         // First decrement the balance of the from vault
-        // Due to underflow-catching, this also catches require(balances[fromId][token] >= amount);
+        assert(balances[fromId][token] >= amount);
         balances[fromId][token] = balances[fromId][token].sub(amount);
 
         // Then increment the balance of the to vault
