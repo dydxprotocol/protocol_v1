@@ -79,7 +79,7 @@ contract Vault is
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
-        // Verify that the tokens were actually sent
+        // Verify that the tokens were actually recieved and update totalBalances for the token
         recieveTokensExternally(token, amount);
 
         // Then increment balances
@@ -108,9 +108,10 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        assert(balances[id][token] >= amount);
+        // Next line also requires that (balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
+        // Place tokens in safety deposit box and update totalBalances for the token
         sendTokensExternally(token, SAFETY_DEPOSIT_BOX, amount);
         SafetyDepositBox(SAFETY_DEPOSIT_BOX).assignTokensToUser(token, onBehalfOf, amount);
     }
@@ -131,9 +132,10 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        assert(balances[id][token] >= amount);
+        // Next line also requires that (balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
+        // Send tokens to authorized address and updates totalBalances for the token
         sendTokensExternally(token, msg.sender, amount);
     }
 
@@ -154,11 +156,8 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        // First decrement the balance of the from vault
-        assert(balances[fromId][token] >= amount);
+        // Next line also requires that (balances[fromId][token] >= amount);
         balances[fromId][token] = balances[fromId][token].sub(amount);
-
-        // Then increment the balance of the to vault
         balances[toId][token] = balances[toId][token].add(amount);
     }
 }

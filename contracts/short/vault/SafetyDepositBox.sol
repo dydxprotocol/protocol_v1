@@ -71,7 +71,7 @@ contract SafetyDepositBox is
     {
         require(amount > 0);
 
-        // validate that we recieved the tokens
+        // Verify that the tokens were actually recieved and update totalBalances for the token
         recieveTokensExternally(token, amount);
 
         withdrawableBalances[account][token] = withdrawableBalances[account][token].add(amount);
@@ -93,7 +93,7 @@ contract SafetyDepositBox is
     )
         external
     {
-        // not nonReentrant, but withdraw() is nonReentrant
+        // Not nonReentrant, but withdraw() is nonReentrant
         for (uint256 i = 0; i < tokens.length; i++) {
             withdraw(tokens[i], who);
         }
@@ -113,16 +113,16 @@ contract SafetyDepositBox is
         nonReentrant
         returns (uint256 _tokensWithdrawn)
     {
-        // make sure there are tokens to withdraw
+        // Make sure there are tokens to withdraw
         uint256 numTokens = withdrawableBalances[who][token];
         if (numTokens == 0) {
             return numTokens;
         }
 
-        // subtract from mappings
+        // Decrement funds from user
         delete withdrawableBalances[who][token];
 
-        // everything looks good, lets send
+        // Let user withdraw tokens and update totalBalances for token
         sendTokensExternally(token, who, numTokens);
 
         return numTokens;
