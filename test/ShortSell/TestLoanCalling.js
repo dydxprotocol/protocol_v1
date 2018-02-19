@@ -1,17 +1,17 @@
-/*global artifacts, web3, contract, describe, it*/
+/*global artifacts, contract, describe, it*/
 
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const { wait } = require('@digix/tempo')(web3);
 const ShortSell = artifacts.require("ShortSell");
 const {
   doShort,
   getShort,
   doShortAndCall,
-  placeAuctionBid
+  placeAuctionBid,
+  totalTokensForAddress
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
@@ -143,7 +143,7 @@ describe('#cancelLoanCall', () => {
     it('unsets callTimestamp on the short', async () => {
       const bidder = accounts[6];
       const bid = new BigNumber(100);
-      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
       await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
 
       await shortSell.cancelLoanCall(
@@ -162,7 +162,7 @@ describe('#cancelLoanCall', () => {
         shortSell.hasShortAuctionOffer.call(shortTx.id),
         vault.totalBalances.call(underlyingToken.address),
         underlyingToken.balanceOf.call(vault.address),
-        underlyingToken.balanceOf.call(bidder),
+        totalTokensForAddress(underlyingToken, bidder, safe)
       ]);
 
       expect(callTimestamp).to.be.bignumber.equal(0);

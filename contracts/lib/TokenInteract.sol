@@ -16,7 +16,7 @@ contract TokenInteract {
         returns (uint _balance)
     {
         // Limit gas to prevent reentrancy
-        // ?? Do I need to limit gas? compiler throws warning on limiting in view function
+        // TODO: Do I need to limit gas? compiler throws warning on limiting in view function
         return ERC20(token).balanceOf/*.gas(EXTERNAL_QUERY_GAS_LIMIT)*/(owner);
     }
 

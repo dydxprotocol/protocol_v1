@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const Vault = artifacts.require("Vault");
+const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
@@ -21,7 +22,8 @@ const {
   getShort,
   doShortAndCall,
   placeAuctionBid,
-  issueForDirectClose
+  issueForDirectClose,
+  totalTokensForAddress
 } = require('../helpers/ShortSellHelper');
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
@@ -38,7 +40,7 @@ describe('#closeShort', () => {
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
       // Close half the short at a time
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.div(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
@@ -72,7 +74,7 @@ describe('#closeShort', () => {
         ShortSell.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.div(2);
 
       await expectThrow(
         () => callCloseShort(
@@ -88,23 +90,23 @@ describe('#closeShort', () => {
 
   contract('ShortSell', function(accounts) {
     it('sends tokens back to auction bidder if there is one', async () => {
-      const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const { shortSell, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
       const sellOrder = await createSigned0xSellOrder(accounts);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
       const bidder = accounts[6];
       const bid = new BigNumber(200);
       await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.div(2);
 
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
-      let bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      let bidderTokens = await totalTokensForAddress(underlyingToken, bidder, safe);
+      expect(bidderTokens).to.be.bignumber.equal(0);
 
       await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
 
-      bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      bidderTokens = await totalTokensForAddress(underlyingToken, bidder, safe);
+      expect(bidderTokens).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -118,7 +120,7 @@ describe('#closeShort', () => {
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
       // Try to close twice the short amount
-      const closeAmount = shortTx.shortAmount.times(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.times(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
@@ -142,7 +144,7 @@ describe('#closeShortDirectly', () => {
       await issueForDirectClose(shortTx);
 
       const shortSell = await ShortSell.deployed();
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.div(2);
 
       const closeTx = await shortSell.closeShortDirectly(
         shortTx.id,
@@ -166,7 +168,8 @@ describe('#closeShortDirectly', () => {
       expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
         shortTx.shortAmount.minus(closeAmount)
       );
-      expect(balances.sellerBaseToken).to.be.bignumber.equal(
+      expect(balances.sellerBaseToken).to.be.bignumber.equal(0);
+      expect(balances.sellerBaseTokenInSafe).to.be.bignumber.equal(
         getPartialAmount(
           closeAmount,
           shortTx.shortAmount,
@@ -183,7 +186,7 @@ describe('#closeShortDirectly', () => {
       const shortTx = await doShort(accounts);
       const shortSell = await ShortSell.deployed();
       await issueForDirectClose(shortTx);
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(2));
+      const closeAmount = shortTx.shortAmount.div(2);
 
       await expectThrow(
         () => shortSell.closeShortDirectly(
@@ -197,7 +200,7 @@ describe('#closeShortDirectly', () => {
 
   contract('ShortSell', function(accounts) {
     it('sends tokens back to auction bidder if there is one', async () => {
-      const { shortSell, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const { shortSell, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
       await issueForDirectClose(shortTx);
       const bidder = accounts[6];
       const bid = new BigNumber(200);
@@ -225,14 +228,14 @@ describe('#closeShortDirectly', () => {
       checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
       expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(0);
-      expect(balances.sellerBaseToken).to.be.bignumber.equal(
+      expect(balances.sellerBaseTokenInSafe).to.be.bignumber.equal(
         shortTx.depositAmount
           .plus(baseTokenFromSell)
           .minus(interestFee)
       );
 
-      const bidderUnderlyingTokenBalance = await underlyingToken.balanceOf.call(bidder);
-      expect(bidderUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      const returnedTokens = await safe.withdrawableBalances.call(bidder, underlyingToken.address);
+      expect(returnedTokens).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
@@ -244,7 +247,7 @@ describe('#closeShortDirectly', () => {
       await issueForDirectClose(shortTx);
 
       const shortSell = await ShortSell.deployed();
-      const requestedCloseAmount = shortTx.shortAmount.times(new BigNumber(2));
+      const requestedCloseAmount = shortTx.shortAmount.times(2);
 
       const closeTx = await shortSell.closeShortDirectly(
         shortTx.id,
@@ -270,7 +273,8 @@ describe('#closeShortDirectly', () => {
       expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
         shortTx.shortAmount.minus(closeAmount)
       );
-      expect(balances.sellerBaseToken).to.be.bignumber.equal(
+      expect(balances.sellerBaseToken).to.be.bignumber.equal(0);
+      expect(balances.sellerBaseTokenInSafe).to.be.bignumber.equal(
         getPartialAmount(
           closeAmount,
           shortTx.shortAmount,
@@ -298,6 +302,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   const balances = await getBalances(shortSell, shortTx, sellOrder);
   const {
     sellerBaseToken,
+    sellerBaseTokenInSafe,
     externalSellerBaseToken,
     externalSellerUnderlyingToken,
     sellerFeeToken,
@@ -308,7 +313,8 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   checkSmartContractBalances(balances, shortTx, closeAmount);
   checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
-  expect(sellerBaseToken).to.be.bignumber.equal(
+  const totalSellerBaseToken = sellerBaseToken.plus(sellerBaseTokenInSafe);
+  expect(totalSellerBaseToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       shortTx.shortAmount,
@@ -406,10 +412,14 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
 function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
   const {
     lenderBaseToken,
+    lenderBaseTokenInSafe,
+    lenderUnderlyingTokenInSafe,
     lenderUnderlyingToken
   } = balances;
-  expect(lenderBaseToken).to.be.bignumber.equal(interestFee);
-  expect(lenderUnderlyingToken).to.be.bignumber.equal(
+  const totalLenderBaseToken = lenderBaseToken.plus(lenderBaseTokenInSafe);
+  expect(totalLenderBaseToken).to.be.bignumber.equal(interestFee);
+  const totalLenderUnderlyingToken = lenderUnderlyingToken.plus(lenderUnderlyingTokenInSafe);
+  expect(totalLenderUnderlyingToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
       .plus(closeAmount)
@@ -436,10 +446,12 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
 
 async function getBalances(shortSell, shortTx, sellOrder) {
   const [
+    safe,
     underlyingToken,
     baseToken,
     feeToken
   ] = await Promise.all([
+    SafetyDepositBox.deployed(),
     UnderlyingToken.deployed(),
     BaseToken.deployed(),
     FeeToken.deployed(),
@@ -467,47 +479,75 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   const [
     sellerBaseToken,
     sellerUnderlyingToken,
+    sellerBaseTokenInSafe,
+    sellerUnderlyingTokenInSafe,
+
     lenderBaseToken,
     lenderUnderlyingToken,
+    lenderBaseTokenInSafe,
+    lenderUnderlyingTokenInSafe,
+
     sellerFeeToken,
+
     vaultFeeToken,
     vaultBaseToken,
     vaultUnderlyingToken,
+
     traderFeeToken,
     traderBaseToken,
     traderUnderlyingToken,
+
     shortBalance
   ] = await Promise.all([
     baseToken.balanceOf.call(shortTx.seller),
     underlyingToken.balanceOf.call(shortTx.seller),
+    safe.withdrawableBalances.call(shortTx.seller, baseToken.address),
+    safe.withdrawableBalances.call(shortTx.seller, underlyingToken.address),
+
     baseToken.balanceOf.call(shortTx.loanOffering.lender),
     underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
+    safe.withdrawableBalances.call(shortTx.loanOffering.lender, baseToken.address),
+    safe.withdrawableBalances.call(shortTx.loanOffering.lender, underlyingToken.address),
+
     feeToken.balanceOf.call(shortTx.seller),
+
     feeToken.balanceOf.call(Vault.address),
     baseToken.balanceOf.call(Vault.address),
     underlyingToken.balanceOf.call(Vault.address),
+
     feeToken.balanceOf.call(Trader.address),
     baseToken.balanceOf.call(Trader.address),
     underlyingToken.balanceOf.call(Trader.address),
+
     shortSell.getShortBalance.call(shortTx.id)
   ]);
 
   return {
     sellerBaseToken,
     sellerUnderlyingToken,
+    sellerBaseTokenInSafe,
+    sellerUnderlyingTokenInSafe,
+
     lenderBaseToken,
     lenderUnderlyingToken,
+    lenderBaseTokenInSafe,
+    lenderUnderlyingTokenInSafe,
+
     externalSellerBaseToken,
     externalSellerUnderlyingToken,
-    sellerFeeToken,
     externalSellerFeeToken,
+    sellerFeeToken,
+
     feeRecipientFeeToken,
+
     vaultFeeToken,
     vaultBaseToken,
     vaultUnderlyingToken,
+
     traderFeeToken,
     traderBaseToken,
     traderUnderlyingToken,
+
     shortBalance
   };
 }

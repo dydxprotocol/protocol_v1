@@ -14,7 +14,7 @@ import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellRepo } from "./ShortSellRepo.sol";
-import { Vault } from "./Vault.sol";
+import { Vault } from "./vault/Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
 

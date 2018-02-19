@@ -2,7 +2,7 @@ pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../Vault.sol";
+import { Vault } from "../vault/Vault.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -142,7 +142,7 @@ library ShortSellCommon {
 
         bytes32 auctionVaultId = getAuctionVaultId(shortId);
 
-        vault.sendFromVault(
+        vault.transferToSafetyDepositBox(
             auctionVaultId,
             short.underlyingToken,
             currentBidder,

@@ -2,6 +2,7 @@
 
 const Exchange = artifacts.require("Exchange");
 const Vault = artifacts.require("Vault");
+const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
 const ShortSellRepo = artifacts.require("ShortSellRepo");
@@ -49,6 +50,9 @@ async function deployShortSellContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract),
     deployer.deploy(
+      SafetyDepositBox,
+      ONE_HOUR),
+    deployer.deploy(
       ShortSellRepo,
       ONE_HOUR,
     ),
@@ -77,6 +81,7 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(
       Vault,
       ProxyContract.address,
+      SafetyDepositBox.address,
       ONE_HOUR
     )
   ]);
@@ -124,6 +129,10 @@ async function grantAccessToVault() {
   ]);
 }
 
+async function grantAccessToSafetyDepositBox() {
+  const safetyDepositBox = await SafetyDepositBox.deployed();
+  await safetyDepositBox.grantAccess(Vault.address);
+}
 async function grantAccessToRepo() {
   const repo = await ShortSellRepo.deployed();
   return repo.grantAccess(ShortSell.address);
@@ -148,7 +157,8 @@ async function doMigration(deployer, network) {
     grantAccessToVault(),
     grantAccessToRepo(),
     grantAccessToAuctionRepo(),
-    grantAccessToTrader()
+    grantAccessToTrader(),
+    grantAccessToSafetyDepositBox()
   ]);
 }
 

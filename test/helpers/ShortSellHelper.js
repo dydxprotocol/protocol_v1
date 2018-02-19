@@ -16,7 +16,7 @@ const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
-const { wait } = require('@digix/tempo')(web3);
+const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const { BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -341,6 +341,20 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
   ]);
 }
 
+async function totalTokensForAddress(tokenContract, address, safe) {
+  if (!safe) {
+    safe = await SafetyDepositBox.deployed();
+  }
+  const [
+    directBalance,
+    balanceInSafe
+  ] = await Promise.all([
+    tokenContract.balanceOf.call(address),
+    safe.withdrawableBalances.call(address, tokenContract.address)
+  ]);
+  return directBalance.plus(balanceInSafe);
+}
+
 // HELPERS
 
 async function createSigned0xBuyOrder(accounts) {
@@ -554,9 +568,10 @@ async function getShortAuctionOffer(shortSell, id) {
 }
 
 async function doShortAndCall(accounts) {
-  const [shortSell, vault, underlyingToken] = await Promise.all([
+  const [shortSell, vault, safe, underlyingToken] = await Promise.all([
     ShortSell.deployed(),
     Vault.deployed(),
+    SafetyDepositBox.deployed(),
     UnderlyingToken.deployed()
   ]);
 
@@ -567,7 +582,7 @@ async function doShortAndCall(accounts) {
     { from: shortTx.loanOffering.lender }
   );
 
-  return { shortSell, vault, underlyingToken, shortTx };
+  return { shortSell, vault, safe, underlyingToken, shortTx };
 }
 
 async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid) {
@@ -631,5 +646,6 @@ module.exports = {
   getShortAuctionOffer,
   placeAuctionBid,
   doShortAndCall,
-  issueForDirectClose
+  issueForDirectClose,
+  totalTokensForAddress
 };

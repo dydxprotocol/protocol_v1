@@ -52,7 +52,7 @@ describe('#placeSellbackBid', () => {
       const bidder2 = accounts[7];
       const bid = new BigNumber(200);
       const bid2 = new BigNumber(100);
-      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
 
       await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
       const tx = await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder2, bid2);
@@ -65,7 +65,9 @@ describe('#placeSellbackBid', () => {
         vaultUnderlyingTokenBalance,
         tokenBalanceOfVault,
         bidderBalance,
-        bidder2Balance
+        bidder2Balance,
+        bidderSafeBalance,
+        bidder2SafeBalance
       ] = await Promise.all([
         getShortAuctionOffer(shortSell, shortTx.id),
         shortSell.hasShortAuctionOffer.call(shortTx.id),
@@ -73,6 +75,8 @@ describe('#placeSellbackBid', () => {
         underlyingToken.balanceOf.call(vault.address),
         underlyingToken.balanceOf.call(bidder),
         underlyingToken.balanceOf.call(bidder2),
+        safe.withdrawableBalances.call(bidder, underlyingToken.address),
+        safe.withdrawableBalances.call(bidder2, underlyingToken.address)
       ]);
 
       expect(auctionExists).to.be.true;
@@ -81,8 +85,10 @@ describe('#placeSellbackBid', () => {
       expect(auctionOffer.exists).to.be.true;
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(tokenBalanceOfVault).to.be.bignumber.equal(shortTx.shortAmount);
-      expect(bidderBalance).to.be.bignumber.equal(shortTx.shortAmount);
+      expect(bidderBalance).to.be.bignumber.equal(0);
+      expect(bidderSafeBalance).to.be.bignumber.equal(shortTx.shortAmount);
       expect(bidder2Balance).to.be.bignumber.equal(0);
+      expect(bidder2SafeBalance).to.be.bignumber.equal(0);
     });
   });
 
@@ -177,7 +183,7 @@ describe('#placeSellbackBid', () => {
       const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
 
       // Partially close short
-      const closeAmount = shortTx.shortAmount.div(new BigNumber(3)).floor();
+      const closeAmount = shortTx.shortAmount.div(3).floor();
       await underlyingToken.issue(closeAmount, { from: shortTx.seller });
       await underlyingToken.approve(ProxyContract.address, closeAmount, { from: shortTx.seller });
       await shortSell.closeShortDirectly(shortTx.id, closeAmount, { from: shortTx.seller });

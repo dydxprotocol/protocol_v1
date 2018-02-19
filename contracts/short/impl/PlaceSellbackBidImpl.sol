@@ -4,7 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
-import { Vault } from "../Vault.sol";
+import { Vault } from "../vault/Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -62,7 +62,7 @@ library PlaceSellbackBidImpl {
 
         // If a previous bidder has been outbid, give them their tokens back
         if (hasCurrentOffer) {
-            Vault(state.VAULT).sendFromVault(
+            Vault(state.VAULT).transferToSafetyDepositBox(
                 auctionVaultId,
                 short.underlyingToken,
                 currentBidder,
