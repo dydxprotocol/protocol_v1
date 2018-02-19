@@ -260,22 +260,34 @@ contract('TokenizedShort', function(accounts) {
   });
 
   describe('#redeemDirectly', () => {
-    const shortAmount = SHORT.FULL.TX.shortAmount;
-    let seller;
+    let baseToken, underlyingToken, feeToken;
 
     beforeEach('set up shorts and short tokens', async () => {
       await setUpShorts();
       await setUpShortTokens();
-      seller = SHORTS.FULL.TX.seller;
-      //todo give tokens to seller
+
+      [baseToken, underlyingToken, feeToken] = await Promise.all([
+        BaseToken.deployed(),
+        UnderlyingToken.deployed(),
+        FeeToken.deployed()
+      ]);
+      for (let type in FULL_AND_PARTIAL) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const amount = SHORT.TX.shortAmount;
+        underlyingToken.issueTo(seller, amount);
+        SHORT.TOKEN_CONTRACT.transfer(seller, amount, { from: INITIAL_TOKEN_HOLDER });
+      }
     });
 
     it('fails if not initialized', async () => {
       for (let type in FULL_AND_PARTIAL) {
         const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const amount = SHORT.TX.shortAmount;
         await expectThrow(
           () => SHORT.TOKEN_CONTRACT.redeemDirectly(
-            shortAmount.div(2), { from: seller }));
+            amount.div(2), { from: seller }));
       }
     });
 
@@ -311,6 +323,10 @@ contract('TokenizedShort', function(accounts) {
       for (let type in FULL_AND_PARTIAL) {
         const SHORT = SHORTS[type];
         await SHORT.TOKEN_CONTRACT.initialize();
+        SHORT.TOKEN_CONTRACT.redeemDirectly(
+            amount.div(2), { from: seller }));
+        SHORT.TOKEN_CONTRACT.redeemDirectly(
+            amount.div(2), { from: seller }));
       }
     });
   });

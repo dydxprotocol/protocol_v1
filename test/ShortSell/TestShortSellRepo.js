@@ -1,4 +1,4 @@
-ADDRESSES.TEST/*global artifacts, contract, describe, it, beforeEach*/
+/*global artifacts, contract, describe, it, beforeEach*/
 
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
@@ -115,7 +115,6 @@ contract('ShortSellRepo', function(accounts) {
       expect(s.startTimestamp).to.be.bignumber.not.equal(0);
       expect(s.callTimestamp).to.be.bignumber.equal(0);
       expect(s.callTimeLimit).to.be.bignumber.equal(callTimeLimit);
-      expect(s.lockoutTime).to.be.bignumber.equal(lockoutTime);
       expect(s.maxDuration).to.be.bignumber.equal(maxDuration);
     });
 
@@ -188,9 +187,6 @@ contract('ShortSellRepo', function(accounts) {
 
   describe('#setShortCallTimeLimit',
     createDescribe('setShortCallTimeLimit', callTimeLimit.mul(2), 'callTimeLimit'));
-
-  describe('#setShortLockoutTime',
-    createDescribe('setShortLockoutTime', lockoutTime.mul(2), 'lockoutTime'));
 
   describe('#setShortMaxDuration',
     createDescribe('setShortMaxDuration', maxDuration.mul(2), 'maxDuration'));
