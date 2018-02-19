@@ -1,11 +1,10 @@
-/*global artifacts, web3, contract, describe, it*/
+/*global artifacts, contract, describe, it*/
 
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const { wait } = require('@digix/tempo')(web3);
 const ShortSell = artifacts.require("ShortSell");
 const {
   doShort,

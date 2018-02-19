@@ -47,6 +47,36 @@ contract SafetyDepositBox is
     {
     }
 
+    // --------------------------------------------------
+    // ---- Authorized Only State Changing Functions ----
+    // --------------------------------------------------
+
+    /**
+     * Mark a certain amount of tokens as belonging to a certain account. Requires authorization to
+     * call and ensures that those tokens have actually already been deposited into this account.
+     * Does not verify that the source of those tokens and the caller of this function were the same
+     * entity, but at least prevents too many tokens from being assigned to all accounts combined.
+     * @param  token    ERC20 token
+     * @param  account  The account to credit with the token
+     * @param  amount   Number of token to mark as belonging to account
+     */
+    function assignTokensToUser(
+        address token,
+        address account,
+        uint amount
+    )
+        external
+        nonReentrant
+        requiresAuthorization
+    {
+        require(amount > 0);
+
+        // validate that we recieved the tokens
+        recieveTokensExternally(token, amount);
+
+        withdrawableBalances[account][token] = withdrawableBalances[account][token].add(amount);
+    }
+
     // -----------------------------------------
     // ---- Public State Changing Functions ----
     // -----------------------------------------
@@ -62,8 +92,8 @@ contract SafetyDepositBox is
         address who
     )
         external
-        // not nonReentrant, but withdraw() is nonReentrant
     {
+        // not nonReentrant, but withdraw() is nonReentrant
         for (uint256 i = 0; i < tokens.length; i++) {
             withdraw(tokens[i], who);
         }
@@ -96,35 +126,5 @@ contract SafetyDepositBox is
         sendTokensExternally(token, who, numTokens);
 
         return numTokens;
-    }
-
-    // --------------------------------------------------
-    // ---- Authorized Only State Changing Functions ----
-    // --------------------------------------------------
-
-    /**
-     * Mark a certain amount of tokens as belonging to a certain account. Requires authorization to
-     * call and ensures that those tokens have actually already been deposited into this account.
-     * Does not verify that the source of those tokens and the caller of this function were the same
-     * entity, but at least prevents too many tokens from being assigned to all accounts combined.
-     * @param  token    ERC20 token
-     * @param  account  The account to credit with the token
-     * @param  amount   Number of token to mark as belonging to account
-     */
-    function assignTokensToUser(
-        address token,
-        address account,
-        uint amount
-    )
-        external
-        nonReentrant
-        requiresAuthorization
-    {
-        require(amount > 0);
-
-        // validate that we recieved the tokens
-        recieveTokensExternally(token, amount);
-
-        withdrawableBalances[account][token] = withdrawableBalances[account][token].add(amount);
     }
 }
