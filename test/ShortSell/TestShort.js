@@ -25,7 +25,8 @@ const {
   getPartialAmount,
   sign0xOrder,
   getShort,
-  signLoanOffering
+  signLoanOffering,
+  callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
 
 describe('#short', () => {
@@ -145,6 +146,24 @@ describe('#short', () => {
       const tx = await callShort(shortSell, shortTx);
 
       console.log('\tShortSell.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
+
+      await checkSuccess(shortSell, shortTx);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('succeeds with on-chain approved loan offerings', async () => {
+      const shortTx = await createShortSellTx(accounts);
+      const shortSell = await ShortSell.deployed();
+
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      await callApproveLoanOffering(shortSell, shortTx.loanOffering);
+
+      shortTx.loanOffering.signature.v = 0;
+      shortTx.loanOffering.signature.r = "";
+      shortTx.loanOffering.signature.s = "";
+
+      await callShort(shortSell, shortTx);
 
       await checkSuccess(shortSell, shortTx);
     });

@@ -264,6 +264,29 @@ function getOrderTxFields(order) {
 }
 
 function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
+  const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
+
+  return shortSell.cancelLoanOffering(
+    addresses,
+    values256,
+    values32,
+    cancelAmount,
+    { from: from || loanOffering.lender }
+  );
+}
+
+function callApproveLoanOffering(shortSell, loanOffering, from) {
+  const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
+
+  return shortSell.approveLoanOffering(
+    addresses,
+    values256,
+    values32,
+    { from: from || loanOffering.lender }
+  );
+}
+
+function formatLoanOffering(loanOffering) {
   const addresses = [
     loanOffering.underlyingToken,
     loanOffering.baseToken,
@@ -292,13 +315,7 @@ function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
     loanOffering.maxDuration
   ];
 
-  return shortSell.cancelLoanOffering(
-    addresses,
-    values256,
-    values32,
-    cancelAmount,
-    { from: from || loanOffering.lender }
-  );
+  return { addresses, values256, values32 };
 }
 
 async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
@@ -647,5 +664,6 @@ module.exports = {
   placeAuctionBid,
   doShortAndCall,
   issueForDirectClose,
-  totalTokensForAddress
+  totalTokensForAddress,
+  callApproveLoanOffering
 };

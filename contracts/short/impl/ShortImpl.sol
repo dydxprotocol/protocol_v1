@@ -203,9 +203,10 @@ library ShortImpl {
             .mul(getPartialInterestFee(transaction))
             .mul(transaction.shortAmount);
 
-        // Check Signature
+        // Require the order to either be pre-approved on-chain or to have a valid signature
         require(
-            isValidSignature(transaction.loanOffering)
+            state.isLoanApproved[transaction.loanOffering.loanHash]
+            || isValidSignature(transaction.loanOffering)
         );
 
         // Validate the short amount is <= than max and >= min

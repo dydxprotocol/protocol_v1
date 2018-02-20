@@ -17,7 +17,8 @@ const {
   createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  issueForDirectClose
+  issueForDirectClose,
+  callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
 
 const OperationState = {
@@ -174,6 +175,27 @@ describe('#onlyWhileOperational', () => {
         shortSell,
         shortTx.loanOffering,
         cancelAmount
+      );
+    });
+  });
+
+  contract('ShortSell', accounts => {
+    it('Only allows #approveLoanOffering while OPERATIONAL', async () => {
+      const shortTx = await createShortSellTx(accounts);
+      const shortSell = await ShortSell.deployed();
+
+      await issueTokensAndSetAllowancesForShort(shortTx);
+
+      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_ONLY);
+      await expectThrow(() => callApproveLoanOffering(
+        shortSell,
+        shortTx.loanOffering
+      ));
+
+      await shortSell.setOperationState(OperationState.OPERATIONAL);
+      await callApproveLoanOffering(
+        shortSell,
+        shortTx.loanOffering
       );
     });
   });

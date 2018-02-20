@@ -56,6 +56,15 @@ library LoanImpl {
         uint cancelAmount
     );
 
+    /**
+     * A loan offering was approved on-chain by a lender
+     */
+    event LoanOfferingApproved(
+        bytes32 indexed loanHash,
+        address indexed lender,
+        address indexed feeRecipient
+    );
+
     // -------------------------------------------
     // ---- Internal Implementation Functions ----
     // -------------------------------------------
@@ -151,6 +160,32 @@ library LoanImpl {
         );
 
         return amountToCancel;
+    }
+
+    function approveLoanOffering(
+        ShortSellState.State storage state,
+        address[8] addresses,
+        uint[9] values256,
+        uint32[2] values32
+    )
+        public
+    {
+        ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
+            addresses,
+            values256,
+            values32
+        );
+
+        require(loanOffering.lender == msg.sender);
+        require(loanOffering.expirationTimestamp > block.timestamp);
+
+        state.isLoanApproved[loanOffering.loanHash] = true;
+
+        LoanOfferingApproved(
+            loanOffering.loanHash,
+            loanOffering.lender,
+            loanOffering.feeRecipient
+        );
     }
 
     // ------ Parsing Functions ------
