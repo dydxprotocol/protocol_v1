@@ -16,7 +16,6 @@ const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const SafetyDepositBox = artifacts.require("SafetyDepositBox");
-const { BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -581,7 +580,7 @@ async function getShortAuctionOffer(shortSell, id) {
   };
 }
 
-async function doShortAndCall(accounts) {
+async function doShortAndCall(accounts, _salt = DEFAULT_SALT) {
   const [shortSell, vault, safe, underlyingToken] = await Promise.all([
     ShortSell.deployed(),
     Vault.deployed(),

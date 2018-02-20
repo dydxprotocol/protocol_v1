@@ -73,7 +73,7 @@ library LoanImpl {
         ShortSellState.State storage state,
         bytes32 shortId
     )
-        public
+        internal
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
@@ -97,7 +97,7 @@ library LoanImpl {
         ShortSellState.State storage state,
         bytes32 shortId
     )
-        public
+        internal
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
         require(msg.sender == short.lender);
@@ -127,7 +127,7 @@ library LoanImpl {
         uint32[2] values32,
         uint cancelAmount
     )
-        public
+        internal
         returns (uint _cancelledAmount)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(

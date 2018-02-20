@@ -5,7 +5,7 @@ module.exports = {
 /**
  * Calls a solidity function and returns the return value.
  * @param  {SolidityFunction} contractFunction the function of the contract to call
- * @return {[type]} the return value of the solidity function if it doesn't revert
+ * @return {var} the return value of the solidity function if it doesn't revert
  */
 async function transact(contractFunction /* , ... */){
   const restOfArgs = [].slice.call(arguments).slice(1);

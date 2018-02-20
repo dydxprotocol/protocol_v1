@@ -7,6 +7,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../vault/Vault.sol";
 import { Trader } from "../Trader.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -65,21 +66,17 @@ library CloseShortImpl {
         bytes32 s;
     }
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ---------------------------------------------
+    // ----- Internal Implementation Functions -----
+    // ---------------------------------------------
 
     function closeShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
         uint requestedCloseAmount,
-        address[5] orderAddresses,
-        uint[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
+        Order memory order
     )
-        public
+        internal
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -90,27 +87,28 @@ library CloseShortImpl {
             shortId,
             requestedCloseAmount
         );
-        Order memory order = parseOrder(
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
 
+        // Validation and state updates
         validateCloseShort(transaction);
-
-        // STATE UPDATES
-
-        // Remove short if it's fully closed, or update the closed amount
         updateStateForCloseShort(state, transaction);
+        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 
-
-        // EXTERNAL CALLS
-        var (interestFee, buybackCost, sellerBaseTokenAmount) = buybackAndSendOnClose(
+        // Secure underlying tokens
+        uint buybackCost = buyBackUnderlyingToken(
             state,
             transaction,
-            order
+            order,
+            closeId,
+            interestFee
+        );
+
+        // Give back base tokens
+        uint sellerBaseTokenAmount = sendTokensOnClose(
+            state,
+            transaction,
+            closeId,
+            interestFee,
+            msg.sender
         );
 
         logEventOnClose(
@@ -131,7 +129,7 @@ library CloseShortImpl {
         bytes32 shortId,
         uint requestedCloseAmount
     )
-        public
+        internal
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -143,13 +141,12 @@ library CloseShortImpl {
             requestedCloseAmount
         );
 
+        // Validation and state updates
         validateCloseShort(transaction);
-
-        // STATE UPDATES
         updateStateForCloseShort(state, transaction);
         var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 
-        // EXTERNAL CALLS
+        // Secure underlying tokens
         Vault(state. VAULT).transferToVault(
             closeId,
             transaction.short.underlyingToken,
@@ -157,11 +154,13 @@ library CloseShortImpl {
             transaction.closeAmount
         );
 
+        // Give back base tokens
         uint sellerBaseTokenAmount = sendTokensOnClose(
             state,
             transaction,
             closeId,
-            interestFee
+            interestFee,
+            msg.sender
         );
 
         logEventOnClose(
@@ -183,10 +182,21 @@ library CloseShortImpl {
         CloseShortTx transaction
     )
         internal
-        view
     {
         require(transaction.closeAmount > 0);
-        require(transaction.short.seller == msg.sender);
+
+        // closer is short seller, valid
+        if (transaction.short.seller == msg.sender) {
+            return;
+        }
+
+        // closer is not short seller, we have to make sure this okay with the short seller
+        else {
+            require(
+                CloseShortVerifier(transaction.short.seller)
+                    .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount)
+            );
+        }
     }
 
     function updateStateForCloseShort(
@@ -243,47 +253,6 @@ library CloseShortImpl {
                 transaction.shortId,
                 transaction.closeAmount
             )
-        );
-    }
-
-    function buybackAndSendOnClose(
-        ShortSellState.State storage state,
-        CloseShortTx transaction,
-        Order order
-    )
-        internal
-        returns (
-            uint _interestFee,
-            uint _buybackCost,
-            uint _sellerBaseTokenAmount
-        )
-    {
-        // First transfer base token used for close into new vault. Vault will then validate
-        // this is the maximum base token that can be used by this close
-        // Prefer to use a new vault, so this close cannot touch the rest of the
-        // funds held in the original short vault
-
-        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
-
-        uint buybackCost = buyBackUnderlyingToken(
-            state,
-            transaction,
-            order,
-            closeId,
-            interestFee
-        );
-
-        uint sellerBaseTokenAmount = sendTokensOnClose(
-            state,
-            transaction,
-            closeId,
-            interestFee
-        );
-
-        return (
-            interestFee,
-            buybackCost,
-            sellerBaseTokenAmount
         );
     }
 
@@ -425,7 +394,8 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         CloseShortTx transaction,
         bytes32 closeId,
-        uint interestFee
+        uint interestFee,
+        address closer
     )
         internal
         returns (uint _sellerBaseTokenAmount)
@@ -450,14 +420,14 @@ library CloseShortImpl {
             );
         }
 
-        // Send remaining base token to seller (= deposit + profit - interestFee)
+        // Send remaining base token to closer (= deposit + profit - interestFee)
         // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
         // have been paid out of the vault balance
         uint sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
         vault.transferToSafetyDepositBox(
             closeId,
             transaction.short.baseToken,
-            transaction.short.seller,
+            closer,
             sellerBaseTokenAmount
         );
 

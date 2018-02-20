@@ -71,9 +71,9 @@ library ShortImpl {
         ShortSellCommon.Signature signature;
     }
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ---------------------------------------------
+    // ----- Internal Implementation Functions -----
+    // ---------------------------------------------
 
     function shortImpl(
         ShortSellState.State storage state,
@@ -83,7 +83,7 @@ library ShortImpl {
         uint8[2] sigV,
         bytes32[4] sigRS
     )
-        public
+        internal
         returns(bytes32 _shortId)
     {
         ShortTx memory transaction = parseShortTx(
