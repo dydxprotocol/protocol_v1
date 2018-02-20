@@ -8,6 +8,7 @@ const BigNumber = require('bignumber.js');
 const ethUtil = require('ethereumjs-util');
 
 const ShortSell = artifacts.require("ShortSell");
+const ShortSellRepo = artifacts.require("ShortSellRepo");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -539,7 +540,7 @@ function get0xOrderHash(order) {
   )
 }
 
-async function getShort(shortSell, id)
+async function getShort(shortSell, id) {
   const repo = await ShortSellRepo.deployed();
   const [
     underlyingToken,
