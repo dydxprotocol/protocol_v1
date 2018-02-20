@@ -41,7 +41,7 @@ library PlaceSellbackBidImpl {
         bytes32 shortId,
         uint offer
     )
-        internal
+        public
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
 

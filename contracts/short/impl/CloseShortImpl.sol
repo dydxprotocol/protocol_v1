@@ -76,7 +76,7 @@ library CloseShortImpl {
         uint requestedCloseAmount,
         Order memory order
     )
-        internal
+        public
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -129,7 +129,7 @@ library CloseShortImpl {
         bytes32 shortId,
         uint requestedCloseAmount
     )
-        internal
+        public
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount

@@ -40,7 +40,7 @@ library ForceRecoverLoanImpl {
         ShortSellState.State storage state,
         bytes32 shortId
     )
-        internal
+        public
         returns (uint _baseTokenAmount)
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);

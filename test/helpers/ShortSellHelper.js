@@ -16,6 +16,7 @@ const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const SafetyDepositBox = artifacts.require("SafetyDepositBox");
+const { BIGNUMBERS } = require('../test/helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
