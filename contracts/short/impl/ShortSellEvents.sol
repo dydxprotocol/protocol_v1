@@ -100,6 +100,15 @@ contract ShortSellEvents {
     );
 
     /**
+     * A loan offering was approved on-chain by a lender
+     */
+    event LoanOfferingApproved(
+        bytes32 indexed loanHash,
+        address indexed lender,
+        address indexed feeRecipient
+    );
+
+    /**
      * A bid was placed to sell back the underlying token required to close
      * a short position
      */

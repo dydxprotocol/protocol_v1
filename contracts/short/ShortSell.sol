@@ -416,6 +416,23 @@ contract ShortSell is
         );
     }
 
+    function approveLoanOffering(
+        address[8] addresses,
+        uint[9] values256,
+        uint32[2] values32
+    )
+        external
+        onlyWhileOperational
+        nonReentrant
+    {
+        LoanImpl.approveLoanOffering(
+            state,
+            addresses,
+            values256,
+            values32
+        );
+    }
+
     /**
      * Transfer ownership of a loan to a new address. This new address will be entitled
      * to all payouts for this loan. Only callable by the lender for a short
