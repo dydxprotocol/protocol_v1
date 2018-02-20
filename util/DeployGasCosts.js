@@ -1,7 +1,8 @@
-/*global artifacts, describe, contract, it*/
+/*global web3, artifacts, describe, contract, it*/
 
 
 const ShortSell = artifacts.require("ShortSell");
+const TokenizedShort = artifacts.require("TokenizedShort");
 const Trader = artifacts.require("Trader");
 const Vault = artifacts.require("Vault");
 const ShortSellRepo = artifacts.require("ShortSellRepo");
@@ -87,6 +88,21 @@ contract('Deploy Costs', () => {
 
       const deployGasCost = await getGasCost(contract.transactionHash);
       console.log('\tProxy deploy gas cost: ' + deployGasCost);
+    });
+  });
+
+  describe('TokenizedShort', () => {
+    it('', async () => {
+      const contract = await TokenizedShort.new(
+        ADDRESSES.TEST[0],
+        ADDRESSES.TEST[1],
+        web3.fromUtf8("123456789"),
+        "THIS IS THE FULL NAME",
+        "SYM 10/10"
+      );
+
+      const deployGasCost = await getGasCost(contract.transactionHash);
+      console.log('\tTokenizedShort deploy gas cost: ' + deployGasCost);
     });
   });
 });

@@ -1,7 +1,9 @@
 /*global artifacts, web3, contract, describe, it, before, beforeEach*/
 
-const expect = require('chai').expect;
 const Web3 = require('web3');
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
@@ -10,9 +12,6 @@ const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const Vault = artifacts.require("Vault");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
-const ProxyContract = artifacts.require("Proxy");
 const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
 const {
   callCloseShort,
@@ -28,11 +27,7 @@ const {
   TOKENIZED_SHORT_STATE
 } = require('../helpers/TokenizedShortHelper');
 
-const web3Instance = new Web3(web3.currentProvider);
-
 contract('TokenizedShort', function(accounts) {
-  const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
-  const [updateDelay, updateExpiration] = [new BigNumber('112233'), new BigNumber('332211')];
   const badId = web3.fromAscii("06231993");
 
   let SHORTS = {
@@ -73,11 +68,9 @@ contract('TokenizedShort', function(accounts) {
 
   before('Set up Proxy, ShortSell, and TokenizedShortCreator accounts', async () => {
     [
-      CONTRACTS.PROXY,
       CONTRACTS.SHORT_SELL,
       CONTRACTS.TOKENIZED_SHORT_CREATOR
     ] = await Promise.all([
-      ProxyContract.deployed(),
       ShortSell.deployed(),
       TokenizedShortCreator.deployed()
     ]);
@@ -119,7 +112,6 @@ contract('TokenizedShort', function(accounts) {
       const SHORT = SHORTS[type];
       SHORT.TOKEN_CONTRACT = await TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
-        CONTRACTS.PROXY.address,
         INITIAL_TOKEN_HOLDER,
         SHORT.ID,
         SHORT.NAME,
@@ -138,7 +130,6 @@ contract('TokenizedShort', function(accounts) {
         const short = SHORTS[type];
         const tsc = await getTokenizedShortConstants(short.TOKEN_CONTRACT);
         expect(tsc.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc.PROXY).to.equal(CONTRACTS.PROXY.address);
         expect(tsc.shortId).to.equal(short.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.name).to.equal(short.NAME);
@@ -157,14 +148,12 @@ contract('TokenizedShort', function(accounts) {
         const SHORT = SHORTS[type];
         const secondContract = await TokenizedShort.new(
           CONTRACTS.SHORT_SELL.address,
-          CONTRACTS.PROXY.address,
           tokenHolder2,
           SHORT.ID,
           name2,
           symbol2);
         const tsc = await getTokenizedShortConstants(secondContract);
         expect(tsc.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc.PROXY).to.equal(CONTRACTS.PROXY.address);
         expect(tsc.shortId).to.equal(SHORT.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.name).to.equal(name2);
@@ -194,7 +183,6 @@ contract('TokenizedShort', function(accounts) {
         const short = await getShort(CONTRACTS.SHORT_SELL, SHORT.ID);
         // expect certain values
         expect(tsc2.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc2.PROXY).to.equal(CONTRACTS.PROXY.address);
         expect(tsc2.shortId).to.equal(SHORT.ID);
         expect(tsc2.state.equals(TOKENIZED_SHORT_STATE.OPEN)).to.be.true;
         expect(tsc2.name).to.equal(SHORT.NAME);
@@ -209,7 +197,6 @@ contract('TokenizedShort', function(accounts) {
 
         // explicity make sure some things have not changed
         expect(tsc2.SHORT_SELL).to.equal(tsc1.SHORT_SELL);
-        expect(tsc2.PROXY).to.equal(tsc1.PROXY);
         expect(tsc2.shortId).to.equal(tsc1.shortId);
         expect(tsc2.name).to.equal(tsc1.name);
         expect(tsc2.symbol).to.equal(tsc1.symbol);
@@ -230,7 +217,6 @@ contract('TokenizedShort', function(accounts) {
     it('fails if short has invalid id', async () => {
       const tokenContract = await TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
-        CONTRACTS.PROXY.address,
         INITIAL_TOKEN_HOLDER,
         badId,
         "NewName",
@@ -355,7 +341,6 @@ contract('TokenizedShort', function(accounts) {
       const symbol = "HEL";
       const tokenContract = await TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
-        CONTRACTS.PROXY.address,
         INITIAL_TOKEN_HOLDER,
         badId,
         name,
@@ -370,7 +355,7 @@ contract('TokenizedShort', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         const decimal = await SHORT.TOKEN_CONTRACT.decimals.call();
-        expect(decimal.equals(new BigNumber(15))).to.be.true;
+        expect(decimal).to.be.bignumber.equal(15);
       }
     });
   });
