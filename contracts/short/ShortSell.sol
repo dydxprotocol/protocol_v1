@@ -207,18 +207,15 @@ contract ShortSell is
             uint _interestFeeAmount
         )
     {
-        CloseShortImpl.Order memory order = CloseShortImpl.parseOrder(
+        return CloseShortImpl.closeShortImpl(
+            state,
+            shortId,
+            requestedCloseAmount,
             orderAddresses,
             orderValues,
             orderV,
             orderR,
             orderS
-        );
-        return CloseShortImpl.closeShortImpl(
-            state,
-            shortId,
-            requestedCloseAmount,
-            order
         );
     }
 

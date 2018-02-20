@@ -74,9 +74,50 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         bytes32 shortId,
         uint requestedCloseAmount,
-        Order memory order
+        address[5] orderAddresses,
+        uint[6] orderValues,
+        uint8 orderV,
+        bytes32 orderR,
+        bytes32 orderS
     )
         public
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        Order memory order = parseOrder(
+            orderAddresses,
+            orderValues,
+            orderV,
+            orderR,
+            orderS
+        );
+        return closeShortImplImpl(state, shortId, requestedCloseAmount, order);
+    }
+
+    function closeShortDirectlyImpl(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        uint requestedCloseAmount
+    )
+        public
+        returns (
+            uint _baseTokenReceived,
+            uint _interestFeeAmount
+        )
+    {
+        Order memory order;
+        return closeShortImplImpl(state, shortId, requestedCloseAmount, order);
+    }
+
+    function closeShortImplImpl(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        uint requestedCloseAmount,
+        Order memory order
+    )
+        internal
         returns (
             uint _baseTokenReceived,
             uint _interestFeeAmount
@@ -94,7 +135,16 @@ library CloseShortImpl {
         var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 
         // Secure underlying tokens
-        uint buybackCost = buyBackUnderlyingToken(
+        uint buybackCost = 0;
+        if (order.addresses[0] == 0) { // null order
+            Vault(state. VAULT).transferToVault(
+                closeId,
+                transaction.short.underlyingToken,
+                msg.sender,
+                transaction.closeAmount
+            );
+        } else  // valid order
+            buybackCost = buyBackUnderlyingToken(
             state,
             transaction,
             order,
@@ -115,58 +165,6 @@ library CloseShortImpl {
             transaction,
             interestFee,
             buybackCost,
-            sellerBaseTokenAmount
-        );
-
-        return (
-            sellerBaseTokenAmount,
-            interestFee
-        );
-    }
-
-    function closeShortDirectlyImpl(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        uint requestedCloseAmount
-    )
-        public
-        returns (
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
-        )
-    {
-        CloseShortTx memory transaction = parseCloseShortTx(
-            state,
-            shortId,
-            requestedCloseAmount
-        );
-
-        // Validation and state updates
-        validateCloseShort(transaction);
-        updateStateForCloseShort(state, transaction);
-        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
-
-        // Secure underlying tokens
-        Vault(state. VAULT).transferToVault(
-            closeId,
-            transaction.short.underlyingToken,
-            msg.sender,
-            transaction.closeAmount
-        );
-
-        // Give back base tokens
-        uint sellerBaseTokenAmount = sendTokensOnClose(
-            state,
-            transaction,
-            closeId,
-            interestFee,
-            msg.sender
-        );
-
-        logEventOnClose(
-            transaction,
-            interestFee,
-            0,
             sellerBaseTokenAmount
         );
 

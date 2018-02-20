@@ -16,7 +16,7 @@ const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const SafetyDepositBox = artifacts.require("SafetyDepositBox");
-const { BIGNUMBERS } = require('../test/helpers/Constants');
+const { BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -303,7 +303,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
+    loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -436,7 +436,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.interestRate,
+    loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -539,7 +539,8 @@ function get0xOrderHash(order) {
   )
 }
 
-async function getShort(shortSell, id) {
+async function getShort(shortSell, id)
+  const repo = await ShortSellRepo.deployed();
   const [
     underlyingToken,
     baseToken,
@@ -552,7 +553,7 @@ async function getShort(shortSell, id) {
     maxDuration,
     lender,
     seller
-  ] = await shortSell.getShort.call(id);
+  ] = await repo.getShort.call(id);
 
   return {
     underlyingToken,

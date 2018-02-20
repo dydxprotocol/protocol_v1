@@ -259,7 +259,7 @@ contract('TokenizedShort', function(accounts) {
     });
   });
 
-  describe('#redeemDirectly', () => {
+  describe('#closeOnBehalfOf', () => {
     let baseToken, underlyingToken, feeToken;
 
     beforeEach('set up shorts and short tokens', async () => {
@@ -286,8 +286,9 @@ contract('TokenizedShort', function(accounts) {
         const seller = SHORT.TX.seller;
         const amount = SHORT.TX.shortAmount;
         await expectThrow(
-          () => SHORT.TOKEN_CONTRACT.redeemDirectly(
-            amount.div(2), { from: seller }));
+          () => SHORT.TOKEN_CONTRACT.closeOnBehalfOf(
+            seller, SHORT.ID, amount.div(2))
+        );
       }
     });
 
@@ -318,20 +319,9 @@ contract('TokenizedShort', function(accounts) {
         await SHORT.TOKEN_CONTRACT.initialize();
       }
     });
-
-    it('succeeds in closing in increments', async () => {
-      for (let type in FULL_AND_PARTIAL) {
-        const SHORT = SHORTS[type];
-        await SHORT.TOKEN_CONTRACT.initialize();
-        SHORT.TOKEN_CONTRACT.redeemDirectly(
-            amount.div(2), { from: seller }));
-        SHORT.TOKEN_CONTRACT.redeemDirectly(
-            amount.div(2), { from: seller }));
-      }
-    });
   });
 
-  describe('#redeem', () => {
+  describe('#closeOnBehalfOf', () => {
     before('', async () => {
 
     });
@@ -343,29 +333,9 @@ contract('TokenizedShort', function(accounts) {
     it('fails if not initialized', async () => {
 
     });
-
-    it('fails if closed', async () => {
-
-    });
-
-    it('fails if value is zero', async () => {
-
-    });
-
-    it('fails if value is too high', async () => {
-
-    });
-
-    it('fails if 0x order is invalid for any reason', async () => {
-
-    });
-
-    it('succeeds in closing in increments', async () => {
-
-    });
   });
 
-  describe('#claimPayout', () => {
+  describe('#withdraw', () => {
     before('', async () => {
 
     });
@@ -375,14 +345,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails for zero balance', async () => {
-
-    });
-
-    it('fails for unclosed short', async () => {
-
-    });
-
-    it('succeeds otherwise', async () => {
 
     });
   });
