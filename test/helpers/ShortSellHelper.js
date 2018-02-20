@@ -71,8 +71,8 @@ async function createSigned0xSellOrder(accounts, _salt = DEFAULT_SALT) {
 
 function callShort(shortSell, tx) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    tx.loanOffering.underlyingToken,
+    tx.loanOffering.baseToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
     tx.loanOffering.taker,
@@ -91,7 +91,7 @@ function callShort(shortSell, tx) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minimumSellAmount,
-    tx.loanOffering.rates.interestRate,
+    tx.loanOffering.rates.dailyInterestFee,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -287,8 +287,8 @@ function callApproveLoanOffering(shortSell, loanOffering, from) {
 
 function formatLoanOffering(loanOffering) {
   const addresses = [
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
@@ -401,6 +401,8 @@ async function createSigned0xBuyOrder(accounts, _salt = DEFAULT_SALT) {
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
+    underlyingToken: UnderlyingToken.address,
+    baseToken: BaseToken.address,
     lender: accounts[1],
     signer: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
@@ -412,13 +414,13 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
       minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
       minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
-      interestRate: BASE_AMOUNT.times(new BigNumber(.1)),
+      dailyInterestFee: BASE_AMOUNT.times(new BigNumber(.01)),
       lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
       takerFee: BASE_AMOUNT.times(new BigNumber(.02))
     },
     expirationTimestamp: 1000000000000,
     callTimeLimit: 10000,
-    maxDuration: 1000000,
+    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: _salt
   };
 
@@ -443,8 +445,8 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
-    UnderlyingToken.address,
-    BaseToken.address,
+    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.taker,
@@ -636,6 +638,9 @@ function getPartialAmount(
   denominator,
   target
 ) {
+  if (!(numerator instanceof BigNumber)) {
+    numerator = new BigNumber(numerator);
+  }
   return numerator.times(target).div(denominator).floor();
 }
 
