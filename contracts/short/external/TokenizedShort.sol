@@ -13,8 +13,25 @@ import { ShortSell } from "../ShortSell.sol";
 import { ShortSellRepo } from "../ShortSellRepo.sol";
 
 
-contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
+/**
+ * @title TokenizedShort
+ * @author dYdX
+ *
+ * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
+ * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
+ * entitled to some amount of base tokens after settlement.
+ */
+ /* solium-disable-next-line */
+contract TokenizedShort is
+    StandardToken,
+    CloseShortVerifier,
+    ReentrancyGuard
+{
     using SafeMath for uint;
+
+    // -----------------------
+    // -------- Enums --------
+    // -----------------------
 
     enum State {
         UNINITIALIZED,
@@ -83,23 +100,11 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
-    function decimals()
-        external
-        view
-        returns (uint8 _decimals)
-    {
-        // Return the decimals place of the underlying token of the short sell.
-        // We do not store this value because it should just be for display purposes and should not
-        // block the tokenization of the short if decimals() is not a function on the underlying
-        // ERC20 token.
-        return
-            DetailedERC20(
-                ShortSellRepo(
-                    ShortSell(SHORT_SELL).REPO()
-                ).getShortUnderlyingToken(shortId)
-            ).decimals();
-    }
-    
+    /**
+     * After the short's "seller" field has been set to the address of this contract, this contract
+     * can be called by anyone in order to set the contract to a usable state and to mint tokens
+     * given to initialTokenHolder.
+     */
     function initialize()
         nonReentrant
         external
@@ -129,6 +134,7 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
     /**
      * Called by ShortSell when an owner of this token is attempting to close some of the short
      * position.
+     *
      * @param  _who      The address of the owner
      * @param  _shortId  The unique id of the short position
      * @param  _amount   The amount of the position being closed
@@ -162,9 +168,9 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
     }
 
     /**
-     * TODO: Should we allow withdrawing for others? It is possible that withdrawing later is the
-     * most advantageous due to rounding error. An "attack" could involve withdrawing for others before
-     * withdrawing for yourself.
+     * Withdraw base tokens from this contract for any of the short that was closed via
+     * forceRecoverLoan(). If all base tokens were returned to the lender, then this contract may
+     * not be entitled to any tokens and therefore the token holders are not entitled to any tokens.
      *
      * NOTE: It is possible that this contract could be sent base token by external sources
      * other than from the ShortSell contract. In this case the payout for token holders
@@ -172,7 +178,13 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
      * nobody has incentive to send this contract extra funds, and if they do then it's
      * also fine just to let the token holders have it.
      *
-     * @return        The number of base tokens withdrawn
+     * NOTE: If there are significant rounding errors, then it is possible that withdrawing later is
+     * more advantageous. An "attack" could involve withdrawing for others before withdrawing for
+     * yourself. Likely, rounding error will be small enough to not properly incentivize people to
+     * carry out such an attack.
+     *
+     * @param  who  Address of the account to withdraw for
+     * @return The number of tokens withdrawn
      */
     function withdraw(
         address who
@@ -210,5 +222,32 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
 
         TokensRedeemed(who, value);
         return baseTokenPayout;
+    }
+
+    // -----------------------------------
+    // ---- Public Constant Functions ----
+    // -----------------------------------
+
+    /**
+     * To be compliant with standards, we have a decimals function that will return the same value
+     * as the underlyingToken of the short.
+     *
+     * @return The number of decimal places, or revert if the underlyingToken has no such function.
+     */
+    function decimals()
+        external
+        view
+        returns (uint8 _decimals)
+    {
+        // Return the decimals place of the underlying token of the short sell.
+        // We do not store this value because it should just be for display purposes and should not
+        // block the tokenization of the short if decimals() is not a function on the underlying
+        // ERC20 token.
+        return
+            DetailedERC20(
+                ShortSellRepo(
+                    ShortSell(SHORT_SELL).REPO()
+                ).getShortUnderlyingToken(shortId)
+            ).decimals();
     }
 }
