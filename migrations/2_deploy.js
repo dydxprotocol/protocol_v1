@@ -13,7 +13,6 @@ const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
-const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const ShortImpl = artifacts.require("ShortImpl");
 const CloseShortImpl = artifacts.require("CloseShortImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
@@ -104,11 +103,6 @@ async function deployShortSellContracts(deployer) {
     Trader.address,
     ProxyContract.address
   );
-
-  await deployer.deploy(
-    TokenizedShortCreator,
-    ShortSell.address
-  );
 }
 
 async function authorizeOnProxy() {
@@ -116,8 +110,7 @@ async function authorizeOnProxy() {
   await Promise.all([
     proxy.grantTransferAuthorization(Vault.address),
     proxy.grantTransferAuthorization(Exchange.address),
-    proxy.grantTransferAuthorization(ShortSell.address),
-    proxy.grantAccess(TokenizedShortCreator.address)
+    proxy.grantTransferAuthorization(ShortSell.address)
   ]);
 }
 
