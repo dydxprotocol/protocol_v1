@@ -7,7 +7,6 @@ const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const TokenizedShort = artifacts.require("TokenizedShort");
-const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const { BIGNUMBERS, ADDRESSES } = require('../helpers/Constants');
