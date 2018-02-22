@@ -93,7 +93,11 @@ library CloseShortImpl {
             orderR,
             orderS
         );
-        return closeShortImplImpl(state, shortId, requestedCloseAmount, order);
+        return closeShortImplImpl(
+            state,
+            shortId,
+            requestedCloseAmount,
+            order);
     }
 
     function closeShortDirectlyImpl(
@@ -108,7 +112,11 @@ library CloseShortImpl {
         )
     {
         Order memory order;
-        return closeShortImplImpl(state, shortId, requestedCloseAmount, order);
+        return closeShortImplImpl(
+            state,
+            shortId,
+            requestedCloseAmount,
+            order);
     }
 
     function closeShortImplImpl(
@@ -143,14 +151,15 @@ library CloseShortImpl {
                 msg.sender,
                 transaction.closeAmount
             );
-        } else  // valid order
+        } else { // valid order
             buybackCost = buyBackUnderlyingToken(
-            state,
-            transaction,
-            order,
-            closeId,
-            interestFee
-        );
+                state,
+                transaction,
+                order,
+                closeId,
+                interestFee
+            );
+        }
 
         // Give back base tokens
         uint sellerBaseTokenAmount = sendTokensOnClose(

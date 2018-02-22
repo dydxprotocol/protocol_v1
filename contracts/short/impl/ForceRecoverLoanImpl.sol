@@ -50,14 +50,11 @@ library ForceRecoverLoanImpl {
         // Can only force recover after the entire call period has elapsed
         // This can either be after the loan was called or after the maxDuration of the short
         // position has elapsed (plus the call time)
-
-        require(
+        require( /* solium-disable-next-line */
             (
                 short.callTimestamp > 0 &&
                 block.timestamp >= uint(short.callTimestamp).add(uint(short.callTimeLimit))
-            )
-            ||
-            (
+            ) || (
                 block.timestamp
                 >= ShortSellCommon.getShortEndTimestamp(short).add(uint(short.callTimeLimit))
             )

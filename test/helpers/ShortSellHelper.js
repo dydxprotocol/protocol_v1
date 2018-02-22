@@ -636,6 +636,13 @@ async function issueForDirectClose(shortTx) {
   ]);
 }
 
+async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
+  await Promise.all([
+    token.issueTo(account, amount),
+    token.approve(ProxyContract.address, amount, { from: account })
+  ]);
+}
+
 function getPartialAmount(
   numerator,
   denominator,
@@ -666,5 +673,6 @@ module.exports = {
   doShortAndCall,
   issueForDirectClose,
   totalTokensForAddress,
-  callApproveLoanOffering
+  callApproveLoanOffering,
+  issueTokenToAccountInAmountAndApproveProxy
 };

@@ -5,15 +5,11 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ProxyContract = artifacts.require("Proxy");
 const ShortSell = artifacts.require("ShortSell");
-const ShortSellRepo = artifacts.require("ShortSellRepo");
-const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
 const { BIGNUMBERS, ADDRESSES } = require('../helpers/Constants');
 const {
   callCloseShort,
@@ -21,7 +17,8 @@ const {
   doShort,
   getShort,
   issueTokensAndSetAllowancesForClose,
-  placeAuctionBid
+  placeAuctionBid,
+  issueTokenToAccountInAmountAndApproveProxy
 } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -33,7 +30,7 @@ const { wait } = require('@digix/tempo')(web3);
 
 contract('TokenizedShort', function(accounts) {
   const badId = web3.fromAscii("06231993");
-  let baseToken, underlyingToken, feeToken, safetyDepositBox;
+  let baseToken, underlyingToken;
 
   function randomAccount() {
     return accounts[Math.floor(Math.random() * accounts.length)];
@@ -74,7 +71,6 @@ contract('TokenizedShort', function(accounts) {
   const FULL_AND_PART = {FULL:0, PART:0};
 
   let CONTRACTS = {
-    PROXY: null,
     SHORT_SELL: null,
     TOKENIZED_SHORT_CREATOR: null
   }
@@ -83,21 +79,15 @@ contract('TokenizedShort', function(accounts) {
 
   before('Set up Proxy, ShortSell, and TokenizedShortCreator accounts', async () => {
     [
-      CONTRACTS.PROXY,
       CONTRACTS.SHORT_SELL,
       CONTRACTS.TOKENIZED_SHORT_CREATOR,
       underlyingToken,
       baseToken,
-      feeToken,
-      safetyDepositBox
     ] = await Promise.all([
-      ProxyContract.deployed(),
       ShortSell.deployed(),
       TokenizedShortCreator.deployed(),
       UnderlyingToken.deployed(),
-      BaseToken.deployed(),
-      FeeToken.deployed(),
-      SafetyDepositBox.deployed()
+      BaseToken.deployed()
     ]);
   });
 
@@ -207,26 +197,14 @@ contract('TokenizedShort', function(accounts) {
   }
 
   async function grantDirectCloseTokensToSeller(act = null) {
-    await Promise.all([
-      underlyingToken.issueTo(
-        act ? act : SHORTS.FULL.TX.seller,
-        SHORTS.FULL.NUM_TOKENS
-      ),
-      underlyingToken.approve(
-        CONTRACTS.PROXY.address,
-        SHORTS.FULL.NUM_TOKENS,
-        { from: act ? act : SHORTS.FULL.TX.seller }
-      ),
-      underlyingToken.issueTo(
-        act ? act : SHORTS.PART.TX.seller,
-        SHORTS.PART.NUM_TOKENS
-      ),
-      underlyingToken.approve(
-        CONTRACTS.PROXY.address,
-        SHORTS.PART.NUM_TOKENS,
-        { from: act ? act : SHORTS.PART.TX.seller }
-      )
-    ]);
+    await issueTokenToAccountInAmountAndApproveProxy(
+      underlyingToken,
+      act ? act : SHORTS.FULL.TX.seller,
+      SHORTS.FULL.NUM_TOKENS);
+    await issueTokenToAccountInAmountAndApproveProxy(
+      underlyingToken,
+      act ? act : SHORTS.PART.TX.seller,
+      SHORTS.PART.NUM_TOKENS);
   }
 
   async function callInShorts() {
@@ -392,17 +370,10 @@ contract('TokenizedShort', function(accounts) {
       await transferShortsToTokens();
 
       // give underlying tokens to token holder
-      await Promise.all([
-        underlyingToken.issueTo(
-          INITIAL_TOKEN_HOLDER,
-          SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS
-        ),
-        underlyingToken.approve(
-          CONTRACTS.PROXY.address,
-          SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS,
-          { from: INITIAL_TOKEN_HOLDER }
-        )
-      ]);
+      issueTokenToAccountInAmountAndApproveProxy(
+        underlyingToken,
+        INITIAL_TOKEN_HOLDER,
+        SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS);
 
       for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
@@ -664,7 +635,7 @@ contract('TokenizedShort', function(accounts) {
       const tokenContract = await TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        web3.fromAscii("87654321"),
+        badId,
         name,
         symbol);
       await expectThrow(() => tokenContract.decimals());
