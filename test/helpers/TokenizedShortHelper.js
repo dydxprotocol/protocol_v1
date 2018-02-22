@@ -11,34 +11,28 @@ const TOKENIZED_SHORT_STATE = {
 async function getTokenizedShortConstants(tokenizedShort) {
   const [
     SHORT_SELL,
-    PROXY,
     shortId,
     state,
     name,
     symbol,
     initialTokenHolder,
-    redeemed,
     baseToken
   ] = await Promise.all([
     tokenizedShort.SHORT_SELL.call(),
-    tokenizedShort.PROXY.call(),
     tokenizedShort.shortId.call(),
     tokenizedShort.state.call(),
     tokenizedShort.name.call(),
     tokenizedShort.symbol.call(),
     tokenizedShort.initialTokenHolder.call(),
-    tokenizedShort.redeemed.call(),
     tokenizedShort.baseToken.call()
   ]);
   return {
     SHORT_SELL,
-    PROXY,
     shortId,
     state,
     name,
     symbol,
     initialTokenHolder,
-    redeemed,
     baseToken
   };
 }

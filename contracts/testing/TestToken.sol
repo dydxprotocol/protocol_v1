@@ -1,8 +1,12 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+
 
 contract TestToken {
-    uint supply;
+    using SafeMath for uint256;
+
+    uint256 supply;
     mapping(address => uint) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
@@ -12,12 +16,12 @@ contract TestToken {
 
     // Allow anyone to get new token
     function issue(uint amount) public {
-        balances[msg.sender] = balances[msg.sender] + amount;
-        Issue(address(this), msg.sender, amount);
+        issueTo(msg.sender, amount);
     }
 
     function issueTo(address who, uint amount) public {
-        balances[who] = balances[who] + amount;
+        supply = supply.add(amount);
+        balances[who] = balances[who].add(amount);
         Issue(address(this), who, amount);
     }
 
@@ -48,7 +52,7 @@ contract TestToken {
     function transfer( address to, uint value) public returns (bool ok) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
-            balances[to] += value;
+            balances[to] = balances[to].add(value);
             Transfer(
                 address(this),
                 msg.sender,
@@ -63,9 +67,9 @@ contract TestToken {
 
     function transferFrom( address from, address to, uint value) public returns (bool ok) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
-            balances[to] += value;
-            balances[from] -= value;
-            allowed[from][msg.sender] -= value;
+            balances[to] = balances[to].add(value);
+            balances[from] = balances[from].sub(value);
+            allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             Transfer(
                 address(this),
                 from,

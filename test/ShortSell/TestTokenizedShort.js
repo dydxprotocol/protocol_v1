@@ -1,24 +1,27 @@
 /*global artifacts, web3, contract, describe, it, before, beforeEach*/
 
-const Web3 = require('web3');
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
+const ProxyContract = artifacts.require("Proxy");
 const ShortSell = artifacts.require("ShortSell");
+const ShortSellRepo = artifacts.require("ShortSellRepo");
+const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
+const { BIGNUMBERS, ADDRESSES } = require('../helpers/Constants');
 const {
   callCloseShort,
   createSigned0xSellOrder,
   doShort,
   getShort,
-  issueTokensAndSetAllowancesForClose
+  issueTokensAndSetAllowancesForClose,
+  placeAuctionBid
 } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -26,9 +29,15 @@ const {
   getTokenizedShortConstants,
   TOKENIZED_SHORT_STATE
 } = require('../helpers/TokenizedShortHelper');
+const { wait } = require('@digix/tempo')(web3);
 
 contract('TokenizedShort', function(accounts) {
   const badId = web3.fromAscii("06231993");
+  let baseToken, underlyingToken, feeToken, safetyDepositBox;
+
+  function randomAccount() {
+    return accounts[Math.floor(Math.random() * accounts.length)];
+  }
 
   let SHORTS = {
     FULL: {
@@ -37,26 +46,32 @@ contract('TokenizedShort', function(accounts) {
       SYMBOL: "FULL",
       TX: null,
       ID: null,
-      SELL_ORDER: null
+      SELL_ORDER: null,
+      NUM_TOKENS: 0,
+      SALT: 0
     },
-    PARTIAL: {
+    PART: {
       TOKEN_CONTRACT: null,
       NAME: "Short that has been partially closed",
-      SYMBOL: "PARTIAL",
+      SYMBOL: "PART",
       TX: null,
       ID: null,
-      SELL_ORDER: null
+      SELL_ORDER: null,
+      NUM_TOKENS: 0,
+      SALT: 0
     },
-    CLOSED: {
+    CLSD: {
       TOKEN_CONTRACT: null,
       NAME: "Short that been fully closed",
-      SYMBOL: "CLOSED",
+      SYMBOL: "CLSD",
       TX: null,
       ID: null,
-      SELL_ORDER: null
+      SELL_ORDER: null,
+      NUM_TOKENS: 0,
+      SALT: 0
     }
   };
-  const FULL_AND_PARTIAL = ['FULL', 'PARTIAL'];
+  const FULL_AND_PART = {FULL:0, PART:0};
 
   let CONTRACTS = {
     PROXY: null,
@@ -68,55 +83,159 @@ contract('TokenizedShort', function(accounts) {
 
   before('Set up Proxy, ShortSell, and TokenizedShortCreator accounts', async () => {
     [
+      CONTRACTS.PROXY,
       CONTRACTS.SHORT_SELL,
-      CONTRACTS.TOKENIZED_SHORT_CREATOR
+      CONTRACTS.TOKENIZED_SHORT_CREATOR,
+      underlyingToken,
+      baseToken,
+      feeToken,
+      safetyDepositBox
     ] = await Promise.all([
+      ProxyContract.deployed(),
       ShortSell.deployed(),
-      TokenizedShortCreator.deployed()
+      TokenizedShortCreator.deployed(),
+      UnderlyingToken.deployed(),
+      BaseToken.deployed(),
+      FeeToken.deployed(),
+      SafetyDepositBox.deployed()
     ]);
   });
 
   async function setUpShorts() {
-    let salt = 0;
     pepper++;
 
-    salt = 222 + pepper;
-    SHORTS.FULL.TX = await doShort(accounts, salt);
+    SHORTS.FULL.SALT = 222 + pepper;
+    SHORTS.PART.SALT = 333 + pepper;
+    SHORTS.CLSD.SALT = 444 + pepper;
+
+    SHORTS.FULL.TX = await doShort(accounts.slice(1), SHORTS.FULL.SALT);
+    SHORTS.PART.TX = await doShort(accounts.slice(2), SHORTS.PART.SALT);
+    SHORTS.CLSD.TX = await doShort(accounts.slice(3), SHORTS.CLSD.SALT);
+
+    expect(SHORTS.FULL.TX.seller).to.be.not.equal(SHORTS.PART.TX.seller);
+    expect(SHORTS.PART.TX.seller).to.be.not.equal(SHORTS.CLSD.TX.seller);
+    expect(SHORTS.CLSD.TX.seller).to.be.not.equal(SHORTS.FULL.TX.seller);
+
+    [
+      SHORTS.PART.SELL_ORDER,
+      SHORTS.CLSD.SELL_ORDER
+    ] = await Promise.all([
+      createSigned0xSellOrder(accounts, SHORTS.PART.SALT),
+      createSigned0xSellOrder(accounts, SHORTS.CLSD.SALT)
+    ]);
+
     SHORTS.FULL.ID = SHORTS.FULL.TX.id;
+    SHORTS.PART.ID = SHORTS.PART.TX.id;
+    SHORTS.CLSD.ID = SHORTS.CLSD.TX.id;
 
-    salt = 333 + pepper;
-    SHORTS.PARTIAL.TX = await doShort(accounts, salt);
-    SHORTS.PARTIAL.ID = SHORTS.PARTIAL.TX.id;
-    SHORTS.PARTIAL.SELL_ORDER = await createSigned0xSellOrder(accounts, salt);
-    await issueTokensAndSetAllowancesForClose(SHORTS.PARTIAL.TX, SHORTS.PARTIAL.SELL_ORDER);
-    await callCloseShort(
-      CONTRACTS.SHORT_SELL,
-      SHORTS.PARTIAL.TX,
-      SHORTS.PARTIAL.SELL_ORDER,
-      SHORTS.PARTIAL.TX.shortAmount.div(new BigNumber(2)));
+    await Promise.all([
+      issueTokensAndSetAllowancesForClose(SHORTS.PART.TX, SHORTS.PART.SELL_ORDER),
+      issueTokensAndSetAllowancesForClose(SHORTS.CLSD.TX, SHORTS.CLSD.SELL_ORDER)
+    ]);
 
-    salt = 444 + pepper;
-    SHORTS.CLOSED.TX = await doShort(accounts, salt);
-    SHORTS.CLOSED.ID = SHORTS.CLOSED.TX.id;
-    SHORTS.CLOSED.SELL_ORDER = await createSigned0xSellOrder(accounts, salt);
-    await issueTokensAndSetAllowancesForClose(SHORTS.CLOSED.TX, SHORTS.CLOSED.SELL_ORDER);
-    await callCloseShort(
-      CONTRACTS.SHORT_SELL,
-      SHORTS.CLOSED.TX,
-      SHORTS.CLOSED.SELL_ORDER,
-      SHORTS.CLOSED.TX.shortAmount);
+    await Promise.all([
+      callCloseShort(
+        CONTRACTS.SHORT_SELL,
+        SHORTS.PART.TX,
+        SHORTS.PART.SELL_ORDER,
+        SHORTS.PART.TX.shortAmount.div(2)),
+      callCloseShort(
+        CONTRACTS.SHORT_SELL,
+        SHORTS.CLSD.TX,
+        SHORTS.CLSD.SELL_ORDER,
+        SHORTS.CLSD.TX.shortAmount)
+    ]);
+    SHORTS.FULL.NUM_TOKENS = SHORTS.FULL.TX.shortAmount;
+    SHORTS.PART.NUM_TOKENS = SHORTS.PART.TX.shortAmount.div(2);
+    SHORTS.CLSD.NUM_TOKENS = BIGNUMBERS.ZERO;
   }
 
   async function setUpShortTokens() {
-    for (let type in SHORTS) {
-      const SHORT = SHORTS[type];
-      SHORT.TOKEN_CONTRACT = await TokenizedShort.new(
+    [
+      SHORTS.FULL.TOKEN_CONTRACT,
+      SHORTS.PART.TOKEN_CONTRACT,
+      SHORTS.CLSD.TOKEN_CONTRACT
+    ] = await Promise.all([
+      TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        SHORT.ID,
-        SHORT.NAME,
-        SHORT.SYMBOL);
-    }
+        SHORTS.FULL.ID,
+        SHORTS.FULL.NAME,
+        SHORTS.FULL.SYMBOL),
+      TokenizedShort.new(
+        CONTRACTS.SHORT_SELL.address,
+        INITIAL_TOKEN_HOLDER,
+        SHORTS.PART.ID,
+        SHORTS.PART.NAME,
+        SHORTS.PART.SYMBOL),
+      TokenizedShort.new(
+        CONTRACTS.SHORT_SELL.address,
+        INITIAL_TOKEN_HOLDER,
+        SHORTS.CLSD.ID,
+        SHORTS.CLSD.NAME,
+        SHORTS.CLSD.SYMBOL)
+    ]);
+  }
+
+  async function transferShortsToTokens() {
+    await Promise.all([
+      CONTRACTS.SHORT_SELL.transferShort(SHORTS.FULL.ID, SHORTS.FULL.TOKEN_CONTRACT.address,
+        { from: SHORTS.FULL.TX.seller }),
+      CONTRACTS.SHORT_SELL.transferShort(SHORTS.PART.ID, SHORTS.PART.TOKEN_CONTRACT.address,
+        { from: SHORTS.PART.TX.seller })
+    ]);
+    const s1 = await getShort(CONTRACTS.SHORT_SELL, SHORTS.FULL.ID);
+    const s2 = await getShort(CONTRACTS.SHORT_SELL, SHORTS.PART.ID);
+    expect(s1.seller).to.be.equal(SHORTS.FULL.TOKEN_CONTRACT.address);
+    expect(s2.seller).to.be.equal(SHORTS.PART.TOKEN_CONTRACT.address);
+  }
+
+  async function initializeTokens() {
+    await Promise.all([
+      SHORTS.FULL.TOKEN_CONTRACT.initialize({ from: randomAccount() }),
+      SHORTS.PART.TOKEN_CONTRACT.initialize({ from: randomAccount() })
+    ]);
+  }
+
+  async function returnTokensToSeller() {
+    await Promise.all([
+      SHORTS.FULL.TOKEN_CONTRACT.transfer(SHORTS.FULL.TX.seller, SHORTS.FULL.NUM_TOKENS,
+        { from: INITIAL_TOKEN_HOLDER }),
+      SHORTS.PART.TOKEN_CONTRACT.transfer(SHORTS.PART.TX.seller, SHORTS.PART.NUM_TOKENS,
+        { from: INITIAL_TOKEN_HOLDER })
+    ]);
+  }
+
+  async function grantDirectCloseTokensToSeller(act = null) {
+    await Promise.all([
+      underlyingToken.issueTo(
+        act ? act : SHORTS.FULL.TX.seller,
+        SHORTS.FULL.NUM_TOKENS
+      ),
+      underlyingToken.approve(
+        CONTRACTS.PROXY.address,
+        SHORTS.FULL.NUM_TOKENS,
+        { from: act ? act : SHORTS.FULL.TX.seller }
+      ),
+      underlyingToken.issueTo(
+        act ? act : SHORTS.PART.TX.seller,
+        SHORTS.PART.NUM_TOKENS
+      ),
+      underlyingToken.approve(
+        CONTRACTS.PROXY.address,
+        SHORTS.PART.NUM_TOKENS,
+        { from: act ? act : SHORTS.PART.TX.seller }
+      )
+    ]);
+  }
+
+  async function callInShorts() {
+    await Promise.all([
+      CONTRACTS.SHORT_SELL.callInLoan(SHORTS.FULL.ID,
+        { from : SHORTS.FULL.TX.loanOffering.lender }),
+      CONTRACTS.SHORT_SELL.callInLoan(SHORTS.PART.ID,
+        { from : SHORTS.PART.TX.loanOffering.lender }),
+    ]);
   }
 
   describe('Constructor', () => {
@@ -135,7 +254,6 @@ contract('TokenizedShort', function(accounts) {
         expect(tsc.name).to.equal(short.NAME);
         expect(tsc.symbol).to.equal(short.SYMBOL);
         expect(tsc.initialTokenHolder).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc.redeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
         expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
       }
     });
@@ -159,7 +277,6 @@ contract('TokenizedShort', function(accounts) {
         expect(tsc.name).to.equal(name2);
         expect(tsc.symbol).to.equal(symbol2);
         expect(tsc.initialTokenHolder).to.equal(tokenHolder2);
-        expect(tsc.redeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
         expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
         expect(SHORT.TOKEN_CONTRACT.address).to.not.equal(secondContract.address);
       }
@@ -173,12 +290,15 @@ contract('TokenizedShort', function(accounts) {
       await setUpShortTokens();
     });
 
-    it('succeeds for full and partial shorts', async () => {
-      for (let type in FULL_AND_PARTIAL) {
+    it('succeeds for full and PART shorts', async () => {
+      await transferShortsToTokens();
+
+      for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
         const tsc1 = await getTokenizedShortConstants(SHORT.TOKEN_CONTRACT);
-        await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address);
-        await SHORT.TOKEN_CONTRACT.initialize({ from: accounts[9] });
+
+        await SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() });
+
         const tsc2 = await getTokenizedShortConstants(SHORT.TOKEN_CONTRACT);
         const short = await getShort(CONTRACTS.SHORT_SELL, SHORT.ID);
         // expect certain values
@@ -188,7 +308,6 @@ contract('TokenizedShort', function(accounts) {
         expect(tsc2.name).to.equal(SHORT.NAME);
         expect(tsc2.symbol).to.equal(SHORT.SYMBOL);
         expect(tsc2.initialTokenHolder).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc2.redeemed.equals(BIGNUMBERS.ZERO)).to.be.true;
         expect(tsc2.baseToken).to.equal(short.baseToken);
 
         // explicity make sure some things have changed
@@ -201,17 +320,17 @@ contract('TokenizedShort', function(accounts) {
         expect(tsc2.name).to.equal(tsc1.name);
         expect(tsc2.symbol).to.equal(tsc1.symbol);
         expect(tsc2.initialTokenHolder).to.equal(tsc1.initialTokenHolder);
-        expect(tsc2.redeemed.equals(tsc1.redeemed)).to.be.true;
       }
     });
 
     it('fails for closed shorts', async () => {
-      const SHORT = SHORTS.CLOSED;
+      const SHORT = SHORTS.CLSD;
       // Even transfer will fail since the short should have been closed
       await expectThrow(
-        () => CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address));
+        () => CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address,
+          { from: SHORT.TX.seller }));
       await expectThrow(
-        () => SHORT.TOKEN_CONTRACT.initialize({ from: accounts[9] }));
+        () => SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() }));
     });
 
     it('fails if short has invalid id', async () => {
@@ -223,51 +342,37 @@ contract('TokenizedShort', function(accounts) {
         "NAM");
       // Even transfer will fail since the shortId is invalid
       await expectThrow(() => CONTRACTS.SHORT_SELL.transferShort(badId, tokenContract.address));
-      await expectThrow(() => tokenContract.initialize({ from: accounts[9] }));
+      await expectThrow(() => tokenContract.initialize({ from: randomAccount() }));
     });
 
     it('fails if short seller is not assigned to be the token', async () => {
-      for (let type in {FULL:0, PARTIAL:0}) {
+      for (let type in {FULL:0, PART:0}) {
         const SHORT = SHORTS[type];
         // transfer to random address (that is not the token contract)
-        await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, ADDRESSES.TEST[8]);
-        await expectThrow(() => SHORT.TOKEN_CONTRACT.initialize({ from: accounts[9] }));
+        await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, ADDRESSES.TEST[8],
+          { from: SHORT.TX.seller });
+        await expectThrow(() => SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() }));
       }
     });
 
     it('fails if already initialized', async () => {
-      for (let type in {FULL:0, PARTIAL:0}) {
+      await transferShortsToTokens();
+      for (let type in {FULL:0, PART:0}) {
         const SHORT = SHORTS[type];
-        await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address);
-        await SHORT.TOKEN_CONTRACT.initialize({ from: accounts[8] }); // succeed
-        await expectThrow(() => SHORT.TOKEN_CONTRACT.initialize({ from: accounts[9] })); // fail
+        await SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() }); // succeed
+        await expectThrow(() => SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() })); // fail
       }
     });
   });
 
   describe('#closeOnBehalfOf', () => {
-    let baseToken, underlyingToken, feeToken;
-
-    beforeEach('set up shorts and short tokens', async () => {
+    it('fails if not authorized', async () => {
       await setUpShorts();
       await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
 
-      [baseToken, underlyingToken, feeToken] = await Promise.all([
-        BaseToken.deployed(),
-        UnderlyingToken.deployed(),
-        FeeToken.deployed()
-      ]);
-      for (let type in FULL_AND_PARTIAL) {
-        const SHORT = SHORTS[type];
-        const seller = SHORT.TX.seller;
-        const amount = SHORT.TX.shortAmount;
-        underlyingToken.issueTo(seller, amount);
-        SHORT.TOKEN_CONTRACT.transfer(seller, amount, { from: INITIAL_TOKEN_HOLDER });
-      }
-    });
-
-    it('fails if not initialized', async () => {
-      for (let type in FULL_AND_PARTIAL) {
+      for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
         const amount = SHORT.TX.shortAmount;
@@ -277,61 +382,278 @@ contract('TokenizedShort', function(accounts) {
         );
       }
     });
+  });
 
-    it('fails if closed', async () => {
-      for (let type in FULL_AND_PARTIAL) {
-        const SHORT = SHORTS[type];
-        await SHORT.TOKEN_CONTRACT.initialize();
-      }
-    });
+  describe('#closeOnBehalfOf via ShortSell#closeShortDirectly', () => {
 
-    it('fails if value is zero', async () => {
-      for (let type in FULL_AND_PARTIAL) {
-        const SHORT = SHORTS[type];
-        await SHORT.TOKEN_CONTRACT.initialize();
-      }
-    });
+    it('fails if not initialized', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
 
-    it('fails if value is too high', async () => {
-      for (let type in FULL_AND_PARTIAL) {
+      // give underlying tokens to token holder
+      await Promise.all([
+        underlyingToken.issueTo(
+          INITIAL_TOKEN_HOLDER,
+          SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS
+        ),
+        underlyingToken.approve(
+          CONTRACTS.PROXY.address,
+          SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS,
+          { from: INITIAL_TOKEN_HOLDER }
+        )
+      ]);
+
+      for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
-        await SHORT.TOKEN_CONTRACT.initialize();
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, SHORT.NUM_TOKENS, { from: INITIAL_TOKEN_HOLDER })
+        );
       }
     });
 
     it('fails if user does not have the amount of underlyingToken required', async () => {
-      for (let type in FULL_AND_PARTIAL) {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await Promise.all([
+        SHORTS.FULL.TOKEN_CONTRACT.transfer(accounts[0], SHORTS.FULL.NUM_TOKENS,
+          { from: INITIAL_TOKEN_HOLDER }),
+        SHORTS.PART.TOKEN_CONTRACT.transfer(accounts[0], SHORTS.PART.NUM_TOKENS,
+          { from: INITIAL_TOKEN_HOLDER })
+      ]);
+
+      for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
-        await SHORT.TOKEN_CONTRACT.initialize();
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller })
+        );
+      }
+    });
+
+    it('fails if value is zero', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller();
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, 0, { from: SHORT.TX.seller })
+        );
+      }
+    });
+
+    it('closes up to the remainingAmount if user tries to close more', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller();
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS + 1, { from: SHORT.TX.seller });
+      }
+    });
+
+    it('fails if (amount < remainingShort) but (amount > numTokens)', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller();
+
+      const rando = accounts[9];
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+
+        // give away half of the short tokens
+        await SHORT.TOKEN_CONTRACT.transfer(rando, SHORT.NUM_TOKENS.div(2),
+          { from: SHORT.TX.seller });
+
+        // can't close more than you have if you don't have all remaining tokens
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, SHORT.NUM_TOKENS.div(2) + 1, { from: SHORT.TX.seller })
+        );
+
+        // this amount is fine
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: SHORT.TX.seller })
+      }
+    });
+
+    it('fails if user does not own any of the tokenized Short', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller(accounts[0]);
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, SHORT.NUM_TOKENS, { from: accounts[0] })
+        );
+      }
+    });
+
+    it('fails if closed', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller();
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        // do it once to close it
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller });
+
+        // try again
+        await expectThrow(
+          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
+            SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller })
+        );
+      }
+    });
+
+    it('succeeds otherwise', async () => {
+      await setUpShorts();
+      await setUpShortTokens();
+      await transferShortsToTokens();
+      await initializeTokens();
+      await returnTokensToSeller();
+      await grantDirectCloseTokensToSeller();
+
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller });
       }
     });
   });
 
-  describe('#closeOnBehalfOf', () => {
-    before('', async () => {
-
-    });
-
-    beforeEach('', async () => {
-
-    });
-
-    it('fails if not initialized', async () => {
-
-    });
-  });
-
   describe('#withdraw', () => {
-    before('', async () => {
+    beforeEach('Set up all tokenized shorts and call-in shorts, waiting for calltimelimit',
+      async () => {
+        await setUpShorts();
+        await setUpShortTokens();
+        await transferShortsToTokens();
+        await initializeTokens();
+        await returnTokensToSeller();
+        await wait(SHORTS.FULL.TX.loanOffering.maxDuration);
+        await callInShorts();
+        await wait(SHORTS.FULL.TX.loanOffering.callTimeLimit);
+      }
+    );
 
+    it('fails when caller never had any tokens', async () => {
+      // close half, force recover, then some random person can't withdraw any funds
+      await grantDirectCloseTokensToSeller();
+      const rando = accounts[9];
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const lender = SHORT.TX.loanOffering.lender;
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: seller });
+        await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
+        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(rando, { from: rando }));
+      }
     });
 
-    beforeEach('', async () => {
-
+    it('fails when short is completely closed', async () => {
+      // close the short completely and then try to withdraw
+      await grantDirectCloseTokensToSeller();
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const lender = SHORT.TX.loanOffering.lender;
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS, { from: seller });
+        await expectThrow(() => CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender }));
+        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
+      }
     });
 
-    it('fails for zero balance', async () => {
+    it('fails when short is still open', async () => {
+      // close short halfway and then try to withdraw
+      await grantDirectCloseTokensToSeller();
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        await CONTRACTS.SHORT_SELL.closeShortDirectly(
+          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: seller });
+        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
+      }
+    });
 
+    it('succeeds for normal operation', async () => {
+      // close nothing, letting the lender forceRecoverLoan
+      const bidder = accounts[9];
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const lender = SHORT.TX.loanOffering.lender;
+        await placeAuctionBid(CONTRACTS.SHORT_SELL, underlyingToken, SHORT.TX, bidder, 100);
+        await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
+
+        const tokens1 = await baseToken.balanceOf.call(seller);
+
+        const numWithdraw = await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
+        expect(numWithdraw).to.be.bignumber.at.least(1);
+
+        const tokens2 = await baseToken.balanceOf.call(seller);
+        expect(tokens2).to.be.bignumber.equal(tokens1.plus(numWithdraw));
+      }
+    });
+
+    it('succeeds when extra tokens have been deposited', async () => {
+      // close nothing, letting the lender forceRecoverLoan
+      const bidder = accounts[9];
+      for (let type in FULL_AND_PART) {
+        const SHORT = SHORTS[type];
+        const seller = SHORT.TX.seller;
+        const lender = SHORT.TX.loanOffering.lender;
+        await placeAuctionBid(CONTRACTS.SHORT_SELL, underlyingToken, SHORT.TX, bidder, 100);
+        await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
+
+        const tokens1 = await baseToken.balanceOf.call(seller);
+
+        // get the amount we would have withdrawn
+        const normalNumWithdraw =
+          await SHORT.TOKEN_CONTRACT.withdraw.call(seller, { from: seller });
+        expect(normalNumWithdraw).to.be.bignumber.at.least(1);
+
+        // add extraTokens
+        const numExtra = new BigNumber("123456789");
+        await baseToken.issueTo(SHORT.TOKEN_CONTRACT.address, numExtra);
+
+        // now we should have withdrawn everything
+        const extendNumWithdraw =
+          await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
+        expect(extendNumWithdraw).to.be.bignumber.equal(normalNumWithdraw.plus(numExtra));
+
+        const tokens2 = await baseToken.balanceOf.call(seller);
+        expect(tokens2).to.be.bignumber.equal(tokens1.plus(extendNumWithdraw));
+      }
     });
   });
 
@@ -342,7 +664,7 @@ contract('TokenizedShort', function(accounts) {
       const tokenContract = await TokenizedShort.new(
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        badId,
+        web3.fromAscii("87654321"),
         name,
         symbol);
       await expectThrow(() => tokenContract.decimals());
@@ -351,11 +673,15 @@ contract('TokenizedShort', function(accounts) {
     it('successfully returns decimal value of underlyingToken', async () => {
       await setUpShorts();
       await setUpShortTokens();
-
-      for (let type in SHORTS) {
+      await transferShortsToTokens();
+      await initializeTokens();
+      for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
-        const decimal = await SHORT.TOKEN_CONTRACT.decimals.call();
-        expect(decimal).to.be.bignumber.equal(15);
+        const [decimal, expectedDecimal] = await Promise.all([
+          SHORT.TOKEN_CONTRACT.decimals.call(),
+          underlyingToken.decimals.call()
+        ]);
+        expect(decimal).to.be.bignumber.equal(expectedDecimal);
       }
     });
   });

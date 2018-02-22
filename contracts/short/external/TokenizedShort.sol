@@ -10,6 +10,7 @@ import { Vault } from "../vault/Vault.sol";
 import { SafetyDepositBox } from "../vault/SafetyDepositBox.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
+import { ShortSellRepo } from "../ShortSellRepo.sol";
 
 
 contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
@@ -54,9 +55,6 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
     // Symbol of this token (as ERC20 standard)
     string public symbol;
 
-    // Decimal places of this token (as ERC20 standard)
-    uint8 public decimals;
-
     // Address of the baseToken
     address public baseToken;
 
@@ -85,6 +83,23 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
+    function decimals()
+        external
+        view
+        returns (uint8 _decimals)
+    {
+        // Return the decimals place of the underlying token of the short sell.
+        // We do not store this value because it should just be for display purposes and should not
+        // block the tokenization of the short if decimals() is not a function on the underlying
+        // ERC20 token.
+        return
+            DetailedERC20(
+                ShortSellRepo(
+                    ShortSell(SHORT_SELL).REPO()
+                ).getShortUnderlyingToken(shortId)
+            ).decimals();
+    }
+    
     function initialize()
         nonReentrant
         external
@@ -105,7 +120,6 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
         balances[initialTokenHolder] = currentShortAmount;
         totalSupply_ = currentShortAmount;
         baseToken = short.baseToken;
-        decimals = DetailedERC20(short.underlyingToken).decimals();
         state = State.OPEN;
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
@@ -188,7 +202,7 @@ contract TokenizedShort is StandardToken, CloseShortVerifier, ReentrancyGuard {
         );
 
         // Destroy the tokens
-        balances[who] = 0;
+        delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
         // Send the redeemer their proportion of base token held by this contract

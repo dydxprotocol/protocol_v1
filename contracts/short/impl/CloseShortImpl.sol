@@ -183,13 +183,8 @@ library CloseShortImpl {
     {
         require(transaction.closeAmount > 0);
 
-        // closer is short seller, valid
-        if (transaction.short.seller == msg.sender) {
-            return;
-        }
-
-        // closer is not short seller, we have to make sure this okay with the short seller
-        else {
+        // if closer is not ahoer seller, we have to make sure this is okay with the short seller
+        if (transaction.short.seller != msg.sender) {
             require(
                 CloseShortVerifier(transaction.short.seller)
                     .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount)

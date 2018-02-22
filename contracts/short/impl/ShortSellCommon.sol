@@ -242,7 +242,7 @@ library ShortSellCommon {
     {
         // If the maxDuration is 0, then this short should never expire so return maximum int
         if (short.maxDuration == 0) {
-            return 2 ** 255;
+            return 2 ** 256 - 1;
         }
 
         return uint(short.startTimestamp).add(uint(short.maxDuration));
