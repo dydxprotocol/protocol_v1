@@ -71,20 +71,17 @@ contract('TokenizedShort', function(accounts) {
 
   let CONTRACTS = {
     SHORT_SELL: null,
-    TOKENIZED_SHORT_CREATOR: null
   }
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
 
-  before('Set up Proxy, ShortSell, and TokenizedShortCreator accounts', async () => {
+  before('Set up Proxy, ShortSell accounts', async () => {
     [
       CONTRACTS.SHORT_SELL,
-      CONTRACTS.TOKENIZED_SHORT_CREATOR,
       underlyingToken,
       baseToken,
     ] = await Promise.all([
       ShortSell.deployed(),
-      TokenizedShortCreator.deployed(),
       UnderlyingToken.deployed(),
       BaseToken.deployed()
     ]);
