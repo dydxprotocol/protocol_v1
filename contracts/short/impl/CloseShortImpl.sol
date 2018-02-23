@@ -66,9 +66,9 @@ library CloseShortImpl {
         bytes32 s;
     }
 
-    // ---------------------------------------------
-    // ----- Internal Implementation Functions -----
-    // ---------------------------------------------
+    // -------------------------------------------
+    // ----- Public Implementation Functions -----
+    // -------------------------------------------
 
     function closeShortImpl(
         ShortSellState.State storage state,
@@ -93,7 +93,7 @@ library CloseShortImpl {
             orderR,
             orderS
         );
-        return closeShortImplImpl(
+        return closeShortInternal(
             state,
             shortId,
             requestedCloseAmount,
@@ -112,14 +112,16 @@ library CloseShortImpl {
         )
     {
         Order memory order;
-        return closeShortImplImpl(
+        return closeShortInternal(
             state,
             shortId,
             requestedCloseAmount,
             order);
     }
 
-    function closeShortImplImpl(
+    // --------- Helper Functions ---------
+
+    function closeShortInternal(
         ShortSellState.State storage state,
         bytes32 shortId,
         uint requestedCloseAmount,
@@ -145,7 +147,7 @@ library CloseShortImpl {
         // Secure underlying tokens
         uint buybackCost = 0;
         if (order.addresses[0] == 0) { // null order
-            Vault(state. VAULT).transferToVault(
+            Vault(state.VAULT).transferToVault(
                 closeId,
                 transaction.short.underlyingToken,
                 msg.sender,
@@ -161,7 +163,7 @@ library CloseShortImpl {
             );
         }
 
-        // Give back base tokens
+        // Send base tokens and underlying tokens to the correct parties
         uint sellerBaseTokenAmount = sendTokensOnClose(
             state,
             transaction,
@@ -183,8 +185,6 @@ library CloseShortImpl {
         );
     }
 
-    // --------- Helper Functions ---------
-
     function validateCloseShort(
         CloseShortTx transaction
     )
@@ -192,7 +192,7 @@ library CloseShortImpl {
     {
         require(transaction.closeAmount > 0);
 
-        // if closer is not ahoer seller, we have to make sure this is okay with the short seller
+        // if closer is not short seller, we have to make sure this is okay with the short seller
         if (transaction.short.seller != msg.sender) {
             require(
                 CloseShortVerifier(transaction.short.seller)

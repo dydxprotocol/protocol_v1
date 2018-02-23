@@ -16,7 +16,8 @@ async function getTokenizedShortConstants(tokenizedShort) {
     name,
     symbol,
     initialTokenHolder,
-    baseToken
+    baseToken,
+    totalSupply
   ] = await Promise.all([
     tokenizedShort.SHORT_SELL.call(),
     tokenizedShort.shortId.call(),
@@ -24,7 +25,8 @@ async function getTokenizedShortConstants(tokenizedShort) {
     tokenizedShort.name.call(),
     tokenizedShort.symbol.call(),
     tokenizedShort.initialTokenHolder.call(),
-    tokenizedShort.baseToken.call()
+    tokenizedShort.baseToken.call(),
+    tokenizedShort.totalSupply.call(),
   ]);
   return {
     SHORT_SELL,
@@ -33,7 +35,8 @@ async function getTokenizedShortConstants(tokenizedShort) {
     name,
     symbol,
     initialTokenHolder,
-    baseToken
+    baseToken,
+    totalSupply
   };
 }
 

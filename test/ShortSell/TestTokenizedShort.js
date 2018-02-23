@@ -79,7 +79,7 @@ contract('TokenizedShort', function(accounts) {
     [
       CONTRACTS.SHORT_SELL,
       underlyingToken,
-      baseToken,
+      baseToken
     ] = await Promise.all([
       ShortSell.deployed(),
       UnderlyingToken.deployed(),
@@ -359,12 +359,13 @@ contract('TokenizedShort', function(accounts) {
   });
 
   describe('#closeOnBehalfOf via ShortSell#closeShortDirectly', () => {
-
-    it('fails if not initialized', async () => {
+    beforeEach('set up shorts and tokens', async () => {
       await setUpShorts();
       await setUpShortTokens();
       await transferShortsToTokens();
+    });
 
+    it('fails if not initialized', async () => {
       // give underlying tokens to token holder
       issueTokenToAccountInAmountAndApproveProxy(
         underlyingToken,
@@ -381,9 +382,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails if user does not have the amount of underlyingToken required', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await Promise.all([
         SHORTS.FULL.TOKEN_CONTRACT.transfer(accounts[0], SHORTS.FULL.NUM_TOKENS,
@@ -402,9 +400,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails if value is zero', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -419,9 +414,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('closes up to the remainingAmount if user tries to close more', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -434,9 +426,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails if (amount < remainingShort) but (amount > numTokens)', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -463,9 +452,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails if user does not own any of the tokenized Short', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller(accounts[0]);
@@ -480,9 +466,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('fails if closed', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -502,9 +485,6 @@ contract('TokenizedShort', function(accounts) {
     });
 
     it('succeeds otherwise', async () => {
-      await setUpShorts();
-      await setUpShortTokens();
-      await transferShortsToTokens();
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -589,37 +569,6 @@ contract('TokenizedShort', function(accounts) {
 
         const tokens2 = await baseToken.balanceOf.call(seller);
         expect(tokens2).to.be.bignumber.equal(tokens1.plus(numWithdraw));
-      }
-    });
-
-    it('succeeds when extra tokens have been deposited', async () => {
-      // close nothing, letting the lender forceRecoverLoan
-      const bidder = accounts[9];
-      for (let type in FULL_AND_PART) {
-        const SHORT = SHORTS[type];
-        const seller = SHORT.TX.seller;
-        const lender = SHORT.TX.loanOffering.lender;
-        await placeAuctionBid(CONTRACTS.SHORT_SELL, underlyingToken, SHORT.TX, bidder, 100);
-        await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
-
-        const tokens1 = await baseToken.balanceOf.call(seller);
-
-        // get the amount we would have withdrawn
-        const normalNumWithdraw =
-          await SHORT.TOKEN_CONTRACT.withdraw.call(seller, { from: seller });
-        expect(normalNumWithdraw).to.be.bignumber.at.least(1);
-
-        // add extraTokens
-        const numExtra = new BigNumber("123456789");
-        await baseToken.issueTo(SHORT.TOKEN_CONTRACT.address, numExtra);
-
-        // now we should have withdrawn everything
-        const extendNumWithdraw =
-          await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
-        expect(extendNumWithdraw).to.be.bignumber.equal(normalNumWithdraw.plus(numExtra));
-
-        const tokens2 = await baseToken.balanceOf.call(seller);
-        expect(tokens2).to.be.bignumber.equal(tokens1.plus(extendNumWithdraw));
       }
     });
   });

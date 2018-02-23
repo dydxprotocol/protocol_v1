@@ -43,11 +43,16 @@ contract TokenizedShort is
     // -------- Events --------
     // ------------------------
 
-    // Emitted when tokens are burned either by closing the short or withdrawing base tokens after
-    // the short has been closed.
-    event TokensRedeemed(
+    // A user burns tokens in order to withdraw base tokens after the short has been closed
+    event TokensRedeemedForBaseTokens(
         address indexed redeemer,
-        uint256 value
+        uint256 baseTokenPayout
+    );
+
+    // A user burns tokens in order to partially close the short
+    event TokensRedeemedForClose(
+        address indexed redeemer,
+        uint256 closeAmount
     );
 
     // ---------------------------
@@ -56,6 +61,9 @@ contract TokenizedShort is
 
     // Address of the ShortSell contract
     address public SHORT_SELL;
+
+    // Address of the SafetyDepositBox contract
+    address public SAFETY_DEPOSIT_BOX;
 
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
@@ -89,6 +97,7 @@ contract TokenizedShort is
         public
     {
         SHORT_SELL = _shortSell;
+        SAFETY_DEPOSIT_BOX = Vault(ShortSell(SHORT_SELL).VAULT()).SAFETY_DEPOSIT_BOX();
         state = State.UNINITIALIZED;
         shortId = _shortId;
         name = _name;
@@ -133,11 +142,14 @@ contract TokenizedShort is
 
     /**
      * Called by ShortSell when an owner of this token is attempting to close some of the short
-     * position.
+     * position. Implementation is required per CloseShortVerifier contract in order to be used by
+     * ShortSell to approve closing parts of a short position. If true is returned, this contract
+     * must assume that ShortSell will either revert the entire transaction or that the specified
+     * amount of the short position was successfully closed.
      *
-     * @param  _who      The address of the owner
-     * @param  _shortId  The unique id of the short position
-     * @param  _amount   The amount of the position being closed
+     * @param _who      Address of the caller of the close function
+     * @param _shortId  Id of the short being closed
+     * @param _amount   Amount of the short being closed
      */
     function closeOnBehalfOf(
         address _who,
@@ -148,22 +160,15 @@ contract TokenizedShort is
         external
         returns (bool _success)
     {
-        require(state == State.OPEN);
         require(msg.sender == SHORT_SELL);
+        require(state == State.OPEN);
         require(_shortId == shortId);
         require(balances[_who] >= _amount);
-
-        /**
-         * Additional checks can be placed here. Some simple examples are:
-         *
-         * require(block.timestamp >= lockoutTime);
-         * require(amount >= minimumDenomination);
-         */
 
         balances[_who] = balances[_who].sub(_amount);
         totalSupply_ = totalSupply_.sub(_amount);
 
-        TokensRedeemed(_who, _amount);
+        TokensRedeemedForClose(_who, _amount);
         return true;
     }
 
@@ -198,14 +203,13 @@ contract TokenizedShort is
 
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(shortId)) {
-            address vault = ShortSell(SHORT_SELL).VAULT();
-            address safetyDepositBox = Vault(vault).SAFETY_DEPOSIT_BOX();
-            SafetyDepositBox(safetyDepositBox).withdraw(baseToken, address(this));
             state = State.CLOSED;
         }
         require(state == State.CLOSED);
 
-        uint256 baseTokenBalance = StandardToken(baseToken).balanceOf(address(this));
+        uint256 baseTokenBalance =
+            SafetyDepositBox(SAFETY_DEPOSIT_BOX).withdrawableBalances(address(this), baseToken);
+
         // NOTE the payout must be calculated before decrementing the totalSupply below
         uint256 baseTokenPayout = MathHelpers.getPartialAmount(
             value,
@@ -217,10 +221,10 @@ contract TokenizedShort is
         delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
-        // Send the redeemer their proportion of base token held by this contract
-        require(StandardToken(baseToken).transfer(who,baseTokenPayout));
+        // Send the redeemer their proportion of base token held by the SafetyDepositBox
+        SafetyDepositBox(SAFETY_DEPOSIT_BOX).giveTokensTo(baseToken, who, baseTokenPayout);
 
-        TokensRedeemed(who, value);
+        TokensRedeemedForBaseTokens(who, baseTokenPayout);
         return baseTokenPayout;
     }
 

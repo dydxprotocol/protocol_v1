@@ -11,9 +11,19 @@ pragma solidity 0.4.19;
 contract CloseShortVerifier {
 
     /**
-     * Function a TokenizedShort must implement in order for holders of the token to be able to
-     * close the short position. If the function doesn't throw, the contract must assume that the
-     * user was able to successfully close their position.
+     * Function a contracts must implement in order to let other accounts call closeShort() or
+     * closeShortDirectly() for the short position.
+
+     * NOTE: If returning true, this contract must assume that ShortSell will either revert the
+     * entire transaction or that the specified amount of the short position was successfully closed.
+     *
+     * NOTE: This can be used to tokenize short positions and distribute shares as ERC20 tokens.
+     * Such a token would be burned for the closer in the amount called here.
+     *
+     * NOTE: This interface also enables more complex logic, even for a single seller. For example,
+     * this function could require the block.timestamp to be at least some time, or the amount to
+     * be at least some minimum denomination.
+     *
      * @param _who      Address of the caller of the close function
      * @param _shortId  Id of the short being closed
      * @param _amount   Amount of the short being closed

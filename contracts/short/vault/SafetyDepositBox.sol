@@ -127,4 +127,37 @@ contract SafetyDepositBox is
 
         return numTokens;
     }
+
+    /**
+     * Allow any account to send their own tokens to another account
+     * @param  token  ERC20 token to withdraw
+     * @param  to     Address of account to give tokens to
+     * @return Number of tokens withdrawn
+     */
+    function giveTokensTo(
+        address token,
+        address to,
+        uint256 amount
+    )
+        public
+        nonReentrant
+        returns (uint256 _tokensWithdrawn)
+    {
+        if (amount == 0) {
+            return amount;
+        }
+
+        // Make sure there are tokens to withdraw
+        uint256 numTokens = withdrawableBalances[msg.sender][token];
+        require(numTokens >= amount);
+
+        // Decrement funds from user
+        withdrawableBalances[msg.sender][token] =
+            withdrawableBalances[msg.sender][token].sub(amount);
+
+        // Let user withdraw tokens and update totalBalances for token
+        sendTokensExternally(token, to, amount);
+
+        return amount;
+    }
 }
