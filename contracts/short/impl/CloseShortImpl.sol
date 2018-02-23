@@ -136,9 +136,9 @@ library CloseShortImpl {
             uint _interestFeeAmount
         )
     {
-        // Validate amount and create transaction
-        CloseShortTx memory transaction = createCloseShortTx(state, shortId, requestedCloseAmount);
-        require(transaction.closeAmount > 0);
+        // Create CloseShortTx and validate closeAmount
+        CloseShortTx memory transaction = parseCloseShortTx(state, shortId, requestedCloseAmount);
+        validateCloseShortTxAmount(transaction); // may modify closeAmount
 
         // State updates
         updateStateForCloseShort(state, transaction);
@@ -184,6 +184,25 @@ library CloseShortImpl {
             sellerBaseTokenAmount,
             interestFee
         );
+    }
+
+    function validateCloseShortTxAmount(
+        CloseShortTx transaction
+    )
+        internal
+    {
+        // if closer is not short seller, we have to make sure this is okay with the short seller
+        if (transaction.short.seller != msg.sender) {
+            uint256 allowedCloseAmount = CloseShortVerifier(transaction.short.seller)
+                .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount);
+
+            // because the verifier will do accounting based on how much it returns, we should
+            // revert if we are not able to close as much as the verifier returns
+            require(transaction.closeAmount >= allowedCloseAmount);
+            transaction.closeAmount = allowedCloseAmount;
+        }
+
+        require(transaction.closeAmount > 0);
     }
 
     function updateStateForCloseShort(
@@ -453,39 +472,27 @@ library CloseShortImpl {
         }
     }
 
-    function createCloseShortTx(
+    // -------- Parsing Functions -------
+
+    function parseCloseShortTx(
         ShortSellState.State storage state,
         bytes32 shortId,
         uint requestedCloseAmount
     )
         internal
+        view
         returns (CloseShortTx memory _tx)
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
-
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
-
-        // if closer is not short seller, we have to make sure this is okay with the short seller
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortVerifier(short.seller)
-                .closeOnBehalfOf(msg.sender, shortId, closeAmount);
-
-            // because the verifier will do accounting based on how much it returns, we should
-            // revert if we are not able to close as much as the verifier returns
-            require (closeAmount >= allowedCloseAmount);
-            closeAmount = allowedCloseAmount;
-        }
 
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,
             shortId: shortId,
-            closeAmount: closeAmount
+            closeAmount: Math.min256(requestedCloseAmount, currentShortAmount)
         });
     }
-
-    // -------- Parsing Functions -------
 
     function parseOrder(
         address[5] orderAddresses,

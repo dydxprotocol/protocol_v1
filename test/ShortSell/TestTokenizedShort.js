@@ -3,7 +3,6 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const TokenizedShort = artifacts.require("TokenizedShort");
