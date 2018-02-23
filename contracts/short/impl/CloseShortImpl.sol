@@ -82,6 +82,7 @@ library CloseShortImpl {
     )
         public
         returns (
+            uint _amountClosed,
             uint _baseTokenReceived,
             uint _interestFeeAmount
         )
@@ -107,6 +108,7 @@ library CloseShortImpl {
     )
         public
         returns (
+            uint _amountClosed,
             uint _baseTokenReceived,
             uint _interestFeeAmount
         )
@@ -129,31 +131,30 @@ library CloseShortImpl {
     )
         internal
         returns (
+            uint _amountClosed,
             uint _baseTokenReceived,
             uint _interestFeeAmount
         )
     {
-        CloseShortTx memory transaction = parseCloseShortTx(
-            state,
-            shortId,
-            requestedCloseAmount
-        );
+        // Validate amount and create transaction
+        CloseShortTx memory transaction = createCloseShortTx(state, shortId, requestedCloseAmount);
+        require(transaction.closeAmount > 0);
 
-        // Validation and state updates
-        validateCloseShort(transaction);
+        // State updates
         updateStateForCloseShort(state, transaction);
         var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 
         // Secure underlying tokens
         uint buybackCost = 0;
-        if (order.addresses[0] == 0) { // null order
+        if (order.addresses[0] == 0) { // no buy order; close short directly
             Vault(state.VAULT).transferToVault(
                 closeId,
                 transaction.short.underlyingToken,
                 msg.sender,
                 transaction.closeAmount
             );
-        } else { // valid order
+        }
+        else { // close short using buy order
             buybackCost = buyBackUnderlyingToken(
                 state,
                 transaction,
@@ -180,25 +181,10 @@ library CloseShortImpl {
         );
 
         return (
+            transaction.closeAmount,
             sellerBaseTokenAmount,
             interestFee
         );
-    }
-
-    function validateCloseShort(
-        CloseShortTx transaction
-    )
-        internal
-    {
-        require(transaction.closeAmount > 0);
-
-        // if closer is not short seller, we have to make sure this is okay with the short seller
-        if (transaction.short.seller != msg.sender) {
-            require(
-                CloseShortVerifier(transaction.short.seller)
-                    .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount)
-            );
-        }
     }
 
     function updateStateForCloseShort(
@@ -468,26 +454,39 @@ library CloseShortImpl {
         }
     }
 
-    // -------- Parsing Functions -------
-
-    function parseCloseShortTx(
+    function createCloseShortTx(
         ShortSellState.State storage state,
         bytes32 shortId,
         uint requestedCloseAmount
     )
         internal
-        view
-        returns (CloseShortTx _tx)
+        returns (CloseShortTx memory _tx)
     {
         ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
+
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+
+        // if closer is not short seller, we have to make sure this is okay with the short seller
+        if (short.seller != msg.sender) {
+            uint256 allowedCloseAmount = CloseShortVerifier(short.seller)
+                .closeOnBehalfOf(msg.sender, shortId, closeAmount);
+
+            // because the verifier will do accounting based on how much it returns, we should
+            // revert if we are not able to close as much as the verifier returns
+            require (closeAmount >= allowedCloseAmount);
+            closeAmount = allowedCloseAmount;
+        }
+
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,
             shortId: shortId,
-            closeAmount: Math.min256(requestedCloseAmount, currentShortAmount)
+            closeAmount: closeAmount
         });
     }
+
+    // -------- Parsing Functions -------
 
     function parseOrder(
         address[5] orderAddresses,

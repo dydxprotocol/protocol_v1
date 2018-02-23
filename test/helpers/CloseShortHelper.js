@@ -292,7 +292,6 @@ async function getBalances(shortSell, shortTx, sellOrder) {
 
 async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount) {
   const interestFee = await getInterestFee(shortTx, closeTx, closeAmount);
-  console.log(interestFee);
   const balances = await getBalances(shortSell, shortTx);
   const baseTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,

@@ -108,7 +108,7 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        // Next line also requires that (balances[id][token] >= amount);
+        // Next line also asserts that (balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
         // Place tokens in safety deposit box and update totalBalances for the token
@@ -132,7 +132,7 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        // Next line also requires that (balances[id][token] >= amount);
+        // Next line also asserts that (balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
         // Send tokens to authorized address and updates totalBalances for the token
@@ -156,7 +156,7 @@ contract Vault is
         nonReentrant
         requiresAuthorization
     {
-        // Next line also requires that (balances[fromId][token] >= amount);
+        // Next line also asserts that (balances[fromId][token] >= amount);
         balances[fromId][token] = balances[fromId][token].sub(amount);
         balances[toId][token] = balances[toId][token].add(amount);
     }

@@ -147,11 +147,8 @@ contract SafetyDepositBox is
             return amount;
         }
 
-        // Make sure there are tokens to withdraw
-        uint256 numTokens = withdrawableBalances[msg.sender][token];
-        require(numTokens >= amount);
-
         // Decrement funds from user
+        require(amount <= withdrawableBalances[msg.sender][token]);
         withdrawableBalances[msg.sender][token] =
             withdrawableBalances[msg.sender][token].sub(amount);
 

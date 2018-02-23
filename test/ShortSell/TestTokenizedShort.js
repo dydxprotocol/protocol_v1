@@ -425,7 +425,7 @@ contract('TokenizedShort', function(accounts) {
       }
     });
 
-    it('fails if (amount < remainingShort) but (amount > numTokens)', async () => {
+    it('closes at most the number of tokens owned', async () => {
       await initializeTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
@@ -439,15 +439,10 @@ contract('TokenizedShort', function(accounts) {
         await SHORT.TOKEN_CONTRACT.transfer(rando, SHORT.NUM_TOKENS.div(2),
           { from: SHORT.TX.seller });
 
-        // can't close more than you have if you don't have all remaining tokens
-        await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, SHORT.NUM_TOKENS.div(2) + 1, { from: SHORT.TX.seller })
-        );
-
-        // this amount is fine
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: SHORT.TX.seller })
+        // try to close with too-large amount, but it will get bounded by the number of tokens owned
+        const result = await transact(CONTRACTS.SHORT_SELL.closeShortDirectly,
+          SHORT.ID, SHORT.NUM_TOKENS.times(10), { from: SHORT.TX.seller })
+        expect(result[0] /* amountClosed */).to.be.bignumber.equal(SHORT.NUM_TOKENS.div(2));
       }
     });
 

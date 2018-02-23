@@ -1,6 +1,7 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
@@ -146,30 +147,41 @@ contract TokenizedShort is
      * ShortSell to approve closing parts of a short position. If true is returned, this contract
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
-     *
-     * @param _who      Address of the caller of the close function
-     * @param _shortId  Id of the short being closed
-     * @param _amount   Amount of the short being closed
+
+     * @param _who              Address of the caller of the close function
+     * @param _shortId          Id of the short being closed
+     * @param _requestedAmount  Amount of the short being closed
+     * @return _allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address _who,
         bytes32 _shortId,
-        uint256 _amount
+        uint256 _requestedAmount
     )
         nonReentrant
         external
-        returns (bool _success)
+        returns (uint256 _success)
     {
         require(msg.sender == SHORT_SELL);
         require(state == State.OPEN);
+
+        // not a necessary check, but we include shortId in the parameters in case a single contract
+        // acts as the seller for multiple short positions
         require(_shortId == shortId);
-        require(balances[_who] >= _amount);
 
-        balances[_who] = balances[_who].sub(_amount);
-        totalSupply_ = totalSupply_.sub(_amount);
+        // to be more general, we prefer to return the amount closed rather than revert
+        uint256 amount = Math.min256(_requestedAmount, balances[_who]);
+        if (amount == 0) {
+            return 0;
+        }
 
-        TokensRedeemedForClose(_who, _amount);
-        return true;
+        // subtract from balances
+        require(amount <= balances[_who]);
+        balances[_who] = balances[_who].sub(amount);
+        totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
+
+        TokensRedeemedForClose(_who, amount);
+        return amount;
     }
 
     /**

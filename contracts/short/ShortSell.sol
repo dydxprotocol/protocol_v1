@@ -187,6 +187,7 @@ contract ShortSell is
      * @param  orderV               ECDSA signature parameter v for the 0x order
      * @param  orderR bytes32       CDSA signature parameter r for the 0x order
      * @param  orderS bytes32       CDSA signature parameter s for the 0x order
+     * @return _amountClosed        amount of short closed
      * @return _baseTokenReceived   amount of base token received by the short seller after closing
      * @return _interestFeeAmount   interest fee in base token paid to the lender
      */
@@ -203,6 +204,7 @@ contract ShortSell is
         closeShortStateControl
         nonReentrant
         returns (
+            uint _amountClosed,
             uint _baseTokenReceived,
             uint _interestFeeAmount
         )
@@ -227,6 +229,7 @@ contract ShortSell is
      * @param  shortId              unique id for the short sell
      * @param  requestedCloseAmount amount of the short position to close. The amount closed will
      *                              be: min(requestedCloseAmount, currentShortAmount)
+     * @return _amountClosed        amount of short closed
      * @return _baseTokenReceived   amount of base token received by the short seller after closing
      * @return _interestFeeAmount   interest fee in base token paid to the lender
      */
@@ -238,6 +241,7 @@ contract ShortSell is
         closeShortDirectlyStateControl
         nonReentrant
         returns (
+            uint _amountClosed,
             uint _baseTokenReceived,
             uint _interestFeeAmount
         )
