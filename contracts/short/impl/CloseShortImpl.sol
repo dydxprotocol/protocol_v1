@@ -138,7 +138,7 @@ library CloseShortImpl {
     {
         // Create CloseShortTx and validate closeAmount
         CloseShortTx memory transaction = parseCloseShortTx(state, shortId, requestedCloseAmount);
-        validateCloseShortTxAmount(transaction); // may modify closeAmount
+        validateCloseShortTx(transaction); // may modify transaction
 
         // State updates
         updateStateForCloseShort(state, transaction);
@@ -186,7 +186,13 @@ library CloseShortImpl {
         );
     }
 
-    function validateCloseShortTxAmount(
+    /**
+     * Validate the CloseShortTx object created for closing a short.
+     * This function may throw, or it may simply modify parameters of the CloseShortTx object.
+     * Will not throw if the resulting object is valid.
+     * @param  CloseShortTx  The transaction to validate
+     */
+    function validateCloseShortTx(
         CloseShortTx transaction
     )
         internal
