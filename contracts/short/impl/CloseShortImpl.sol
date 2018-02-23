@@ -153,8 +153,7 @@ library CloseShortImpl {
                 msg.sender,
                 transaction.closeAmount
             );
-        }
-        else { // close short using buy order
+        } else { // close short using buy order
             buybackCost = buyBackUnderlyingToken(
                 state,
                 transaction,
