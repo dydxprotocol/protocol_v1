@@ -160,7 +160,7 @@ contract TokenizedShort is
     )
         nonReentrant
         external
-        returns (uint256 _success)
+        returns (uint256 _allowedAmount)
     {
         require(msg.sender == SHORT_SELL);
         require(state == State.OPEN);
