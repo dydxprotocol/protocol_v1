@@ -190,7 +190,7 @@ library CloseShortImpl {
      * Validate the CloseShortTx object created for closing a short.
      * This function may throw, or it may simply modify parameters of the CloseShortTx object.
      * Will not throw if the resulting object is valid.
-     * @param  CloseShortTx  The transaction to validate
+     * @param transaction  The transaction to validate
      */
     function validateCloseShortTx(
         CloseShortTx transaction

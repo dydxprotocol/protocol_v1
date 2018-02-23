@@ -44,9 +44,16 @@ contract TokenizedShort is
     // -------- Events --------
     // ------------------------
 
+    // A TokenizedShort was successfully initialized
+    event Initialized(
+        bytes32 shortId,
+        uint256 initialSupply
+    );
+
     // A user burns tokens in order to withdraw base tokens after the short has been closed
-    event TokensRedeemedForBaseTokens(
+    event TokensRedeemedAfterForceClose(
         address indexed redeemer,
+        uint256 tokensRedeemed,
         uint256 baseTokenPayout
     );
 
@@ -137,6 +144,9 @@ contract TokenizedShort is
         baseToken = short.baseToken;
         state = State.OPEN;
 
+        // Record event
+        Initialized(shortId, currentShortAmount);
+
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         Transfer(address(0), initialTokenHolder, currentShortAmount);
     }
@@ -176,8 +186,9 @@ contract TokenizedShort is
         }
 
         // subtract from balances
-        require(amount <= balances[_who]);
-        balances[_who] = balances[_who].sub(amount);
+        uint256 balance = balances[_who];
+        require(amount <= balance);
+        balances[_who] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
 
         TokensRedeemedForClose(_who, amount);
@@ -236,7 +247,7 @@ contract TokenizedShort is
         // Send the redeemer their proportion of base token held by the SafetyDepositBox
         SafetyDepositBox(SAFETY_DEPOSIT_BOX).giveTokensTo(baseToken, who, baseTokenPayout);
 
-        TokensRedeemedForBaseTokens(who, baseTokenPayout);
+        TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
         return baseTokenPayout;
     }
 

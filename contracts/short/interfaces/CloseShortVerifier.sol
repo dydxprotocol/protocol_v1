@@ -20,7 +20,8 @@ contract CloseShortVerifier {
      * minimum denomination.
      *
      * NOTE: If returning non-zero, this contract must assume that ShortSell will either revert the
-     * entire transaction or that the specified amount of the short position was successfully closed.
+     * entire transaction or that the specified amount of the short position was successfully
+     * closed. Returning 0 will indicate an error and cause ShortSell to throw.
      *
      * @param _who              Address of the caller of the close function
      * @param _shortId          Id of the short being closed
