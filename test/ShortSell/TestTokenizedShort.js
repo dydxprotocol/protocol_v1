@@ -272,8 +272,10 @@ contract('TokenizedShort', function(accounts) {
 
         await SHORT.TOKEN_CONTRACT.initialize({ from: randomAccount() });
 
-        const tsc2 = await getTokenizedShortConstants(SHORT.TOKEN_CONTRACT);
-        const short = await getShort(CONTRACTS.SHORT_SELL, SHORT.ID);
+        const [tsc2, short] = await Promise.all([
+          getTokenizedShortConstants(SHORT.TOKEN_CONTRACT),
+          getShort(CONTRACTS.SHORT_SELL, SHORT.ID)
+        ]);
         // expect certain values
         expect(tsc2.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
         expect(tsc2.shortId).to.equal(SHORT.ID);
