@@ -7,24 +7,21 @@ chai.use(require('chai-bignumber')());
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const ShortSell = artifacts.require("ShortSell");
-const ProxyContract = artifacts.require("Proxy");
 
-const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { TOKENIZED_SHORT_STATE } = require('../helpers/TokenizedShortHelper');
+const { ADDRESSES } = require('../helpers/Constants');
 const { doShort } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
 
 contract('TokenizedShortCreator', function(accounts) {
-  let shortSellContract, tokenizedShortCreatorContract, proxyContract;
+  let shortSellContract, tokenizedShortCreatorContract;
 
   before('retrieve deployed contracts', async () => {
     [
       shortSellContract,
-      proxyContract,
       tokenizedShortCreatorContract
     ] = await Promise.all([
       ShortSell.deployed(),
-      ProxyContract.deployed(),
       TokenizedShortCreator.deployed()
     ]);
   });
@@ -67,9 +64,7 @@ contract('TokenizedShortCreator', function(accounts) {
         tokenName,
         tokenSymbol,
         tokenHolder,
-        tokenRedeemed,
         tokenBaseToken,
-        authorized
       ] = await Promise.all([
         shortTokenContract.SHORT_SELL.call(),
         shortTokenContract.shortId.call(),
@@ -77,31 +72,16 @@ contract('TokenizedShortCreator', function(accounts) {
         shortTokenContract.name.call(),
         shortTokenContract.symbol.call(),
         shortTokenContract.initialTokenHolder.call(),
-        shortTokenContract.redeemed.call(),
         shortTokenContract.baseToken.call(),
-        proxyContract.transferAuthorized.call(tokenAddress)
       ]);
 
       expect(tokenShortSell).to.equal(shortSellContract.address);
       expect(tokenShortId).to.equal(shortTx.id);
-      expect(tokenState).to.be.bignumber.equal(BIGNUMBERS.ZERO);  // UNINITIALIZED
+      expect(tokenState).to.be.bignumber.equal(TOKENIZED_SHORT_STATE.UNINITIALIZED);
       expect(tokenName).to.equal(name);
       expect(tokenSymbol).to.equal(symbol);
       expect(tokenHolder).to.equal(initialTokenHolder);
-      expect(tokenRedeemed).to.be.bignumber.equal(BIGNUMBERS.ZERO);
       expect(tokenBaseToken).to.equal(ADDRESSES.ZERO);
-      expect(authorized).to.be.true;
-    });
-
-    it('fails when proxy has not granted access to TokenizedShortCreator', async () => {
-      const contract = await TokenizedShortCreator.new(
-        shortSellContract.address,
-      );
-
-      // no access granted by proxy
-
-      await expectThrow(() => contract.tokenizeShort(
-        initialTokenHolder, shortTx.id, name, symbol, { from: transactionSender }));
     });
   });
 });

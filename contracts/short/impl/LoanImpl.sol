@@ -65,9 +65,9 @@ library LoanImpl {
         address indexed feeRecipient
     );
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // -----------------------------------------
+    // ---- Public Implementation Functions ----
+    // -----------------------------------------
 
     function callInLoanImpl(
         ShortSellState.State storage state,

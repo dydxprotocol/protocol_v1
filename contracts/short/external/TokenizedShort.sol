@@ -1,19 +1,38 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
-import { ShortSell } from "../ShortSell.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
-import { ShortSellState } from "../impl/ShortSellState.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
+import { Vault } from "../vault/Vault.sol";
+import { SafetyDepositBox } from "../vault/SafetyDepositBox.sol";
+import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { ShortSell } from "../ShortSell.sol";
+import { ShortSellRepo } from "../ShortSellRepo.sol";
 
 
-contract TokenizedShort is StandardToken, ReentrancyGuard {
+/**
+ * @title TokenizedShort
+ * @author dYdX
+ *
+ * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
+ * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
+ * entitled to some amount of base tokens after settlement.
+ */
+ /* solium-disable-next-line */
+contract TokenizedShort is
+    StandardToken,
+    CloseShortVerifier,
+    ReentrancyGuard
+{
     using SafeMath for uint;
+
+    // -----------------------
+    // -------- Enums --------
+    // -----------------------
 
     enum State {
         UNINITIALIZED,
@@ -25,10 +44,23 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // -------- Events --------
     // ------------------------
 
-    event TokensRedeemed(
+    // A TokenizedShort was successfully initialized
+    event Initialized(
+        bytes32 shortId,
+        uint256 initialSupply
+    );
+
+    // A user burns tokens in order to withdraw base tokens after the short has been closed
+    event TokensRedeemedAfterForceClose(
         address indexed redeemer,
-        uint value,
-        uint payout
+        uint256 tokensRedeemed,
+        uint256 baseTokenPayout
+    );
+
+    // A user burns tokens in order to partially close the short
+    event TokensRedeemedForClose(
+        address indexed redeemer,
+        uint256 closeAmount
     );
 
     // ---------------------------
@@ -38,11 +70,11 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // Address of the ShortSell contract
     address public SHORT_SELL;
 
-    // Address of the Proxy contract
-    address public PROXY;
+    // Address of the SafetyDepositBox contract
+    address public SAFETY_DEPOSIT_BOX;
 
-    // Address of the Repo contract
-    address public REPO;
+    // All tokens will initially be allocated to this address
+    address public initialTokenHolder;
 
     // id of the short this contract is tokenizing
     bytes32 public shortId;
@@ -56,27 +88,8 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // Symbol of this token (as ERC20 standard)
     string public symbol;
 
-    // Once intialized, all tokens will initially be allocated to this address
-    address public initialTokenHolder;
-
-    // Amount of tokens that have been redeemed
-    uint public redeemed;
-
+    // Address of the baseToken
     address public baseToken;
-
-    // -------------------------
-    // ------- Modifiers -------
-    // -------------------------
-
-    modifier onlyWhileUninitialized {
-        require(state == State.UNINITIALIZED);
-        _;
-    }
-
-    modifier onlyWhileOpen {
-        require(state == State.OPEN);
-        _;
-    }
 
     // -------------------------
     // ------ Constructor ------
@@ -84,8 +97,6 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
 
     function TokenizedShort(
         address _shortSell,
-        address _proxy,
-        address _repo,
         address _initialTokenHolder,
         bytes32 _shortId,
         string _name,
@@ -94,11 +105,9 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         public
     {
         SHORT_SELL = _shortSell;
-        PROXY = _proxy;
-        REPO = _repo;
-        shortId = _shortId;
+        SAFETY_DEPOSIT_BOX = Vault(ShortSell(SHORT_SELL).VAULT()).SAFETY_DEPOSIT_BOX();
         state = State.UNINITIALIZED;
-        // total supply is 0 before initialization
+        shortId = _shortId;
         name = _name;
         symbol = _symbol;
         initialTokenHolder = _initialTokenHolder;
@@ -108,13 +117,18 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
     // ---- Public State Changing Functions ----
     // -----------------------------------------
 
+    /**
+     * After the short's "seller" field has been set to the address of this contract, this contract
+     * can be called by anyone in order to set the contract to a usable state and to mint tokens
+     * given to initialTokenHolder.
+     */
     function initialize()
-        onlyWhileUninitialized
         nonReentrant
         external
     {
+        require(state == State.UNINITIALIZED);
         ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
+            ShortSellCommon.getShortObject(ShortSell(SHORT_SELL).REPO(), shortId);
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The ownership of the short must be transferred to this contract before intialization
@@ -130,233 +144,137 @@ contract TokenizedShort is StandardToken, ReentrancyGuard {
         baseToken = short.baseToken;
         state = State.OPEN;
 
+        // Record event
+        Initialized(shortId, currentShortAmount);
+
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         Transfer(address(0), initialTokenHolder, currentShortAmount);
     }
 
-    function redeemDirectly(
-        uint value
+    /**
+     * Called by ShortSell when an owner of this token is attempting to close some of the short
+     * position. Implementation is required per CloseShortVerifier contract in order to be used by
+     * ShortSell to approve closing parts of a short position. If true is returned, this contract
+     * must assume that ShortSell will either revert the entire transaction or that the specified
+     * amount of the short position was successfully closed.
+
+     * @param _who              Address of the caller of the close function
+     * @param _shortId          Id of the short being closed
+     * @param _requestedAmount  Amount of the short being closed
+     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     */
+    function closeOnBehalfOf(
+        address _who,
+        bytes32 _shortId,
+        uint256 _requestedAmount
     )
-        onlyWhileOpen
         nonReentrant
         external
-        returns (uint _payout)
+        returns (uint256 _allowedAmount)
     {
-        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
+        require(msg.sender == SHORT_SELL);
+        require(state == State.OPEN);
 
-        // Transfer the share of underlying token from the redeemer to this contract
-        Proxy(PROXY).transfer(
-            short.underlyingToken,
-            msg.sender,
-            value
-        );
+        // not a necessary check, but we include shortId in the parameters in case a single contract
+        // acts as the seller for multiple short positions
+        require(_shortId == shortId);
 
-        // Close this part of the short using the underlying token
-        var (baseTokenPayout, ) = ShortSell(SHORT_SELL).closeShortDirectly(
-            shortId,
-            value
-        );
+        // to be more general, we prefer to return the amount closed rather than revert
+        uint256 amount = Math.min256(_requestedAmount, balances[_who]);
+        if (amount == 0) {
+            return 0;
+        }
 
-        // Send the token holder the received amount of base token
-        sendPayoutAndLogEventForRedeem(
-            value,
-            baseTokenPayout
-        );
+        // subtract from balances
+        uint256 balance = balances[_who];
+        require(amount <= balance);
+        balances[_who] = balance.sub(amount);
+        totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
 
-        return baseTokenPayout;
+        TokensRedeemedForClose(_who, amount);
+        return amount;
     }
 
-    function redeem(
-        uint value,
-        address[5] orderAddresses,
-        uint[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
+    /**
+     * Withdraw base tokens from this contract for any of the short that was closed via
+     * forceRecoverLoan(). If all base tokens were returned to the lender, then this contract may
+     * not be entitled to any tokens and therefore the token holders are not entitled to any tokens.
+     *
+     * NOTE: It is possible that this contract could be sent base token by external sources
+     * other than from the ShortSell contract. In this case the payout for token holders
+     * would be greater than just that from the short sell payout. This is fine because
+     * nobody has incentive to send this contract extra funds, and if they do then it's
+     * also fine just to let the token holders have it.
+     *
+     * NOTE: If there are significant rounding errors, then it is possible that withdrawing later is
+     * more advantageous. An "attack" could involve withdrawing for others before withdrawing for
+     * yourself. Likely, rounding error will be small enough to not properly incentivize people to
+     * carry out such an attack.
+     *
+     * @param  who  Address of the account to withdraw for
+     * @return The number of tokens withdrawn
+     */
+    function withdraw(
+        address who
     )
-        onlyWhileOpen
         nonReentrant
         external
-        returns (uint _payout)
+        returns (uint256 _payout)
     {
-        ShortSellCommon.Short memory short = validateAndUpdateStateForRedeem(value);
-
-        // Transfer the taker fee for the order from the redeemer
-        address takerFeeToken = orderAddresses[4];
-
-        transferTakerFeeForRedeem(
-            short,
-            value,
-            takerFeeToken,
-            orderValues
-        );
-
-        // Close this part of the short using the underlying token
-        var (baseTokenPayout, ) = ShortSell(SHORT_SELL).closeShort(
-            shortId,
-            value,
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
-
-        // Send the token holder the received amount of base token
-        sendPayoutAndLogEventForRedeem(
-            value,
-            baseTokenPayout
-        );
-
-        return baseTokenPayout;
-    }
-
-    function claimPayout()
-        nonReentrant
-        external
-        returns (uint _payout)
-    {
-        uint value = balances[msg.sender];
+        uint256 value = balanceOf(who);
+        require(value > 0);
 
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(shortId)) {
             state = State.CLOSED;
         }
-
         require(state == State.CLOSED);
-        require(value > 0);
 
-        uint baseTokenBalance = StandardToken(baseToken).balanceOf(address(this));
+        uint256 baseTokenBalance =
+            SafetyDepositBox(SAFETY_DEPOSIT_BOX).withdrawableBalances(address(this), baseToken);
+
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        uint baseTokenPayout = MathHelpers.getPartialAmount(
+        uint256 baseTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
             baseTokenBalance
         );
 
         // Destroy the tokens
-        balances[msg.sender] = 0;
+        delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
-        // Increment redeemed counter
-        redeemed = redeemed.add(value);
+        // Send the redeemer their proportion of base token held by the SafetyDepositBox
+        SafetyDepositBox(SAFETY_DEPOSIT_BOX).giveTokensTo(baseToken, who, baseTokenPayout);
 
-        // Send the redeemer their proportion of base token held by this contract
-        // NOTE: It is possible that this contract could be sent base token by external sources
-        //       other than from the ShortSell contract. In this case the payout for token holders
-        //       would be greater than just that from the short sell payout. This is fine because
-        //       nobody has incentive to send this contract extra funds, and if they do then it's
-        //       also fine just to let the token holders have it
-        sendPayoutAndLogEventForRedeem(
-            value,
-            baseTokenPayout
-        );
-
+        TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
         return baseTokenPayout;
     }
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // -----------------------------------
+    // ---- Public Constant Functions ----
+    // -----------------------------------
 
-    // The decimals are equal to the underlying token decimals
+    /**
+     * To be compliant with standards, we have a decimals function that will return the same value
+     * as the underlyingToken of the short.
+     *
+     * @return The number of decimal places, or revert if the underlyingToken has no such function.
+     */
     function decimals()
+        external
         view
-        public
         returns (uint8 _decimals)
     {
-        ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
-        return DetailedERC20(short.underlyingToken).decimals();
-    }
-
-    // --------------------------------
-    // ------ Internal Functions ------
-    // --------------------------------
-
-    function validateAndUpdateStateForRedeem(
-        uint value
-    )
-        internal
-        returns (ShortSellCommon.Short _short)
-    {
-        require(value <= balances[msg.sender]);
-        require(value > 0);
-
-        // Destroy the tokens
-        balances[msg.sender] = balances[msg.sender].sub(value);
-        totalSupply_ = totalSupply_.sub(value);
-
-        // Increment redeemed counter
-        redeemed = redeemed.add(value);
-
-        ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(REPO, shortId);
-
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
-
-        // This should always be true
-        assert(currentShortAmount >= value);
-
-        // If we are closing the rest of the short, set this contract's state to CLOSED
-        if (currentShortAmount == value) {
-            assert(totalSupply_ == 0);
-            state = State.CLOSED;
-        }
-
-        return short;
-    }
-
-    function sendPayoutAndLogEventForRedeem(
-        uint value,
-        uint baseTokenPayout
-    )
-        internal
-    {
-        require(
-            StandardToken(baseToken).transfer(
-                msg.sender,
-                baseTokenPayout
-            )
-        );
-
-        TokensRedeemed(
-            msg.sender,
-            value,
-            baseTokenPayout
-        );
-    }
-
-    function transferTakerFeeForRedeem(
-        ShortSellCommon.Short short,
-        uint value,
-        address takerFeeToken,
-        uint[6] orderValues
-    )
-        internal
-    {
-        // If the taker fee is to be paid in base token, then the short sell contract will
-        // automatically use funds it has locked in Vault to pay the fee. Otherwise it
-        // needs to be transfered in
-        if (takerFeeToken != short.baseToken) {
-            uint baseTokenPrice = MathHelpers.getPartialAmount(
-                orderValues[1],
-                orderValues[0],
-                value
-            );
-
-            // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
-            uint takerFee = MathHelpers.getPartialAmount(
-                baseTokenPrice,
-                orderValues[1],
-                orderValues[3]
-            );
-
-            Proxy(PROXY).transfer(
-                takerFeeToken,
-                msg.sender,
-                takerFee
-            );
-        }
+        // Return the decimals place of the underlying token of the short sell.
+        // We do not store this value because it should just be for display purposes and should not
+        // block the tokenization of the short if decimals() is not a function on the underlying
+        // ERC20 token.
+        return
+            DetailedERC20(
+                ShortSellRepo(
+                    ShortSell(SHORT_SELL).REPO()
+                ).getShortUnderlyingToken(shortId)
+            ).decimals();
     }
 }

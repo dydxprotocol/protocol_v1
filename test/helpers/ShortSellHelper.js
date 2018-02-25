@@ -7,8 +7,8 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const ethUtil = require('ethereumjs-util');
 
-const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSell = artifacts.require("ShortSell");
+const ShortSellRepo = artifacts.require("ShortSellRepo");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -22,13 +22,14 @@ const { BIGNUMBERS } = require('../helpers/Constants');
 const web3Instance = new Web3(web3.currentProvider);
 
 const BASE_AMOUNT = new BigNumber('1e18');
+const DEFAULT_SALT = 425;
 
 // PUBLIC
 
-async function createShortSellTx(accounts) {
+async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
   const [loanOffering, buyOrder] = await Promise.all([
-    createLoanOffering(accounts),
-    createSigned0xBuyOrder(accounts)
+    createLoanOffering(accounts, _salt),
+    createSigned0xBuyOrder(accounts, _salt)
   ]);
 
   const tx = {
@@ -44,7 +45,7 @@ async function createShortSellTx(accounts) {
   return tx;
 }
 
-async function createSigned0xSellOrder(accounts) {
+async function createSigned0xSellOrder(accounts, _salt = DEFAULT_SALT) {
   // 4 baseToken : 1 underlyingToken rate
   let order = {
     exchangeContractAddress: Exchange.address,
@@ -54,7 +55,7 @@ async function createSigned0xSellOrder(accounts) {
     makerFee: BASE_AMOUNT.times(new BigNumber(.01)),
     makerTokenAddress: UnderlyingToken.address,
     makerTokenAmount: BASE_AMOUNT.times(new BigNumber(2)),
-    salt: new BigNumber(342),
+    salt: new BigNumber(_salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BASE_AMOUNT.times(new BigNumber(.1)),
     takerTokenAddress: BaseToken.address,
@@ -202,9 +203,9 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 }
 
-async function doShort(accounts) {
+async function doShort(accounts, _salt = DEFAULT_SALT) {
   const [shortTx, shortSell] = await Promise.all([
-    createShortSellTx(accounts),
+    createShortSellTx(accounts, _salt),
     ShortSell.deployed()
   ]);
   const shortId = web3Instance.utils.soliditySha3(
@@ -374,21 +375,21 @@ async function totalTokensForAddress(tokenContract, address, safe) {
 
 // HELPERS
 
-async function createSigned0xBuyOrder(accounts) {
+async function createSigned0xBuyOrder(accounts, _salt = DEFAULT_SALT) {
   // 3 baseToken : 1 underlyingToken rate
   let order = {
     exchangeContractAddress: Exchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
-    makerFee: BASE_AMOUNT.times(new BigNumber(.02)),
+    makerFee: BASE_AMOUNT.times(.02),
     makerTokenAddress: BaseToken.address,
-    makerTokenAmount: BASE_AMOUNT.times(new BigNumber(6)),
-    salt: new BigNumber(7324),
+    makerTokenAmount: BASE_AMOUNT.times(6),
+    salt: new BigNumber(_salt),
     taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BASE_AMOUNT.times(new BigNumber(.1)),
+    takerFee: BASE_AMOUNT.times(.1),
     takerTokenAddress: UnderlyingToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(new BigNumber(2)),
+    takerTokenAmount: BASE_AMOUNT.times(2),
     makerFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
   };
@@ -400,7 +401,7 @@ async function createSigned0xBuyOrder(accounts) {
   return order;
 }
 
-async function createLoanOffering(accounts) {
+async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
@@ -411,18 +412,18 @@ async function createLoanOffering(accounts) {
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
     rates: {
-      minimumDeposit: BASE_AMOUNT,
-      maxAmount: BASE_AMOUNT.times(new BigNumber(3)),
-      minAmount: BASE_AMOUNT.times(new BigNumber(.1)),
-      minimumSellAmount: BASE_AMOUNT.times(new BigNumber(.01)),
-      dailyInterestFee: BASE_AMOUNT.times(new BigNumber(.01)),
-      lenderFee: BASE_AMOUNT.times(new BigNumber(.01)),
-      takerFee: BASE_AMOUNT.times(new BigNumber(.02))
+      minimumDeposit:    BASE_AMOUNT,
+      maxAmount:         BASE_AMOUNT.times(3),
+      minAmount:         BASE_AMOUNT.times(.1),
+      minimumSellAmount: BASE_AMOUNT.times(.01),
+      dailyInterestFee:  BASE_AMOUNT.times(.01),
+      lenderFee:         BASE_AMOUNT.times(.01),
+      takerFee:          BASE_AMOUNT.times(.02)
     },
     expirationTimestamp: 1000000000000,
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
-    salt: 123
+    salt: _salt
   };
 
   loanOffering.signature = await signLoanOffering(loanOffering);
@@ -584,7 +585,7 @@ async function getShortAuctionOffer(shortSell, id) {
   };
 }
 
-async function doShortAndCall(accounts) {
+async function doShortAndCall(accounts, _salt = DEFAULT_SALT) {
   const [shortSell, vault, safe, underlyingToken] = await Promise.all([
     ShortSell.deployed(),
     Vault.deployed(),
@@ -592,7 +593,7 @@ async function doShortAndCall(accounts) {
     UnderlyingToken.deployed()
   ]);
 
-  const shortTx = await doShort(accounts);
+  const shortTx = await doShort(accounts, _salt);
 
   await shortSell.callInLoan(
     shortTx.id,
@@ -635,6 +636,13 @@ async function issueForDirectClose(shortTx) {
   ]);
 }
 
+async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
+  await Promise.all([
+    token.issueTo(account, amount),
+    token.approve(ProxyContract.address, amount, { from: account })
+  ]);
+}
+
 function getPartialAmount(
   numerator,
   denominator,
@@ -665,5 +673,6 @@ module.exports = {
   doShortAndCall,
   issueForDirectClose,
   totalTokensForAddress,
-  callApproveLoanOffering
+  callApproveLoanOffering,
+  issueTokenToAccountInAmountAndApproveProxy
 };

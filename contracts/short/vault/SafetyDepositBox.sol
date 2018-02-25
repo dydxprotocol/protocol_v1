@@ -82,6 +82,36 @@ contract SafetyDepositBox is
     // -----------------------------------------
 
     /**
+     * Allow any account to send safety deposit box tokens directly to another account
+     * @param  token  ERC20 token to withdraw
+     * @param  to     Address of account to give tokens to
+     * @return Number of tokens withdrawn
+     */
+    function giveTokensTo(
+        address token,
+        address to,
+        uint256 amount
+    )
+        external
+        nonReentrant
+        returns (uint256 _tokensWithdrawn)
+    {
+        if (amount == 0) {
+            return amount;
+        }
+
+        // Decrement funds from user
+        uint256 balance = withdrawableBalances[msg.sender][token];
+        require(amount <= balance);
+        withdrawableBalances[msg.sender][token] = balance.sub(amount);
+
+        // Let user withdraw tokens and update totalBalances for token
+        sendTokensExternally(token, to, amount);
+
+        return amount;
+    }
+
+    /**
      * Allow any account to withdraw all specified tokens
      * @param  tokens  Array of ERC20 tokens to withdraw
      * @param  who     Address of account to withdraw tokens for

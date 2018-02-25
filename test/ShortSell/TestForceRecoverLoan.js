@@ -7,7 +7,9 @@ const BigNumber = require('bignumber.js');
 
 const { wait } = require('@digix/tempo')(web3);
 const BaseToken = artifacts.require("TokenA");
+const ShortSell = artifacts.require("ShortSell");
 const {
+  doShort,
   doShortAndCall,
   placeAuctionBid,
   totalTokensForAddress
@@ -161,13 +163,37 @@ describe('#forceRecoverLoan', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('does not allow call before call time limit elapsed', async () => {
+    it('does not allow before call time limit elapsed', async () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
-
       await expectThrow( () => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       ));
+    });
+  });
+  contract('ShortSell', function(accounts) {
+    it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+
+      const maxDuration = shortTx.loanOffering.maxDuration;
+      const almostMaxDuration = maxDuration - 100;
+      const callTimeLimit = shortTx.loanOffering.callTimeLimit;
+      expect(almostMaxDuration).to.be.at.least(callTimeLimit);
+
+      // loan was not called and it is too early
+      await wait(almostMaxDuration);
+      await expectThrow(() => shortSell.forceRecoverLoan(
+        shortTx.id,
+        { from: shortTx.loanOffering.lender }
+      ));
+
+      // now it's okay because we are past maxDuration+callTimeLimit
+      await wait(callTimeLimit + 100);
+      await shortSell.forceRecoverLoan(
+        shortTx.id,
+        { from: shortTx.loanOffering.lender }
+      );
     });
   });
 });

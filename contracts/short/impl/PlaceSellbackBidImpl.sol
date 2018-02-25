@@ -136,6 +136,7 @@ library PlaceSellbackBidImpl {
             Vault(state.VAULT).balances(shortId, short.baseToken)
         );
 
+        require(maxInterestFee <= initialBaseToken); // require there to be some payout
         require(offer <= initialBaseToken.sub(maxInterestFee));
 
         return currentShortAmount;

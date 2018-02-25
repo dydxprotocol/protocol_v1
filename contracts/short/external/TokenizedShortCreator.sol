@@ -2,10 +2,17 @@ pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ShortSell } from "../ShortSell.sol";
-import { Proxy } from "../../shared/Proxy.sol";
 import { TokenizedShort } from "./TokenizedShort.sol";
 
 
+/**
+ * @title TokenizedShortCreator
+ * @author dYdX
+ *
+ * This contract is used to deploy new TokenizedShort contracts without the user having to deploy
+ * the bytecode themselves and just have to send a transaction to a pre-existing contract on the
+ * blockchain.
+ */
 contract TokenizedShortCreator is NoOwner {
     // ------------------------
     // ------ Constants -------
@@ -38,20 +45,13 @@ contract TokenizedShortCreator is NoOwner {
         external
         returns (address _tokenAddress)
     {
-        address PROXY = ShortSell(SHORT_SELL).PROXY();
-        address REPO = ShortSell(SHORT_SELL).REPO();
-
         address token = new TokenizedShort(
             SHORT_SELL,
-            PROXY,
-            REPO,
             _initialTokenHolder,
             _shortId,
             _name,
             _symbol
         );
-
-        Proxy(PROXY).grantTransferAuthorization(token);
 
         return token;
     }
