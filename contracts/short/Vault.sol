@@ -90,9 +90,8 @@ contract Vault is
     }
 
     /**
-     * Transfers a certain amount of funds to the safety deposit box on behalf of an address.
-     * This effectively marks those funds as withdrawable without sending the tokens directly to any
-     * untrusted external address which may have a malicious tokenFallback function.
+     * Transfers a certain amount of funds to an address.
+     *
      * @param  id          The vault from which to send the tokens
      * @param  token       ERC20 token address
      * @param  to          Address to transfer tokens to

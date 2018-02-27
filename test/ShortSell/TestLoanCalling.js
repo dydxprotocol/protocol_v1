@@ -46,7 +46,7 @@ describe('#callInLoan', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('only allows the lender to call', async () => {
+    it('prevents unauthorized accounts from calling', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
@@ -116,7 +116,7 @@ describe('#cancelLoanCall', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('only allows the lender to call', async () => {
+    it('prevents unauthorized accounts from cancelling', async () => {
       const shortSell = await ShortSell.deployed();
       const { shortTx, callTx } = await doShortAndCall(accounts);
 

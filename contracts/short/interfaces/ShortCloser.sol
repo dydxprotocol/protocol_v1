@@ -1,17 +1,35 @@
 pragma solidity 0.4.19;
 
+import { ShortOwner } from "./ShortOwner.sol";
+
 
 /**
- * @title CloseShortVerifier
+ * @title ShortCloser
  * @author dYdX
  *
- * Interface that smart contracts must implement to be able to make off-chain generated
- * loan offerings
+ * Interface that smart contracts must implement in order to let other addresses close a short
+ * owned by the smart contract.
  */
-contract CloseShortVerifier {
+contract ShortCloser is ShortOwner {
+
+    // -------------------------
+    // ------ Constructor ------
+    // -------------------------
+
+    function ShortCloser(
+        address _shortSell
+    )
+        public
+        ShortOwner(_shortSell)
+    {
+    }
+
+    // ----------------------------------------
+    // ------ Public Interface functions ------
+    // ----------------------------------------
 
     /**
-     * Function a contracts must implement in order to let other accounts call closeShort() or
+     * Function a contract must implement in order to let other accounts call closeShort() or
      * closeShortDirectly() for the short position. This allows short sellers to use more complex
      * logic to control their short positions. For example, this can be used to tokenize short
      * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer
@@ -33,6 +51,7 @@ contract CloseShortVerifier {
         bytes32 _shortId,
         uint256 _requestedAmount
     )
+        onlyShortSell
         external
         returns (uint256 _allowedAmount);
 }

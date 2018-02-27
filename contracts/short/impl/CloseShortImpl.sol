@@ -6,7 +6,7 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
-import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
+import { ShortCloser } from "../interfaces/ShortCloser.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -198,7 +198,7 @@ library CloseShortImpl {
     {
         // if closer is not short seller, we have to make sure this is okay with the short seller
         if (transaction.short.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortVerifier(transaction.short.seller)
+            uint256 allowedCloseAmount = ShortCloser(transaction.short.seller)
                 .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount);
 
             // because the verifier will do accounting based on how much it returns, we should

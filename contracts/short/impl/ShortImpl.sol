@@ -8,6 +8,7 @@ import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
+import { TransferImpl } from "./TransferImpl.sol";
 
 
 /**
@@ -46,6 +47,7 @@ library ShortImpl {
     // -----------------------
 
     struct ShortTx {
+        address owner;
         address underlyingToken;
         address baseToken;
         uint256 shortAmount;
@@ -75,7 +77,7 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values256,
         uint32[2] values32,
         uint8[2] sigV,
@@ -167,6 +169,18 @@ library ShortImpl {
             transaction,
             baseTokenReceived
         );
+
+        callTransferLoan(
+            state,
+            shortId,
+            transaction.loanOffering.lender,
+            transaction.loanOffering.owner);
+
+        callTransferShort(
+            state,
+            shortId,
+            msg.sender,
+            transaction.owner);
 
         return shortId;
     }
@@ -528,10 +542,46 @@ library ShortImpl {
         });
     }
 
+    function callTransferLoan(
+        ShortSellState.State storage _state,
+        bytes32 _shortId,
+        address _lender,
+        address _owner
+    )
+        internal
+    {
+        bool atomicallyAssignNewOwner = (_owner != address(0)) && (_owner != _lender);
+        if (atomicallyAssignNewOwner) {
+            TransferImpl.transferLoanImpl(
+                _state,
+                _shortId,
+                _lender,
+                _owner);
+        }
+    }
+
+    function callTransferShort(
+        ShortSellState.State storage _state,
+        bytes32 _shortId,
+        address _seller,
+        address _owner
+    )
+        internal
+    {
+        bool atomicallyAssignNewOwner = (_owner != address(0)) && (_owner != _seller);
+        if (atomicallyAssignNewOwner) {
+            TransferImpl.transferShortImpl(
+                _state,
+                _shortId,
+                _seller,
+                _owner);
+        }
+    }
+
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -542,8 +592,9 @@ library ShortImpl {
         returns (ShortTx _transaction)
     {
         ShortTx memory transaction = ShortTx({
-            underlyingToken: addresses[0],
-            baseToken: addresses[1],
+            owner: addresses[0],
+            underlyingToken: addresses[1],
+            baseToken: addresses[2],
             shortAmount: values[15],
             depositAmount: values[16],
             loanOffering: parseLoanOffering(
@@ -565,7 +616,7 @@ library ShortImpl {
     }
 
     function parseLoanOffering(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -576,12 +627,13 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[2],
-            signer: addresses[3],
-            taker: addresses[4],
-            feeRecipient: addresses[5],
-            lenderFeeToken: addresses[6],
-            takerFeeToken: addresses[7],
+            lender: addresses[3],
+            signer: addresses[4],
+            owner: addresses[5],
+            taker: addresses[6],
+            feeRecipient: addresses[7],
+            lenderFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],
@@ -593,8 +645,8 @@ library ShortImpl {
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
-            addresses[1],
-            addresses[0]
+            addresses[2],
+            addresses[1]
         );
 
         return loanOffering;
@@ -638,7 +690,7 @@ library ShortImpl {
     }
 
     function parseBuyOrder(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -648,11 +700,11 @@ library ShortImpl {
         returns (BuyOrder _buyOrder)
     {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[8],
-            taker: addresses[9],
-            feeRecipient: addresses[10],
-            makerFeeToken: addresses[11],
-            takerFeeToken: addresses[12],
+            maker: addresses[10],
+            taker: addresses[11],
+            feeRecipient: addresses[12],
+            makerFeeToken: addresses[13],
+            takerFeeToken: addresses[14],
             baseTokenAmount: values[9],
             underlyingTokenAmount: values[10],
             makerFee: values[11],
@@ -687,13 +739,14 @@ library ShortImpl {
     )
         internal
         pure
-        returns (address[8] _addresses)
+        returns (address[9] _addresses)
     {
         return [
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.loanOffering.lender,
             transaction.loanOffering.signer,
+            transaction.loanOffering.owner,
             transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
             transaction.loanOffering.lenderFeeToken,

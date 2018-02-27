@@ -1,3 +1,5 @@
+/*global web3*/
+
 const BigNumber = require('bignumber.js');
 
 module.exports = {
@@ -22,5 +24,21 @@ module.exports = {
   BIGNUMBERS: {
     ZERO: new BigNumber(0),
     ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24)
+  },
+  BYTES32: {
+    ZERO: '0x0000000000000000000000000000000000000000000000000000000000000000'.valueOf(),
+    BAD_ID: web3.fromUtf8("XXXXXXXX"),
+    TEST: [
+      web3.fromUtf8("12345670"),
+      web3.fromUtf8("12345671"),
+      web3.fromUtf8("12345672"),
+      web3.fromUtf8("12345673"),
+      web3.fromUtf8("12345674"),
+      web3.fromUtf8("12345675"),
+      web3.fromUtf8("12345676"),
+      web3.fromUtf8("12345677"),
+      web3.fromUtf8("12345678"),
+      web3.fromUtf8("12345679"),
+    ]
   }
 };

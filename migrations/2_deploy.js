@@ -1,13 +1,11 @@
 /*global artifacts*/
 
+// For production deployment
 const Exchange = artifacts.require("Exchange");
 const Vault = artifacts.require("Vault");
 const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
 const ShortSell = artifacts.require("ShortSell");
-const TokenA = artifacts.require("TokenA");
-const TokenB = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
@@ -16,8 +14,15 @@ const CloseShortImpl = artifacts.require("CloseShortImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
-const BigNumber = require('bignumber.js');
+const TransferImpl = artifacts.require("TransferImpl");
 
+// For testing
+const TokenA = artifacts.require("TokenA");
+const TokenB = artifacts.require("TokenB");
+const FeeToken = artifacts.require("TokenC");
+
+// Other constants
+const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 
 function isDevNetwork(network) {
@@ -50,12 +55,15 @@ function maybeDeploy0x(deployer, network) {
 async function deployShortSellContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract),
-    deployer.deploy(ShortImpl),
     deployer.deploy(CloseShortImpl),
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
-    deployer.deploy(DepositImpl)
+    deployer.deploy(DepositImpl),
+    deployer.deploy(TransferImpl)
   ]);
+
+  await ShortImpl.link('TransferImpl', TransferImpl.address);
+  await deployer.deploy(ShortImpl);
 
   // Link ShortSell function libraries
   await Promise.all([
@@ -63,7 +71,8 @@ async function deployShortSellContracts(deployer) {
     ShortSell.link('CloseShortImpl', CloseShortImpl.address),
     ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
     ShortSell.link('LoanImpl', LoanImpl.address),
-    ShortSell.link('DepositImpl', DepositImpl.address)
+    ShortSell.link('DepositImpl', DepositImpl.address),
+    ShortSell.link('TransferImpl', TransferImpl.address)
   ]);
 
   await Promise.all([

@@ -1,8 +1,10 @@
 pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { TokenizedShort } from "./TokenizedShort.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 
 /**
@@ -13,12 +15,12 @@ import { TokenizedShort } from "./TokenizedShort.sol";
  * the bytecode themselves and just have to send a transaction to a pre-existing contract on the
  * blockchain.
  */
-contract TokenizedShortCreator is NoOwner {
-    // ------------------------
-    // ------ Constants -------
-    // ------------------------
-
-    address public SHORT_SELL;
+ /* solium-disable-next-line */
+contract TokenizedShortCreator is
+    NoOwner,
+    ShortOwner,
+    ReentrancyGuard
+{
 
     // ------------------------
     // ------ Constructor -----
@@ -28,31 +30,39 @@ contract TokenizedShortCreator is NoOwner {
         address _shortSell
     )
         public
+        ShortOwner(_shortSell)
     {
-        SHORT_SELL = _shortSell;
     }
 
-    // -----------------------------
-    // ------ Public functions -----
-    // -----------------------------
+    // -------------------------------
+    // ------ Public functions -------
+    // -------------------------------
 
-    function tokenizeShort(
-        address _initialTokenHolder,
-        bytes32 _shortId,
-        string _name,
-        string _symbol
+    /**
+     * Implementation for ShortOwner functionality. Creates a new TokenizedShort and assigns short
+     * ownership to the TokenizedShort.
+     *
+     * @param  _from     Address of the previous owner of the short
+     * @return the address of the owner we are passing ownership to
+     */
+    function recieveShortOwnership(
+        address _from,
+        bytes32 /* _shortId */
     )
+        onlyShortSell
+        nonReentrant
         external
-        returns (address _tokenAddress)
+        returns (address owner)
     {
-        address token = new TokenizedShort(
+
+        address tokenAddress = new TokenizedShort(
             SHORT_SELL,
-            _initialTokenHolder,
-            _shortId,
-            _name,
-            _symbol
+            _from
         );
 
-        return token;
+        assert(tokenAddress != address(this));
+        assert(tokenAddress != address(0));
+
+        return tokenAddress;
     }
 }

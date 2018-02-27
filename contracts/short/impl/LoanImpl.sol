@@ -4,6 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
+import { LoanCaller } from "../interfaces/LoanCaller.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -77,7 +78,12 @@ library LoanImpl {
         public
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        require(msg.sender == short.lender);
+
+        // If not the lender, we require the lender to approve msg.sender
+        if (msg.sender != short.lender) {
+            require(LoanCaller(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit));
+        }
+
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
         require(
@@ -102,13 +108,18 @@ library LoanImpl {
         public
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        require(msg.sender == short.lender);
+
+        // If not the lender, we require the lender to approve msg.sender
+        if (msg.sender != short.lender) {
+            require(LoanCaller(short.lender).cancelOnBehalfOf(msg.sender, shortId));
+        }
+
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
 
         state.shorts[shortId].callTimestamp = 0;
         state.shorts[shortId].requiredDeposit = 0;
-        
+
         LoanCallCanceled(
             shortId,
             short.lender,
@@ -119,10 +130,10 @@ library LoanImpl {
 
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
-        address[8] addresses,
+        address[9] addresses,
         uint256[9] values256,
-        uint32[2] values32,
-        uint256 cancelAmount
+        uint32[2]  values32,
+        uint256    cancelAmount
     )
         public
         returns (uint256 _cancelledAmount)
@@ -161,9 +172,9 @@ library LoanImpl {
 
     function approveLoanOfferingImpl(
         ShortSellState.State storage state,
-        address[8] addresses,
+        address[9] addresses,
         uint256[9] values256,
-        uint32[2] values32
+        uint32[2]  values32
     )
         public
     {
@@ -188,9 +199,9 @@ library LoanImpl {
     // ------ Parsing Functions ------
 
     function parseLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint256[9] values,
-        uint32[2] values32
+        uint32[2]  values32
     )
         internal
         view
@@ -199,10 +210,11 @@ library LoanImpl {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[2],
             signer: addresses[3],
-            taker: addresses[4],
-            feeRecipient: addresses[5],
-            lenderFeeToken: addresses[6],
-            takerFeeToken: addresses[7],
+            owner: addresses[4],
+            taker: addresses[5],
+            feeRecipient: addresses[6],
+            lenderFeeToken: addresses[7],
+            takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],
