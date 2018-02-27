@@ -12,8 +12,8 @@ contract LoanOfferingVerifier {
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
      * will be generated off-chain and signed by a signer. The ShortSell contract will verify that
-     * the signature for the loan offering was made by signer. The implementing contract will be
-     * the lender for the loan.
+     * the signature for the loan offering was made by signer. If "owner" is a non-zero address,
+     * then it will be the lender, otherwise the implementing contract will be the lender.
      *
      * If true is returned, and no errors are thrown by the ShortSell contract, the loan will have
      * occurred. This means that verifyLoanOffering can also be used to update internal contract
@@ -25,10 +25,11 @@ contract LoanOfferingVerifier {
      *  [1] = base token
      *  [2] = lender
      *  [3] = signer
-     *  [4] = loan taker
-     *  [5] = loan fee recipient
-     *  [6] = loan lender fee token
-     *  [7] = loan taker fee token
+     *  [4] = owner
+     *  [5] = loan taker
+     *  [6] = loan fee recipient
+     *  [7] = loan lender fee token
+     *  [8] = loan taker fee token
      *
      * @param  values256        Values corresponding to:
      *
@@ -51,7 +52,7 @@ contract LoanOfferingVerifier {
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[2] values32,
         bytes32 shortId

@@ -38,6 +38,7 @@ library ShortSellCommon {
     struct LoanOffering {
         address lender;
         address signer;
+        address owner;
         address taker;
         address feeRecipient;
         address lenderFeeToken;
@@ -203,6 +204,7 @@ library ShortSellCommon {
             baseToken,
             loanOffering.lender,
             loanOffering.signer,
+            loanOffering.owner,
             loanOffering.taker,
             loanOffering.feeRecipient,
             loanOffering.lenderFeeToken,
