@@ -179,10 +179,14 @@ async function checkSuccess(shortSell, shortTx) {
   const contains = await shortSell.containsShort.call(shortId);
   expect(contains).to.equal(true);
   const short = await getShort(shortSell, shortId);
+
   const proratedInterestRate =
-    shortTx.loanOffering.rates.dailyInterestFee
-      .mul(short.shortAmount)
-      .dividedToIntegerBy(shortTx.loanOffering.rates.maxAmount); // rounds down
+    getPartialAmount(
+      short.shortAmount,
+      shortTx.loanOffering.rates.maxAmount,
+      shortTx.loanOffering.rates.dailyInterestFee,
+      true // roundsUp
+    );
 
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
   expect(short.baseToken).to.equal(shortTx.baseToken);

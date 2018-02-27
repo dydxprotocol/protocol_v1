@@ -198,10 +198,15 @@ library ShortImpl {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
-        // Prevent overflows when calculating interest fees. Unused variable, throws on overflow
-        uint(transaction.loanOffering.maxDuration)
-            .mul(getPartialInterestFee(transaction))
-            .mul(transaction.shortAmount);
+        // Prevent overflows when calculating interest fees. Unused result, throws on overflow
+        // Should be the same calculation used in calculateInterestFee
+        MathHelpers.getQuotient3Over2RoundedUp(
+            transaction.shortAmount,              // numerator
+            transaction.loanOffering.maxDuration, // numerator
+            getPartialInterestFee(transaction),   // numerator
+            transaction.shortAmount,              // denominator
+            1 days                                // denominator
+        );
 
         // Require the order to either be pre-approved on-chain or to have a valid signature
         require(
@@ -482,7 +487,10 @@ library ShortImpl {
         pure
         returns (uint _interestFee)
     {
-        return MathHelpers.getPartialAmount(
+        // Round up to disincentivize taking out smaller shorts in order to make reduced interest
+        // payments. This would be an infeasiable attack in most scenarios due to low rounding error
+        // and high transaction/gas fees, but is nonetheless theoretically possible.
+        return MathHelpers.getPartialAmountRoundedUp(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.dailyInterestFee);

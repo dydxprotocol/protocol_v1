@@ -168,22 +168,24 @@ library ShortSellCommon {
         returns (uint _interestFee)
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (short.callTimestamp > 0 &&
-            timeElapsed > uint(short.callTimestamp).add(short.callTimeLimit)
-        ) {
-            timeElapsed = uint(short.callTimestamp).add(short.callTimeLimit);
+        if (short.callTimestamp > 0) {
+            uint256 maxCallElapsed =
+                uint256(short.callTimestamp).sub(short.startTimestamp).add(short.callTimeLimit);
+            if (timeElapsed > maxCallElapsed) {
+                timeElapsed = maxCallElapsed;
+            }
         }
         if (timeElapsed > short.maxDuration) {
             timeElapsed = short.maxDuration;
         }
 
-        // We multiply everything before dividing to reduce rounding error as much as possible.
-        // Overflow should have been prevented by the loan verification already.
-        // const proratedInterest = interestRate * (close Amount / short.shortAmount)
-        // return proratedInterest * (timeElapsed / 1 days);
-        uint numerator = short.interestRate.mul(closeAmount).mul(timeElapsed);
-        uint denominator = short.shortAmount.mul(1 days);
-        return numerator.div(denominator);
+        // Round up to disincentivize taking out smaller shorts in order to make reduced interest
+        // payments. This would be an infeasiable attack in most scenarios due to low rounding error
+        // and high transaction/gas fees, but is nonetheless theoretically possible.
+        return MathHelpers.getQuotient3Over2RoundedUp(
+            closeAmount, timeElapsed, short.interestRate, // numerators
+            short.shortAmount, 1 days                     // denominators
+        );
     }
 
     function getLoanOfferingHash(
