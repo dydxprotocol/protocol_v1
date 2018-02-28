@@ -24,7 +24,10 @@ const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 
 function isDevNetwork(network) {
-  return network === 'development' || network === 'test' || network === 'develop';
+  return network === 'development'
+          || network === 'test'
+          || network === 'develop'
+          || network === 'dev';
 }
 
 function maybeDeployTestTokens(deployer, network) {
