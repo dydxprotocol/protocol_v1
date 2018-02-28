@@ -73,10 +73,12 @@ async function createSigned0xSellOrder(accounts, _salt = DEFAULT_SALT) {
 
 function callShort(shortSell, tx) {
   const addresses = [
+    ZeroEx.NULL_ADDRESS,
     tx.loanOffering.underlyingToken,
     tx.loanOffering.baseToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
+    tx.loanOffering.owner,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
@@ -293,6 +295,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
+    loanOffering.owner,
     loanOffering.taker,
     loanOffering.feeRecipient,
     FeeToken.address,
@@ -407,6 +410,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     baseToken: BaseToken.address,
     lender: accounts[1],
     signer: ZeroEx.NULL_ADDRESS,
+    owner: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
     feeRecipient: accounts[3],
     lenderFeeTokenAddress: FeeToken.address,
@@ -451,6 +455,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
+    loanOffering.owner,
     loanOffering.taker,
     loanOffering.feeRecipient,
     loanOffering.lenderFeeTokenAddress,

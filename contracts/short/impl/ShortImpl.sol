@@ -48,6 +48,7 @@ library ShortImpl {
     // -----------------------
 
     struct ShortTx {
+        address owner;
         address underlyingToken;
         address baseToken;
         uint shortAmount;
@@ -77,7 +78,7 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[13] addresses,
+        address[15] addresses,
         uint[17] values256,
         uint32[2] values32,
         uint8[2] sigV,
@@ -116,6 +117,12 @@ library ShortImpl {
             uint(uint32(block.timestamp)) == block.timestamp
         );
 
+        address loanOwner = (transaction.loanOffering.owner != address(0))
+            ? transaction.loanOffering.owner : transaction.loanOffering.lender;
+
+        address shortOwner = (transaction.owner != address(0))
+            ? transaction.owner : msg.sender;
+
         ShortSellRepo(state.REPO).addShort(
             shortId,
             transaction.underlyingToken,
@@ -125,8 +132,8 @@ library ShortImpl {
             transaction.loanOffering.callTimeLimit,
             uint32(block.timestamp),
             transaction.loanOffering.maxDuration,
-            transaction.loanOffering.lender,
-            msg.sender
+            loanOwner,
+            shortOwner
         );
 
         // EXTERNAL CALLS
@@ -491,7 +498,7 @@ library ShortImpl {
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[13] addresses,
+        address[15] addresses,
         uint[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -502,8 +509,9 @@ library ShortImpl {
         returns (ShortTx _transaction)
     {
         ShortTx memory transaction = ShortTx({
-            underlyingToken: addresses[0],
-            baseToken: addresses[1],
+            owner: addresses[0],
+            underlyingToken: addresses[1],
+            baseToken: addresses[2],
             shortAmount: values[15],
             depositAmount: values[16],
             loanOffering: parseLoanOffering(
@@ -525,7 +533,7 @@ library ShortImpl {
     }
 
     function parseLoanOffering(
-        address[13] addresses,
+        address[15] addresses,
         uint[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -536,12 +544,13 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[2],
-            signer: addresses[3],
-            taker: addresses[4],
-            feeRecipient: addresses[5],
-            lenderFeeToken: addresses[6],
-            takerFeeToken: addresses[7],
+            lender: addresses[3],
+            signer: addresses[4],
+            owner: addresses[5],
+            taker: addresses[6],
+            feeRecipient: addresses[7],
+            lenderFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],
@@ -553,8 +562,8 @@ library ShortImpl {
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
-            addresses[1],
-            addresses[0]
+            addresses[2],
+            addresses[1]
         );
 
         return loanOffering;
@@ -598,7 +607,7 @@ library ShortImpl {
     }
 
     function parseBuyOrder(
-        address[13] addresses,
+        address[15] addresses,
         uint[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -608,11 +617,11 @@ library ShortImpl {
         returns (BuyOrder _buyOrder)
     {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[8],
-            taker: addresses[9],
-            feeRecipient: addresses[10],
-            makerFeeToken: addresses[11],
-            takerFeeToken: addresses[12],
+            maker: addresses[10],
+            taker: addresses[11],
+            feeRecipient: addresses[12],
+            makerFeeToken: addresses[13],
+            takerFeeToken: addresses[14],
             baseTokenAmount: values[9],
             underlyingTokenAmount: values[10],
             makerFee: values[11],
@@ -647,13 +656,14 @@ library ShortImpl {
     )
         internal
         pure
-        returns (address[8] _addresses)
+        returns (address[9] _addresses)
     {
         return [
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.loanOffering.lender,
             transaction.loanOffering.signer,
+            transaction.loanOffering.owner,
             transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
             transaction.loanOffering.lenderFeeToken,

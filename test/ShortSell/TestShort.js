@@ -141,6 +141,7 @@ describe('#short', () => {
 
       shortTx.loanOffering.signer = shortTx.loanOffering.lender;
       shortTx.loanOffering.lender = smartContractLender.address;
+      shortTx.loanOffering.owner = shortTx.loanOffering.lender;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
       const tx = await callShort(shortSell, shortTx);

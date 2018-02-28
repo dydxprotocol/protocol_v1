@@ -122,7 +122,7 @@ library LoanImpl {
 
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[2] values32,
         uint cancelAmount
@@ -164,7 +164,7 @@ library LoanImpl {
 
     function approveLoanOffering(
         ShortSellState.State storage state,
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[2] values32
     )
@@ -191,7 +191,7 @@ library LoanImpl {
     // ------ Parsing Functions ------
 
     function parseLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values,
         uint32[2] values32
     )
@@ -202,10 +202,11 @@ library LoanImpl {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[2],
             signer: addresses[3],
-            taker: addresses[4],
-            feeRecipient: addresses[5],
-            lenderFeeToken: addresses[6],
-            takerFeeToken: addresses[7],
+            owner: addresses[4],
+            taker: addresses[5],
+            feeRecipient: addresses[6],
+            lenderFeeToken: addresses[7],
+            takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],

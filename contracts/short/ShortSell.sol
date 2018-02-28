@@ -91,20 +91,24 @@ contract ShortSell is
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0]  = underlying token
-     *  [1]  = base token
-     *  [2]  = lender
-     *  [3]  = loan offering signer (if 0, lender will be the signer - otherwise lender must be a
-     *                               smart contract that implements LoanOfferingVerifier)
-     *  [4]  = loan taker
-     *  [5]  = loan fee recipient
-     *  [6]  = loan lender fee token
-     *  [7]  = loan taker fee token
-     *  [8]  = buy order maker
-     *  [9]  = buy order taker
-     *  [10] = buy order fee recipient
-     *  [11] = buy order maker fee token
-     *  [12] = buy order taker fee token
+     *  [0]  = short owner (address to assign as owner after the short is opened;
+     *                      if 0, owner will be msg.sender)
+     *  [1]  = underlying token
+     *  [2]  = base token
+     *  [3]  = loan lender
+     *  [4]  = loan signer (if 0, lender will be the signer - otherwise lender must be a
+     *                      smart contract that implements LoanOfferingVerifier)
+     *  [5]  = loan owner (address to assign as the owner of the loan side of the transaction;
+     *                     if 0, owner will be the lender)
+     *  [6]  = loan taker
+     *  [7]  = loan fee recipient
+     *  [8]  = loan lender fee token
+     *  [9]  = loan taker fee token
+     *  [10] = buy order maker
+     *  [11] = buy order taker
+     *  [12] = buy order fee recipient
+     *  [13] = buy order maker fee token
+     *  [14] = buy order taker fee token
      *
      * @param  values256  Values corresponding to:
      *
@@ -136,7 +140,7 @@ contract ShortSell is
      * @return _shortId   unique identifier for the short sell
      */
     function short(
-        address[13] addresses,
+        address[15] addresses,
         uint[17] values256,
         uint32[2] values32,
         uint8[2] sigV,
@@ -375,10 +379,11 @@ contract ShortSell is
      *  [1] = base token
      *  [2] = lender
      *  [3] = signer
-     *  [4] = loan taker
-     *  [5] = loan fee recipient
-     *  [6] = loan lender fee token
-     *  [7] = loan taker fee token
+     *  [4] = owner
+     *  [5] = loan taker
+     *  [6] = loan fee recipient
+     *  [7] = loan lender fee token
+     *  [8] = loan taker fee token
      *
      * @param  values256        Values corresponding to:
      *
@@ -401,7 +406,7 @@ contract ShortSell is
      * @return _cancelledAmount Amount that was cancelled
      */
     function cancelLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[2] values32,
         uint cancelAmount
@@ -421,7 +426,7 @@ contract ShortSell is
     }
 
     function approveLoanOffering(
-        address[8] addresses,
+        address[9] addresses,
         uint[9] values256,
         uint32[2] values32
     )
