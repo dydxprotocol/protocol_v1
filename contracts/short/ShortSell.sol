@@ -91,19 +91,21 @@ contract ShortSell is
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0]  = short owner (if 0, owner will be msg.sender)
+     *  [0]  = short owner (address to assign as owner after the short is opened;
+     *                      if 0, owner will be msg.sender)
      *  [1]  = underlying token
      *  [2]  = base token
-     *  [3]  = lender
+     *  [3]  = loan lender
      *  [4]  = loan signer (if 0, lender will be the signer - otherwise lender must be a
      *                      smart contract that implements LoanOfferingVerifier)
-     *  [5]  = loan owner (if 0, owner will be the lender)
+     *  [5]  = loan owner (address to assign as the owner of the loan side of the transaction;
+     *                     if 0, owner will be the lender)
      *  [6]  = loan taker
      *  [7]  = loan fee recipient
      *  [8]  = loan lender fee token
      *  [9]  = loan taker fee token
-     *  [10]  = buy order maker
-     *  [11]  = buy order taker
+     *  [10] = buy order maker
+     *  [11] = buy order taker
      *  [12] = buy order fee recipient
      *  [13] = buy order maker fee token
      *  [14] = buy order taker fee token
