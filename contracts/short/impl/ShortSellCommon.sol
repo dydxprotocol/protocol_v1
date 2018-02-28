@@ -168,13 +168,6 @@ library ShortSellCommon {
         returns (uint _interestFee)
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (short.callTimestamp > 0) {
-            uint256 maxCallElapsed =
-                uint256(short.callTimestamp).sub(short.startTimestamp).add(short.callTimeLimit);
-            if (timeElapsed > maxCallElapsed) {
-                timeElapsed = maxCallElapsed;
-            }
-        }
         if (timeElapsed > short.maxDuration) {
             timeElapsed = short.maxDuration;
         }

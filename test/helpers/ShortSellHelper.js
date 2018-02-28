@@ -419,7 +419,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       lenderFee:         BASE_AMOUNT.times(.01),
       takerFee:          BASE_AMOUNT.times(.02)
     },
-    expirationTimestamp: 1000000000000,
+    expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: _salt
