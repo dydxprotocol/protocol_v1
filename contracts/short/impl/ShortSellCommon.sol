@@ -226,31 +226,7 @@ library ShortSellCommon {
         );
     }
 
-    function getShortEndTimestamp(
-        Short short
-    )
-        internal
-        pure
-        returns (uint _endTimestamp)
-    {
-        // If the maxDuration is 0, then this short should never expire so return maximum int
-        if (short.maxDuration == 0) {
-            return 2 ** 256 - 1;
-        }
-
-        return uint(short.startTimestamp).add(uint(short.maxDuration));
-    }
-
-    function containsShortImpl(
-        ShortSellState.State storage state,
-        bytes32 id
-    )
-        view
-        internal
-        returns (bool exists)
-    {
-        return state.shorts[id].startTimestamp != 0;
-    }
+    // -------- Parsing Functions -------
 
     function getShortObject(
         ShortSellState.State storage state,

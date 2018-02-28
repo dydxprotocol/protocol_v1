@@ -53,9 +53,9 @@ library ForceRecoverLoanImpl {
         require( /* solium-disable-next-line */
             (
                 short.callTimestamp > 0
-                && block.timestamp >= uint(short.callTimestamp).add(uint(short.callTimeLimit))
+                && block.timestamp >= uint256(short.callTimestamp).add(uint256(short.callTimeLimit))
             ) || (
-                block.timestamp >= ShortSellCommon.getShortEndTimestamp(short)
+                block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
             )
         );
 
