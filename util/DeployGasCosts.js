@@ -5,7 +5,6 @@ const ShortSell = artifacts.require("ShortSell");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const Trader = artifacts.require("Trader");
 const Vault = artifacts.require("Vault");
-const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 const ProxyContract = artifacts.require("Proxy");
 const { getGasCost } = require('../test/helpers/NodeHelper');
@@ -54,17 +53,6 @@ contract('Deploy Costs', () => {
 
       const deployGasCost = await getGasCost(contract.transactionHash);
       console.log('\tVault deploy gas cost: ' + deployGasCost);
-    });
-  });
-
-  describe('ShortSellRepo', () => {
-    it('', async () => {
-      const contract = await ShortSellRepo.new(
-        BIGNUMBERS.ONE_DAY_IN_SECONDS
-      );
-
-      const deployGasCost = await getGasCost(contract.transactionHash);
-      console.log('\tShortSellRepo deploy gas cost: ' + deployGasCost);
     });
   });
 

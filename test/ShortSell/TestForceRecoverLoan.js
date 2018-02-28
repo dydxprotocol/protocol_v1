@@ -18,7 +18,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
-    it('allows funds to be recovered by the lender', async () => {
+    it.only('allows funds to be recovered by the lender', async () => {
       const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 

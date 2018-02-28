@@ -1,5 +1,7 @@
 pragma solidity 0.4.19;
 
+import { ShortSellCommon } from "./ShortSellCommon.sol";
+
 
 /**
  * @title ShortSellState
@@ -15,9 +17,6 @@ library ShortSellState {
 
         // Address of the Trader contract
         address TRADER;
-
-        // Address of the ShortSellRepo contract
-        address REPO;
 
         // Address of the ShortSellAuctionRepo contract
         address AUCTION_REPO;
@@ -41,5 +40,10 @@ library ShortSellState {
         // on-chain by the lender. This will typically be used to allow smart contracts to make
         // on-chain loan offerings
         mapping(bytes32 => bool) isLoanApproved;
+
+        // Mapping that contains all short sells. Mapped by: shortId -> Short
+        mapping(bytes32 => ShortSellCommon.Short) shorts;
+
+        mapping(bytes32 => bool) closedShorts;
     }
 }

@@ -5,7 +5,6 @@ const Vault = artifacts.require("Vault");
 const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
-const ShortSellRepo = artifacts.require("ShortSellRepo");
 const ShortSellAuctionRepo = artifacts.require("ShortSellAuctionRepo");
 const ShortSell = artifacts.require("ShortSell");
 const TokenA = artifacts.require("TokenA");
@@ -54,10 +53,7 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(ProxyContract),
     deployer.deploy(
       SafetyDepositBox,
-      ONE_HOUR),
-    deployer.deploy(
-      ShortSellRepo,
-      ONE_HOUR,
+      ONE_HOUR
     ),
     deployer.deploy(
       ShortSellAuctionRepo,
@@ -102,7 +98,6 @@ async function deployShortSellContracts(deployer) {
   await deployer.deploy(
     ShortSell,
     Vault.address,
-    ShortSellRepo.address,
     ShortSellAuctionRepo.address,
     Trader.address,
     ProxyContract.address
@@ -135,10 +130,6 @@ async function grantAccessToSafetyDepositBox() {
   const safetyDepositBox = await SafetyDepositBox.deployed();
   await safetyDepositBox.grantAccess(Vault.address);
 }
-async function grantAccessToRepo() {
-  const repo = await ShortSellRepo.deployed();
-  return repo.grantAccess(ShortSell.address);
-}
 
 async function grantAccessToAuctionRepo() {
   const auctionRepo = await ShortSellAuctionRepo.deployed();
@@ -157,7 +148,6 @@ async function doMigration(deployer, network) {
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault(),
-    grantAccessToRepo(),
     grantAccessToAuctionRepo(),
     grantAccessToTrader(),
     grantAccessToSafetyDepositBox()

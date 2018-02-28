@@ -43,7 +43,7 @@ library PlaceSellbackBidImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
 
         var (currentOffer, currentBidder, hasCurrentOffer) =
             ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);

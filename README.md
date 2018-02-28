@@ -62,10 +62,6 @@ Used to transfer user funds. Users set token allowance for the proxy authorizing
 
 Contains business logic for short selling. All external functions for shorting are in this contract. This contract doesn't hold any of the short sell state, but is authorized to write to the contracts which hold state and transfer user funds.
 
-##### ShortSellRepo.sol
-
-Contains state for short sells. Holds a map of short id to short struct. Only writable to by authorized addresses.
-
 ##### Vault.sol
 
 Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.

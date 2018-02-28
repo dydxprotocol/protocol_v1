@@ -2,7 +2,6 @@ pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { Vault } from "../vault/Vault.sol";
 import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
@@ -116,7 +115,8 @@ library ShortImpl {
             uint(uint32(block.timestamp)) == block.timestamp
         );
 
-        ShortSellRepo(state.REPO).addShort(
+        addShort(
+            state,
             shortId,
             transaction.underlyingToken,
             transaction.baseToken,
@@ -191,7 +191,7 @@ library ShortImpl {
         require(transaction.shortAmount > 0);
 
         // Make sure we don't already have this short id
-        require(!ShortSellRepo(state.REPO).containsShort(shortId));
+        require(!ShortSellCommon.containsShortImpl(state, shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -486,6 +486,39 @@ library ShortImpl {
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.dailyInterestFee);
+    }
+
+    function addShort(
+        ShortSellState.State storage state,
+        bytes32 id,
+        address underlyingToken,
+        address baseToken,
+        uint shortAmount,
+        uint interestRate,
+        uint32 callTimeLimit,
+        uint32 startTimestamp,
+        uint32 maxDuration,
+        address lender,
+        address seller
+    )
+        internal
+    {
+        require(!ShortSellCommon.containsShortImpl(state, id));
+        require(startTimestamp != 0);
+
+        state.shorts[id] = ShortSellCommon.Short({
+            underlyingToken: underlyingToken,
+            baseToken: baseToken,
+            shortAmount: shortAmount,
+            closedAmount: 0,
+            interestRate: interestRate,
+            callTimeLimit: callTimeLimit,
+            startTimestamp: startTimestamp,
+            callTimestamp: 0,
+            maxDuration: maxDuration,
+            lender: lender,
+            seller: seller
+        });
     }
 
     // -------- Parsing Functions -------

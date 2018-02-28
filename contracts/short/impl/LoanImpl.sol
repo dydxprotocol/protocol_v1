@@ -4,7 +4,6 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -75,7 +74,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
@@ -83,7 +82,7 @@ library LoanImpl {
             uint(uint32(block.timestamp)) == block.timestamp
         );
 
-        ShortSellRepo(state.REPO).setShortCallStart(shortId, uint32(block.timestamp));
+        short.callTimestamp = uint32(block.timestamp);
 
         LoanCalled(
             shortId,
@@ -99,12 +98,12 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
 
-        ShortSellRepo(state.REPO).setShortCallStart(shortId, 0);
+        state.shorts[shortId].callTimestamp = 0;
 
         ShortSellCommon.payBackAuctionBidderIfExists(
             state,
