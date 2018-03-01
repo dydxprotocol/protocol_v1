@@ -51,7 +51,7 @@ library CloseShortImpl {
     // -----------------------
 
     struct CloseShortTx {
-        ShortSellCommon.Short short; // TODO check if storage
+        ShortSellCommon.Short short;
         uint currentShortAmount;
         bytes32 shortId;
         uint closeAmount;

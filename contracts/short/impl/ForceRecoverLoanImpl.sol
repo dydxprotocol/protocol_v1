@@ -63,12 +63,6 @@ library ForceRecoverLoanImpl {
         // Only the lender or the winning bidder can call recover the loan
         require(msg.sender == short.lender || msg.sender == bidder);
 
-        // Delete the short
-        ShortSellCommon.cleanupShort(
-            state,
-            shortId
-        );
-
         // Send the tokens
         var (lenderBaseTokenAmount, buybackCost) = sendTokensOnForceRecover(
             state,
@@ -77,6 +71,13 @@ library ForceRecoverLoanImpl {
             offer,
             bidder,
             hasCurrentOffer
+        );
+
+        // Delete the short
+        // NOTE: Since short is a storage pointer, this will also set all of short's fields to 0
+        ShortSellCommon.cleanupShort(
+            state,
+            shortId
         );
 
         // Log an event
@@ -95,7 +96,7 @@ library ForceRecoverLoanImpl {
 
     function sendTokensOnForceRecover(
         ShortSellState.State storage state,
-        ShortSellCommon.Short short,
+        ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint offer,
         address bidder,
@@ -133,7 +134,7 @@ library ForceRecoverLoanImpl {
 
     function sendTokensOnForceRecoverWithAuctionBid(
         ShortSellState.State storage state,
-        ShortSellCommon.Short short,
+        ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint offer,
         address bidder
@@ -180,7 +181,7 @@ library ForceRecoverLoanImpl {
 
     function sendToLenderOnForceCloseWithAuctionBid(
         ShortSellState.State storage state,
-        ShortSellCommon.Short short,
+        ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint currentShortAmount,
         bytes32 auctionVaultId
@@ -219,7 +220,7 @@ library ForceRecoverLoanImpl {
 
     function sendToBidderOnForceCloseWithAuctionBid(
         ShortSellState.State storage state,
-        ShortSellCommon.Short short,
+        ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint currentShortAmount,
         address bidder,
@@ -264,7 +265,7 @@ library ForceRecoverLoanImpl {
 
     function sendToShortSellerOnForceCloseWithAuctionBid(
         ShortSellState.State storage state,
-        ShortSellCommon.Short short,
+        ShortSellCommon.Short storage short,
         bytes32 shortId
     )
         internal
