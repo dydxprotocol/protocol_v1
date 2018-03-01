@@ -1,7 +1,8 @@
 pragma solidity 0.4.19;
 
-import { ShortSell } from '../../ShortSell.sol';
-import { ShortSellCommon } from '../../impl/ShortSellCommon.sol';
+import { ShortSell } from "../../ShortSell.sol";
+import { ShortSellCommon } from "../../impl/ShortSellCommon.sol";
+
 
 library ShortSellHelper {
     function getShort(

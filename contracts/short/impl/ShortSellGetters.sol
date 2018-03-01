@@ -1,7 +1,7 @@
 pragma solidity 0.4.19;
 
-import { ShortSellCommon } from './ShortSellCommon.sol';
-import { ShortSellState } from './ShortSellState.sol';
+import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { ShortSellState } from "./ShortSellState.sol";
 
 
 contract ShortSellGetters {
