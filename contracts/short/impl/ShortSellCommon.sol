@@ -226,7 +226,16 @@ library ShortSellCommon {
         );
     }
 
-    // -------- Parsing Functions -------
+    function containsShortImpl(
+        ShortSellState.State storage state,
+        bytes32 id
+    )
+        view
+        internal
+        returns (bool exists)
+    {
+        return state.shorts[id].startTimestamp != 0;
+    }
 
     function getShortObject(
         ShortSellState.State storage state,
