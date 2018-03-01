@@ -271,6 +271,21 @@ contract ShortSell is
     }
 
     /**
+     * Cancel a loan call. Only callable by the short sell's lender
+     *
+     * @param  shortId  unique id for the short sell
+     */
+    function cancelLoanCall(
+        bytes32 shortId
+    )
+        external
+        onlyWhileOperational
+        nonReentrant
+    {
+        LoanImpl.cancelLoanCallImpl(state, shortId);
+    }
+
+    /**
      * Offer to sell back the tokens loaned for a short sell for some amount of base tokens held
      * in this short position. Only the lowest bid amount will be accepted. On placing a bid,
      * the full underlying token amount owed to the lender will be taken from the bidder and
@@ -404,7 +419,7 @@ contract ShortSell is
         onlyWhileOperational
         nonReentrant
     {
-        LoanImpl.approveLoanOffering(
+        LoanImpl.approveLoanOfferingImpl(
             state,
             addresses,
             values256,

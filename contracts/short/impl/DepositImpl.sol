@@ -13,7 +13,7 @@ import { Vault } from "../vault/Vault.sol";
  * This library contains the implementation for the deposit function of ShortSell
  */
 library DepositImpl {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ------------------------
     // -------- Events --------
@@ -24,7 +24,8 @@ library DepositImpl {
      */
     event AdditionalDeposit(
         bytes32 indexed id,
-        uint amount
+        uint256 amount,
+        address depositor
     );
 
     /**
@@ -49,13 +50,12 @@ library DepositImpl {
         public
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        require(msg.sender == short.seller);
         require(depositAmount > 0);
 
         Vault(state.VAULT).transferToVault(
             shortId,
             short.baseToken,
-            short.seller,
+            msg.sender,
             depositAmount
         );
 
@@ -80,7 +80,8 @@ library DepositImpl {
 
         AdditionalDeposit(
             shortId,
-            depositAmount
+            depositAmount,
+            msg.sender
         );
     }
 }
