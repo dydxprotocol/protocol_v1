@@ -485,7 +485,7 @@ library CloseShortImpl {
         view
         returns (CloseShortTx memory _tx)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         return CloseShortTx({

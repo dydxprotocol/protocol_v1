@@ -1,19 +1,10 @@
 pragma solidity 0.4.19;
 
 import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { ShortSellStorage } from "./ShortSellStorage.sol";
 
 
-contract ShortSellGetters {
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
-
-    /**
-     * Struct holding the entire state of ShortSell
-     */
-    ShortSellState.State state;
-
+contract ShortSellGetters is ShortSellStorage {
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------

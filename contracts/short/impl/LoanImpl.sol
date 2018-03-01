@@ -74,7 +74,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
@@ -98,7 +98,7 @@ library LoanImpl {
     )
         public
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.lender);
         // Ensure the loan has been called
         require(short.callTimestamp > 0);

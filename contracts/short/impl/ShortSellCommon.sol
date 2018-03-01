@@ -257,9 +257,7 @@ library ShortSellCommon {
         return state.shorts[id].startTimestamp != 0;
     }
 
-    // -------- Parsing Functions -------
-
-    function getShort(
+    function getShortObject(
         ShortSellState.State storage state,
         bytes32 shortId
     )

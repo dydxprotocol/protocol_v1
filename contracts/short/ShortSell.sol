@@ -14,6 +14,7 @@ import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellGetters } from "./impl/ShortSellGetters.sol";
+import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { Vault } from "./vault/Vault.sol";
 import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
@@ -29,6 +30,7 @@ contract ShortSell is
     Ownable,
     NoOwner,
     ReentrancyGuard,
+    ShortSellStorage,
     ShortSellEvents,
     ShortSellAdmin,
     ShortSellGetters {
@@ -340,7 +342,7 @@ contract ShortSell is
         onlyWhileOperational
         nonReentrant
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         require(msg.sender == short.seller);
 
         Vault(state.VAULT).transferToVault(
@@ -443,7 +445,7 @@ contract ShortSell is
     {
         // This address will be address(0) if the short does not exist. This is fine because
         // we validate msg.sender == lender right after, and msg.sender can't be address(0)
-        address lender = ShortSellCommon.getShort(state, shortId).lender;
+        address lender = ShortSellCommon.getShortObject(state, shortId).lender;
         require(msg.sender == lender);
 
         state.shorts[shortId].lender = who;
@@ -471,7 +473,7 @@ contract ShortSell is
     {
         // This address will be address(0) if the short does not exist. This is fine because
         // we validate msg.sender == seller right after, and msg.sender can't be address(0)
-        address seller = ShortSellCommon.getShort(state, shortId).seller;
+        address seller = ShortSellCommon.getShortObject(state, shortId).seller;
         require(msg.sender == seller);
 
         state.shorts[shortId].seller = who;
@@ -507,7 +509,7 @@ contract ShortSell is
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
         return Vault(state.VAULT).balances(shortId, short.baseToken);
     }
@@ -522,7 +524,7 @@ contract ShortSell is
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
         // In both branches of the conditional, endTimestamp may end up being past the maximum
         // duration of the short, but calculateInterestFee() will bound it
@@ -584,7 +586,7 @@ contract ShortSell is
         external
         returns(bool _isCalled)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShort(state, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
         return (short.callTimestamp > 0);
     }
