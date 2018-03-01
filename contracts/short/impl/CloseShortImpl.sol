@@ -6,7 +6,6 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../vault/Vault.sol";
 import { Trader } from "../Trader.sol";
-import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
@@ -236,10 +235,7 @@ library CloseShortImpl {
             assert(newClosedAmount < transaction.short.shortAmount);
 
             // Otherwise increment the closed amount on the short
-            ShortSellRepo(state.REPO).setShortClosedAmount(
-                transaction.shortId,
-                newClosedAmount
-            );
+            state.shorts[transaction.shortId].closedAmount = newClosedAmount;
         }
     }
 
@@ -489,7 +485,7 @@ library CloseShortImpl {
         view
         returns (CloseShortTx memory _tx)
     {
-        ShortSellCommon.Short memory short = ShortSellCommon.getShortObject(state.REPO, shortId);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         return CloseShortTx({

@@ -11,7 +11,8 @@ import { Vault } from "../vault/Vault.sol";
 import { SafetyDepositBox } from "../vault/SafetyDepositBox.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
-import { ShortSellRepo } from "../ShortSellRepo.sol";
+import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
+
 
 
 /**
@@ -128,7 +129,7 @@ contract TokenizedShort is
     {
         require(state == State.UNINITIALIZED);
         ShortSellCommon.Short memory short =
-            ShortSellCommon.getShortObject(ShortSell(SHORT_SELL).REPO(), shortId);
+            ShortSellHelper.getShort(SHORT_SELL, shortId);
         uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The ownership of the short must be transferred to this contract before intialization
@@ -272,9 +273,7 @@ contract TokenizedShort is
         // ERC20 token.
         return
             DetailedERC20(
-                ShortSellRepo(
-                    ShortSell(SHORT_SELL).REPO()
-                ).getShortUnderlyingToken(shortId)
+                ShortSell(SHORT_SELL).getShortUnderlyingToken(shortId)
             ).decimals();
     }
 }

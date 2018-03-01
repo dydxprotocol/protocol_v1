@@ -3,7 +3,6 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../vault/Vault.sol";
-import { ShortSellRepo } from "../ShortSellRepo.sol";
 import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
@@ -117,9 +116,8 @@ library ShortSellCommon {
     )
         internal
     {
-        ShortSellRepo repo = ShortSellRepo(state.REPO);
-        repo.deleteShort(shortId);
-        repo.markShortClosed(shortId);
+        delete state.shorts[shortId];
+        state.closedShorts[shortId] = true;
     }
 
     function payBackAuctionBidderIfExists(
@@ -248,45 +246,30 @@ library ShortSellCommon {
         return uint(short.startTimestamp).add(uint(short.maxDuration));
     }
 
-    // -------- Parsing Functions -------
+    function containsShortImpl(
+        ShortSellState.State storage state,
+        bytes32 id
+    )
+        view
+        internal
+        returns (bool exists)
+    {
+        return state.shorts[id].startTimestamp != 0;
+    }
 
     function getShortObject(
-        address repo,
+        ShortSellState.State storage state,
         bytes32 shortId
     )
         internal
         view
-        returns (Short _short)
+        returns (Short storage _short)
     {
-        var (
-            underlyingToken,
-            baseToken,
-            shortAmount,
-            closedAmount,
-            interestRate,
-            callTimeLimit,
-            startTimestamp,
-            callTimestamp,
-            maxDuration,
-            lender,
-            seller
-        ) =  ShortSellRepo(repo).getShort(shortId);
+        Short storage short = state.shorts[shortId];
 
         // This checks that the short exists
-        require(startTimestamp != 0);
+        require(short.startTimestamp != 0);
 
-        return Short({
-            underlyingToken: underlyingToken,
-            baseToken: baseToken,
-            shortAmount: shortAmount,
-            closedAmount: closedAmount,
-            interestRate: interestRate,
-            callTimeLimit: callTimeLimit,
-            startTimestamp: startTimestamp,
-            callTimestamp: callTimestamp,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
-        });
+        return short;
     }
 }
