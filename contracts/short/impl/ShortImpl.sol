@@ -519,6 +519,7 @@ library ShortImpl {
             shortAmount: shortAmount,
             closedAmount: 0,
             interestRate: interestRate,
+            requiredDeposit: 0,
             callTimeLimit: callTimeLimit,
             startTimestamp: startTimestamp,
             callTimestamp: 0,

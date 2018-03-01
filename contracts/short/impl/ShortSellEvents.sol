@@ -75,7 +75,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller
+        uint256 requiredDeposit
     );
 
     /**
@@ -85,7 +85,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller
+        uint256 depositAmount
     );
 
     /**

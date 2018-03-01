@@ -21,9 +21,10 @@ contract ShortSellGetters is ShortSellStorage {
         returns (
             address underlyingToken,
             address baseToken,
-            uint shortAmount,
-            uint closedAmount,
-            uint interestRate,
+            uint256 shortAmount,
+            uint256 closedAmount,
+            uint256 interestRate,
+            uint256 requiredDeposit,
             uint32 callTimeLimit,
             uint32 startTimestamp,
             uint32 callTimestamp,
@@ -40,6 +41,7 @@ contract ShortSellGetters is ShortSellStorage {
             short.shortAmount,
             short.closedAmount,
             short.interestRate,
+            short.requiredDeposit,
             short.callTimeLimit,
             short.startTimestamp,
             short.callTimestamp,
@@ -94,7 +96,7 @@ contract ShortSellGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint _shortAmount)
+        returns (uint256 _shortAmount)
     {
         return state.shorts[id].shortAmount;
     }
@@ -104,7 +106,7 @@ contract ShortSellGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint _closedAmount)
+        returns (uint256 _closedAmount)
     {
         return state.shorts[id].closedAmount;
     }
@@ -114,9 +116,19 @@ contract ShortSellGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint _interestRate)
+        returns (uint256 _interestRate)
     {
         return state.shorts[id].interestRate;
+    }
+
+    function getShortRequiredDeposit(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint256 _requiredDeposit)
+    {
+        return state.shorts[id].requiredDeposit;
     }
 
     function getShortStartTimestamp(

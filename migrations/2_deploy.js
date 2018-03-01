@@ -16,6 +16,7 @@ const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
 const ShortImpl = artifacts.require("ShortImpl");
 const CloseShortImpl = artifacts.require("CloseShortImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
+const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const PlaceSellbackBidImpl = artifacts.require("PlaceSellbackBidImpl");
 const BigNumber = require('bignumber.js');
@@ -72,7 +73,8 @@ async function deployShortSellContracts(deployer) {
     ShortSell.link('CloseShortImpl', CloseShortImpl.address),
     ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
     ShortSell.link('LoanImpl', LoanImpl.address),
-    ShortSell.link('PlaceSellbackBidImpl', PlaceSellbackBidImpl.address)
+    ShortSell.link('PlaceSellbackBidImpl', PlaceSellbackBidImpl.address),
+    ShortSell.link('DepositImpl', DepositImpl.address)
   ]);
 
   await Promise.all([

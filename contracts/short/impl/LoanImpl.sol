@@ -31,17 +31,7 @@ library LoanImpl {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller
-    );
-
-    /**
-     * A loan call was canceled
-     */
-    event LoanCallCanceled(
-        bytes32 indexed id,
-        address indexed lender,
-        address indexed shortSeller,
-        address caller
+        uint256 requiredDeposit
     );
 
     /**
@@ -70,7 +60,8 @@ library LoanImpl {
 
     function callInLoanImpl(
         ShortSellState.State storage state,
-        bytes32 shortId
+        bytes32 shortId,
+        uint256 requiredDeposit
     )
         public
     {
@@ -83,39 +74,13 @@ library LoanImpl {
         );
 
         short.callTimestamp = uint32(block.timestamp);
+        short.requiredDeposit = requiredDeposit;
 
         LoanCalled(
             shortId,
             short.lender,
             short.seller,
-            msg.sender
-        );
-    }
-
-    function cancelLoanCallImpl(
-        ShortSellState.State storage state,
-        bytes32 shortId
-    )
-        public
-    {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        require(msg.sender == short.lender);
-        // Ensure the loan has been called
-        require(short.callTimestamp > 0);
-
-        state.shorts[shortId].callTimestamp = 0;
-
-        ShortSellCommon.payBackAuctionBidderIfExists(
-            state,
-            shortId,
-            short
-        );
-
-        LoanCallCanceled(
-            shortId,
-            short.lender,
-            short.seller,
-            msg.sender
+            requiredDeposit
         );
     }
 
