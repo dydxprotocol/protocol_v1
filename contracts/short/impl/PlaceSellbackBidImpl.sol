@@ -155,7 +155,7 @@ library PlaceSellbackBidImpl {
         if (short.callTimestamp > 0) {
             return short.callTimestamp;
         } else {
-            return ShortSellCommon.getShortEndTimestamp(short);
+            return uint256(short.startTimestamp).add(short.maxDuration);
         }
     }
 }

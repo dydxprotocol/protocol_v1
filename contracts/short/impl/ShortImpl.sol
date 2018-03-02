@@ -102,6 +102,15 @@ library ShortImpl {
             shortId
         );
 
+        // If maxDuration is 0, then assume it to be "infinite" (maxInt)
+        uint32 parsedMaxDuration = (transaction.loanOffering.maxDuration == 0)
+            ? MathHelpers.maxUint32() : transaction.loanOffering.maxDuration;
+        uint256 partialInterestFee = getPartialInterestFee(transaction);
+
+        // Prevent overflows when calculating interest fees. Unused result, throws on overflow
+        // Should be the same calculation used in calculateInterestFee
+        transaction.shortAmount.mul(parsedMaxDuration).mul(partialInterestFee);
+
         // STATE UPDATES
 
         // Update global amounts for the loan and lender
@@ -121,10 +130,10 @@ library ShortImpl {
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.shortAmount,
-            getPartialInterestFee(transaction),
+            partialInterestFee,
             transaction.loanOffering.callTimeLimit,
             uint32(block.timestamp),
-            transaction.loanOffering.maxDuration,
+            parsedMaxDuration,
             transaction.loanOffering.lender,
             msg.sender
         );
@@ -197,11 +206,6 @@ library ShortImpl {
         if (transaction.loanOffering.taker != address(0)) {
             require(msg.sender == transaction.loanOffering.taker);
         }
-
-        // Prevent overflows when calculating interest fees. Unused variable, throws on overflow
-        uint(transaction.loanOffering.maxDuration)
-            .mul(getPartialInterestFee(transaction))
-            .mul(transaction.shortAmount);
 
         // Require the order to either be pre-approved on-chain or to have a valid signature
         require(
@@ -482,7 +486,10 @@ library ShortImpl {
         pure
         returns (uint _interestFee)
     {
-        return MathHelpers.getPartialAmount(
+        // Round up to disincentivize taking out smaller shorts in order to make reduced interest
+        // payments. This would be an infeasiable attack in most scenarios due to low rounding error
+        // and high transaction/gas fees, but is nonetheless theoretically possible.
+        return MathHelpers.getPartialAmountRoundedUp(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.dailyInterestFee);

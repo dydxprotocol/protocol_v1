@@ -22,7 +22,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 const BASE_AMOUNT = new BigNumber('1e18');
 const DEFAULT_SALT = 425;
-
+BigNumber.config({ DECIMAL_PLACES: 80 });
 // PUBLIC
 
 async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
@@ -419,7 +419,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       lenderFee:         BASE_AMOUNT.times(.01),
       takerFee:          BASE_AMOUNT.times(.02)
     },
-    expirationTimestamp: 1000000000000,
+    expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: _salt
@@ -644,12 +644,38 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
 function getPartialAmount(
   numerator,
   denominator,
-  target
+  target,
+  roundsUp = false
 ) {
   if (!(numerator instanceof BigNumber)) {
     numerator = new BigNumber(numerator);
   }
-  return numerator.times(target).div(denominator).floor();
+  if (roundsUp) {
+    return numerator.times(target).plus(denominator).minus(1).div(denominator).floor();
+  } else {
+    return numerator.times(target).div(denominator).floor();
+  }
+}
+
+function getQuotient3Over2(
+  numerator1,
+  numerator2,
+  numerator3,
+  denominator1,
+  denominator2,
+  roundsUp = false
+) {
+  if (!(numerator1 instanceof BigNumber)) {
+    numerator1 = new BigNumber(numerator1);
+  }
+  const n = numerator1.times(numerator2).times(numerator3);
+  const d = denominator1.times(denominator2);
+  if (roundsUp) {
+    const res = n.plus(d).minus(1).div(d).floor();
+    return res;
+  } else {
+    return n.div(d).floor();
+  }
 }
 
 module.exports = {
@@ -660,6 +686,7 @@ module.exports = {
   doShort,
   issueTokensAndSetAllowancesForClose,
   getPartialAmount,
+  getQuotient3Over2,
   signLoanOffering,
   callCancelLoanOffer,
   signOrder,
