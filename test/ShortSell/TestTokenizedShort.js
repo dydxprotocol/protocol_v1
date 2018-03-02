@@ -25,6 +25,7 @@ const {
   TOKENIZED_SHORT_STATE
 } = require('../helpers/TokenizedShortHelper');
 const { wait } = require('@digix/tempo')(web3);
+const BigNumber = require('bignumber.js');
 
 contract('TokenizedShort', function(accounts) {
   const badId = web3.fromAscii("06231993");
@@ -203,11 +204,18 @@ contract('TokenizedShort', function(accounts) {
   }
 
   async function callInShorts() {
+    const requiredDeposit = new BigNumber(10);
     await Promise.all([
-      CONTRACTS.SHORT_SELL.callInLoan(SHORTS.FULL.ID,
-        { from : SHORTS.FULL.TX.loanOffering.lender }),
-      CONTRACTS.SHORT_SELL.callInLoan(SHORTS.PART.ID,
-        { from : SHORTS.PART.TX.loanOffering.lender }),
+      CONTRACTS.SHORT_SELL.callInLoan(
+        SHORTS.FULL.ID,
+        requiredDeposit,
+        { from : SHORTS.FULL.TX.loanOffering.lender }
+      ),
+      CONTRACTS.SHORT_SELL.callInLoan(
+        SHORTS.PART.ID,
+        requiredDeposit,
+        { from : SHORTS.PART.TX.loanOffering.lender }
+      ),
     ]);
   }
 

@@ -113,6 +113,7 @@ describe('#onlyWhileOperational', () => {
 
       await shortSell.callInLoan(
         shortTx.id,
+        new BigNumber(10),
         { from: shortTx.loanOffering.lender }
       );
 

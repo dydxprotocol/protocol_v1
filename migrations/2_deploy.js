@@ -64,7 +64,8 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(CloseShortImpl),
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
-    deployer.deploy(PlaceSellbackBidImpl)
+    deployer.deploy(PlaceSellbackBidImpl),
+    deployer.deploy(DepositImpl)
   ]);
 
   // Link ShortSell function libraries
