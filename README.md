@@ -70,14 +70,6 @@ Holds all token funds. Is authorized to transfer user funds via the Proxy. Allow
 
 Responsible for trading tokens out of vault. Uses exchange contract. Abstracts trading logic out of Vault
 
-##### DerivativeCreator.sol
-
-Creates standard derivatives contracts. Currently creates all CoveredOption contracts
-
-##### CoveredOption.sol
-
-Implements the dYdX options protocol. Allows options to be written, exercised, and traded. Each options contract is its own ERC20 token.
-
 ##### Exchange.sol
 
 Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.
