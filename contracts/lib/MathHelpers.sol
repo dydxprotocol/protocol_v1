@@ -8,6 +8,7 @@ library MathHelpers {
 
     /**
      * Calculates partial value given a numerator and denominator.
+     *
      * @param numerator    Numerator
      * @param denominator  Denominator
      * @param target       Value to calculate partial of
@@ -29,6 +30,7 @@ library MathHelpers {
 
     /**
      * Calculates quotient given 3 numerators and 2 denominators
+     *
      * @param numerator1    Numerator 1
      * @param numerator2    Numerator 2
      * @param numerator3    Numerator 3
@@ -104,6 +106,7 @@ library MathHelpers {
 
     /**
      * Calculates and returns the maximum value for a uint32 in solidity
+     *
      * @return the maximum value for uint32
      */
     function maxUint32(
@@ -119,6 +122,7 @@ library MathHelpers {
 
     /**
      * Calculates and returns the maximum value for a uint256 in solidity
+     *
      * @return the maximum value for uint256
      */
     function maxUint256(
