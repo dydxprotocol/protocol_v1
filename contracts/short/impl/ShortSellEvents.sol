@@ -28,11 +28,10 @@ contract ShortSellEvents {
         uint256 shortAmount,
         uint256 baseTokenFromSell,
         uint256 depositAmount,
-        uint32 callTimeLimit,
-        uint32 maxDuration,
+        uint32  callTimeLimit,
+        uint32  maxDuration,
         uint256 interestRate
     );
-
 
     /**
      * A short sell was closed
@@ -64,7 +63,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed winningBidder,
         uint256 amount,
-        bool hadAcutcionOffer,
+        bool    hadAcutcionOffer,
         uint256 buybackCost
     );
 
