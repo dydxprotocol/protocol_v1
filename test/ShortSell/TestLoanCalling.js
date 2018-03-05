@@ -21,13 +21,15 @@ function getCallTimestamp(tx) {
 }
 
 describe('#callInLoan', () => {
+  const REQUIRED_DEPOSIT = new BigNumber(10);
   contract('ShortSell', function(accounts) {
-    it('sets callTimestamp on the short', async () => {
+    it('sets callTimestamp and requiredDeposit on the short', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
       const tx = await shortSell.callInLoan(
         shortTx.id,
+        REQUIRED_DEPOSIT,
         { from: shortTx.loanOffering.lender }
       );
 
@@ -35,9 +37,13 @@ describe('#callInLoan', () => {
 
       const shortCalledTimestamp = await getCallTimestamp(tx);
 
-      const { callTimestamp } = await getShort(shortSell, shortTx.id);
+      const {
+        callTimestamp,
+        requiredDeposit
+      } = await getShort(shortSell, shortTx.id);
 
       expect(callTimestamp).to.be.bignumber.equal(shortCalledTimestamp);
+      expect(requiredDeposit).to.be.bignumber.equal(REQUIRED_DEPOSIT);
     });
   });
 
@@ -48,6 +54,7 @@ describe('#callInLoan', () => {
 
       await expectThrow(() => shortSell.callInLoan(
         shortTx.id,
+        REQUIRED_DEPOSIT,
         { from: accounts[6] }
       ));
 
@@ -64,33 +71,34 @@ describe('#callInLoan', () => {
 
       const tx = await shortSell.callInLoan(
         shortTx.id,
+        REQUIRED_DEPOSIT,
         { from: shortTx.loanOffering.lender }
       );
 
       await expectThrow(() => shortSell.callInLoan(
         shortTx.id,
+        REQUIRED_DEPOSIT.plus(REQUIRED_DEPOSIT),
         { from: shortTx.loanOffering.lender }
       ));
 
       const shortCalledTimestamp = await getCallTimestamp(tx);
 
-      const { callTimestamp } = await getShort(shortSell, shortTx.id);
+      const {
+        callTimestamp,
+        requiredDeposit
+      } = await getShort(shortSell, shortTx.id);
 
       expect(callTimestamp).to.be.bignumber.equal(shortCalledTimestamp);
+      expect(requiredDeposit).to.be.bignumber.equal(REQUIRED_DEPOSIT);
     });
   });
 });
 
 describe('#cancelLoanCall', () => {
   contract('ShortSell', function(accounts) {
-    it('unsets callTimestamp on the short', async () => {
+    it('unsets callTimestamp and requiredDeposit on the short', async () => {
       const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-
-      await shortSell.callInLoan(
-        shortTx.id,
-        { from: shortTx.loanOffering.lender }
-      );
+      const { shortTx } = await doShortAndCall(accounts);
 
       const tx = await shortSell.cancelLoanCall(
         shortTx.id,
@@ -99,22 +107,22 @@ describe('#cancelLoanCall', () => {
 
       console.log('\tShortSell.cancelLoanCall gas used: ' + tx.receipt.gasUsed);
 
-      const { callTimestamp } = await getShort(shortSell, shortTx.id);
+      const {
+        callTimestamp,
+        requiredDeposit
+      } = await getShort(shortSell, shortTx.id);
 
       expect(callTimestamp).to.be.bignumber.equal(0);
+      expect(requiredDeposit).to.be.bignumber.equal(0);
     });
   });
 
   contract('ShortSell', function(accounts) {
     it('only allows the lender to call', async () => {
       const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
+      const { shortTx, callTx } = await doShortAndCall(accounts);
 
-      const tx = await shortSell.callInLoan(
-        shortTx.id,
-        { from: shortTx.loanOffering.lender }
-      );
-      const shortCalledTimestamp = await getCallTimestamp(tx);
+      const shortCalledTimestamp = await getCallTimestamp(callTx);
 
       await expectThrow( () => shortSell.cancelLoanCall(
         shortTx.id,

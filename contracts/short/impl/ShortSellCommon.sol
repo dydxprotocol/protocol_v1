@@ -23,41 +23,42 @@ library ShortSellCommon {
     struct Short {
         address underlyingToken; // Immutable
         address baseToken;       // Immutable
-        uint shortAmount;
-        uint closedAmount;
-        uint interestRate;
-        uint32 callTimeLimit;
-        uint32 startTimestamp;   // Immutable, cannot be 0
-        uint32 callTimestamp;
-        uint32 maxDuration;
+        uint256 shortAmount;
+        uint256 closedAmount;
+        uint256 interestRate;
+        uint256 requiredDeposit;
+        uint32  callTimeLimit;
+        uint32  startTimestamp;   // Immutable, cannot be 0
+        uint32  callTimestamp;
+        uint32  maxDuration;
         address lender;
         address seller;
     }
 
     struct LoanOffering {
-        address lender;
-        address signer;
-        address taker;
-        address feeRecipient;
-        address lenderFeeToken;
-        address takerFeeToken;
+        address   lender;
+        address   signer;
+        address   taker;
+        address   feeRecipient;
+        address   lenderFeeToken;
+        address   takerFeeToken;
         LoanRates rates;
-        uint expirationTimestamp;
-        uint32 callTimeLimit;
-        uint32 maxDuration;
-        uint salt;
-        bytes32 loanHash;
+        uint256   expirationTimestamp;
+        uint32    callTimeLimit;
+        uint32    maxDuration;
+        uint256   salt;
+        bytes32   loanHash;
         Signature signature;
     }
 
     struct LoanRates {
-        uint minimumDeposit;
-        uint minimumSellAmount;
-        uint maxAmount;
-        uint minAmount;
-        uint dailyInterestFee;
-        uint lenderFee;
-        uint takerFee;
+        uint256 minimumDeposit;
+        uint256 minimumSellAmount;
+        uint256 maxAmount;
+        uint256 minAmount;
+        uint256 dailyInterestFee;
+        uint256 lenderFee;
+        uint256 takerFee;
     }
 
     struct Signature {
@@ -85,15 +86,15 @@ library ShortSellCommon {
         ShortSellState.State storage state,
         Short short,
         bytes32 shortId,
-        uint closeAmount
+        uint256 closeAmount
     )
         internal
         returns (bytes32 _closeId)
     {
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The maximum amount of base token that can be used by this close
-        uint baseTokenShare = MathHelpers.getPartialAmount(
+        uint256 baseTokenShare = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
             Vault(state.VAULT).balances(shortId, short.baseToken)
@@ -160,12 +161,12 @@ library ShortSellCommon {
 
     function calculateInterestFee(
         Short short,
-        uint closeAmount,
-        uint endTimestamp
+        uint256 closeAmount,
+        uint256 endTimestamp
     )
         internal
         pure
-        returns (uint _interestFee)
+        returns (uint256 _interestFee)
     {
         uint timeElapsed = endTimestamp.sub(short.startTimestamp);
         if (timeElapsed > short.maxDuration) {

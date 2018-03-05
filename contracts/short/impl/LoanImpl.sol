@@ -14,11 +14,12 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  * This library contains the implementation for the following functions of ShortSell:
  *
  *      - callInLoan
- *      - cancelLoanCall
+ *      - cancelLoanCallImpl
  *      - cancelLoanOffering
+ *      - approveLoanOffering
  */
 library LoanImpl {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ------------------------
     // -------- Events --------
@@ -31,7 +32,7 @@ library LoanImpl {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller
+        uint256 requiredDeposit
     );
 
     /**
@@ -41,7 +42,7 @@ library LoanImpl {
         bytes32 indexed id,
         address indexed lender,
         address indexed shortSeller,
-        address caller
+        uint256 depositAmount
     );
 
     /**
@@ -70,7 +71,8 @@ library LoanImpl {
 
     function callInLoanImpl(
         ShortSellState.State storage state,
-        bytes32 shortId
+        bytes32 shortId,
+        uint256 requiredDeposit
     )
         public
     {
@@ -79,16 +81,17 @@ library LoanImpl {
         // Ensure the loan has not already been called
         require(short.callTimestamp == 0);
         require(
-            uint(uint32(block.timestamp)) == block.timestamp
+            uint256(uint32(block.timestamp)) == block.timestamp
         );
 
         short.callTimestamp = uint32(block.timestamp);
+        short.requiredDeposit = requiredDeposit;
 
         LoanCalled(
             shortId,
             short.lender,
             short.seller,
-            msg.sender
+            requiredDeposit
         );
     }
 
@@ -104,6 +107,7 @@ library LoanImpl {
         require(short.callTimestamp > 0);
 
         state.shorts[shortId].callTimestamp = 0;
+        state.shorts[shortId].requiredDeposit = 0;
 
         ShortSellCommon.payBackAuctionBidderIfExists(
             state,
@@ -115,19 +119,19 @@ library LoanImpl {
             shortId,
             short.lender,
             short.seller,
-            msg.sender
+            0
         );
     }
 
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
         address[8] addresses,
-        uint[9] values256,
+        uint256[9] values256,
         uint32[2] values32,
-        uint cancelAmount
+        uint256 cancelAmount
     )
         public
-        returns (uint _cancelledAmount)
+        returns (uint256 _cancelledAmount)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
@@ -138,10 +142,10 @@ library LoanImpl {
         require(loanOffering.lender == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
-        uint remainingAmount = loanOffering.rates.maxAmount.sub(
+        uint256 remainingAmount = loanOffering.rates.maxAmount.sub(
             ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
         );
-        uint amountToCancel = Math.min256(remainingAmount, cancelAmount);
+        uint256 amountToCancel = Math.min256(remainingAmount, cancelAmount);
 
         // If the loan was already fully canceled, then just return 0 amount was canceled
         if (amountToCancel == 0) {
@@ -161,10 +165,10 @@ library LoanImpl {
         return amountToCancel;
     }
 
-    function approveLoanOffering(
+    function approveLoanOfferingImpl(
         ShortSellState.State storage state,
         address[8] addresses,
-        uint[9] values256,
+        uint256[9] values256,
         uint32[2] values32
     )
         public
@@ -191,7 +195,7 @@ library LoanImpl {
 
     function parseLoanOffering(
         address[8] addresses,
-        uint[9] values,
+        uint256[9] values,
         uint32[2] values32
     )
         internal
@@ -228,7 +232,7 @@ library LoanImpl {
     }
 
     function parseLoanOfferRates(
-        uint[9] values
+        uint256[9] values
     )
         internal
         pure

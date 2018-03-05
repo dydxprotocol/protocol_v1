@@ -546,6 +546,7 @@ async function getShort(shortSell, id) {
     shortAmount,
     closedAmount,
     interestRate,
+    requiredDeposit,
     callTimeLimit,
     startTimestamp,
     callTimestamp,
@@ -560,6 +561,7 @@ async function getShort(shortSell, id) {
     shortAmount,
     closedAmount,
     interestRate,
+    requiredDeposit,
     callTimeLimit,
     startTimestamp,
     callTimestamp,
@@ -583,7 +585,11 @@ async function getShortAuctionOffer(shortSell, id) {
   };
 }
 
-async function doShortAndCall(accounts, _salt = DEFAULT_SALT) {
+async function doShortAndCall(
+  accounts,
+  _salt = DEFAULT_SALT,
+  _requiredDeposit = new BigNumber(10)
+) {
   const [shortSell, vault, safe, underlyingToken] = await Promise.all([
     ShortSell.deployed(),
     Vault.deployed(),
@@ -593,12 +599,13 @@ async function doShortAndCall(accounts, _salt = DEFAULT_SALT) {
 
   const shortTx = await doShort(accounts, _salt);
 
-  await shortSell.callInLoan(
+  const callTx = await shortSell.callInLoan(
     shortTx.id,
+    _requiredDeposit,
     { from: shortTx.loanOffering.lender }
   );
 
-  return { shortSell, vault, safe, underlyingToken, shortTx };
+  return { shortSell, vault, safe, underlyingToken, shortTx, callTx };
 }
 
 async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid) {

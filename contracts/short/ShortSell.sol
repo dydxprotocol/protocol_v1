@@ -10,6 +10,7 @@ import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
+import { DepositImpl } from "./impl/DepositImpl.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
@@ -129,10 +130,10 @@ contract ShortSell is
      */
     function short(
         address[13] addresses,
-        uint[17] values256,
-        uint32[2] values32,
-        uint8[2] sigV,
-        bytes32[4] sigRS
+        uint256[17] values256,
+        uint32[2]   values32,
+        uint8[2]    sigV,
+        bytes32[4]  sigRS
     )
         external
         onlyWhileOperational
@@ -184,21 +185,21 @@ contract ShortSell is
      * @return _interestFeeAmount   interest fee in base token paid to the lender
      */
     function closeShort(
-        bytes32 shortId,
-        uint requestedCloseAmount,
+        bytes32    shortId,
+        uint256    requestedCloseAmount,
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
+        uint256[6] orderValues,
+        uint8      orderV,
+        bytes32    orderR,
+        bytes32    orderS
     )
         external
         closeShortStateControl
         nonReentrant
         returns (
-            uint _amountClosed,
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
         )
     {
         return CloseShortImpl.closeShortImpl(
@@ -227,15 +228,15 @@ contract ShortSell is
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint requestedCloseAmount
+        uint256 requestedCloseAmount
     )
         external
         closeShortDirectlyStateControl
         nonReentrant
         returns (
-            uint _amountClosed,
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
         )
     {
         return CloseShortImpl.closeShortDirectlyImpl(
@@ -252,15 +253,21 @@ contract ShortSell is
      * close the short and repay the loan. If the short seller does not close the short, the
      * lender can use forceRecoverLoan to recover his funds.
      *
-     * @param  shortId  unique id for the short sell
+     * @param  shortId          unique id for the short sell
+     * @param  requiredDeposit  amount of deposit the short seller must put up to cancel the call
      */
     function callInLoan(
-        bytes32 shortId
+        bytes32 shortId,
+        uint256 requiredDeposit
     )
         external
         nonReentrant
     {
-        LoanImpl.callInLoanImpl(state, shortId);
+        LoanImpl.callInLoanImpl(
+            state,
+            shortId,
+            requiredDeposit
+        );
     }
 
     /**
@@ -296,7 +303,7 @@ contract ShortSell is
      */
     function placeSellbackBid(
         bytes32 shortId,
-        uint offer
+        uint256 offer
     )
         external
         auctionStateControl
@@ -322,7 +329,7 @@ contract ShortSell is
     )
         external
         nonReentrant
-        returns (uint _baseTokenAmount)
+        returns (uint256 _baseTokenAmount)
     {
         return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, shortId);
     }
@@ -336,23 +343,14 @@ contract ShortSell is
      */
     function deposit(
         bytes32 shortId,
-        uint depositAmount
+        uint256 depositAmount
     )
         external
         onlyWhileOperational
         nonReentrant
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        require(msg.sender == short.seller);
-
-        Vault(state.VAULT).transferToVault(
-            shortId,
-            short.baseToken,
-            short.seller,
-            depositAmount
-        );
-
-        AdditionalDeposit(
+        DepositImpl.depositImpl(
+            state,
             shortId,
             depositAmount
         );
@@ -394,14 +392,14 @@ contract ShortSell is
      */
     function cancelLoanOffering(
         address[8] addresses,
-        uint[9] values256,
-        uint32[2] values32,
-        uint cancelAmount
+        uint256[9] values256,
+        uint32[2]  values32,
+        uint256    cancelAmount
     )
         external
         cancelLoanOfferingStateControl
         nonReentrant
-        returns (uint _cancelledAmount)
+        returns (uint256 _cancelledAmount)
     {
         return LoanImpl.cancelLoanOfferingImpl(
             state,
@@ -414,14 +412,14 @@ contract ShortSell is
 
     function approveLoanOffering(
         address[8] addresses,
-        uint[9] values256,
-        uint32[2] values32
+        uint256[9] values256,
+        uint32[2]  values32
     )
         external
         onlyWhileOperational
         nonReentrant
     {
-        LoanImpl.approveLoanOffering(
+        LoanImpl.approveLoanOfferingImpl(
             state,
             addresses,
             values256,
