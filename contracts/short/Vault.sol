@@ -7,7 +7,6 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 import { Proxy } from "../shared/Proxy.sol";
-import { Exchange } from "../shared/Exchange.sol";
 
 
 /**
@@ -22,7 +21,6 @@ import { Exchange } from "../shared/Exchange.sol";
  /* solium-disable-next-line */
 contract Vault is
     StaticAccessControlled,
-    TokenInteract,
     HasNoEther,
     HasNoContracts,
     ReentrancyGuard {
@@ -117,36 +115,15 @@ contract Vault is
         assert(totalBalances[token] >= balances[id][token]);
 
         // Do the sending
-        transfer(token, to, amount); // asserts transfer succeeded
+        TokenInteract.transfer(token, to, amount); // asserts transfer succeeded
 
         // Final validation
         validateBalance(token);
     }
 
     /**
-     * Transfers tokens between vault ids
-     * @param  fromId the vault where the funds will be withdrawn
-     * @param  toId    The vault where the funds will be credited
-     * @param  token   ERC20 token address
-     * @param  amount  Number of the token to be sent
-     */
-    function transferBetweenVaults(
-        bytes32 fromId,
-        bytes32 toId,
-        address token,
-        uint256 amount
-    )
-        external
-        nonReentrant
-        requiresAuthorization
-    {
-        // Next line also asserts that (balances[fromId][token] >= amount);
-        balances[fromId][token] = balances[fromId][token].sub(amount);
-        balances[toId][token] = balances[toId][token].add(amount);
-    }
-
-    /**
-     * Verifies that this contract is in control of at least as many tokens as expected
+     * Verifies that this contract is in control of at least as many tokens as accounted for
+     *
      * @param  token  Address of ERC20 token
      */
     function validateBalance(
@@ -157,6 +134,6 @@ contract Vault is
     {
         // The actual balance could be greater than totalBalances[token] because anyone
         // can send tokens to the contract's address which cannot be accounted for
-        assert(balanceOf(token, address(this)) >= totalBalances[token]);
+        assert(TokenInteract.balanceOf(token, address(this)) >= totalBalances[token]);
     }
 }

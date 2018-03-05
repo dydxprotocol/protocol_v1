@@ -69,10 +69,6 @@ Contains business logic for short selling. All external functions for shorting a
 
 Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.
 
-##### Trader.sol
-
-Responsible for trading tokens out of vault. Uses exchange contract. Abstracts trading logic out of Vault
-
 ##### Exchange.sol
 
 Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.

@@ -9,7 +9,7 @@ const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const { getPartialAmount, getQuotient3Over2 } = require('../helpers/ShortSellHelper');
+const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
 

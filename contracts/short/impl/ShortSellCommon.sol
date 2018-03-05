@@ -85,35 +85,6 @@ library ShortSellCommon {
         return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
 
-    function transferToCloseVault(
-        ShortSellState.State storage state,
-        Short short,
-        bytes32 shortId,
-        uint256 closeAmount
-    )
-        internal
-        returns (bytes32 _closeId)
-    {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-
-        // The maximum amount of base token that can be used by this close
-        uint256 baseTokenShare = MathHelpers.getPartialAmount(
-            closeAmount,
-            currentShortAmount,
-            Vault(state.VAULT).balances(shortId, short.baseToken)
-        );
-
-        bytes32 closeId = keccak256(shortId, "CLOSE");
-        Vault(state.VAULT).transferBetweenVaults(
-            shortId,
-            closeId,
-            short.baseToken,
-            baseTokenShare
-        );
-
-        return closeId;
-    }
-
     function cleanupShort(
         ShortSellState.State storage state,
         bytes32 shortId

@@ -4,9 +4,7 @@ function callCancelOrder(exchange, order, cancelAmount) {
     order.taker,
     order.makerTokenAddress,
     order.takerTokenAddress,
-    order.feeRecipient,
-    order.makerFeeTokenAddress,
-    order.takerFeeTokenAddress
+    order.feeRecipient
   ];
 
   const values = [

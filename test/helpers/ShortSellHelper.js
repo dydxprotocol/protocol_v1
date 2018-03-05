@@ -1,74 +1,46 @@
 /*global artifacts, web3*/
 
 const expect = require('chai').expect;
-const ZeroEx = require('0x.js').ZeroEx;
-const promisify = require("es6-promisify");
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const ethUtil = require('ethereumjs-util');
 
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const Exchange = artifacts.require("Exchange");
+const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
+const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const { zeroExOrderToBytes } = require('./BytesHelper');
+const { createSignedBuyOrder } = require('./0xHelper');
+const { createLoanOffering } = require('./LoanHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-const BASE_AMOUNT = new BigNumber('1e18');
-const DEFAULT_SALT = 425;
 BigNumber.config({ DECIMAL_PLACES: 80 });
-// PUBLIC
 
 async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
   const [loanOffering, buyOrder] = await Promise.all([
     createLoanOffering(accounts, _salt),
-    createSigned0xBuyOrder(accounts, _salt)
+    createSignedBuyOrder(accounts, _salt)
   ]);
 
   const tx = {
     owner: ADDRESSES.ZERO,
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
-    shortAmount: BASE_AMOUNT,
-    depositAmount: BASE_AMOUNT.times(new BigNumber(2)),
+    shortAmount: BIGNUMBERS.BASE_AMOUNT,
+    depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
-    seller: accounts[0]
+    seller: accounts[0],
+    exchangeWrapperAddress: ZeroExExchangeWrapper.address
   };
 
   return tx;
-}
-
-async function createSigned0xSellOrder(accounts, _salt = DEFAULT_SALT) {
-  // 4 baseToken : 1 underlyingToken rate
-  let order = {
-    exchangeContractAddress: Exchange.address,
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
-    feeRecipient: accounts[6],
-    maker: accounts[5],
-    makerFee: BASE_AMOUNT.times(new BigNumber(.01)),
-    makerTokenAddress: UnderlyingToken.address,
-    makerTokenAmount: BASE_AMOUNT.times(new BigNumber(2)),
-    salt: new BigNumber(_salt),
-    taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BASE_AMOUNT.times(new BigNumber(.1)),
-    takerTokenAddress: BaseToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(new BigNumber(8)),
-    takerFeeTokenAddress: FeeToken.address,
-    makerFeeTokenAddress: FeeToken.address
-  };
-
-  const signature = await signOrder(order);
-
-  order.ecSignature = signature;
-
-  return order;
 }
 
 function callShort(shortSell, tx) {
@@ -83,11 +55,7 @@ function callShort(shortSell, tx) {
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
-    tx.buyOrder.maker,
-    tx.buyOrder.taker,
-    tx.buyOrder.feeRecipient,
-    tx.buyOrder.makerFeeTokenAddress,
-    tx.buyOrder.takerFeeTokenAddress
+    tx.exchangeWrapperAddress
   ];
 
   const values256 = [
@@ -100,12 +68,6 @@ function callShort(shortSell, tx) {
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
-    tx.buyOrder.makerTokenAmount,
-    tx.buyOrder.takerTokenAmount,
-    tx.buyOrder.makerFee,
-    tx.buyOrder.takerFee,
-    tx.buyOrder.expirationUnixTimestampSec,
-    tx.buyOrder.salt,
     tx.shortAmount,
     tx.depositAmount
   ];
@@ -115,17 +77,14 @@ function callShort(shortSell, tx) {
     tx.loanOffering.maxDuration
   ];
 
-  const sigV = [
-    tx.loanOffering.signature.v,
-    tx.buyOrder.ecSignature.v
-  ];
+  const sigV = tx.loanOffering.signature.v;
 
   const sigRS = [
     tx.loanOffering.signature.r,
     tx.loanOffering.signature.s,
-    tx.buyOrder.ecSignature.r,
-    tx.buyOrder.ecSignature.s
   ];
+
+  const order = zeroExOrderToBytes(tx.buyOrder);
 
   return shortSell.short(
     addresses,
@@ -133,6 +92,7 @@ function callShort(shortSell, tx) {
     values32,
     sigV,
     sigRS,
+    order,
     { from: tx.seller }
   );
 }
@@ -183,12 +143,12 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       { from: tx.seller }
     ),
     baseToken.approve(
-      ProxyContract.address,
+      ZeroExProxy.address,
       tx.buyOrder.makerTokenAmount,
       { from: tx.buyOrder.maker }
     ),
     feeToken.approve(
-      ProxyContract.address,
+      ZeroExProxy.address,
       tx.buyOrder.makerFee,
       { from: tx.buyOrder.maker }
     ),
@@ -199,7 +159,12 @@ async function issueTokensAndSetAllowancesForShort(tx) {
     ),
     feeToken.approve(
       ProxyContract.address,
-      tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee),
+      tx.loanOffering.rates.takerFee,
+      { from: tx.seller }
+    ),
+    feeToken.approve(
+      ZeroExExchangeWrapper.address,
+      tx.buyOrder.takerFee,
       { from: tx.seller }
     )
   ]);
@@ -235,38 +200,13 @@ async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
 }
 
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
-  const { addresses, values } = getOrderTxFields(sellOrder);
-
   return shortSell.closeShort(
     shortTx.id,
     closeAmount,
-    addresses,
-    values,
-    sellOrder.ecSignature.v,
-    sellOrder.ecSignature.r,
-    sellOrder.ecSignature.s,
-    { from: from || shortTx.seller }
+    ZeroExExchangeWrapper.address,
+    zeroExOrderToBytes(sellOrder),
+    { from }
   );
-}
-
-function getOrderTxFields(order) {
-  const addresses = [
-    order.maker,
-    order.taker,
-    order.feeRecipient,
-    order.makerFeeTokenAddress,
-    order.takerFeeTokenAddress
-  ];
-  const values = [
-    order.makerTokenAmount,
-    order.takerTokenAmount,
-    order.makerFee,
-    order.takerFee,
-    order.expirationUnixTimestampSec,
-    order.salt
-  ];
-
-  return { addresses, values };
 }
 
 function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
@@ -348,190 +288,21 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
 
   return Promise.all([
     underlyingToken.approve(
-      ProxyContract.address,
+      ZeroExProxy.address,
       sellOrder.makerTokenAmount,
       { from: sellOrder.maker }
     ),
     feeToken.approve(
-      ProxyContract.address,
+      ZeroExProxy.address,
       sellOrder.makerFee,
       { from: sellOrder.maker }
     ),
     feeToken.approve(
-      ProxyContract.address,
+      ZeroExProxy.address,
       sellOrder.takerFee,
       { from: shortTx.seller }
     )
   ]);
-}
-
-// HELPERS
-
-async function createSigned0xBuyOrder(accounts, _salt = DEFAULT_SALT) {
-  // 3 baseToken : 1 underlyingToken rate
-  let order = {
-    exchangeContractAddress: Exchange.address,
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
-    feeRecipient: accounts[4],
-    maker: accounts[2],
-    makerFee: BASE_AMOUNT.times(.02),
-    makerTokenAddress: BaseToken.address,
-    makerTokenAmount: BASE_AMOUNT.times(6),
-    salt: new BigNumber(_salt),
-    taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BASE_AMOUNT.times(.1),
-    takerTokenAddress: UnderlyingToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(2),
-    makerFeeTokenAddress: FeeToken.address,
-    takerFeeTokenAddress: FeeToken.address,
-  };
-
-  const signature = await signOrder(order);
-
-  order.ecSignature = signature;
-
-  return order;
-}
-
-async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
-  let loanOffering = {
-    underlyingToken: UnderlyingToken.address,
-    baseToken: BaseToken.address,
-    lender: accounts[1],
-    signer: ZeroEx.NULL_ADDRESS,
-    owner: ZeroEx.NULL_ADDRESS,
-    taker: ZeroEx.NULL_ADDRESS,
-    feeRecipient: accounts[3],
-    lenderFeeTokenAddress: FeeToken.address,
-    takerFeeTokenAddress: FeeToken.address,
-    rates: {
-      minimumDeposit:    BASE_AMOUNT,
-      maxAmount:         BASE_AMOUNT.times(3),
-      minAmount:         BASE_AMOUNT.times(.1),
-      minimumSellAmount: BASE_AMOUNT.times(.01),
-      dailyInterestFee:  BASE_AMOUNT.times(.01),
-      lenderFee:         BASE_AMOUNT.times(.01),
-      takerFee:          BASE_AMOUNT.times(.02)
-    },
-    expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
-    callTimeLimit: 10000,
-    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
-    salt: _salt
-  };
-
-  loanOffering.signature = await signLoanOffering(loanOffering);
-
-  return loanOffering;
-}
-
-async function signLoanOffering(loanOffering) {
-  const valuesHash = web3Instance.utils.soliditySha3(
-    loanOffering.rates.minimumDeposit,
-    loanOffering.rates.maxAmount,
-    loanOffering.rates.minAmount,
-    loanOffering.rates.minimumSellAmount,
-    loanOffering.rates.dailyInterestFee,
-    loanOffering.rates.lenderFee,
-    loanOffering.rates.takerFee,
-    loanOffering.expirationTimestamp,
-    { type: 'uint32', value: loanOffering.callTimeLimit },
-    { type: 'uint32', value: loanOffering.maxDuration },
-    loanOffering.salt
-  );
-  const hash = web3Instance.utils.soliditySha3(
-    ShortSell.address,
-    loanOffering.underlyingToken,
-    loanOffering.baseToken,
-    loanOffering.lender,
-    loanOffering.signer,
-    loanOffering.owner,
-    loanOffering.taker,
-    loanOffering.feeRecipient,
-    loanOffering.lenderFeeTokenAddress,
-    loanOffering.takerFeeTokenAddress,
-    valuesHash
-  );
-
-  loanOffering.loanHash = hash;
-
-  const signer = loanOffering.signer === ZeroEx.NULL_ADDRESS
-    ? loanOffering.lender : loanOffering.signer;
-
-  const signature = await promisify(web3Instance.eth.sign)(
-    hash, signer
-  );
-
-  const { v, r, s } = ethUtil.fromRpcSig(signature);
-
-  return {
-    v,
-    r: ethUtil.bufferToHex(r),
-    s: ethUtil.bufferToHex(s)
-  }
-}
-
-async function signOrder(order) {
-  const signature = await promisify(web3Instance.eth.sign)(
-    getOrderHash(order), order.maker
-  );
-
-  const { v, r, s } = ethUtil.fromRpcSig(signature);
-
-  return {
-    v,
-    r: ethUtil.bufferToHex(r),
-    s: ethUtil.bufferToHex(s)
-  };
-}
-
-async function sign0xOrder(order) {
-  const signature = await promisify(web3Instance.eth.sign)(
-    get0xOrderHash(order), order.maker
-  );
-
-  const { v, r, s } = ethUtil.fromRpcSig(signature);
-
-  return {
-    v,
-    r: ethUtil.bufferToHex(r),
-    s: ethUtil.bufferToHex(s)
-  };
-}
-
-function getOrderHash(order) {
-  return web3Instance.utils.soliditySha3(
-    Exchange.address,
-    order.maker,
-    order.taker,
-    order.makerTokenAddress,
-    order.takerTokenAddress,
-    order.feeRecipient,
-    order.makerFeeTokenAddress,
-    order.takerFeeTokenAddress,
-    order.makerTokenAmount,
-    order.takerTokenAmount,
-    order.makerFee,
-    order.takerFee,
-    order.expirationUnixTimestampSec,
-    order.salt
-  )
-}
-
-function get0xOrderHash(order) {
-  return web3Instance.utils.soliditySha3(
-    ZeroExExchange.address,
-    order.maker,
-    order.taker,
-    order.makerTokenAddress,
-    order.takerTokenAddress,
-    order.feeRecipient,
-    order.makerTokenAmount,
-    order.takerTokenAmount,
-    order.makerFee,
-    order.takerFee,
-    order.expirationUnixTimestampSec,
-    order.salt
-  )
 }
 
 async function getShort(shortSell, id) {
@@ -610,56 +381,13 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
   ]);
 }
 
-function getPartialAmount(
-  numerator,
-  denominator,
-  target,
-  roundsUp = false
-) {
-  if (!(numerator instanceof BigNumber)) {
-    numerator = new BigNumber(numerator);
-  }
-  if (roundsUp) {
-    return numerator.times(target).plus(denominator).minus(1).div(denominator).floor();
-  } else {
-    return numerator.times(target).div(denominator).floor();
-  }
-}
-
-function getQuotient3Over2(
-  numerator1,
-  numerator2,
-  numerator3,
-  denominator1,
-  denominator2,
-  roundsUp = false
-) {
-  if (!(numerator1 instanceof BigNumber)) {
-    numerator1 = new BigNumber(numerator1);
-  }
-  const n = numerator1.times(numerator2).times(numerator3);
-  const d = denominator1.times(denominator2);
-  if (roundsUp) {
-    const res = n.plus(d).minus(1).div(d).floor();
-    return res;
-  } else {
-    return n.div(d).floor();
-  }
-}
-
 module.exports = {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
-  createSigned0xSellOrder,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  getPartialAmount,
-  getQuotient3Over2,
-  signLoanOffering,
   callCancelLoanOffer,
-  signOrder,
-  sign0xOrder,
   callCloseShort,
   getShort,
   doShortAndCall,

@@ -12,12 +12,14 @@ const {
   callShort,
   callCancelLoanOffer,
   doShort,
-  createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
   issueForDirectClose,
   callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
+const {
+  createSignedSellOrder
+} = require('../helpers/0xHelper');
 
 const OperationState = {
   OPERATIONAL: 0,
@@ -204,7 +206,7 @@ describe('#closeShortStateControl', () => {
   async function test(accounts, state) {
     const shortTx = await doShort(accounts);
     const [sellOrder, shortSell] = await Promise.all([
-      createSigned0xSellOrder(accounts),
+      createSignedSellOrder(accounts),
       ShortSell.deployed()
     ]);
     await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
@@ -247,7 +249,7 @@ describe('#closeShortStateControl', () => {
     it('Disallows #closeShort while in other operation states', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
+        createSignedSellOrder(accounts),
         ShortSell.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);

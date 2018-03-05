@@ -43,7 +43,6 @@ contract ShortSell is
 
     function ShortSell(
         address _vault,
-        address _trader,
         address _proxy
     )
         Ownable()
@@ -52,7 +51,6 @@ contract ShortSell is
     {
         state = ShortSellState.State({
             VAULT: _vault,
-            TRADER: _trader,
             PROXY: _proxy
         });
     }
@@ -74,11 +72,6 @@ contract ShortSell is
      * 5 - add details of the short sell to repo
      * 6 - Short event recorded
      *
-     * Note: This function will by default use the dYdX Exchange contract (which allows fees
-     *       to be paid in any token). If you would rather use the official 0x Exchange contract,
-     *       set "buy order maker fee token" to the constant specified on Trader, and "buy order
-     *       taker fee token" to the address of the ZRX token.
-     *
      * @param  addresses  Addresses corresponding to:
      *
      *  [0]  = short owner (if 0, owner will be msg.sender)
@@ -92,11 +85,7 @@ contract ShortSell is
      *  [7]  = loan fee recipient
      *  [8]  = loan lender fee token
      *  [9]  = loan taker fee token
-     *  [10] = buy order maker
-     *  [11] = buy order taker
-     *  [12] = buy order fee recipient
-     *  [13] = buy order maker fee token
-     *  [14] = buy order taker fee token
+     *  [10]  = exchange wrapper address
      *
      * @param  values256  Values corresponding to:
      *
@@ -109,30 +98,26 @@ contract ShortSell is
      *  [6]  = loan taker fee
      *  [7]  = loan expiration timestamp (in seconds)
      *  [8]  = loan salt
-     *  [9]  = buy order base token amount
-     *  [10] = buy order underlying token amount
-     *  [11] = buy order maker fee
-     *  [12] = buy order taker fee
-     *  [13] = buy order expiration timestamp (in seconds)
-     *  [14] = buy order salt
-     *  [15] = short amount
-     *  [16] = deposit amount
+     *  [9]  = short amount
+     *  [10] = deposit amount
      *
      * @param  values32  Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
      *  [1] = loan maxDuration      (in seconds)
      *
-     * @param  sigV       ECDSA v parameters for [0] loan and [1] buy order
-     * @param  sigRS      CDSA r and s parameters for [0] loan and [2] buy order
+     * @param  sigV       ECDSA v parameter for loan offering
+     * @param  sigRS      CDSA r and s parameters for loan offering
+     * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
     function short(
-        address[15] addresses,
-        uint256[17] values256,
-        uint32[2]   values32,
-        uint8[2]    sigV,
-        bytes32[4]  sigRS
+        address[11] addresses,
+        uint[11] values256,
+        uint32[2] values32,
+        uint8 sigV,
+        bytes32[2] sigRS,
+        bytes order
     )
         external
         onlyWhileOperational
@@ -145,7 +130,8 @@ contract ShortSell is
             values256,
             values32,
             sigV,
-            sigRS
+            sigRS,
+            order
         );
     }
 
@@ -155,46 +141,23 @@ contract ShortSell is
      * enough base token left over after the trade to pay the lender the full owed interest fee.
      * The short seller is sent base token = deposit + profit - interest fee
      *
-     * Note: This function will by default use the dYdX Exchange contract (which allows fees
-     *       to be paid in any token). If you would rather use the official 0x Exchange contract,
-     *       set "buy order maker fee token" to the constant specified on Trader, and "buy order
-     *       taker fee token" to the address of the ZRX token.
-     *
-     * @param  shortId              unique id for the short sell
-     * @param  requestedCloseAmount amount of the short position to close. The amount closed will
-     *                              be: min(requestedCloseAmount, currentShortAmount)
-     * @param  orderAddresses       Addresses for the supplied 0x order:
-     *
-     *  [0] = maker
-     *  [1] = taker
-     *  [2] = fee recipient
-     *  [3] = maker fee token
-     *  [4] = taker fee token
-     *
-     * @param  orderValues          Values for the supplied 0x order:
-     *
-     *  [0] = underlying token amount
-     *  [1] = base token amount
-     *  [2] = maker fee
-     *  [3] = taker fee
-     *  [4] = expiration timestamp
-     *  [5] = salt
-     *
-     * @param  orderV               ECDSA signature parameter v for the 0x order
-     * @param  orderR bytes32       CDSA signature parameter r for the 0x order
-     * @param  orderS bytes32       CDSA signature parameter s for the 0x order
-     * @return _amountClosed        amount of short closed
-     * @return _baseTokenReceived   amount of base token received by the short seller after closing
-     * @return _interestFeeAmount   interest fee in base token paid to the lender
+     * @param  shortId                  unique id for the short sell
+     * @param  requestedCloseAmount     amount of the short position to close. The amount closed
+     *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  exchangeWrapperAddress   address of the exchange wrapper
+     * @param  order                    order object to be passed to the exchange wrapper
+     * @return _amountClosed            amount of short closed
+     * @return _baseTokenReceived       amount of base token received by the short seller
+     *                                  after closing
+     * @return _amountClosed            amount of short closed
+     * @return _baseTokenReceived       amount of base token received by the short seller after closing
+     * @return _interestFeeAmount       interest fee in base token paid to the lender
      */
     function closeShort(
-        bytes32    shortId,
-        uint256    requestedCloseAmount,
-        address[5] orderAddresses,
-        uint256[6] orderValues,
-        uint8      orderV,
-        bytes32    orderR,
-        bytes32    orderS
+        bytes32 shortId,
+        uint256 requestedCloseAmount,
+        address exchangeWrapperAddress,
+        bytes order
     )
         external
         closeShortStateControl
@@ -209,43 +172,8 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
-    }
-
-    /**
-     * Close a short sell. Only callable by short seller. This method to close a short transfers
-     * the borrowed underlying tokens directly from the short seller, and does not use a 0x order
-     * to buy them back. To use this, the short seller must own the shortAmount of underlyingToken
-     *
-     * @param  shortId              unique id for the short sell
-     * @param  requestedCloseAmount amount of the short position to close. The amount closed will
-     *                              be: min(requestedCloseAmount, currentShortAmount)
-     * @return _amountClosed        amount of short closed
-     * @return _baseTokenReceived   amount of base token received by the short seller after closing
-     * @return _interestFeeAmount   interest fee in base token paid to the lender
-     */
-    function closeShortDirectly(
-        bytes32 shortId,
-        uint256 requestedCloseAmount
-    )
-        external
-        closeShortDirectlyStateControl
-        nonReentrant
-        returns (
-            uint256 _amountClosed,
-            uint256 _baseTokenReceived,
-            uint256 _interestFeeAmount
-        )
-    {
-        return CloseShortImpl.closeShortDirectlyImpl(
-            state,
-            shortId,
-            requestedCloseAmount
+            exchangeWrapperAddress,
+            order
         );
     }
 
@@ -574,14 +502,6 @@ contract ShortSell is
         returns (address _VAULT)
     {
         return state.VAULT;
-    }
-
-    function TRADER()
-        view
-        external
-        returns (address _TRADER)
-    {
-        return state.TRADER;
     }
 
     function PROXY()

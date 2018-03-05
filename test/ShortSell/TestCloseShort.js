@@ -7,13 +7,15 @@ chai.use(require('chai-bignumber')());
 const ShortSell = artifacts.require("ShortSell");
 const { wait } = require('@digix/tempo')(web3);
 const {
-  createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   doShort,
   callCloseShort,
   getShort,
   issueForDirectClose,
 } = require('../helpers/ShortSellHelper');
+const {
+  createSignedSellOrder
+} = require('../helpers/0xHelper');
 const {
   checkSuccess,
   checkSuccessCloseDirectly
@@ -26,7 +28,7 @@ describe('#closeShort', () => {
     it('Successfully closes a short in increments', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
+        createSignedSellOrder(accounts),
         ShortSell.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
@@ -62,7 +64,7 @@ describe('#closeShort', () => {
     it('only allows the short seller to close', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
+        createSignedSellOrder(accounts),
         ShortSell.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
@@ -84,7 +86,7 @@ describe('#closeShort', () => {
     it('Only closes up to the current short amount', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
+        createSignedSellOrder(accounts),
         ShortSell.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);

@@ -27,8 +27,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 contract ERC20Short is
     StandardToken,
     CloseShortDelegator,
-    ReentrancyGuard,
-    TokenInteract {
+    ReentrancyGuard {
     using SafeMath for uint256;
 
     // -----------------------
@@ -216,7 +215,7 @@ contract ERC20Short is
         }
         require(state == State.CLOSED);
 
-        uint256 baseTokenBalance = balanceOf(baseToken, address(this));
+        uint256 baseTokenBalance = TokenInteract.balanceOf(baseToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
         uint256 baseTokenPayout = MathHelpers.getPartialAmount(
@@ -230,7 +229,7 @@ contract ERC20Short is
         totalSupply_ = totalSupply_.sub(value);
 
         // Send the redeemer their proportion of base token
-        transfer(baseToken, who, baseTokenPayout);
+        TokenInteract.transfer(baseToken, who, baseTokenPayout);
 
         TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
         return baseTokenPayout;

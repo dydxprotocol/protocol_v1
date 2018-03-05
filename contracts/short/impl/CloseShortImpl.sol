@@ -5,9 +5,10 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
-import { Trader } from "../Trader.sol";
+import { Proxy } from "../../shared/Proxy.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
@@ -55,14 +56,12 @@ library CloseShortImpl {
         uint256 currentShortAmount;
         bytes32 shortId;
         uint256 closeAmount;
+        uint256 availableBaseToken;
     }
 
     struct Order {
-        address[5] addresses;
-        uint256[6] values;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
+        address exchangeWrapperAddress;
+        bytes orderData;
     }
 
     // -------------------------------------------
@@ -73,11 +72,8 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         bytes32 shortId,
         uint256 requestedCloseAmount,
-        address[5] orderAddresses,
-        uint256[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
+        address exchangeWrapperAddress,
+        bytes orderData
     )
         public
         returns (
@@ -86,33 +82,11 @@ library CloseShortImpl {
             uint256 _interestFeeAmount
         )
     {
-        Order memory order = parseOrder(
-            orderAddresses,
-            orderValues,
-            orderV,
-            orderR,
-            orderS
-        );
-        return closeShortInternal(
-            state,
-            shortId,
-            requestedCloseAmount,
-            order);
-    }
+        Order memory order = Order({
+            exchangeWrapperAddress: exchangeWrapperAddress,
+            orderData: orderData
+        });
 
-    function closeShortDirectlyImpl(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        uint256 requestedCloseAmount
-    )
-        public
-        returns (
-            uint256 _amountClosed,
-            uint256 _baseTokenReceived,
-            uint256 _interestFeeAmount
-        )
-    {
-        Order memory order;
         return closeShortInternal(
             state,
             shortId,
@@ -141,34 +115,44 @@ library CloseShortImpl {
 
         // State updates
         updateStateForCloseShort(state, transaction);
-        var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
+        uint256 interestFee = getInterestFee(transaction);
 
-        // Secure underlying tokens
+        // Send underlying tokens to lender
         uint256 buybackCost = 0;
-        if (order.addresses[0] == 0) { // no buy order; close short directly
-            Vault(state.VAULT).transferToVault(
-                closeId,
+        if (order.exchangeWrapperAddress == address(0)) {
+            // no buy order; send underlying tokens directly from the closer to the lender
+            Proxy(state.PROXY).transferTo(
                 transaction.short.underlyingToken,
                 msg.sender,
+                transaction.short.lender,
                 transaction.closeAmount
             );
-        } else { // close short using buy order
+        } else {
+            // close short using buy order
             buybackCost = buyBackUnderlyingToken(
                 state,
                 transaction,
                 order,
-                closeId,
+                shortId,
                 interestFee
             );
         }
 
-        // Send base tokens and underlying tokens to the correct parties
-        uint256 sellerBaseTokenAmount = sendTokensOnClose(
+        // Send base tokens to the correct parties
+        uint256 sellerBaseTokenAmount = sendBaseTokensOnClose(
             state,
             transaction,
-            closeId,
+            shortId,
             interestFee,
+            buybackCost,
             msg.sender
+        );
+
+        // The ending base token balance of the vault should be the starting base token balance
+        // minus the available base token amount
+        assert(
+            Vault(state.VAULT).balances(shortId, transaction.short.baseToken)
+            == transaction.currentShortAmount.sub(transaction.availableBaseToken)
         );
 
         logEventOnClose(
@@ -208,6 +192,7 @@ library CloseShortImpl {
         }
 
         require(transaction.closeAmount > 0);
+        require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
     function updateStateForCloseShort(
@@ -231,28 +216,17 @@ library CloseShortImpl {
         }
     }
 
-    function getInterestFeeAndTransferToCloseVault(
-        ShortSellState.State storage state,
+    function getInterestFee(
         CloseShortTx transaction
     )
         internal
-        returns (
-            uint256 _interestFee,
-            bytes32 _closeId
-        )
+        view
+        returns (uint256 _interestFee)
     {
-        return (
-            ShortSellCommon.calculateInterestFee(
-                transaction.short,
-                transaction.closeAmount,
-                block.timestamp
-            ),
-            ShortSellCommon.transferToCloseVault(
-                state,
-                transaction.short,
-                transaction.shortId,
-                transaction.closeAmount
-            )
+        return ShortSellCommon.calculateInterestFee(
+            transaction.short,
+            transaction.closeAmount,
+            block.timestamp
         );
     }
 
@@ -260,141 +234,63 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         CloseShortTx transaction,
         Order order,
-        bytes32 closeId,
+        bytes32 shortId,
         uint256 interestFee
     )
         internal
         returns (uint256 _buybackCost)
     {
-        uint256 baseTokenPrice = getBaseTokenPriceForBuyback(
-            state,
-            transaction,
-            order,
-            interestFee,
-            closeId
+        // Ask the exchange wrapper what the price in base token to buy back the close
+        // amount of underlying token is
+        uint256 baseTokenPrice = ExchangeWrapper(order.exchangeWrapperAddress).getTakerTokenPrice(
+            transaction.short.underlyingToken,
+            transaction.short.baseToken,
+            transaction.closeAmount,
+            order.orderData
         );
 
-        if (order.addresses[2] != address(0)) {
-            transferFeeForBuyback(
-                state,
-                transaction,
-                order,
-                closeId,
+        // We need to have enough base token locked in the the close's vault to pay
+        // for both the buyback and the interest fee
+        require(baseTokenPrice.add(interestFee) <= transaction.availableBaseToken);
+
+        // Send the requisite base token to do the buyback from vault to exchange wrapper
+        if (baseTokenPrice > 0) {
+            Vault(state.VAULT).transferFromVault(
+                shortId,
+                transaction.short.baseToken,
+                order.exchangeWrapperAddress,
                 baseTokenPrice
             );
         }
 
-        var (buybackCost, ) = Trader(state.TRADER).trade(
-            closeId,
-            [
-                order.addresses[0],
-                order.addresses[1],
-                transaction.short.underlyingToken,
-                transaction.short.baseToken,
-                order.addresses[2],
-                order.addresses[3],
-                order.addresses[4]
-            ],
-            order.values,
+        // Trade the base token for the underlying token
+        uint256 receivedUnderlyingToken = ExchangeWrapper(order.exchangeWrapperAddress).exchange(
+            transaction.short.underlyingToken,
+            transaction.short.baseToken,
+            msg.sender,
             baseTokenPrice,
-            order.v,
-            order.r,
-            order.s,
-            true
+            order.orderData
         );
 
-        // Should now hold exactly closeAmount of underlying token
-        assert(
-            Vault(state.VAULT).balances(
-                closeId, transaction.short.underlyingToken
-            ) == transaction.closeAmount
-        );
+        assert(receivedUnderlyingToken == transaction.closeAmount);
 
-        address takerFeeToken = order.addresses[4];
-
-        // Assert take fee token balance is 0. The only cases where it should not be 0
-        // is if it is either baseToken or underlyingToken
-        if (
-            takerFeeToken != transaction.short.baseToken
-            && takerFeeToken != transaction.short.underlyingToken
-        ) {
-            assert(Vault(state.VAULT).balances(closeId, takerFeeToken) == 0);
-        }
-
-        return buybackCost;
-    }
-
-    function getBaseTokenPriceForBuyback(
-        ShortSellState.State storage state,
-        CloseShortTx transaction,
-        Order order,
-        uint256 interestFee,
-        bytes32 closeId
-    )
-        internal
-        view
-        returns (uint256 _baseTokenPrice)
-    {
-        // baseTokenPrice = closeAmount * (buyOrderBaseTokenAmount / buyOrderUnderlyingTokenAmount)
-        uint256 baseTokenPrice = MathHelpers.getPartialAmount(
-            order.values[1],
-            order.values[0],
+        // Transfer underlying token from the exchange wrapper to the lender
+        Proxy(state.PROXY).transferTo(
+            transaction.short.underlyingToken,
+            order.exchangeWrapperAddress,
+            transaction.short.lender,
             transaction.closeAmount
-        );
-
-        // Requires having enough base token locked in the the close's vault to pay
-        // for both the buyback and the interest fee
-        require(
-            baseTokenPrice.add(interestFee)
-            <= Vault(state.VAULT).balances(closeId, transaction.short.baseToken)
         );
 
         return baseTokenPrice;
     }
 
-    function transferFeeForBuyback(
+    function sendBaseTokensOnClose(
         ShortSellState.State storage state,
         CloseShortTx transaction,
-        Order order,
-        bytes32 closeId,
-        uint256 baseTokenPrice
-    )
-        internal
-    {
-        address takerFeeToken = order.addresses[4];
-
-        // If the taker fee token is base token, then just pay it out of what is held in Vault
-        // and do not transfer it in from the short seller
-        if (transaction.short.baseToken == takerFeeToken) {
-            return;
-        }
-
-        uint256 buyOrderTakerFee = order.values[3];
-        uint256 buyOrderTakerTokenAmount = order.values[1];
-
-        // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
-        uint256 takerFee = MathHelpers.getPartialAmount(
-            baseTokenPrice,
-            buyOrderTakerTokenAmount,
-            buyOrderTakerFee
-        );
-
-        // Transfer taker fee for buyback
-        if (takerFee > 0) {
-            Vault(state.VAULT).transferToVault(
-                closeId,
-                takerFeeToken,
-                msg.sender,
-                takerFee
-            );
-        }
-    }
-
-    function sendTokensOnClose(
-        ShortSellState.State storage state,
-        CloseShortTx transaction,
-        bytes32 closeId,
+        bytes32 shortId,
         uint256 interestFee,
+        uint256 buybackCost,
         address closer
     )
         internal
@@ -402,38 +298,26 @@ library CloseShortImpl {
     {
         Vault vault = Vault(state.VAULT);
 
-        // Send original loaned underlying token to lender
-        vault.transferFromVault(
-            closeId,
-            transaction.short.underlyingToken,
-            transaction.short.lender,
-            transaction.closeAmount
-        );
-
         // Send base token interest fee to lender
         if (interestFee > 0) {
             vault.transferFromVault(
-                closeId,
+                shortId,
                 transaction.short.baseToken,
                 transaction.short.lender,
                 interestFee
             );
         }
 
-        // Send remaining base token to closer (= deposit + profit - interestFee)
-        // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
-        // have been paid out of the vault balance
-        uint256 sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
+        // Send remaining base token to closer (= availableBaseToken - buybackCost - interestFee)
+        uint256 sellerBaseTokenAmount =
+            transaction.availableBaseToken.sub(buybackCost).sub(interestFee);
+
         vault.transferFromVault(
-            closeId,
+            shortId,
             transaction.short.baseToken,
             closer,
             sellerBaseTokenAmount
         );
-
-        // Should now hold no balance of base or underlying token
-        assert(vault.balances(closeId, transaction.short.underlyingToken) == 0);
-        assert(vault.balances(closeId, transaction.short.baseToken) == 0);
 
         return sellerBaseTokenAmount;
     }
@@ -479,32 +363,19 @@ library CloseShortImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+        uint256 availableBaseToken = MathHelpers.getPartialAmount(
+            closeAmount,
+            currentShortAmount,
+            Vault(state.VAULT).balances(shortId, short.baseToken)
+        );
 
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,
             shortId: shortId,
-            closeAmount: Math.min256(requestedCloseAmount, currentShortAmount)
-        });
-    }
-
-    function parseOrder(
-        address[5] orderAddresses,
-        uint256[6] orderValues,
-        uint8 orderV,
-        bytes32 orderR,
-        bytes32 orderS
-    )
-        internal
-        pure
-        returns (Order _order)
-    {
-        return Order({
-            addresses: orderAddresses,
-            values: orderValues,
-            v: orderV,
-            r: orderR,
-            s: orderS
+            closeAmount: closeAmount,
+            availableBaseToken: availableBaseToken
         });
     }
 }
