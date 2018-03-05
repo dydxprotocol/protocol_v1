@@ -51,7 +51,7 @@ describe('#deposit', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it.only('allows anyone to deposit', async () => {
+    it('allows anyone to deposit', async () => {
       const [shortSell, baseToken] = await Promise.all([
         ShortSell.deployed(),
         BaseToken.deployed()
