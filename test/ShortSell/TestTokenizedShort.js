@@ -566,9 +566,6 @@ contract('TokenizedShort', function(accounts) {
 
         const numWithdraw = await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
         expect(numWithdraw).to.be.bignumber.equal(0);
-
-        const numTokens = await baseToken.balanceOf.call(seller);
-        expect(numTokens).to.be.bignumber.equal(0);
       }
     });
   });

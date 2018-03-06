@@ -4,7 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../vault/Vault.sol";
+import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -403,7 +403,7 @@ library CloseShortImpl {
         Vault vault = Vault(state.VAULT);
 
         // Send original loaned underlying token to lender
-        vault.transferToSafetyDepositBox(
+        vault.transferFromVault(
             closeId,
             transaction.short.underlyingToken,
             transaction.short.lender,
@@ -412,7 +412,7 @@ library CloseShortImpl {
 
         // Send base token interest fee to lender
         if (interestFee > 0) {
-            vault.transferToSafetyDepositBox(
+            vault.transferFromVault(
                 closeId,
                 transaction.short.baseToken,
                 transaction.short.lender,
@@ -424,7 +424,7 @@ library CloseShortImpl {
         // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
         // have been paid out of the vault balance
         uint256 sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
-        vault.transferToSafetyDepositBox(
+        vault.transferFromVault(
             closeId,
             transaction.short.baseToken,
             closer,

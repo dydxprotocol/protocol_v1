@@ -3,7 +3,7 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { Vault } from "../vault/Vault.sol";
+import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -59,7 +59,7 @@ library ForceRecoverLoanImpl {
         // Send the tokens
         Vault vault = Vault(state.VAULT);
         uint256 lenderBaseTokenAmount = vault.balances(shortId, short.baseToken);
-        vault.transferToSafetyDepositBox(
+        vault.transferFromVault(
             shortId,
             short.baseToken,
             short.lender,

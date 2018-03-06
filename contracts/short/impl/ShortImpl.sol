@@ -2,7 +2,7 @@ pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { Vault } from "../vault/Vault.sol";
+import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";

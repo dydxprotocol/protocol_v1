@@ -7,12 +7,11 @@ import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardT
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
-import { Vault } from "../vault/Vault.sol";
-import { SafetyDepositBox } from "../vault/SafetyDepositBox.sol";
+import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-
+import { TokenInteract } from "../../lib/TokenInteract.sol";
 
 
 /**
@@ -27,8 +26,8 @@ import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 contract TokenizedShort is
     StandardToken,
     CloseShortVerifier,
-    ReentrancyGuard
-{
+    ReentrancyGuard,
+    TokenInteract {
     using SafeMath for uint256;
 
     // -----------------------
@@ -71,9 +70,6 @@ contract TokenizedShort is
     // Address of the ShortSell contract
     address public SHORT_SELL;
 
-    // Address of the SafetyDepositBox contract
-    address public SAFETY_DEPOSIT_BOX;
-
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
 
@@ -106,7 +102,6 @@ contract TokenizedShort is
         public
     {
         SHORT_SELL = _shortSell;
-        SAFETY_DEPOSIT_BOX = Vault(ShortSell(SHORT_SELL).VAULT()).SAFETY_DEPOSIT_BOX();
         state = State.UNINITIALIZED;
         shortId = _shortId;
         name = _name;
@@ -231,8 +226,7 @@ contract TokenizedShort is
         }
         require(state == State.CLOSED);
 
-        uint256 baseTokenBalance =
-            SafetyDepositBox(SAFETY_DEPOSIT_BOX).withdrawableBalances(address(this), baseToken);
+        uint256 baseTokenBalance = balanceOf(baseToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
         uint256 baseTokenPayout = MathHelpers.getPartialAmount(
@@ -245,8 +239,8 @@ contract TokenizedShort is
         delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
-        // Send the redeemer their proportion of base token held by the SafetyDepositBox
-        SafetyDepositBox(SAFETY_DEPOSIT_BOX).giveTokensTo(baseToken, who, baseTokenPayout);
+        // Send the redeemer their proportion of base token
+        transfer(baseToken, who, baseTokenPayout);
 
         TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
         return baseTokenPayout;

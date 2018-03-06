@@ -4,12 +4,10 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { StaticAccessControlled } from "../../lib/StaticAccessControlled.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { TokenAccounting } from "../../lib/TokenAccounting.sol";
-import { Proxy } from "../../shared/Proxy.sol";
-import { Exchange } from "../../shared/Exchange.sol";
-import { SafetyDepositBox } from "./SafetyDepositBox.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
+import { Proxy } from "../shared/Proxy.sol";
+import { Exchange } from "../shared/Exchange.sol";
 
 
 /**
@@ -17,12 +15,14 @@ import { SafetyDepositBox } from "./SafetyDepositBox.sol";
  * @author dYdX
  *
  * Holds and transfers tokens in vaults denominated by id
+ *
+ * Vault only supports ERC20 tokens, and will not accept any tokens that require
+ * a tokenFallback or equivalent function (See ERC223, ERC777, etc.)
  */
  /* solium-disable-next-line */
 contract Vault is
     StaticAccessControlled,
     TokenInteract,
-    TokenAccounting,
     HasNoEther,
     HasNoContracts,
     ReentrancyGuard {
@@ -33,11 +33,13 @@ contract Vault is
     // ---------------------------
 
     address public PROXY;
-    address public SAFETY_DEPOSIT_BOX;
 
     // Map from short id to map from token address to amount of that token attributed to the
     // particular short id.
     mapping(bytes32 => mapping(address => uint256)) public balances;
+
+    // Map from token address to total amount of that token attributed to some account.
+    mapping(address => uint256) public totalBalances;
 
     // -------------------------
     // ------ Constructor ------
@@ -45,14 +47,12 @@ contract Vault is
 
     function Vault(
         address _proxy,
-        address _safetyDepositBox,
         uint256 gracePeriod
     )
         StaticAccessControlled(gracePeriod)
         public
     {
         PROXY = _proxy;
-        SAFETY_DEPOSIT_BOX = _safetyDepositBox;
     }
 
     // --------------------------------------------------
@@ -79,14 +79,14 @@ contract Vault is
         // First send tokens to this contract
         Proxy(PROXY).transfer(token, from, amount);
 
-        // Verify that the tokens were actually recieved and update totalBalances for the token
-        recieveTokensExternally(token, amount);
-
         // Then increment balances
         balances[id][token] = balances[id][token].add(amount);
+        totalBalances[token] = totalBalances[token].add(amount);
 
         // This should always be true. If not, something is very wrong
         assert(totalBalances[token] >= balances[id][token]);
+
+        validateBalance(token);
     }
 
     /**
@@ -95,13 +95,13 @@ contract Vault is
      * untrusted external address which may have a malicious tokenFallback function.
      * @param  id          The vault from which to send the tokens
      * @param  token       ERC20 token address
-     * @param  onBehalfOf  Address which can withdraw the tokens from the SafetyDepositBox
+     * @param  to          Address to transfer tokens to
      * @param  amount      Number of the token to be sent
      */
-    function transferToSafetyDepositBox(
+    function transferFromVault(
         bytes32 id,
         address token,
-        address onBehalfOf,
+        address to,
         uint256 amount
     )
         external
@@ -111,32 +111,17 @@ contract Vault is
         // Next line also asserts that (balances[id][token] >= amount);
         balances[id][token] = balances[id][token].sub(amount);
 
-        // Place tokens in safety deposit box and update totalBalances for the token
-        sendTokensExternally(token, SAFETY_DEPOSIT_BOX, amount);
-        SafetyDepositBox(SAFETY_DEPOSIT_BOX).assignTokensToUser(token, onBehalfOf, amount);
-    }
+        // Next line also asserts that (totalBalances[token] >= amount);
+        totalBalances[token] = totalBalances[token].sub(amount);
 
-    /**
-     * Transfers a certain amount of funds directly to the message sender. The message sender should
-     * always be a trusted contract, so we expect any tokenFallback function to be non-malicious.
-     * @param  id      The vault from which to send the tokens
-     * @param  token   ERC20 token address
-     * @param  amount  Number of the token to be sent
-     */
-    function withdrawFromVault(
-        bytes32 id,
-        address token,
-        uint256 amount
-    )
-        external
-        nonReentrant
-        requiresAuthorization
-    {
-        // Next line also asserts that (balances[id][token] >= amount);
-        balances[id][token] = balances[id][token].sub(amount);
+        // This should always be true. If not, something is very wrong
+        assert(totalBalances[token] >= balances[id][token]);
 
-        // Send tokens to authorized address and updates totalBalances for the token
-        sendTokensExternally(token, msg.sender, amount);
+        // Do the sending
+        transfer(token, to, amount); // asserts transfer succeeded
+
+        // Final validation
+        validateBalance(token);
     }
 
     /**
@@ -159,5 +144,20 @@ contract Vault is
         // Next line also asserts that (balances[fromId][token] >= amount);
         balances[fromId][token] = balances[fromId][token].sub(amount);
         balances[toId][token] = balances[toId][token].add(amount);
+    }
+
+    /**
+     * Verifies that this contract is in control of at least as many tokens as we are accounting for
+     * @param  token  Address of ERC20 token
+     */
+    function validateBalance(
+        address token
+    )
+        internal
+        view
+    {
+        // The actual balance could be greater than totalBalances[token] because anyone
+        // can send tokens to the contract's address which cannot be accounted for
+        assert(balanceOf(token, address(this)) >= totalBalances[token]);
     }
 }

@@ -16,7 +16,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
-      const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
       const baseTokenBalance = await shortSell.getShortBalance.call(shortTx.id);
@@ -37,8 +37,7 @@ describe('#forceRecoverLoan', () => {
         baseTokenBalanceOfVault,
         shortExists,
         isShortClosed,
-        lenderBaseTokenBalance,
-        lenderSafeBaseTokenBalance
+        lenderBaseTokenBalance
       ] = await Promise.all([
         vault.totalBalances.call(underlyingToken.address),
         underlyingToken.balanceOf.call(vault.address),
@@ -46,8 +45,7 @@ describe('#forceRecoverLoan', () => {
         baseToken.balanceOf.call(vault.address),
         shortSell.containsShort.call(shortTx.id),
         shortSell.isShortClosed.call(shortTx.id),
-        baseToken.balanceOf.call(shortTx.loanOffering.lender),
-        safe.withdrawableBalances.call(shortTx.loanOffering.lender, baseToken.address)
+        baseToken.balanceOf.call(shortTx.loanOffering.lender)
       ]);
 
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
@@ -56,8 +54,7 @@ describe('#forceRecoverLoan', () => {
       expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
-      expect(lenderBaseTokenBalance).to.be.bignumber.equal(0);
-      expect(lenderSafeBaseTokenBalance).to.be.bignumber.equal(baseTokenBalance);
+      expect(lenderBaseTokenBalance).to.be.bignumber.equal(baseTokenBalance);
     });
   });
 

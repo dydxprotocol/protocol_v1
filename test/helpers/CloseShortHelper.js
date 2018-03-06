@@ -5,7 +5,6 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const Vault = artifacts.require("Vault");
-const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
@@ -40,7 +39,6 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   const balances = await getBalances(shortSell, shortTx, sellOrder);
   const {
     sellerBaseToken,
-    sellerBaseTokenInSafe,
     externalSellerBaseToken,
     externalSellerUnderlyingToken,
     sellerFeeToken,
@@ -51,8 +49,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   checkSmartContractBalances(balances, shortTx, closeAmount);
   checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
-  const totalSellerBaseToken = sellerBaseToken.plus(sellerBaseTokenInSafe);
-  expect(totalSellerBaseToken).to.be.bignumber.equal(
+  expect(sellerBaseToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       shortTx.shortAmount,
@@ -150,14 +147,10 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
 function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
   const {
     lenderBaseToken,
-    lenderBaseTokenInSafe,
     lenderUnderlyingToken,
-    lenderUnderlyingTokenInSafe
   } = balances;
-  const totalLenderBaseToken = lenderBaseToken.plus(lenderBaseTokenInSafe);
-  expect(totalLenderBaseToken).to.be.bignumber.equal(interestFee);
-  const totalLenderUnderlyingToken = lenderUnderlyingToken.plus(lenderUnderlyingTokenInSafe);
-  expect(totalLenderUnderlyingToken).to.be.bignumber.equal(
+  expect(lenderBaseToken).to.be.bignumber.equal(interestFee);
+  expect(lenderUnderlyingToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
       .plus(closeAmount)
@@ -184,12 +177,10 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
 
 async function getBalances(shortSell, shortTx, sellOrder) {
   const [
-    safe,
     underlyingToken,
     baseToken,
     feeToken
   ] = await Promise.all([
-    SafetyDepositBox.deployed(),
     UnderlyingToken.deployed(),
     BaseToken.deployed(),
     FeeToken.deployed(),
@@ -217,13 +208,9 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   const [
     sellerBaseToken,
     sellerUnderlyingToken,
-    sellerBaseTokenInSafe,
-    sellerUnderlyingTokenInSafe,
 
     lenderBaseToken,
     lenderUnderlyingToken,
-    lenderBaseTokenInSafe,
-    lenderUnderlyingTokenInSafe,
 
     sellerFeeToken,
 
@@ -239,13 +226,9 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   ] = await Promise.all([
     baseToken.balanceOf.call(shortTx.seller),
     underlyingToken.balanceOf.call(shortTx.seller),
-    safe.withdrawableBalances.call(shortTx.seller, baseToken.address),
-    safe.withdrawableBalances.call(shortTx.seller, underlyingToken.address),
 
     baseToken.balanceOf.call(shortTx.loanOffering.lender),
     underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
-    safe.withdrawableBalances.call(shortTx.loanOffering.lender, baseToken.address),
-    safe.withdrawableBalances.call(shortTx.loanOffering.lender, underlyingToken.address),
 
     feeToken.balanceOf.call(shortTx.seller),
 
@@ -263,13 +246,9 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   return {
     sellerBaseToken,
     sellerUnderlyingToken,
-    sellerBaseTokenInSafe,
-    sellerUnderlyingTokenInSafe,
 
     lenderBaseToken,
     lenderUnderlyingToken,
-    lenderBaseTokenInSafe,
-    lenderUnderlyingTokenInSafe,
 
     externalSellerBaseToken,
     externalSellerUnderlyingToken,
@@ -304,9 +283,8 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
   expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
     shortTx.shortAmount.minus(closeAmount)
   );
-  expect(balances.sellerBaseToken).to.be.bignumber.equal(0);
 
-  expect(balances.sellerBaseTokenInSafe).to.be.bignumber.equal(
+  expect(balances.sellerBaseToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       shortTx.shortAmount,
