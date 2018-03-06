@@ -24,7 +24,8 @@ function isDevNetwork(network) {
   return network === 'development'
           || network === 'test'
           || network === 'develop'
-          || network === 'dev';
+          || network === 'dev'
+          || network === 'coverage';
 }
 
 function maybeDeployTestTokens(deployer, network) {
