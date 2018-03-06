@@ -15,7 +15,6 @@ const {
   doShort,
   getShort,
   issueTokensAndSetAllowancesForClose,
-  placeAuctionBid,
   issueTokenToAccountInAmountAndApproveProxy
 } = require('../helpers/ShortSellHelper');
 const { transact } = require('../helpers/ContractHelper');
@@ -558,12 +557,11 @@ contract('TokenizedShort', function(accounts) {
 
     it('succeeds for normal operation', async () => {
       // close nothing, letting the lender forceRecoverLoan
-      const bidder = accounts[9];
       for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
         const lender = SHORT.TX.loanOffering.lender;
-        await placeAuctionBid(CONTRACTS.SHORT_SELL, underlyingToken, SHORT.TX, bidder, 100);
+
         await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
 
         const tokens1 = await baseToken.balanceOf.call(seller);

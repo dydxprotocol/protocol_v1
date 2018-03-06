@@ -61,10 +61,7 @@ contract ShortSellEvents {
      */
     event LoanForceRecovered(
         bytes32 indexed id,
-        address indexed winningBidder,
-        uint256 amount,
-        bool    hadAcutcionOffer,
-        uint256 buybackCost
+        uint256 amount
     );
 
     /**
@@ -105,17 +102,6 @@ contract ShortSellEvents {
         bytes32 indexed loanHash,
         address indexed lender,
         address indexed feeRecipient
-    );
-
-    /**
-     * A bid was placed to sell back the underlying token required to close
-     * a short position
-     */
-    event AuctionBidPlaced(
-        bytes32 indexed id,
-        address indexed bidder,
-        uint256 bid,
-        uint256 currentShortAmount
     );
 
     /**

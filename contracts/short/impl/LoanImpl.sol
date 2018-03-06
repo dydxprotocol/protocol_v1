@@ -108,13 +108,7 @@ library LoanImpl {
 
         state.shorts[shortId].callTimestamp = 0;
         state.shorts[shortId].requiredDeposit = 0;
-
-        ShortSellCommon.payBackAuctionBidderIfExists(
-            state,
-            shortId,
-            short
-        );
-
+        
         LoanCallCanceled(
             shortId,
             short.lender,

@@ -9,7 +9,6 @@ import { ShortImpl } from "./impl/ShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
-import { PlaceSellbackBidImpl } from "./impl/PlaceSellbackBidImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
@@ -17,7 +16,6 @@ import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellGetters } from "./impl/ShortSellGetters.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { Vault } from "./vault/Vault.sol";
-import { ShortSellAuctionRepo } from "./ShortSellAuctionRepo.sol";
 
 
 /**
@@ -44,7 +42,6 @@ contract ShortSell is
 
     function ShortSell(
         address _vault,
-        address _auctionRepo,
         address _trader,
         address _proxy
     )
@@ -55,8 +52,7 @@ contract ShortSell is
         state = ShortSellState.State({
             VAULT: _vault,
             TRADER: _trader,
-            PROXY: _proxy,
-            AUCTION_REPO: _auctionRepo
+            PROXY: _proxy
         });
     }
 
@@ -286,41 +282,9 @@ contract ShortSell is
     }
 
     /**
-     * Offer to sell back the tokens loaned for a short sell for some amount of base tokens held
-     * in this short position. Only the lowest bid amount will be accepted. On placing a bid,
-     * the full underlying token amount owed to the lender will be taken from the bidder and
-     * placed in escrow. If a bidder is outbid or the short is closed normally by the short seller,
-     * the bidder's underlying tokens will be automatically returned.
-     * Only callable for a short that has been called, but not yet closed.
-     * Callable by any address
-     *
-     * @param  shortId      ID of the short sell to bid on
-     * @param  offer        the amount of base token the bidder wants to be paid in exchange for
-     *                      the amount of underlying token in the short sell. The price paid per
-     *                      underlying token is: offer / shortAmount (the opening amount
-     *                      of the short). Even if the short is partially closed, this amount is
-     *                      still relative to the opening short amount
-     */
-    function placeSellbackBid(
-        bytes32 shortId,
-        uint256 offer
-    )
-        external
-        auctionStateControl
-        nonReentrant
-    {
-        PlaceSellbackBidImpl.placeSellbackBidImpl(
-            state,
-            shortId,
-            offer
-        );
-    }
-
-    /**
      * Function callable by a short sell lender after he has called in the loan, but the
      * short seller did not close the short sell before the call time limit. Used to recover the
-     * lender's original loaned amount of underlying token as well as any owed interest fee
-     * This function can also be called by the winner of a sellback auction.
+     * lender's original loaned amount of underlying token as well as any owed interest fee.
      *
      * @param  shortId  unique id for the short sell
      */
@@ -553,30 +517,6 @@ contract ShortSell is
         return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
     }
 
-    function getShortAuctionOffer(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (
-            uint _offer,
-            address _bidder,
-            bool _exists
-        )
-    {
-        return ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
-    }
-
-    function hasShortAuctionOffer(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (bool _exists)
-    {
-        return ShortSellAuctionRepo(state.AUCTION_REPO).containsAuction(shortId);
-    }
-
     function isShortCalled(
         bytes32 shortId
     )
@@ -615,14 +555,6 @@ contract ShortSell is
         returns (address _TRADER)
     {
         return state.TRADER;
-    }
-
-    function AUCTION_REPO()
-        view
-        external
-        returns (address _AUCTION_REPO)
-    {
-        return state.AUCTION_REPO;
     }
 
     function PROXY()

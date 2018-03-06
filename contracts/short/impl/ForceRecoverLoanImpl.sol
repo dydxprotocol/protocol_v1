@@ -4,7 +4,6 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../vault/Vault.sol";
-import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -26,10 +25,7 @@ library ForceRecoverLoanImpl {
      */
     event LoanForceRecovered(
         bytes32 indexed id,
-        address indexed winningBidder,
-        uint amount,
-        bool hadAcutcionOffer,
-        uint buybackCost
+        uint amount
     );
 
     // -------------------------------------------
@@ -44,8 +40,6 @@ library ForceRecoverLoanImpl {
         returns (uint _baseTokenAmount)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        var (offer, bidder, hasCurrentOffer) =
-            ShortSellAuctionRepo(state.AUCTION_REPO).getAuction(shortId);
 
         // Can only force recover after the entire call period has elapsed
         // This can either be after the loan was called or after the maxDuration of the short
@@ -59,17 +53,17 @@ library ForceRecoverLoanImpl {
             )
         );
 
-        // Only the lender or the winning bidder can call recover the loan
-        require(msg.sender == short.lender || msg.sender == bidder);
+        // Only the lender can call recover the loan
+        require(msg.sender == short.lender);
 
         // Send the tokens
-        var (lenderBaseTokenAmount, buybackCost) = sendTokensOnForceRecover(
-            state,
-            short,
+        Vault vault = Vault(state.VAULT);
+        uint256 lenderBaseTokenAmount = vault.balances(shortId, short.baseToken);
+        vault.transferToSafetyDepositBox(
             shortId,
-            offer,
-            bidder,
-            hasCurrentOffer
+            short.baseToken,
+            short.lender,
+            lenderBaseTokenAmount
         );
 
         // Delete the short
@@ -82,202 +76,9 @@ library ForceRecoverLoanImpl {
         // Log an event
         LoanForceRecovered(
             shortId,
-            bidder,
-            lenderBaseTokenAmount,
-            hasCurrentOffer,
-            buybackCost
-        );
-
-        return lenderBaseTokenAmount;
-    }
-
-    // --------- Helper Functions ---------
-
-    function sendTokensOnForceRecover(
-        ShortSellState.State storage state,
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint offer,
-        address bidder,
-        bool hasCurrentOffer
-    )
-        internal
-        returns (
-            uint _lenderBaseTokenAmount,
-            uint _buybackCost
-        )
-    {
-        Vault vault = Vault(state.VAULT);
-
-        if (!hasCurrentOffer) {
-            // If there is no auction bid to sell back the underlying token owed to the lender
-            // then give the lender everything locked in the position
-            vault.transferToSafetyDepositBox(
-                shortId,
-                short.baseToken,
-                short.lender,
-                vault.balances(shortId, short.baseToken)
-            );
-
-            return (0, 0);
-        } else {
-            return sendTokensOnForceRecoverWithAuctionBid(
-                state,
-                short,
-                shortId,
-                offer,
-                bidder
-            );
-        }
-    }
-
-    function sendTokensOnForceRecoverWithAuctionBid(
-        ShortSellState.State storage state,
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint offer,
-        address bidder
-    )
-        internal
-        returns (
-            uint _lenderBaseTokenAmount,
-            uint _buybackCost
-        )
-    {
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        bytes32 auctionVaultId = ShortSellCommon.getAuctionVaultId(shortId);
-
-        // Send the lender underlying tokens + interest fee
-        uint lenderBaseTokenAmount = sendToLenderOnForceCloseWithAuctionBid(
-            state,
-            short,
-            shortId,
-            currentShortAmount,
-            auctionVaultId
-        );
-
-        // Send the auction bidder any leftover underlying token, and base token proportional
-        // to what he bid
-        uint buybackCost = sendToBidderOnForceCloseWithAuctionBid(
-            state,
-            short,
-            shortId,
-            currentShortAmount,
-            bidder,
-            offer,
-            auctionVaultId
-        );
-
-        // Send the short seller whatever is left
-        sendToShortSellerOnForceCloseWithAuctionBid(
-            state,
-            short,
-            shortId
-        );
-
-        return (lenderBaseTokenAmount, buybackCost);
-    }
-
-    function sendToLenderOnForceCloseWithAuctionBid(
-        ShortSellState.State storage state,
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint currentShortAmount,
-        bytes32 auctionVaultId
-    )
-        internal
-        returns (uint _lenderBaseTokenAmount)
-    {
-        Vault vault = Vault(state.VAULT);
-
-        // If there is an auction bid to sell back the underlying token owed to the lender
-        // then give the lender just the owed interest fee at the end of the call time
-        uint lenderBaseTokenAmount = ShortSellCommon.calculateInterestFee(
-            short,
-            currentShortAmount,
-            uint(short.callTimestamp).add(short.callTimeLimit)
-        );
-
-        vault.transferToSafetyDepositBox(
-            shortId,
-            short.baseToken,
-            short.lender,
             lenderBaseTokenAmount
         );
 
-        // Send the lender back the borrowed tokens (out of the auction vault)
-
-        vault.transferToSafetyDepositBox(
-            auctionVaultId,
-            short.underlyingToken,
-            short.lender,
-            currentShortAmount
-        );
-
         return lenderBaseTokenAmount;
-    }
-
-    function sendToBidderOnForceCloseWithAuctionBid(
-        ShortSellState.State storage state,
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint currentShortAmount,
-        address bidder,
-        uint offer,
-        bytes32 auctionVaultId
-    )
-        internal
-        returns (uint _buybackCost)
-    {
-        Vault vault = Vault(state.VAULT);
-
-        // If there is extra underlying token leftover, send it back to the bidder
-        uint remainingAuctionVaultBalance = vault.balances(
-            auctionVaultId, short.underlyingToken
-        );
-
-        if (remainingAuctionVaultBalance > 0) {
-            vault.transferToSafetyDepositBox(
-                auctionVaultId,
-                short.underlyingToken,
-                bidder,
-                remainingAuctionVaultBalance
-            );
-        }
-
-        // Send the bidder the bidded amount of base token
-        uint auctionAmount = MathHelpers.getPartialAmount(
-            currentShortAmount,
-            short.shortAmount,
-            offer
-        );
-
-        vault.transferToSafetyDepositBox(
-            shortId,
-            short.baseToken,
-            bidder,
-            auctionAmount
-        );
-
-        return auctionAmount;
-    }
-
-    function sendToShortSellerOnForceCloseWithAuctionBid(
-        ShortSellState.State storage state,
-        ShortSellCommon.Short storage short,
-        bytes32 shortId
-    )
-        internal
-    {
-        Vault vault = Vault(state.VAULT);
-
-        // Send the short seller whatever is left
-        // (== margin deposit + interest fee - bid offer)
-        vault.transferToSafetyDepositBox(
-            shortId,
-            short.baseToken,
-            short.seller,
-            vault.balances(shortId, short.baseToken)
-        );
     }
 }

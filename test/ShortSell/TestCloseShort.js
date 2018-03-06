@@ -3,7 +3,6 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const { wait } = require('@digix/tempo')(web3);
@@ -13,10 +12,7 @@ const {
   doShort,
   callCloseShort,
   getShort,
-  doShortAndCall,
-  placeAuctionBid,
   issueForDirectClose,
-  totalTokensForAddress
 } = require('../helpers/ShortSellHelper');
 const {
   checkSuccess,
@@ -85,28 +81,6 @@ describe('#closeShort', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('sends tokens back to auction bidder if there is one', async () => {
-      const { shortSell, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
-      const sellOrder = await createSigned0xSellOrder(accounts);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-      const bidder = accounts[6];
-      const bid = new BigNumber(200);
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
-      const closeAmount = shortTx.shortAmount.div(2);
-
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
-
-      let bidderTokens = await totalTokensForAddress(underlyingToken, bidder, safe);
-      expect(bidderTokens).to.be.bignumber.equal(0);
-
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
-
-      bidderTokens = await totalTokensForAddress(underlyingToken, bidder, safe);
-      expect(bidderTokens).to.be.bignumber.equal(shortTx.shortAmount);
-    });
-  });
-
-  contract('ShortSell', function(accounts) {
     it('Only closes up to the current short amount', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
@@ -169,32 +143,6 @@ describe('#closeShortDirectly', () => {
           { from: accounts[6] }
         )
       );
-    });
-  });
-
-  contract('ShortSell', function(accounts) {
-    it('sends tokens back to auction bidder if there is one', async () => {
-      const { shortSell, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
-      await issueForDirectClose(shortTx);
-      const bidder = accounts[6];
-      const bid = new BigNumber(200);
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
-
-      const closeTx = await shortSell.closeShortDirectly(
-        shortTx.id,
-        shortTx.shortAmount,
-        { from: shortTx.seller }
-      );
-
-      const exists = await shortSell.containsShort.call(shortTx.id);
-      expect(exists).to.be.false;
-
-      const closeAmount = shortTx.shortAmount;
-
-      await checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount)
-
-      const returnedTokens = await safe.withdrawableBalances.call(bidder, underlyingToken.address);
-      expect(returnedTokens).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 
