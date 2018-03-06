@@ -13,7 +13,7 @@ Source code for Ethereum Smart Contracts used by the dYdX Protocol
 Contains implementations for:
 
 - Short Sell
-- Covered Option
+- Tokenized Short
 - Custom 0x Exchange
 
 ### Development
@@ -73,9 +73,3 @@ Responsible for trading tokens out of vault. Uses exchange contract. Abstracts t
 ##### Exchange.sol
 
 Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.
-
-## Useful Links
-
-- [Solidity](http://solidity.readthedocs.io/en/develop/)
-- [Truffle](http://truffleframework.com/docs/)
-- [Hitchhiker’s Guide to Smart Contracts](https://blog.zeppelin.solutions/the-hitchhikers-guide-to-smart-contracts-in-ethereum-848f08001f05)
