@@ -555,7 +555,7 @@ contract('TokenizedShort', function(accounts) {
       }
     });
 
-    it('succeeds for normal operation', async () => {
+    it('withdraws no tokens after forceRecoverLoan', async () => {
       // close nothing, letting the lender forceRecoverLoan
       for (let type in FULL_AND_PART) {
         const SHORT = SHORTS[type];
@@ -564,13 +564,11 @@ contract('TokenizedShort', function(accounts) {
 
         await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
 
-        const tokens1 = await baseToken.balanceOf.call(seller);
-
         const numWithdraw = await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
-        expect(numWithdraw).to.be.bignumber.at.least(1);
+        expect(numWithdraw).to.be.bignumber.equal(0);
 
-        const tokens2 = await baseToken.balanceOf.call(seller);
-        expect(tokens2).to.be.bignumber.equal(tokens1.plus(numWithdraw));
+        const numTokens = await baseToken.balanceOf.call(seller);
+        expect(numTokens).to.be.bignumber.equal(0);
       }
     });
   });
