@@ -571,20 +571,6 @@ async function getShort(shortSell, id) {
   };
 }
 
-async function getShortAuctionOffer(shortSell, id) {
-  const [
-    offer,
-    bidder,
-    exists
-  ] = await shortSell.getShortAuctionOffer.call(id);
-
-  return {
-    offer,
-    bidder,
-    exists
-  };
-}
-
 async function doShortAndCall(
   accounts,
   _salt = DEFAULT_SALT,
@@ -606,24 +592,6 @@ async function doShortAndCall(
   );
 
   return { shortSell, vault, safe, underlyingToken, shortTx, callTx };
-}
-
-async function placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid) {
-  await underlyingToken.issue(
-    shortTx.shortAmount,
-    { from: bidder }
-  );
-  await underlyingToken.approve(
-    ProxyContract.address,
-    shortTx.shortAmount,
-    { from: bidder }
-  );
-
-  return shortSell.placeSellbackBid(
-    shortTx.id,
-    bid,
-    { from: bidder }
-  );
 }
 
 async function issueForDirectClose(shortTx) {
@@ -700,8 +668,6 @@ module.exports = {
   sign0xOrder,
   callCloseShort,
   getShort,
-  getShortAuctionOffer,
-  placeAuctionBid,
   doShortAndCall,
   issueForDirectClose,
   totalTokensForAddress,

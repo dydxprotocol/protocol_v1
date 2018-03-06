@@ -18,9 +18,6 @@ library ShortSellState {
         // Address of the Trader contract
         address TRADER;
 
-        // Address of the ShortSellAuctionRepo contract
-        address AUCTION_REPO;
-
         // Address of the Proxy contract
         address PROXY;
 

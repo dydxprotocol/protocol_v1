@@ -9,9 +9,7 @@ const ShortSell = artifacts.require("ShortSell");
 const {
   doShort,
   getShort,
-  doShortAndCall,
-  placeAuctionBid,
-  totalTokensForAddress
+  doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
@@ -149,10 +147,7 @@ describe('#cancelLoanCall', () => {
 
   contract('ShortSell', function(accounts) {
     it('unsets callTimestamp on the short', async () => {
-      const bidder = accounts[6];
-      const bid = new BigNumber(100);
-      const { shortSell, vault, safe, underlyingToken, shortTx } = await doShortAndCall(accounts);
-      await placeAuctionBid(shortSell, underlyingToken, shortTx, bidder, bid);
+      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
 
       await shortSell.cancelLoanCall(
         shortTx.id,
@@ -162,22 +157,16 @@ describe('#cancelLoanCall', () => {
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
       const [
-        auctionExists,
         vaultUnderlyingTokenBalance,
         tokenBalanceOfVault,
-        bidderTokenBalance
       ] = await Promise.all([
-        shortSell.hasShortAuctionOffer.call(shortTx.id),
         vault.totalBalances.call(underlyingToken.address),
-        underlyingToken.balanceOf.call(vault.address),
-        totalTokensForAddress(underlyingToken, bidder, safe)
+        underlyingToken.balanceOf.call(vault.address)
       ]);
 
       expect(callTimestamp).to.be.bignumber.equal(0);
-      expect(auctionExists).to.be.false;
       expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
       expect(tokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(bidderTokenBalance).to.be.bignumber.equal(shortTx.shortAmount);
     });
   });
 });

@@ -3,7 +3,6 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../vault/Vault.sol";
-import { ShortSellAuctionRepo } from "../ShortSellAuctionRepo.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -119,44 +118,6 @@ library ShortSellCommon {
     {
         delete state.shorts[shortId];
         state.closedShorts[shortId] = true;
-    }
-
-    function payBackAuctionBidderIfExists(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        Short short
-    )
-        internal
-    {
-        ShortSellAuctionRepo repo = ShortSellAuctionRepo(state.AUCTION_REPO);
-        Vault vault = Vault(state.VAULT);
-
-        var (, currentBidder, hasCurrentOffer) = repo.getAuction(shortId);
-
-        if (!hasCurrentOffer) {
-            return;
-        }
-
-        repo.deleteAuctionOffer(shortId);
-
-        bytes32 auctionVaultId = getAuctionVaultId(shortId);
-
-        vault.transferToSafetyDepositBox(
-            auctionVaultId,
-            short.underlyingToken,
-            currentBidder,
-            vault.balances(auctionVaultId, short.underlyingToken)
-        );
-    }
-
-    function getAuctionVaultId(
-        bytes32 shortId
-    )
-        internal
-        pure
-        returns (bytes32 _auctionVaultId)
-    {
-        return keccak256(shortId, "AUCTION_VAULT");
     }
 
     function calculateInterestFee(

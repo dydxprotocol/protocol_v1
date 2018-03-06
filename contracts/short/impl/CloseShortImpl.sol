@@ -222,14 +222,6 @@ library CloseShortImpl {
                 state,
                 transaction.shortId
             );
-
-            // EXTERNAL CALL (comes after state update)
-            // If the whole short is closed and there is an auction offer, send it back
-            ShortSellCommon.payBackAuctionBidderIfExists(
-                state,
-                transaction.shortId,
-                transaction.short
-            );
         } else {
             uint newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
             assert(newClosedAmount < transaction.short.shortAmount);
