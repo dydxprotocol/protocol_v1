@@ -13,7 +13,7 @@ contract TokenInteract {
     )
         internal
         view
-        returns (uint _balance)
+        returns (uint256 _balance)
     {
         // Limit gas to prevent reentrancy
         // TODO: Do I need to limit gas? compiler throws warning on limiting in view function
@@ -23,7 +23,7 @@ contract TokenInteract {
     function setAllowance(
         address token,
         address spender,
-        uint value
+        uint256 value
     )
         internal
     {
@@ -33,7 +33,7 @@ contract TokenInteract {
     function transfer(
         address token,
         address to,
-        uint amount
+        uint256 amount
     )
         internal
     {

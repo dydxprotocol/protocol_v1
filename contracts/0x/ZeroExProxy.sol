@@ -71,7 +71,7 @@ contract ZeroExProxy is ZeroExOwnable {
         targetAuthorized(target)
     {
         delete authorized[target];
-        for (uint i = 0; i < authorities.length; i++) {
+        for (uint256 i = 0; i < authorities.length; i++) {
             if (authorities[i] == target) {
                 authorities[i] = authorities[authorities.length - 1];
                 authorities.length -= 1;
@@ -91,7 +91,7 @@ contract ZeroExProxy is ZeroExOwnable {
         address token,
         address from,
         address to,
-        uint value)
+        uint256 value)
         public
         onlyAuthorized
         returns (bool)

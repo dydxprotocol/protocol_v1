@@ -15,7 +15,7 @@ import { OwnedAccessControlled } from "../lib/OwnedAccessControlled.sol";
  * Used to transfer tokens between addresses which have set allowance on this contract
  */
 contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ---------------------------
     // ----- State Variables -----
@@ -95,7 +95,7 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
     function transfer(
         address token,
         address from,
-        uint value
+        uint256 value
     )
         requiresTransferAuthorization
         whenNotPaused
@@ -108,7 +108,7 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
         address token,
         address from,
         address to,
-        uint value
+        uint256 value
     )
         requiresTransferAuthorization
         whenNotPaused
@@ -127,7 +127,7 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
     )
         view
         external
-        returns (uint _allowance)
+        returns (uint256 _allowance)
     {
         return Math.min256(
             ERC20(token).allowance(who, address(this)),

@@ -13,16 +13,16 @@ import { AccessControlledBase } from "./AccessControlledBase.sol";
  * Permissions cannot be changed
  */
 contract StaticAccessControlled is AccessControlledBase, Ownable {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
-    uint public gracePeriodExpiration;
+    uint256 public gracePeriodExpiration;
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function StaticAccessControlled(
-        uint _gracePeriod
+        uint256 _gracePeriod
     )
         Ownable()
         public

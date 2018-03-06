@@ -41,8 +41,8 @@ contract ZeroExExchange is ZeroExSafeMath {
     address public TOKEN_TRANSFER_PROXY_CONTRACT;
 
     // Mappings of orderHash => amounts of takerTokenAmount filled or cancelled.
-    mapping (bytes32 => uint) public filled;
-    mapping (bytes32 => uint) public cancelled;
+    mapping (bytes32 => uint256) public filled;
+    mapping (bytes32 => uint256) public cancelled;
 
     event LogFill(
         address indexed maker,
@@ -50,10 +50,10 @@ contract ZeroExExchange is ZeroExSafeMath {
         address indexed feeRecipient,
         address makerToken,
         address takerToken,
-        uint filledMakerTokenAmount,
-        uint filledTakerTokenAmount,
-        uint paidMakerFee,
-        uint paidTakerFee,
+        uint256 filledMakerTokenAmount,
+        uint256 filledTakerTokenAmount,
+        uint256 paidMakerFee,
+        uint256 paidTakerFee,
         bytes32 indexed tokens, // keccak256(makerToken, takerToken), allows subscribing to a token pair
         bytes32 orderHash
     );
@@ -63,8 +63,8 @@ contract ZeroExExchange is ZeroExSafeMath {
         address indexed feeRecipient,
         address makerToken,
         address takerToken,
-        uint cancelledMakerTokenAmount,
-        uint cancelledTakerTokenAmount,
+        uint256 cancelledMakerTokenAmount,
+        uint256 cancelledTakerTokenAmount,
         bytes32 indexed tokens,
         bytes32 orderHash
     );
@@ -77,11 +77,11 @@ contract ZeroExExchange is ZeroExSafeMath {
         address makerToken;
         address takerToken;
         address feeRecipient;
-        uint makerTokenAmount;
-        uint takerTokenAmount;
-        uint makerFee;
-        uint takerFee;
-        uint expirationTimestampInSec;
+        uint256 makerTokenAmount;
+        uint256 takerTokenAmount;
+        uint256 makerFee;
+        uint256 takerFee;
+        uint256 expirationTimestampInSec;
         bytes32 orderHash;
     }
 
@@ -105,14 +105,14 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Total amount of takerToken filled in trade.
     function fillOrder(
           address[5] orderAddresses,
-          uint[6] orderValues,
-          uint fillTakerTokenAmount,
+          uint256[6] orderValues,
+          uint256 fillTakerTokenAmount,
           bool shouldThrowOnInsufficientBalanceOrAllowance,
           uint8 v,
           bytes32 r,
           bytes32 s)
           public
-          returns (uint filledTakerTokenAmount)
+          returns (uint256 filledTakerTokenAmount)
     {
         Order memory order = Order({
             maker: orderAddresses[0],
@@ -143,7 +143,7 @@ contract ZeroExExchange is ZeroExSafeMath {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
+        uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
         filledTakerTokenAmount = min256(fillTakerTokenAmount, remainingTakerTokenAmount);
         if (filledTakerTokenAmount == 0) {
             LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
@@ -160,9 +160,9 @@ contract ZeroExExchange is ZeroExSafeMath {
             return 0;
         }
 
-        uint filledMakerTokenAmount = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
-        uint paidMakerFee;
-        uint paidTakerFee;
+        uint256 filledMakerTokenAmount = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
+        uint256 paidMakerFee;
+        uint256 paidTakerFee;
         filled[order.orderHash] = safeAdd(filled[order.orderHash], filledTakerTokenAmount);
         require(transferViaTokenTransferProxy(
             order.makerToken,
@@ -221,10 +221,10 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Amount of takerToken cancelled.
     function cancelOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint cancelTakerTokenAmount)
+        uint256[6] orderValues,
+        uint256 cancelTakerTokenAmount)
         public
-        returns (uint)
+        returns (uint256)
     {
         Order memory order = Order({
             maker: orderAddresses[0],
@@ -248,8 +248,8 @@ contract ZeroExExchange is ZeroExSafeMath {
             return 0;
         }
 
-        uint remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
-        uint cancelledTakerTokenAmount = min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
+        uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
+        uint256 cancelledTakerTokenAmount = min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
         if (cancelledTakerTokenAmount == 0) {
             LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
             return 0;
@@ -283,8 +283,8 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param s ECDSA signature parameters s.
     function fillOrKillOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint fillTakerTokenAmount,
+        uint256[6] orderValues,
+        uint256 fillTakerTokenAmount,
         uint8 v,
         bytes32 r,
         bytes32 s)
@@ -303,7 +303,7 @@ contract ZeroExExchange is ZeroExSafeMath {
 
     /// @dev Synchronously executes multiple fill orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmounts Array of desired amounts of takerToken to fill in orders.
     /// @param shouldThrowOnInsufficientBalanceOrAllowance Test if transfers will fail before attempting.
     /// @param v Array ECDSA signature v parameters.
@@ -311,15 +311,15 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param s Array of ECDSA signature s parameters.
     function batchFillOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] fillTakerTokenAmounts,
+        uint256[6][] orderValues,
+        uint256[] fillTakerTokenAmounts,
         bool shouldThrowOnInsufficientBalanceOrAllowance,
         uint8[] v,
         bytes32[] r,
         bytes32[] s)
         public
     {
-        for (uint i = 0; i < orderAddresses.length; i++) {
+        for (uint256 i = 0; i < orderAddresses.length; i++) {
             fillOrder(
                 orderAddresses[i],
                 orderValues[i],
@@ -334,21 +334,21 @@ contract ZeroExExchange is ZeroExSafeMath {
 
     /// @dev Synchronously executes multiple fillOrKill orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmounts Array of desired amounts of takerToken to fill in orders.
     /// @param v Array ECDSA signature v parameters.
     /// @param r Array of ECDSA signature r parameters.
     /// @param s Array of ECDSA signature s parameters.
     function batchFillOrKillOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] fillTakerTokenAmounts,
+        uint256[6][] orderValues,
+        uint256[] fillTakerTokenAmounts,
         uint8[] v,
         bytes32[] r,
         bytes32[] s)
         public
     {
-        for (uint i = 0; i < orderAddresses.length; i++) {
+        for (uint256 i = 0; i < orderAddresses.length; i++) {
             fillOrKillOrder(
                 orderAddresses[i],
                 orderValues[i],
@@ -362,7 +362,7 @@ contract ZeroExExchange is ZeroExSafeMath {
 
     /// @dev Synchronously executes multiple fill orders in a single transaction until total fillTakerTokenAmount filled.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmount Desired total amount of takerToken to fill in orders.
     /// @param shouldThrowOnInsufficientBalanceOrAllowance Test if transfers will fail before attempting.
     /// @param v Array ECDSA signature v parameters.
@@ -371,17 +371,17 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @return Total amount of fillTakerTokenAmount filled in orders.
     function fillOrdersUpTo(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint fillTakerTokenAmount,
+        uint256[6][] orderValues,
+        uint256 fillTakerTokenAmount,
         bool shouldThrowOnInsufficientBalanceOrAllowance,
         uint8[] v,
         bytes32[] r,
         bytes32[] s)
         public
-        returns (uint)
+        returns (uint256)
     {
-        uint filledTakerTokenAmount = 0;
-        for (uint i = 0; i < orderAddresses.length; i++) {
+        uint256 filledTakerTokenAmount = 0;
+        for (uint256 i = 0; i < orderAddresses.length; i++) {
             require(orderAddresses[i][3] == orderAddresses[0][3]); // takerToken must be the same for each order
             filledTakerTokenAmount = safeAdd(filledTakerTokenAmount, fillOrder(
                 orderAddresses[i],
@@ -399,15 +399,15 @@ contract ZeroExExchange is ZeroExSafeMath {
 
     /// @dev Synchronously cancels multiple orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param cancelTakerTokenAmounts Array of desired amounts of takerToken to cancel in orders.
     function batchCancelOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] cancelTakerTokenAmounts)
+        uint256[6][] orderValues,
+        uint256[] cancelTakerTokenAmounts)
         public
     {
-        for (uint i = 0; i < orderAddresses.length; i++) {
+        for (uint256 i = 0; i < orderAddresses.length; i++) {
             cancelOrder(
                 orderAddresses[i],
                 orderValues[i],
@@ -424,7 +424,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param orderAddresses Array of order's maker, taker, makerToken, takerToken, and feeRecipient.
     /// @param orderValues Array of order's makerTokenAmount, takerTokenAmount, makerFee, takerFee, expirationTimestampInSec, and salt.
     /// @return Keccak-256 hash of order.
-    function getOrderHash(address[5] orderAddresses, uint[6] orderValues)
+    function getOrderHash(address[5] orderAddresses, uint256[6] orderValues)
         public
         view
         returns (bytes32)
@@ -475,15 +475,15 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param denominator Denominator.
     /// @param target Value to multiply with numerator/denominator.
     /// @return Rounding error is present.
-    function isRoundingError(uint numerator, uint denominator, uint target)
+    function isRoundingError(uint256 numerator, uint256 denominator, uint256 target)
         public
         pure
         returns (bool)
     {
-        uint remainder = mulmod(target, numerator, denominator);
+        uint256 remainder = mulmod(target, numerator, denominator);
         if (remainder == 0) return false; // No rounding error.
 
-        uint errPercentageTimes1000000 = safeDiv(
+        uint256 errPercentageTimes1000000 = safeDiv(
             safeMul(remainder, 1000000),
             safeMul(numerator, target)
         );
@@ -495,10 +495,10 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param denominator Denominator.
     /// @param target Value to calculate partial of.
     /// @return Partial value of target.
-    function getPartialAmount(uint numerator, uint denominator, uint target)
+    function getPartialAmount(uint256 numerator, uint256 denominator, uint256 target)
         public
         pure
-        returns (uint)
+        returns (uint256)
     {
         return safeDiv(safeMul(numerator, target), denominator);
     }
@@ -509,7 +509,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     function getUnavailableTakerTokenAmount(bytes32 orderHash)
         public
         view
-        returns (uint)
+        returns (uint256)
     {
         return safeAdd(filled[orderHash], cancelled[orderHash]);
     }
@@ -529,7 +529,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         address token,
         address from,
         address to,
-        uint value)
+        uint256 value)
         internal
         returns (bool)
     {
@@ -540,21 +540,21 @@ contract ZeroExExchange is ZeroExSafeMath {
     /// @param order Order struct of params that will be checked.
     /// @param fillTakerTokenAmount Desired amount of takerToken to fill.
     /// @return Predicted result of transfers.
-    function isTransferable(Order order, uint fillTakerTokenAmount)
+    function isTransferable(Order order, uint256 fillTakerTokenAmount)
         internal
         view  // The called token contracts may attempt to change state, but will not be able to due to gas limits on getBalance and getAllowance.
         returns (bool)
     {
         address taker = msg.sender;
-        uint fillMakerTokenAmount = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
+        uint256 fillMakerTokenAmount = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
 
         if (order.feeRecipient != address(0)) {
             bool isMakerTokenZRX = order.makerToken == ZRX_TOKEN_CONTRACT;
             bool isTakerTokenZRX = order.takerToken == ZRX_TOKEN_CONTRACT;
-            uint paidMakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerFee);
-            uint paidTakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.takerFee);
-            uint requiredMakerZRX = isMakerTokenZRX ? safeAdd(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
-            uint requiredTakerZRX = isTakerTokenZRX ? safeAdd(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
+            uint256 paidMakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerFee);
+            uint256 paidTakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.takerFee);
+            uint256 requiredMakerZRX = isMakerTokenZRX ? safeAdd(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
+            uint256 requiredTakerZRX = isTakerTokenZRX ? safeAdd(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
 
             if (   getBalance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
                 || getAllowance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
@@ -584,7 +584,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     function getBalance(address token, address owner)
         internal
         view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
-        returns (uint)
+        returns (uint256)
     {
         return ZeroExToken(token).balanceOf(owner); // Limit gas to prevent reentrancy
     }
@@ -596,7 +596,7 @@ contract ZeroExExchange is ZeroExSafeMath {
     function getAllowance(address token, address owner)
         internal
         view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
-        returns (uint)
+        returns (uint256)
     {
         return ZeroExToken(token).allowance(owner, TOKEN_TRANSFER_PROXY_CONTRACT); // Limit gas to prevent reentrancy
     }

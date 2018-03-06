@@ -29,7 +29,7 @@ contract TokenizedShort is
     CloseShortVerifier,
     ReentrancyGuard
 {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // -----------------------
     // -------- Enums --------
@@ -130,7 +130,7 @@ contract TokenizedShort is
         require(state == State.UNINITIALIZED);
         ShortSellCommon.Short memory short =
             ShortSellHelper.getShort(SHORT_SELL, shortId);
-        uint currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
 
         // The ownership of the short must be transferred to this contract before intialization
         // Once ownership is transferred, there is no way to have this contract transfer it back

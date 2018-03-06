@@ -17,7 +17,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  * This library contains the implementation for the closeShort function of ShortSell
  */
 library CloseShortImpl {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ------------------------
     // -------- Events --------
@@ -28,10 +28,10 @@ library CloseShortImpl {
      */
     event ShortClosed(
         bytes32 indexed id,
-        uint closeAmount,
-        uint interestFee,
-        uint shortSellerBaseToken,
-        uint buybackCost
+        uint256 closeAmount,
+        uint256 interestFee,
+        uint256 shortSellerBaseToken,
+        uint256 buybackCost
     );
 
     /**
@@ -39,11 +39,11 @@ library CloseShortImpl {
      */
     event ShortPartiallyClosed(
         bytes32 indexed id,
-        uint closeAmount,
-        uint remainingAmount,
-        uint interestFee,
-        uint shortSellerBaseToken,
-        uint buybackCost
+        uint256 closeAmount,
+        uint256 remainingAmount,
+        uint256 interestFee,
+        uint256 shortSellerBaseToken,
+        uint256 buybackCost
     );
 
     // -----------------------
@@ -52,14 +52,14 @@ library CloseShortImpl {
 
     struct CloseShortTx {
         ShortSellCommon.Short short;
-        uint currentShortAmount;
+        uint256 currentShortAmount;
         bytes32 shortId;
-        uint closeAmount;
+        uint256 closeAmount;
     }
 
     struct Order {
         address[5] addresses;
-        uint[6] values;
+        uint256[6] values;
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -72,18 +72,18 @@ library CloseShortImpl {
     function closeShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint requestedCloseAmount,
+        uint256 requestedCloseAmount,
         address[5] orderAddresses,
-        uint[6] orderValues,
+        uint256[6] orderValues,
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS
     )
         public
         returns (
-            uint _amountClosed,
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
         )
     {
         Order memory order = parseOrder(
@@ -103,13 +103,13 @@ library CloseShortImpl {
     function closeShortDirectlyImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint requestedCloseAmount
+        uint256 requestedCloseAmount
     )
         public
         returns (
-            uint _amountClosed,
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
         )
     {
         Order memory order;
@@ -125,14 +125,14 @@ library CloseShortImpl {
     function closeShortInternal(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint requestedCloseAmount,
+        uint256 requestedCloseAmount,
         Order memory order
     )
         internal
         returns (
-            uint _amountClosed,
-            uint _baseTokenReceived,
-            uint _interestFeeAmount
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
         )
     {
         // Create CloseShortTx and validate closeAmount
@@ -144,7 +144,7 @@ library CloseShortImpl {
         var (interestFee, closeId) = getInterestFeeAndTransferToCloseVault(state, transaction);
 
         // Secure underlying tokens
-        uint buybackCost = 0;
+        uint256 buybackCost = 0;
         if (order.addresses[0] == 0) { // no buy order; close short directly
             Vault(state.VAULT).transferToVault(
                 closeId,
@@ -163,7 +163,7 @@ library CloseShortImpl {
         }
 
         // Send base tokens and underlying tokens to the correct parties
-        uint sellerBaseTokenAmount = sendTokensOnClose(
+        uint256 sellerBaseTokenAmount = sendTokensOnClose(
             state,
             transaction,
             closeId,
@@ -223,7 +223,7 @@ library CloseShortImpl {
                 transaction.shortId
             );
         } else {
-            uint newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
+            uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
             assert(newClosedAmount < transaction.short.shortAmount);
 
             // Otherwise increment the closed amount on the short
@@ -237,7 +237,7 @@ library CloseShortImpl {
     )
         internal
         returns (
-            uint _interestFee,
+            uint256 _interestFee,
             bytes32 _closeId
         )
     {
@@ -261,12 +261,12 @@ library CloseShortImpl {
         CloseShortTx transaction,
         Order order,
         bytes32 closeId,
-        uint interestFee
+        uint256 interestFee
     )
         internal
-        returns (uint _buybackCost)
+        returns (uint256 _buybackCost)
     {
-        uint baseTokenPrice = getBaseTokenPriceForBuyback(
+        uint256 baseTokenPrice = getBaseTokenPriceForBuyback(
             state,
             transaction,
             order,
@@ -328,15 +328,15 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         CloseShortTx transaction,
         Order order,
-        uint interestFee,
+        uint256 interestFee,
         bytes32 closeId
     )
         internal
         view
-        returns (uint _baseTokenPrice)
+        returns (uint256 _baseTokenPrice)
     {
         // baseTokenPrice = closeAmount * (buyOrderBaseTokenAmount / buyOrderUnderlyingTokenAmount)
-        uint baseTokenPrice = MathHelpers.getPartialAmount(
+        uint256 baseTokenPrice = MathHelpers.getPartialAmount(
             order.values[1],
             order.values[0],
             transaction.closeAmount
@@ -357,7 +357,7 @@ library CloseShortImpl {
         CloseShortTx transaction,
         Order order,
         bytes32 closeId,
-        uint baseTokenPrice
+        uint256 baseTokenPrice
     )
         internal
     {
@@ -369,11 +369,11 @@ library CloseShortImpl {
             return;
         }
 
-        uint buyOrderTakerFee = order.values[3];
-        uint buyOrderTakerTokenAmount = order.values[1];
+        uint256 buyOrderTakerFee = order.values[3];
+        uint256 buyOrderTakerTokenAmount = order.values[1];
 
         // takerFee = buyOrderTakerFee * (baseTokenPrice / buyOrderBaseTokenAmount)
-        uint takerFee = MathHelpers.getPartialAmount(
+        uint256 takerFee = MathHelpers.getPartialAmount(
             baseTokenPrice,
             buyOrderTakerTokenAmount,
             buyOrderTakerFee
@@ -394,11 +394,11 @@ library CloseShortImpl {
         ShortSellState.State storage state,
         CloseShortTx transaction,
         bytes32 closeId,
-        uint interestFee,
+        uint256 interestFee,
         address closer
     )
         internal
-        returns (uint _sellerBaseTokenAmount)
+        returns (uint256 _sellerBaseTokenAmount)
     {
         Vault vault = Vault(state.VAULT);
 
@@ -423,7 +423,7 @@ library CloseShortImpl {
         // Send remaining base token to closer (= deposit + profit - interestFee)
         // Also note if the takerFeeToken on the sell order is baseToken, that fee will also
         // have been paid out of the vault balance
-        uint sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
+        uint256 sellerBaseTokenAmount = vault.balances(closeId, transaction.short.baseToken);
         vault.transferToSafetyDepositBox(
             closeId,
             transaction.short.baseToken,
@@ -440,9 +440,9 @@ library CloseShortImpl {
 
     function logEventOnClose(
         CloseShortTx transaction,
-        uint interestFee,
-        uint buybackCost,
-        uint sellerBaseTokenAmount
+        uint256 interestFee,
+        uint256 buybackCost,
+        uint256 sellerBaseTokenAmount
     )
         internal
     {
@@ -471,7 +471,7 @@ library CloseShortImpl {
     function parseCloseShortTx(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint requestedCloseAmount
+        uint256 requestedCloseAmount
     )
         internal
         view
@@ -490,7 +490,7 @@ library CloseShortImpl {
 
     function parseOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
+        uint256[6] orderValues,
         uint8 orderV,
         bytes32 orderR,
         bytes32 orderS

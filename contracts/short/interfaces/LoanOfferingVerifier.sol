@@ -52,7 +52,7 @@ contract LoanOfferingVerifier {
      */
     function verifyLoanOffering(
         address[8] addresses,
-        uint[9] values256,
+        uint256[9] values256,
         uint32[2] values32,
         bytes32 shortId
     )

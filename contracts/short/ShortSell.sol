@@ -34,7 +34,7 @@ contract ShortSell is
     ShortSellAdmin,
     ShortSellGetters {
 
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // -------------------------
     // ------ Constructor ------
@@ -466,7 +466,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _baseTokenBalance)
+        returns (uint256 _baseTokenBalance)
     {
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
@@ -481,7 +481,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _interestFeeOwed)
+        returns (uint256 _interestFeeOwed)
     {
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
@@ -490,12 +490,12 @@ contract ShortSell is
 
         // In both branches of the conditional, endTimestamp may end up being past the maximum
         // duration of the short, but calculateInterestFee() will bound it
-        uint endTimestamp;
+        uint256 endTimestamp;
         if (
             short.callTimestamp > 0
-            && block.timestamp > uint(short.callTimestamp).add(short.callTimeLimit)
+            && block.timestamp > uint256(short.callTimestamp).add(short.callTimeLimit)
         ) {
-            endTimestamp = uint(short.callTimestamp).add(short.callTimeLimit);
+            endTimestamp = uint256(short.callTimestamp).add(short.callTimeLimit);
         } else {
             endTimestamp = block.timestamp;
         }
@@ -512,7 +512,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _unavailableAmount)
+        returns (uint256 _unavailableAmount)
     {
         return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
     }
@@ -570,7 +570,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _filledAmount)
+        returns (uint256 _filledAmount)
     {
         return state.loanFills[loanHash];
     }
@@ -580,7 +580,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _cancelledAmount)
+        returns (uint256 _cancelledAmount)
     {
         return state.loanCancels[loanHash];
     }
@@ -590,7 +590,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint _cancelledAmount)
+        returns (uint256 _cancelledAmount)
     {
         return state.loanCancels[loanHash];
     }
