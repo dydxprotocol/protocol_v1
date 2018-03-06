@@ -15,7 +15,7 @@ import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellGetters } from "./impl/ShortSellGetters.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
-import { Vault } from "./vault/Vault.sol";
+import { Vault } from "./Vault.sol";
 
 
 /**

@@ -8,7 +8,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
 import { ZeroExExchangeInterface } from "../interfaces/ZeroExExchangeInterface.sol";
 import { Exchange } from "../shared/Exchange.sol";
 import { Proxy } from "../shared/Proxy.sol";
-import { Vault } from "./vault/Vault.sol";
+import { Vault } from "./Vault.sol";
 import { MathHelpers } from "../lib/MathHelpers.sol";
 
 
@@ -229,9 +229,10 @@ contract Trader is
         // These transfers will fail on insufficient vault balance
         if (order.feeRecipient == address(0)) {
             // If the fee recipient is 0, no fee is required so just transfer the taker token
-            Vault(VAULT).withdrawFromVault(
+            Vault(VAULT).transferFromVault(
                 id,
                 order.takerToken,
+                address(this),
                 requestedFillAmount
             );
 
@@ -247,9 +248,10 @@ contract Trader is
 
             uint256 totalAmount = requestedFillAmount.add(feeAmount);
 
-            Vault(VAULT).withdrawFromVault(
+            Vault(VAULT).transferFromVault(
                 id,
                 order.takerToken,
+                address(this),
                 totalAmount
             );
 
@@ -262,17 +264,19 @@ contract Trader is
                 order.takerFee
             );
 
-            Vault(VAULT).withdrawFromVault(
+            Vault(VAULT).transferFromVault(
                 id,
                 order.takerToken,
+                address(this),
                 requestedFillAmount
             );
             setAllowance(order.takerToken, proxy, requestedFillAmount);
 
             if (feeAmount > 0) {
-                Vault(VAULT).withdrawFromVault(
+                Vault(VAULT).transferFromVault(
                     id,
                     order.takerFeeToken,
+                    address(this),
                     feeAmount
                 );
                 setAllowance(order.takerFeeToken, proxy, feeAmount);

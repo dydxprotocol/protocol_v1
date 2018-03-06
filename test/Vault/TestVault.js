@@ -4,7 +4,6 @@ const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
 const ProxyContract = artifacts.require("Proxy");
-const SafetyDepositBox = artifacts.require("SafetyDepositBox");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
 
@@ -16,19 +15,17 @@ const {
 contract('Vault', function(accounts) {
   const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
   const num1 = new BigNumber(12);
-  let proxy, safetyDepositBox, vault, tokenA, tokenB;
+  let proxy, vault, tokenA, tokenB;
 
   beforeEach('migrate smart contracts and set permissions', async () => {
     proxy = await ProxyContract.new(delay, gracePeriod);
-    safetyDepositBox = await SafetyDepositBox.new(gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
-      Vault.new(proxy.address, safetyDepositBox.address, gracePeriod),
+      Vault.new(proxy.address, gracePeriod),
       TestToken.new(),
       TestToken.new()
     ]);
     await proxy.grantAccess(accounts[0]);
     await proxy.grantTransferAuthorization(vault.address, { from: accounts[0] });
-    await safetyDepositBox.grantAccess(vault.address);
   });
 
   describe('Constructor', () => {
@@ -194,137 +191,7 @@ contract('Vault', function(accounts) {
     });
   });
 
-  describe('#transferToSafetyDepositBox', () => {
-    const holder1 = accounts[4];
-    const receiver = accounts[5];
-    const id = 'TEST_ID';
-    const id2 = 'TEST_ID_2';
-    const halfNum1 = num1.div(2);
-
-    let balances = {
-      vault: {
-        id: 0,
-        total: 0,
-        actual: 0
-      },
-      safe: {
-        id: 0,
-        total: 0,
-        actual: 0,
-      }
-    };
-
-    async function checkBalances() {
-      [
-        balances.vault.id,
-        balances.vault.total,
-        balances.vault.actual,
-        balances.safe.id,
-        balances.safe.total,
-        balances.safe.actual,
-      ] = await Promise.all([
-        vault.balances.call(id, tokenA.address),
-        vault.totalBalances.call(tokenA.address),
-        tokenA.balanceOf.call(vault.address),
-        safetyDepositBox.withdrawableBalances.call(receiver, tokenA.address),
-        safetyDepositBox.totalBalances.call(tokenA.address),
-        tokenA.balanceOf.call(safetyDepositBox.address)
-      ]);
-    }
-
-    beforeEach('place funds in vault', async () => {
-      // holder1 has tokens and allows the proxy to access them
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(proxy.address, num1, { from: holder1 });
-
-      // account[1] acts as dYdX contract and puts the funds in the vault
-      await vault.grantAccess(accounts[1]);
-      await vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] });
-
-      await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
-      expect(balances.vault.total).to.be.bignumber.equal(num1);
-      expect(balances.vault.actual).to.be.bignumber.equal(num1);
-      expect(balances.safe.id).to.be.bignumber.equal(0);
-      expect(balances.safe.total).to.be.bignumber.equal(0);
-      expect(balances.safe.actual).to.be.bignumber.equal(0);
-    });
-
-    it('Sends tokens if vault has balance', async () => {
-      await vault.transferToSafetyDepositBox(id, tokenA.address, receiver, halfNum1,
-        { from: accounts[1] });
-
-      await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
-      expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.vault.actual).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.id).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.actual).to.be.bignumber.equal(halfNum1);
-
-      await vault.transferToSafetyDepositBox(id, tokenA.address, receiver, halfNum1,
-        { from: accounts[1] });
-
-      await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(0);
-      expect(balances.vault.total).to.be.bignumber.equal(0);
-      expect(balances.vault.actual).to.be.bignumber.equal(0);
-      expect(balances.safe.id).to.be.bignumber.equal(num1);
-      expect(balances.safe.total).to.be.bignumber.equal(num1);
-      expect(balances.safe.actual).to.be.bignumber.equal(num1);
-    });
-
-    it('Does not send tokens if vault does not have sufficient accounting', async () => {
-      // issue extra tokens and secretly send to vault without using the normal proxy channel
-      const extraAccount = accounts[9];
-      await tokenA.issue(num1, { from: extraAccount }); //issue extra tokens
-      tokenA.transfer(vault.address, num1, { from: extraAccount });
-
-      // okay to transfer half of the tokens
-      await vault.grantAccess(receiver);
-      await vault.transferToSafetyDepositBox(id, tokenA.address, receiver, halfNum1,
-        { from: accounts[1] });
-
-      // not okay to overtransfer, even though those tokens are technically credited to the vault
-      await expectAssertFailure(
-        () => vault.transferToSafetyDepositBox(id, tokenA.address, receiver, num1,
-          { from: accounts[1] })
-      );
-
-      // not okay to transfer from a bad id
-      await expectAssertFailure(
-        () => vault.transferToSafetyDepositBox(id2, tokenA.address, receiver, num1,
-          { from: accounts[1] })
-      );
-
-      await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
-      expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.id).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.safe.actual).to.be.bignumber.equal(halfNum1);
-      // prove that the vault actually has extra un-assigned funds
-      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(halfNum1));
-    });
-
-    it('Does not allow unauthorized addresses to send', async () => {
-      // holder1 is not an approved address and therefore cannot simply take their funds back
-      await expectThrow(
-        () => vault.transferToSafetyDepositBox(id, tokenA.address, receiver, halfNum1,
-          { from: holder1 })
-      );
-
-      await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
-      expect(balances.vault.total).to.be.bignumber.equal(num1);
-      expect(balances.vault.actual).to.be.bignumber.equal(num1);
-      expect(balances.safe.id).to.be.bignumber.equal(0);
-      expect(balances.safe.total).to.be.bignumber.equal(0);
-      expect(balances.safe.actual).to.be.bignumber.equal(0);
-    });
-  });
-
-  describe('#withdrawFromVault', () => {
+  describe('#transferFromVault', () => {
     const holder1 = accounts[4];
     const receiver = accounts[5];
     const id = 'TEST_ID';
@@ -372,7 +239,7 @@ contract('Vault', function(accounts) {
 
     it('Sends tokens if vault has balance', async () => {
       await vault.grantAccess(receiver);
-      await vault.withdrawFromVault(id, tokenA.address, halfNum1, { from: receiver });
+      await vault.transferFromVault(id, tokenA.address, receiver, halfNum1, { from: receiver });
 
       await checkBalances();
       expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
@@ -380,7 +247,7 @@ contract('Vault', function(accounts) {
       expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
       expect(balances.reciever).to.be.bignumber.equal(halfNum1);
 
-      await vault.withdrawFromVault(id, tokenA.address, num1.div(2), { from: receiver });
+      await vault.transferFromVault(id, tokenA.address, receiver, num1.div(2), { from: receiver });
 
       await checkBalances();
       expect(balances.vault.id).to.be.bignumber.equal(0);
@@ -397,16 +264,16 @@ contract('Vault', function(accounts) {
 
       // okay to withdraw half of the tokens
       await vault.grantAccess(receiver);
-      await vault.withdrawFromVault(id, tokenA.address, halfNum1, { from: receiver });
+      await vault.transferFromVault(id, tokenA.address, receiver, halfNum1, { from: receiver });
 
       // not okay to overwithdraw, even though those tokens are technically credited to the vault
       await expectAssertFailure(
-        () => vault.withdrawFromVault(id, tokenA.address, num1, { from: receiver })
+        () => vault.transferFromVault(id, tokenA.address, receiver, num1, { from: receiver })
       );
 
       // not okay to withdraw from a bad id
       await expectAssertFailure(
-        () => vault.withdrawFromVault(id2, tokenA.address, num1, { from: receiver })
+        () => vault.transferFromVault(id2, tokenA.address, receiver, num1, { from: receiver })
       );
 
       await checkBalances();
@@ -420,7 +287,7 @@ contract('Vault', function(accounts) {
     it('Does not allow unauthorized addresses to send', async () => {
       // holder1 is not an approved address and therefore cannot simply take their funds back
       await expectThrow(
-        () => vault.withdrawFromVault(id, tokenA.address, num1, { from: holder1 })
+        () => vault.transferFromVault(id, tokenA.address, holder1, num1, { from: holder1 })
       );
 
       await checkBalances();
