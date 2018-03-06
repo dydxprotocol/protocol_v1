@@ -4,27 +4,27 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 contract OwnedToken is Ownable {
-    uint supply;
-    mapping(address => uint) balances;
+    uint256 supply;
+    mapping(address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer( address token, address from, address to, uint value);
-    event Approval( address token, address owner, address spender, uint value);
+    event Transfer( address token, address from, address to, uint256 value);
+    event Approval( address token, address owner, address spender, uint256 value);
 
 
-    function issueTo(address who, uint amount) onlyOwner external {
+    function issueTo(address who, uint256 amount) onlyOwner external {
         balances[who] = balances[who] + amount;
     }
 
-    function totalSupply() view public returns (uint _supply) {
+    function totalSupply() view public returns (uint256 _supply) {
         return supply;
     }
 
-    function balanceOf( address who ) view public returns (uint value) {
+    function balanceOf( address who ) view public returns (uint256 value) {
         return balances[who];
     }
 
-    function allowance( address owner, address spender ) view public returns (uint _allowance) {
+    function allowance( address owner, address spender ) view public returns (uint256 _allowance) {
         return allowed[owner][spender];
     }
 
@@ -40,7 +40,7 @@ contract OwnedToken is Ownable {
         return 18;
     }
 
-    function transfer( address to, uint value) public returns (bool ok) {
+    function transfer( address to, uint256 value) public returns (bool ok) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
@@ -56,7 +56,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function transferFrom( address from, address to, uint value) public returns (bool ok) {
+    function transferFrom( address from, address to, uint256 value) public returns (bool ok) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] += value;
             balances[from] -= value;
@@ -73,7 +73,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function approve( address spender, uint value ) public returns (bool ok) {
+    function approve( address spender, uint256 value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
         Approval(
             address(this),

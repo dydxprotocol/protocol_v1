@@ -13,7 +13,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  * This library contains common functions for implementations of public facing ShortSell functions
  */
 library ShortSellCommon {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // -----------------------
     // ------- Structs -------
@@ -76,7 +76,7 @@ library ShortSellCommon {
     )
         view
         internal
-        returns (uint _unavailableAmount)
+        returns (uint256 _unavailableAmount)
     {
         return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
@@ -129,7 +129,7 @@ library ShortSellCommon {
         pure
         returns (uint256 _interestFee)
     {
-        uint timeElapsed = endTimestamp.sub(short.startTimestamp);
+        uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
         if (timeElapsed > short.maxDuration) {
             timeElapsed = short.maxDuration;
         }

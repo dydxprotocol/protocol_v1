@@ -24,7 +24,7 @@ contract Trader is
     TokenInteract,
     HasNoEther,
     HasNoContracts {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // -----------------------
     // ------- Structs -------
@@ -38,18 +38,18 @@ contract Trader is
         address feeRecipient;
         address makerFeeToken;
         address takerFeeToken;
-        uint makerTokenAmount;
-        uint takerTokenAmount;
-        uint makerFee;
-        uint takerFee;
-        uint expirationTimestampInSec;
+        uint256 makerTokenAmount;
+        uint256 takerTokenAmount;
+        uint256 makerFee;
+        uint256 takerFee;
+        uint256 expirationTimestampInSec;
         bool is0xOrder;
     }
 
     struct StartingBalances {
-        uint takerTokenBalance;
-        uint makerTokenBalance;
-        uint takerFeeTokenBalance;
+        uint256 takerTokenBalance;
+        uint256 makerTokenBalance;
+        uint256 takerFeeTokenBalance;
     }
 
     // ---------------------------
@@ -74,7 +74,7 @@ contract Trader is
         address _proxy,
         address _0xProxy,
         address _0xFeeTokenConstant,
-        uint _gracePeriod
+        uint256 _gracePeriod
     )
         StaticAccessControlled(_gracePeriod)
         public
@@ -94,8 +94,8 @@ contract Trader is
     function trade(
         bytes32 id,
         address[7] orderAddresses,
-        uint[6] orderValues,
-        uint requestedFillAmount,
+        uint256[6] orderValues,
+        uint256 requestedFillAmount,
         uint8 v,
         bytes32 r,
         bytes32 s,
@@ -104,8 +104,8 @@ contract Trader is
         requiresAuthorization
         external
         returns (
-            uint _filledTakerTokenAmount,
-            uint _makerTokenAmount
+            uint256 _filledTakerTokenAmount,
+            uint256 _makerTokenAmount
         )
     {
         Order memory order = Order({
@@ -138,7 +138,7 @@ contract Trader is
         );
 
         // Do the trade
-        uint filledTakerTokenAmount = doTrade(
+        uint256 filledTakerTokenAmount = doTrade(
             orderAddresses,
             orderValues,
             requestedFillAmount,
@@ -147,7 +147,7 @@ contract Trader is
             s
         );
 
-        uint makerTokenAmount = returnTokens(
+        uint256 makerTokenAmount = returnTokens(
             id,
             order,
             filledTakerTokenAmount,
@@ -167,14 +167,14 @@ contract Trader is
 
     function doTrade(
         address[7] orderAddresses,
-        uint[6] orderValues,
-        uint requestedFillAmount,
+        uint256[6] orderValues,
+        uint256 requestedFillAmount,
         uint8 v,
         bytes32 r,
         bytes32 s
     )
         internal
-        returns (uint _filledTakerTokenAmount)
+        returns (uint256 _filledTakerTokenAmount)
     {
         // If the maker fee token address is a special reserved constant then
         // Use the official 0x exchange contract. Otherwise use dydx's general exchange contract
@@ -210,13 +210,13 @@ contract Trader is
     function transferTokensBeforeTrade(
         bytes32 id,
         Order order,
-        uint requestedFillAmount
+        uint256 requestedFillAmount
     )
         internal
     {
         require(order.makerToken != order.takerToken);
 
-        uint feeAmount;
+        uint256 feeAmount;
 
         address proxy;
 
@@ -245,7 +245,7 @@ contract Trader is
                 order.takerFee
             );
 
-            uint totalAmount = requestedFillAmount.add(feeAmount);
+            uint256 totalAmount = requestedFillAmount.add(feeAmount);
 
             Vault(VAULT).withdrawFromVault(
                 id,
@@ -283,12 +283,12 @@ contract Trader is
     function returnTokens(
         bytes32 id,
         Order order,
-        uint filledTakerTokenAmount,
-        uint requestedFillAmount,
+        uint256 filledTakerTokenAmount,
+        uint256 requestedFillAmount,
         bool requireFullAmount
     )
         internal
-        returns (uint _receivedMakerTokenAmount)
+        returns (uint256 _receivedMakerTokenAmount)
     {
         // 0 can indicate an error
         require(filledTakerTokenAmount > 0);
@@ -297,24 +297,24 @@ contract Trader is
             require(requestedFillAmount == filledTakerTokenAmount);
         }
 
-        uint makerTokenAmount = MathHelpers.getPartialAmount(
+        uint256 makerTokenAmount = MathHelpers.getPartialAmount(
             order.makerTokenAmount,
             order.takerTokenAmount,
             filledTakerTokenAmount
         );
-        uint paidTakerFee = MathHelpers.getPartialAmount(
+        uint256 paidTakerFee = MathHelpers.getPartialAmount(
             filledTakerTokenAmount,
             order.takerTokenAmount,
             order.takerFee
         );
-        uint requestedTakerFee = MathHelpers.getPartialAmount(
+        uint256 requestedTakerFee = MathHelpers.getPartialAmount(
             requestedFillAmount,
             order.takerTokenAmount,
             order.takerFee
         );
 
-        uint extraTakerTokenAmount = requestedFillAmount.sub(filledTakerTokenAmount);
-        uint extraTakerFeeTokenAmount = requestedTakerFee.sub(paidTakerFee);
+        uint256 extraTakerTokenAmount = requestedFillAmount.sub(filledTakerTokenAmount);
+        uint256 extraTakerFeeTokenAmount = requestedTakerFee.sub(paidTakerFee);
 
         transferBackTokens(
             id,
@@ -330,9 +330,9 @@ contract Trader is
     function transferBackTokens(
         bytes32 id,
         Order order,
-        uint receivedMakerTokenAmount,
-        uint extraTakerTokenAmount,
-        uint extraTakerFeeTokenAmount
+        uint256 receivedMakerTokenAmount,
+        uint256 extraTakerTokenAmount,
+        uint256 extraTakerFeeTokenAmount
     )
         internal
     {
@@ -358,7 +358,7 @@ contract Trader is
                 );
             } else if (order.takerToken == order.takerFeeToken) {
                 // If the fee token is the same as the taker token, transfer extras back together
-                uint totalAmount = extraTakerTokenAmount.add(extraTakerFeeTokenAmount);
+                uint256 totalAmount = extraTakerTokenAmount.add(extraTakerFeeTokenAmount);
 
                 setAllowance(order.takerToken, PROXY, extraTakerTokenAmount);
                 Vault(VAULT).transferToVault(

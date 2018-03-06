@@ -14,7 +14,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  * This library contains the implementation for the forceRecoverLoan function of ShortSell
  */
 library ForceRecoverLoanImpl {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ------------------------
     // -------- Events --------
@@ -25,7 +25,7 @@ library ForceRecoverLoanImpl {
      */
     event LoanForceRecovered(
         bytes32 indexed id,
-        uint amount
+        uint256 amount
     );
 
     // -------------------------------------------
@@ -37,7 +37,7 @@ library ForceRecoverLoanImpl {
         bytes32 shortId
     )
         public
-        returns (uint _baseTokenAmount)
+        returns (uint256 _baseTokenAmount)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 

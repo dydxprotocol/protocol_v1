@@ -25,7 +25,7 @@ contract SafetyDepositBox is
     HasNoEther,
     HasNoContracts,
     ReentrancyGuard {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ---------------------------
     // ----- State Variables -----
@@ -40,7 +40,7 @@ contract SafetyDepositBox is
     // -------------------------
 
     function SafetyDepositBox(
-        uint gracePeriod
+        uint256 gracePeriod
     )
         StaticAccessControlled(gracePeriod)
         public
@@ -63,7 +63,7 @@ contract SafetyDepositBox is
     function assignTokensToUser(
         address token,
         address account,
-        uint amount
+        uint256 amount
     )
         external
         nonReentrant

@@ -37,8 +37,8 @@ contract ZeroExExchangeInterface {
     address public TOKEN_TRANSFER_PROXY_CONTRACT;
 
     // Mappings of orderHash => amounts of takerTokenAmount filled or cancelled.
-    mapping (bytes32 => uint) public filled;
-    mapping (bytes32 => uint) public cancelled;
+    mapping (bytes32 => uint256) public filled;
+    mapping (bytes32 => uint256) public cancelled;
 
     /*
     * Core exchange functions
@@ -55,14 +55,14 @@ contract ZeroExExchangeInterface {
     /// @return Total amount of takerToken filled in trade.
     function fillOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint fillTakerTokenAmount,
+        uint256[6] orderValues,
+        uint256 fillTakerTokenAmount,
         bool shouldThrowOnInsufficientBalanceOrAllowance,
         uint8 v,
         bytes32 r,
         bytes32 s)
         public
-        returns (uint filledTakerTokenAmount);
+        returns (uint256 filledTakerTokenAmount);
 
     /// @dev Cancels the input order.
     /// @param orderAddresses Array of order's maker, taker, makerToken, takerToken, and feeRecipient.
@@ -71,10 +71,10 @@ contract ZeroExExchangeInterface {
     /// @return Amount of takerToken cancelled.
     function cancelOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint cancelTakerTokenAmount)
+        uint256[6] orderValues,
+        uint256 cancelTakerTokenAmount)
         public
-        returns (uint);
+        returns (uint256);
 
     /*
     * Wrapper functions
@@ -89,8 +89,8 @@ contract ZeroExExchangeInterface {
     /// @param s ECDSA signature parameters s.
     function fillOrKillOrder(
         address[5] orderAddresses,
-        uint[6] orderValues,
-        uint fillTakerTokenAmount,
+        uint256[6] orderValues,
+        uint256 fillTakerTokenAmount,
         uint8 v,
         bytes32 r,
         bytes32 s)
@@ -98,7 +98,7 @@ contract ZeroExExchangeInterface {
 
     /// @dev Synchronously executes multiple fill orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmounts Array of desired amounts of takerToken to fill in orders.
     /// @param shouldThrowOnInsufficientBalanceOrAllowance Test if transfers will fail before attempting.
     /// @param v Array ECDSA signature v parameters.
@@ -106,8 +106,8 @@ contract ZeroExExchangeInterface {
     /// @param s Array of ECDSA signature s parameters.
     function batchFillOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] fillTakerTokenAmounts,
+        uint256[6][] orderValues,
+        uint256[] fillTakerTokenAmounts,
         bool shouldThrowOnInsufficientBalanceOrAllowance,
         uint8[] v,
         bytes32[] r,
@@ -116,15 +116,15 @@ contract ZeroExExchangeInterface {
 
     /// @dev Synchronously executes multiple fillOrKill orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmounts Array of desired amounts of takerToken to fill in orders.
     /// @param v Array ECDSA signature v parameters.
     /// @param r Array of ECDSA signature r parameters.
     /// @param s Array of ECDSA signature s parameters.
     function batchFillOrKillOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] fillTakerTokenAmounts,
+        uint256[6][] orderValues,
+        uint256[] fillTakerTokenAmounts,
         uint8[] v,
         bytes32[] r,
         bytes32[] s)
@@ -132,7 +132,7 @@ contract ZeroExExchangeInterface {
 
     /// @dev Synchronously executes multiple fill orders in a single transaction until total fillTakerTokenAmount filled.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param fillTakerTokenAmount Desired total amount of takerToken to fill in orders.
     /// @param shouldThrowOnInsufficientBalanceOrAllowance Test if transfers will fail before attempting.
     /// @param v Array ECDSA signature v parameters.
@@ -141,23 +141,23 @@ contract ZeroExExchangeInterface {
     /// @return Total amount of fillTakerTokenAmount filled in orders.
     function fillOrdersUpTo(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint fillTakerTokenAmount,
+        uint256[6][] orderValues,
+        uint256 fillTakerTokenAmount,
         bool shouldThrowOnInsufficientBalanceOrAllowance,
         uint8[] v,
         bytes32[] r,
         bytes32[] s)
         public
-        returns (uint);
+        returns (uint256);
 
     /// @dev Synchronously cancels multiple orders in a single transaction.
     /// @param orderAddresses Array of address arrays containing individual order addresses.
-    /// @param orderValues Array of uint arrays containing individual order values.
+    /// @param orderValues Array of uint256 arrays containing individual order values.
     /// @param cancelTakerTokenAmounts Array of desired amounts of takerToken to cancel in orders.
     function batchCancelOrders(
         address[5][] orderAddresses,
-        uint[6][] orderValues,
-        uint[] cancelTakerTokenAmounts)
+        uint256[6][] orderValues,
+        uint256[] cancelTakerTokenAmounts)
         public;
 
     /*
@@ -168,7 +168,7 @@ contract ZeroExExchangeInterface {
     /// @param orderAddresses Array of order's maker, taker, makerToken, takerToken, and feeRecipient.
     /// @param orderValues Array of order's makerTokenAmount, takerTokenAmount, makerFee, takerFee, expirationTimestampInSec, and salt.
     /// @return Keccak-256 hash of order.
-    function getOrderHash(address[5] orderAddresses, uint[6] orderValues)
+    function getOrderHash(address[5] orderAddresses, uint256[6] orderValues)
         public
         view
         returns (bytes32);
@@ -195,7 +195,7 @@ contract ZeroExExchangeInterface {
     /// @param denominator Denominator.
     /// @param target Value to multiply with numerator/denominator.
     /// @return Rounding error is present.
-    function isRoundingError(uint numerator, uint denominator, uint target)
+    function isRoundingError(uint256 numerator, uint256 denominator, uint256 target)
         public
         pure
         returns (bool);
@@ -205,10 +205,10 @@ contract ZeroExExchangeInterface {
     /// @param denominator Denominator.
     /// @param target Value to calculate partial of.
     /// @return Partial value of target.
-    function getPartialAmount(uint numerator, uint denominator, uint target)
+    function getPartialAmount(uint256 numerator, uint256 denominator, uint256 target)
         public
         pure
-        returns (uint);
+        returns (uint256);
 
     /// @dev Calculates the sum of values already filled and cancelled for a given order.
     /// @param orderHash The Keccak-256 hash of the given order.
@@ -216,5 +216,5 @@ contract ZeroExExchangeInterface {
     function getUnavailableTakerTokenAmount(bytes32 orderHash)
         public
         view
-        returns (uint);
+        returns (uint256);
 }

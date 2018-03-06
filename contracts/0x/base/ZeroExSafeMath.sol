@@ -1,24 +1,24 @@
 pragma solidity 0.4.19;
 
 contract ZeroExSafeMath {
-    function safeMul(uint a, uint b) internal pure returns (uint256) {
-        uint c = a * b;
+    function safeMul(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a * b;
         assert(a == 0 || c / a == b);
         return c;
     }
 
-    function safeDiv(uint a, uint b) internal pure returns (uint256) {
-        uint c = a / b;
+    function safeDiv(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a / b;
         return c;
     }
 
-    function safeSub(uint a, uint b) internal pure returns (uint256) {
+    function safeSub(uint256 a, uint256 b) internal pure returns (uint256) {
         assert(b <= a);
         return a - b;
     }
 
-    function safeAdd(uint a, uint b) internal pure returns (uint256) {
-        uint c = a + b;
+    function safeAdd(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
         assert(c >= a);
         return c;
     }

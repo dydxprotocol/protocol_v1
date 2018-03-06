@@ -7,33 +7,33 @@ contract TestToken {
     using SafeMath for uint256;
 
     uint256 supply;
-    mapping(address => uint) balances;
+    mapping(address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer(address token, address from, address to, uint value);
-    event Approval(address token, address owner, address spender, uint value);
-    event Issue(address token, address owner, uint value);
+    event Transfer(address token, address from, address to, uint256 value);
+    event Approval(address token, address owner, address spender, uint256 value);
+    event Issue(address token, address owner, uint256 value);
 
     // Allow anyone to get new token
-    function issue(uint amount) public {
+    function issue(uint256 amount) public {
         issueTo(msg.sender, amount);
     }
 
-    function issueTo(address who, uint amount) public {
+    function issueTo(address who, uint256 amount) public {
         supply = supply.add(amount);
         balances[who] = balances[who].add(amount);
         Issue(address(this), who, amount);
     }
 
-    function totalSupply() public view returns (uint _supply) {
+    function totalSupply() public view returns (uint256 _supply) {
         return supply;
     }
 
-    function balanceOf( address who ) public view returns (uint value) {
+    function balanceOf( address who ) public view returns (uint256 value) {
         return balances[who];
     }
 
-    function allowance( address owner, address spender ) public view returns (uint _allowance) {
+    function allowance( address owner, address spender ) public view returns (uint256 _allowance) {
         return allowed[owner][spender];
     }
 
@@ -49,7 +49,7 @@ contract TestToken {
         return 18;
     }
 
-    function transfer( address to, uint value) public returns (bool ok) {
+    function transfer( address to, uint256 value) public returns (bool ok) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] = balances[to].add(value);
@@ -65,7 +65,7 @@ contract TestToken {
         }
     }
 
-    function transferFrom( address from, address to, uint value) public returns (bool ok) {
+    function transferFrom( address from, address to, uint256 value) public returns (bool ok) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] = balances[to].add(value);
             balances[from] = balances[from].sub(value);
@@ -82,7 +82,7 @@ contract TestToken {
         }
     }
 
-    function approve( address spender, uint value ) public returns (bool ok) {
+    function approve( address spender, uint256 value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
         Approval(
             address(this),

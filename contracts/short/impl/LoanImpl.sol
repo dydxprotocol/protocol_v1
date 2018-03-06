@@ -53,7 +53,7 @@ library LoanImpl {
         bytes32 indexed loanHash,
         address indexed lender,
         address indexed feeRecipient,
-        uint cancelAmount
+        uint256 cancelAmount
     );
 
     /**

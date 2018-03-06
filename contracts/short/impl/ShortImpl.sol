@@ -17,7 +17,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
  * This library contains the implementation for the short function of ShortSell
  */
 library ShortImpl {
-    using SafeMath for uint;
+    using SafeMath for uint256;
 
     // ------------------------
     // -------- Events --------
@@ -34,9 +34,9 @@ library ShortImpl {
         address underlyingToken,
         address baseToken,
         address loanFeeRecipient,
-        uint shortAmount,
-        uint baseTokenFromSell,
-        uint depositAmount,
+        uint256 shortAmount,
+        uint256 baseTokenFromSell,
+        uint256 depositAmount,
         uint32 callTimeLimit,
         uint32 maxDuration
     );
@@ -48,8 +48,8 @@ library ShortImpl {
     struct ShortTx {
         address underlyingToken;
         address baseToken;
-        uint shortAmount;
-        uint depositAmount;
+        uint256 shortAmount;
+        uint256 depositAmount;
         ShortSellCommon.LoanOffering loanOffering;
         BuyOrder buyOrder;
     }
@@ -60,12 +60,12 @@ library ShortImpl {
         address feeRecipient;
         address makerFeeToken;
         address takerFeeToken;
-        uint baseTokenAmount;
-        uint underlyingTokenAmount;
-        uint makerFee;
-        uint takerFee;
-        uint expirationTimestamp;
-        uint salt;
+        uint256 baseTokenAmount;
+        uint256 underlyingTokenAmount;
+        uint256 makerFee;
+        uint256 takerFee;
+        uint256 expirationTimestamp;
+        uint256 salt;
         ShortSellCommon.Signature signature;
     }
 
@@ -76,7 +76,7 @@ library ShortImpl {
     function shortImpl(
         ShortSellState.State storage state,
         address[13] addresses,
-        uint[17] values256,
+        uint256[17] values256,
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -120,7 +120,7 @@ library ShortImpl {
 
         // Check no casting errors
         require(
-            uint(uint32(block.timestamp)) == block.timestamp
+            uint256(uint32(block.timestamp)) == block.timestamp
         );
 
         addShort(
@@ -153,7 +153,7 @@ library ShortImpl {
         );
 
         // Do the sell
-        uint baseTokenReceived = executeSell(
+        uint256 baseTokenReceived = executeSell(
             state,
             transaction,
             shortId
@@ -223,7 +223,7 @@ library ShortImpl {
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
 
-        uint minimumDeposit = MathHelpers.getPartialAmount(
+        uint256 minimumDeposit = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minimumDeposit
@@ -331,7 +331,7 @@ library ShortImpl {
         internal
     {
         // Calculate Fee
-        uint buyOrderTakerFee = MathHelpers.getPartialAmount(
+        uint256 buyOrderTakerFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.buyOrder.underlyingTokenAmount,
             transaction.buyOrder.takerFee
@@ -380,7 +380,7 @@ library ShortImpl {
         internal
     {
         Proxy proxy = Proxy(state.PROXY);
-        uint lenderFee = MathHelpers.getPartialAmount(
+        uint256 lenderFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.lenderFee
@@ -391,7 +391,7 @@ library ShortImpl {
             transaction.loanOffering.feeRecipient,
             lenderFee
         );
-        uint takerFee = MathHelpers.getPartialAmount(
+        uint256 takerFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.takerFee
@@ -410,7 +410,7 @@ library ShortImpl {
         bytes32 shortId
     )
         internal
-        returns (uint _baseTokenReceived)
+        returns (uint256 _baseTokenReceived)
     {
         var ( , baseTokenReceived) = Trader(state.TRADER).trade(
             shortId,
@@ -458,7 +458,7 @@ library ShortImpl {
         bytes32 shortId,
         address shortSeller,
         ShortTx transaction,
-        uint baseTokenReceived
+        uint256 baseTokenReceived
     )
         internal
     {
@@ -483,7 +483,7 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint _interestFee)
+        returns (uint256 _interestFee)
     {
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
         // payments. This would be an infeasiable attack in most scenarios due to low rounding error
@@ -499,8 +499,8 @@ library ShortImpl {
         bytes32 id,
         address underlyingToken,
         address baseToken,
-        uint shortAmount,
-        uint interestRate,
+        uint256 shortAmount,
+        uint256 interestRate,
         uint32 callTimeLimit,
         uint32 startTimestamp,
         uint32 maxDuration,
@@ -532,7 +532,7 @@ library ShortImpl {
 
     function parseShortTx(
         address[13] addresses,
-        uint[17] values,
+        uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -566,7 +566,7 @@ library ShortImpl {
 
     function parseLoanOffering(
         address[13] addresses,
-        uint[17] values,
+        uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -601,7 +601,7 @@ library ShortImpl {
     }
 
     function parseLoanOfferRates(
-        uint[17] values
+        uint256[17] values
     )
         internal
         pure
@@ -639,7 +639,7 @@ library ShortImpl {
 
     function parseBuyOrder(
         address[13] addresses,
-        uint[17] values,
+        uint256[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
     )
@@ -706,7 +706,7 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint[9] _values)
+        returns (uint256[9] _values)
     {
         return [
             transaction.loanOffering.rates.minimumDeposit,
