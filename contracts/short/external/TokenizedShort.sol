@@ -171,7 +171,6 @@ contract TokenizedShort is
         external
         returns (uint256 _allowedAmount)
     {
-        require(msg.sender == SHORT_SELL);
         require(state == State.OPEN);
 
         // not a necessary check, but we include shortId in the parameters in case a single contract

@@ -8,7 +8,7 @@ pragma solidity 0.4.19;
  * Interface that smart contracts must implement in order to own shorts on behalf of users in order
  * to unlock more complex logic.
  */
-contract ShortOwner {
+contract ShortOwner is OnlyShortSell{
 
     // address of the known and trusted ShortSell contract on the blockchain
     address public SHORT_SELL;
@@ -21,18 +21,8 @@ contract ShortOwner {
         address _shortSell
     )
         public
+        OnlyShortSell(_shortSell)
     {
-        SHORT_SELL = _shortSell;
-    }
-
-    // ---------------------------
-    // -------- Modifiers --------
-    // ---------------------------
-
-    modifier onlyShortSell()
-    {
-        require(msg.sender == SHORT_SELL);
-        _;
     }
 
     // ----------------------------------------
