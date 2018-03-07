@@ -43,7 +43,7 @@ contract TestLoanCaller is LoanCaller {
         return _who == caller;
     }
 
-    function cancelOnBehalfOf(
+    function cancelLoanCallOnBehalfOf(
         address _who,
         bytes32
     )

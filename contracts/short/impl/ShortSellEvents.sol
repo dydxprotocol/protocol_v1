@@ -118,8 +118,8 @@ contract ShortSellEvents {
      */
     event LoanTransfered(
         bytes32 indexed id,
-        address from,
-        address to
+        address indexed from,
+        address indexed to
     );
 
     /**

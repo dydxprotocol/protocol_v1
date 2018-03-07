@@ -8,7 +8,6 @@ import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
-import { TransferImpl } from "./TransferImpl.sol";
 
 
 /**
@@ -125,19 +124,10 @@ library ShortImpl {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        addShort(
-            state,
-            shortId,
-            transaction.underlyingToken,
-            transaction.baseToken,
-            transaction.shortAmount,
-            partialInterestFee,
-            transaction.loanOffering.callTimeLimit,
-            uint32(block.timestamp),
-            parsedMaxDuration,
-            transaction.loanOffering.lender,
-            msg.sender
-        );
+        address shortOwner = (transaction.owner != address(0))
+            ? transaction.owner : msg.sender;
+        address loanOwner = (transaction.loanOffering.owner != address(0))
+            ? transaction.loanOffering.owner : transaction.loanOffering.lender;
 
         // EXTERNAL CALLS
 
@@ -165,24 +155,64 @@ library ShortImpl {
         // one level of indirection in order to number of variables for solidity compiler
         recordShortInitiated(
             shortId,
-            msg.sender,
+            shortOwner,
+            loanOwner,
             transaction,
             baseTokenReceived
         );
 
-        callTransferLoan(
+        addShort(
             state,
             shortId,
-            transaction.loanOffering.lender,
-            transaction.loanOffering.owner);
+            transaction.underlyingToken,
+            transaction.baseToken,
+            transaction.shortAmount,
+            partialInterestFee,
+            transaction.loanOffering.callTimeLimit,
+            uint32(block.timestamp),
+            parsedMaxDuration
+        );
 
-        callTransferShort(
-            state,
-            shortId,
-            msg.sender,
-            transaction.owner);
+        state.shorts[shortId].seller = msg.sender;
+        state.shorts[shortId].lender = transaction.loanOffering.lender;
+
+        setOwnersForNewShort(state, transaction, shortId);
 
         return shortId;
+    }
+
+    function setOwnersForNewShort(
+        ShortSellState.State storage state,
+        ShortTx transaction,
+        bytes32 shortId
+    )
+        internal
+    {
+        address oldLender;
+        address newLender;
+        if (transaction.loanOffering.owner == address(0)) {
+            newLender = transaction.loanOffering.lender;
+        } else {
+            oldLender = transaction.loanOffering.lender;
+            newLender = transaction.loanOffering.owner;
+        }
+        state.shorts[shortId].lender = ShortSellCommon.getNewLoanOwner(
+            shortId,
+            oldLender,
+            newLender);
+
+        address oldSeller;
+        address newSeller;
+        if (transaction.owner == address(0)) {
+            newSeller = msg.sender;
+        } else {
+            oldSeller = msg.sender;
+            newSeller = transaction.owner;
+        }
+        state.shorts[shortId].seller = ShortSellCommon.getNewShortOwner(
+            shortId,
+            oldSeller,
+            newSeller);
     }
 
     // --------- Helper Functions ---------
@@ -470,7 +500,8 @@ library ShortImpl {
 
     function recordShortInitiated(
         bytes32 shortId,
-        address shortSeller,
+        address shortOwner,
+        address loanOwner,
         ShortTx transaction,
         uint256 baseTokenReceived
     )
@@ -478,8 +509,8 @@ library ShortImpl {
     {
         ShortInitiated(
             shortId,
-            shortSeller,
-            transaction.loanOffering.lender,
+            shortOwner,
+            loanOwner,
             transaction.loanOffering.loanHash,
             transaction.underlyingToken,
             transaction.baseToken,
@@ -517,65 +548,25 @@ library ShortImpl {
         uint256 interestRate,
         uint32 callTimeLimit,
         uint32 startTimestamp,
-        uint32 maxDuration,
-        address lender,
-        address seller
+        uint32 maxDuration
     )
         internal
     {
         require(!ShortSellCommon.containsShortImpl(state, id));
         require(startTimestamp != 0);
 
-        state.shorts[id] = ShortSellCommon.Short({
-            underlyingToken: underlyingToken,
-            baseToken: baseToken,
-            shortAmount: shortAmount,
-            closedAmount: 0,
-            interestRate: interestRate,
-            requiredDeposit: 0,
-            callTimeLimit: callTimeLimit,
-            startTimestamp: startTimestamp,
-            callTimestamp: 0,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
-        });
-    }
-
-    function callTransferLoan(
-        ShortSellState.State storage _state,
-        bytes32 _shortId,
-        address _lender,
-        address _owner
-    )
-        internal
-    {
-        bool atomicallyAssignNewOwner = (_owner != address(0)) && (_owner != _lender);
-        if (atomicallyAssignNewOwner) {
-            TransferImpl.transferLoanImpl(
-                _state,
-                _shortId,
-                _lender,
-                _owner);
-        }
-    }
-
-    function callTransferShort(
-        ShortSellState.State storage _state,
-        bytes32 _shortId,
-        address _seller,
-        address _owner
-    )
-        internal
-    {
-        bool atomicallyAssignNewOwner = (_owner != address(0)) && (_owner != _seller);
-        if (atomicallyAssignNewOwner) {
-            TransferImpl.transferShortImpl(
-                _state,
-                _shortId,
-                _seller,
-                _owner);
-        }
+        state.shorts[id].underlyingToken = underlyingToken;
+        state.shorts[id].baseToken = baseToken;
+        state.shorts[id].shortAmount = shortAmount;
+        state.shorts[id].interestRate = interestRate;
+        state.shorts[id].callTimeLimit = callTimeLimit;
+        state.shorts[id].startTimestamp = startTimestamp;
+        state.shorts[id].maxDuration = maxDuration;
+        state.shorts[id].closedAmount = 0;
+        state.shorts[id].requiredDeposit = 0;
+        state.shorts[id].callTimestamp = 0;
+        state.shorts[id].lender = address(0);
+        state.shorts[id].seller = address(0);
     }
 
     // -------- Parsing Functions -------

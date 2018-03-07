@@ -1,5 +1,7 @@
 pragma solidity 0.4.19;
 
+import { OnlyShortSell } from "./OnlyShortSell.sol";
+
 
 /**
  * @title LoanOwner

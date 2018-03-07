@@ -21,16 +21,24 @@ contract TokenizedShortCreator is
     ShortOwner,
     ReentrancyGuard
 {
+    // -------------------
+    // ------ Events -----
+    // -------------------
+
+    event TokenizedShortCreated(
+        bytes32 indexed shortId,
+        address tokenAddress
+    );
 
     // ------------------------
     // ------ Constructor -----
     // ------------------------
 
     function TokenizedShortCreator(
-        address _shortSell
+        address shortSell
     )
         public
-        ShortOwner(_shortSell)
+        ShortOwner(shortSell)
     {
     }
 
@@ -42,26 +50,26 @@ contract TokenizedShortCreator is
      * Implementation for ShortOwner functionality. Creates a new TokenizedShort and assigns short
      * ownership to the TokenizedShort.
      *
-     * @param  _from     Address of the previous owner of the short
+     * @param  from  Address of the previous owner of the short
      * @return the address of the owner we are passing ownership to
      */
     function recieveShortOwnership(
-        address _from,
-        bytes32 /* _shortId */
+        address from,
+        bytes32 shortId
     )
         onlyShortSell
         nonReentrant
         external
-        returns (address owner)
+        returns (address _owner)
     {
 
         address tokenAddress = new TokenizedShort(
+            shortId,
             SHORT_SELL,
-            _from
+            from
         );
 
-        assert(tokenAddress != address(this));
-        assert(tokenAddress != address(0));
+        TokenizedShortCreated(shortId, tokenAddress);
 
         return tokenAddress;
     }

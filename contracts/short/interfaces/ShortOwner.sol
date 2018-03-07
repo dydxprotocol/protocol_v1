@@ -1,5 +1,7 @@
 pragma solidity 0.4.19;
 
+import { OnlyShortSell } from "./OnlyShortSell.sol";
+
 
 /**
  * @title ShortOwner
@@ -8,10 +10,7 @@ pragma solidity 0.4.19;
  * Interface that smart contracts must implement in order to own shorts on behalf of users in order
  * to unlock more complex logic.
  */
-contract ShortOwner is OnlyShortSell{
-
-    // address of the known and trusted ShortSell contract on the blockchain
-    address public SHORT_SELL;
+contract ShortOwner is OnlyShortSell {
 
     // -------------------------
     // ------ Constructor ------

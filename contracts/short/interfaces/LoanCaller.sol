@@ -4,10 +4,10 @@ import { LoanOwner } from "./LoanOwner.sol";
 
 
 /**
- * @title ShortCloser
+ * @title LoanCaller
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses close a short
+ * Interface that smart contracts must implement in order to let other addresses call-in a loan
  * owned by the smart contract.
  */
 contract LoanCaller is LoanOwner {
@@ -60,7 +60,7 @@ contract LoanCaller is LoanOwner {
      * @param _shortId        Id of the short being call-canceled
      * @return _allowed       true if the user is allowed to cancel the short call, false otherwise
      */
-    function cancelOnBehalfOf(
+    function cancelLoanCallOnBehalfOf(
         address _who,
         bytes32 _shortId
     )

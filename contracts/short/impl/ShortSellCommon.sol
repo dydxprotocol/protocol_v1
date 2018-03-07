@@ -3,6 +3,9 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -119,6 +122,42 @@ library ShortSellCommon {
     {
         delete state.shorts[shortId];
         state.closedShorts[shortId] = true;
+    }
+
+    function getNewLoanOwner(
+        bytes32 shortId,
+        address oldOwner,
+        address newOwner
+    )
+        internal
+        returns (address _newOwner)
+    {
+        if (ContractHelper.isContract(newOwner)) {
+            address nextOwner = LoanOwner(newOwner).recieveLoanOwnership(oldOwner, shortId);
+            if (nextOwner != newOwner) {
+                return getNewLoanOwner(shortId, newOwner, nextOwner);
+            }
+        }
+        require (newOwner != address(0));
+        return newOwner;
+    }
+
+    function getNewShortOwner(
+        bytes32 shortId,
+        address oldOwner,
+        address newOwner
+    )
+        internal
+        returns (address _newOwner)
+    {
+        if (ContractHelper.isContract(newOwner)) {
+            address nextOwner = ShortOwner(newOwner).recieveShortOwnership(oldOwner, shortId);
+            if (nextOwner != newOwner) {
+                return getNewShortOwner(shortId, newOwner, nextOwner);
+            }
+        }
+        require (newOwner != address(0));
+        return newOwner;
     }
 
     function calculateInterestFee(

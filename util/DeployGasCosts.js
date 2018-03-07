@@ -70,11 +70,9 @@ contract('Deploy Costs', () => {
   describe('TokenizedShort', () => {
     it('', async () => {
       const contract = await TokenizedShort.new(
-        ADDRESSES.TEST[0],
-        ADDRESSES.TEST[1],
         web3.fromUtf8("123456789"),
-        "THIS IS THE FULL NAME",
-        "SYM 10/10"
+        ADDRESSES.TEST[0],
+        ADDRESSES.TEST[1]
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);

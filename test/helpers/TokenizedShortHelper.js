@@ -20,7 +20,7 @@ async function getTokenizedShortConstants(tokenizedShort) {
     totalSupply
   ] = await Promise.all([
     tokenizedShort.SHORT_SELL.call(),
-    tokenizedShort.shortId.call(),
+    tokenizedShort.SHORT_ID.call(),
     tokenizedShort.state.call(),
     tokenizedShort.name.call(),
     tokenizedShort.symbol.call(),

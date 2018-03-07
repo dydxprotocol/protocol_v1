@@ -12,7 +12,6 @@ import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ShortCloser } from "../interfaces/ShortCloser.sol";
 
 
 /**
@@ -68,14 +67,11 @@ contract TokenizedShort is
     // ----- State Variables -----
     // ---------------------------
 
-    // Address of the ShortSell contract
-    address public SHORT_SELL;
-
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
 
     // id of the short this contract is tokenizing
-    bytes32 public shortId;
+    bytes32 public SHORT_ID;
 
     // Current State of this contract. See State enum
     State public state;
@@ -87,22 +83,23 @@ contract TokenizedShort is
     address public underlyingToken;
 
     // Symbol to be ERC20 compliant with frontends
-    string public symbol = "DYDXS";
+    string public symbol = "DYDX-S";
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function TokenizedShort(
+        bytes32 _shortId,
         address _shortSell,
         address _initialTokenHolder
     )
         public
         ShortCloser(_shortSell)
     {
-        SHORT_SELL = _shortSell;
         state = State.UNINITIALIZED;
         initialTokenHolder = _initialTokenHolder;
+        SHORT_ID = _shortId;
     }
 
     // -----------------------------------------
@@ -110,13 +107,16 @@ contract TokenizedShort is
     // -----------------------------------------
 
     /**
-     * After the short has transferred ownership to this contract, it can be initialized.
-     * @param  _shortId  Unique ID of the short
-     * @return true on success
+     * Called by the ShortSell contract when anyone transfers ownership of a short to this contract.
+     * This function initializes the tokenization of the short given and returns this address to
+     * indicate to ShortSell that it is willing to take ownership of the short.
+     *
+     * @param  shortId  Unique ID of the short
+     * @return this address on success, throw otherwise
      */
     function recieveShortOwnership(
-        address /* _from */,
-        bytes32 _shortId
+        address /* from */,
+        bytes32 shortId
     )
         onlyShortSell
         nonReentrant
@@ -125,12 +125,12 @@ contract TokenizedShort is
     {
         // require uninitialized so that this cannot recieve short ownership from more than 1 short
         require(state == State.UNINITIALIZED);
+        require(SHORT_ID == shortId);
 
         // set relevant constants
         state = State.OPEN;
-        shortId = _shortId;
 
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, shortId);
+        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         require(currentShortAmount > 0);
 
@@ -141,7 +141,7 @@ contract TokenizedShort is
         underlyingToken = short.underlyingToken;
 
         // Record event
-        Initialized(shortId, currentShortAmount);
+        Initialized(SHORT_ID, currentShortAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         Transfer(address(0), initialTokenHolder, currentShortAmount);
@@ -156,15 +156,15 @@ contract TokenizedShort is
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
 
-     * @param _who              Address of the caller of the close function
-     * @param _shortId          Id of the short being closed
-     * @param _requestedAmount  Amount of the short being closed
-     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     * @param who              Address of the caller of the close function
+     * @param shortId          Id of the short being closed
+     * @param requestedAmount  Amount of the short being closed
+     * @return allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _who,
-        bytes32 _shortId,
-        uint256 _requestedAmount
+        address who,
+        bytes32 shortId,
+        uint256 requestedAmount
     )
         onlyShortSell
         nonReentrant
@@ -175,21 +175,21 @@ contract TokenizedShort is
 
         // not a necessary check, but we include shortId in the parameters in case a single contract
         // acts as the seller for multiple short positions
-        require(_shortId == shortId);
+        require(SHORT_ID == shortId);
 
         // to be more general, we prefer to return the amount closed rather than revert
-        uint256 amount = Math.min256(_requestedAmount, balances[_who]);
+        uint256 amount = Math.min256(requestedAmount, balances[who]);
         if (amount == 0) {
             return 0;
         }
 
         // subtract from balances
-        uint256 balance = balances[_who];
+        uint256 balance = balances[who];
         require(amount <= balance);
-        balances[_who] = balance.sub(amount);
+        balances[who] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
 
-        TokensRedeemedForClose(_who, amount);
+        TokensRedeemedForClose(who, amount);
         return amount;
     }
 
@@ -223,7 +223,7 @@ contract TokenizedShort is
         require(value > 0);
 
         // If in OPEN state, but the short is closed, set to CLOSED state
-        if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(shortId)) {
+        if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
         }
         require(state == State.CLOSED);
@@ -269,7 +269,7 @@ contract TokenizedShort is
         // ERC20 token.
         return
             DetailedERC20(
-                ShortSell(SHORT_SELL).getShortUnderlyingToken(shortId)
+                ShortSell(SHORT_SELL).getShortUnderlyingToken(SHORT_ID)
             ).decimals();
     }
 
@@ -285,29 +285,54 @@ contract TokenizedShort is
         view
         returns (string _name)
     {
-        if (shortId == bytes32(0)) {
+        if (state == State.UNINITIALIZED) {
             return "dYdx Tokenized Short [UNINITIALIZED]";
         }
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
         uint256 introLength = intro.length;
         bytes memory bytesString = new bytes(introLength + 64);
-        for (uint k = 0; k < introLength; k++) {
-            bytesString[k] = intro[k];
-        }
 
-        // Copy shortId into bytes array (in hexadecimal form)
-        uint256 temp = uint256(shortId);
+        bytesString = copyIn(bytesString, intro);
+        bytesString = copyIn(bytesString, SHORT_ID, introLength);
+
+        return string(bytesString);
+    }
+
+    function copyIn(
+        bytes base,
+        bytes toCopy
+    )
+        internal
+        pure
+        returns (bytes _return)
+    {
+        assert(toCopy.length <= base.length);
+        for (uint k = 0; k < toCopy.length; k++) {
+            base[k] = toCopy[k];
+        }
+        return base;
+    }
+
+    function copyIn(
+        bytes base,
+        bytes32 toCopy,
+        uint256 position
+    )
+        internal
+        pure
+        returns (bytes _return)
+    {
+        uint256 temp = uint256(toCopy);
         for (uint8 j = 0; j < 32; j++) {
             uint256 jthByte = temp / uint256(uint256(2) ** uint256(248-8*j));
             uint8 fourBit1 = uint8(jthByte) / uint8(16);
             uint8 fourBit2 = uint8(jthByte) % uint8(16);
             fourBit1 += (fourBit1 > 9) ? 87 : 48; // shift into proper ascii value
             fourBit2 += (fourBit2 > 9) ? 87 : 48; // shift into proper ascii value
-            bytesString[introLength + 2 * j] = byte(fourBit1);
-            bytesString[introLength + 2 * j + 1] = byte(fourBit2);
+            base[position + 2 * j] = byte(fourBit1);
+            base[position + 2 * j + 1] = byte(fourBit2);
         }
-
-        return string(bytesString);
+        return base;
     }
 }

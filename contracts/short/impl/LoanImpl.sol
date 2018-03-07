@@ -111,7 +111,7 @@ library LoanImpl {
 
         // If not the lender, we require the lender to approve msg.sender
         if (msg.sender != short.lender) {
-            require(LoanCaller(short.lender).cancelOnBehalfOf(msg.sender, shortId));
+            require(LoanCaller(short.lender).cancelLoanCallOnBehalfOf(msg.sender, shortId));
         }
 
         // Ensure the loan has been called

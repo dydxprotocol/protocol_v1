@@ -35,12 +35,12 @@ contract('TokenizedShortCreator', function(accounts) {
     let contract;
 
     beforeEach('set up new TokenizedShortCreator contract', async () => {
-      contract = await TokenizedShortCreator.new(shortSellContract.address);
+      contract = await TokenizedShortCreator.new(ShortSell.address);
     });
 
     it('sets constants correctly', async () => {
       const shortSellContractAddress = await contract.SHORT_SELL.call();
-      expect(shortSellContractAddress).to.equal(shortSellContract.address);
+      expect(shortSellContractAddress).to.equal(ShortSell.address);
     });
   });
 
@@ -57,7 +57,7 @@ contract('TokenizedShortCreator', function(accounts) {
         ownerSupply,
       ] = await Promise.all([
         shortTokenContract.SHORT_SELL.call(),
-        shortTokenContract.shortId.call(),
+        shortTokenContract.SHORT_ID.call(),
         shortTokenContract.state.call(),
         shortTokenContract.initialTokenHolder.call(),
         shortTokenContract.baseToken.call(),

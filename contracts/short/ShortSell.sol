@@ -409,17 +409,9 @@ contract ShortSell is
         external
         nonReentrant
     {
-        // This address will be address(0) if the short does not exist. This is fine because
-        // we validate msg.sender == lender right after, and msg.sender can't be address(0)
-        address lender = ShortSellCommon.getShortObject(state, shortId).lender;
-
-        require(msg.sender == lender);
-        require(who != lender);
-
         TransferImpl.transferLoanImpl(
             state,
             shortId,
-            lender,
             who);
     }
 
@@ -437,17 +429,9 @@ contract ShortSell is
         external
         nonReentrant
     {
-        // This address will be address(0) if the short does not exist. This is fine because
-        // we validate msg.sender == seller right after, and msg.sender can't be address(0)
-        address seller = ShortSellCommon.getShortObject(state, shortId).seller;
-
-        require(msg.sender == seller);
-        require(who != seller);
-
         TransferImpl.transferShortImpl(
             state,
             shortId,
-            seller,
             who);
     }
 

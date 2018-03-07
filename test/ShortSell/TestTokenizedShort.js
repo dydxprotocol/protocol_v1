@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const ShortSell = artifacts.require("ShortSell");
 const TokenizedShort = artifacts.require("TokenizedShort");
 const UnderlyingToken = artifacts.require("TokenB");
-const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 const {
   callCloseShort,
   createSigned0xSellOrder,
@@ -95,9 +95,11 @@ contract('TokenizedShort', function(accounts) {
       SHORTS.PART.TOKEN_CONTRACT
     ] = await Promise.all([
       TokenizedShort.new(
+        SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER),
       TokenizedShort.new(
+        SHORTS.PART.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER)
     ]);
@@ -159,11 +161,11 @@ contract('TokenizedShort', function(accounts) {
         const short = SHORTS[type];
         const tsc = await getTokenizedShortConstants(short.TOKEN_CONTRACT);
         expect(tsc.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc.shortId).to.equal(BYTES32.ZERO);
+        expect(tsc.shortId).to.equal(short.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.initialTokenHolder).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
-        expect(tsc.symbol).to.equal("DYDXS");
+        expect(tsc.symbol).to.equal("DYDX-S");
         expect(tsc.name).to.equal("dYdx Tokenized Short [UNINITIALIZED]");
       }
     });
@@ -179,6 +181,7 @@ contract('TokenizedShort', function(accounts) {
     it('succeeds for FULL and PART shorts', async () => {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
+
         const tsc1 = await getTokenizedShortConstants(SHORT.TOKEN_CONTRACT);
 
         await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address,
@@ -188,6 +191,7 @@ contract('TokenizedShort', function(accounts) {
           getTokenizedShortConstants(SHORT.TOKEN_CONTRACT),
           getShort(CONTRACTS.SHORT_SELL, SHORT.ID)
         ]);
+
         // expect certain values
         expect(tsc2.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
         expect(tsc2.shortId).to.equal(SHORT.ID);
@@ -198,9 +202,9 @@ contract('TokenizedShort', function(accounts) {
         // explicity make sure some things have changed
         expect(tsc2.state.equals(tsc1.state)).to.be.false;
         expect(tsc2.baseToken).to.not.equal(tsc1.baseToken);
-        expect(tsc2.shortId).to.not.equal(tsc1.shortId);
 
         // explicity make sure some things have not changed
+        expect(tsc2.shortId).to.equal(tsc1.shortId);
         expect(tsc2.SHORT_SELL).to.equal(tsc1.SHORT_SELL);
         expect(tsc2.initialTokenHolder).to.equal(tsc1.initialTokenHolder);
       }
@@ -428,14 +432,7 @@ contract('TokenizedShort', function(accounts) {
   });
 
   describe('#decimals', () => {
-    it('fails for non-transferred short', async () => {
-      const tokenContract = await TokenizedShort.new(
-        CONTRACTS.SHORT_SELL.address,
-        INITIAL_TOKEN_HOLDER);
-      await expectThrow(() => tokenContract.decimals());
-    });
-
-    it('successfully returns decimal value of underlyingToken', async () => {
+    it('returns decimal value of underlyingToken', async () => {
       await setUpShorts();
       await setUpShortTokens();
       await transferShortsToTokens();
@@ -449,6 +446,19 @@ contract('TokenizedShort', function(accounts) {
         expect(decimal).to.be.bignumber.equal(expectedDecimal);
       }
     });
+
+    it('returns decimal value of underlyingToken, even if not initialized', async () => {
+      await setUpShorts();
+      const tokenContract = await TokenizedShort.new(
+        SHORTS.FULL.ID,
+        CONTRACTS.SHORT_SELL.address,
+        INITIAL_TOKEN_HOLDER);
+      const [decimal, expectedDecimal] = await Promise.all([
+        tokenContract.decimals.call(),
+        underlyingToken.decimals.call()
+      ]);
+      expect(decimal).to.be.bignumber.equal(expectedDecimal);
+    });
   });
 
   describe('#name', () => {
@@ -460,7 +470,7 @@ contract('TokenizedShort', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         const [shortId, shortName] = await Promise.all([
-          SHORT.TOKEN_CONTRACT.shortId.call(),
+          SHORT.TOKEN_CONTRACT.SHORT_ID.call(),
           SHORT.TOKEN_CONTRACT.name.call()
         ]);
         expect(shortId).to.be.bignumber.equal(SHORT.ID);
