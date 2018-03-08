@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const ShortSell = artifacts.require("ShortSell");
-const TokenizedShort = artifacts.require("TokenizedShort");
+const ERC20Short = artifacts.require("ERC20Short");
 const UnderlyingToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../helpers/Constants');
 const {
@@ -19,13 +19,13 @@ const {
 const { transact } = require('../helpers/ContractHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
-  getTokenizedShortConstants,
+  getERC20ShortConstants,
   TOKENIZED_SHORT_STATE
-} = require('../helpers/TokenizedShortHelper');
+} = require('../helpers/ERC20ShortHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
-contract('TokenizedShort', function(accounts) {
+contract('ERC20Short', function(accounts) {
   let underlyingToken
 
   let SHORTS = {
@@ -94,11 +94,11 @@ contract('TokenizedShort', function(accounts) {
       SHORTS.FULL.TOKEN_CONTRACT,
       SHORTS.PART.TOKEN_CONTRACT
     ] = await Promise.all([
-      TokenizedShort.new(
+      ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER),
-      TokenizedShort.new(
+      ERC20Short.new(
         SHORTS.PART.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER)
@@ -159,7 +159,7 @@ contract('TokenizedShort', function(accounts) {
     it('sets constants correctly', async () => {
       for (let type in SHORTS) {
         const short = SHORTS[type];
-        const tsc = await getTokenizedShortConstants(short.TOKEN_CONTRACT);
+        const tsc = await getERC20ShortConstants(short.TOKEN_CONTRACT);
         expect(tsc.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
         expect(tsc.shortId).to.equal(short.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
@@ -182,13 +182,13 @@ contract('TokenizedShort', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
 
-        const tsc1 = await getTokenizedShortConstants(SHORT.TOKEN_CONTRACT);
+        const tsc1 = await getERC20ShortConstants(SHORT.TOKEN_CONTRACT);
 
         await CONTRACTS.SHORT_SELL.transferShort(SHORT.ID, SHORT.TOKEN_CONTRACT.address,
           { from: SHORT.TX.seller });
 
         const [tsc2, short] = await Promise.all([
-          getTokenizedShortConstants(SHORT.TOKEN_CONTRACT),
+          getERC20ShortConstants(SHORT.TOKEN_CONTRACT),
           getShort(CONTRACTS.SHORT_SELL, SHORT.ID)
         ]);
 
@@ -449,7 +449,7 @@ contract('TokenizedShort', function(accounts) {
 
     it('returns decimal value of underlyingToken, even if not initialized', async () => {
       await setUpShorts();
-      const tokenContract = await TokenizedShort.new(
+      const tokenContract = await ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER);

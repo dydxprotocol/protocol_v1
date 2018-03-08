@@ -15,7 +15,7 @@ const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
-const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
+const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -222,7 +222,7 @@ async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
   await issueTokensAndSetAllowancesForShort(shortTx);
 
   if (tokenized) {
-    shortTx.owner = TokenizedShortCreator.address;
+    shortTx.owner = ERC20ShortCreator.address;
   }
   const response = await callShort(shortSell, shortTx);
 

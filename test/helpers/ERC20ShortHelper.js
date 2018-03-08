@@ -8,7 +8,7 @@ const TOKENIZED_SHORT_STATE = {
   CLOSED: new BigNumber(2)
 };
 
-async function getTokenizedShortConstants(tokenizedShort) {
+async function getERC20ShortConstants(ERC20Short) {
   const [
     SHORT_SELL,
     shortId,
@@ -19,14 +19,14 @@ async function getTokenizedShortConstants(tokenizedShort) {
     baseToken,
     totalSupply
   ] = await Promise.all([
-    tokenizedShort.SHORT_SELL.call(),
-    tokenizedShort.SHORT_ID.call(),
-    tokenizedShort.state.call(),
-    tokenizedShort.name.call(),
-    tokenizedShort.symbol.call(),
-    tokenizedShort.initialTokenHolder.call(),
-    tokenizedShort.baseToken.call(),
-    tokenizedShort.totalSupply.call(),
+    ERC20Short.SHORT_SELL.call(),
+    ERC20Short.SHORT_ID.call(),
+    ERC20Short.state.call(),
+    ERC20Short.name.call(),
+    ERC20Short.symbol.call(),
+    ERC20Short.initialTokenHolder.call(),
+    ERC20Short.baseToken.call(),
+    ERC20Short.totalSupply.call(),
   ]);
   return {
     SHORT_SELL,
@@ -42,5 +42,5 @@ async function getTokenizedShortConstants(tokenizedShort) {
 
 module.exports = {
   TOKENIZED_SHORT_STATE,
-  getTokenizedShortConstants
+  getERC20ShortConstants
 };

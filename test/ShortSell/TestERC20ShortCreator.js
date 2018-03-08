@@ -4,12 +4,12 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const TokenizedShortCreator = artifacts.require("TokenizedShortCreator");
-const TokenizedShort = artifacts.require("TokenizedShort");
+const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
-const { TOKENIZED_SHORT_STATE } = require('../helpers/TokenizedShortHelper');
+const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
@@ -18,24 +18,24 @@ const {
   callCloseShort
 } = require('../helpers/ShortSellHelper');
 
-contract('TokenizedShortCreator', function(accounts) {
-  let shortSellContract, tokenizedShortCreatorContract;
+contract('ERC20ShortCreator', function(accounts) {
+  let shortSellContract, ERC20ShortCreatorContract;
 
   before('retrieve deployed contracts', async () => {
     [
       shortSellContract,
-      tokenizedShortCreatorContract
+      ERC20ShortCreatorContract
     ] = await Promise.all([
       ShortSell.deployed(),
-      TokenizedShortCreator.deployed()
+      ERC20ShortCreator.deployed()
     ]);
   });
 
   describe('Constructor', () => {
     let contract;
 
-    beforeEach('set up new TokenizedShortCreator contract', async () => {
-      contract = await TokenizedShortCreator.new(ShortSell.address);
+    beforeEach('set up new ERC20ShortCreator contract', async () => {
+      contract = await ERC20ShortCreator.new(ShortSell.address);
     });
 
     it('sets constants correctly', async () => {
@@ -77,7 +77,7 @@ contract('TokenizedShortCreator', function(accounts) {
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
       await expectThrow(
-        () => tokenizedShortCreatorContract.recieveShortOwnership(accounts[0], badId));
+        () => ERC20ShortCreatorContract.recieveShortOwnership(accounts[0], badId));
     });
 
     it('succeeds for new short', async () => {
@@ -86,8 +86,8 @@ contract('TokenizedShortCreator', function(accounts) {
       // Get the return value of the tokenizeShort function
       const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);
 
-      // Get the TokenizedShort on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await TokenizedShort.at(tokenAddress);
+      // Get the ERC20Short on the blockchain and make sure that it was created correctly
+      const shortTokenContract = await ERC20Short.at(tokenAddress);
 
       await checkSuccess(shortTx, shortTokenContract, shortTx.shortAmount);
     });
@@ -105,14 +105,14 @@ contract('TokenizedShortCreator', function(accounts) {
         sellOrder,
         shortTx.shortAmount.div(2));
 
-      // transfer short to TokenizedShortCreator
-      await shortSellContract.transferShort(shortTx.id, tokenizedShortCreatorContract.address);
+      // transfer short to ERC20ShortCreator
+      await shortSellContract.transferShort(shortTx.id, ERC20ShortCreatorContract.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);
 
-      // Get the TokenizedShort on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await TokenizedShort.at(tokenAddress);
+      // Get the ERC20Short on the blockchain and make sure that it was created correctly
+      const shortTokenContract = await ERC20Short.at(tokenAddress);
 
       await checkSuccess(shortTx, shortTokenContract, shortTx.shortAmount.div(2));
     });

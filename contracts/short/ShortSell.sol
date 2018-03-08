@@ -164,18 +164,22 @@ contract ShortSell is
      * @param  requestedCloseAmount amount of the short position to close. The amount closed will
      *                              be: min(requestedCloseAmount, currentShortAmount)
      * @param  orderAddresses       Addresses for the supplied 0x order:
-     *                              [0] = maker
-     *                              [1] = taker
-     *                              [2] = fee recipient
-     *                              [3] = maker fee token
-     *                              [4] = taker fee token
+     *
+     *  [0] = maker
+     *  [1] = taker
+     *  [2] = fee recipient
+     *  [3] = maker fee token
+     *  [4] = taker fee token
+     *
      * @param  orderValues          Values for the supplied 0x order:
-     *                              [0] = underlying token amount
-     *                              [1] = base token amount
-     *                              [2] = maker fee
-     *                              [3] = taker fee
-     *                              [4] = expiration timestamp
-     *                              [5] = salt
+     *
+     *  [0] = underlying token amount
+     *  [1] = base token amount
+     *  [2] = maker fee
+     *  [3] = taker fee
+     *  [4] = expiration timestamp
+     *  [5] = salt
+     *
      * @param  orderV               ECDSA signature parameter v for the 0x order
      * @param  orderR bytes32       CDSA signature parameter r for the 0x order
      * @param  orderS bytes32       CDSA signature parameter s for the 0x order
@@ -302,8 +306,8 @@ contract ShortSell is
     }
 
     /**
-     * Deposit additional base token as colateral for a short sell loan. Only callable by
-     * the short seller
+     * Deposit additional base token as colateral for a short sell loan. Cancels loan call if:
+     * 0 < short.requiredDeposit < depositAmount
      *
      * @param  shortId          unique id for the short sell
      * @param  depositAmount    additional amount in base token to deposit
@@ -378,6 +382,39 @@ contract ShortSell is
         );
     }
 
+    /**
+     * On-chain approve a loan offering. Meant for smart contracts to approve loans with a
+     * transaction rather than a signature.
+     *
+     * @param  addresses        Array of addresses:
+     *
+     *  [0] = underlying token
+     *  [1] = base token
+     *  [2] = lender
+     *  [3] = signer
+     *  [4] = owner
+     *  [5] = loan taker
+     *  [6] = loan fee recipient
+     *  [7] = loan lender fee token
+     *  [8] = loan taker fee token
+     *
+     * @param  values256        Values corresponding to:
+     *
+     *  [0] = loan minimum deposit
+     *  [1] = loan maximum amount
+     *  [2] = loan minimum amount
+     *  [3] = loan minimum sell amount
+     *  [4] = loan interest rate
+     *  [5] = loan lender fee
+     *  [6] = loan taker fee
+     *  [7] = loan expiration timestamp (in seconds)
+     *  [8] = loan salt
+     *
+     * @param  values32         Values corresponding to:
+     *
+     *  [0] = loan call time limit  (in seconds)
+     *  [1] = loan maxDuration      (in seconds)
+     */
     function approveLoanOffering(
         address[9] addresses,
         uint256[9] values256,

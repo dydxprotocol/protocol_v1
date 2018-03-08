@@ -15,7 +15,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 
 
 /**
- * @title TokenizedShort
+ * @title ERC20Short
  * @author dYdX
  *
  * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
@@ -23,7 +23,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
  * entitled to some amount of base tokens after settlement.
  */
  /* solium-disable-next-line */
-contract TokenizedShort is
+contract ERC20Short is
     StandardToken,
     ShortCloser,
     ReentrancyGuard,
@@ -44,7 +44,7 @@ contract TokenizedShort is
     // -------- Events --------
     // ------------------------
 
-    // A TokenizedShort was successfully initialized
+    // A ERC20Short was successfully initialized
     event Initialized(
         bytes32 shortId,
         uint256 initialSupply
@@ -89,7 +89,7 @@ contract TokenizedShort is
     // ------ Constructor ------
     // -------------------------
 
-    function TokenizedShort(
+    function ERC20Short(
         bytes32 _shortId,
         address _shortSell,
         address _initialTokenHolder
