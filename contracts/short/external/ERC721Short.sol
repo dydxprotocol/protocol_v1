@@ -12,11 +12,11 @@ import { ShortSell } from "../ShortSell.sol";
 
 
 /**
- * @title GlobalShortSellOwner
+ * @title ERC721Short
  * @author dYdX
  */
  /* solium-disable-next-line */
-contract ERC20Short is
+contract ERC721Short is
     ERC721Token,
     ShortCloser,
     ReentrancyGuard {
@@ -42,7 +42,7 @@ contract ERC20Short is
     // ------ Constructor ------
     // -------------------------
 
-    function ERC20Short(
+    function ERC721Short(
         address _shortSell
     )
         public
