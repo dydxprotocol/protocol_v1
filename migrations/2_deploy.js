@@ -15,6 +15,7 @@ const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
+const TransferInternal = artifacts.require("TransferInternal");
 
 // For testing
 const TokenA = artifacts.require("TokenA");
@@ -53,6 +54,13 @@ function maybeDeploy0x(deployer, network) {
 }
 
 async function deployShortSellContracts(deployer) {
+  await deployer.deploy(TransferInternal);
+
+  await Promise.all([
+      ShortSell.link('TransferInternal', TransferInternal.address),
+      TransferImpl.link('TransferInternal', TransferInternal.address)
+  ]);
+
   await Promise.all([
     deployer.deploy(ProxyContract),
     deployer.deploy(CloseShortImpl),

@@ -434,7 +434,8 @@ contract ShortSell is
 
     /**
      * Transfer ownership of a loan to a new address. This new address will be entitled
-     * to all payouts for this loan. Only callable by the lender for a short
+     * to all payouts for this loan. Only callable by the lender for a short. If the "who"
+     * param is a contract, it must implement the LoanOwner interface.
      *
      * @param  shortId  unique id for the short sell
      * @param  who      new owner of the loan
@@ -454,7 +455,8 @@ contract ShortSell is
 
     /**
      * Transfer ownership of a short to a new address. This new address will be entitled
-     * to all payouts for this short. Only callable by the short seller for a short
+     * to all payouts for this short. Only callable by the short seller for a short. If the "who"
+     * param is a contract, it must implement the ShortOwner interface.
      *
      * @param  shortId  unique id for the short sell
      * @param  who      new owner of the short

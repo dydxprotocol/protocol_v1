@@ -4,9 +4,9 @@ const expect = require('chai').expect;
 
 const TokenA = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
-const TestShortCloser = artifacts.require("TestShortCloser");
+const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
 const TestShortOwner = artifacts.require("TestShortOwner");
-const TestLoanCaller = artifacts.require("TestLoanCaller");
+const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const {
   doShort,
@@ -71,13 +71,13 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract with the correct interface', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testShortCloser = await TestShortCloser.new(shortSell.address, ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(shortSell.address, ADDRESSES.ZERO);
 
       const tx = await shortSell.transferShort(shortTx.id,
-        testShortCloser.address,
+        testCloseShortDelegator.address,
         { from: shortTx.seller });
       const { seller } = await getShort(shortSell, shortTx.id);
-      expect(seller.toLowerCase()).to.eq(testShortCloser.address.toLowerCase());
+      expect(seller.toLowerCase()).to.eq(testCloseShortDelegator.address.toLowerCase());
       console.log('\tShortSell.transferShort gas used (to contract): ' + tx.receipt.gasUsed);
     });
   });
@@ -86,14 +86,14 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract that chains to another contract', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testShortCloser = await TestShortCloser.new(shortSell.address, ADDRESSES.ZERO);
-      const testShortOwner = await TestShortOwner.new(shortSell.address, testShortCloser.address);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(shortSell.address, ADDRESSES.ZERO);
+      const testShortOwner = await TestShortOwner.new(shortSell.address, testCloseShortDelegator.address);
 
       const tx = await shortSell.transferShort(shortTx.id,
         testShortOwner.address,
         { from: shortTx.seller });
       const { seller } = await getShort(shortSell, shortTx.id);
-      expect(seller.toLowerCase()).to.eq(testShortCloser.address.toLowerCase());
+      expect(seller.toLowerCase()).to.eq(testCloseShortDelegator.address.toLowerCase());
       console.log('\tShortSell.transferShort gas used (chains thru): ' + tx.receipt.gasUsed);
     });
   });
@@ -169,16 +169,16 @@ describe('#transferLoan', () => {
     it('successfully transfers to a contract with the correct interface', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testLoanCaller = await TestLoanCaller.new(
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
         shortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
       const tx = await shortSell.transferLoan(shortTx.id,
-        testLoanCaller.address,
+        testCallLoanDelegator.address,
         { from: shortTx.loanOffering.lender });
       const { lender } = await getShort(shortSell, shortTx.id);
-      expect(lender.toLowerCase()).to.eq(testLoanCaller.address.toLowerCase());
+      expect(lender.toLowerCase()).to.eq(testCallLoanDelegator.address.toLowerCase());
       console.log('\tShortSell.transferLoan gas used (to contract): ' + tx.receipt.gasUsed);
     });
   });
@@ -187,17 +187,17 @@ describe('#transferLoan', () => {
     it('successfully transfers to a contract that chains to another contract', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testLoanCaller = await TestLoanCaller.new(
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
         shortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testLoanOwner = await TestLoanOwner.new(shortSell.address, testLoanCaller.address);
+      const testLoanOwner = await TestLoanOwner.new(shortSell.address, testCallLoanDelegator.address);
 
       const tx = await shortSell.transferLoan(shortTx.id,
         testLoanOwner.address,
         { from: shortTx.loanOffering.lender });
       const { lender } = await getShort(shortSell, shortTx.id);
-      expect(lender.toLowerCase()).to.eq(testLoanCaller.address.toLowerCase());
+      expect(lender.toLowerCase()).to.eq(testCallLoanDelegator.address.toLowerCase());
       console.log('\tShortSell.transferLoan gas used (chain thru): ' + tx.receipt.gasUsed);
     });
   });

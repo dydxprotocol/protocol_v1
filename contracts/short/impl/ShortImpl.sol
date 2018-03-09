@@ -7,6 +7,7 @@ import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
+import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
@@ -124,11 +125,6 @@ library ShortImpl {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        address shortOwner = (transaction.owner != address(0))
-            ? transaction.owner : msg.sender;
-        address loanOwner = (transaction.loanOffering.owner != address(0))
-            ? transaction.loanOffering.owner : transaction.loanOffering.lender;
-
         // EXTERNAL CALLS
 
         // If the lender is a smart contract, call out to it to get its consent for this loan
@@ -155,8 +151,7 @@ library ShortImpl {
         // one level of indirection in order to number of variables for solidity compiler
         recordShortInitiated(
             shortId,
-            shortOwner,
-            loanOwner,
+            msg.sender,
             transaction,
             baseTokenReceived
         );
@@ -164,55 +159,12 @@ library ShortImpl {
         addShort(
             state,
             shortId,
-            transaction.underlyingToken,
-            transaction.baseToken,
-            transaction.shortAmount,
+            transaction,
             partialInterestFee,
-            transaction.loanOffering.callTimeLimit,
-            uint32(block.timestamp),
             parsedMaxDuration
         );
 
-        state.shorts[shortId].seller = msg.sender;
-        state.shorts[shortId].lender = transaction.loanOffering.lender;
-
-        setOwnersForNewShort(state, transaction, shortId);
-
         return shortId;
-    }
-
-    function setOwnersForNewShort(
-        ShortSellState.State storage state,
-        ShortTx transaction,
-        bytes32 shortId
-    )
-        internal
-    {
-        address oldLender;
-        address newLender;
-        if (transaction.loanOffering.owner == address(0)) {
-            newLender = transaction.loanOffering.lender;
-        } else {
-            oldLender = transaction.loanOffering.lender;
-            newLender = transaction.loanOffering.owner;
-        }
-        state.shorts[shortId].lender = ShortSellCommon.getNewLoanOwner(
-            shortId,
-            oldLender,
-            newLender);
-
-        address oldSeller;
-        address newSeller;
-        if (transaction.owner == address(0)) {
-            newSeller = msg.sender;
-        } else {
-            oldSeller = msg.sender;
-            newSeller = transaction.owner;
-        }
-        state.shorts[shortId].seller = ShortSellCommon.getNewShortOwner(
-            shortId,
-            oldSeller,
-            newSeller);
     }
 
     // --------- Helper Functions ---------
@@ -242,7 +194,7 @@ library ShortImpl {
         // Disallow 0 value shorts
         require(transaction.shortAmount > 0);
 
-        // Make sure we don't already have this short id
+        // Make this shortId doesn't already exist
         require(!ShortSellCommon.containsShortImpl(state, shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
@@ -390,9 +342,7 @@ library ShortImpl {
                 transaction.depositAmount
             );
         } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
-            // If the buy order taker fee token is base token
-            // we can just transfer base token once from the short seller
-
+            // If the buy order taker fee token is base token, transfer only once for gas efficiency
             Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
@@ -500,8 +450,7 @@ library ShortImpl {
 
     function recordShortInitiated(
         bytes32 shortId,
-        address shortOwner,
-        address loanOwner,
+        address shortSeller,
         ShortTx transaction,
         uint256 baseTokenReceived
     )
@@ -509,8 +458,8 @@ library ShortImpl {
     {
         ShortInitiated(
             shortId,
-            shortOwner,
-            loanOwner,
+            shortSeller,
+            transaction.loanOffering.lender,
             transaction.loanOffering.loanHash,
             transaction.underlyingToken,
             transaction.baseToken,
@@ -541,32 +490,38 @@ library ShortImpl {
 
     function addShort(
         ShortSellState.State storage state,
-        bytes32 id,
-        address underlyingToken,
-        address baseToken,
-        uint256 shortAmount,
+        bytes32 shortId,
+        ShortTx transaction,
         uint256 interestRate,
-        uint32 callTimeLimit,
-        uint32 startTimestamp,
         uint32 maxDuration
     )
         internal
     {
-        require(!ShortSellCommon.containsShortImpl(state, id));
-        require(startTimestamp != 0);
+        require(!ShortSellCommon.containsShortImpl(state, shortId));
 
-        state.shorts[id].underlyingToken = underlyingToken;
-        state.shorts[id].baseToken = baseToken;
-        state.shorts[id].shortAmount = shortAmount;
-        state.shorts[id].interestRate = interestRate;
-        state.shorts[id].callTimeLimit = callTimeLimit;
-        state.shorts[id].startTimestamp = startTimestamp;
-        state.shorts[id].maxDuration = maxDuration;
-        state.shorts[id].closedAmount = 0;
-        state.shorts[id].requiredDeposit = 0;
-        state.shorts[id].callTimestamp = 0;
-        state.shorts[id].lender = address(0);
-        state.shorts[id].seller = address(0);
+        state.shorts[shortId].underlyingToken = transaction.underlyingToken;
+        state.shorts[shortId].baseToken = transaction.baseToken;
+        state.shorts[shortId].shortAmount = transaction.shortAmount;
+        state.shorts[shortId].interestRate = interestRate;
+        state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.shorts[shortId].startTimestamp = uint32(block.timestamp);
+        state.shorts[shortId].maxDuration = maxDuration;
+        state.shorts[shortId].closedAmount = 0;
+        state.shorts[shortId].requiredDeposit = 0;
+        state.shorts[shortId].callTimestamp = 0;
+
+        bool newLender = transaction.loanOffering.owner != address(0);
+        bool newSeller = transaction.owner != address(0);
+
+        state.shorts[shortId].lender = TransferInternal.grantLoanOwnership(
+            shortId,
+            newLender ? transaction.loanOffering.lender : address(0),
+            newLender ? transaction.loanOffering.owner : transaction.loanOffering.lender);
+
+        state.shorts[shortId].seller = TransferInternal.grantShortOwnership(
+            shortId,
+            newSeller ? msg.sender : address(0),
+            newSeller ? transaction.owner : msg.sender);
     }
 
     // -------- Parsing Functions -------

@@ -11,9 +11,10 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
  * @title ERC20ShortCreator
  * @author dYdX
  *
- * This contract is used to deploy new ERC20Short contracts without the user having to deploy
- * the bytecode themselves and just have to send a transaction to a pre-existing contract on the
- * blockchain.
+ * This contract is used to deploy new ERC20Short contracts. A new ERC20Short is automatically
+ * deployed whenever a short is transferred to this contract. That short is then transferred to the
+ * new ERC20Short, with the tokens initially being allocated to the address that transferred the
+ * short originally to the ERC20ERC20ShortCreator.
  */
  /* solium-disable-next-line */
 contract ERC20ShortCreator is
@@ -47,11 +48,12 @@ contract ERC20ShortCreator is
     // -------------------------------
 
     /**
-     * Implementation for ShortOwner functionality. Creates a new ERC20Short and assigns short
-     * ownership to the ERC20Short.
+     * Implementation of ShortOwner functionality. Creates a new ERC20Short and assigns short
+     * ownership to the ERC20Short. Called by ShortSell when a short is transferred to this
+     * contract.
      *
      * @param  from  Address of the previous owner of the short
-     * @return the address of the owner we are passing ownership to
+     * @return Address of the new ERC20Short contract
      */
     function recieveShortOwnership(
         address from,
@@ -62,7 +64,6 @@ contract ERC20ShortCreator is
         external
         returns (address _owner)
     {
-
         address tokenAddress = new ERC20Short(
             shortId,
             SHORT_SELL,

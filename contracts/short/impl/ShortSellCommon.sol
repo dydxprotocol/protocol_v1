@@ -124,42 +124,6 @@ library ShortSellCommon {
         state.closedShorts[shortId] = true;
     }
 
-    function getNewLoanOwner(
-        bytes32 shortId,
-        address oldOwner,
-        address newOwner
-    )
-        internal
-        returns (address _newOwner)
-    {
-        if (ContractHelper.isContract(newOwner)) {
-            address nextOwner = LoanOwner(newOwner).recieveLoanOwnership(oldOwner, shortId);
-            if (nextOwner != newOwner) {
-                return getNewLoanOwner(shortId, newOwner, nextOwner);
-            }
-        }
-        require (newOwner != address(0));
-        return newOwner;
-    }
-
-    function getNewShortOwner(
-        bytes32 shortId,
-        address oldOwner,
-        address newOwner
-    )
-        internal
-        returns (address _newOwner)
-    {
-        if (ContractHelper.isContract(newOwner)) {
-            address nextOwner = ShortOwner(newOwner).recieveShortOwnership(oldOwner, shortId);
-            if (nextOwner != newOwner) {
-                return getNewShortOwner(shortId, newOwner, nextOwner);
-            }
-        }
-        require (newOwner != address(0));
-        return newOwner;
-    }
-
     function calculateInterestFee(
         Short short,
         uint256 closeAmount,

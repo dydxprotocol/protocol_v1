@@ -1,20 +1,20 @@
 pragma solidity 0.4.19;
 
-import { LoanCaller } from "../short/interfaces/LoanCaller.sol";
+import { CallLoanDelegator } from "../short/interfaces/CallLoanDelegator.sol";
 
 
-contract TestLoanCaller is LoanCaller {
+contract TestCallLoanDelegator is CallLoanDelegator {
 
     address public caller;
     address public canceller;
 
-    function TestLoanCaller(
+    function TestCallLoanDelegator(
         address _shortSell,
         address _caller,
         address _canceller
     )
         public
-        LoanCaller(_shortSell)
+        CallLoanDelegator(_shortSell)
     {
         caller = _caller;
         canceller = _canceller;

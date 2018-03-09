@@ -4,7 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { LoanCaller } from "../interfaces/LoanCaller.sol";
+import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -79,9 +79,9 @@ library LoanImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // If not the lender, we require the lender to approve msg.sender
+        // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
-            require(LoanCaller(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit));
+            require(CallLoanDelegator(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit));
         }
 
         // Ensure the loan has not already been called
@@ -109,9 +109,9 @@ library LoanImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // If not the lender, we require the lender to approve msg.sender
+        // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
-            require(LoanCaller(short.lender).cancelLoanCallOnBehalfOf(msg.sender, shortId));
+            require(CallLoanDelegator(short.lender).cancelLoanCallOnBehalfOf(msg.sender, shortId));
         }
 
         // Ensure the loan has been called

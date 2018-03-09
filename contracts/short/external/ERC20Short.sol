@@ -6,7 +6,8 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ShortCloser } from "../interfaces/ShortCloser.sol";
+import { StringHelpers } from "../../lib/StringHelpers.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -25,7 +26,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
  /* solium-disable-next-line */
 contract ERC20Short is
     StandardToken,
-    ShortCloser,
+    CloseShortDelegator,
     ReentrancyGuard,
     TokenInteract {
     using SafeMath for uint256;
@@ -44,7 +45,7 @@ contract ERC20Short is
     // -------- Events --------
     // ------------------------
 
-    // A ERC20Short was successfully initialized
+    // An ERC20Short was successfully initialized
     event Initialized(
         bytes32 shortId,
         uint256 initialSupply
@@ -79,9 +80,6 @@ contract ERC20Short is
     // Address of the short's baseToken. Cached for convenience and lower-cost withdrawals
     address public baseToken;
 
-    // Address of the short's underlyingToken. Cached for convenience
-    address public underlyingToken;
-
     // Symbol to be ERC20 compliant with frontends
     string public symbol = "DYDX-S";
 
@@ -95,7 +93,7 @@ contract ERC20Short is
         address _initialTokenHolder
     )
         public
-        ShortCloser(_shortSell)
+        CloseShortDelegator(_shortSell)
     {
         state = State.UNINITIALIZED;
         initialTokenHolder = _initialTokenHolder;
@@ -111,6 +109,7 @@ contract ERC20Short is
      * This function initializes the tokenization of the short given and returns this address to
      * indicate to ShortSell that it is willing to take ownership of the short.
      *
+     *  param  (unused)
      * @param  shortId  Unique ID of the short
      * @return this address on success, throw otherwise
      */
@@ -127,18 +126,15 @@ contract ERC20Short is
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 
-        // set relevant constants
-        state = State.OPEN;
-
         ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         require(currentShortAmount > 0);
 
-        // Give the specified address the entire balance, equal to the current amount of the short
-        balances[initialTokenHolder] = currentShortAmount;
+        // set relevant constants
+        state = State.OPEN;
         totalSupply_ = currentShortAmount;
+        balances[initialTokenHolder] = currentShortAmount;
         baseToken = short.baseToken;
-        underlyingToken = short.underlyingToken;
 
         // Record event
         Initialized(SHORT_ID, currentShortAmount);
@@ -172,20 +168,12 @@ contract ERC20Short is
         returns (uint256 _allowedAmount)
     {
         require(state == State.OPEN);
-
-        // not a necessary check, but we include shortId in the parameters in case a single contract
-        // acts as the seller for multiple short positions
         require(SHORT_ID == shortId);
 
-        // to be more general, we prefer to return the amount closed rather than revert
-        uint256 amount = Math.min256(requestedAmount, balances[who]);
-        if (amount == 0) {
-            return 0;
-        }
-
-        // subtract from balances
         uint256 balance = balances[who];
-        require(amount <= balance);
+        uint256 amount = Math.min256(requestedAmount, balance);
+        require(amount > 0);
+
         balances[who] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
 
@@ -253,8 +241,9 @@ contract ERC20Short is
     // -----------------------------------
 
     /**
-     * To be compliant with ERC20, we have a decimals function that will return the same value
-     * as the underlyingToken of the short.
+     * ERC20 decimals function. Returns the same number of decimals as the short's underlyingToken
+     *
+     * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
      * @return The number of decimal places, or revert if the underlyingToken has no such function.
      */
@@ -263,10 +252,6 @@ contract ERC20Short is
         view
         returns (uint8 _decimals)
     {
-        // Return the decimals place of the underlying token of the short sell.
-        // We do not store this value because it should just be for display purposes and should not
-        // block the tokenization of the short if decimals() is not a function on the underlying
-        // ERC20 token.
         return
             DetailedERC20(
                 ShortSell(SHORT_SELL).getShortUnderlyingToken(SHORT_ID)
@@ -274,7 +259,8 @@ contract ERC20Short is
     }
 
     /**
-     * To be compliant with ERC20, we have a name function that will return the shortId as the name.
+     * ERC20 name function. Returns a name based off shortID. Throws if this contract does not own
+     * the short.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
@@ -290,49 +276,6 @@ contract ERC20Short is
         }
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
-        uint256 introLength = intro.length;
-        bytes memory bytesString = new bytes(introLength + 64);
-
-        bytesString = copyIn(bytesString, intro);
-        bytesString = copyIn(bytesString, SHORT_ID, introLength);
-
-        return string(bytesString);
-    }
-
-    function copyIn(
-        bytes base,
-        bytes toCopy
-    )
-        internal
-        pure
-        returns (bytes _return)
-    {
-        assert(toCopy.length <= base.length);
-        for (uint k = 0; k < toCopy.length; k++) {
-            base[k] = toCopy[k];
-        }
-        return base;
-    }
-
-    function copyIn(
-        bytes base,
-        bytes32 toCopy,
-        uint256 position
-    )
-        internal
-        pure
-        returns (bytes _return)
-    {
-        uint256 temp = uint256(toCopy);
-        for (uint8 j = 0; j < 32; j++) {
-            uint256 jthByte = temp / uint256(uint256(2) ** uint256(248-8*j));
-            uint8 fourBit1 = uint8(jthByte) / uint8(16);
-            uint8 fourBit2 = uint8(jthByte) % uint8(16);
-            fourBit1 += (fourBit1 > 9) ? 87 : 48; // shift into proper ascii value
-            fourBit2 += (fourBit2 > 9) ? 87 : 48; // shift into proper ascii value
-            base[position + 2 * j] = byte(fourBit1);
-            base[position + 2 * j + 1] = byte(fourBit2);
-        }
-        return base;
+        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
     }
 }

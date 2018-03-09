@@ -51,8 +51,7 @@ library MathHelpers {
             uint256 quotient
         )
     {
-        // We multiply everything before dividing to reduce rounding error as much as possible,
-        // but this can also potentially introduce an overflow error
+        // Multiply everything before dividing to reduce rounding error as much as possible
         return divisionRoundedUp(
             numerator1.mul(numerator2).mul(numerator3),
             denominator1.mul(denominator2));

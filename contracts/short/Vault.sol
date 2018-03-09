@@ -146,7 +146,7 @@ contract Vault is
     }
 
     /**
-     * Verifies that this contract is in control of at least as many tokens as we are accounting for
+     * Verifies that this contract is in control of at least as many tokens as expected
      * @param  token  Address of ERC20 token
      */
     function validateBalance(

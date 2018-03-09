@@ -7,6 +7,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellGetters } from "./ShortSellGetters.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { TransferInternal } from "./TransferInternal.sol";
 
 
 /**
@@ -17,40 +18,10 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
  */
 library TransferImpl {
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
-
-    /**
-     * Ownership of a loan was transfered to a new address
-     */
-    event LoanTransfered(
-        bytes32 indexed id,
-        address indexed from,
-        address indexed to
-    );
-
-    /**
-     * Ownership of a short was transfered to a new address
-     */
-    event ShortTransfered(
-        bytes32 indexed id,
-        address from,
-        address to
-    );
-
     // -------------------------------------------
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    /**
-     * Internal implementation of transferring loan ownership to a new address. Requires recieving
-     * contracts to implement the LoanOwner interface.
-     *
-     * @param  state      State of ShortSell
-     * @param  shortId    Unique ID of the short
-     * @param  newLender  The address the loan is being transferred to. (May re-assign loan)
-     */
     function transferLoanImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -58,35 +29,22 @@ library TransferImpl {
     )
         public
     {
-        // getShortObject also verifies that the loan exists
-        address originalLender = ShortSellCommon.getShortObject(state, shortId).lender;
+        require(ShortSellCommon.containsShortImpl(state, shortId));
+        address originalLender = state.shorts[shortId].lender;
         require(msg.sender == originalLender);
+        require(newLender != originalLender);
 
-        address finalLender = ShortSellCommon.getNewLoanOwner(
+        address finalLender = TransferInternal.grantLoanOwnership(
             shortId,
             originalLender,
             newLender);
 
         require(finalLender != originalLender);
 
-        LoanTransfered(
-            shortId,
-            originalLender,
-            finalLender
-        );
-
         // Set state only after resolving the new owner (to reduce the number of storage calls)
         state.shorts[shortId].lender = finalLender;
     }
 
-    /**
-     * Internal implementatino of transferring short ownership to a new address. Requires recieving
-     * contracts to implement the ShortOwner interface.
-     *
-     * @param  state      State of ShortSell
-     * @param  shortId    Unique ID of the short
-     * @param  newSeller  The address the short is being transferred to. (May re-assign short)
-     */
     function transferShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -94,21 +52,16 @@ library TransferImpl {
     )
         public
     {
-        // getShortObject also verifies that the loan exists
-        address originalSeller = ShortSellCommon.getShortObject(state, shortId).seller;
+        require(ShortSellCommon.containsShortImpl(state, shortId));
+        address originalSeller = state.shorts[shortId].seller;
         require(msg.sender == originalSeller);
+        require(newSeller != originalSeller);
 
-        address finalSeller = ShortSellCommon.getNewShortOwner(
+        address finalSeller = TransferInternal.grantShortOwnership(
             shortId,
             originalSeller,
             newSeller);
         require(finalSeller != originalSeller);
-
-        LoanTransfered(
-            shortId,
-            originalSeller,
-            finalSeller
-        );
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
         state.shorts[shortId].seller = finalSeller;

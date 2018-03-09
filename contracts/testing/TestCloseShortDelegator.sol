@@ -1,18 +1,18 @@
 pragma solidity 0.4.19;
 
-import { ShortCloser } from "../short/interfaces/ShortCloser.sol";
+import { CloseShortDelegator } from "../short/interfaces/CloseShortDelegator.sol";
 
 
-contract TestShortCloser is ShortCloser {
+contract TestCloseShortDelegator is CloseShortDelegator {
 
     address public closer;
 
-    function TestShortCloser(
+    function TestCloseShortDelegator(
         address _shortSell,
         address _closer
     )
         public
-        ShortCloser(_shortSell)
+        CloseShortDelegator(_shortSell)
     {
         closer = _closer;
     }

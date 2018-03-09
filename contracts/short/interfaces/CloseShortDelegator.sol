@@ -4,19 +4,19 @@ import { ShortOwner } from "./ShortOwner.sol";
 
 
 /**
- * @title ShortCloser
+ * @title CloseShortDelegator
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to let other addresses close a short
  * owned by the smart contract.
  */
-contract ShortCloser is ShortOwner {
+contract CloseShortDelegator is ShortOwner {
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
-    function ShortCloser(
+    function CloseShortDelegator(
         address _shortSell
     )
         public

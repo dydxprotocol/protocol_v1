@@ -5,7 +5,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ShortCloser } from "../interfaces/ShortCloser.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -18,15 +18,9 @@ import { ShortSell } from "../ShortSell.sol";
  /* solium-disable-next-line */
 contract ERC721Short is
     ERC721Token,
-    ShortCloser,
+    CloseShortDelegator,
     ReentrancyGuard {
     using SafeMath for uint256;
-
-    // --------------------
-    // ------ Events ------
-    // --------------------
-
-    mapping(address => mapping(address => bool)) public closeAllApprovals;
 
     // --------------------
     // ------ Events ------
@@ -38,6 +32,13 @@ contract ERC721Short is
         bool _isApproved
     );
 
+    // -----------------------------
+    // ------ State Variables ------
+    // -----------------------------
+
+    // Mapping from an address to other addresses that are approved to close shorts for that address
+    mapping(address => mapping(address => bool)) public closeAllApprovals;
+
     // -------------------------
     // ------ Constructor ------
     // -------------------------
@@ -46,7 +47,7 @@ contract ERC721Short is
         address _shortSell
     )
         public
-        ShortCloser(_shortSell)
+        CloseShortDelegator(_shortSell)
     {
     }
 

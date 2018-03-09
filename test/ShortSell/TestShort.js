@@ -14,9 +14,9 @@ const Vault = artifacts.require("Vault");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const SmartContractLender = artifacts.require("SmartContractLender");
-const TestLoanCaller = artifacts.require("TestLoanCaller");
+const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
-const TestShortCloser = artifacts.require("TestShortCloser");
+const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
 const TestShortOwner = artifacts.require("TestShortOwner");
 const { ADDRESSES, zeroExFeeTokenConstant } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -143,14 +143,14 @@ describe('#short', () => {
           lenderUnderlyingTokenBalance
         )
       ]);
-      const testLoanCaller = await TestLoanCaller.new(
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
         ShortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
       shortTx.loanOffering.signer = shortTx.loanOffering.lender;
       shortTx.loanOffering.lender = smartContractLender.address;
-      shortTx.loanOffering.owner = testLoanCaller.address;
+      shortTx.loanOffering.owner = testCallLoanDelegator.address;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
       const tx = await callShort(shortSell, shortTx);
@@ -197,15 +197,15 @@ describe('#short', () => {
   contract('ShortSell', function(accounts) {
     it('properly assigns owner for lender and seller for contracts', async () => {
       const shortSell = await ShortSell.deployed();
-      const testLoanCaller = await TestLoanCaller.new(
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
         ShortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testShortCloser = await TestShortCloser.new(ShortSell.address, ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(ShortSell.address, ADDRESSES.ZERO);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
-      shortTx.owner = testShortCloser.address;
-      shortTx.loanOffering.owner = testLoanCaller.address;
+      shortTx.owner = testCloseShortDelegator.address;
+      shortTx.loanOffering.owner = testCallLoanDelegator.address;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
       await callShort(shortSell, shortTx);
       await checkSuccess(shortSell, shortTx);
@@ -215,13 +215,13 @@ describe('#short', () => {
   contract('ShortSell', function(accounts) {
     it('properly assigns owner for lender and seller for chaining', async () => {
       const shortSell = await ShortSell.deployed();
-      const testLoanCaller = await TestLoanCaller.new(
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
         ShortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testShortCloser = await TestShortCloser.new(ShortSell.address, ADDRESSES.ZERO);
-      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, testLoanCaller.address);
-      const testShortOwner = await TestShortOwner.new(ShortSell.address, testShortCloser.address);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(ShortSell.address, ADDRESSES.ZERO);
+      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, testCallLoanDelegator.address);
+      const testShortOwner = await TestShortOwner.new(ShortSell.address, testCloseShortDelegator.address);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = testShortOwner.address;

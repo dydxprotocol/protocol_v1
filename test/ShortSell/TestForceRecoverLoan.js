@@ -96,7 +96,7 @@ describe('#forceRecoverLoan', () => {
         { from: shortTx.loanOffering.lender }
       ));
 
-      // now it's okay because we are past maxDuration+callTimeLimit
+      // now it's okay because current time is past maxDuration+callTimeLimit
       await wait(callTimeLimit + 100);
       await shortSell.forceRecoverLoan(
         shortTx.id,
