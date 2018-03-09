@@ -7,6 +7,7 @@ import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
+import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
@@ -46,6 +47,7 @@ library ShortImpl {
     // -----------------------
 
     struct ShortTx {
+        address owner;
         address underlyingToken;
         address baseToken;
         uint256 shortAmount;
@@ -75,7 +77,7 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values256,
         uint32[2] values32,
         uint8[2] sigV,
@@ -123,20 +125,6 @@ library ShortImpl {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        addShort(
-            state,
-            shortId,
-            transaction.underlyingToken,
-            transaction.baseToken,
-            transaction.shortAmount,
-            partialInterestFee,
-            transaction.loanOffering.callTimeLimit,
-            uint32(block.timestamp),
-            parsedMaxDuration,
-            transaction.loanOffering.lender,
-            msg.sender
-        );
-
         // EXTERNAL CALLS
 
         // If the lender is a smart contract, call out to it to get its consent for this loan
@@ -166,6 +154,14 @@ library ShortImpl {
             msg.sender,
             transaction,
             baseTokenReceived
+        );
+
+        addShort(
+            state,
+            shortId,
+            transaction,
+            partialInterestFee,
+            parsedMaxDuration
         );
 
         return shortId;
@@ -198,7 +194,7 @@ library ShortImpl {
         // Disallow 0 value shorts
         require(transaction.shortAmount > 0);
 
-        // Make sure we don't already have this short id
+        // Make this shortId doesn't already exist
         require(!ShortSellCommon.containsShortImpl(state, shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
@@ -346,9 +342,7 @@ library ShortImpl {
                 transaction.depositAmount
             );
         } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
-            // If the buy order taker fee token is base token
-            // we can just transfer base token once from the short seller
-
+            // If the buy order taker fee token is base token, transfer only once for gas efficiency
             Vault(state.VAULT).transferToVault(
                 shortId,
                 transaction.baseToken,
@@ -496,42 +490,44 @@ library ShortImpl {
 
     function addShort(
         ShortSellState.State storage state,
-        bytes32 id,
-        address underlyingToken,
-        address baseToken,
-        uint256 shortAmount,
+        bytes32 shortId,
+        ShortTx transaction,
         uint256 interestRate,
-        uint32 callTimeLimit,
-        uint32 startTimestamp,
-        uint32 maxDuration,
-        address lender,
-        address seller
+        uint32 maxDuration
     )
         internal
     {
-        require(!ShortSellCommon.containsShortImpl(state, id));
-        require(startTimestamp != 0);
+        require(!ShortSellCommon.containsShortImpl(state, shortId));
 
-        state.shorts[id] = ShortSellCommon.Short({
-            underlyingToken: underlyingToken,
-            baseToken: baseToken,
-            shortAmount: shortAmount,
-            closedAmount: 0,
-            interestRate: interestRate,
-            requiredDeposit: 0,
-            callTimeLimit: callTimeLimit,
-            startTimestamp: startTimestamp,
-            callTimestamp: 0,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
-        });
+        state.shorts[shortId].underlyingToken = transaction.underlyingToken;
+        state.shorts[shortId].baseToken = transaction.baseToken;
+        state.shorts[shortId].shortAmount = transaction.shortAmount;
+        state.shorts[shortId].interestRate = interestRate;
+        state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.shorts[shortId].startTimestamp = uint32(block.timestamp);
+        state.shorts[shortId].maxDuration = maxDuration;
+        state.shorts[shortId].closedAmount = 0;
+        state.shorts[shortId].requiredDeposit = 0;
+        state.shorts[shortId].callTimestamp = 0;
+
+        bool newLender = transaction.loanOffering.owner != address(0);
+        bool newSeller = transaction.owner != address(0);
+
+        state.shorts[shortId].lender = TransferInternal.grantLoanOwnership(
+            shortId,
+            newLender ? transaction.loanOffering.lender : address(0),
+            newLender ? transaction.loanOffering.owner : transaction.loanOffering.lender);
+
+        state.shorts[shortId].seller = TransferInternal.grantShortOwnership(
+            shortId,
+            newSeller ? msg.sender : address(0),
+            newSeller ? transaction.owner : msg.sender);
     }
 
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -542,8 +538,9 @@ library ShortImpl {
         returns (ShortTx _transaction)
     {
         ShortTx memory transaction = ShortTx({
-            underlyingToken: addresses[0],
-            baseToken: addresses[1],
+            owner: addresses[0],
+            underlyingToken: addresses[1],
+            baseToken: addresses[2],
             shortAmount: values[15],
             depositAmount: values[16],
             loanOffering: parseLoanOffering(
@@ -565,7 +562,7 @@ library ShortImpl {
     }
 
     function parseLoanOffering(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint32[2] values32,
         uint8[2] sigV,
@@ -576,12 +573,13 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[2],
-            signer: addresses[3],
-            taker: addresses[4],
-            feeRecipient: addresses[5],
-            lenderFeeToken: addresses[6],
-            takerFeeToken: addresses[7],
+            lender: addresses[3],
+            signer: addresses[4],
+            owner: addresses[5],
+            taker: addresses[6],
+            feeRecipient: addresses[7],
+            lenderFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],
@@ -593,8 +591,8 @@ library ShortImpl {
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
-            addresses[1],
-            addresses[0]
+            addresses[2],
+            addresses[1]
         );
 
         return loanOffering;
@@ -638,7 +636,7 @@ library ShortImpl {
     }
 
     function parseBuyOrder(
-        address[13] addresses,
+        address[15] addresses,
         uint256[17] values,
         uint8[2] sigV,
         bytes32[4] sigRS
@@ -648,11 +646,11 @@ library ShortImpl {
         returns (BuyOrder _buyOrder)
     {
         BuyOrder memory order = BuyOrder({
-            maker: addresses[8],
-            taker: addresses[9],
-            feeRecipient: addresses[10],
-            makerFeeToken: addresses[11],
-            takerFeeToken: addresses[12],
+            maker: addresses[10],
+            taker: addresses[11],
+            feeRecipient: addresses[12],
+            makerFeeToken: addresses[13],
+            takerFeeToken: addresses[14],
             baseTokenAmount: values[9],
             underlyingTokenAmount: values[10],
             makerFee: values[11],
@@ -687,13 +685,14 @@ library ShortImpl {
     )
         internal
         pure
-        returns (address[8] _addresses)
+        returns (address[9] _addresses)
     {
         return [
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.loanOffering.lender,
             transaction.loanOffering.signer,
+            transaction.loanOffering.owner,
             transaction.loanOffering.taker,
             transaction.loanOffering.feeRecipient,
             transaction.loanOffering.lenderFeeToken,

@@ -14,7 +14,12 @@ const Vault = artifacts.require("Vault");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const SmartContractLender = artifacts.require("SmartContractLender");
-const { zeroExFeeTokenConstant } = require('../helpers/Constants');
+const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
+const TestLoanOwner = artifacts.require("TestLoanOwner");
+const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
+const TestShortOwner = artifacts.require("TestShortOwner");
+const { ADDRESSES, zeroExFeeTokenConstant } = require('../helpers/Constants');
+const { expectThrow } = require('../helpers/ExpectHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -138,15 +143,99 @@ describe('#short', () => {
           lenderUnderlyingTokenBalance
         )
       ]);
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO,
+        ADDRESSES.ZERO);
 
       shortTx.loanOffering.signer = shortTx.loanOffering.lender;
       shortTx.loanOffering.lender = smartContractLender.address;
+      shortTx.loanOffering.owner = testCallLoanDelegator.address;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
       const tx = await callShort(shortSell, shortTx);
 
       console.log('\tShortSell.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
+      await checkSuccess(shortSell, shortTx);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
+      const shortSell = await ShortSell.deployed();
+      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, ADDRESSES.ZERO);
+      const testShortOwner = await TestShortOwner.new(ShortSell.address, ADDRESSES.ZERO);
+
+      const shortTx1 = await createShortSellTx(accounts);
+      await issueTokensAndSetAllowancesForShort(shortTx1);
+      shortTx1.owner = testLoanOwner.address; // loan owner can't take short
+      shortTx1.loanOffering.signature = await signLoanOffering(shortTx1.loanOffering);
+      await expectThrow(() => callShort(shortSell, shortTx1));
+
+      const shortTx2 = await createShortSellTx(accounts);
+      await issueTokensAndSetAllowancesForShort(shortTx2);
+      shortTx2.loanOffering.owner = testShortOwner.address; // short owner can't take loan
+      shortTx2.loanOffering.signature = await signLoanOffering(shortTx2.loanOffering);
+      await expectThrow(() => callShort(shortSell, shortTx2));
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('properly assigns owner for lender and seller for accounts', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await createShortSellTx(accounts);
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      shortTx.owner = accounts[8];
+      shortTx.loanOffering.owner = accounts[9];
+      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      await callShort(shortSell, shortTx);
+      await checkSuccess(shortSell, shortTx);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('properly assigns owner for lender and seller for contracts', async () => {
+      const shortSell = await ShortSell.deployed();
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO,
+        ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO);
+      const shortTx = await createShortSellTx(accounts);
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      shortTx.owner = testCloseShortDelegator.address;
+      shortTx.loanOffering.owner = testCallLoanDelegator.address;
+      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      await callShort(shortSell, shortTx);
+      await checkSuccess(shortSell, shortTx);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('properly assigns owner for lender and seller for chaining', async () => {
+      const shortSell = await ShortSell.deployed();
+      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO,
+        ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO);
+      const testLoanOwner = await TestLoanOwner.new(
+        ShortSell.address,
+        testCallLoanDelegator.address);
+      const testShortOwner = await TestShortOwner.new(
+        ShortSell.address,
+        testCloseShortDelegator.address);
+      const shortTx = await createShortSellTx(accounts);
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      shortTx.owner = testShortOwner.address;
+      shortTx.loanOffering.owner = testLoanOwner.address;
+      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      await callShort(shortSell, shortTx);
       await checkSuccess(shortSell, shortTx);
     });
   });
@@ -193,11 +282,35 @@ async function checkSuccess(shortSell, shortTx) {
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
   expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate);
   expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
-  expect(short.lender).to.equal(shortTx.loanOffering.lender);
-  expect(short.seller).to.equal(shortTx.seller);
   expect(short.closedAmount).to.be.bignumber.equal(0);
   expect(short.callTimestamp).to.be.bignumber.equal(0);
   expect(short.maxDuration).to.be.bignumber.equal(shortTx.loanOffering.maxDuration);
+
+  // if atomic owner is specified, then expect it
+  if (shortTx.owner === ADDRESSES.ZERO) {
+    expect(short.seller).to.equal(shortTx.seller);
+  } else {
+    let toReturn = null;
+    try {
+      toReturn = await TestShortOwner.at(shortTx.owner).toReturn.call();
+    } catch(e) {
+      toReturn = null;
+    }
+    expect(short.seller).to.equal(toReturn ? toReturn : shortTx.owner);
+  }
+
+  // if atomic owner is specified, then expect it
+  if (shortTx.loanOffering.owner === ADDRESSES.ZERO) {
+    expect(short.lender).to.equal(shortTx.loanOffering.lender);
+  } else {
+    let toReturn = null;
+    try {
+      toReturn = await TestLoanOwner.at(shortTx.loanOffering.owner).toReturn.call();
+    } catch(e) {
+      toReturn = null;
+    }
+    expect(short.lender).to.equal(toReturn ? toReturn : shortTx.loanOffering.owner);
+  }
 
   const balance = await shortSell.getShortBalance.call(shortId);
 

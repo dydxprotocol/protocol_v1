@@ -3,6 +3,9 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -37,6 +40,7 @@ library ShortSellCommon {
     struct LoanOffering {
         address   lender;
         address   signer;
+        address   owner;
         address   taker;
         address   feeRecipient;
         address   lenderFeeToken;
@@ -158,6 +162,7 @@ library ShortSellCommon {
             baseToken,
             loanOffering.lender,
             loanOffering.signer,
+            loanOffering.owner,
             loanOffering.taker,
             loanOffering.feeRecipient,
             loanOffering.lenderFeeToken,

@@ -15,7 +15,8 @@ const Exchange = artifacts.require("Exchange");
 const ProxyContract = artifacts.require("Proxy");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const Vault = artifacts.require("Vault");
-const { BIGNUMBERS } = require('../helpers/Constants');
+const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -31,6 +32,7 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
   ]);
 
   const tx = {
+    owner: ADDRESSES.ZERO,
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
     shortAmount: BASE_AMOUNT,
@@ -71,10 +73,12 @@ async function createSigned0xSellOrder(accounts, _salt = DEFAULT_SALT) {
 
 function callShort(shortSell, tx) {
   const addresses = [
+    tx.owner,
     tx.loanOffering.underlyingToken,
     tx.loanOffering.baseToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
+    tx.loanOffering.owner,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
@@ -201,7 +205,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 }
 
-async function doShort(accounts, _salt = DEFAULT_SALT) {
+async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
   const [shortTx, shortSell] = await Promise.all([
     createShortSellTx(accounts, _salt),
     ShortSell.deployed()
@@ -217,6 +221,9 @@ async function doShort(accounts, _salt = DEFAULT_SALT) {
 
   await issueTokensAndSetAllowancesForShort(shortTx);
 
+  if (tokenized) {
+    shortTx.owner = ERC20ShortCreator.address;
+  }
   const response = await callShort(shortSell, shortTx);
 
   const contains = await shortSell.containsShort.call(shortId);
@@ -291,6 +298,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
+    loanOffering.owner,
     loanOffering.taker,
     loanOffering.feeRecipient,
     FeeToken.address,
@@ -391,6 +399,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     baseToken: BaseToken.address,
     lender: accounts[1],
     signer: ZeroEx.NULL_ADDRESS,
+    owner: ZeroEx.NULL_ADDRESS,
     taker: ZeroEx.NULL_ADDRESS,
     feeRecipient: accounts[3],
     lenderFeeTokenAddress: FeeToken.address,
@@ -435,6 +444,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.baseToken,
     loanOffering.lender,
     loanOffering.signer,
+    loanOffering.owner,
     loanOffering.taker,
     loanOffering.feeRecipient,
     loanOffering.lenderFeeTokenAddress,

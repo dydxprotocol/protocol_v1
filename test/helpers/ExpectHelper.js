@@ -21,7 +21,7 @@ async function expectAssertFailure(call) {
 }
 
 function assertCertainError(error, expected_error_msg) {
-  // we do this whole thing so that the actual error will appear in truffle test output
+  // This complication is so that the actual error will appear in truffle test output
   const message = error.message;
   const matchedIndex = message.search(expected_error_msg);
   let matchedString = message;

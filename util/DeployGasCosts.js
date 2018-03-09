@@ -2,7 +2,7 @@
 
 
 const ShortSell = artifacts.require("ShortSell");
-const TokenizedShort = artifacts.require("TokenizedShort");
+const ERC20Short = artifacts.require("ERC20Short");
 const Trader = artifacts.require("Trader");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
@@ -67,18 +67,16 @@ contract('Deploy Costs', () => {
     });
   });
 
-  describe('TokenizedShort', () => {
+  describe('ERC20Short', () => {
     it('', async () => {
-      const contract = await TokenizedShort.new(
-        ADDRESSES.TEST[0],
-        ADDRESSES.TEST[1],
+      const contract = await ERC20Short.new(
         web3.fromUtf8("123456789"),
-        "THIS IS THE FULL NAME",
-        "SYM 10/10"
+        ADDRESSES.TEST[0],
+        ADDRESSES.TEST[1]
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
-      console.log('\tTokenizedShort deploy gas cost: ' + deployGasCost);
+      console.log('\tERC20Short deploy gas cost: ' + deployGasCost);
     });
   });
 });

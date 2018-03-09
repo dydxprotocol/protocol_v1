@@ -6,7 +6,8 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
+import { StringHelpers } from "../../lib/StringHelpers.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -15,7 +16,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 
 
 /**
- * @title TokenizedShort
+ * @title ERC20Short
  * @author dYdX
  *
  * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
@@ -23,9 +24,9 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
  * entitled to some amount of base tokens after settlement.
  */
  /* solium-disable-next-line */
-contract TokenizedShort is
+contract ERC20Short is
     StandardToken,
-    CloseShortVerifier,
+    CloseShortDelegator,
     ReentrancyGuard,
     TokenInteract {
     using SafeMath for uint256;
@@ -44,7 +45,7 @@ contract TokenizedShort is
     // -------- Events --------
     // ------------------------
 
-    // A TokenizedShort was successfully initialized
+    // An ERC20Short was successfully initialized
     event Initialized(
         bytes32 shortId,
         uint256 initialSupply
@@ -67,46 +68,36 @@ contract TokenizedShort is
     // ----- State Variables -----
     // ---------------------------
 
-    // Address of the ShortSell contract
-    address public SHORT_SELL;
-
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
 
     // id of the short this contract is tokenizing
-    bytes32 public shortId;
+    bytes32 public SHORT_ID;
 
     // Current State of this contract. See State enum
     State public state;
 
-    // Name of this token (as ERC20 standard)
-    string public name;
-
-    // Symbol of this token (as ERC20 standard)
-    string public symbol;
-
-    // Address of the baseToken
+    // Address of the short's baseToken. Cached for convenience and lower-cost withdrawals
     address public baseToken;
+
+    // Symbol to be ERC20 compliant with frontends
+    string public symbol = "DYDX-S";
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
-    function TokenizedShort(
-        address _shortSell,
-        address _initialTokenHolder,
+    function ERC20Short(
         bytes32 _shortId,
-        string _name,
-        string _symbol
+        address _shortSell,
+        address _initialTokenHolder
     )
         public
+        CloseShortDelegator(_shortSell)
     {
-        SHORT_SELL = _shortSell;
         state = State.UNINITIALIZED;
-        shortId = _shortId;
-        name = _name;
-        symbol = _symbol;
         initialTokenHolder = _initialTokenHolder;
+        SHORT_ID = _shortId;
     }
 
     // -----------------------------------------
@@ -114,80 +105,79 @@ contract TokenizedShort is
     // -----------------------------------------
 
     /**
-     * After the short's "seller" field has been set to the address of this contract, this contract
-     * can be called by anyone in order to set the contract to a usable state and to mint tokens
-     * given to initialTokenHolder.
+     * Called by the ShortSell contract when anyone transfers ownership of a short to this contract.
+     * This function initializes the tokenization of the short given and returns this address to
+     * indicate to ShortSell that it is willing to take ownership of the short.
+     *
+     *  param  (unused)
+     * @param  shortId  Unique ID of the short
+     * @return this address on success, throw otherwise
      */
-    function initialize()
+    function recieveShortOwnership(
+        address /* from */,
+        bytes32 shortId
+    )
+        onlyShortSell
         nonReentrant
         external
+        returns (address owner)
     {
+        // require uninitialized so that this cannot recieve short ownership from more than 1 short
         require(state == State.UNINITIALIZED);
-        ShortSellCommon.Short memory short =
-            ShortSellHelper.getShort(SHORT_SELL, shortId);
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        require(SHORT_ID == shortId);
 
-        // The ownership of the short must be transferred to this contract before intialization
-        // Once ownership is transferred, there is no way to have this contract transfer it back
-        // to the original short seller. Therefore, the short seller transferring ownership should
-        // verify that the initialTokenHolder field is properly set so that they recieve the tokens.
-        require(short.seller == address(this));
+        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         require(currentShortAmount > 0);
 
-        // Give the specified address the entire balance, equal to the current amount of the short
-        balances[initialTokenHolder] = currentShortAmount;
-        totalSupply_ = currentShortAmount;
-        baseToken = short.baseToken;
+        // set relevant constants
         state = State.OPEN;
+        totalSupply_ = currentShortAmount;
+        balances[initialTokenHolder] = currentShortAmount;
+        baseToken = short.baseToken;
 
         // Record event
-        Initialized(shortId, currentShortAmount);
+        Initialized(SHORT_ID, currentShortAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         Transfer(address(0), initialTokenHolder, currentShortAmount);
+
+        return address(this); // returning own address retains ownership of short
     }
 
     /**
      * Called by ShortSell when an owner of this token is attempting to close some of the short
-     * position. Implementation is required per CloseShortVerifier contract in order to be used by
+     * position. Implementation is required per ShortOwner contract in order to be used by
      * ShortSell to approve closing parts of a short position. If true is returned, this contract
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
 
-     * @param _who              Address of the caller of the close function
-     * @param _shortId          Id of the short being closed
-     * @param _requestedAmount  Amount of the short being closed
-     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     * @param who              Address of the caller of the close function
+     * @param shortId          Id of the short being closed
+     * @param requestedAmount  Amount of the short being closed
+     * @return allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _who,
-        bytes32 _shortId,
-        uint256 _requestedAmount
+        address who,
+        bytes32 shortId,
+        uint256 requestedAmount
     )
+        onlyShortSell
         nonReentrant
         external
         returns (uint256 _allowedAmount)
     {
-        require(msg.sender == SHORT_SELL);
         require(state == State.OPEN);
+        require(SHORT_ID == shortId);
 
-        // not a necessary check, but we include shortId in the parameters in case a single contract
-        // acts as the seller for multiple short positions
-        require(_shortId == shortId);
+        uint256 balance = balances[who];
+        uint256 amount = Math.min256(requestedAmount, balance);
+        require(amount > 0);
 
-        // to be more general, we prefer to return the amount closed rather than revert
-        uint256 amount = Math.min256(_requestedAmount, balances[_who]);
-        if (amount == 0) {
-            return 0;
-        }
-
-        // subtract from balances
-        uint256 balance = balances[_who];
-        require(amount <= balance);
-        balances[_who] = balance.sub(amount);
+        balances[who] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
 
-        TokensRedeemedForClose(_who, amount);
+        TokensRedeemedForClose(who, amount);
         return amount;
     }
 
@@ -221,7 +211,7 @@ contract TokenizedShort is
         require(value > 0);
 
         // If in OPEN state, but the short is closed, set to CLOSED state
-        if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(shortId)) {
+        if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
         }
         require(state == State.CLOSED);
@@ -251,8 +241,9 @@ contract TokenizedShort is
     // -----------------------------------
 
     /**
-     * To be compliant with standards, we have a decimals function that will return the same value
-     * as the underlyingToken of the short.
+     * ERC20 decimals function. Returns the same number of decimals as the short's underlyingToken
+     *
+     * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
      * @return The number of decimal places, or revert if the underlyingToken has no such function.
      */
@@ -261,13 +252,30 @@ contract TokenizedShort is
         view
         returns (uint8 _decimals)
     {
-        // Return the decimals place of the underlying token of the short sell.
-        // We do not store this value because it should just be for display purposes and should not
-        // block the tokenization of the short if decimals() is not a function on the underlying
-        // ERC20 token.
         return
             DetailedERC20(
-                ShortSell(SHORT_SELL).getShortUnderlyingToken(shortId)
+                ShortSell(SHORT_SELL).getShortUnderlyingToken(SHORT_ID)
             ).decimals();
+    }
+
+    /**
+     * ERC20 name function. Returns a name based off shortID. Throws if this contract does not own
+     * the short.
+     *
+     * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
+     *
+     * @return The name of the short token which includes the hexadecimal shortId of the short
+     */
+    function name()
+        external
+        view
+        returns (string _name)
+    {
+        if (state == State.UNINITIALIZED) {
+            return "dYdx Tokenized Short [UNINITIALIZED]";
+        }
+        // Copy intro into return value
+        bytes memory intro = "dYdX Tokenized Short 0x";
+        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
     }
 }

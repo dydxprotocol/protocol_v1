@@ -6,7 +6,7 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Trader } from "../Trader.sol";
-import { CloseShortVerifier } from "../interfaces/CloseShortVerifier.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -196,13 +196,13 @@ library CloseShortImpl {
     )
         internal
     {
-        // if closer is not short seller, we have to make sure this is okay with the short seller
+        // If not the short seller, requires short seller to approve msg.sender
         if (transaction.short.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortVerifier(transaction.short.seller)
+            uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller)
                 .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount);
 
-            // because the verifier will do accounting based on how much it returns, we should
-            // revert if we are not able to close as much as the verifier returns
+            // Because the verifier may do accounting based on the number that it returns, revert
+            // if the returned amount is larger than the remaining amount of the short.
             require(transaction.closeAmount >= allowedCloseAmount);
             transaction.closeAmount = allowedCloseAmount;
         }
@@ -342,7 +342,7 @@ library CloseShortImpl {
             transaction.closeAmount
         );
 
-        // We need to have enough base token locked in the the close's vault to pay
+        // Requires having enough base token locked in the the close's vault to pay
         // for both the buyback and the interest fee
         require(
             baseTokenPrice.add(interestFee)
