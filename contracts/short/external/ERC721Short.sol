@@ -7,6 +7,8 @@ import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Toke
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
+import { TokenInteract } from "../../lib/TokenInteract.sol";
+import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
 
@@ -19,12 +21,13 @@ import { ShortSell } from "../ShortSell.sol";
 contract ERC721Short is
     ERC721Token,
     CloseShortDelegator,
+    ShortCustodian,
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // --------------------
-    // ------ Events ------
-    // --------------------
+    // ----------------------------
+    // ------ Sate Variables ------
+    // ----------------------------
 
     event CloseAllApproval(
         address indexed _owner,
@@ -132,5 +135,19 @@ contract ERC721Short is
         address owner = ownerOf(tokenId);
         require(who == owner || closeAllApprovals[owner][who]);
         return requestedAmount;
+    }
+
+    // ----------------------------------
+    // ---- ShortCustodian Functions ----
+    // ----------------------------------
+
+    function getShortSellDeedHolder(
+        bytes32 shortId
+    )
+        external
+        view
+        returns (address _deedHolder)
+    {
+        return ownerOf(uint256(shortId));
     }
 }

@@ -9,6 +9,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
+import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
@@ -27,7 +28,9 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 contract ERC20Short is
     StandardToken,
     CloseShortDelegator,
-    ReentrancyGuard {
+    ShortCustodian,
+    ReentrancyGuard,
+    TokenInteract {
     using SafeMath for uint256;
 
     // -----------------------
@@ -276,5 +279,21 @@ contract ERC20Short is
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
         return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
+    }
+
+    // ----------------------------------
+    // ---- ShortCustodian Functions ----
+    // ----------------------------------
+
+    function getShortSellDeedHolder(
+        bytes32 shortId
+    )
+        external
+        view
+        returns (address _deedHolder)
+    {
+        require(shortId == SHORT_ID);
+        // Claim ownership of deed and allow token holders to withdraw funds from this contract
+        return address(this);
     }
 }

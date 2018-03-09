@@ -57,4 +57,15 @@ library TokenInteract {
     {
         require(ERC20(token).transferFrom(from, to, amount));
     }
+
+    function transferFrom(
+        address token,
+        address from,
+        address to,
+        uint256 amount
+    )
+        internal
+    {
+        assert(ERC20(token).transferFrom(from, to, amount));
+    }
 }
