@@ -57,8 +57,8 @@ async function deployShortSellContracts(deployer) {
   await deployer.deploy(TransferInternal);
 
   await Promise.all([
-      ShortSell.link('TransferInternal', TransferInternal.address),
-      TransferImpl.link('TransferInternal', TransferInternal.address)
+    ShortSell.link('TransferInternal', TransferInternal.address),
+    TransferImpl.link('TransferInternal', TransferInternal.address)
   ]);
 
   await Promise.all([

@@ -201,7 +201,9 @@ describe('#short', () => {
         ShortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(ShortSell.address, ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = testCloseShortDelegator.address;
@@ -219,9 +221,15 @@ describe('#short', () => {
         ShortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(ShortSell.address, ADDRESSES.ZERO);
-      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, testCallLoanDelegator.address);
-      const testShortOwner = await TestShortOwner.new(ShortSell.address, testCloseShortDelegator.address);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO);
+      const testLoanOwner = await TestLoanOwner.new(
+        ShortSell.address,
+        testCallLoanDelegator.address);
+      const testShortOwner = await TestShortOwner.new(
+        ShortSell.address,
+        testCloseShortDelegator.address);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = testShortOwner.address;

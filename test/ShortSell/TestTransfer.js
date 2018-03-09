@@ -71,7 +71,9 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract with the correct interface', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(shortSell.address, ADDRESSES.ZERO);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        shortSell.address,
+        ADDRESSES.ZERO);
 
       const tx = await shortSell.transferShort(shortTx.id,
         testCloseShortDelegator.address,
@@ -86,8 +88,12 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract that chains to another contract', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(shortSell.address, ADDRESSES.ZERO);
-      const testShortOwner = await TestShortOwner.new(shortSell.address, testCloseShortDelegator.address);
+      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+        shortSell.address,
+        ADDRESSES.ZERO);
+      const testShortOwner = await TestShortOwner.new(
+        ShortSell.address,
+        testCloseShortDelegator.address);
 
       const tx = await shortSell.transferShort(shortTx.id,
         testShortOwner.address,
@@ -191,7 +197,9 @@ describe('#transferLoan', () => {
         shortSell.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testLoanOwner = await TestLoanOwner.new(shortSell.address, testCallLoanDelegator.address);
+      const testLoanOwner = await TestLoanOwner.new(
+        shortSell.address,
+        testCallLoanDelegator.address);
 
       const tx = await shortSell.transferLoan(shortTx.id,
         testLoanOwner.address,

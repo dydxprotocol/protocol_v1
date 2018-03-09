@@ -50,7 +50,7 @@ library TransferInternal {
      * @param  shortId   The unique ID of the short
      * @param  oldOwner  The previous owner of the loan
      * @param  newOwner  The intended owner of the loan
-     * @returns The address that the intended owner wishes to assign the loan to (may be the same
+     * @return The address that the intended owner wishes to assign the loan to (may be the same
      * as the intended owner). Zero if ownership is rejected.
      */
     function grantLoanOwnership(
@@ -83,7 +83,7 @@ library TransferInternal {
      * @param  shortId   The unique ID of the short
      * @param  oldOwner  The previous owner of the short
      * @param  newOwner  The intended owner of the short
-     * @returns The address that the intended owner wishes to assign the short to (may be the same
+     * @return The address that the intended owner wishes to assign the short to (may be the same
      * as the intended owner). Zero if ownership is rejected.
      */
     function grantShortOwnership(
