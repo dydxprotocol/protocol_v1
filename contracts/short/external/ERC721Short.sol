@@ -62,8 +62,11 @@ contract ERC721Short is
         nonReentrant
         external
     {
-        closeAllApprovals[msg.sender][to] = isApproved;
-        CloseAllApproval(msg.sender, to, isApproved);
+        require(to != msg.sender);
+        if (closeAllApprovals[msg.sender][to] != isApproved) {
+            closeAllApprovals[msg.sender][to] = isApproved;
+            CloseAllApproval(msg.sender, to, isApproved);
+        }
     }
 
     function transferShort(

@@ -92,8 +92,8 @@ contract ShortSell is
      *  [7]  = loan fee recipient
      *  [8]  = loan lender fee token
      *  [9]  = loan taker fee token
-     *  [10]  = buy order maker
-     *  [11]  = buy order taker
+     *  [10] = buy order maker
+     *  [11] = buy order taker
      *  [12] = buy order fee recipient
      *  [13] = buy order maker fee token
      *  [14] = buy order taker fee token
