@@ -25,8 +25,6 @@ contract ShortSellAdmin is Ownable {
      *                                    forceRecoverLoan)
      * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closeShort,
      *                                    forceRecoverLoan)
-     * SHORT_SELLER_CLOSE_0X_ONLY       - Only closing by the short seller with order is allowed
-     *                                    (callInLoan, closeShort, forceRecoverLoan)
      */
     enum OperationState {
         OPERATIONAL,
