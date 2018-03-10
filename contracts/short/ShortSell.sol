@@ -113,7 +113,7 @@ contract ShortSell is
      */
     function short(
         address[11] addresses,
-        uint[11] values256,
+        uint256[11] values256,
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -149,8 +149,6 @@ contract ShortSell is
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing
-     * @return _amountClosed            amount of short closed
-     * @return _baseTokenReceived       amount of base token received by the short seller after closing
      * @return _interestFeeAmount       interest fee in base token paid to the lender
      */
     function closeShort(

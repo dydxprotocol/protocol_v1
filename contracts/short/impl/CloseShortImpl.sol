@@ -57,6 +57,7 @@ library CloseShortImpl {
         bytes32 shortId;
         uint256 closeAmount;
         uint256 availableBaseToken;
+        uint256 startingBaseToken;
     }
 
     struct Order {
@@ -87,28 +88,6 @@ library CloseShortImpl {
             orderData: orderData
         });
 
-        return closeShortInternal(
-            state,
-            shortId,
-            requestedCloseAmount,
-            order);
-    }
-
-    // --------- Helper Functions ---------
-
-    function closeShortInternal(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        uint256 requestedCloseAmount,
-        Order memory order
-    )
-        internal
-        returns (
-            uint256 _amountClosed,
-            uint256 _baseTokenReceived,
-            uint256 _interestFeeAmount
-        )
-    {
         // Create CloseShortTx and validate closeAmount
         CloseShortTx memory transaction = parseCloseShortTx(state, shortId, requestedCloseAmount);
         validateCloseShortTx(transaction); // may modify transaction
@@ -152,7 +131,7 @@ library CloseShortImpl {
         // minus the available base token amount
         assert(
             Vault(state.VAULT).balances(shortId, transaction.short.baseToken)
-            == transaction.currentShortAmount.sub(transaction.availableBaseToken)
+            == transaction.startingBaseToken.sub(transaction.availableBaseToken)
         );
 
         logEventOnClose(
@@ -168,6 +147,8 @@ library CloseShortImpl {
             interestFee
         );
     }
+
+    // --------- Helper Functions ---------
 
     /**
      * Validate the CloseShortTx object created for closing a short.
@@ -272,6 +253,7 @@ library CloseShortImpl {
             order.orderData
         );
 
+
         assert(receivedUnderlyingToken == transaction.closeAmount);
 
         // Transfer underlying token from the exchange wrapper to the lender
@@ -364,10 +346,11 @@ library CloseShortImpl {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+        uint256 startingBaseToken = Vault(state.VAULT).balances(shortId, short.baseToken);
         uint256 availableBaseToken = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
-            Vault(state.VAULT).balances(shortId, short.baseToken)
+            startingBaseToken
         );
 
         return CloseShortTx({
@@ -375,7 +358,8 @@ library CloseShortImpl {
             currentShortAmount: currentShortAmount,
             shortId: shortId,
             closeAmount: closeAmount,
-            availableBaseToken: availableBaseToken
+            availableBaseToken: availableBaseToken,
+            startingBaseToken: startingBaseToken
         });
     }
 }

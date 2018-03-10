@@ -14,7 +14,6 @@ const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  issueForDirectClose,
   callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
 const {
@@ -256,68 +255,6 @@ describe('#closeShortStateControl', () => {
 
       await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
       await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, closeAmount));
-    });
-  });
-});
-
-describe('#closeShortDirectlyStateControl', () => {
-  const closeAmount = new BigNumber(100);
-  async function test(accounts, state) {
-    const shortSell = await ShortSell.deployed();
-    const shortTx = await doShort(accounts);
-    await issueForDirectClose(shortTx);
-
-    await shortSell.setOperationState(state);
-    await shortSell.closeShortDirectly(
-      shortTx.id,
-      closeAmount,
-      { from: shortTx.seller }
-    );
-  }
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while OPERATIONAL', async () => {
-      await test(accounts, OperationState.OPERATIONAL);
-
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while CLOSE_ONLY', async () => {
-      await test(accounts, OperationState.CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_DIRECTLY_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
-      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Disallows #closeShortDirectly while in other operation states', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
-
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
-      await expectThrow(() => shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      ));
     });
   });
 });

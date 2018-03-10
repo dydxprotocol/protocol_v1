@@ -205,7 +205,17 @@ function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
     closeAmount,
     ZeroExExchangeWrapper.address,
     zeroExOrderToBytes(sellOrder),
-    { from }
+    { from: from || shortTx.seller }
+  );
+}
+
+function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
+  return shortSell.closeShort(
+    shortTx.id,
+    closeAmount,
+    ADDRESSES.ZERO,
+    "",
+    { from: from || shortTx.seller }
   );
 }
 
@@ -298,7 +308,7 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
       { from: sellOrder.maker }
     ),
     feeToken.approve(
-      ZeroExProxy.address,
+      ZeroExExchangeWrapper.address,
       sellOrder.takerFee,
       { from: shortTx.seller }
     )
@@ -393,5 +403,6 @@ module.exports = {
   doShortAndCall,
   issueForDirectClose,
   callApproveLoanOffering,
-  issueTokenToAccountInAmountAndApproveProxy
+  issueTokenToAccountInAmountAndApproveProxy,
+  callCloseShortDirectly
 };

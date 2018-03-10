@@ -34,7 +34,7 @@ library TokenInteract {
     )
         internal
     {
-        assert(ERC20(token).approve(spender, value));
+        require(ERC20(token).approve(spender, value));
     }
 
     function transfer(
@@ -44,7 +44,7 @@ library TokenInteract {
     )
         internal
     {
-        assert(ERC20(token).transfer(to, amount));
+        require(ERC20(token).transfer(to, amount));
     }
 
     function transferFrom(
@@ -55,6 +55,6 @@ library TokenInteract {
     )
         internal
     {
-        assert(ERC20(token).transferFrom(from, to, amount));
+        require(ERC20(token).transferFrom(from, to, amount));
     }
 }

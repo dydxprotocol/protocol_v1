@@ -10,12 +10,15 @@ const UnderlyingToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../helpers/Constants');
 const {
   callCloseShort,
-  createSigned0xSellOrder,
+  callCloseShortDirectly,
   doShort,
   getShort,
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy
 } = require('../helpers/ShortSellHelper');
+const {
+  createSignedSellOrder
+} = require('../helpers/0xHelper');
 const { transact } = require('../helpers/ContractHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -77,7 +80,7 @@ contract('ERC20Short', function(accounts) {
     SHORTS.FULL.ID = SHORTS.FULL.TX.id;
     SHORTS.PART.ID = SHORTS.PART.TX.id;
 
-    SHORTS.PART.SELL_ORDER = await createSigned0xSellOrder(accounts, SHORTS.PART.SALT);
+    SHORTS.PART.SELL_ORDER = await createSignedSellOrder(accounts, SHORTS.PART.SALT);
     await issueTokensAndSetAllowancesForClose(SHORTS.PART.TX, SHORTS.PART.SELL_ORDER);
     await callCloseShort(
       CONTRACTS.SHORT_SELL,
@@ -229,7 +232,7 @@ contract('ERC20Short', function(accounts) {
     });
   });
 
-  describe('#closeOnBehalfOf via ShortSell#closeShortDirectly', () => {
+  describe('#closeOnBehalfOf via close short directly', () => {
     beforeEach('set up shorts and tokens', async () => {
       await setUpShorts();
       await setUpShortTokens();
@@ -245,8 +248,11 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, SHORT.NUM_TOKENS, { from: INITIAL_TOKEN_HOLDER })
+          () => callCloseShortDirectly(
+            CONTRACTS.SHORT_SELL,
+            SHORT.TX,
+            SHORT.NUM_TOKENS,
+            INITIAL_TOKEN_HOLDER)
         );
       }
     });
@@ -263,8 +269,12 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller })
+          () => callCloseShortDirectly(
+            CONTRACTS.SHORT_SELL,
+            SHORT.TX,
+            SHORT.NUM_TOKENS,
+            SHORT.TX.seller
+          )
         );
       }
     });
@@ -277,8 +287,12 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, 0, { from: SHORT.TX.seller })
+          () => callCloseShortDirectly(
+            CONTRACTS.SHORT_SELL,
+            SHORT.TX,
+            0,
+            SHORT.TX.seller
+          )
         );
       }
     });
@@ -290,8 +304,12 @@ contract('ERC20Short', function(accounts) {
 
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS + 1, { from: SHORT.TX.seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS + 1,
+          SHORT.TX.seller
+        );
       }
     });
 
@@ -310,8 +328,8 @@ contract('ERC20Short', function(accounts) {
           { from: SHORT.TX.seller });
 
         // try to close with too-large amount, but it will get bounded by the number of tokens owned
-        const result = await transact(CONTRACTS.SHORT_SELL.closeShortDirectly,
-          SHORT.ID, SHORT.NUM_TOKENS.times(10), { from: SHORT.TX.seller })
+        const result = await transact(CONTRACTS.SHORT_SELL.closeShort,
+          SHORT.ID, SHORT.NUM_TOKENS.times(10), ADDRESSES.ZERO, "", { from: SHORT.TX.seller })
         expect(result[0] /* amountClosed */).to.be.bignumber.equal(SHORT.NUM_TOKENS.div(2));
       }
     });
@@ -324,8 +342,12 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, SHORT.NUM_TOKENS, { from: accounts[0] })
+          () => callCloseShortDirectly(
+            CONTRACTS.SHORT_SELL,
+            SHORT.TX,
+            SHORT.NUM_TOKENS,
+            accounts[0]
+          )
         );
       }
     });
@@ -338,13 +360,21 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         // do it once to close it
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS,
+          SHORT.TX.seller
+        );
 
         // try again
         await expectThrow(
-          () => CONTRACTS.SHORT_SELL.closeShortDirectly(
-            SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller })
+          () => callCloseShortDirectly(
+            CONTRACTS.SHORT_SELL,
+            SHORT.TX,
+            SHORT.NUM_TOKENS,
+            SHORT.TX.seller
+          )
         );
       }
     });
@@ -356,8 +386,11 @@ contract('ERC20Short', function(accounts) {
 
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS, { from: SHORT.TX.seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS
+        );
       }
     });
   });
@@ -381,10 +414,12 @@ contract('ERC20Short', function(accounts) {
       const rando = accounts[9];
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
-        const seller = SHORT.TX.seller;
         const lender = SHORT.TX.loanOffering.lender;
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS.div(2)
+        );
         await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
         await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(rando, { from: rando }));
       }
@@ -397,8 +432,11 @@ contract('ERC20Short', function(accounts) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
         const lender = SHORT.TX.loanOffering.lender;
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS, { from: seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS
+        );
         await expectThrow(() => CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender }));
         await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
       }
@@ -410,8 +448,11 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
-        await CONTRACTS.SHORT_SELL.closeShortDirectly(
-          SHORT.ID, SHORT.NUM_TOKENS.div(2), { from: seller });
+        await callCloseShortDirectly(
+          CONTRACTS.SHORT_SELL,
+          SHORT.TX,
+          SHORT.NUM_TOKENS.div(2)
+        );
         await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
       }
     });

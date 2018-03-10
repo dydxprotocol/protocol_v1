@@ -229,6 +229,7 @@ contract ZeroExExchangeWrapper is
          *
          * NOTE: The first 32 bytes in an array store the length, so we start reading from 32
          */
+        /* solium-disable-next-line */
         assembly {
             mstore(order,           mload(add(orderData, 32)))  // maker
             mstore(add(order, 32),  mload(add(orderData, 64)))  // taker

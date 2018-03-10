@@ -112,7 +112,6 @@ library ShortImpl {
         //       (possible other contract calls back into ShortSell)
         getConsentIfSmartContractLender(transaction, shortId);
 
-        // Transfer deposit and loan fees
         transferDepositAndFees(
             state,
             shortId,
@@ -273,7 +272,6 @@ library ShortImpl {
             );
         }
 
-        // Transfer loan fees
         transferLoanFees(
             state,
             transaction
@@ -363,10 +361,10 @@ library ShortImpl {
         pure
     {
         require(
-            baseTokenReceived >= MathHelpers.getPartialAmount(
-                transaction.loanOffering.rates.minimumSellAmount,
+            baseTokenReceived >= MathHelpers.getPartialAmountRoundedUp(
+                transaction.shortAmount,
                 transaction.loanOffering.rates.maxAmount,
-                transaction.shortAmount
+                transaction.loanOffering.rates.minimumSellAmount
             )
         );
     }
