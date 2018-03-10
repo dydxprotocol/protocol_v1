@@ -8,7 +8,6 @@ import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";

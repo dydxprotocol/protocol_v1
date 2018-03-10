@@ -29,8 +29,7 @@ contract ERC20Short is
     StandardToken,
     CloseShortDelegator,
     ShortCustodian,
-    ReentrancyGuard,
-    TokenInteract {
+    ReentrancyGuard {
     using SafeMath for uint256;
 
     // -----------------------

@@ -99,7 +99,7 @@ async function deployShortSellContracts(deployer) {
     ZeroExProxy.address,
     FeeToken.address
   );
-  
+
   await deployer.deploy(
     DutchAuctionCloser,
     ShortSell.address
