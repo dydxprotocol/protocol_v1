@@ -2,20 +2,26 @@
 
 const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
-const Exchange = artifacts.require("Exchange");
+const ZeroExExchange = artifacts.require("ZeroExExchange");
 const {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
-  signLoanOffering,
-  getPartialAmount,
   callCancelLoanOffer,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  createSigned0xSellOrder,
-  callCloseShort,
-  signOrder
+  callCloseShort
 } = require('../helpers/ShortSellHelper');
+const {
+  signLoanOffering
+} = require('../helpers/LoanHelper');
+const {
+  getPartialAmount
+} = require('../helpers/MathHelper');
+const {
+  createSignedSellOrder,
+  signOrder
+} = require('../helpers/0xHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -188,7 +194,7 @@ describe('#short', () => {
         const shortTx = await createShortSellTx(accounts);
 
         await issueTokensAndSetAllowancesForShort(shortTx);
-        const exchange = await Exchange.deployed();
+        const exchange = await ZeroExExchange.deployed();
 
         await callCancelOrder(
           exchange,
@@ -318,7 +324,7 @@ describe('#closeShort', () => {
       it('Does not allow lender to close', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -332,7 +338,7 @@ describe('#closeShort', () => {
       it('Does not allow external address to close', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -348,7 +354,7 @@ describe('#closeShort', () => {
       it('Enforces that short sell exists', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -362,7 +368,7 @@ describe('#closeShort', () => {
       it('Only allows short to be entirely closed once', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -379,7 +385,7 @@ describe('#closeShort', () => {
       it('Fails if interest fee cannot be paid', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -395,7 +401,7 @@ describe('#closeShort', () => {
       it('Fails on invalid order signature', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -410,7 +416,7 @@ describe('#closeShort', () => {
       it('Fails if sell order is not large enough', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -428,7 +434,7 @@ describe('#closeShort', () => {
       it('Fails on insufficient sell order balance/allowance', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -444,7 +450,7 @@ describe('#closeShort', () => {
       it('Fails on insufficient sell order fee token balance/allowance', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 
@@ -460,7 +466,7 @@ describe('#closeShort', () => {
       it('Fails on insufficient short seller fee token balance/allowance', async() => {
         const shortTx = await doShort(accounts);
         const [sellOrder, shortSell] = await Promise.all([
-          createSigned0xSellOrder(accounts),
+          createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
 

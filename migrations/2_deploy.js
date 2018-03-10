@@ -1,9 +1,7 @@
 /*global artifacts*/
 
-// For production deployment
-const Exchange = artifacts.require("Exchange");
+const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
-const Trader = artifacts.require("Trader");
 const ProxyContract = artifacts.require("Proxy");
 const ShortSell = artifacts.require("ShortSell");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
@@ -81,58 +79,45 @@ async function deployShortSellContracts(deployer) {
     ShortSell.link('TransferImpl', TransferImpl.address)
   ]);
 
-  await Promise.all([
-    deployer.deploy(Exchange, ProxyContract.address),
-    deployer.deploy(
-      Vault,
-      ProxyContract.address,
-      ONE_HOUR
-    )
-  ]);
   await deployer.deploy(
-    Trader,
-    Exchange.address,
-    ZeroExExchange.address,
-    Vault.address,
+    Vault,
     ProxyContract.address,
-    ZeroExProxy.address,
-    '0x0000000000000000000000000000010',
     ONE_HOUR
   );
 
   await deployer.deploy(
     ShortSell,
     Vault.address,
-    Trader.address,
     ProxyContract.address
   );
 
-  await deployer.deploy(
-    ERC20ShortCreator,
-    ShortSell.address
-  );
+  await Promise.all([
+    deployer.deploy(
+      ERC20ShortCreator,
+      ShortSell.address
+    ),
+    deployer.deploy(
+      ZeroExExchangeWrapper,
+      ShortSell.address,
+      ProxyContract.address,
+      ZeroExExchange.address, // TODO update these for prod
+      ZeroExProxy.address,
+      FeeToken.address
+    )
+  ]);
 }
 
 async function authorizeOnProxy() {
   const proxy = await ProxyContract.deployed();
   await Promise.all([
     proxy.grantTransferAuthorization(Vault.address),
-    proxy.grantTransferAuthorization(Exchange.address),
     proxy.grantTransferAuthorization(ShortSell.address)
   ]);
 }
 
 async function grantAccessToVault() {
   const vault = await Vault.deployed();
-  return Promise.all([
-    vault.grantAccess(ShortSell.address),
-    vault.grantAccess(Trader.address)
-  ]);
-}
-
-async function grantAccessToTrader() {
-  const trader = await Trader.deployed();
-  return trader.grantAccess(ShortSell.address);
+  return vault.grantAccess(ShortSell.address);
 }
 
 async function doMigration(deployer, network) {
@@ -141,8 +126,7 @@ async function doMigration(deployer, network) {
   await deployShortSellContracts(deployer);
   await Promise.all([
     authorizeOnProxy(),
-    grantAccessToVault(),
-    grantAccessToTrader()
+    grantAccessToVault()
   ]);
 }
 

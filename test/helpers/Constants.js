@@ -23,7 +23,8 @@ module.exports = {
   },
   BIGNUMBERS: {
     ZERO: new BigNumber(0),
-    ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24)
+    ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24),
+    BASE_AMOUNT: new BigNumber('1e18')
   },
   BYTES32: {
     ZERO: '0x0000000000000000000000000000000000000000000000000000000000000000'.valueOf(),
@@ -40,5 +41,6 @@ module.exports = {
       web3.fromUtf8("12345678"),
       web3.fromUtf8("12345679"),
     ]
-  }
+  },
+  DEFAULT_SALT: 425
 };

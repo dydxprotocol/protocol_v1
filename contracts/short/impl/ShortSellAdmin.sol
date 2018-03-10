@@ -22,23 +22,14 @@ contract ShortSellAdmin is Ownable {
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
      *                                    (callInLoan, closeShort, cancelLoanOffering
-     *                                    closeShortDirectly, forceRecoverLoan)
+     *                                    forceRecoverLoan)
      * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closeShort,
-     *                                    closeShortDirectly, forceRecoverLoan)
-     * SHORT_SELLER_CLOSE_ONLY          - Only closing by the short seller is allowed (callInLoan,
-     *                                    closeShort, closeShortDirectly, forceRecoverLoan)
-     * SHORT_SELLER_CLOSE_DIRECTLY_ONLY - Only direct closing by the short seller is allowed
-     *                                    (callInLoan, closeShortDirectly, forceRecoverLoan)
-     * SHORT_SELLER_CLOSE_0X_ONLY       - Only closing by the short seller with order is allowed
-     *                                    (callInLoan, closeShort, forceRecoverLoan)
+     *                                    forceRecoverLoan)
      */
     enum OperationState {
         OPERATIONAL,
         CLOSE_AND_CANCEL_LOAN_ONLY,
-        CLOSE_ONLY,
-        SHORT_SELLER_CLOSE_ONLY,
-        SHORT_SELLER_CLOSE_DIRECTLY_ONLY,
-        SHORT_SELLER_CLOSE_0X_ONLY
+        CLOSE_ONLY
     }
 
     // ------------------------
@@ -90,20 +81,6 @@ contract ShortSellAdmin is Ownable {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_ONLY
-            || operationState == OperationState.SHORT_SELLER_CLOSE_ONLY
-            || operationState == OperationState.SHORT_SELLER_CLOSE_0X_ONLY
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
-        );
-        _;
-    }
-
-    modifier closeShortDirectlyStateControl() {
-        require(
-            operationState == OperationState.OPERATIONAL
-            || operationState == OperationState.CLOSE_ONLY
-            || operationState == OperationState.SHORT_SELLER_CLOSE_ONLY
-            || operationState == OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
         );
         _;
     }

@@ -13,10 +13,12 @@ const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
-  createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   callCloseShort
 } = require('../helpers/ShortSellHelper');
+const {
+  createSignedSellOrder
+} = require('../helpers/0xHelper');
 
 contract('ERC20ShortCreator', function(accounts) {
   let shortSellContract, ERC20ShortCreatorContract;
@@ -97,7 +99,7 @@ contract('ERC20ShortCreator', function(accounts) {
       const shortTx = await doShort(accounts, salt);
 
       // close half the short
-      const sellOrder = await createSigned0xSellOrder(accounts, salt);
+      const sellOrder = await createSignedSellOrder(accounts, salt);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
       await callCloseShort(
         shortSellContract,

@@ -15,9 +15,6 @@ library ShortSellState {
         // Address of the Vault contract
         address VAULT;
 
-        // Address of the Trader contract
-        address TRADER;
-
         // Address of the Proxy contract
         address PROXY;
 

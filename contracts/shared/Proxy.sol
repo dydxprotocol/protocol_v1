@@ -1,11 +1,11 @@
 pragma solidity 0.4.19;
 
-import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { OwnedAccessControlled } from "../lib/OwnedAccessControlled.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
 
 
 /**
@@ -101,7 +101,12 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
         whenNotPaused
         external
     {
-        require(ERC20(token).transferFrom(from, msg.sender, value));
+        TokenInteract.transferFrom(
+            token,
+            from,
+            msg.sender,
+            value
+        );
     }
 
     function transferTo(
@@ -114,7 +119,12 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
         whenNotPaused
         external
     {
-        require(ERC20(token).transferFrom(from, to, value));
+        TokenInteract.transferFrom(
+            token,
+            from,
+            to,
+            value
+        );
     }
 
     // -----------------------------------------
@@ -130,8 +140,8 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
         returns (uint256 _allowance)
     {
         return Math.min256(
-            ERC20(token).allowance(who, address(this)),
-            ERC20(token).balanceOf(who)
+            TokenInteract.allowance(token, who, address(this)),
+            TokenInteract.balanceOf(token, who)
         );
     }
 }

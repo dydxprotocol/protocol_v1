@@ -16,7 +16,7 @@ library ContractHelper {
         internal
         returns (bool)
     {
-        uint size;
+        uint256 size;
         assembly { size := extcodesize(addr) } // solium-disable-line security/no-inline-assembly
         return size > 0;
     }

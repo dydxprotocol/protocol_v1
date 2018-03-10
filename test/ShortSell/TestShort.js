@@ -4,21 +4,19 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const SmartContractLender = artifacts.require("SmartContractLender");
 const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
 const TestShortOwner = artifacts.require("TestShortOwner");
-const { ADDRESSES, zeroExFeeTokenConstant } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
@@ -27,12 +25,11 @@ const {
   createShortSellTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
-  getPartialAmount,
-  sign0xOrder,
   getShort,
-  signLoanOffering,
   callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
+const { getPartialAmount } = require('../helpers/MathHelper');
+const { signLoanOffering } = require('../helpers/LoanHelper');
 
 describe('#short', () => {
   contract('ShortSell', function(accounts) {
@@ -41,51 +38,6 @@ describe('#short', () => {
       const shortSell = await ShortSell.deployed();
 
       await issueTokensAndSetAllowancesForShort(shortTx);
-
-      const tx = await callShort(shortSell, shortTx);
-
-      console.log('\tShortSell.short (dYdX Exchange Contract) gas used: ' + tx.receipt.gasUsed);
-
-      await checkSuccess(shortSell, shortTx);
-    });
-  });
-
-  contract('ShortSell', function(accounts) {
-    it('succeeds when using 0x exchange contract', async () => {
-      const shortTx = await createShortSellTx(accounts);
-      const [shortSell, feeToken, baseToken] = await Promise.all([
-        ShortSell.deployed(),
-        FeeToken.deployed(),
-        BaseToken.deployed(),
-      ]);
-
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      shortTx.buyOrder.makerFeeTokenAddress = zeroExFeeTokenConstant;
-      shortTx.buyOrder.ecSignature = await sign0xOrder(shortTx.buyOrder);
-
-      // Set allowances on the 0x proxy, not the dYdX proxy
-      await Promise.all([
-        feeToken.approve(
-          ProxyContract.address,
-          new BigNumber(0),
-          { from: shortTx.buyOrder.maker }
-        ),
-        feeToken.approve(
-          ZeroExProxy.address,
-          shortTx.buyOrder.makerFee,
-          { from: shortTx.buyOrder.maker }
-        ),
-        baseToken.approve(
-          ProxyContract.address,
-          new BigNumber(0),
-          { from: shortTx.buyOrder.maker }
-        ),
-        baseToken.approve(
-          ZeroExProxy.address,
-          shortTx.buyOrder.makerTokenAmount,
-          { from: shortTx.buyOrder.maker }
-        ),
-      ]);
 
       const tx = await callShort(shortSell, shortTx);
 

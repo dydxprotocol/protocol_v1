@@ -12,12 +12,13 @@ const {
   callShort,
   callCancelLoanOffer,
   doShort,
-  createSigned0xSellOrder,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  issueForDirectClose,
   callApproveLoanOffering
 } = require('../helpers/ShortSellHelper');
+const {
+  createSignedSellOrder
+} = require('../helpers/0xHelper');
 
 const OperationState = {
   OPERATIONAL: 0,
@@ -114,7 +115,7 @@ describe('#onlyWhileOperational', () => {
         { from: shortTx.loanOffering.lender }
       );
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
+      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
       await expectThrow(() => shortSell.cancelLoanCall(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
@@ -139,7 +140,7 @@ describe('#onlyWhileOperational', () => {
       await baseToken.issue(amount, { from: shortTx.seller });
       await baseToken.approve(ProxyContract.address, amount, { from: shortTx.seller });
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
+      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
       await expectThrow(() => shortSell.deposit(
         shortTx.id,
         amount,
@@ -161,7 +162,7 @@ describe('#onlyWhileOperational', () => {
       const shortTx = await createShortSellTx(accounts);
       const cancelAmount = new BigNumber(1000);
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_ONLY);
+      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
       await expectThrow(() => callCancelLoanOffer(
         shortSell,
         shortTx.loanOffering,
@@ -184,7 +185,7 @@ describe('#onlyWhileOperational', () => {
 
       await issueTokensAndSetAllowancesForShort(shortTx);
 
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_ONLY);
+      await shortSell.setOperationState(OperationState.CLOSE_ONLY);
       await expectThrow(() => callApproveLoanOffering(
         shortSell,
         shortTx.loanOffering
@@ -204,7 +205,7 @@ describe('#closeShortStateControl', () => {
   async function test(accounts, state) {
     const shortTx = await doShort(accounts);
     const [sellOrder, shortSell] = await Promise.all([
-      createSigned0xSellOrder(accounts),
+      createSignedSellOrder(accounts),
       ShortSell.deployed()
     ]);
     await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
@@ -222,100 +223,6 @@ describe('#closeShortStateControl', () => {
   contract('ShortSell', accounts => {
     it('Allows #closeShort while CLOSE_ONLY', async () => {
       await test(accounts, OperationState.CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShort while SHORT_SELLER_CLOSE_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShort while SHORT_SELLER_CLOSE_0X_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
-      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Disallows #closeShort while in other operation states', async () => {
-      const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
-        createSigned0xSellOrder(accounts),
-        ShortSell.deployed()
-      ]);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
-
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
-      await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, closeAmount));
-    });
-  });
-});
-
-describe('#closeShortDirectlyStateControl', () => {
-  const closeAmount = new BigNumber(100);
-  async function test(accounts, state) {
-    const shortSell = await ShortSell.deployed();
-    const shortTx = await doShort(accounts);
-    await issueForDirectClose(shortTx);
-
-    await shortSell.setOperationState(state);
-    await shortSell.closeShortDirectly(
-      shortTx.id,
-      closeAmount,
-      { from: shortTx.seller }
-    );
-  }
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while OPERATIONAL', async () => {
-      await test(accounts, OperationState.OPERATIONAL);
-
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while CLOSE_ONLY', async () => {
-      await test(accounts, OperationState.CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while SHORT_SELLER_CLOSE_DIRECTLY_ONLY', async () => {
-      await test(accounts, OperationState.SHORT_SELLER_CLOSE_DIRECTLY_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Allows #closeShortDirectly while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
-      await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
-    });
-  });
-
-  contract('ShortSell', accounts => {
-    it('Disallows #closeShortDirectly while in other operation states', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await doShort(accounts);
-      await issueForDirectClose(shortTx);
-
-      await shortSell.setOperationState(OperationState.SHORT_SELLER_CLOSE_0X_ONLY);
-      await expectThrow(() => shortSell.closeShortDirectly(
-        shortTx.id,
-        closeAmount,
-        { from: shortTx.seller }
-      ));
     });
   });
 });

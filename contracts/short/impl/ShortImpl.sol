@@ -3,12 +3,12 @@ pragma solidity 0.4.19;
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
-import { Trader } from "../Trader.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
@@ -53,22 +53,7 @@ library ShortImpl {
         uint256 shortAmount;
         uint256 depositAmount;
         ShortSellCommon.LoanOffering loanOffering;
-        BuyOrder buyOrder;
-    }
-
-    struct BuyOrder {
-        address maker;
-        address taker;
-        address feeRecipient;
-        address makerFeeToken;
-        address takerFeeToken;
-        uint256 baseTokenAmount;
-        uint256 underlyingTokenAmount;
-        uint256 makerFee;
-        uint256 takerFee;
-        uint256 expirationTimestamp;
-        uint256 salt;
-        ShortSellCommon.Signature signature;
+        address exchangeWrapperAddress;
     }
 
     // -------------------------------------------
@@ -77,14 +62,15 @@ library ShortImpl {
 
     function shortImpl(
         ShortSellState.State storage state,
-        address[15] addresses,
-        uint256[17] values256,
+        address[11] addresses,
+        uint256[11] values256,
         uint32[2] values32,
-        uint8[2] sigV,
-        bytes32[4] sigRS
+        uint8 sigV,
+        bytes32[2] sigRS,
+        bytes orderData
     )
         public
-        returns(bytes32 _shortId)
+        returns (bytes32 _shortId)
     {
         ShortTx memory transaction = parseShortTx(
             addresses,
@@ -103,29 +89,22 @@ library ShortImpl {
             shortId
         );
 
-        // If maxDuration is 0, then assume it to be "infinite" (maxInt)
-        uint32 parsedMaxDuration = (transaction.loanOffering.maxDuration == 0)
-            ? MathHelpers.maxUint32() : transaction.loanOffering.maxDuration;
-        uint256 partialInterestFee = getPartialInterestFee(transaction);
-
-        // Prevent overflows when calculating interest fees. Unused result, throws on overflow
-        // Should be the same calculation used in calculateInterestFee
-        transaction.shortAmount.mul(parsedMaxDuration).mul(partialInterestFee);
-
-        // STATE UPDATES
-
-        // Update global amounts for the loan and lender
-        state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.shortAmount);
-        state.loanNumbers[transaction.loanOffering.loanHash] =
-            state.loanNumbers[transaction.loanOffering.loanHash].add(1);
-
-        // Check no casting errors
-        require(
-            uint256(uint32(block.timestamp)) == block.timestamp
+        // First pull funds from lender and sell them. Prefer to do this first to make order
+        // collisions use up less gas.
+        // NOTE: Doing this before updating state relies on #short being non-reentrant
+        transferFromLender(state, transaction);
+        uint256 baseTokenReceived = executeSell(
+            state,
+            transaction,
+            orderData,
+            shortId
         );
 
-        // EXTERNAL CALLS
+        updateState(
+            state,
+            shortId,
+            transaction
+        );
 
         // If the lender is a smart contract, call out to it to get its consent for this loan
         // This is done after other validations/state updates as it is an external call
@@ -133,18 +112,10 @@ library ShortImpl {
         //       (possible other contract calls back into ShortSell)
         getConsentIfSmartContractLender(transaction, shortId);
 
-        // Transfer tokens
-        transferTokensForShort(
+        transferDepositAndFees(
             state,
             shortId,
             transaction
-        );
-
-        // Do the sell
-        uint256 baseTokenReceived = executeSell(
-            state,
-            transaction,
-            shortId
         );
 
         // LOG EVENT
@@ -154,14 +125,6 @@ library ShortImpl {
             msg.sender,
             transaction,
             baseTokenReceived
-        );
-
-        addShort(
-            state,
-            shortId,
-            transaction,
-            partialInterestFee,
-            parsedMaxDuration
         );
 
         return shortId;
@@ -228,26 +191,12 @@ library ShortImpl {
         require(transaction.depositAmount >= minimumDeposit);
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
 
-        /*  Validate the minimum sell price
-         *
-         *    loan min sell            buy order base token amount
-         *  -----------------  <=  -----------------------------------
-         *   loan max amount        buy order underlying token amount
-         *
-         *                      |
-         *                      V
-         *
-         *  loan min sell * buy order underlying token amount
-         *  <= buy order base token amount * loan max amount
-         */
-
+        // Check no casting errors
         require(
-            transaction.loanOffering.rates.minimumSellAmount.mul(
-                transaction.buyOrder.underlyingTokenAmount
-            ) <= transaction.loanOffering.rates.maxAmount.mul(
-                transaction.buyOrder.baseTokenAmount
-            )
+            uint256(uint32(block.timestamp)) == block.timestamp
         );
+
+        // The minimum sell amount is validated after executing the sell
     }
 
     function isValidSignature(
@@ -291,80 +240,42 @@ library ShortImpl {
         }
     }
 
-    function transferTokensForShort(
+    function transferFromLender(
+        ShortSellState.State storage state,
+        ShortTx transaction
+    )
+        internal
+    {
+        // Transfer underlying token to the exchange wrapper
+        Proxy(state.PROXY).transferTo(
+            transaction.underlyingToken,
+            transaction.loanOffering.lender,
+            transaction.exchangeWrapperAddress,
+            transaction.shortAmount
+        );
+    }
+
+    function transferDepositAndFees(
         ShortSellState.State storage state,
         bytes32 shortId,
         ShortTx transaction
     )
         internal
     {
-        transferTokensFromShortSeller(
-            state,
-            shortId,
-            transaction
-        );
+        // Transfer base token deposit from the short seller
+        if (transaction.depositAmount > 0) {
+            Vault(state.VAULT).transferToVault(
+                shortId,
+                transaction.baseToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+        }
 
-        // Transfer underlying token
-        Vault(state.VAULT).transferToVault(
-            shortId,
-            transaction.underlyingToken,
-            transaction.loanOffering.lender,
-            transaction.shortAmount
-        );
-
-        // Transfer loan fees
         transferLoanFees(
             state,
             transaction
         );
-    }
-
-    function transferTokensFromShortSeller(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        ShortTx transaction
-    )
-        internal
-    {
-        // Calculate Fee
-        uint256 buyOrderTakerFee = MathHelpers.getPartialAmount(
-            transaction.shortAmount,
-            transaction.buyOrder.underlyingTokenAmount,
-            transaction.buyOrder.takerFee
-        );
-
-        // Transfer deposit and buy taker fee
-        if (transaction.buyOrder.feeRecipient == address(0)) {
-            Vault(state.VAULT).transferToVault(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-        } else if (transaction.baseToken == transaction.buyOrder.takerFeeToken) {
-            // If the buy order taker fee token is base token, transfer only once for gas efficiency
-            Vault(state.VAULT).transferToVault(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                transaction.depositAmount.add(buyOrderTakerFee)
-            );
-        } else {
-            // Otherwise transfer the deposit and buy order taker fee separately
-            Vault(state.VAULT).transferToVault(
-                shortId,
-                transaction.baseToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-
-            Vault(state.VAULT).transferToVault(
-                shortId,
-                transaction.buyOrder.takerFeeToken,
-                msg.sender,
-                buyOrderTakerFee
-            );
-        }
     }
 
     function transferLoanFees(
@@ -373,79 +284,89 @@ library ShortImpl {
     )
         internal
     {
+        // 0 fee address indicates no fees
+        if (transaction.loanOffering.feeRecipient == address(0)) {
+            return;
+        }
+
         Proxy proxy = Proxy(state.PROXY);
+
         uint256 lenderFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.lenderFee
-        );
-        proxy.transferTo(
-            transaction.loanOffering.lenderFeeToken,
-            transaction.loanOffering.lender,
-            transaction.loanOffering.feeRecipient,
-            lenderFee
         );
         uint256 takerFee = MathHelpers.getPartialAmount(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.takerFee
         );
-        proxy.transferTo(
-            transaction.loanOffering.takerFeeToken,
-            msg.sender,
-            transaction.loanOffering.feeRecipient,
-            takerFee
-        );
+
+        if (lenderFee > 0) {
+            proxy.transferTo(
+                transaction.loanOffering.lenderFeeToken,
+                transaction.loanOffering.lender,
+                transaction.loanOffering.feeRecipient,
+                lenderFee
+            );
+        }
+
+        if (takerFee > 0) {
+            proxy.transferTo(
+                transaction.loanOffering.takerFeeToken,
+                msg.sender,
+                transaction.loanOffering.feeRecipient,
+                takerFee
+            );
+        }
     }
 
     function executeSell(
         ShortSellState.State storage state,
         ShortTx transaction,
+        bytes orderData,
         bytes32 shortId
     )
         internal
         returns (uint256 _baseTokenReceived)
     {
-        var ( , baseTokenReceived) = Trader(state.TRADER).trade(
-            shortId,
-            [
-                transaction.buyOrder.maker,
-                transaction.buyOrder.taker,
-                transaction.baseToken,
-                transaction.underlyingToken,
-                transaction.buyOrder.feeRecipient,
-                transaction.buyOrder.makerFeeToken,
-                transaction.buyOrder.takerFeeToken
-            ],
-            [
-                transaction.buyOrder.baseTokenAmount,
-                transaction.buyOrder.underlyingTokenAmount,
-                transaction.buyOrder.makerFee,
-                transaction.buyOrder.takerFee,
-                transaction.buyOrder.expirationTimestamp,
-                transaction.buyOrder.salt
-            ],
+        uint256 baseTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
+            transaction.baseToken,
+            transaction.underlyingToken,
+            msg.sender,
             transaction.shortAmount,
-            transaction.buyOrder.signature.v,
-            transaction.buyOrder.signature.r,
-            transaction.buyOrder.signature.s,
-            true
+            orderData
         );
 
-        Vault vault = Vault(state.VAULT);
-
-        // Should hold base token == deposit amount + base token from sell
-        assert(
-            vault.balances(
-                shortId,
-                transaction.baseToken
-            ) == baseTokenReceived.add(transaction.depositAmount)
+        validateMinimumSellAmount(
+            transaction,
+            baseTokenReceived
         );
 
-        // Should hold 0 underlying token
-        assert(vault.balances(shortId, transaction.underlyingToken) == 0);
+        Vault(state.VAULT).transferToVault(
+            shortId,
+            transaction.baseToken,
+            transaction.exchangeWrapperAddress,
+            baseTokenReceived
+        );
 
         return baseTokenReceived;
+    }
+
+    function validateMinimumSellAmount(
+        ShortTx transaction,
+        uint256 baseTokenReceived
+    )
+        internal
+        pure
+    {
+        require(
+            baseTokenReceived >= MathHelpers.getPartialAmountRoundedUp(
+                transaction.shortAmount,
+                transaction.loanOffering.rates.maxAmount,
+                transaction.loanOffering.rates.minimumSellAmount
+            )
+        );
     }
 
     function recordShortInitiated(
@@ -472,7 +393,7 @@ library ShortImpl {
         );
     }
 
-    function getPartialInterestFee(
+    function getPartialInterestRate(
         ShortTx transaction
     )
         internal
@@ -482,30 +403,40 @@ library ShortImpl {
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
         // payments. This would be an infeasiable attack in most scenarios due to low rounding error
         // and high transaction/gas fees, but is nonetheless theoretically possible.
-        return MathHelpers.getPartialAmountRoundedUp(
+        uint256 partialInterestFee = MathHelpers.getPartialAmountRoundedUp(
             transaction.shortAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.dailyInterestFee);
+
+        // Prevent overflows when calculating interest fees. Unused result, throws on overflow
+        // Should be the same calculation used in calculateInterestFee
+        transaction.shortAmount.mul(transaction.loanOffering.maxDuration).mul(partialInterestFee);
+
+        return partialInterestFee;
     }
 
-    function addShort(
+    function updateState(
         ShortSellState.State storage state,
         bytes32 shortId,
-        ShortTx transaction,
-        uint256 interestRate,
-        uint32 maxDuration
+        ShortTx transaction
     )
         internal
     {
-        require(!ShortSellCommon.containsShortImpl(state, shortId));
+        assert(!ShortSellCommon.containsShortImpl(state, shortId));
+
+        // Update global amounts for the loan and lender
+        state.loanFills[transaction.loanOffering.loanHash] =
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.shortAmount);
+        state.loanNumbers[transaction.loanOffering.loanHash] =
+            state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].interestRate = interestRate;
+        state.shorts[shortId].interestRate = getPartialInterestRate(transaction);
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
-        state.shorts[shortId].maxDuration = maxDuration;
+        state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -527,11 +458,11 @@ library ShortImpl {
     // -------- Parsing Functions -------
 
     function parseShortTx(
-        address[15] addresses,
-        uint256[17] values,
+        address[11] addresses,
+        uint256[11] values256,
         uint32[2] values32,
-        uint8[2] sigV,
-        bytes32[4] sigRS
+        uint8 sigV,
+        bytes32[2] sigRS
     )
         internal
         view
@@ -541,32 +472,27 @@ library ShortImpl {
             owner: addresses[0],
             underlyingToken: addresses[1],
             baseToken: addresses[2],
-            shortAmount: values[15],
-            depositAmount: values[16],
+            shortAmount: values256[9],
+            depositAmount: values256[10],
             loanOffering: parseLoanOffering(
                 addresses,
-                values,
+                values256,
                 values32,
                 sigV,
                 sigRS
             ),
-            buyOrder: parseBuyOrder(
-                addresses,
-                values,
-                sigV,
-                sigRS
-            )
+            exchangeWrapperAddress: addresses[10]
         });
 
         return transaction;
     }
 
     function parseLoanOffering(
-        address[15] addresses,
-        uint256[17] values,
+        address[11] addresses,
+        uint256[11] values256,
         uint32[2] values32,
-        uint8[2] sigV,
-        bytes32[4] sigRS
+        uint8 sigV,
+        bytes32[2] sigRS
     )
         internal
         view
@@ -580,11 +506,11 @@ library ShortImpl {
             feeRecipient: addresses[7],
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
-            rates: parseLoanOfferRates(values),
-            expirationTimestamp: values[7],
+            rates: parseLoanOfferRates(values256),
+            expirationTimestamp: values256[7],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
-            salt: values[8],
+            salt: values256[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
@@ -599,82 +525,37 @@ library ShortImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[17] values
+        uint256[11] values256
     )
         internal
         pure
         returns (ShortSellCommon.LoanRates _loanRates)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            minimumDeposit: values[0],
-            maxAmount: values[1],
-            minAmount: values[2],
-            minimumSellAmount: values[3],
-            dailyInterestFee: values[4],
-            lenderFee: values[5],
-            takerFee: values[6]
+            minimumDeposit: values256[0],
+            maxAmount: values256[1],
+            minAmount: values256[2],
+            minimumSellAmount: values256[3],
+            dailyInterestFee: values256[4],
+            lenderFee: values256[5],
+            takerFee: values256[6]
         });
 
         return rates;
     }
 
     function parseLoanOfferingSignature(
-        uint8[2] sigV,
-        bytes32[4] sigRS
+        uint8 sigV,
+        bytes32[2] sigRS
     )
         internal
         pure
         returns (ShortSellCommon.Signature _signature)
     {
         ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
-            v: sigV[0],
+            v: sigV,
             r: sigRS[0],
             s: sigRS[1]
-        });
-
-        return signature;
-    }
-
-    function parseBuyOrder(
-        address[15] addresses,
-        uint256[17] values,
-        uint8[2] sigV,
-        bytes32[4] sigRS
-    )
-        internal
-        pure
-        returns (BuyOrder _buyOrder)
-    {
-        BuyOrder memory order = BuyOrder({
-            maker: addresses[10],
-            taker: addresses[11],
-            feeRecipient: addresses[12],
-            makerFeeToken: addresses[13],
-            takerFeeToken: addresses[14],
-            baseTokenAmount: values[9],
-            underlyingTokenAmount: values[10],
-            makerFee: values[11],
-            takerFee: values[12],
-            expirationTimestamp: values[13],
-            salt: values[14],
-            signature: parseBuyOrderSignature(sigV, sigRS)
-        });
-
-        return order;
-    }
-
-    function parseBuyOrderSignature(
-        uint8[2] sigV,
-        bytes32[4] sigRS
-    )
-        internal
-        pure
-        returns (ShortSellCommon.Signature _signature)
-    {
-        ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
-            v: sigV[1],
-            r: sigRS[2],
-            s: sigRS[3]
         });
 
         return signature;

@@ -5,11 +5,10 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const Vault = artifacts.require("Vault");
-const Trader = artifacts.require("Trader");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const { getPartialAmount, getQuotient3Over2 } = require('../helpers/ShortSellHelper');
+const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
 
@@ -129,18 +128,12 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
     vaultFeeToken,
     vaultBaseToken,
     vaultUnderlyingToken,
-    traderFeeToken,
-    traderBaseToken,
-    traderUnderlyingToken,
     shortBalance
   } = balances;
 
   expect(vaultFeeToken).to.be.bignumber.equal(0);
   expect(vaultBaseToken).to.be.bignumber.equal(expectedShortBalance);
   expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
-  expect(traderFeeToken).to.be.bignumber.equal(0);
-  expect(traderBaseToken).to.be.bignumber.equal(0);
-  expect(traderUnderlyingToken).to.be.bignumber.equal(0);
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
@@ -218,10 +211,6 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     vaultBaseToken,
     vaultUnderlyingToken,
 
-    traderFeeToken,
-    traderBaseToken,
-    traderUnderlyingToken,
-
     shortBalance
   ] = await Promise.all([
     baseToken.balanceOf.call(shortTx.seller),
@@ -235,10 +224,6 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     feeToken.balanceOf.call(Vault.address),
     baseToken.balanceOf.call(Vault.address),
     underlyingToken.balanceOf.call(Vault.address),
-
-    feeToken.balanceOf.call(Trader.address),
-    baseToken.balanceOf.call(Trader.address),
-    underlyingToken.balanceOf.call(Trader.address),
 
     shortSell.getShortBalance.call(shortTx.id)
   ]);
@@ -260,10 +245,6 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     vaultFeeToken,
     vaultBaseToken,
     vaultUnderlyingToken,
-
-    traderFeeToken,
-    traderBaseToken,
-    traderUnderlyingToken,
 
     shortBalance
   };
