@@ -103,9 +103,7 @@ library ShortImpl {
         updateState(
             state,
             shortId,
-            transaction,
-            partialInterestFee,
-            parsedMaxDuration
+            transaction
         );
 
         // If the lender is a smart contract, call out to it to get its consent for this loan
@@ -422,9 +420,7 @@ library ShortImpl {
     function updateState(
         ShortSellState.State storage state,
         bytes32 shortId,
-        ShortTx transaction,
-        uint256 interestRate,
-        uint32 maxDuration
+        ShortTx transaction
     )
         internal
     {
@@ -439,10 +435,10 @@ library ShortImpl {
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].interestRate = interestRate;
+        state.shorts[shortId].interestRate = getPartialInterestRate(transaction);
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
-        state.shorts[shortId].maxDuration = maxDuration;
+        state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -478,8 +474,8 @@ library ShortImpl {
             owner: addresses[0],
             underlyingToken: addresses[1],
             baseToken: addresses[2],
-            shortAmount: values[9],
-            depositAmount: values[10],
+            shortAmount: values256[9],
+            depositAmount: values256[10],
             loanOffering: parseLoanOffering(
                 addresses,
                 values256,
@@ -513,7 +509,7 @@ library ShortImpl {
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values256),
-            expirationTimestamp: values[7],
+            expirationTimestamp: values256[7],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             salt: values256[8],
