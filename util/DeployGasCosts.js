@@ -53,7 +53,8 @@ contract('Deploy Costs', () => {
       const contract = await ERC20Short.new(
         web3.fromUtf8("123456789"),
         ADDRESSES.TEST[0],
-        ADDRESSES.TEST[1]
+        ADDRESSES.TEST[1],
+        ADDRESSES.TEST[2]
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);

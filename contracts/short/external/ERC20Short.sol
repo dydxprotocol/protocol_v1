@@ -70,6 +70,9 @@ contract ERC20Short is
     // ----- State Variables -----
     // ---------------------------
 
+    // Address of a trusted closing contract
+    address public TRUSTED_CLOSER;
+
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
 
@@ -92,14 +95,16 @@ contract ERC20Short is
     function ERC20Short(
         bytes32 _shortId,
         address _shortSell,
+        address _trustedCloser,
         address _initialTokenHolder
     )
         public
         CloseShortDelegator(_shortSell)
     {
-        state = State.UNINITIALIZED;
-        initialTokenHolder = _initialTokenHolder;
         SHORT_ID = _shortId;
+        state = State.UNINITIALIZED;
+        TRUSTED_CLOSER = _trustedCloser;
+        initialTokenHolder = _initialTokenHolder;
     }
 
     // -----------------------------------------
@@ -172,13 +177,19 @@ contract ERC20Short is
         require(state == State.OPEN);
         require(SHORT_ID == shortId);
 
+        // Tokens are not burned when a trusted closer closes the short, but we require the trusted
+        // closer to close the rest of the short. All token holders are then entitled to the
+        // baseTokens in this contract (presumably given by the trusted closer) by using withdraw().
+        if (who == TRUSTED_CLOSER && requestedAmount == totalSupply_) {
+            return requestedAmount;
+        }
+
+        // For untrusted closers, we check token balances
         uint256 balance = balances[who];
         uint256 amount = Math.min256(requestedAmount, balance);
         require(amount > 0);
-
         balances[who] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
-
         TokensRedeemedForClose(who, amount);
         return amount;
     }

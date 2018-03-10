@@ -100,10 +100,12 @@ contract('ERC20Short', function(accounts) {
       ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
+        ADDRESSES.ZERO,
         INITIAL_TOKEN_HOLDER),
       ERC20Short.new(
         SHORTS.PART.ID,
         CONTRACTS.SHORT_SELL.address,
+        ADDRESSES.ZERO,
         INITIAL_TOKEN_HOLDER)
     ]);
   }
@@ -493,6 +495,7 @@ contract('ERC20Short', function(accounts) {
       const tokenContract = await ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
+        ADDRESSES.ZERO,
         INITIAL_TOKEN_HOLDER);
       const [decimal, expectedDecimal] = await Promise.all([
         tokenContract.decimals.call(),

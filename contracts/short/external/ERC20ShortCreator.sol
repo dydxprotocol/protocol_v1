@@ -22,6 +22,7 @@ contract ERC20ShortCreator is
     ShortOwner,
     ReentrancyGuard
 {
+
     // -------------------
     // ------ Events -----
     // -------------------
@@ -31,16 +32,24 @@ contract ERC20ShortCreator is
         address tokenAddress
     );
 
+    // ----------------------------
+    // ------ State Variables -----
+    // ----------------------------
+
+    address public TRUSTED_CLOSER;
+
     // ------------------------
     // ------ Constructor -----
     // ------------------------
 
     function ERC20ShortCreator(
-        address shortSell
+        address _shortSell,
+        address _trustedCloser
     )
         public
-        ShortOwner(shortSell)
+        ShortOwner(_shortSell)
     {
+        TRUSTED_CLOSER = _trustedCloser;
     }
 
     // -------------------------------
@@ -67,6 +76,7 @@ contract ERC20ShortCreator is
         address tokenAddress = new ERC20Short(
             shortId,
             SHORT_SELL,
+            TRUSTED_CLOSER,
             from
         );
 

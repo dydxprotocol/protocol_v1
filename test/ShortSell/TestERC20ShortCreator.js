@@ -9,6 +9,7 @@ const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
+const { ADDRESSES } = require('../helpers/Constants');
 const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -37,7 +38,7 @@ contract('ERC20ShortCreator', function(accounts) {
     let contract;
 
     beforeEach('set up new ERC20ShortCreator contract', async () => {
-      contract = await ERC20ShortCreator.new(ShortSell.address);
+      contract = await ERC20ShortCreator.new(ShortSell.address, ADDRESSES.ZERO);
     });
 
     it('sets constants correctly', async () => {
