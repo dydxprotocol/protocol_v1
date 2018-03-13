@@ -200,10 +200,6 @@ async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
 }
 
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
-  console.log(shortTx.id)
-  console.log(closeAmount)
-  console.log(ZeroExExchangeWrapper.address)
-  console.log(zeroExOrderToBytes(sellOrder))
   return shortSell.closeShort(
     shortTx.id,
     closeAmount,
