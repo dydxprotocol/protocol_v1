@@ -200,6 +200,10 @@ async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
 }
 
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
+  console.log(shortTx.id)
+  console.log(closeAmount)
+  console.log(ZeroExExchangeWrapper.address)
+  console.log(zeroExOrderToBytes(sellOrder))
   return shortSell.closeShort(
     shortTx.id,
     closeAmount,
@@ -210,11 +214,9 @@ function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
 }
 
 function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
-  return shortSell.closeShort(
+  return shortSell.closeShortDirectly(
     shortTx.id,
     closeAmount,
-    ADDRESSES.ZERO,
-    "",
     { from: from || shortTx.seller }
   );
 }

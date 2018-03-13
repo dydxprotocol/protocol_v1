@@ -22,14 +22,17 @@ contract ShortSellAdmin is Ownable {
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
      *                                    (callInLoan, closeShort, cancelLoanOffering
-     *                                    forceRecoverLoan)
+     *                                    closeShortDirectly, forceRecoverLoan)
      * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closeShort,
-     *                                    forceRecoverLoan)
+     *                                    closeShortDirectly, forceRecoverLoan)
+     * CLOSE_DIRECTLY_ONLY              - Only closing functions allowed (callInLoan,
+     *                                    closeShortDirectly, forceRecoverLoan)
      */
     enum OperationState {
         OPERATIONAL,
         CLOSE_AND_CANCEL_LOAN_ONLY,
-        CLOSE_ONLY
+        CLOSE_ONLY,
+        CLOSE_DIRECTLY_ONLY
     }
 
     // ------------------------
@@ -81,6 +84,15 @@ contract ShortSellAdmin is Ownable {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_ONLY
+        );
+        _;
+    }
+
+    modifier closeShortDirectlyStateControl() {
+        require(
+            operationState == OperationState.OPERATIONAL
+            || operationState == OperationState.CLOSE_ONLY
+            || operationState == OperationState.CLOSE_DIRECTLY_ONLY
         );
         _;
     }
