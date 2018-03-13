@@ -518,7 +518,7 @@ contract('ERC20Short', function(accounts) {
           SHORT.TOKEN_CONTRACT.name.call()
         ]);
         expect(shortId).to.be.bignumber.equal(SHORT.ID);
-        expect(shortName).to.be.equal("dYdX Tokenized Short " + SHORT.ID.toString());
+        expect(shortName).to.equal("dYdX Tokenized Short " + SHORT.ID.toString());
       }
     });
   });

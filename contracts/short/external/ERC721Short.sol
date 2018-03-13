@@ -5,6 +5,7 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
+import { ShortSellGetters } from "../impl/ShortSellGetters.sol";
 import { ShortSell } from "../ShortSell.sol";
 
 
@@ -128,13 +129,16 @@ contract ERC721Short is
     {
         address owner = ownerOf(uint256(shortId));
 
-        // owners and approved accounts are allowed
-        if (who == owner || closeAllApprovals[owner][who]) {
-            return requestedAmount;
+        // not authorized address
+        if (who != owner && !closeAllApprovals[owner][who]) {
+            return 0;
         }
 
-        // not a contract and not authorized address
-        return 0;
+        // Does not burn token (even if short is completely closed) since that requires msg.sender
+        // to be ownerOf the token. The owner may choose to call _burn(uint256(shortId)) at any time
+        // afterwards if they wish.
+
+        return requestedAmount;
     }
 
     // ----------------------------------

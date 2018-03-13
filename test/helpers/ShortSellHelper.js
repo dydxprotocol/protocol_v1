@@ -41,14 +41,16 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
 
   return tx;
 }
-async function callShort(shortSell, tx) {
+async function callShort(shortSell, tx, safely = true) {
   const shortId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     0
   );
 
   let contains = await shortSell.containsShort.call(shortId);
-  expect(contains).to.be.false;
+  if (safely) {
+    expect(contains).to.be.false;
+  }
 
   const addresses = [
     tx.owner,
@@ -101,8 +103,10 @@ async function callShort(shortSell, tx) {
     { from: tx.seller }
   );
 
-  contains = await shortSell.containsShort.call(shortId);
-  expect(contains).to.be.true;
+  if (safely) {
+    contains = await shortSell.containsShort.call(shortId);
+    expect(contains).to.be.true;
+  }
 
   response.id = shortId;
   return response;

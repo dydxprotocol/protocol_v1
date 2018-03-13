@@ -108,7 +108,9 @@ async function deployShortSellContracts(deployer) {
     ),
     deployer.deploy(
       DutchAuctionCloser,
-      ShortSell.address
+      ShortSell.address,
+      new BigNumber(1), // Numerator
+      new BigNumber(2), // Denominator
     )
   ]);
 

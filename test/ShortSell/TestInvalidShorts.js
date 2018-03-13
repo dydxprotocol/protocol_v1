@@ -147,9 +147,9 @@ describe('#short', () => {
         const shortSell = await ShortSell.deployed();
 
         // First should succeed
-        await callShort(shortSell, shortTx);
+        await callShort(shortSell, shortTx, /*safely=*/ false);
 
-        await expectThrow(() => callShort(shortSell, shortTx));
+        await expectThrow(() => callShort(shortSell, shortTx, /*safely=*/ false));
       });
     });
 
