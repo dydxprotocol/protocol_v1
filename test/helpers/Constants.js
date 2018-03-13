@@ -1,5 +1,7 @@
 /*global web3*/
 
+const Web3 = require('web3');
+const web3Instance = new Web3(web3.currentProvider);
 const BigNumber = require('bignumber.js');
 
 module.exports = {
@@ -28,18 +30,18 @@ module.exports = {
   },
   BYTES32: {
     ZERO: '0x0000000000000000000000000000000000000000000000000000000000000000'.valueOf(),
-    BAD_ID: web3.fromUtf8("XXXXXXXX"),
+    BAD_ID: web3Instance.utils.utf8ToHex("XXXXXXXX"),
     TEST: [
-      web3.fromUtf8("12345670"),
-      web3.fromUtf8("12345671"),
-      web3.fromUtf8("12345672"),
-      web3.fromUtf8("12345673"),
-      web3.fromUtf8("12345674"),
-      web3.fromUtf8("12345675"),
-      web3.fromUtf8("12345676"),
-      web3.fromUtf8("12345677"),
-      web3.fromUtf8("12345678"),
-      web3.fromUtf8("12345679"),
+      web3Instance.utils.utf8ToHex("12345670"),
+      web3Instance.utils.utf8ToHex("12345671"),
+      web3Instance.utils.utf8ToHex("12345672"),
+      web3Instance.utils.utf8ToHex("12345673"),
+      web3Instance.utils.utf8ToHex("12345674"),
+      web3Instance.utils.utf8ToHex("12345675"),
+      web3Instance.utils.utf8ToHex("12345676"),
+      web3Instance.utils.utf8ToHex("12345677"),
+      web3Instance.utils.utf8ToHex("12345678"),
+      web3Instance.utils.utf8ToHex("12345679"),
     ]
   },
   DEFAULT_SALT: 425

@@ -1,15 +1,10 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { Vault } from "../Vault.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
 
 
@@ -133,14 +128,9 @@ contract ERC721Short is
     {
         address owner = ownerOf(uint256(shortId));
 
-        // owners and approved accounts are fine regardless of whether they are a contract or not
+        // owners and approved accounts are allowed
         if (who == owner || closeAllApprovals[owner][who]) {
             return requestedAmount;
-        }
-
-        // if owner is a contract, check if it is okay with them
-        if (ContractHelper.isContract(owner)) {
-            return CloseShortDelegator(owner).closeOnBehalfOf(who, shortId, requestedAmount);
         }
 
         // not a contract and not authorized address
@@ -158,10 +148,6 @@ contract ERC721Short is
         view
         returns (address _deedHolder)
     {
-        address owner = ownerOf(uint256(shortId));
-        if (ContractHelper.isContract(owner)) {
-            return ShortCustodian(owner).getShortSellDeedHolder(shortId);
-        }
-        return owner;
+        return ownerOf(uint256(shortId));
     }
 }

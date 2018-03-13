@@ -7,6 +7,7 @@ const ShortSell = artifacts.require("ShortSell");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const ERC721Short = artifacts.require("ERC721Short");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ShortImpl = artifacts.require("ShortImpl");
 const CloseShortImpl = artifacts.require("CloseShortImpl");
@@ -91,19 +92,25 @@ async function deployShortSellContracts(deployer) {
     Vault.address,
     ProxyContract.address
   );
-  await deployer.deploy(
-    ZeroExExchangeWrapper,
-    ShortSell.address,
-    ProxyContract.address,
-    ZeroExExchange.address, // TODO update these for prod
-    ZeroExProxy.address,
-    FeeToken.address
-  );
 
-  await deployer.deploy(
-    DutchAuctionCloser,
-    ShortSell.address
-  );
+  await Promise.all([
+    deployer.deploy(
+      ZeroExExchangeWrapper,
+      ShortSell.address,
+      ProxyContract.address,
+      ZeroExExchange.address, // TODO update these for prod
+      ZeroExProxy.address,
+      FeeToken.address
+    ),
+    deployer.deploy(
+      ERC721Short,
+      ShortSell.address
+    ),
+    deployer.deploy(
+      DutchAuctionCloser,
+      ShortSell.address
+    )
+  ]);
 
   await deployer.deploy(
     ERC20ShortCreator,

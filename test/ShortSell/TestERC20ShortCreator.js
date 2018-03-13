@@ -84,7 +84,7 @@ contract('ERC20ShortCreator', function(accounts) {
     });
 
     it('succeeds for new short', async () => {
-      const shortTx = await doShort(accounts, /* salt */ 1234, /* tokenized */ true);
+      const shortTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);

@@ -9,7 +9,6 @@ import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-import { Vault } from "../Vault.sol";
 
 
 /**
@@ -42,7 +41,7 @@ contract DutchAuctionCloser is
     // -----------------------
 
     struct DutchBidTx {
-        uint256 bidPrice;
+        uint256 bidderReward;
         uint256 closeAmount;
     }
 
@@ -50,21 +49,33 @@ contract DutchAuctionCloser is
     // ------ State Variables ------
     // -----------------------------
 
-    address SHORT_SELL;
+    // Address of the dYdX ShortSell contract
+    address public SHORT_SELL;
 
-    address VAULT;
+    // Numerator of the fraction of the callTimeLimit allocated to the auction
+    uint256 public numerator;
+
+    // Denominator of the fraction of the callTimeLimit allocated to the auction
+    uint256 public denominator;
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function DutchAuctionCloser(
-        address _shortSell
+        address _shortSell,
+        uint256 _numerator,
+        uint256 _denominator
     )
         public
     {
+        // these two requirements also require (_denominator > 0)
+        require(_numerator <= _denominator);
+        require(_numerator > 0);
+
         SHORT_SELL = _shortSell;
-        VAULT = ShortSell(SHORT_SELL).VAULT();
+        numerator = _numerator;
+        denominator = _denominator;
     }
 
     // ----------------------------------------
@@ -77,12 +88,18 @@ contract DutchAuctionCloser is
      * linearly increases to the amount of baseToken in the vault for the shortId. The short-seller
      * will be granted the difference between the price and the total baseToken in the vault.
      *
-     * @param  shortId  Unique ID of the short
-     * @return Amount of baseToken that the auction bidder recieved for fully closing the short
+     * @param  shortId                Unique ID of the short
+     * @param  requestedCloseAmount   Amount of the short the bidder is attempting to close
+     * @param  minimumAcceptedPayout  Minimum accepted amount of baseToken the msg.sender is willing
+     *                                to accept for the entire requestedCloseAmount.
+     * @return tuple:
+     *         1) Amount of the short that was closed
+     *         2) Amount of baseToken that the auction bidder recieved for closing the short
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedCloseAmount,
+        uint256 minimumAcceptedPayout
     )
         nonReentrant
         external
@@ -94,35 +111,45 @@ contract DutchAuctionCloser is
         // get short
         ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, shortId);
 
-        // validate auction timing and get bidPrice
-        DutchBidTx memory closeTx = parseDutchBidTx(shortId, short, requestedCloseAmount);
+        // validate auction timing and get bidderReward
+        DutchBidTx memory bidTx = calculateBid(
+            shortId,
+            short,
+            requestedCloseAmount);
+
+        // validate that minimumAcceptedPayout is respected
+        uint256 proratedMinAcceptedPayout = MathHelpers.getPartialAmount(
+            bidTx.closeAmount,
+            requestedCloseAmount,
+            minimumAcceptedPayout
+        );
+        require(bidTx.bidderReward >= proratedMinAcceptedPayout);
 
         // take tokens from msg.sender and close the short
         uint256 baseTokenReceived = closeShortInternal(
             shortId,
-            short.underlyingToken,
-            short.baseToken,
-            closeTx
+            short,
+            bidTx
         );
 
         // pay baseToken back to short owner
         address deedHolder = ShortCustodian(short.seller).getShortSellDeedHolder(shortId);
-        TokenInteract.transfer(short.baseToken, deedHolder, closeTx.bidPrice);
+        uint256 baseTokenForShortOwner = baseTokenReceived.sub(bidTx.bidderReward);
+        TokenInteract.transfer(short.baseToken, deedHolder, baseTokenForShortOwner);
 
         // pay baseToken to the auction bidder
-        uint256 baseTokenForBidder = baseTokenReceived.sub(closeTx.bidPrice);
-        TokenInteract.transfer(short.baseToken, msg.sender, baseTokenForBidder);
+        TokenInteract.transfer(short.baseToken, msg.sender, bidTx.bidderReward);
 
         ShortClosedByDutchAuction(
             shortId,
             short.seller,
             msg.sender,
-            closeTx.closeAmount,
-            baseTokenForBidder,
-            closeTx.bidPrice
+            bidTx.closeAmount,
+            bidTx.bidderReward,
+            baseTokenForShortOwner
         );
 
-        return (closeTx.closeAmount, baseTokenForBidder);
+        return (bidTx.closeAmount, bidTx.bidderReward);
     }
 
     // -----------------------------------
@@ -131,89 +158,120 @@ contract DutchAuctionCloser is
 
     function closeShortInternal(
         bytes32 shortId,
-        address baseToken,
-        address underlyingToken,
+        ShortSellCommon.Short memory short,
         DutchBidTx memory closeTx
     )
-        private
-        returns(uint256 _baseTokenReceived)
+        internal
+        returns (uint256 _baseTokenReceived)
     {
         // remember how much baseToken this contract has before the short is taken out
-        uint256 initialBaseToken = TokenInteract.balanceOf(baseToken, address(this));
+        uint256 initialBaseToken = TokenInteract.balanceOf(short.baseToken, address(this));
 
         // take the underlying token from the msg.sender
         TokenInteract.transferFrom(
-            underlyingToken,
+            short.underlyingToken,
             msg.sender,
             address(this),
             closeTx.closeAmount);
 
         // close the short directly using the underlying token
-        bytes memory noData;
-        var (
-            /*uint256*/ amountClosed,
-            /*uint256*/ baseTokenReceived,
-            /*uint256   interestFeeAmount */
-        ) = ShortSell(SHORT_SELL).closeShort(
+        uint256 amountClosed;
+        uint256 baseTokenReceived;
+        (amountClosed, baseTokenReceived, /*interestFeeAmount*/) = ShortSell(SHORT_SELL).closeShort(
             shortId,
             closeTx.closeAmount,
             address(0), // no exchange wrapper
-            noData // no order bytes
+            new bytes(0) // no order bytes
         );
 
-        uint256 finalBaseToken = TokenInteract.balanceOf(baseToken, address(this));
+        uint256 finalBaseToken = TokenInteract.balanceOf(short.baseToken, address(this));
 
         // check receipt of the correct amount of baseToken
-        assert(closeTx.bidPrice < baseTokenReceived);
+        assert(closeTx.bidderReward <= baseTokenReceived);
         assert(closeTx.closeAmount == amountClosed);
         assert(finalBaseToken.sub(initialBaseToken) == baseTokenReceived);
 
         return baseTokenReceived;
     }
 
-    function parseDutchBidTx(
+    function calculateBid(
         bytes32 shortId,
         ShortSellCommon.Short memory short,
         uint256 requestedCloseAmount
     )
         view
-        private
-        returns(DutchBidTx memory _bidTx)
+        internal
+        returns (DutchBidTx memory _bidTx)
     {
         uint256 maxCloseAmount = short.shortAmount.sub(short.closedAmount);
         uint256 closeAmount = Math.min256(requestedCloseAmount, maxCloseAmount);
 
-        // get initial base tokens
-        uint256 vaultBaseToken = Vault(VAULT).balances(shortId, short.baseToken);
-        uint256 shortInterestFee = ShortSell(SHORT_SELL).getShortInterestFee(shortId);
+        uint256 auctionStartTimestamp;
+        uint256 auctionEndTimestamp;
+        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(short);
+
         uint256 availableBaseTokenAmount = MathHelpers.getPartialAmount(
             closeAmount,
             maxCloseAmount,
-            vaultBaseToken.sub(shortInterestFee));
+            getAvailableBaseToken(shortId));
 
-        uint256 callTimestamp = uint256(short.callTimestamp);
-        uint256 callTimeLimit = uint256(short.callTimeLimit);
-        require(callTimestamp > 0);
-
-        uint256 auctionStartTimestamp = callTimestamp.add(callTimeLimit.div(2));
-        uint256 auctionEndTimestamp = callTimestamp.add(callTimeLimit);
-
-        require(block.timestamp >= auctionStartTimestamp);
-        require(block.timestamp < auctionEndTimestamp);
-
-        // price starts at max at (callTimeLimit / 2) and linearly decreases until callTimeLimit
-        uint256 bidPrice =
-            availableBaseTokenAmount.sub(
-                MathHelpers.getPartialAmount(
-                    block.timestamp.sub(auctionStartTimestamp), // time since auction start
-                    auctionEndTimestamp.sub(auctionStartTimestamp), // total auction length
-                    availableBaseTokenAmount
-                )
-            );
+        // linearly increases from zero to availableBaseTokenAmount over the course of the auction
+        uint256 bidderReward = MathHelpers.getPartialAmount(
+            block.timestamp.sub(auctionStartTimestamp), // time since auction start
+            auctionEndTimestamp.sub(auctionStartTimestamp), // total auction length
+            availableBaseTokenAmount
+        );
 
         return DutchBidTx({
-            bidPrice: bidPrice,
+            bidderReward: bidderReward,
             closeAmount: closeAmount
         });
+    }
+
+    function getAuctionTimeLimits(
+        ShortSellCommon.Short memory short
+    )
+        view
+        internal
+        returns (
+            uint256 _auctionStartTimestamp,
+            uint256 _auctionEndTimestamp
+        )
+    {
+        uint256 maxTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
+        uint256 callTimestamp = uint256(short.callTimestamp);
+        uint256 callTimeLimit = uint256(short.callTimeLimit);
+
+        uint256 auctionLength = callTimeLimit.mul(numerator).div(denominator);
+
+        uint256 auctionStartTimestamp;
+        uint256 auctionEndTimestamp;
+        if (callTimestamp == 0 || callTimestamp > maxTimestamp.sub(auctionLength)) {
+            // auction time determined by maxTimestamp
+            auctionStartTimestamp = Math.max256(
+                uint256(short.startTimestamp),
+                maxTimestamp.sub(auctionLength));
+            auctionEndTimestamp = maxTimestamp;
+        } else {
+            // auction time determined by callTimestamp
+            auctionStartTimestamp = callTimestamp;
+            auctionEndTimestamp = callTimestamp.add(auctionLength);
+        }
+
+        require(block.timestamp >= auctionStartTimestamp);
+        require(block.timestamp <= auctionEndTimestamp);
+        return (auctionStartTimestamp, auctionEndTimestamp);
+    }
+
+    function getAvailableBaseToken(
+        bytes32 shortId
+    )
+        view
+        internal
+        returns (uint256 _availableBaseTokenAmount)
+    {
+        uint256 vaultBaseToken = ShortSell(SHORT_SELL).getShortBalance(shortId);
+        uint256 shortInterestFee = ShortSell(SHORT_SELL).getShortInterestFee(shortId);
+        return vaultBaseToken.sub(shortInterestFee);
     }
 }
