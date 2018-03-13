@@ -176,6 +176,39 @@ contract ShortSell is
     }
 
     /**
+     * Helper to close a short sell by paying underlying token directly from the short seller
+     *
+     * @param  shortId                  unique id for the short sell
+     * @param  requestedCloseAmount     amount of the short position to close. The amount closed
+     *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @return _amountClosed            amount of short closed
+     * @return _baseTokenReceived       amount of base token received by the short seller
+     *                                  after closing
+     * @return _interestFeeAmount       interest fee in base token paid to the lender
+     */
+    function closeShortDirectly(
+        bytes32 shortId,
+        uint256 requestedCloseAmount
+    )
+        external
+        closeShortDirectlyStateControl
+        nonReentrant
+        returns (
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived,
+            uint256 _interestFeeAmount
+        )
+    {
+        return CloseShortImpl.closeShortImpl(
+            state,
+            shortId,
+            requestedCloseAmount,
+            address(0),
+            new bytes(0)
+        );
+    }
+
+    /**
      * Call in a short sell loan.
      * Only callable by the lender for a short sell. After loan is called in, the short seller
      * will have time equal to the call time limit specified on the original short sell to

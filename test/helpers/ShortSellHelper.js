@@ -210,11 +210,9 @@ function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
 }
 
 function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
-  return shortSell.closeShort(
+  return shortSell.closeShortDirectly(
     shortTx.id,
     closeAmount,
-    ADDRESSES.ZERO,
-    "",
     { from: from || shortTx.seller }
   );
 }
