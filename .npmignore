@@ -1,5 +1,5 @@
 .idea
-node_modules/
+build/
 coverage.json
 coverage/
 allFiredEvents
@@ -7,4 +7,3 @@ test/
 util/
 .circleci
 .git
-contracts/testing/

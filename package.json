@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/protocol",
-  "version": "0.0.4",
+  "version": "0.0.8",
   "description": "Solidity Smart Contracts for dYdX",
   "main": "truffle.js",
   "bin": {
@@ -21,7 +21,6 @@
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "prepublishOnly": "npm run clean && truffle compile --all && truffle test",
     "clean": "truffle networks --clean && rm -rf build/ coverage/ coverage.json"
   },
   "repository": {
@@ -58,7 +57,7 @@
     "babel-polyfill": "^6.26.0",
     "babel-register": "^6.26.0",
     "bignumber.js": "^4.1.0",
-    "ganache-cli": "^6.0.3",
+    "ganache-cli": "^6.1.0",
     "shelljs": "^0.8.1",
     "truffle": "4.1.3",
     "zeppelin-solidity": "^1.7.0"
