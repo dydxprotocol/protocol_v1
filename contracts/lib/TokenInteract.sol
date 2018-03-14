@@ -27,7 +27,7 @@ library TokenInteract {
         return ERC20(token).allowance(owner, spender);
     }
 
-    function setAllowance(
+    function approve(
         address token,
         address spender,
         uint256 value
@@ -56,15 +56,5 @@ library TokenInteract {
         internal
     {
         require(ERC20(token).transferFrom(from, to, amount));
-    }
-
-    function approve(
-        address token,
-        address spender,
-        uint256 amount
-    )
-        internal
-    {
-        require(ERC20(token).approve(spender, amount));
     }
 }

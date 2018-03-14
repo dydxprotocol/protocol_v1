@@ -56,10 +56,10 @@ contract DutchAuctionCloser is
     address public PROXY;
 
     // Numerator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public numerator;
+    uint256 public callTimeLimitNumerator;
 
     // Denominator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public denominator;
+    uint256 public callTimeLimitDenominator;
 
     // -------------------------
     // ------ Constructor ------
@@ -67,19 +67,19 @@ contract DutchAuctionCloser is
 
     function DutchAuctionCloser(
         address _shortSell,
-        uint256 _numerator,
-        uint256 _denominator
+        uint256 _callTimeLimitNumerator,
+        uint256 _callTimeLimitDenominator
     )
         public
     {
         // these two requirements also require (_denominator > 0)
-        require(_numerator <= _denominator);
-        require(_numerator > 0);
+        require(_callTimeLimitNumerator <= _callTimeLimitNumerator);
+        require(_callTimeLimitNumerator > 0);
+        callTimeLimitNumerator = _callTimeLimitNumerator;
+        callTimeLimitDenominator = _callTimeLimitDenominator;
 
         SHORT_SELL = _shortSell;
         PROXY = ShortSell(_shortSell).PROXY();
-        numerator = _numerator;
-        denominator = _denominator;
     }
 
     // ----------------------------------------
@@ -112,7 +112,7 @@ contract DutchAuctionCloser is
             uint256 _baseTokenReceived
         )
     {
-        return closeShortInternal(
+        return closeShortImpl(
             shortId,
             requestedCloseAmount,
             minimumAcceptedPayout,
@@ -152,7 +152,7 @@ contract DutchAuctionCloser is
             uint256 _baseTokenReceived
         )
     {
-        return closeShortInternal(
+        return closeShortImpl(
             shortId,
             requestedCloseAmount,
             minimumAcceptedPayout,
@@ -165,7 +165,7 @@ contract DutchAuctionCloser is
     // ---- Internal Helper functions ----
     // -----------------------------------
 
-    function closeShortInternal(
+    function closeShortImpl(
         bytes32 shortId,
         uint256 requestedCloseAmount,
         uint256 minimumAcceptedPayout,
@@ -181,7 +181,7 @@ contract DutchAuctionCloser is
         // get short
         ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, shortId);
 
-        // get deedHolder ASAP; the state of short.seller my change upon closing the short
+        // get deedHolder ASAP; the state of short.seller may change upon closing the short
         address deedHolder = ShortCustodian(short.seller).getShortSellDeedHolder(shortId);
 
         // validate auction timing and get auction price
@@ -191,7 +191,7 @@ contract DutchAuctionCloser is
             requestedCloseAmount);
 
         // take tokens from msg.sender and close the short
-        uint256 baseTokenReceived = getBaseTokenForClosingShort(
+        uint256 baseTokenReceived = shortSellCloseShort(
             shortId,
             short,
             bidTx,
@@ -210,7 +210,9 @@ contract DutchAuctionCloser is
         );
         uint256 bidderReward = baseTokenReceived.sub(bidTx.auctionPrice);
         require(bidderReward >= proratedMinAcceptedPayout);
-        TokenInteract.transfer(short.baseToken, msg.sender, bidderReward);
+        if (bidderReward > 0) {
+            TokenInteract.transfer(short.baseToken, msg.sender, bidderReward);
+        }
 
         ShortClosedByDutchAuction(
             shortId,
@@ -224,7 +226,7 @@ contract DutchAuctionCloser is
         return (bidTx.closeAmount, bidderReward);
     }
 
-    function getBaseTokenForClosingShort(
+    function shortSellCloseShort(
         bytes32 shortId,
         ShortSellCommon.Short memory short,
         DutchBidTx memory closeTx,
@@ -315,7 +317,10 @@ contract DutchAuctionCloser is
         uint256 callTimestamp = uint256(short.callTimestamp);
         uint256 callTimeLimit = uint256(short.callTimeLimit);
 
-        uint256 auctionLength = callTimeLimit.mul(numerator).div(denominator);
+        uint256 auctionLength = MathHelpers.getPartialAmount(
+            callTimeLimitNumerator,
+            callTimeLimitDenominator,
+            callTimeLimit);
 
         if (callTimestamp == 0 || callTimestamp > maxTimestamp.sub(callTimeLimit)) {
             // auction time determined by maxTimestamp
@@ -328,6 +333,7 @@ contract DutchAuctionCloser is
             auctionStartTimestamp = callTimestamp.add(callTimeLimit).sub(auctionLength);
             auctionEndTimestamp = callTimestamp.add(callTimeLimit);
         }
+
         require(block.timestamp >= auctionStartTimestamp);
         require(block.timestamp <= auctionEndTimestamp);
     }

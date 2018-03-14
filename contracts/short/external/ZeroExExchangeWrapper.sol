@@ -59,7 +59,7 @@ contract ZeroExExchangeWrapper is
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
         // NOTE: this is *not* standard behavior for an ERC20, so do not rely on it for other tokens
-        TokenInteract.setAllowance(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
+        TokenInteract.approve(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
     }
 
     // ---------------------------------
@@ -90,7 +90,7 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
-        TokenInteract.setAllowance(
+        TokenInteract.approve(
             takerToken,
             ZERO_EX_PROXY,
             requestedFillAmount
@@ -109,7 +109,7 @@ contract ZeroExExchangeWrapper is
             filledTakerTokenAmount
         );
 
-        TokenInteract.setAllowance(
+        TokenInteract.approve(
             makerToken,
             DYDX_PROXY,
             receivedMakerTokenAmount

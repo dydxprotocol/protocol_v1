@@ -9,6 +9,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
+import { AddressDatabase } from "./interfaces/AddressDatabase.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -69,8 +70,8 @@ contract ERC20Short is
     // ----- State Variables -----
     // ---------------------------
 
-    // Address of a trusted closing contract
-    address public TRUSTED_CLOSER;
+    // Address of a contract that holds information about trusted closers
+    address public trustedCloserDB;
 
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
@@ -94,7 +95,7 @@ contract ERC20Short is
     function ERC20Short(
         bytes32 _shortId,
         address _shortSell,
-        address _trustedCloser,
+        address _trustedCloserDB,
         address _initialTokenHolder
     )
         public
@@ -102,7 +103,7 @@ contract ERC20Short is
     {
         SHORT_ID = _shortId;
         state = State.UNINITIALIZED;
-        TRUSTED_CLOSER = _trustedCloser;
+        trustedCloserDB = _trustedCloserDB;
         initialTokenHolder = _initialTokenHolder;
     }
 
@@ -179,7 +180,11 @@ contract ERC20Short is
         // Tokens are not burned when a trusted closer closes the short, but we require the trusted
         // closer to close the rest of the short. All token holders are then entitled to the
         // baseTokens in this contract (presumably given by the trusted closer) by using withdraw().
-        if (who == TRUSTED_CLOSER && requestedAmount == totalSupply_) {
+        if (
+            requestedAmount == totalSupply_
+            && trustedCloserDB != address(0)
+            && AddressDatabase(trustedCloserDB).hasAddress(msg.sender)
+        ) {
             return requestedAmount;
         }
 

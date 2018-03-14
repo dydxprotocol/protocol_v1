@@ -2,8 +2,9 @@ pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ERC20Short } from "./ERC20Short.sol";
+import { AddressDatabase } from "./interfaces/AddressDatabase.sol";
+import { ShortSell } from "../ShortSell.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 
@@ -20,6 +21,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
 contract ERC20ShortCreator is
     NoOwner,
     ShortOwner,
+    AddressDatabase,
     ReentrancyGuard
 {
 
@@ -36,7 +38,7 @@ contract ERC20ShortCreator is
     // ------ State Variables -----
     // ----------------------------
 
-    address public TRUSTED_CLOSER;
+    mapping(address => bool) trustedClosers;
 
     // ------------------------
     // ------ Constructor -----
@@ -44,12 +46,14 @@ contract ERC20ShortCreator is
 
     function ERC20ShortCreator(
         address _shortSell,
-        address _trustedCloser
+        address[] _trustedClosers
     )
         public
         ShortOwner(_shortSell)
     {
-        TRUSTED_CLOSER = _trustedCloser;
+        for (uint8 i = 0; i < _trustedClosers.length; i++) {
+            trustedClosers[_trustedClosers[i]] = true;
+        }
     }
 
     // -------------------------------
@@ -76,12 +80,27 @@ contract ERC20ShortCreator is
         address tokenAddress = new ERC20Short(
             shortId,
             SHORT_SELL,
-            TRUSTED_CLOSER,
+            address(this),
             from
         );
 
         ERC20ShortCreated(shortId, tokenAddress);
 
         return tokenAddress;
+    }
+
+    /**
+     * Implementation of AddressDatabase functionality.
+     * @param  who  Address to check
+     * @return true if the address is a trusted closers
+     */
+    function hasAddress(
+        address who
+    )
+        external
+        view
+        returns (bool _hasAddress)
+    {
+        return trustedClosers[who];
     }
 }
