@@ -21,8 +21,8 @@
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "prepublishOnly": "truffle compile --all && truffle test",
-    "clean": "rm -rf build/ coverage/ coverage.json"
+    "prepublishOnly": "npm run clean && truffle compile --all && truffle test",
+    "clean": "truffle networks --clean && rm -rf build/ coverage/ coverage.json"
   },
   "repository": {
     "type": "git",

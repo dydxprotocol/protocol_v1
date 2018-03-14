@@ -7,7 +7,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       network_id: "*",
-      gas:4700000
+      gas: 4700000
     },
     dev: {
       host: "localhost",
