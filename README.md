@@ -17,7 +17,6 @@ Contains implementations for:
 
 - Short Sell
 - Tokenized Short
-- Custom 0x Exchange
 
 ### Development
 
@@ -68,7 +67,3 @@ Contains business logic for short selling. All external functions for shorting a
 ##### Vault.sol
 
 Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.
-
-##### Exchange.sol
-
-Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.

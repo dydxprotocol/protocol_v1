@@ -1,0 +1,9 @@
+.idea
+build/
+coverage.json
+coverage/
+allFiredEvents
+test/
+util/
+.circleci
+.git
