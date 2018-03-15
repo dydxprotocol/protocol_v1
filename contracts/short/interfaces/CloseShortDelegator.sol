@@ -41,13 +41,15 @@ contract CloseShortDelegator is ShortOwner {
      * entire transaction or that the specified amount of the short position was successfully
      * closed. Returning 0 will indicate an error and cause ShortSell to throw.
      *
-     * @param _who              Address of the caller of the close function
+     * @param _closer           Address of the caller of the close function
+     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
      * @param _shortId          Id of the short being closed
      * @param _requestedAmount  Amount of the short being closed
      * @return _allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _who,
+        address _closer,
+        address _payoutRecipient,
         bytes32 _shortId,
         uint256 _requestedAmount
     )

@@ -228,7 +228,7 @@ contract('ERC20Short', function(accounts) {
         const amount = SHORT.TX.shortAmount;
         await expectThrow(
           () => SHORT.TOKEN_CONTRACT.closeOnBehalfOf(
-            seller, SHORT.ID, amount.div(2))
+            seller, seller, SHORT.ID, amount.div(2))
         );
       }
     });
@@ -331,7 +331,12 @@ contract('ERC20Short', function(accounts) {
 
         // try to close with too-large amount, but it will get bounded by the number of tokens owned
         const result = await transact(CONTRACTS.SHORT_SELL.closeShort,
-          SHORT.ID, SHORT.NUM_TOKENS.times(10), ADDRESSES.ZERO, "", { from: SHORT.TX.seller })
+          SHORT.ID,
+          SHORT.NUM_TOKENS.times(10),
+          SHORT.TX.seller,
+          ADDRESSES.ZERO,
+          "",
+          { from: SHORT.TX.seller });
         expect(result[0] /* amountClosed */).to.be.bignumber.equal(SHORT.NUM_TOKENS.div(2));
       }
     });

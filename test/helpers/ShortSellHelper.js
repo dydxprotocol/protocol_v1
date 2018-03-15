@@ -202,20 +202,24 @@ async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner = ADDRESSES.ZE
 }
 
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
+  const closer = from || shortTx.seller;
   return shortSell.closeShort(
     shortTx.id,
     closeAmount,
+    closer,
     ZeroExExchangeWrapper.address,
     zeroExOrderToBytes(sellOrder),
-    { from: from || shortTx.seller }
+    { from: closer }
   );
 }
 
 function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
+  const closer = from || shortTx.seller;
   return shortSell.closeShortDirectly(
     shortTx.id,
     closeAmount,
-    { from: from || shortTx.seller }
+    closer,
+    { from: closer }
   );
 }
 

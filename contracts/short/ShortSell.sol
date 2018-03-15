@@ -153,6 +153,7 @@ contract ShortSell is
     function closeShort(
         bytes32 shortId,
         uint256 requestedCloseAmount,
+        address payoutRecipient,
         address exchangeWrapperAddress,
         bytes order
     )
@@ -169,6 +170,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             exchangeWrapperAddress,
             order
         );
@@ -187,7 +189,8 @@ contract ShortSell is
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedCloseAmount,
+        address payoutRecipient
     )
         external
         closeShortDirectlyStateControl
@@ -202,6 +205,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             address(0),
             new bytes(0)
         );

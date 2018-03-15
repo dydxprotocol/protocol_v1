@@ -21,11 +21,17 @@ contract ERC721Short is
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // ----------------------------
-    // ------ Sate Variables ------
-    // ----------------------------
+    // --------------------
+    // ------ Events ------
+    // --------------------
 
-    event CloseAllApproval(
+    event CloserApproval(
+        address indexed _owner,
+        address indexed _approved,
+        bool _isApproved
+    );
+
+    event RecipientApproval(
         address indexed _owner,
         address indexed _approved,
         bool _isApproved
@@ -35,8 +41,11 @@ contract ERC721Short is
     // ------ State Variables ------
     // -----------------------------
 
-    // Mapping from an address to other addresses that are approved to close shorts for that address
-    mapping(address => mapping(address => bool)) public closeAllApprovals;
+    // Mapping from an address to other addresses that are approved to be short closers
+    mapping(address => mapping(address => bool)) public approvedClosers;
+
+    // Mapping from an address to other addresses that are approved to be payoutRecipients
+    mapping(address => mapping(address => bool)) public approvedRecipients;
 
     // -------------------------
     // ------ Constructor ------
@@ -54,17 +63,48 @@ contract ERC721Short is
     // ---- Token-Holder functions ----
     // --------------------------------
 
-    function approveForCloseAll(
-        address to,
+    /**
+     * Approve any close with the specified closer as the msg.sender of the close.
+     *
+     * @param  closer      Address of the closer
+     * @param  isApproved  True if approving the closer, false if revoking approval
+     */
+    function approveCloser(
+        address closer,
         bool isApproved
     )
         nonReentrant
         external
     {
-        require(to != msg.sender);
-        if (closeAllApprovals[msg.sender][to] != isApproved) {
-            closeAllApprovals[msg.sender][to] = isApproved;
-            CloseAllApproval(msg.sender, to, isApproved);
+        // cannot approve self since any address can already close its own short positions
+        require(closer != msg.sender);
+
+        if (approvedClosers[msg.sender][closer] != isApproved) {
+            approvedClosers[msg.sender][closer] = isApproved;
+            CloserApproval(msg.sender, closer, isApproved);
+        }
+    }
+
+    /**
+     * Approve any close with the specified recipient as the payoutRecipient of the close.
+     *
+     * NOTE: An account approving itself as a recipient is often a very bad idea. A smart contract
+     * that approves itself should implement the PayoutRecipient interface for dYdX to verify that
+     * it is given a fair payout for an external account closing the short.
+     *
+     * @param  recipient   Address of the recipient
+     * @param  isApproved  True if approving the recipient, false if revoking approval
+     */
+    function approveRecipient(
+        address recipient,
+        bool isApproved
+    )
+        nonReentrant
+        external
+    {
+        if (approvedRecipients[msg.sender][recipient] != isApproved) {
+            approvedRecipients[msg.sender][recipient] = isApproved;
+            RecipientApproval(msg.sender, recipient, isApproved);
         }
     }
 
@@ -111,34 +151,39 @@ contract ERC721Short is
      * ShortSell to approve closing parts of a short position. If true is returned, this contract
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
-
-     * @param who              Address of the caller of the close function
-     * @param shortId          Id of the short being closed
-     * @param requestedAmount  Amount of the short being closed
-     * @return allowedAmount   The amount the user is allowed to close for the specified short
+     *
+     * @param _closer           Address of the caller of the close function
+     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param _shortId          Id of the short being closed
+     * @param _requestedAmount  Amount of the short being closed
+     * @return _allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address who,
-        bytes32 shortId,
-        uint256 requestedAmount
+        address _closer,
+        address _payoutRecipient,
+        bytes32 _shortId,
+        uint256 _requestedAmount
     )
         onlyShortSell
         nonReentrant
         external
         returns (uint256 _allowedAmount)
     {
-        address owner = ownerOf(uint256(shortId));
-
-        // not authorized address
-        if (who != owner && !closeAllApprovals[owner][who]) {
-            return 0;
-        }
-
         // Does not burn token (even if short is completely closed) since that requires msg.sender
         // to be ownerOf the token. The owner may choose to call _burn(uint256(shortId)) at any time
         // afterwards if they wish.
 
-        return requestedAmount;
+        address owner = ownerOf(uint256(_shortId));
+
+        if (
+            (_closer == owner)
+            || approvedClosers[owner][_closer]
+            || approvedRecipients[owner][_payoutRecipient]
+        ) {
+            return _requestedAmount;
+        }
+
+        return 0;
     }
 
     // ----------------------------------

@@ -71,7 +71,7 @@ contract ERC20Short is
     // ---------------------------
 
     // Address of a contract that holds information about trusted closers
-    address public trustedCloserDB;
+    address public trustedRecipientDB;
 
     // All tokens will initially be allocated to this address
     address public initialTokenHolder;
@@ -95,7 +95,7 @@ contract ERC20Short is
     function ERC20Short(
         bytes32 _shortId,
         address _shortSell,
-        address _trustedCloserDB,
+        address _trustedRecipientDB,
         address _initialTokenHolder
     )
         public
@@ -103,7 +103,7 @@ contract ERC20Short is
     {
         SHORT_ID = _shortId;
         state = State.UNINITIALIZED;
-        trustedCloserDB = _trustedCloserDB;
+        trustedRecipientDB = _trustedRecipientDB;
         initialTokenHolder = _initialTokenHolder;
     }
 
@@ -158,16 +158,18 @@ contract ERC20Short is
      * ShortSell to approve closing parts of a short position. If true is returned, this contract
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
-
-     * @param who              Address of the caller of the close function
-     * @param shortId          Id of the short being closed
-     * @param requestedAmount  Amount of the short being closed
-     * @return allowedAmount   The amount the user is allowed to close for the specified short
+     *
+     * @param _closer           Address of the caller of the close function
+     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param _shortId          Id of the short being closed
+     * @param _requestedAmount  Amount of the short being closed
+     * @return _allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address who,
-        bytes32 shortId,
-        uint256 requestedAmount
+        address _closer,
+        address _payoutRecipient,
+        bytes32 _shortId,
+        uint256 _requestedAmount
     )
         onlyShortSell
         nonReentrant
@@ -175,26 +177,27 @@ contract ERC20Short is
         returns (uint256 _allowedAmount)
     {
         require(state == State.OPEN);
-        require(SHORT_ID == shortId);
+        require(SHORT_ID == _shortId);
 
         // Tokens are not burned when a trusted closer closes the short, but we require the trusted
         // closer to close the rest of the short. All token holders are then entitled to the
         // baseTokens in this contract (presumably given by the trusted closer) by using withdraw().
         if (
-            requestedAmount == totalSupply_
-            && trustedCloserDB != address(0)
-            && AddressDatabase(trustedCloserDB).hasAddress(msg.sender)
+            _requestedAmount == totalSupply_
+            && trustedRecipientDB != address(0)
+            && AddressDatabase(trustedRecipientDB).hasAddress(_payoutRecipient)
         ) {
-            return requestedAmount;
+            return _requestedAmount;
         }
 
-        // For untrusted closers, we check token balances
-        uint256 balance = balances[who];
-        uint256 amount = Math.min256(requestedAmount, balance);
+        // For untrusted closers, we check token balances for closer. PayoutRecipient can be
+        // whatever the token holder wants.
+        uint256 balance = balances[_closer];
+        uint256 amount = Math.min256(_requestedAmount, balance);
         require(amount > 0);
-        balances[who] = balance.sub(amount);
+        balances[_closer] = balance.sub(amount);
         totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
-        TokensRedeemedForClose(who, amount);
+        TokensRedeemedForClose(_closer, amount);
         return amount;
     }
 

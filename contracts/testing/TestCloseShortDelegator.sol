@@ -30,6 +30,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
 
     function closeOnBehalfOf(
         address _who,
+        address,
         bytes32,
         uint256 _requestedAmount
     )
