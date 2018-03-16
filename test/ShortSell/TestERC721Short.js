@@ -9,6 +9,9 @@ chai.use(require('chai-bignumber')());
 
 const ERC721Short = artifacts.require("ERC721Short");
 const ShortSell = artifacts.require("ShortSell");
+const ProxyContract = artifacts.require("Proxy");
+const BaseToken = artifacts.require("TokenA");
+const UnderlyingToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -26,16 +29,18 @@ function uint256(shortId) {
 }
 
 contract('ERC721Short', function(accounts) {
-  let shortSellContract, ERC721ShortContract;
+  let shortSellContract, ERC721ShortContract, underlyingToken;
   let salt = 1111;
 
   before('retrieve deployed contracts', async () => {
     [
       shortSellContract,
-      ERC721ShortContract
+      ERC721ShortContract,
+      underlyingToken
     ] = await Promise.all([
       ShortSell.deployed(),
-      ERC721Short.deployed()
+      ERC721Short.deployed(),
+      UnderlyingToken.deployed()
     ]);
   });
 
@@ -192,6 +197,60 @@ contract('ERC721Short', function(accounts) {
   });
 
   describe('#closeOnBehalfOf', () => {
-    //TODO(brendanchou)
+    let shortTx;
+    const approvedCloser = accounts[6];
+    const approvedRecipient = accounts[7];
+    const unapprovedAcct = accounts[9];
+
+    async function initUnderlying(account) {
+      await underlyingToken.issueTo(account, shortTx.shortAmount);
+      await underlyingToken.approve(ProxyContract.address, shortTx.shortAmount, { from: account });
+    }
+
+    beforeEach('sets up short', async () => {
+      shortTx = await doShort(accounts, salt++, ERC721Short.address);
+      await ERC721ShortContract.approveCloser(approvedCloser, true, { from: shortTx.seller });
+      await ERC721ShortContract.approveRecipient(approvedRecipient, true, { from: shortTx.seller });
+    });
+
+    it('succeeds for owner', async () => {
+      await initUnderlying(shortTx.seller);
+      await shortSellContract.closeShortDirectly(
+        shortTx.id,
+        shortTx.shortAmount,
+        unapprovedAcct,
+        { from: shortTx.seller }
+      );
+    });
+
+    it('succeeds for approved recipients', async () => {
+      await initUnderlying(unapprovedAcct);
+      await shortSellContract.closeShortDirectly(
+        shortTx.id,
+        shortTx.shortAmount,
+        approvedRecipient,
+        { from: unapprovedAcct }
+      );
+    });
+
+    it('succeeds for approved closers', async () => {
+      await initUnderlying(approvedCloser);
+      await shortSellContract.closeShortDirectly(
+        shortTx.id,
+        shortTx.shortAmount,
+        unapprovedAcct,
+        { from: approvedCloser }
+      );
+    });
+
+    it('fails for non-approved recipients/closers', async () => {
+      await initUnderlying(unapprovedAcct);
+      await expectThrow(() => shortSellContract.closeShortDirectly(
+        shortTx.id,
+        shortTx.shortAmount,
+        unapprovedAcct,
+        { from: unapprovedAcct }
+      ));
+    });
   });
 });
