@@ -7,9 +7,11 @@ chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ERC721Short = artifacts.require("ERC721Short");
+const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
+const Vault = artifacts.require("Vault");
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -21,20 +23,24 @@ const ONE = new BigNumber(1);
 const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
-  let shortSellContract, ERC721ShortContract;
-  let UnderlyingTokenContract;
+  let shortSellContract, VaultContract, ERC721ShortContract;
+  let UnderlyingTokenContract, BaseTokenContract;
   let shortTx;
   const dutchBidder = accounts[9];
 
   before('retrieve deployed contracts', async () => {
     [
       shortSellContract,
+      VaultContract,
       ERC721ShortContract,
       UnderlyingTokenContract,
+      BaseTokenContract,
     ] = await Promise.all([
       ShortSell.deployed(),
+      Vault.deployed(),
       ERC721Short.deployed(),
-      UnderlyingToken.deployed()
+      UnderlyingToken.deployed(),
+      BaseToken.deployed(),
     ]);
   });
 
@@ -114,6 +120,8 @@ contract('DutchAuctionCloser', function(accounts) {
     it('succeeds for full short', async () => {
       await wait(callTimeLimit * 3 / 4);
 
+      const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
+
       // closing half is fine
       await shortSellContract.closeShortDirectly(
         shortTx.id,
@@ -135,7 +143,21 @@ contract('DutchAuctionCloser', function(accounts) {
           shortTx.shortAmount.div(2),
           DutchAuctionCloser.address,
           { from: dutchBidder }));
-      //TODO(brendanchou): validate token numbers
+
+      const [
+        baseLender,
+        baseSeller,
+        baseBidder
+      ] = await Promise.all([
+        BaseTokenContract.balanceOf.call(shortTx.loanOffering.lender),
+        BaseTokenContract.balanceOf.call(shortTx.seller),
+        BaseTokenContract.balanceOf.call(dutchBidder),
+      ]);
+
+      // check baseBidder and baseSeller are pretty much the same
+      const maxInterestFee = baseVault.dividedBy('10000');
+      expect(baseSeller.minus(baseBidder).abs()).to.be.bignumber.lessThan(maxInterestFee);
+      expect(baseLender.plus(baseSeller).plus(baseBidder)).to.be.bignumber.equal(baseVault);
     });
   });
 });
