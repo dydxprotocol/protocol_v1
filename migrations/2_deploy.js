@@ -17,6 +17,7 @@ const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
 const TransferInternal = artifacts.require("TransferInternal");
+const InterestHelper = artifacts.require("InterestHelper");
 
 // For testing
 const TokenA = artifacts.require("TokenA");
@@ -70,7 +71,8 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
     deployer.deploy(TransferImpl),
-    deployer.deploy(ShortImpl)
+    deployer.deploy(ShortImpl),
+    deployer.deploy(InterestHelper)
   ]);
 
   // Link ShortSell function libraries
