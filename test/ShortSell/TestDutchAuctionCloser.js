@@ -1,45 +1,28 @@
 /*global web3, artifacts, contract, describe, it, before, beforeEach,*/
 
-const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const web3Instance = new Web3(web3.currentProvider);
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const ERC20Short = artifacts.require("ERC20Short");
 const ERC721Short = artifacts.require("ERC721Short");
-const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 
-const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../helpers/Constants');
-const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
-  doShort,
-  issueTokensAndSetAllowancesForClose,
-  callCloseShort,
-  createShortSellTx,
-  issueTokensAndSetAllowancesForShort,
-  callShort
+  doShort
 } = require('../helpers/ShortSellHelper');
-const {
-  createSignedSellOrder
-} = require('../helpers/0xHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 const ONE = new BigNumber(1);
 const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
-  let shortSellContract, ERC721ShortContract, DutchAuctionCloserContract;
+  let shortSellContract, ERC721ShortContract;
   let UnderlyingTokenContract;
-  let salt = 1111;
   let shortTx;
   const dutchBidder = accounts[9];
 
@@ -47,12 +30,10 @@ contract('DutchAuctionCloser', function(accounts) {
     [
       shortSellContract,
       ERC721ShortContract,
-      DutchAuctionCloserContract,
       UnderlyingTokenContract,
     ] = await Promise.all([
       ShortSell.deployed(),
       ERC721Short.deployed(),
-      DutchAuctionCloser.deployed(),
       UnderlyingToken.deployed()
     ]);
   });

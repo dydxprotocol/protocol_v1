@@ -9,7 +9,6 @@ const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
-const { ADDRESSES } = require('../helpers/Constants');
 const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {

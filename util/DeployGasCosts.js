@@ -1,4 +1,4 @@
-/*global web3, artifacts, describe, contract, it*/
+/*global artifacts, describe, contract, it*/
 
 const ShortSell = artifacts.require("ShortSell");
 const ERC20Short = artifacts.require("ERC20Short");

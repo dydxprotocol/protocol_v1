@@ -7,22 +7,15 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const ERC20Short = artifacts.require("ERC20Short");
 const ERC721Short = artifacts.require("ERC721Short");
-const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
-const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
-const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
+const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort,
-  createShortSellTx,
-  issueTokensAndSetAllowancesForShort,
-  callShort
+  callCloseShort
 } = require('../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
