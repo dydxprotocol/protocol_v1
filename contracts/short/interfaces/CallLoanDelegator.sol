@@ -29,7 +29,7 @@ contract CallLoanDelegator is LoanOwner {
     // ----------------------------------------
 
     /**
-     * Function a contract must implement in order to let other accounts call callInLoan() for
+     * Function a contract must implement in order to let other addresses call callInLoan() for
      * the loan-side of a short position.
      *
      * NOTE: If returning true, this contract must assume that ShortSell will either revert the
@@ -50,7 +50,7 @@ contract CallLoanDelegator is LoanOwner {
         returns (bool _allowed);
 
     /**
-     * Function a contract must implement in order to let other accounts call cancelLoanCall() for
+     * Function a contract must implement in order to let other addresses call cancelLoanCall() for
      * the loan-side of a short position.
      *
      * NOTE: If returning true, this contract must assume that ShortSell will either revert the

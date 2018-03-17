@@ -81,7 +81,9 @@ library LoanImpl {
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
-            require(CallLoanDelegator(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit));
+            require(
+                CallLoanDelegator(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit)
+            );
         }
 
         // Ensure the loan has not already been called
@@ -111,7 +113,9 @@ library LoanImpl {
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
-            require(CallLoanDelegator(short.lender).cancelLoanCallOnBehalfOf(msg.sender, shortId));
+            require(
+                CallLoanDelegator(short.lender).cancelLoanCallOnBehalfOf(msg.sender, shortId)
+            );
         }
 
         // Ensure the loan has been called
