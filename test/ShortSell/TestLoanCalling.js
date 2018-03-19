@@ -6,6 +6,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
+const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const {
   doShort,
   getShort,
@@ -13,6 +14,7 @@ const {
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
+const { ADDRESSES } = require('../helpers/Constants');
 
 function getCallTimestamp(tx) {
   return getBlockTimestamp(tx.receipt.blockNumber)
@@ -59,6 +61,41 @@ describe('#callInLoan', () => {
       const { callTimestamp } = await getShort(shortSell, shortTx.id);
 
       expect(callTimestamp).to.be.bignumber.equal(0);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('CallLoanDelegator loan owner only allows certain accounts', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+      const caller = accounts[8];
+      const loanCaller = await TestCallLoanDelegator.new(
+        ShortSell.address,
+        caller,
+        ADDRESSES.ZERO);
+      await shortSell.transferLoan(
+        shortTx.id,
+        loanCaller.address,
+        { from: shortTx.loanOffering.lender }
+      );
+      let short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.equal(0);
+
+      await expectThrow(() => shortSell.callInLoan(
+        shortTx.id,
+        REQUIRED_DEPOSIT,
+        { from: accounts[6] }
+      ));
+      short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.equal(0);
+
+      await shortSell.callInLoan(
+        shortTx.id,
+        REQUIRED_DEPOSIT,
+        { from: caller }
+      );
+      short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.not.equal(0);
     });
   });
 
@@ -146,27 +183,35 @@ describe('#cancelLoanCall', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('unsets callTimestamp on the short', async () => {
-      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+    it('CallLoanDelegator loan owner only allows certain accounts', async () => {
+      const shortSell = await ShortSell.deployed();
+      const { shortTx } = await doShortAndCall(accounts);
+      const canceller = accounts[9];
+      const loanCaller = await TestCallLoanDelegator.new(
+        ShortSell.address,
+        ADDRESSES.ZERO,
+        canceller);
+      await shortSell.transferLoan(
+        shortTx.id,
+        loanCaller.address,
+        { from: shortTx.loanOffering.lender }
+      );
+      let short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.not.equal(0);
+
+      await expectThrow(() => shortSell.cancelLoanCall(
+        shortTx.id,
+        { from: accounts[6] }
+      ));
+      short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.not.equal(0);
 
       await shortSell.cancelLoanCall(
         shortTx.id,
-        { from: shortTx.loanOffering.lender }
+        { from: canceller }
       );
-
-      const { callTimestamp } = await getShort(shortSell, shortTx.id);
-
-      const [
-        vaultUnderlyingTokenBalance,
-        tokenBalanceOfVault,
-      ] = await Promise.all([
-        vault.totalBalances.call(underlyingToken.address),
-        underlyingToken.balanceOf.call(vault.address)
-      ]);
-
-      expect(callTimestamp).to.be.bignumber.equal(0);
-      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
-      expect(tokenBalanceOfVault).to.be.bignumber.equal(0);
+      short = await getShort(shortSell, shortTx.id);
+      expect(short.callTimestamp).to.be.bignumber.equal(0);
     });
   });
 });

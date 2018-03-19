@@ -7,6 +7,7 @@ chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
+const TestForceRecoverLoanDelegator = artifacts.require("TestForceRecoverLoanDelegator");
 const {
   doShort,
   doShortAndCall
@@ -67,6 +68,63 @@ describe('#forceRecoverLoan', () => {
         shortTx.id,
         { from: accounts[7] }
       ));
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('ForceRecoverLoanDelegator loan owner only allows certain accounts', async () => {
+      const { shortSell, vault, underlyingToken, shortTx } = await doShortAndCall(accounts);
+      await wait(shortTx.loanOffering.callTimeLimit);
+
+      const baseTokenBalance = await shortSell.getShortBalance.call(shortTx.id);
+
+      const recoverer = accounts[9];
+      const testForceRecoverLoanDelegator = await TestForceRecoverLoanDelegator.new(
+        ShortSell.address,
+        recoverer
+      );
+      await shortSell.transferLoan(
+        shortTx.id,
+        testForceRecoverLoanDelegator.address,
+        { from: shortTx.loanOffering.lender });
+
+      await expectThrow( () => shortSell.forceRecoverLoan(
+        shortTx.id,
+        { from: accounts[6] }
+      ));
+
+      await shortSell.forceRecoverLoan(
+        shortTx.id,
+        { from: recoverer }
+      );
+
+      const baseToken = await BaseToken.deployed();
+
+      const [
+        vaultUnderlyingTokenBalance,
+        underlyingTokenBalanceOfVault,
+        vaultBaseTokenBalance,
+        baseTokenBalanceOfVault,
+        shortExists,
+        isShortClosed,
+        lenderBaseTokenBalance
+      ] = await Promise.all([
+        vault.totalBalances.call(underlyingToken.address),
+        underlyingToken.balanceOf.call(vault.address),
+        vault.totalBalances.call(baseToken.address),
+        baseToken.balanceOf.call(vault.address),
+        shortSell.containsShort.call(shortTx.id),
+        shortSell.isShortClosed.call(shortTx.id),
+        baseToken.balanceOf.call(testForceRecoverLoanDelegator.address)
+      ]);
+
+      expect(vaultUnderlyingTokenBalance).to.be.bignumber.equal(0);
+      expect(underlyingTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
+      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(shortExists).to.be.false;
+      expect(isShortClosed).to.be.true;
+      expect(lenderBaseTokenBalance).to.be.bignumber.equal(baseTokenBalance);
     });
   });
 

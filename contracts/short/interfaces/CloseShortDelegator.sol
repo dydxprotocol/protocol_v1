@@ -29,7 +29,7 @@ contract CloseShortDelegator is ShortOwner {
     // ----------------------------------------
 
     /**
-     * Function a contract must implement in order to let other accounts call closeShort() for the
+     * Function a contract must implement in order to let other addresses call closeShort() for the
      * short position. This allows short sellers to use more complex
      * logic to control their short positions. For example, this can be used to tokenize short
      * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer

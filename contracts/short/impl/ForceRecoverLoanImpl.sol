@@ -4,6 +4,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
+import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -53,8 +54,15 @@ library ForceRecoverLoanImpl {
             )
         );
 
-        // Only the lender can call recover the loan
-        require(msg.sender == short.lender);
+        // If not the lender, requires the lender to approve msg.sender
+        if (msg.sender != short.lender) {
+            require(
+                ForceRecoverLoanDelegator(short.lender).forceRecoverLoanOnBehalfOf(
+                    msg.sender,
+                    shortId
+                )
+            );
+        }
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
