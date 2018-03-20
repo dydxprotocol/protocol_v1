@@ -96,7 +96,7 @@ contract ShortSell is
      *  [4]  = loan interest rate (amount of base tokens per day)
      *  [5]  = loan lender fee
      *  [6]  = loan taker fee
-     *  [7]  = loan expiration timestamp (in seconds)
+     *  [7]  = loan offer expiration timestamp
      *  [8]  = loan salt
      *  [9]  = short amount
      *  [10] = deposit amount
@@ -104,7 +104,7 @@ contract ShortSell is
      * @param  values32  Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan expiration timestamp
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      CDSA r and s parameters for loan offering
@@ -310,13 +310,13 @@ contract ShortSell is
      *  [4] = loan interest rate
      *  [5] = loan lender fee
      *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
+     *  [7] = loan offer expiration timestamp
      *  [8] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan expiration timestamp
      *
      * @param  cancelAmount     Amount to cancel
      * @return _cancelledAmount Amount that was cancelled
@@ -366,13 +366,13 @@ contract ShortSell is
      *  [4] = loan interest rate
      *  [5] = loan lender fee
      *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
+     *  [7] = loan offer expiration timestamp
      *  [8] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan expiration timestamp
      */
     function approveLoanOffering(
         address[9] addresses,

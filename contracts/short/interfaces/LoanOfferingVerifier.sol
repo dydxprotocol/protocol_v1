@@ -40,13 +40,13 @@ contract LoanOfferingVerifier {
      *  [4] = loan interest rate
      *  [5] = loan lender fee
      *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
+     *  [7] = loan offer expiration timestamp
      *  [8] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan expiration timestamp
      *
      * @return _isValid     true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur

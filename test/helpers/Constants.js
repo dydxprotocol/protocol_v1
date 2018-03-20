@@ -24,7 +24,8 @@ module.exports = {
   BIGNUMBERS: {
     ZERO: new BigNumber(0),
     ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24),
-    BASE_AMOUNT: new BigNumber('1e18')
+    BASE_AMOUNT: new BigNumber('1e18'),
+    EXPIRATION_TIMESTAMP: new BigNumber(Math.floor(Date.now() / 1000) + 365 * 24 * 60 * 60) // One year from now
   },
   BYTES32: {
     ZERO: '0x0000000000000000000000000000000000000000000000000000000000000000'.valueOf(),

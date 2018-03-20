@@ -13,6 +13,7 @@ const {
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { getBlockNumber, getBlockTimestamp } = require("../helpers/NodeHelper");
 
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
@@ -137,25 +138,29 @@ describe('#forceRecoverLoan', () => {
       ));
     });
   });
+  
   contract('ShortSell', function(accounts) {
-    it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
+    it('does not allow if not called or not reached expirationTimestamp+callTimeLimit', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxDuration = maxDuration - 100;
-      const callTimeLimit = shortTx.loanOffering.callTimeLimit;
-      expect(almostMaxDuration).to.be.at.least(callTimeLimit);
+      const blockNumber = await getBlockNumber(shortTx.response.receipt.transactionHash);
+      const startTime = await getBlockTimestamp(blockNumber);
+
+      const expirationTimestamp = shortTx.loanOffering.expirationTimestamp;
+      const almostMaxTime = expirationTimestamp - startTime - 24 * 60 * 60;
+      const callTimeLimit = shortTx.loanOffering.callTimeLimit
+      expect(almostMaxTime).to.be.at.least(callTimeLimit);
 
       // loan was not called and it is too early
-      await wait(almostMaxDuration);
+      await wait(almostMaxTime);
       await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       ));
 
-      // now it's okay because current time is past maxDuration+callTimeLimit
-      await wait(callTimeLimit + 100);
+      // now it's okay because current time is past expirationTimestamp+callTimeLimit
+      await wait(callTimeLimit + 24 * 60 * 60);
       await shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }

@@ -236,7 +236,7 @@ async function checkSuccess(shortSell, shortTx) {
   expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
   expect(short.closedAmount).to.be.bignumber.equal(0);
   expect(short.callTimestamp).to.be.bignumber.equal(0);
-  expect(short.maxDuration).to.be.bignumber.equal(shortTx.loanOffering.maxDuration);
+  expect(short.expirationTimestamp).to.be.bignumber.equal(shortTx.loanOffering.expirationTimestamp);
 
   // if atomic owner is specified, then expect it
   if (shortTx.owner === ADDRESSES.ZERO) {

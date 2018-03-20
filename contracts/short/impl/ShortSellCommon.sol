@@ -32,7 +32,7 @@ library ShortSellCommon {
         uint32  callTimeLimit;
         uint32  startTimestamp;   // Immutable, cannot be 0
         uint32  callTimestamp;
-        uint32  maxDuration;
+        uint32  expirationTimestamp;
         address lender;
         address seller;
     }
@@ -46,9 +46,9 @@ library ShortSellCommon {
         address   lenderFeeToken;
         address   takerFeeToken;
         LoanRates rates;
-        uint256   expirationTimestamp;
+        uint256   offerExpiration;
         uint32    callTimeLimit;
-        uint32    maxDuration;
+        uint32    expirationTimestamp;
         uint256   salt;
         bytes32   loanHash;
         Signature signature;
@@ -104,10 +104,9 @@ library ShortSellCommon {
         pure
         returns (uint256 _interestFee)
     {
-        uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (timeElapsed > short.maxDuration) {
-            timeElapsed = short.maxDuration;
-        }
+        // Use the maximum duration to calculate interest if the end timestamp is outside the limit.
+        uint256 upperBound = endTimestamp >= short.expirationTimestamp ? short.expirationTimestamp : endTimestamp;
+        uint256 timeElapsed = upperBound.sub(short.startTimestamp);
 
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
         // payments. This would be an infeasiable attack in most scenarios due to low rounding error
@@ -157,9 +156,9 @@ library ShortSellCommon {
             loanOffering.rates.dailyInterestFee,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
-            loanOffering.expirationTimestamp,
+            loanOffering.offerExpiration,
             loanOffering.callTimeLimit,
-            loanOffering.maxDuration,
+            loanOffering.expirationTimestamp,
             loanOffering.salt
         );
     }
