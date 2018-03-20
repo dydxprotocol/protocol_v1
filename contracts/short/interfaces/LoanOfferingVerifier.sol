@@ -33,15 +33,14 @@ contract LoanOfferingVerifier {
      *
      * @param  values256        Values corresponding to:
      *
-     *  [0] = loan minimum deposit
-     *  [1] = loan maximum amount
-     *  [2] = loan minimum amount
-     *  [3] = loan minimum sell amount
-     *  [4] = loan interest rate
-     *  [5] = loan lender fee
-     *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
-     *  [8] = loan salt
+     *  [0] = loan maximum amount
+     *  [1] = loan minimum amount
+     *  [2] = loan minimum base token
+     *  [3] = loan interest rate
+     *  [4] = loan lender fee
+     *  [5] = loan taker fee
+     *  [6] = loan expiration timestamp (in seconds)
+     *  [7] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
@@ -53,7 +52,7 @@ contract LoanOfferingVerifier {
      */
     function verifyLoanOffering(
         address[9] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint32[2] values32,
         bytes32 shortId
     )

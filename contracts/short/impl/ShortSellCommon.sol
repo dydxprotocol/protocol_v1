@@ -55,10 +55,9 @@ library ShortSellCommon {
     }
 
     struct LoanRates {
-        uint256 minimumDeposit;
-        uint256 minimumSellAmount;
         uint256 maxAmount;
         uint256 minAmount;
+        uint256 minBaseToken;
         uint256 dailyInterestFee;
         uint256 lenderFee;
         uint256 takerFee;
@@ -150,10 +149,9 @@ library ShortSellCommon {
         returns (bytes32 _hash)
     {
         return keccak256(
-            loanOffering.rates.minimumDeposit,
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
-            loanOffering.rates.minimumSellAmount,
+            loanOffering.rates.minBaseToken,
             loanOffering.rates.dailyInterestFee,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,

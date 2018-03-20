@@ -59,10 +59,9 @@ function callShort(shortSell, tx) {
   ];
 
   const values256 = [
-    tx.loanOffering.rates.minimumDeposit,
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
-    tx.loanOffering.rates.minimumSellAmount,
+    tx.loanOffering.rates.minBaseToken,
     tx.loanOffering.rates.dailyInterestFee,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
@@ -254,10 +253,9 @@ function formatLoanOffering(loanOffering) {
   ];
 
   const values256 = [
-    loanOffering.rates.minimumDeposit,
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minimumSellAmount,
+    loanOffering.rates.minBaseToken,
     loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
