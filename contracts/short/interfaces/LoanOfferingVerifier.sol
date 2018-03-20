@@ -46,7 +46,7 @@ contract LoanOfferingVerifier {
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan experation timestamp
+     *  [1] = loan expiration timestamp
      *
      * @return _isValid     true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
