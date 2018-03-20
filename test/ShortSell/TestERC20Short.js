@@ -402,7 +402,7 @@ contract('ERC20Short', function(accounts) {
         await setUpShortTokens();
         await transferShortsToTokens();
         await returnTokensToSeller();
-        await wait(SHORTS.FULL.TX.loanOffering.maxDuration - Math.floor(Date.now()/1000));
+        await wait(365 * 24 * 60 * 60);
         await callInShorts();
         await wait(SHORTS.FULL.TX.loanOffering.callTimeLimit);
       }

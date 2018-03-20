@@ -12,6 +12,7 @@ const {
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { getBlockNumber, getBlockTimestamp } = require("../helpers/NodeHelper");
 
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
@@ -85,13 +86,16 @@ describe('#forceRecoverLoan', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
+      const blockNumber = await getBlockNumber(shortTx.response.receipt.transactionHash);
+      const startTime = await getBlockTimestamp(blockNumber);
+
       const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxDuration = maxDuration - Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+      const almostMaxTime = maxDuration - startTime - 24 * 60 * 60;
       const callTimeLimit = shortTx.loanOffering.callTimeLimit
-      expect(almostMaxDuration).to.be.at.least(callTimeLimit);
+      expect(almostMaxTime).to.be.at.least(callTimeLimit);
 
       // loan was not called and it is too early
-      await wait(almostMaxDuration);
+      await wait(almostMaxTime);
       await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
