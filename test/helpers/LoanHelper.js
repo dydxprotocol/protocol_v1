@@ -32,9 +32,9 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       lenderFee:         BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:          BIGNUMBERS.BASE_AMOUNT.times(.02)
     },
-    expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
+    offerExpiration: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
-    maxDuration: BIGNUMBERS.MAX_DURATION,
+    expirationTimestamp: BIGNUMBERS.EXPIRATION_TIMESTAMP,
     salt: _salt
   };
 
@@ -52,9 +52,9 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
-    loanOffering.expirationTimestamp,
+    loanOffering.offerExpiration,
     { type: 'uint32', value: loanOffering.callTimeLimit },
-    { type: 'uint32', value: loanOffering.maxDuration },
+    { type: 'uint32', value: loanOffering.expirationTimestamp },
     loanOffering.salt
   );
   const hash = web3Instance.utils.soliditySha3(

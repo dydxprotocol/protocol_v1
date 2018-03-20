@@ -145,7 +145,7 @@ library LoanImpl {
         );
 
         require(loanOffering.lender == msg.sender);
-        require(loanOffering.expirationTimestamp > block.timestamp);
+        require(loanOffering.offerExpiration > block.timestamp);
 
         uint256 remainingAmount = loanOffering.rates.maxAmount.sub(
             ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
@@ -185,7 +185,7 @@ library LoanImpl {
         );
 
         require(loanOffering.lender == msg.sender);
-        require(loanOffering.expirationTimestamp > block.timestamp);
+        require(loanOffering.offerExpiration > block.timestamp);
 
         state.isLoanApproved[loanOffering.loanHash] = true;
 
@@ -216,9 +216,9 @@ library LoanImpl {
             lenderFeeToken: addresses[7],
             takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values),
-            expirationTimestamp: values[7],
+            offerExpiration: values[7],
             callTimeLimit: values32[0],
-            maxDuration: values32[1],
+            expirationTimestamp: values32[1],
             salt: values[8],
             loanHash: 0,
             signature: ShortSellCommon.Signature({

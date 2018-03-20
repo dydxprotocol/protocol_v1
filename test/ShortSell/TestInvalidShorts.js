@@ -125,7 +125,7 @@ describe('#short', () => {
         const shortTx = await createShortSellTx(accounts);
 
         await issueTokensAndSetAllowancesForShort(shortTx);
-        shortTx.loanOffering.expirationTimestamp = 100;
+        shortTx.loanOffering.offerExpiration = 100;
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();

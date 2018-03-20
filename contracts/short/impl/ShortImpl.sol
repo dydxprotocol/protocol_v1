@@ -39,7 +39,7 @@ library ShortImpl {
         uint256 baseTokenFromSell,
         uint256 depositAmount,
         uint32 callTimeLimit,
-        uint32 maxDuration
+        uint32 expirationTimestamp
     );
 
     // -----------------------
@@ -189,7 +189,7 @@ library ShortImpl {
         );
 
         require(transaction.depositAmount >= minimumDeposit);
-        require(transaction.loanOffering.expirationTimestamp > block.timestamp);
+        require(transaction.loanOffering.offerExpiration > block.timestamp);
 
         // Check no casting errors
         require(
@@ -389,7 +389,7 @@ library ShortImpl {
             baseTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.expirationTimestamp
         );
     }
 
@@ -412,7 +412,7 @@ library ShortImpl {
 
         // Prevent overflows when calculating interest fees. Unused result, throws on overflow
         // Should be the same calculation used in calculateInterestFee
-        uint256 maxTime = uint256(transaction.loanOffering.maxDuration).sub(state.shorts[shortId].startTimestamp);
+        uint256 maxTime = uint256(transaction.loanOffering.expirationTimestamp).sub(state.shorts[shortId].startTimestamp);
         transaction.shortAmount.mul(maxTime).mul(partialInterestFee);
 
         return partialInterestFee;
@@ -439,7 +439,7 @@ library ShortImpl {
         state.shorts[shortId].interestRate = getPartialInterestRate(state, shortId, transaction);
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
-        state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
+        state.shorts[shortId].expirationTimestamp = transaction.loanOffering.expirationTimestamp;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -510,9 +510,9 @@ library ShortImpl {
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values256),
-            expirationTimestamp: values256[7],
+            offerExpiration: values256[7],
             callTimeLimit: values32[0],
-            maxDuration: values32[1],
+            expirationTimestamp: values32[1],
             salt: values256[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
@@ -599,7 +599,7 @@ library ShortImpl {
             transaction.loanOffering.rates.dailyInterestFee,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
-            transaction.loanOffering.expirationTimestamp,
+            transaction.loanOffering.offerExpiration,
             transaction.loanOffering.salt
         ];
     }
@@ -613,7 +613,7 @@ library ShortImpl {
     {
         return [
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.expirationTimestamp
         ];
     }
 }

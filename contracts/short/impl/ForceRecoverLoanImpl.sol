@@ -42,14 +42,14 @@ library ForceRecoverLoanImpl {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
         // Can only force recover after the entire call period has elapsed
-        // This can either be after the loan was called or after the maxDuration of the short
+        // This can either be after the loan was called or after the expirationTimestamp of the short
         // position has elapsed (plus the call time)
         require( /* solium-disable-next-line */
             (
                 short.callTimestamp > 0
                 && block.timestamp >= uint256(short.callTimestamp).add(uint256(short.callTimeLimit))
             ) || (
-                block.timestamp >= short.maxDuration
+                block.timestamp >= short.expirationTimestamp
             )
         );
 

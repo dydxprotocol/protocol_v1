@@ -82,15 +82,15 @@ describe('#forceRecoverLoan', () => {
   });
   
   contract('ShortSell', function(accounts) {
-    it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
+    it('does not allow if not called or not reached expirationTimestamp+callTimeLimit', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
       const blockNumber = await getBlockNumber(shortTx.response.receipt.transactionHash);
       const startTime = await getBlockTimestamp(blockNumber);
 
-      const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxTime = maxDuration - startTime - 24 * 60 * 60;
+      const expirationTimestamp = shortTx.loanOffering.expirationTimestamp;
+      const almostMaxTime = expirationTimestamp - startTime - 24 * 60 * 60;
       const callTimeLimit = shortTx.loanOffering.callTimeLimit
       expect(almostMaxTime).to.be.at.least(callTimeLimit);
 
@@ -101,7 +101,7 @@ describe('#forceRecoverLoan', () => {
         { from: shortTx.loanOffering.lender }
       ));
 
-      // now it's okay because current time is past maxDuration+callTimeLimit
+      // now it's okay because current time is past expirationTimestamp+callTimeLimit
       await wait(callTimeLimit + 24 * 60 * 60);
       await shortSell.forceRecoverLoan(
         shortTx.id,
