@@ -29,14 +29,14 @@ contract ShortOwner is OnlyShortSell {
     // ----------------------------------------
 
     /**
-     * Function a contract must implement in order to recieve ownership of a short sell via the
+     * Function a contract must implement in order to receive ownership of a short sell via the
      * transferShort function or the atomic-assign to the "owner" field when opening a short.
      *
      * @param  _from     Address of the previous owner
      * @param  _shortId  Id of the short that was reassigned
      * @return true on success, false or throw otherwise
      */
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address _from,
         bytes32 _shortId
     )

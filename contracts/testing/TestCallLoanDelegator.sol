@@ -20,7 +20,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         canceller = _canceller;
     }
 
-    function recieveLoanOwnership(
+    function receiveLoanOwnership(
         address,
         bytes32
     )

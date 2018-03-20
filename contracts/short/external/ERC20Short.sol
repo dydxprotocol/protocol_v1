@@ -112,7 +112,7 @@ contract ERC20Short is
      * @param  shortId  Unique ID of the short
      * @return this address on success, throw otherwise
      */
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address /* from */,
         bytes32 shortId
     )
@@ -121,7 +121,7 @@ contract ERC20Short is
         external
         returns (address owner)
     {
-        // require uninitialized so that this cannot recieve short ownership from more than 1 short
+        // require uninitialized so that this cannot receive short ownership from more than 1 short
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 

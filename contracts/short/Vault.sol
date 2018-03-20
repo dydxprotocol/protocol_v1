@@ -59,7 +59,7 @@ contract Vault is
 
     /**
      * Transfers tokens from an address (that has approved the proxy) to the vault.
-     * @param  id      The vault which will recieve the tokens
+     * @param  id      The vault which will receive the tokens
      * @param  token   ERC20 token address
      * @param  from    Address from which the tokens will be taken
      * @param  amount  Number of the token to be sent
