@@ -76,7 +76,7 @@ library ForceRecoverLoanImpl {
         // Log an event
         LoanForceRecovered(
             shortId,
-            block.timestamp
+            lenderBaseTokenAmount
         );
 
         return lenderBaseTokenAmount;
