@@ -79,14 +79,15 @@ describe('#forceRecoverLoan', () => {
       ));
     });
   });
+  
   contract('ShortSell', function(accounts) {
     it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
       const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxDuration = maxDuration - 100;
-      const callTimeLimit = shortTx.loanOffering.callTimeLimit;
+      const almostMaxDuration = maxDuration - Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+      const callTimeLimit = shortTx.loanOffering.callTimeLimit
       expect(almostMaxDuration).to.be.at.least(callTimeLimit);
 
       // loan was not called and it is too early
@@ -97,7 +98,7 @@ describe('#forceRecoverLoan', () => {
       ));
 
       // now it's okay because current time is past maxDuration+callTimeLimit
-      await wait(callTimeLimit + 100);
+      await wait(callTimeLimit + 24 * 60 * 60);
       await shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }

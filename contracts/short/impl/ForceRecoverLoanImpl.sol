@@ -49,7 +49,7 @@ library ForceRecoverLoanImpl {
                 short.callTimestamp > 0
                 && block.timestamp >= uint256(short.callTimestamp).add(uint256(short.callTimeLimit))
             ) || (
-                block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
+                block.timestamp >= short.maxDuration
             )
         );
 
@@ -76,7 +76,7 @@ library ForceRecoverLoanImpl {
         // Log an event
         LoanForceRecovered(
             shortId,
-            lenderBaseTokenAmount
+            block.timestamp
         );
 
         return lenderBaseTokenAmount;
