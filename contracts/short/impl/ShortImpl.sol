@@ -56,8 +56,6 @@ library ShortImpl {
         address exchangeWrapperAddress;
     }
 
-    struct
-
     // -------------------------------------------
     // ----- Public Implementation Functions -----
     // -------------------------------------------
@@ -616,8 +614,23 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortTx memory)
+        returns (ShortTx memory _tx)
     {
-        Short memory short = ShortSellCommon.getShortObject(state, shortId)
+        Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
+        ShortTx memory transaction = ShortTx({
+            owner: addresses[0],
+            underlyingToken: addresses[1],
+            baseToken: addresses[2],
+            shortAmount: values256[6],
+            loanOffering: parseLoanOffering(
+                addresses,
+                values256,
+                values32,
+                sigV,
+                sigRS
+            ),
+            exchangeWrapperAddress: addresses[6]
+        });
     }
 }
