@@ -394,10 +394,12 @@ library ShortImpl {
     }
 
     function getPartialInterestRate(
+        ShortSellState.State storage state,
+        bytes32 shortId,
         ShortTx transaction
     )
         internal
-        pure
+        view
         returns (uint256 _interestFee)
     {
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
@@ -410,7 +412,8 @@ library ShortImpl {
 
         // Prevent overflows when calculating interest fees. Unused result, throws on overflow
         // Should be the same calculation used in calculateInterestFee
-        transaction.shortAmount.mul(transaction.loanOffering.maxDuration).mul(partialInterestFee);
+        uint256 maxTime = uint256(transaction.loanOffering.maxDuration).sub(state.shorts[shortId].startTimestamp);
+        transaction.shortAmount.mul(maxTime).mul(partialInterestFee);
 
         return partialInterestFee;
     }
@@ -433,7 +436,7 @@ library ShortImpl {
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].interestRate = getPartialInterestRate(transaction);
+        state.shorts[shortId].interestRate = getPartialInterestRate(state, shortId, transaction);
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
         state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;

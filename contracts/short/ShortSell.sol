@@ -104,7 +104,7 @@ contract ShortSell is
      * @param  values32  Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan maxDuration timestamp
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      CDSA r and s parameters for loan offering
@@ -316,7 +316,7 @@ contract ShortSell is
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan maxDuration timestamp
      *
      * @param  cancelAmount     Amount to cancel
      * @return _cancelledAmount Amount that was cancelled
@@ -372,7 +372,7 @@ contract ShortSell is
      * @param  values32         Values corresponding to:
      *
      *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [1] = loan maxDuration timestamp
      */
     function approveLoanOffering(
         address[9] addresses,
