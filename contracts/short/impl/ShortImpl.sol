@@ -56,6 +56,8 @@ library ShortImpl {
         address exchangeWrapperAddress;
     }
 
+    struct
+
     // -------------------------------------------
     // ----- Public Implementation Functions -----
     // -------------------------------------------
@@ -128,6 +130,27 @@ library ShortImpl {
         );
 
         return shortId;
+    }
+
+    function addValueToShortImpl(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        address[7] addresses,
+        uint256[7] values256,
+        uint8 sigV,
+        bytes32[2] sigRS,
+        bytes order
+    )
+        public
+    {
+        ShortTx memory transaction = parseAddValueToShortTx(
+            state,
+            shortId,
+            addresses,
+            values256,
+            sigV,
+            sigRS
+        );
     }
 
     // --------- Helper Functions ---------
@@ -581,5 +604,20 @@ library ShortImpl {
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration
         ];
+    }
+
+    function parseAddValueToShortTx(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        address[7] addresses,
+        uint256[7] values256,
+        uint8 sigV,
+        bytes32[2] sigRS,
+    )
+        internal
+        view
+        returns (ShortTx memory)
+    {
+        Short memory short = ShortSellCommon.getShortObject(state, shortId)
     }
 }

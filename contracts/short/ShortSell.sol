@@ -135,9 +135,61 @@ contract ShortSell is
     }
 
     /**
-     * Close a short sell. May be called by the short seller or with the approval of the short
-     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
-     * short position. The short seller is sent base token stored in the contract.
+     * Add value to a short sell
+     *
+     * @param  addresses  Addresses corresponding to:
+     *
+     *  [0]  = lender
+     *  [1]  = loan signer (if 0, lender will be the signer - otherwise lender must be a
+     *                      smart contract that implements LoanOfferingVerifier)
+     *  [2]  = loan taker
+     *  [3]  = loan fee recipient
+     *  [4]  = loan lender fee token
+     *  [5]  = loan taker fee token
+     *  [6]  = exchange wrapper address
+     *
+     * @param  values256  Values corresponding to:
+     *
+     *  [0]  = loan maximum amount
+     *  [1]  = loan minimum amount
+     *  [2]  = loan lender fee
+     *  [3]  = loan taker fee
+     *  [4]  = loan expiration timestamp (in seconds)
+     *  [5]  = loan salt
+     *  [6]  = short amount
+     *
+     * @param  sigV       ECDSA v parameter for loan offering
+     * @param  sigRS      CDSA r and s parameters for loan offering
+     * @param  order      order object to be passed to the exchange wrapper
+     * @return _shortId   unique identifier for the short sell
+     */
+    function addValueToShort(
+        bytes32 shortId,
+        address[7] addresses,
+        uint256[7] values256,
+        uint8 sigV,
+        bytes32[2] sigRS,
+        bytes order
+    )
+        external
+        onlyWhileOperational
+        nonReentrant
+    {
+        return ShortImpl.addValueToShortImpl(
+            state,
+            shortId,
+            addresses,
+            values256,
+            sigV,
+            sigRS,
+            order
+        );
+    }
+
+    /**
+    * Close a short sell. May be called by the short seller or with the approval of the short
+    * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
+    * short position. The short seller is sent base token stored in the contract.
      *
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
