@@ -406,9 +406,6 @@ contract('ERC20Short', function(accounts) {
         const startTime = await getBlockTimestamp(SHORTS.FULL.TX.response.receipt.blockNumber);
         const endTime = SHORTS.FULL.TX.loanOffering.endDate;
         const loanTime = endTime - startTime;
-        console.log(startTime);
-        console.log(endTime);
-        console.log(loanTime);
         await wait(loanTime);
         await callInShorts();
         await wait(SHORTS.FULL.TX.loanOffering.callTimeLimit);

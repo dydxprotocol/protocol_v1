@@ -105,8 +105,8 @@ library ShortSellCommon {
         returns (uint256 _interestFee)
     {
         uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (timeElapsed > short.endDate) {
-            timeElapsed = short.endDate;
+        if (endTimestamp > short.endDate) {
+            timeElapsed = uint256(short.endDate).sub(short.startTimestamp);
         }
 
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest

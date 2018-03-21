@@ -130,14 +130,14 @@ describe('#forceRecoverLoan', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('does not allow before call time limit elapsed', async () => {
-      const { shortSell, shortTx } = await doShortAndCall(accounts);
-      await expectThrow( () => shortSell.forceRecoverLoan(
-        shortTx.id,
-        { from: shortTx.loanOffering.lender }
-      ));
+      it('does not allow before call time limit elapsed', async () => {
+        const { shortSell, shortTx } = await doShortAndCall(accounts);
+        await expectThrow( () => shortSell.forceRecoverLoan(
+          shortTx.id,
+          { from: shortTx.loanOffering.lender }
+        ));
+      });
     });
-  });
 
   contract('ShortSell', function(accounts) {
     it('does not allow if not called or not reached expiration date', async () => {
