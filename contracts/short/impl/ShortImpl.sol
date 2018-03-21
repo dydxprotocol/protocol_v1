@@ -397,7 +397,7 @@ library ShortImpl {
         ShortTx transaction
     )
         internal
-        view
+        pure
         returns (uint256 _interestFee)
     {
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
