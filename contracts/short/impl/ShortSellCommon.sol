@@ -1,13 +1,14 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 
 /**
  * @title ShortSellCommon
@@ -68,6 +69,15 @@ library ShortSellCommon {
         uint8 v;
         bytes32 r;
         bytes32 s;
+    }
+
+    struct CloseShortTx {
+        Short short;
+        uint256 currentShortAmount;
+        bytes32 shortId;
+        uint256 closeAmount;
+        uint256 availableBaseToken;
+        uint256 startingBaseToken;
     }
 
     // -------------------------------------------
@@ -189,5 +199,80 @@ library ShortSellCommon {
         require(short.startTimestamp != 0);
 
         return short;
+    }
+
+    function parseCloseShortTx(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        uint256 requestedCloseAmount
+    )
+        internal
+        view
+        returns (CloseShortTx memory _tx)
+    {
+        Short storage short = getShortObject(state, shortId);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+        uint256 startingBaseToken = Vault(state.VAULT).balances(shortId, short.baseToken);
+        uint256 availableBaseToken = MathHelpers.getPartialAmount(
+            closeAmount,
+            currentShortAmount,
+            startingBaseToken
+        );
+
+        return CloseShortTx({
+            short: short,
+            currentShortAmount: currentShortAmount,
+            shortId: shortId,
+            closeAmount: closeAmount,
+            availableBaseToken: availableBaseToken,
+            startingBaseToken: startingBaseToken
+        });
+    }
+
+    // --------- Helper Functions ---------
+
+    /**
+     * Validate the CloseShortTx object created for closing a short.
+     * This function may throw, or it may simply modify parameters of the CloseShortTx object.
+     * Will not throw if the resulting object is valid.
+     * @param transaction  The transaction to validate
+     */
+    function validateCloseShortTx(
+        CloseShortTx transaction
+    )
+        internal
+    {
+        // If not the short seller, requires short seller to approve msg.sender
+        if (transaction.short.seller != msg.sender) {
+            uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller)
+                .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount);
+
+            // Because the verifier may do accounting based on the number that it returns, revert
+            // if the returned amount is larger than the remaining amount of the short.
+            require(transaction.closeAmount >= allowedCloseAmount);
+            transaction.closeAmount = allowedCloseAmount;
+        }
+
+        require(transaction.closeAmount > 0);
+        require(transaction.closeAmount <= transaction.currentShortAmount);
+    }
+
+    function updateStateForCloseShort(
+        ShortSellState.State storage state,
+        CloseShortTx transaction
+    )
+        internal
+    {
+        // If the whole short is closed, remove it from repo
+        if (transaction.closeAmount == transaction.currentShortAmount) {
+            cleanupShort(state, transaction.shortId);
+        } else {
+            uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
+            assert(newClosedAmount < transaction.short.shortAmount);
+
+            // Otherwise increment the closed amount on the short
+            state.shorts[transaction.shortId].closedAmount = newClosedAmount;
+        }
     }
 }

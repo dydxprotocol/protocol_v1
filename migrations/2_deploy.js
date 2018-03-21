@@ -9,6 +9,7 @@ const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ShortImpl = artifacts.require("ShortImpl");
 const CloseShortImpl = artifacts.require("CloseShortImpl");
+const WithdrawImpl = artifacts.require("WithdrawImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
@@ -62,6 +63,7 @@ async function deployShortSellContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract),
     deployer.deploy(CloseShortImpl),
+    deployer.deploy(WithdrawImpl),
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
@@ -73,6 +75,7 @@ async function deployShortSellContracts(deployer) {
   await Promise.all([
     ShortSell.link('ShortImpl', ShortImpl.address),
     ShortSell.link('CloseShortImpl', CloseShortImpl.address),
+    ShortSell.link('WithdrawImpl', WithdrawImpl.address),
     ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
     ShortSell.link('LoanImpl', LoanImpl.address),
     ShortSell.link('DepositImpl', DepositImpl.address),

@@ -6,6 +6,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
+import { WithdrawImpl } from "./impl/WithdrawImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
@@ -205,6 +206,25 @@ contract ShortSell is
             requestedCloseAmount,
             address(0),
             new bytes(0)
+        );
+    }
+
+    function withdraw(
+        bytes32 shortId,
+        uint256 requestedCloseAmount
+    )
+        external
+        closeShortStateControl
+        nonReentrant
+        returns (
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived
+        )
+    {
+        return WithdrawImpl.withdrawImpl(
+            state,
+            shortId,
+            requestedCloseAmount
         );
     }
 
