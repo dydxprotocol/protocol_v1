@@ -135,7 +135,7 @@ library LoanImpl {
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
         address[9] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint32[2]  values32,
         uint256    cancelAmount
     )
@@ -177,7 +177,7 @@ library LoanImpl {
     function approveLoanOfferingImpl(
         ShortSellState.State storage state,
         address[9] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint32[2]  values32
     )
         public
@@ -204,7 +204,7 @@ library LoanImpl {
 
     function parseLoanOffering(
         address[9] addresses,
-        uint256[9] values,
+        uint256[8] values,
         uint32[2]  values32
     )
         internal
@@ -220,10 +220,10 @@ library LoanImpl {
             lenderFeeToken: addresses[7],
             takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values),
-            expirationTimestamp: values[7],
+            expirationTimestamp: values[6],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
-            salt: values[8],
+            salt: values[7],
             loanHash: 0,
             signature: ShortSellCommon.Signature({
                 v: 0,
@@ -242,20 +242,19 @@ library LoanImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[9] values
+        uint256[8] values
     )
         internal
         pure
         returns (ShortSellCommon.LoanRates _loanRates)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            minimumDeposit: values[0],
-            maxAmount: values[1],
-            minAmount: values[2],
-            minimumSellAmount: values[3],
-            dailyInterestFee: values[4],
-            lenderFee: values[5],
-            takerFee: values[6]
+            maxAmount: values[0],
+            minAmount: values[1],
+            minBaseToken: values[2],
+            dailyInterestFee: values[3],
+            lenderFee: values[4],
+            takerFee: values[5]
         });
 
         return rates;

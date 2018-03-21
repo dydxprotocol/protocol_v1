@@ -25,6 +25,7 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { BIGNUMBERS } = require('../helpers/Constants');
 
 describe('#short', () => {
   describe('Validations', () => {
@@ -91,16 +92,13 @@ describe('#short', () => {
     });
 
     contract('ShortSell', accounts => {
-      it('fails on too low deposit amount', async () => {
+      it('fails on too low base token amount', async () => {
         const shortTx = await createShortSellTx(accounts);
 
         await issueTokensAndSetAllowancesForShort(shortTx);
 
-        shortTx.depositAmount = getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.loanOffering.rates.maxAmount,
-          shortTx.loanOffering.rates.minimumDeposit
-        ).minus(new BigNumber(1));
+        shortTx.loanOffering.rates.minBaseToken = BIGNUMBERS.BASE_AMOUNT.times(100);
+        shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();
         await expectThrow(() => callShort(shortSell, shortTx));
@@ -113,7 +111,7 @@ describe('#short', () => {
 
         await issueTokensAndSetAllowancesForShort(shortTx);
 
-        shortTx.depositAmount = shortTx.loanOffering.rates.minAmount.minus(new BigNumber(1));
+        shortTx.shortAmount = shortTx.loanOffering.rates.minAmount.minus(1);
 
         const shortSell = await ShortSell.deployed();
         await expectThrow(() => callShort(shortSell, shortTx));
@@ -126,23 +124,6 @@ describe('#short', () => {
 
         await issueTokensAndSetAllowancesForShort(shortTx);
         shortTx.loanOffering.expirationTimestamp = 100;
-        shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
-
-        const shortSell = await ShortSell.deployed();
-        await expectThrow(() => callShort(shortSell, shortTx));
-      });
-    });
-
-    contract('ShortSell', accounts => {
-      it('fails if the order price is lower than the minimum sell price', async () => {
-        const shortTx = await createShortSellTx(accounts);
-
-        await issueTokensAndSetAllowancesForShort(shortTx);
-        shortTx.loanOffering.rates.minimumSellAmount = getPartialAmount(
-          shortTx.buyOrder.makerTokenAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.loanOffering.rates.maxAmount
-        ).plus(new BigNumber(1));
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();
