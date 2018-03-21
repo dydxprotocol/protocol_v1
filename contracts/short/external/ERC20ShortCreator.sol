@@ -36,8 +36,7 @@ contract ERC20ShortCreator is
     // ------ State Variables -----
     // ----------------------------
 
-    address[] public TRUSTED_CLOSERS;
-
+    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
     address[] public TRUSTED_RECIPIENTS;
 
     // ------------------------
@@ -46,17 +45,12 @@ contract ERC20ShortCreator is
 
     function ERC20ShortCreator(
         address shortSell,
-        address[] trustedClosers,
         address[] trustedRecipients
     )
         public
         ShortOwner(shortSell)
     {
-        uint256 i;
-        for (i = 0; i < trustedClosers.length; i++) {
-            TRUSTED_CLOSERS.push(trustedClosers[i]);
-        }
-        for (i = 0; i < trustedRecipients.length; i++) {
+        for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
         }
     }
@@ -86,7 +80,6 @@ contract ERC20ShortCreator is
             shortId,
             SHORT_SELL,
             from,
-            TRUSTED_CLOSERS,
             TRUSTED_RECIPIENTS
         );
 

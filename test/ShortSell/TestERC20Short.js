@@ -93,6 +93,8 @@ contract('ERC20Short', function(accounts) {
   }
 
   async function setUpShortTokens() {
+    SHORTS.FULL.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
+    SHORTS.PART.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
     [
       SHORTS.FULL.TOKEN_CONTRACT,
       SHORTS.PART.TOKEN_CONTRACT
@@ -101,14 +103,12 @@ contract('ERC20Short', function(accounts) {
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        [],
-        []),
+        SHORTS.FULL.TRUSTED_RECIPIENTS),
       ERC20Short.new(
         SHORTS.PART.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        [],
-        [])
+        SHORTS.PART.TRUSTED_RECIPIENTS)
     ]);
   }
 
@@ -173,7 +173,14 @@ contract('ERC20Short', function(accounts) {
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
-        expect(tsc.name).to.equal("dYdx Tokenized Short [UNINITIALIZED]");
+        expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
+        for (let i in short.TRUSTED_RECIPIENTS) {
+          const recipient = short.TRUSTED_RECIPIENTS[i];
+          const isIn = await short.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(recipient);
+          expect(isIn).to.be.true;
+        }
+        const hasZero = await short.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(ADDRESSES.ZERO);
+        expect(hasZero).to.be.false;
       }
     });
   });
@@ -503,7 +510,6 @@ contract('ERC20Short', function(accounts) {
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
         INITIAL_TOKEN_HOLDER,
-        [],
         []);
       const [decimal, expectedDecimal] = await Promise.all([
         tokenContract.decimals.call(),

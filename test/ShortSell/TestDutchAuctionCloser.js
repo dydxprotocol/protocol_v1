@@ -13,6 +13,7 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
+const { getInterestFee } = require('../helpers/CloseShortHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort
@@ -121,27 +122,29 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
-      const expectedInterestFee = await shortSellContract.getShortInterestFee.call(shortTx.id);
+      const closeAmount = shortTx.shortAmount.div(2);
 
       // closing half is fine
-      await shortSellContract.closeShortDirectly(
+      const closeTx1 = await shortSellContract.closeShortDirectly(
         shortTx.id,
-        shortTx.shortAmount.div(2),
+        closeAmount,
         DutchAuctionCloser.address,
         { from: dutchBidder });
+      const interest1 = await getInterestFee(shortTx, closeTx1, closeAmount);
 
       // closing the other half is fine
-      await shortSellContract.closeShortDirectly(
+      const closeTx2 = await shortSellContract.closeShortDirectly(
         shortTx.id,
-        shortTx.shortAmount.div(2),
+        closeAmount,
         DutchAuctionCloser.address,
         { from: dutchBidder });
+      const interest2 = await getInterestFee(shortTx, closeTx2, closeAmount);
 
       // cannot close half a third time
       await expectThrow(
         () => shortSellContract.closeShortDirectly(
           shortTx.id,
-          shortTx.shortAmount.div(2),
+          closeAmount,
           DutchAuctionCloser.address,
           { from: dutchBidder }));
 
@@ -156,7 +159,7 @@ contract('DutchAuctionCloser', function(accounts) {
       ]);
 
       // check baseToken amounts
-      expect(baseLender).to.be.bignumber.equal(expectedInterestFee);
+      expect(baseLender).to.be.bignumber.equal(interest1.plus(interest2));
       expect(baseLender.plus(baseSeller).plus(baseBidder)).to.be.bignumber.equal(baseVault);
     });
   });

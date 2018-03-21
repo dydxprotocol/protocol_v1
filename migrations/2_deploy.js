@@ -117,7 +117,6 @@ async function deployShortSellContracts(deployer) {
   await deployer.deploy(
     ERC20ShortCreator,
     ShortSell.address,
-    [],
     [DutchAuctionCloser.address]
   );
 }

@@ -81,9 +81,6 @@ contract ERC20Short is
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
-    // Addresses of closers that are allowed to completely close the short
-    mapping (address => bool) public TRUSTED_CLOSERS;
-
     // Current State of this contract. See State enum
     State public state;
 
@@ -101,7 +98,6 @@ contract ERC20Short is
         bytes32 shortId,
         address shortSell,
         address initialTokenHolder,
-        address[] trustedClosers,
         address[] trustedRecipients
     )
         public
@@ -111,11 +107,7 @@ contract ERC20Short is
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
 
-        uint256 i;
-        for (i = 0; i < trustedClosers.length; i++) {
-            TRUSTED_CLOSERS[trustedClosers[i]] = true;
-        }
-        for (i = 0; i < trustedRecipients.length; i++) {
+        for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS[trustedRecipients[i]] = true;
         }
     }
@@ -194,10 +186,7 @@ contract ERC20Short is
 
         // Tokens are not burned when a trusted recipient is used, but we require the short to be
         // completely closed. All token holders are then entitled to the  baseTokens in the contract
-        if (
-            requestedAmount == totalSupply_
-            && (TRUSTED_RECIPIENTS[payoutRecipient] || TRUSTED_CLOSERS[closer])
-        ) {
+        if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
             Closed();
         } else {
@@ -307,7 +296,7 @@ contract ERC20Short is
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "dYdx Tokenized Short [UNINITIALIZED]";
+            return "dYdX Tokenized Short [UNINITIALIZED]";
         }
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
