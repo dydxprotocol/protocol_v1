@@ -8,6 +8,12 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
+/**
+ * @title ZeroExExchangeWrapper
+ * @author dYdX
+ *
+ * dYdX ExchangeWrapper to interface with 0x Version 1
+ */
 /* solium-disable-next-line */
 contract ZeroExExchangeWrapper is
     HasNoEther,
@@ -59,7 +65,7 @@ contract ZeroExExchangeWrapper is
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
         // NOTE: this is *not* standard behavior for an ERC20, so do not rely on it for other tokens
-        TokenInteract.setAllowance(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
+        TokenInteract.approve(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
     }
 
     // ---------------------------------
@@ -74,7 +80,7 @@ contract ZeroExExchangeWrapper is
         bytes orderData
     )
         external
-        returns (uint256 _receivedMakerTokenAmount)
+        returns (uint256)
     {
         require(msg.sender == SHORT_SELL);
 
@@ -90,7 +96,7 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
-        TokenInteract.setAllowance(
+        TokenInteract.approve(
             takerToken,
             ZERO_EX_PROXY,
             requestedFillAmount
@@ -109,7 +115,7 @@ contract ZeroExExchangeWrapper is
             filledTakerTokenAmount
         );
 
-        TokenInteract.setAllowance(
+        TokenInteract.approve(
             makerToken,
             DYDX_PROXY,
             receivedMakerTokenAmount
@@ -130,7 +136,7 @@ contract ZeroExExchangeWrapper is
     )
         external
         pure
-        returns (uint256 _requiredTakerToken)
+        returns (uint256)
     {
         Order memory order = parseOrder(orderData);
 
@@ -179,7 +185,7 @@ contract ZeroExExchangeWrapper is
         uint256 requestedFillAmount
     )
         internal
-        returns (uint256 _filledTakerTokenAmount)
+        returns (uint256)
     {
         uint256 filledTakerTokenAmount = ZeroExExchangeInterface(ZERO_EX_EXCHANGE).fillOrder(
             [

@@ -5,16 +5,16 @@ import { ForceRecoverLoanDelegator } from "../short/interfaces/ForceRecoverLoanD
 
 contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
 
-    address public recoverer;
+    address public RECOVERER;
 
     function TestForceRecoverLoanDelegator(
-        address _shortSell,
-        address _recoverer
+        address shortSell,
+        address recoverer
     )
         public
-        ForceRecoverLoanDelegator(_shortSell)
+        ForceRecoverLoanDelegator(shortSell)
     {
-        recoverer = _recoverer;
+        RECOVERER = recoverer;
     }
 
     function receiveLoanOwnership(
@@ -23,19 +23,19 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
 
     function forceRecoverLoanOnBehalfOf(
-        address _who,
+        address who,
         bytes32
     )
         onlyShortSell
         external
-        returns (bool _allowed)
+        returns (bool)
     {
-        return _who == recoverer;
+        return who == RECOVERER;
     }
 }

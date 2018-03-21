@@ -20,24 +20,24 @@ library ShortSellState {
 
         // Mapping from loanHash -> amount, which stores the amount of a loan which has
         // already been filled
-        mapping(bytes32 => uint256) loanFills;
+        mapping (bytes32 => uint256) loanFills;
 
         // Mapping from loanHash -> amount, which stores the amount of a loan which has
         // already been canceled
-        mapping(bytes32 => uint256) loanCancels;
+        mapping (bytes32 => uint256) loanCancels;
 
         // Mapping from loanHash -> number, which stores the number of shorts taken out
         // for a given loan
-        mapping(bytes32 => uint256) loanNumbers;
+        mapping (bytes32 => uint256) loanNumbers;
 
         // Mapping from loanHash -> bool, which stores whether the order has been pre-approved
         // on-chain by the lender. This will typically be used to allow smart contracts to make
         // on-chain loan offerings
-        mapping(bytes32 => bool) isLoanApproved;
+        mapping (bytes32 => bool) isLoanApproved;
 
         // Mapping that contains all short sells. Mapped by: shortId -> Short
-        mapping(bytes32 => ShortSellCommon.Short) shorts;
+        mapping (bytes32 => ShortSellCommon.Short) shorts;
 
-        mapping(bytes32 => bool) closedShorts;
+        mapping (bytes32 => bool) closedShorts;
     }
 }

@@ -143,6 +143,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @param  exchangeWrapperAddress   address of the exchange wrapper
      * @param  order                    order object to be passed to the exchange wrapper
      * @return _amountClosed            amount of short closed
@@ -153,6 +154,7 @@ contract ShortSell is
     function closeShort(
         bytes32 shortId,
         uint256 requestedCloseAmount,
+        address payoutRecipient,
         address exchangeWrapperAddress,
         bytes order
     )
@@ -169,6 +171,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             exchangeWrapperAddress,
             order
         );
@@ -180,6 +183,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing
@@ -187,7 +191,8 @@ contract ShortSell is
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedCloseAmount,
+        address payoutRecipient
     )
         external
         closeShortDirectlyStateControl
@@ -202,6 +207,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             address(0),
             new bytes(0)
         );

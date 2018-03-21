@@ -1,10 +1,12 @@
 pragma solidity 0.4.19;
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellStorage } from "./ShortSellStorage.sol";
 
 
 contract ShortSellGetters is ShortSellStorage {
+    using SafeMath for uint256;
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
@@ -109,6 +111,16 @@ contract ShortSellGetters is ShortSellStorage {
         returns (uint256 _closedAmount)
     {
         return state.shorts[id].closedAmount;
+    }
+
+    function getShortUnclosedAmount(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint256 _closedAmount)
+    {
+        return state.shorts[id].shortAmount.sub(state.shorts[id].closedAmount);
     }
 
     function getShortInterestRate(

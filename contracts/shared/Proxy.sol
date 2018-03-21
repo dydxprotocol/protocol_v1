@@ -26,7 +26,7 @@ contract Proxy is OwnedAccessControlled, NoOwner, Pausable {
      * Authorized addresses through AccessControlled can add and revoke
      * transfer authorized addresses
      */
-    mapping(address => bool) public transferAuthorized;
+    mapping (address => bool) public transferAuthorized;
 
     // ------------------------
     // -------- Events --------

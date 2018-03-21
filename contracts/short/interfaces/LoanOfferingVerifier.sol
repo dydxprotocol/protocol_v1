@@ -47,7 +47,7 @@ contract LoanOfferingVerifier {
      *  [0] = loan call time limit  (in seconds)
      *  [1] = loan maxDuration      (in seconds)
      *
-     * @return _isValid     true if the contract consents to this loan, false if not.
+     * @return              true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(
@@ -57,5 +57,5 @@ contract LoanOfferingVerifier {
         bytes32 shortId
     )
         external
-        returns (bool _isValid);
+        returns (bool);
 }

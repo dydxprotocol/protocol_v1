@@ -10,7 +10,7 @@ const BaseToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
 const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
@@ -35,14 +35,20 @@ contract('ERC20ShortCreator', function(accounts) {
 
   describe('Constructor', () => {
     let contract;
-
-    beforeEach('set up new ERC20ShortCreator contract', async () => {
-      contract = await ERC20ShortCreator.new(ShortSell.address);
-    });
-
     it('sets constants correctly', async () => {
+      const trustedRecipientsExpected = [accounts[8], accounts[9]];
+      contract = await ERC20ShortCreator.new(ShortSell.address, trustedRecipientsExpected);
       const shortSellContractAddress = await contract.SHORT_SELL.call();
       expect(shortSellContractAddress).to.equal(ShortSell.address);
+
+      const numRecipients = trustedRecipientsExpected.length;
+      for(let i = 0; i < numRecipients; i++) {
+        const trustedRecipient = await contract.TRUSTED_RECIPIENTS.call(i);
+        expect(trustedRecipient).to.equal(trustedRecipientsExpected[i]);
+      }
+
+      // cannot read from past the length of the array
+      await expectAssertFailure(() => contract.TRUSTED_RECIPIENTS.call(numRecipients));
     });
   });
 
@@ -61,7 +67,7 @@ contract('ERC20ShortCreator', function(accounts) {
         shortTokenContract.SHORT_SELL.call(),
         shortTokenContract.SHORT_ID.call(),
         shortTokenContract.state.call(),
-        shortTokenContract.initialTokenHolder.call(),
+        shortTokenContract.INITIAL_TOKEN_HOLDER.call(),
         shortTokenContract.baseToken.call(),
         shortTokenContract.totalSupply.call(),
         shortTokenContract.balanceOf.call(originalSeller),
@@ -83,7 +89,7 @@ contract('ERC20ShortCreator', function(accounts) {
     });
 
     it('succeeds for new short', async () => {
-      const shortTx = await doShort(accounts, /* salt */ 1234, /* tokenized */ true);
+      const shortTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);

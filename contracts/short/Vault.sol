@@ -34,10 +34,10 @@ contract Vault is
 
     // Map from short id to map from token address to amount of that token attributed to the
     // particular short id.
-    mapping(bytes32 => mapping(address => uint256)) public balances;
+    mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.
-    mapping(address => uint256) public totalBalances;
+    mapping (address => uint256) public totalBalances;
 
     // -------------------------
     // ------ Constructor ------

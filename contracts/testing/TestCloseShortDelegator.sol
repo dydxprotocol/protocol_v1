@@ -5,16 +5,16 @@ import { CloseShortDelegator } from "../short/interfaces/CloseShortDelegator.sol
 
 contract TestCloseShortDelegator is CloseShortDelegator {
 
-    address public closer;
+    address public CLOSER;
 
     function TestCloseShortDelegator(
-        address _shortSell,
-        address _closer
+        address shortSell,
+        address closer
     )
         public
-        CloseShortDelegator(_shortSell)
+        CloseShortDelegator(shortSell)
     {
-        closer = _closer;
+        CLOSER = closer;
     }
 
     function receiveShortOwnership(
@@ -23,20 +23,21 @@ contract TestCloseShortDelegator is CloseShortDelegator {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
 
     function closeOnBehalfOf(
-        address _who,
+        address who,
+        address,
         bytes32,
-        uint256 _requestedAmount
+        uint256 requestedAmount
     )
         onlyShortSell
         external
-        returns (uint256 _allowedAmount)
+        returns (uint256)
     {
-        return _who == closer ? _requestedAmount : 0;
+        return who == CLOSER ? requestedAmount : 0;
     }
 }

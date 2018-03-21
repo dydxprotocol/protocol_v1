@@ -13,7 +13,7 @@ contract AccessControlledBase {
     // ----- State Variables -----
     // ---------------------------
 
-    mapping(address => bool) public authorized;
+    mapping (address => bool) public authorized;
 
     // ------------------------
     // -------- Events --------
