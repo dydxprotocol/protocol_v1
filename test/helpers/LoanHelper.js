@@ -14,7 +14,6 @@ const web3Instance = new Web3(web3.currentProvider);
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   const block = await web3Instance.eth.getBlock("latest");
-  console.log(block.timestamp);
   let loanOffering = {
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
