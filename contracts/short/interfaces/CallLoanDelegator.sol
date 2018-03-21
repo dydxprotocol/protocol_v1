@@ -38,7 +38,7 @@ contract CallLoanDelegator is LoanOwner {
      * @param who            Address of the caller of the callInLoan function
      * @param shortId        Id of the short being called
      * @param depositAmount  Amount of baseToken deposit that will be required to cancel the call
-     * @return allowed       true if the user is allowed to call-in the short, false otherwise
+     * @return               true if the user is allowed to call-in the short, false otherwise
      */
     function callOnBehalfOf(
         address who,
@@ -47,7 +47,7 @@ contract CallLoanDelegator is LoanOwner {
     )
         onlyShortSell
         external
-        returns (bool allowed);
+        returns (bool);
 
     /**
      * Function a contract must implement in order to let other addresses call cancelLoanCall() for
@@ -58,7 +58,7 @@ contract CallLoanDelegator is LoanOwner {
      *
      * @param who            Address of the caller of the cancelLoanCall function
      * @param shortId        Id of the short being call-canceled
-     * @return allowed       true if the user is allowed to cancel the short call, false otherwise
+     * @return               true if the user is allowed to cancel the short call, false otherwise
      */
     function cancelLoanCallOnBehalfOf(
         address who,
@@ -66,5 +66,5 @@ contract CallLoanDelegator is LoanOwner {
     )
         onlyShortSell
         external
-        returns (bool allowed);
+        returns (bool);
 }

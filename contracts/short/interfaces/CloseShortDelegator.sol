@@ -45,7 +45,7 @@ contract CloseShortDelegator is ShortOwner {
      * @param payoutRecipient  Address of the recipient of any base tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the short being closed
-     * @return allowedAmount   The amount the user is allowed to close for the specified short
+     * @return                 The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address closer,
@@ -55,5 +55,5 @@ contract CloseShortDelegator is ShortOwner {
     )
         onlyShortSell
         external
-        returns (uint256 allowedAmount);
+        returns (uint256);
 }

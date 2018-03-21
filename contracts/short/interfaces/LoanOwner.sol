@@ -34,7 +34,7 @@ contract LoanOwner is OnlyShortSell {
      *
      * @param  from     Address of the previous owner
      * @param  shortId  Id of the short
-     * @return owner    The address to pass loan ownership to. Own address to keep loan ownership,
+     * @return          The address to pass loan ownership to. Own address to keep loan ownership,
                         0x0 to reject loan ownership completely.
      */
     function receiveLoanOwnership(
@@ -43,5 +43,5 @@ contract LoanOwner is OnlyShortSell {
     )
         onlyShortSell
         external
-        returns (address owner);
+        returns (address);
 }

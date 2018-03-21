@@ -302,7 +302,7 @@ library CloseShortImpl {
         );
 
         if (ContractHelper.isContract(transaction.payoutRecipient)) {
-            PayoutRecipient(transaction.payoutRecipient).recieveCloseShortPayout(
+            PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
                 transaction.shortId,
                 transaction.closeAmount,
                 msg.sender,
@@ -365,7 +365,7 @@ library CloseShortImpl {
             currentShortAmount,
             startingBaseToken
         );
-        
+
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,

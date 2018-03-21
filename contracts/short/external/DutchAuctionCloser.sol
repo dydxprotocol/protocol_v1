@@ -88,10 +88,10 @@ contract DutchAuctionCloser is
      * @param  shortCloser      Address of the account or contract that closed the short
      * @param  shortSeller      Address of the owner of the short
      * @param  baseToken        Address of the ERC20 base token
-     * @param  payoutBaseToken  Number of base tokens recieved from the payout
+     * @param  payoutBaseToken  Number of base tokens received from the payout
      * @param  totalBaseToken   Total number of base tokens removed from vault during close
      */
-    function recieveCloseShortPayout(
+    function receiveCloseShortPayout(
         bytes32 shortId,
         uint256 closeAmount,
         address shortCloser,

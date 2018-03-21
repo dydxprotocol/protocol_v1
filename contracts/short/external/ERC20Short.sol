@@ -51,9 +51,15 @@ contract ERC20Short is
         bytes32 shortId,
         uint256 initialSupply
     );
+    // The short was completely closed and tokens can be withdrawn
+    event ClosedByTrustedParty(
+        address closer,
+        address payoutRecipient,
+        uint256 closeAmount
+    );
 
     // The short was completely closed and tokens can be withdrawn
-    event Closed();
+    event CompletelyClosed();
 
     // A user burns tokens in order to withdraw base tokens after the short has been closed
     event TokensRedeemedAfterForceClose(
@@ -123,7 +129,7 @@ contract ERC20Short is
      *
      *  param  (unused)
      * @param  shortId  Unique ID of the short
-     * @return this address on success, throw otherwise
+     * @return          this address on success, throw otherwise
      */
     function receiveShortOwnership(
         address /* from */,
@@ -132,7 +138,7 @@ contract ERC20Short is
         onlyShortSell
         nonReentrant
         external
-        returns (address owner)
+        returns (address)
     {
         // require uninitialized so that this cannot receive short ownership from more than 1 short
         require(state == State.UNINITIALIZED);
@@ -168,7 +174,7 @@ contract ERC20Short is
      * @param payoutRecipient  Address of the recipient of any base tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the short being closed
-     * @return allowedAmount   The amount the user is allowed to close for the specified short
+     * @return                 The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address closer,
@@ -179,16 +185,20 @@ contract ERC20Short is
         onlyShortSell
         nonReentrant
         external
-        returns (uint256 allowedAmount)
+        returns (uint256)
     {
         require(state == State.OPEN);
         require(SHORT_ID == shortId);
+
+        uint256 allowedAmount;
 
         // Tokens are not burned when a trusted recipient is used, but we require the short to be
         // completely closed. All token holders are then entitled to the  baseTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
-            Closed();
+            ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
+            state = State.CLOSED;
+            CompletelyClosed();
         } else {
             // For non-approved closers or recipients, we check token balances for closer.
             // payoutRecipient can be whatever the token holder wants.
@@ -200,9 +210,11 @@ contract ERC20Short is
             TokensRedeemedForClose(closer, allowedAmount);
 
             if (totalSupply_ == 0) {
-                Closed();
+                state = State.CLOSED;
+                CompletelyClosed();
             }
         }
+        return allowedAmount;
     }
 
     /**
@@ -231,13 +243,13 @@ contract ERC20Short is
         external
         returns (uint256 baseTokenPayout)
     {
+
         uint256 value = balanceOf(who);
         require(value > 0);
-
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
-            Closed();
+            CompletelyClosed();
         }
         require(state == State.CLOSED);
 

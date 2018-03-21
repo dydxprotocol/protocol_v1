@@ -23,7 +23,7 @@ contract TestLoanOwner is LoanOwner {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return TO_RETURN;
     }

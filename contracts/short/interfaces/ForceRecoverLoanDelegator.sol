@@ -37,7 +37,7 @@ contract ForceRecoverLoanDelegator is LoanOwner {
      *
      * @param who            Address of the caller of the cancelLoanCall function
      * @param shortId        Id of the short being call-canceled
-     * @return allowed       true if the user is allowed to cancel the short call, false otherwise
+     * @return               true if the user is allowed to cancel the short call, false otherwise
      */
     function forceRecoverLoanOnBehalfOf(
         address who,
@@ -45,5 +45,5 @@ contract ForceRecoverLoanDelegator is LoanOwner {
     )
         onlyShortSell
         external
-        returns (bool allowed);
+        returns (bool);
 }

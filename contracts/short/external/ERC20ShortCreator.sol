@@ -65,7 +65,7 @@ contract ERC20ShortCreator is
      * contract.
      *
      * @param  from  Address of the previous owner of the short
-     * @return Address of the new ERC20Short contract
+     * @return       Address of the new ERC20Short contract
      */
     function receiveShortOwnership(
         address from,
@@ -74,7 +74,7 @@ contract ERC20ShortCreator is
         onlyShortSell
         nonReentrant
         external
-        returns (address _owner)
+        returns (address)
     {
         address tokenAddress = new ERC20Short(
             shortId,

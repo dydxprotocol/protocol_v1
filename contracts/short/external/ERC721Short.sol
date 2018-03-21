@@ -127,6 +127,12 @@ contract ERC721Short is
         ShortSell(SHORT_SELL).transferShort(shortId, to);
     }
 
+    /**
+     * Burn an invalid token. Callable by anyone. Used to burn unecessary tokens for clarity and to
+     * free up storage. Throws if the short is not yet closed.
+     *
+     * @param  shortId  Unique ID of the short
+     */
     function burnTokenSafe(
         bytes32 shortId
     )
@@ -148,7 +154,7 @@ contract ERC721Short is
      *
      * @param  from     Address of previous short owner
      * @param  shortId  Unique ID of the short
-     * @return this address on success, throw otherwise
+     * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
         address from,
@@ -157,7 +163,7 @@ contract ERC721Short is
         onlyShortSell
         nonReentrant
         external
-        returns (address owner)
+        returns (address)
     {
         _mint(from, uint256(shortId));
         return address(this); // returning own address retains ownership of short
@@ -174,7 +180,7 @@ contract ERC721Short is
      * @param payoutRecipient  Address of the recipient of any base tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the short being closed
-     * @return allowedAmount   The amount the user is allowed to close for the specified short
+     * @return                 The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address closer,
@@ -185,20 +191,21 @@ contract ERC721Short is
         onlyShortSell
         nonReentrant
         external
-        returns (uint256 allowedAmount)
+        returns (uint256)
     {
         // Cannot burn the token since the short hasn't been closed yet and getShortSellDeedHolder
         // must return the owner of the short after it has been closed in the current transaction.
 
         address owner = ownerOf(uint256(shortId));
-        allowedAmount = 0;
         if (
             (closer == owner)
             || approvedClosers[owner][closer]
             || approvedRecipients[owner][payoutRecipient]
         ) {
-            allowedAmount = requestedAmount;
+            return requestedAmount;
         }
+
+        return 0;
     }
 
     // ----------------------------------
@@ -210,8 +217,8 @@ contract ERC721Short is
     )
         external
         view
-        returns (address deedHolder)
+        returns (address)
     {
-        deedHolder = ownerOf(uint256(shortId));
+        return ownerOf(uint256(shortId));
     }
 }

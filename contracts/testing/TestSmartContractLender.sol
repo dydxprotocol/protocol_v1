@@ -22,7 +22,7 @@ contract TestSmartContractLender {
     )
         external
         view
-        returns (bool isValid)
+        returns (bool)
     {
         return SHOULD_ALLOW;
     }
@@ -33,7 +33,7 @@ contract TestSmartContractLender {
         uint256 amount
     )
         external
-        returns (bool success)
+        returns (bool)
     {
         return ERC20(token).approve(spender, amount);
     }

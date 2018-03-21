@@ -23,7 +23,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
@@ -34,7 +34,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
     )
         onlyShortSell
         external
-        returns (bool allowed)
+        returns (bool)
     {
         return who == RECOVERER;
     }

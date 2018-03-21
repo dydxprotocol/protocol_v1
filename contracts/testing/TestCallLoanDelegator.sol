@@ -26,7 +26,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
@@ -38,7 +38,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
     )
         onlyShortSell
         external
-        returns (bool allowed)
+        returns (bool)
     {
         return who == CALLER;
     }
@@ -49,7 +49,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
     )
         onlyShortSell
         external
-        returns (bool allowed)
+        returns (bool)
     {
         return who == CANCELLER;
     }

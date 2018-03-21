@@ -23,7 +23,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
@@ -36,7 +36,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
     )
         onlyShortSell
         external
-        returns (uint256 allowedAmount)
+        returns (uint256)
     {
         return who == CLOSER ? requestedAmount : 0;
     }
