@@ -121,6 +121,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
+      const expectedInterestFee = await shortSellContract.getShortInterestFee.call(shortTx.id);
 
       // closing half is fine
       await shortSellContract.closeShortDirectly(
@@ -154,9 +155,8 @@ contract('DutchAuctionCloser', function(accounts) {
         BaseTokenContract.balanceOf.call(dutchBidder),
       ]);
 
-      // check baseBidder and baseSeller are pretty much the same
-      const maxInterestFee = baseVault.dividedBy('10000');
-      expect(baseSeller.minus(baseBidder).abs()).to.be.bignumber.lessThan(maxInterestFee);
+      // check baseToken amounts
+      expect(baseLender).to.be.bignumber.equal(expectedInterestFee);
       expect(baseLender.plus(baseSeller).plus(baseBidder)).to.be.bignumber.equal(baseVault);
     });
   });
