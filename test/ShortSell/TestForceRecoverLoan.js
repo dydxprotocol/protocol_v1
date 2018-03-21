@@ -13,6 +13,7 @@ const {
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { getBlockTimestamp } = require('../helpers/NodeHelper');
 
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
@@ -137,29 +138,30 @@ describe('#forceRecoverLoan', () => {
       ));
     });
   });
+
   contract('ShortSell', function(accounts) {
-    it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
+    it('does not allow if not called or not reached expiration date', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxDuration = maxDuration - 100;
-      const callTimeLimit = shortTx.loanOffering.callTimeLimit;
-      expect(almostMaxDuration).to.be.at.least(callTimeLimit);
+      const startTime = await getBlockTimestamp(shortTx.response.receipt.blockNumber);
+      const endTime = shortTx.loanOffering.endDate;
+      const almostLoanTime = endTime - startTime - 100;
 
       // loan was not called and it is too early
-      await wait(almostMaxDuration);
+      await wait(almostLoanTime);
       await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       ));
 
-      // now it's okay because current time is past maxDuration+callTimeLimit
-      await wait(callTimeLimit + 100);
+      // now it's okay because current time is past endDate
+      await wait(100);
       await shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       );
     });
+
   });
 });

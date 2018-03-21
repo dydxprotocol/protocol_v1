@@ -21,6 +21,7 @@ const {
 } = require('../helpers/0xHelper');
 const { transact } = require('../helpers/ContractHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { getBlockTimestamp } = require('../helpers/NodeHelper');
 const {
   getERC20ShortConstants,
   TOKENIZED_SHORT_STATE
@@ -402,7 +403,10 @@ contract('ERC20Short', function(accounts) {
         await setUpShortTokens();
         await transferShortsToTokens();
         await returnTokensToSeller();
-        await wait(SHORTS.FULL.TX.loanOffering.maxDuration);
+        const startTime = await getBlockTimestamp(SHORTS.FULL.TX.response.receipt.blockNumber);
+        const endTime = SHORTS.FULL.TX.loanOffering.endDate;
+        const loanTime = endTime - startTime;
+        await wait(loanTime);
         await callInShorts();
         await wait(SHORTS.FULL.TX.loanOffering.callTimeLimit);
       }

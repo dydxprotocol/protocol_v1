@@ -28,7 +28,7 @@ contract ShortSellGetters is ShortSellStorage {
             uint32 callTimeLimit,
             uint32 startTimestamp,
             uint32 callTimestamp,
-            uint32 maxDuration,
+            uint32 endDate,
             address lender,
             address seller
         )
@@ -45,7 +45,7 @@ contract ShortSellGetters is ShortSellStorage {
             short.callTimeLimit,
             short.startTimestamp,
             short.callTimestamp,
-            short.maxDuration,
+            short.endDate,
             short.lender,
             short.seller
         );
@@ -161,13 +161,13 @@ contract ShortSellGetters is ShortSellStorage {
         return state.shorts[id].callTimeLimit;
     }
 
-    function getShortMaxDuration(
+    function getShortEndDate(
         bytes32 id
     )
         view
         external
-        returns (uint32 _maxDuration)
+        returns (uint32 _endDate)
     {
-        return state.shorts[id].maxDuration;
+        return state.shorts[id].endDate;
     }
 }

@@ -39,7 +39,7 @@ library ShortImpl {
         uint256 baseTokenFromSell,
         uint256 depositAmount,
         uint32 callTimeLimit,
-        uint32 maxDuration
+        uint32 endDate
     );
 
     // -----------------------
@@ -389,7 +389,7 @@ library ShortImpl {
             baseTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.endDate
         );
     }
 
@@ -397,7 +397,7 @@ library ShortImpl {
         ShortTx transaction
     )
         internal
-        pure
+        view
         returns (uint256 _interestFee)
     {
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
@@ -410,7 +410,8 @@ library ShortImpl {
 
         // Prevent overflows when calculating interest fees. Unused result, throws on overflow
         // Should be the same calculation used in calculateInterestFee
-        transaction.shortAmount.mul(transaction.loanOffering.maxDuration).mul(partialInterestFee);
+        uint256 maxTime = uint256(transaction.loanOffering.endDate).sub(block.timestamp);
+        transaction.shortAmount.mul(maxTime).mul(partialInterestFee);
 
         return partialInterestFee;
     }
@@ -436,7 +437,7 @@ library ShortImpl {
         state.shorts[shortId].interestRate = getPartialInterestRate(transaction);
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
-        state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
+        state.shorts[shortId].endDate = transaction.loanOffering.endDate;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -509,7 +510,7 @@ library ShortImpl {
             rates: parseLoanOfferRates(values256),
             expirationTimestamp: values256[7],
             callTimeLimit: values32[0],
-            maxDuration: values32[1],
+            endDate: values32[1],
             salt: values256[8],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
@@ -610,7 +611,7 @@ library ShortImpl {
     {
         return [
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.endDate
         ];
     }
 }

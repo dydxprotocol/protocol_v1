@@ -281,10 +281,10 @@ async function getShortLifetime(shortTx, closeTx) {
     getBlockTimestamp(shortTx.response.receipt.blockNumber),
     getBlockTimestamp(closeTx.receipt.blockNumber)
   ]);
-  const maxDuration = shortTx.loanOffering.maxDuration;
+  const endDate = shortTx.loanOffering.endDate;
   let duration = shortClosedTimestamp - shortTimestamp;
-  if (duration > maxDuration) {
-    duration = maxDuration;
+  if (duration > endDate) {
+    duration = endDate;
   }
   return duration;
 }

@@ -13,6 +13,7 @@ const ethUtil = require('ethereumjs-util');
 const web3Instance = new Web3(web3.currentProvider);
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
+  const block = await web3Instance.eth.getBlock("latest");
   let loanOffering = {
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
@@ -34,7 +35,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     },
     expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
-    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
+    endDate: block.timestamp + 365 * 24 * 60 * 60,
     salt: _salt
   };
 
@@ -54,7 +55,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
     { type: 'uint32', value: loanOffering.callTimeLimit },
-    { type: 'uint32', value: loanOffering.maxDuration },
+    { type: 'uint32', value: loanOffering.endDate },
     loanOffering.salt
   );
   const hash = web3Instance.utils.soliditySha3(
