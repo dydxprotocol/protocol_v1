@@ -139,7 +139,7 @@ describe('#forceRecoverLoan', () => {
     });
   });
 
-  contract.only('ShortSell', function(accounts) {
+  contract('ShortSell', function(accounts) {
     it('does not allow if not called or not reached expiration date', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
