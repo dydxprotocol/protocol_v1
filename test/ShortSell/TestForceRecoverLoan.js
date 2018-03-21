@@ -137,7 +137,7 @@ describe('#forceRecoverLoan', () => {
           { from: shortTx.loanOffering.lender }
         ));
       });
-    });
+  });
 
   contract('ShortSell', function(accounts) {
     it('does not allow if not called or not reached expiration date', async () => {
