@@ -17,10 +17,10 @@ contract PayoutRecipient is OnlyShortSell {
     // -------------------------
 
     function PayoutRecipient(
-        address _shortSell
+        address shortSell
     )
         public
-        OnlyShortSell(_shortSell)
+        OnlyShortSell(shortSell)
     {
     }
 
@@ -32,23 +32,23 @@ contract PayoutRecipient is OnlyShortSell {
      * Function a contract must implement in order to recieve payout from being the payoutRecipient
      * in a closeShort transaction. May redistribute any payout as necessary. Throws on error.
      *
-     * @param  _shortId          Id of the short
-     * @param  _closeAmount      Amount of the short that was closed
-     * @param  _shortCloser      Address of the account or contract that closed the short
-     * @param  _shortSeller      Address of the owner of the short
-     * @param  _baseToken        Address of the ERC20 base token
-     * @param  _payoutBaseToken  Number of base tokens recieved from the payout
-     * @param  _totalBaseToken   Total number of base tokens removed from vault during close
+     * @param  shortId          Id of the short
+     * @param  closeAmount      Amount of the short that was closed
+     * @param  shortCloser      Address of the account or contract that closed the short
+     * @param  shortSeller      Address of the owner of the short
+     * @param  baseToken        Address of the ERC20 base token
+     * @param  payoutBaseToken  Number of base tokens recieved from the payout
+     * @param  totalBaseToken   Total number of base tokens removed from vault during close
 
      */
     function recieveCloseShortPayout(
-        bytes32 _shortId,
-        uint256 _closeAmount,
-        address _shortCloser,
-        address _shortSeller,
-        address _baseToken,
-        uint256 _payoutBaseToken,
-        uint256 _totalBaseToken
+        bytes32 shortId,
+        uint256 closeAmount,
+        address shortCloser,
+        address shortSeller,
+        address baseToken,
+        uint256 payoutBaseToken,
+        uint256 totalBaseToken
     )
         onlyShortSell
         external;

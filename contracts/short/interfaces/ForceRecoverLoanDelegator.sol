@@ -17,10 +17,10 @@ contract ForceRecoverLoanDelegator is LoanOwner {
     // -------------------------
 
     function ForceRecoverLoanDelegator(
-        address _shortSell
+        address shortSell
     )
         public
-        LoanOwner(_shortSell)
+        LoanOwner(shortSell)
     {
     }
 
@@ -35,15 +35,15 @@ contract ForceRecoverLoanDelegator is LoanOwner {
      * NOTE: If returning true, this contract must assume that ShortSell will either revert the
      * entire transaction or that the loan call was successfully cancelled
      *
-     * @param _who            Address of the caller of the cancelLoanCall function
-     * @param _shortId        Id of the short being call-canceled
-     * @return _allowed       true if the user is allowed to cancel the short call, false otherwise
+     * @param who            Address of the caller of the cancelLoanCall function
+     * @param shortId        Id of the short being call-canceled
+     * @return allowed       true if the user is allowed to cancel the short call, false otherwise
      */
     function forceRecoverLoanOnBehalfOf(
-        address _who,
-        bytes32 _shortId
+        address who,
+        bytes32 shortId
     )
         onlyShortSell
         external
-        returns (bool _allowed);
+        returns (bool allowed);
 }

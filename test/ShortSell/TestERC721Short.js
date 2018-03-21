@@ -10,7 +10,6 @@ chai.use(require('chai-bignumber')());
 const ERC721Short = artifacts.require("ERC721Short");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
-const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../helpers/Constants');

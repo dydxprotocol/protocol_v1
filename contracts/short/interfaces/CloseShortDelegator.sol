@@ -17,10 +17,10 @@ contract CloseShortDelegator is ShortOwner {
     // -------------------------
 
     function CloseShortDelegator(
-        address _shortSell
+        address shortSell
     )
         public
-        ShortOwner(_shortSell)
+        ShortOwner(shortSell)
     {
     }
 
@@ -41,19 +41,19 @@ contract CloseShortDelegator is ShortOwner {
      * entire transaction or that the specified amount of the short position was successfully
      * closed. Returning 0 will indicate an error and cause ShortSell to throw.
      *
-     * @param _closer           Address of the caller of the close function
-     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
-     * @param _shortId          Id of the short being closed
-     * @param _requestedAmount  Amount of the short being closed
-     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     * @param closer           Address of the caller of the close function
+     * @param payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param shortId          Id of the short being closed
+     * @param requestedAmount  Amount of the short being closed
+     * @return allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _closer,
-        address _payoutRecipient,
-        bytes32 _shortId,
-        uint256 _requestedAmount
+        address closer,
+        address payoutRecipient,
+        bytes32 shortId,
+        uint256 requestedAmount
     )
         onlyShortSell
         external
-        returns (uint256 _allowedAmount);
+        returns (uint256 allowedAmount);
 }

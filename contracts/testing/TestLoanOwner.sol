@@ -5,16 +5,16 @@ import { LoanOwner } from "../short/interfaces/LoanOwner.sol";
 
 contract TestLoanOwner is LoanOwner {
 
-    address public toReturn;
+    address public TO_RETURN;
 
     function TestLoanOwner(
-        address _shortSell,
-        address _toReturn
+        address shortSell,
+        address toReturn
     )
         public
-        LoanOwner(_shortSell)
+        LoanOwner(shortSell)
     {
-        toReturn = _toReturn;
+        TO_RETURN = toReturn;
     }
 
     function receiveLoanOwnership(
@@ -25,6 +25,6 @@ contract TestLoanOwner is LoanOwner {
         external
         returns (address owner)
     {
-        return toReturn;
+        return TO_RETURN;
     }
 }

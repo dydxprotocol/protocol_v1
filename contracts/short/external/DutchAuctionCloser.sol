@@ -52,28 +52,28 @@ contract DutchAuctionCloser is
     // -----------------------------
 
     // Numerator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public callTimeLimitNumerator;
+    uint256 public CALL_TIMELIMIT_NUMERATOR;
 
     // Denominator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public callTimeLimitDenominator;
+    uint256 public CALL_TIMELIMIT_DENOMINATOR;
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function DutchAuctionCloser(
-        address _shortSell,
-        uint256 _callTimeLimitNumerator,
-        uint256 _callTimeLimitDenominator
+        address shortSell,
+        uint256 callTimeLimitNumerator,
+        uint256 callTimeLimitDenominator
     )
         public
-        PayoutRecipient(_shortSell)
+        PayoutRecipient(shortSell)
     {
         // these two requirements also require (_denominator > 0)
-        require(_callTimeLimitNumerator <= _callTimeLimitNumerator);
-        require(_callTimeLimitNumerator > 0);
-        callTimeLimitNumerator = _callTimeLimitNumerator;
-        callTimeLimitDenominator = _callTimeLimitDenominator;
+        require(callTimeLimitNumerator <= callTimeLimitDenominator);
+        require(callTimeLimitNumerator > 0);
+        CALL_TIMELIMIT_NUMERATOR = callTimeLimitNumerator;
+        CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
 
     // ----------------------------------------
@@ -83,52 +83,50 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  _shortId          Id of the short
-     * @param  _closeAmount      Amount of the short that was closed
-     * @param  _shortCloser      Address of the account or contract that closed the short
-     * @param  _shortSeller      Address of the owner of the short
-     * @param  _baseToken        Address of the ERC20 base token
-     * @param  _payoutBaseToken  Number of base tokens recieved from the payout
-     * @param  _totalBaseToken   Total number of base tokens removed from vault during close
+     * @param  shortId          Id of the short
+     * @param  closeAmount      Amount of the short that was closed
+     * @param  shortCloser      Address of the account or contract that closed the short
+     * @param  shortSeller      Address of the owner of the short
+     * @param  baseToken        Address of the ERC20 base token
+     * @param  payoutBaseToken  Number of base tokens recieved from the payout
+     * @param  totalBaseToken   Total number of base tokens removed from vault during close
      */
     function recieveCloseShortPayout(
-        bytes32 _shortId,
-        uint256 _closeAmount,
-        address _shortCloser,
-        address _shortSeller,
-        address _baseToken,
-        uint256 _payoutBaseToken,
-        uint256 _totalBaseToken
+        bytes32 shortId,
+        uint256 closeAmount,
+        address shortCloser,
+        address shortSeller,
+        address baseToken,
+        uint256 payoutBaseToken,
+        uint256 totalBaseToken
     )
         onlyShortSell
         external
     {
-        // get deedHolder ASAP; the state of short.seller may change upon closing the short
-        address deedHolder = ShortCustodian(_shortSeller).getShortSellDeedHolder(_shortId);
-
         uint256 auctionStartTimestamp;
         uint256 auctionEndTimestamp;
-        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(_shortId);
+        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(shortId);
 
         // linearly decreases from maximum amount to zero over the course of the auction
         uint256 auctionPrice = MathHelpers.getPartialAmount(
-            auctionEndTimestamp.sub(block.timestamp), // time since auction start
-            auctionEndTimestamp.sub(auctionStartTimestamp), // total auction length
-            _totalBaseToken
+            auctionEndTimestamp.sub(block.timestamp),
+            auctionEndTimestamp.sub(auctionStartTimestamp),
+            totalBaseToken
         );
 
         // pay baseToken back to short owner
-        TokenInteract.transfer(_baseToken, deedHolder, auctionPrice);
+        address deedHolder = ShortCustodian(shortSeller).getShortSellDeedHolder(shortId);
+        TokenInteract.transfer(baseToken, deedHolder, auctionPrice);
 
         // pay baseToken back to short closer
-        uint256 bidderReward = _payoutBaseToken.sub(auctionPrice);
-        TokenInteract.transfer(_baseToken, _shortCloser, bidderReward);
+        uint256 bidderReward = payoutBaseToken.sub(auctionPrice);
+        TokenInteract.transfer(baseToken, shortCloser, bidderReward);
 
         ShortClosedByDutchAuction(
-            _shortId,
-            _shortSeller,
-            _shortCloser,
-            _closeAmount,
+            shortId,
+            shortSeller,
+            shortCloser,
+            closeAmount,
             bidderReward,
             auctionPrice
         );
@@ -155,8 +153,8 @@ contract DutchAuctionCloser is
         uint256 callTimeLimit = uint256(short.callTimeLimit);
 
         uint256 auctionLength = MathHelpers.getPartialAmount(
-            callTimeLimitNumerator,
-            callTimeLimitDenominator,
+            CALL_TIMELIMIT_NUMERATOR,
+            CALL_TIMELIMIT_DENOMINATOR,
             callTimeLimit);
 
         if (callTimestamp == 0 || callTimestamp > maxTimestamp.sub(callTimeLimit)) {

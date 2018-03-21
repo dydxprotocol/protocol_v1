@@ -11,11 +11,11 @@ const TOKENIZED_SHORT_STATE = {
 async function getERC20ShortConstants(ERC20Short) {
   const [
     SHORT_SELL,
-    shortId,
+    SHORT_ID,
     state,
     name,
     symbol,
-    initialTokenHolder,
+    INITIAL_TOKEN_HOLDER,
     baseToken,
     totalSupply
   ] = await Promise.all([
@@ -24,17 +24,17 @@ async function getERC20ShortConstants(ERC20Short) {
     ERC20Short.state.call(),
     ERC20Short.name.call(),
     ERC20Short.symbol.call(),
-    ERC20Short.initialTokenHolder.call(),
+    ERC20Short.INITIAL_TOKEN_HOLDER.call(),
     ERC20Short.baseToken.call(),
     ERC20Short.totalSupply.call(),
   ]);
   return {
     SHORT_SELL,
-    shortId,
+    SHORT_ID,
     state,
     name,
     symbol,
-    initialTokenHolder,
+    INITIAL_TOKEN_HOLDER,
     baseToken,
     totalSupply
   };

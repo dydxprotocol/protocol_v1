@@ -42,10 +42,10 @@ contract ERC721Short is
     // -----------------------------
 
     // Mapping from an address to other addresses that are approved to be short closers
-    mapping(address => mapping(address => bool)) public approvedClosers;
+    mapping (address => mapping (address => bool)) public approvedClosers;
 
     // Mapping from an address to other addresses that are approved to be payoutRecipients
-    mapping(address => mapping(address => bool)) public approvedRecipients;
+    mapping (address => mapping (address => bool)) public approvedRecipients;
 
     // -------------------------
     // ------ Constructor ------
@@ -108,6 +108,12 @@ contract ERC721Short is
         }
     }
 
+    /**
+     * Transfer ownership of the short externally to this contract, thereby burning the token
+     *
+     * @param  shortId  Unique ID of the short
+     * @param  to       Address to transfer short ownership to
+     */
     function transferShort(
         bytes32 shortId,
         address to
@@ -115,8 +121,20 @@ contract ERC721Short is
         nonReentrant
         external
     {
-        _burn(uint256(shortId)); // requires msg.sender to be owner
+        uint256 tokenId = uint256(shortId);
+        require(msg.sender == ownerOf(tokenId));
+        _burn(tokenId); // requires msg.sender to be owner
         ShortSell(SHORT_SELL).transferShort(shortId, to);
+    }
+
+    function burnTokenSafe(
+        bytes32 shortId
+    )
+        nonReentrant
+        external
+    {
+        require(!ShortSell(SHORT_SELL).containsShort(shortId));
+        _burn(uint256(shortId));
     }
 
     // ---------------------------------
@@ -152,38 +170,35 @@ contract ERC721Short is
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
      *
-     * @param _closer           Address of the caller of the close function
-     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
-     * @param _shortId          Id of the short being closed
-     * @param _requestedAmount  Amount of the short being closed
-     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     * @param closer           Address of the caller of the close function
+     * @param payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param shortId          Id of the short being closed
+     * @param requestedAmount  Amount of the short being closed
+     * @return allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _closer,
-        address _payoutRecipient,
-        bytes32 _shortId,
-        uint256 _requestedAmount
+        address closer,
+        address payoutRecipient,
+        bytes32 shortId,
+        uint256 requestedAmount
     )
         onlyShortSell
         nonReentrant
         external
-        returns (uint256 _allowedAmount)
+        returns (uint256 allowedAmount)
     {
-        // Does not burn token (even if short is completely closed) since that requires msg.sender
-        // to be ownerOf the token. The owner may choose to call _burn(uint256(shortId)) at any time
-        // afterwards if they wish.
+        // Cannot burn the token since the short hasn't been closed yet and getShortSellDeedHolder
+        // must return the owner of the short after it has been closed in the current transaction.
 
-        address owner = ownerOf(uint256(_shortId));
-
+        address owner = ownerOf(uint256(shortId));
+        allowedAmount = 0;
         if (
-            (_closer == owner)
-            || approvedClosers[owner][_closer]
-            || approvedRecipients[owner][_payoutRecipient]
+            (closer == owner)
+            || approvedClosers[owner][closer]
+            || approvedRecipients[owner][payoutRecipient]
         ) {
-            return _requestedAmount;
+            allowedAmount = requestedAmount;
         }
-
-        return 0;
     }
 
     // ----------------------------------
@@ -195,8 +210,8 @@ contract ERC721Short is
     )
         external
         view
-        returns (address _deedHolder)
+        returns (address deedHolder)
     {
-        return ownerOf(uint256(shortId));
+        deedHolder = ownerOf(uint256(shortId));
     }
 }

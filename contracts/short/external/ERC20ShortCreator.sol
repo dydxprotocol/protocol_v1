@@ -3,7 +3,6 @@ pragma solidity 0.4.19;
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ERC20Short } from "./ERC20Short.sol";
-import { AddressDatabase } from "./interfaces/AddressDatabase.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
@@ -21,7 +20,6 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
 contract ERC20ShortCreator is
     NoOwner,
     ShortOwner,
-    AddressDatabase,
     ReentrancyGuard
 {
 
@@ -38,21 +36,28 @@ contract ERC20ShortCreator is
     // ------ State Variables -----
     // ----------------------------
 
-    mapping(address => bool) trustedClosers;
+    address[] public TRUSTED_CLOSERS;
+
+    address[] public TRUSTED_RECIPIENTS;
 
     // ------------------------
     // ------ Constructor -----
     // ------------------------
 
     function ERC20ShortCreator(
-        address _shortSell,
-        address[] _trustedClosers
+        address shortSell,
+        address[] trustedClosers,
+        address[] trustedRecipients
     )
         public
-        ShortOwner(_shortSell)
+        ShortOwner(shortSell)
     {
-        for (uint8 i = 0; i < _trustedClosers.length; i++) {
-            trustedClosers[_trustedClosers[i]] = true;
+        uint256 i;
+        for (i = 0; i < trustedClosers.length; i++) {
+            TRUSTED_CLOSERS.push(trustedClosers[i]);
+        }
+        for (i = 0; i < trustedRecipients.length; i++) {
+            TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
         }
     }
 
@@ -80,27 +85,13 @@ contract ERC20ShortCreator is
         address tokenAddress = new ERC20Short(
             shortId,
             SHORT_SELL,
-            address(this),
-            from
+            from,
+            TRUSTED_CLOSERS,
+            TRUSTED_RECIPIENTS
         );
 
         ERC20ShortCreated(shortId, tokenAddress);
 
         return tokenAddress;
-    }
-
-    /**
-     * Implementation of AddressDatabase functionality.
-     * @param  who  Address to check
-     * @return true if the address is a trusted closers
-     */
-    function hasAddress(
-        address who
-    )
-        external
-        view
-        returns (bool _hasAddress)
-    {
-        return trustedClosers[who];
     }
 }

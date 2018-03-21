@@ -54,7 +54,8 @@ contract('Deploy Costs', () => {
         BYTES32.ZERO,
         ADDRESSES.TEST[0],
         ADDRESSES.TEST[1],
-        ADDRESSES.TEST[2]
+        [],
+        []
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);

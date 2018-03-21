@@ -9,7 +9,6 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { Vault } from "../Vault.sol";
-import { AddressDatabase } from "./interfaces/AddressDatabase.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -47,11 +46,14 @@ contract ERC20Short is
     // -------- Events --------
     // ------------------------
 
-    // An ERC20Short was successfully initialized
+    // The ERC20Short was successfully initialized
     event Initialized(
         bytes32 shortId,
         uint256 initialSupply
     );
+
+    // The short was completely closed and tokens can be withdrawn
+    event Closed();
 
     // A user burns tokens in order to withdraw base tokens after the short has been closed
     event TokensRedeemedAfterForceClose(
@@ -70,14 +72,17 @@ contract ERC20Short is
     // ----- State Variables -----
     // ---------------------------
 
-    // Address of a contract that holds information about trusted closers
-    address public trustedRecipientDB;
-
     // All tokens will initially be allocated to this address
-    address public initialTokenHolder;
+    address public INITIAL_TOKEN_HOLDER;
 
     // id of the short this contract is tokenizing
     bytes32 public SHORT_ID;
+
+    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
+    mapping (address => bool) public TRUSTED_RECIPIENTS;
+
+    // Addresses of closers that are allowed to completely close the short
+    mapping (address => bool) public TRUSTED_CLOSERS;
 
     // Current State of this contract. See State enum
     State public state;
@@ -93,18 +98,26 @@ contract ERC20Short is
     // -------------------------
 
     function ERC20Short(
-        bytes32 _shortId,
-        address _shortSell,
-        address _trustedRecipientDB,
-        address _initialTokenHolder
+        bytes32 shortId,
+        address shortSell,
+        address initialTokenHolder,
+        address[] trustedClosers,
+        address[] trustedRecipients
     )
         public
-        CloseShortDelegator(_shortSell)
+        CloseShortDelegator(shortSell)
     {
-        SHORT_ID = _shortId;
+        SHORT_ID = shortId;
         state = State.UNINITIALIZED;
-        trustedRecipientDB = _trustedRecipientDB;
-        initialTokenHolder = _initialTokenHolder;
+        INITIAL_TOKEN_HOLDER = initialTokenHolder;
+
+        uint256 i;
+        for (i = 0; i < trustedClosers.length; i++) {
+            TRUSTED_CLOSERS[trustedClosers[i]] = true;
+        }
+        for (i = 0; i < trustedRecipients.length; i++) {
+            TRUSTED_RECIPIENTS[trustedRecipients[i]] = true;
+        }
     }
 
     // -----------------------------------------
@@ -140,14 +153,14 @@ contract ERC20Short is
         // set relevant constants
         state = State.OPEN;
         totalSupply_ = currentShortAmount;
-        balances[initialTokenHolder] = currentShortAmount;
+        balances[INITIAL_TOKEN_HOLDER] = currentShortAmount;
         baseToken = short.baseToken;
 
         // Record event
         Initialized(SHORT_ID, currentShortAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        Transfer(address(0), initialTokenHolder, currentShortAmount);
+        Transfer(address(0), INITIAL_TOKEN_HOLDER, currentShortAmount);
 
         return address(this); // returning own address retains ownership of short
     }
@@ -159,46 +172,48 @@ contract ERC20Short is
      * must assume that ShortSell will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
      *
-     * @param _closer           Address of the caller of the close function
-     * @param _payoutRecipient  Address of the recipient of any base tokens paid out
-     * @param _shortId          Id of the short being closed
-     * @param _requestedAmount  Amount of the short being closed
-     * @return _allowedAmount   The amount the user is allowed to close for the specified short
+     * @param closer           Address of the caller of the close function
+     * @param payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param shortId          Id of the short being closed
+     * @param requestedAmount  Amount of the short being closed
+     * @return allowedAmount   The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
-        address _closer,
-        address _payoutRecipient,
-        bytes32 _shortId,
-        uint256 _requestedAmount
+        address closer,
+        address payoutRecipient,
+        bytes32 shortId,
+        uint256 requestedAmount
     )
         onlyShortSell
         nonReentrant
         external
-        returns (uint256 _allowedAmount)
+        returns (uint256 allowedAmount)
     {
         require(state == State.OPEN);
-        require(SHORT_ID == _shortId);
+        require(SHORT_ID == shortId);
 
-        // Tokens are not burned when a trusted closer closes the short, but we require the trusted
-        // closer to close the rest of the short. All token holders are then entitled to the
-        // baseTokens in this contract (presumably given by the trusted closer) by using withdraw().
+        // Tokens are not burned when a trusted recipient is used, but we require the short to be
+        // completely closed. All token holders are then entitled to the  baseTokens in the contract
         if (
-            _requestedAmount == totalSupply_
-            && trustedRecipientDB != address(0)
-            && AddressDatabase(trustedRecipientDB).hasAddress(_payoutRecipient)
+            requestedAmount == totalSupply_
+            && (TRUSTED_RECIPIENTS[payoutRecipient] || TRUSTED_CLOSERS[closer])
         ) {
-            return _requestedAmount;
-        }
+            allowedAmount = requestedAmount;
+            Closed();
+        } else {
+            // For non-approved closers or recipients, we check token balances for closer.
+            // payoutRecipient can be whatever the token holder wants.
+            uint256 balance = balances[closer];
+            allowedAmount = Math.min256(requestedAmount, balance);
+            require(allowedAmount > 0);
+            balances[closer] = balance.sub(allowedAmount);
+            totalSupply_ = totalSupply_.sub(allowedAmount);  // asserts (allowedAmount <= totalSupply_)
+            TokensRedeemedForClose(closer, allowedAmount);
 
-        // For untrusted closers, we check token balances for closer. PayoutRecipient can be
-        // whatever the token holder wants.
-        uint256 balance = balances[_closer];
-        uint256 amount = Math.min256(_requestedAmount, balance);
-        require(amount > 0);
-        balances[_closer] = balance.sub(amount);
-        totalSupply_ = totalSupply_.sub(amount);  // also asserts (amount <= totalSupply_)
-        TokensRedeemedForClose(_closer, amount);
-        return amount;
+            if (totalSupply_ == 0) {
+                Closed();
+            }
+        }
     }
 
     /**
@@ -225,7 +240,7 @@ contract ERC20Short is
     )
         nonReentrant
         external
-        returns (uint256 _payout)
+        returns (uint256 baseTokenPayout)
     {
         uint256 value = balanceOf(who);
         require(value > 0);
@@ -233,13 +248,14 @@ contract ERC20Short is
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
+            Closed();
         }
         require(state == State.CLOSED);
 
         uint256 baseTokenBalance = TokenInteract.balanceOf(baseToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        uint256 baseTokenPayout = MathHelpers.getPartialAmount(
+        baseTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
             baseTokenBalance
@@ -253,7 +269,6 @@ contract ERC20Short is
         TokenInteract.transfer(baseToken, who, baseTokenPayout);
 
         TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
-        return baseTokenPayout;
     }
 
     // -----------------------------------
@@ -270,7 +285,7 @@ contract ERC20Short is
     function decimals()
         external
         view
-        returns (uint8 _decimals)
+        returns (uint8)
     {
         return
             DetailedERC20(
@@ -289,7 +304,7 @@ contract ERC20Short is
     function name()
         external
         view
-        returns (string _name)
+        returns (string)
     {
         if (state == State.UNINITIALIZED) {
             return "dYdx Tokenized Short [UNINITIALIZED]";
@@ -308,7 +323,7 @@ contract ERC20Short is
     )
         external
         view
-        returns (address _deedHolder)
+        returns (address deedHolder)
     {
         require(shortId == SHORT_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract

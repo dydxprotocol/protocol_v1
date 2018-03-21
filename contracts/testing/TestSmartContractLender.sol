@@ -3,15 +3,15 @@ pragma solidity 0.4.19;
 import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
-contract SmartContractLender {
-    bool shouldAllow;
+contract TestSmartContractLender {
+    bool SHOULD_ALLOW;
 
-    function SmartContractLender(
-        bool _shouldAllow
+    function TestSmartContractLender(
+        bool shouldAllow
     )
         public
     {
-        shouldAllow = _shouldAllow;
+        SHOULD_ALLOW = shouldAllow;
     }
 
     function verifyLoanOffering(
@@ -22,9 +22,9 @@ contract SmartContractLender {
     )
         external
         view
-        returns (bool _isValid)
+        returns (bool isValid)
     {
-        return shouldAllow;
+        return SHOULD_ALLOW;
     }
 
     function allow(
@@ -33,7 +33,7 @@ contract SmartContractLender {
         uint256 amount
     )
         external
-        returns (bool _success)
+        returns (bool success)
     {
         return ERC20(token).approve(spender, amount);
     }

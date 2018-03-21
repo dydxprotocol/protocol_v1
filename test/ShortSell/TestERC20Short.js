@@ -100,13 +100,15 @@ contract('ERC20Short', function(accounts) {
       ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
-        ADDRESSES.ZERO,
-        INITIAL_TOKEN_HOLDER),
+        INITIAL_TOKEN_HOLDER,
+        [],
+        []),
       ERC20Short.new(
         SHORTS.PART.ID,
         CONTRACTS.SHORT_SELL.address,
-        ADDRESSES.ZERO,
-        INITIAL_TOKEN_HOLDER)
+        INITIAL_TOKEN_HOLDER,
+        [],
+        [])
     ]);
   }
 
@@ -166,9 +168,9 @@ contract('ERC20Short', function(accounts) {
         const short = SHORTS[type];
         const tsc = await getERC20ShortConstants(short.TOKEN_CONTRACT);
         expect(tsc.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc.shortId).to.equal(short.ID);
+        expect(tsc.SHORT_ID).to.equal(short.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
-        expect(tsc.initialTokenHolder).to.equal(INITIAL_TOKEN_HOLDER);
+        expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
         expect(tsc.name).to.equal("dYdx Tokenized Short [UNINITIALIZED]");
@@ -199,9 +201,9 @@ contract('ERC20Short', function(accounts) {
 
         // expect certain values
         expect(tsc2.SHORT_SELL).to.equal(CONTRACTS.SHORT_SELL.address);
-        expect(tsc2.shortId).to.equal(SHORT.ID);
+        expect(tsc2.SHORT_ID).to.equal(SHORT.ID);
         expect(tsc2.state.equals(TOKENIZED_SHORT_STATE.OPEN)).to.be.true;
-        expect(tsc2.initialTokenHolder).to.equal(INITIAL_TOKEN_HOLDER);
+        expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc2.baseToken).to.equal(short.baseToken);
 
         // explicity make sure some things have changed
@@ -209,9 +211,9 @@ contract('ERC20Short', function(accounts) {
         expect(tsc2.baseToken).to.not.equal(tsc1.baseToken);
 
         // explicity make sure some things have not changed
-        expect(tsc2.shortId).to.equal(tsc1.shortId);
+        expect(tsc2.SHORT_ID).to.equal(tsc1.SHORT_ID);
         expect(tsc2.SHORT_SELL).to.equal(tsc1.SHORT_SELL);
-        expect(tsc2.initialTokenHolder).to.equal(tsc1.initialTokenHolder);
+        expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(tsc1.INITIAL_TOKEN_HOLDER);
       }
     });
   });
@@ -500,8 +502,9 @@ contract('ERC20Short', function(accounts) {
       const tokenContract = await ERC20Short.new(
         SHORTS.FULL.ID,
         CONTRACTS.SHORT_SELL.address,
-        ADDRESSES.ZERO,
-        INITIAL_TOKEN_HOLDER);
+        INITIAL_TOKEN_HOLDER,
+        [],
+        []);
       const [decimal, expectedDecimal] = await Promise.all([
         tokenContract.decimals.call(),
         underlyingToken.decimals.call()

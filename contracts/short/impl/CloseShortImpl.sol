@@ -171,8 +171,6 @@ library CloseShortImpl {
     )
         internal
     {
-        require(transaction.payoutRecipient != address(0));
-
         // If not the short seller, requires short seller to approve msg.sender
         if (transaction.short.seller != msg.sender) {
             uint256 allowedCloseAmount =
@@ -367,7 +365,7 @@ library CloseShortImpl {
             currentShortAmount,
             startingBaseToken
         );
-
+        
         return CloseShortTx({
             short: short,
             currentShortAmount: currentShortAmount,
@@ -375,7 +373,7 @@ library CloseShortImpl {
             closeAmount: closeAmount,
             availableBaseToken: availableBaseToken,
             startingBaseToken: startingBaseToken,
-            payoutRecipient: payoutRecipient
+            payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
         });
     }
 }

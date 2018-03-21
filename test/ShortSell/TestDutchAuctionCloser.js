@@ -49,8 +49,8 @@ contract('DutchAuctionCloser', function(accounts) {
       const contract = await DutchAuctionCloser.new(ShortSell.address, ONE, TWO);
       const [ssAddress, num, den] = await Promise.all([
         contract.SHORT_SELL.call(),
-        contract.callTimeLimitNumerator.call(),
-        contract.callTimeLimitDenominator.call(),
+        contract.CALL_TIMELIMIT_NUMERATOR.call(),
+        contract.CALL_TIMELIMIT_DENOMINATOR.call(),
       ]);
       expect(ssAddress).to.equal(ShortSell.address);
       expect(num).to.be.bignumber.equal(ONE);

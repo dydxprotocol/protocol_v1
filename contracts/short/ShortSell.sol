@@ -143,6 +143,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @param  exchangeWrapperAddress   address of the exchange wrapper
      * @param  order                    order object to be passed to the exchange wrapper
      * @return _amountClosed            amount of short closed
@@ -182,6 +183,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing

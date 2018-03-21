@@ -37,7 +37,7 @@ contract('ERC20ShortCreator', function(accounts) {
     let contract;
 
     beforeEach('set up new ERC20ShortCreator contract', async () => {
-      contract = await ERC20ShortCreator.new(ShortSell.address, []);
+      contract = await ERC20ShortCreator.new(ShortSell.address, [], []);
     });
 
     it('sets constants correctly', async () => {
@@ -61,7 +61,7 @@ contract('ERC20ShortCreator', function(accounts) {
         shortTokenContract.SHORT_SELL.call(),
         shortTokenContract.SHORT_ID.call(),
         shortTokenContract.state.call(),
-        shortTokenContract.initialTokenHolder.call(),
+        shortTokenContract.INITIAL_TOKEN_HOLDER.call(),
         shortTokenContract.baseToken.call(),
         shortTokenContract.totalSupply.call(),
         shortTokenContract.balanceOf.call(originalSeller),
