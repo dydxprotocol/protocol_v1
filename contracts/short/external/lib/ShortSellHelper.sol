@@ -23,7 +23,7 @@ library ShortSellHelper {
             callTimeLimit,
             startTimestamp,
             callTimestamp,
-            maxDuration,
+            endDate,
             lender,
             seller
         ) = ShortSell(SHORT_SELL).getShort(shortId);
@@ -38,7 +38,7 @@ library ShortSellHelper {
             callTimeLimit: callTimeLimit,
             startTimestamp: startTimestamp,
             callTimestamp: callTimestamp,
-            maxDuration: maxDuration,
+            endDate: endDate,
             lender: lender,
             seller: seller
         });

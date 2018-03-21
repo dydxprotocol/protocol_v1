@@ -29,7 +29,7 @@ contract ShortSellEvents {
         uint256 baseTokenFromSell,
         uint256 depositAmount,
         uint32  callTimeLimit,
-        uint32  maxDuration,
+        uint32  endDate,
         uint256 interestRate
     );
 

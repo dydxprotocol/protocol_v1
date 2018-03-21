@@ -222,7 +222,7 @@ library LoanImpl {
             rates: parseLoanOfferRates(values),
             expirationTimestamp: values[7],
             callTimeLimit: values32[0],
-            maxDuration: values32[1],
+            endDate: values32[1],
             salt: values[8],
             loanHash: 0,
             signature: ShortSellCommon.Signature({

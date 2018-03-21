@@ -32,7 +32,7 @@ library ShortSellCommon {
         uint32  callTimeLimit;
         uint32  startTimestamp;   // Immutable, cannot be 0
         uint32  callTimestamp;
-        uint32  maxDuration;
+        uint32  endDate;
         address lender;
         address seller;
     }
@@ -48,7 +48,7 @@ library ShortSellCommon {
         LoanRates rates;
         uint256   expirationTimestamp;
         uint32    callTimeLimit;
-        uint32    maxDuration;
+        uint32    endDate;
         uint256   salt;
         bytes32   loanHash;
         Signature signature;
@@ -105,8 +105,8 @@ library ShortSellCommon {
         returns (uint256 _interestFee)
     {
         uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (timeElapsed > short.maxDuration) {
-            timeElapsed = short.maxDuration;
+        if (timeElapsed > short.endDate) {
+            timeElapsed = short.endDate;
         }
 
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
@@ -159,7 +159,7 @@ library ShortSellCommon {
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,
             loanOffering.callTimeLimit,
-            loanOffering.maxDuration,
+            loanOffering.endDate,
             loanOffering.salt
         );
     }
