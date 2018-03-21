@@ -174,7 +174,7 @@ contract('ERC20Short', function(accounts) {
     });
   });
 
-  describe('#recieveShortOwnership', () => {
+  describe('#receiveShortOwnership', () => {
     beforeEach('set up new shorts and tokens', async () => {
       // Create new shorts since state is modified by transferring them
       await setUpShorts();

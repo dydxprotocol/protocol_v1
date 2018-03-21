@@ -55,7 +55,7 @@ contract ERC20ShortCreator is
      * @param  from  Address of the previous owner of the short
      * @return Address of the new ERC20Short contract
      */
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address from,
         bytes32 shortId
     )

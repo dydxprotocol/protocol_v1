@@ -17,7 +17,7 @@ contract TestShortOwner is ShortOwner {
         toReturn = _toReturn;
     }
 
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address,
         bytes32
     )

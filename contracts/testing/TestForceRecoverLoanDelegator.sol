@@ -17,7 +17,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
         recoverer = _recoverer;
     }
 
-    function recieveLoanOwnership(
+    function receiveLoanOwnership(
         address,
         bytes32
     )

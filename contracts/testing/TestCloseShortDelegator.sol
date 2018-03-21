@@ -17,7 +17,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
         closer = _closer;
     }
 
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address,
         bytes32
     )

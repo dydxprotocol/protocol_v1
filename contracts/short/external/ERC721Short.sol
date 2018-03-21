@@ -93,7 +93,7 @@ contract ERC721Short is
      * @param  shortId  Unique ID of the short
      * @return this address on success, throw otherwise
      */
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address from,
         bytes32 shortId
     )

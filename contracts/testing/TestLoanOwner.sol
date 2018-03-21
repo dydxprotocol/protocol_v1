@@ -17,7 +17,7 @@ contract TestLoanOwner is LoanOwner {
         toReturn = _toReturn;
     }
 
-    function recieveLoanOwnership(
+    function receiveLoanOwnership(
         address,
         bytes32
     )
