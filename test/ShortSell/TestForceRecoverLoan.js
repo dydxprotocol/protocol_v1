@@ -142,19 +142,19 @@ describe('#forceRecoverLoan', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      const maxDuration = shortTx.loanOffering.maxDuration;
-      const almostMaxDuration = maxDuration - 100;
+      const endDate = shortTx.loanOffering.endDate;
+      const almostendDate = endDate - 100;
       const callTimeLimit = shortTx.loanOffering.callTimeLimit;
-      expect(almostMaxDuration).to.be.at.least(callTimeLimit);
+      expect(almostendDate).to.be.at.least(callTimeLimit);
 
       // loan was not called and it is too early
-      await wait(almostMaxDuration);
+      await wait(almostendDate);
       await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.lender }
       ));
 
-      // now it's okay because current time is past maxDuration+callTimeLimit
+      // now it's okay because current time is past endDate+callTimeLimit
       await wait(callTimeLimit + 100);
       await shortSell.forceRecoverLoan(
         shortTx.id,

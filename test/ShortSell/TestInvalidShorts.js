@@ -390,7 +390,7 @@ describe('#closeShort', () => {
         ]);
 
         // Wait for interest fee to accrue
-        await wait(shortTx.loanOffering.maxDuration);
+        await wait(shortTx.loanOffering.endDate);
 
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
