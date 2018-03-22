@@ -71,7 +71,7 @@ library ShortSellCommon {
     }
 
     struct CloseShortTx {
-        ShortSellCommon.Short short;
+        Short short;
         uint256 currentShortAmount;
         bytes32 shortId;
         uint256 closeAmount;
@@ -203,7 +203,8 @@ library ShortSellCommon {
     function parseCloseShortTx(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedCloseAmount,
+        address payoutRecipient
     )
         internal
         view
@@ -225,7 +226,8 @@ library ShortSellCommon {
             shortId: shortId,
             closeAmount: closeAmount,
             availableBaseToken: availableBaseToken,
-            startingBaseToken: startingBaseToken
+            startingBaseToken: startingBaseToken,
+            payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
         });
     }
 

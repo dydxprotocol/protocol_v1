@@ -58,11 +58,16 @@ library WithdrawImpl {
         )
     {
         // Create CloseShortTx and validate closeAmount
-        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(state, shortId, requestedCloseAmount);
+        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
+            state,
+            shortId,
+            requestedCloseAmount,
+            msg.sender
+        );
         ShortSellCommon.validateCloseShortTx(transaction); // may modify transaction
 
         // State updates
-        ShortSellCommon.updateStateForCloseShort(state, transaction);
+        ShortSellCommon.updateClosedAmount(state, transaction);
 
         // TODO: Calculate close amount in base token
         uint256 withdrawAmount = requestedCloseAmount;

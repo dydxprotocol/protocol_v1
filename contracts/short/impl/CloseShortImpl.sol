@@ -87,11 +87,12 @@ library CloseShortImpl {
             state,
             shortId,
             requestedCloseAmount,
-            payoutRecipient);
-        validateCloseShortTx(transaction); // may modify transaction
+            payoutRecipient
+        );
+        ShortSellCommon.validateCloseShortTx(transaction); // may modify transaction
 
         // State updates
-        updateClosedAmount(state, transaction);
+        ShortSellCommon.updateClosedAmount(state, transaction);
 
         // Send underlying tokens to lender
         uint256 buybackCost = 0;
