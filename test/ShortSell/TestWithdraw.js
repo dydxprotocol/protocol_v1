@@ -1,3 +1,5 @@
+/*global artifacts, contract, describe, it*/
+
 const ShortSell = artifacts.require('ShortSell');
 const TestWithdrawDelegator = artifacts.require('TestWithdrawDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
