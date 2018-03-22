@@ -14,6 +14,7 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
 const { getInterestFee } = require('../helpers/CloseShortHelper');
+const { getMaxInterestFee } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort
@@ -75,11 +76,15 @@ contract('DutchAuctionCloser', function(accounts) {
 
       // grant tokens and set permissions for bidder
       const numTokens = await UnderlyingTokenContract.balanceOf(dutchBidder);
-      await UnderlyingTokenContract.issueTo(dutchBidder, shortTx.shortAmount.minus(numTokens));
-      await UnderlyingTokenContract.approve(
-        ProxyContract.address,
-        shortTx.shortAmount,
-        { from: dutchBidder });
+      const targetTokens = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
+
+      if (numTokens < targetTokens) {
+        await UnderlyingTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
+        await UnderlyingTokenContract.approve(
+          ProxyContract.address,
+          targetTokens,
+          { from: dutchBidder });
+      }
     });
 
     it('fails for unapproved short', async () => {
@@ -149,18 +154,24 @@ contract('DutchAuctionCloser', function(accounts) {
           { from: dutchBidder }));
 
       const [
-        baseLender,
+        underlyingBidder,
         baseSeller,
         baseBidder
       ] = await Promise.all([
-        BaseTokenContract.balanceOf.call(shortTx.loanOffering.lender),
+        UnderlyingTokenContract.balanceOf.call(dutchBidder),
         BaseTokenContract.balanceOf.call(shortTx.seller),
         BaseTokenContract.balanceOf.call(dutchBidder),
       ]);
 
-      // check baseToken amounts
-      expect(baseLender).to.be.bignumber.equal(interest1.plus(interest2));
-      expect(baseLender.plus(baseSeller).plus(baseBidder)).to.be.bignumber.equal(baseVault);
+      // check amounts
+      const startingBidderUnderlyingToken = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
+      expect(underlyingBidder).to.be.bignumber.equal(
+        startingBidderUnderlyingToken
+          .minus(closeAmount.times(2))
+          .minus(interest1)
+          .minus(interest2)
+      );
+      expect(baseSeller.plus(baseBidder)).to.be.bignumber.equal(baseVault);
     });
   });
 });
