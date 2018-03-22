@@ -16,8 +16,10 @@ Source code for Ethereum Smart Contracts used by the dYdX Protocol
 Contains implementations for:
 
 - Short Sell
-- Tokenized Short
-- Custom 0x Exchange
+- ERC20 Short
+- ERC721 Short
+- Dutch Auction Short Closer
+- 0x Exchange Wrapper
 
 ### Development
 
@@ -63,12 +65,8 @@ Used to transfer user funds. Users set token allowance for the proxy authorizing
 
 ##### ShortSell.sol
 
-Contains business logic for short selling. All external functions for shorting are in this contract. This contract doesn't hold any of the short sell state, but is authorized to write to the contracts which hold state and transfer user funds.
+Contains business logic for short selling. All external functions for shorting are in this contract.
 
 ##### Vault.sol
 
 Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.
-
-##### Exchange.sol
-
-Generalized version of a 0x Exchange contract. Allows tokens to be traded as per 0x protocol with fees paid in any user defined token.

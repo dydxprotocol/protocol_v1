@@ -17,7 +17,8 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort
+  callCloseShort,
+  getMaxInterestFee
 } = require('../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
@@ -202,8 +203,9 @@ contract('ERC721Short', function(accounts) {
     const unapprovedAcct = accounts[9];
 
     async function initUnderlying(account) {
-      await underlyingToken.issueTo(account, shortTx.shortAmount);
-      await underlyingToken.approve(ProxyContract.address, shortTx.shortAmount, { from: account });
+      const amount = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
+      await underlyingToken.issueTo(account, amount);
+      await underlyingToken.approve(ProxyContract.address, amount, { from: account });
     }
 
     beforeEach('sets up short', async () => {

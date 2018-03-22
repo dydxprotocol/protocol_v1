@@ -14,7 +14,8 @@ const {
   doShort,
   getShort,
   issueTokensAndSetAllowancesForClose,
-  issueTokenToAccountInAmountAndApproveProxy
+  issueTokenToAccountInAmountAndApproveProxy,
+  getMaxInterestFee
 } = require('../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
@@ -134,11 +135,11 @@ contract('ERC20Short', function(accounts) {
     await issueTokenToAccountInAmountAndApproveProxy(
       underlyingToken,
       act ? act : SHORTS.FULL.TX.seller,
-      SHORTS.FULL.NUM_TOKENS);
+      SHORTS.FULL.NUM_TOKENS.plus(getMaxInterestFee(SHORTS.FULL.TX)));
     await issueTokenToAccountInAmountAndApproveProxy(
       underlyingToken,
       act ? act : SHORTS.PART.TX.seller,
-      SHORTS.PART.NUM_TOKENS);
+      SHORTS.PART.NUM_TOKENS.plus(getMaxInterestFee(SHORTS.PART.TX)));
   }
 
   async function callInShorts() {

@@ -16,6 +16,7 @@ const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
 const { createLoanOffering } = require('./LoanHelper');
+const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -374,17 +375,37 @@ async function doShortAndCall(
 
 async function issueForDirectClose(shortTx) {
   const underlyingToken = await UnderlyingToken.deployed();
+
+  // Issue to the short seller the maximum amount of underlying token they could have to pay
+
+  const maxInterestFee = getMaxInterestFee(shortTx);
+  const maxUnderlyingTokenOwed = shortTx.shortAmount.plus(maxInterestFee);
+
   await Promise.all([
     underlyingToken.issueTo(
       shortTx.seller,
-      shortTx.shortAmount
+      maxUnderlyingTokenOwed
     ),
     underlyingToken.approve(
       ProxyContract.address,
-      shortTx.shortAmount,
+      maxUnderlyingTokenOwed,
       { from: shortTx.seller }
     )
   ]);
+}
+
+function getMaxInterestFee(shortTx) {
+  const interestRate = getPartialAmount(
+    shortTx.shortAmount,
+    shortTx.loanOffering.rates.maxAmount,
+    shortTx.loanOffering.rates.dailyInterestFee,
+    true // roundsUp
+  );
+  return getQuotient3Over2(
+    shortTx.shortAmount, shortTx.loanOffering.maxDuration, interestRate,
+    shortTx.shortAmount, BIGNUMBERS.ONE_DAY_IN_SECONDS,
+    true
+  );
 }
 
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
@@ -407,5 +428,6 @@ module.exports = {
   issueForDirectClose,
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
-  callCloseShortDirectly
+  callCloseShortDirectly,
+  getMaxInterestFee
 };

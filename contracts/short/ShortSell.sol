@@ -93,7 +93,7 @@ contract ShortSell is
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
      *  [2]  = loan minimum base token
-     *  [3]  = loan interest rate (amount of base tokens per day)
+     *  [3]  = loan interest rate (amount of underlying tokens per day)
      *  [4]  = loan lender fee
      *  [5]  = loan taker fee
      *  [6]  = loan expiration timestamp (in seconds)

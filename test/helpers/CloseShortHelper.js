@@ -9,8 +9,9 @@ const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
-const { BIGNUMBERS } = require('../helpers/Constants');
-const { getBlockTimestamp } = require('../helpers/NodeHelper');
+const { BIGNUMBERS } = require('./Constants');
+const { getBlockTimestamp } = require('./NodeHelper');
+const { getMaxInterestFee } = require('./ShortSellHelper');
 
 module.exports = {
   checkSuccess,
@@ -23,16 +24,17 @@ module.exports = {
 };
 
 async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
+  const interestFee = await getInterestFee(shortTx, closeTx, closeAmount);
+  const underlyingTokenOwedToLender = closeAmount.plus(interestFee);
   const baseTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,
     closeAmount
   );
-  const interestFee = await getInterestFee(shortTx, closeTx, closeAmount);
   const baseTokenBuybackCost = getPartialAmount(
     sellOrder.takerTokenAmount,
     sellOrder.makerTokenAmount,
-    closeAmount
+    underlyingTokenOwedToLender
   );
 
   const balances = await getBalances(shortSell, shortTx, sellOrder);
@@ -46,7 +48,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   } = balances;
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, interestFee, shortTx, closeAmount);
+  checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender);
 
   expect(sellerBaseToken).to.be.bignumber.equal(
     getPartialAmount(
@@ -55,20 +57,19 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
       shortTx.depositAmount
     ).plus(baseTokenFromSell)
       .minus(baseTokenBuybackCost)
-      .minus(interestFee)
   );
   expect(externalSellerBaseToken).to.be.bignumber.equal(baseTokenBuybackCost);
   expect(externalSellerUnderlyingToken).to.be.bignumber.equal(
-    sellOrder.makerTokenAmount.minus(closeAmount)
+    sellOrder.makerTokenAmount.minus(underlyingTokenOwedToLender)
   );
   expect(feeRecipientFeeToken).to.be.bignumber.equal(
     getPartialAmount(
-      closeAmount,
+      underlyingTokenOwedToLender,
       sellOrder.makerTokenAmount,
       sellOrder.takerFee
     ).plus(
       getPartialAmount(
-        closeAmount,
+        underlyingTokenOwedToLender,
         sellOrder.makerTokenAmount,
         sellOrder.makerFee
       )
@@ -94,7 +95,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
       )
       .minus(
         getPartialAmount(
-          closeAmount,
+          underlyingTokenOwedToLender,
           sellOrder.makerTokenAmount,
           sellOrder.takerFee
         )
@@ -104,7 +105,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
     sellOrder.makerFee
       .minus(
         getPartialAmount(
-          closeAmount,
+          underlyingTokenOwedToLender,
           sellOrder.makerTokenAmount,
           sellOrder.makerFee
         )
@@ -137,22 +138,22 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
-function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
+function checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender) {
   const {
     lenderBaseToken,
     lenderUnderlyingToken,
   } = balances;
-  expect(lenderBaseToken).to.be.bignumber.equal(interestFee);
+  expect(lenderBaseToken).to.be.bignumber.equal(0);
   expect(lenderUnderlyingToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
-      .plus(closeAmount)
+      .plus(underlyingTokenOwedToLender)
   );
 }
 
 async function getInterestFee(shortTx, closeTx, closeAmount) {
   const shortLifetime = await getShortLifetime(shortTx, closeTx);
-  const interestFee = getPartialAmount(
+  const interestRate = getPartialAmount(
     shortTx.shortAmount,
     shortTx.loanOffering.rates.maxAmount,
     shortTx.loanOffering.rates.dailyInterestFee,
@@ -161,7 +162,7 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
   return getQuotient3Over2(
     closeAmount,
     shortLifetime,
-    interestFee,
+    interestRate,
     shortTx.shortAmount,
     BIGNUMBERS.ONE_DAY_IN_SECONDS,
     true // roundsUp
@@ -252,6 +253,7 @@ async function getBalances(shortSell, shortTx, sellOrder) {
 
 async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount) {
   const interestFee = await getInterestFee(shortTx, closeTx, closeAmount);
+  const underlyingTokenOwedToLender = closeAmount.plus(interestFee);
   const balances = await getBalances(shortSell, shortTx);
   const baseTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
@@ -260,9 +262,11 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
   );
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, interestFee, shortTx, closeAmount);
+  checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender);
   expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
-    shortTx.shortAmount.minus(closeAmount)
+    shortTx.shortAmount
+      .plus(getMaxInterestFee(shortTx))
+      .minus(underlyingTokenOwedToLender)
   );
 
   expect(balances.sellerBaseToken).to.be.bignumber.equal(
@@ -272,7 +276,6 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
       shortTx.depositAmount
     )
       .plus(baseTokenFromSell)
-      .minus(interestFee)
   );
 }
 
