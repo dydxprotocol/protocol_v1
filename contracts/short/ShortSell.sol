@@ -152,11 +152,13 @@ contract ShortSell is
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
-     *  [2]  = loan lender fee
-     *  [3]  = loan taker fee
-     *  [4]  = loan expiration timestamp (in seconds)
-     *  [5]  = loan salt
-     *  [6]  = short amount
+     *  [2]  = loan minimum base token
+     *  [3]  = loan lender fee
+     *  [4]  = loan taker fee
+     *  [5]  = loan expiration timestamp (in seconds)
+     *  [6]  = loan salt
+     *  [7]  = short amount
+     *  [8]  = deposit amount
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      CDSA r and s parameters for loan offering
@@ -166,7 +168,7 @@ contract ShortSell is
     function addValueToShort(
         bytes32 shortId,
         address[7] addresses,
-        uint256[7] values256,
+        uint256[9] values256,
         uint8 sigV,
         bytes32[2] sigRS,
         bytes order
