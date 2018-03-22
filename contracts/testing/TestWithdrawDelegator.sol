@@ -28,9 +28,8 @@ contract TestWithdrawDelegator is WithdrawDelegator {
         return address(this);
     }
 
-    function closeOnBehalfOf(
+    function withdrawOnBehalfOf(
         address who,
-        address,
         bytes32,
         uint256 requestedAmount
     )
