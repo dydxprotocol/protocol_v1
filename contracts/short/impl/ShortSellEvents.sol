@@ -57,6 +57,25 @@ contract ShortSellEvents {
     );
 
     /**
+     * A loan was withdrawn
+     */
+    event LoanWithdrawn(
+        bytes32 indexed id,
+        uint256 closeAmount,
+        uint256 baseAmount
+    );
+
+    /**
+     * A loan was partially withdrawn
+     */
+    event LoanPartiallyWithdrawn(
+        bytes32 indexed id,
+        uint256 closeAmount,
+        uint256 remainingAmount,
+        uint256 baseAmount
+    );
+
+    /**
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(

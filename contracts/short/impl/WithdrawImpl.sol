@@ -29,7 +29,7 @@ library WithdrawImpl {
      */
     event LoanWithdrawn(
         bytes32 indexed id,
-        uint256 underlyingAmount,
+        uint256 closeAmount,
         uint256 baseAmount
     );
 
@@ -38,9 +38,9 @@ library WithdrawImpl {
      */
     event LoanPartiallyWithdrawn(
         bytes32 indexed id,
-        uint256 underlyingAmount,
+        uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 baseTokenAmount
+        uint256 baseAmount
     );
 
     // -------------------------------------------
@@ -104,14 +104,19 @@ library WithdrawImpl {
     )
         internal
     {
-        // Ask the short owner how much can be closed
-        uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
-            msg.sender,
-            transaction.payoutRecipient,
-            transaction.shortId,
-            transaction.closeAmount
-        );
-        transaction.closeAmount = allowedCloseAmount;
+        // If not the short seller, requires short seller to approve msg.sender
+        if (msg.sender != transaction.short.seller) {
+            uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+                msg.sender,
+                transaction.payoutRecipient,
+                transaction.shortId,
+                transaction.closeAmount
+            );
+            // Because the verifier may do accounting based on the number that it returns, revert
+            // if the returned amount is larger than the remaining amount of the short.
+            require(transaction.closeAmount >= allowedCloseAmount);
+            transaction.closeAmount = allowedCloseAmount;
+        }
 
         // If not the lender, requires lender to approve msg.sender
         if (transaction.short.lender != msg.sender) {

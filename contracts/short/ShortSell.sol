@@ -214,11 +214,25 @@ contract ShortSell is
         );
     }
 
+    /**
+     * Withdraw base tokens from the vault. 
+     * Allow the lender to withdraw base tokens and close some amount of the loan.
+     * Must be approved by the short seller (e.g., by requiring the lender to own some of the 
+     * short position, and burning upon withdrawal).
+     *
+     * @param  shortId                  unique id for the short sell
+     * @param  requestedCloseAmount     amount of the loan to close. The amount closed
+     *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @return _amountClosed            amount of loan closed
+     * @return _baseTokenReceived       amount of base token received by the lender
+     *                                  after closing
+     */
     function withdraw(
         bytes32 shortId,
         uint256 requestedCloseAmount
     )
         external
+        onlyWhileOperational
         closeShortStateControl
         nonReentrant
         returns (
