@@ -107,7 +107,7 @@ contract ShortSell is
      *  [1] = loan maxDuration      (in seconds)
      *
      * @param  sigV       ECDSA v parameter for loan offering
-     * @param  sigRS      CDSA r and s parameters for loan offering
+     * @param  sigRS      ECDSA r and s parameters for loan offering
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */

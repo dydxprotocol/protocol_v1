@@ -70,8 +70,7 @@ library WithdrawImpl {
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
 
-        // TODO: Calculate close amount in base token
-        uint256 withdrawAmount = requestedCloseAmount;
+        uint256 withdrawAmount = transaction.availableBaseToken;
 
         Vault vault = Vault(state.VAULT);
 

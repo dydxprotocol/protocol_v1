@@ -89,7 +89,7 @@ library CloseShortImpl {
             requestedCloseAmount,
             payoutRecipient
         );
-        ShortSellCommon.validateCloseShortTx(transaction); // may modify transaction
+        validateCloseShortTx(transaction); // may modify transaction
 
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
