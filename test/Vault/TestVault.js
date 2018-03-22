@@ -204,7 +204,7 @@ contract('Vault', function(accounts) {
         total: 0,
         actual: 0
       },
-      reciever: 0
+      receiver: 0
     };
 
     async function checkBalances() {
@@ -212,7 +212,7 @@ contract('Vault', function(accounts) {
         balances.vault.id,
         balances.vault.total,
         balances.vault.actual,
-        balances.reciever
+        balances.receiver
       ] = await Promise.all([
         vault.balances.call(id, tokenA.address),
         vault.totalBalances.call(tokenA.address),
@@ -234,7 +234,7 @@ contract('Vault', function(accounts) {
       expect(balances.vault.id).to.be.bignumber.equal(num1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(num1);
-      expect(balances.reciever).to.be.bignumber.equal(0);
+      expect(balances.receiver).to.be.bignumber.equal(0);
     });
 
     it('Sends tokens if vault has balance', async () => {
@@ -245,7 +245,7 @@ contract('Vault', function(accounts) {
       expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.reciever).to.be.bignumber.equal(halfNum1);
+      expect(balances.receiver).to.be.bignumber.equal(halfNum1);
 
       await vault.transferFromVault(id, tokenA.address, receiver, num1.div(2), { from: receiver });
 
@@ -253,7 +253,7 @@ contract('Vault', function(accounts) {
       expect(balances.vault.id).to.be.bignumber.equal(0);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(0);
-      expect(balances.reciever).to.be.bignumber.equal(num1);
+      expect(balances.receiver).to.be.bignumber.equal(num1);
     });
 
     it('Does not send tokens if vault does not have sufficient accounting', async () => {
@@ -279,7 +279,7 @@ contract('Vault', function(accounts) {
       await checkBalances();
       expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
       expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
-      expect(balances.reciever).to.be.bignumber.equal(halfNum1);
+      expect(balances.receiver).to.be.bignumber.equal(halfNum1);
       // prove that the vault actually has extra un-assigned funds
       expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(halfNum1));
     });
@@ -294,7 +294,7 @@ contract('Vault', function(accounts) {
       expect(balances.vault.id).to.be.bignumber.equal(num1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(num1);
-      expect(balances.reciever).to.be.bignumber.equal(0);
+      expect(balances.receiver).to.be.bignumber.equal(0);
     });
   });
 });

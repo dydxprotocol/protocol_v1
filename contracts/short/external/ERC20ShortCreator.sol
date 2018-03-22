@@ -2,8 +2,8 @@ pragma solidity 0.4.19;
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ERC20Short } from "./ERC20Short.sol";
+import { ShortSell } from "../ShortSell.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 
@@ -22,6 +22,7 @@ contract ERC20ShortCreator is
     ShortOwner,
     ReentrancyGuard
 {
+
     // -------------------
     // ------ Events -----
     // -------------------
@@ -31,16 +32,27 @@ contract ERC20ShortCreator is
         address tokenAddress
     );
 
+    // ----------------------------
+    // ------ State Variables -----
+    // ----------------------------
+
+    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
+    address[] public TRUSTED_RECIPIENTS;
+
     // ------------------------
     // ------ Constructor -----
     // ------------------------
 
     function ERC20ShortCreator(
-        address shortSell
+        address shortSell,
+        address[] trustedRecipients
     )
         public
         ShortOwner(shortSell)
     {
+        for (uint256 i = 0; i < trustedRecipients.length; i++) {
+            TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
+        }
     }
 
     // -------------------------------
@@ -53,21 +65,22 @@ contract ERC20ShortCreator is
      * contract.
      *
      * @param  from  Address of the previous owner of the short
-     * @return Address of the new ERC20Short contract
+     * @return       Address of the new ERC20Short contract
      */
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address from,
         bytes32 shortId
     )
         onlyShortSell
         nonReentrant
         external
-        returns (address _owner)
+        returns (address)
     {
         address tokenAddress = new ERC20Short(
             shortId,
             SHORT_SELL,
-            from
+            from,
+            TRUSTED_RECIPIENTS
         );
 
         ERC20ShortCreated(shortId, tokenAddress);

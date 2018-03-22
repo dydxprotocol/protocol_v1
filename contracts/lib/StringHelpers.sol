@@ -48,7 +48,7 @@ library StringHelpers {
         bytes memory numberAsString = new bytes(64);
         uint256 number = uint256(input);
 
-        for (uint8 n = 0; n < 32; n++) {
+        for (uint256 n = 0; n < 32; n++) {
             uint256 nthByte = number / uint256(uint256(2) ** uint256(248 - 8 * n));
 
             // 1 byte to 2 hexadecimal numbers

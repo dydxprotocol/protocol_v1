@@ -11,7 +11,7 @@ library ShortSellHelper {
     )
         internal
         view
-        returns (ShortSellCommon.Short _short)
+        returns (ShortSellCommon.Short memory _short)
     {
         var (
             underlyingToken,

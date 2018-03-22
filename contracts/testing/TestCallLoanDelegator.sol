@@ -5,52 +5,52 @@ import { CallLoanDelegator } from "../short/interfaces/CallLoanDelegator.sol";
 
 contract TestCallLoanDelegator is CallLoanDelegator {
 
-    address public caller;
-    address public canceller;
+    address public CALLER;
+    address public CANCELLER;
 
     function TestCallLoanDelegator(
-        address _shortSell,
-        address _caller,
-        address _canceller
+        address shortSell,
+        address caller,
+        address canceller
     )
         public
-        CallLoanDelegator(_shortSell)
+        CallLoanDelegator(shortSell)
     {
-        caller = _caller;
-        canceller = _canceller;
+        CALLER = caller;
+        CANCELLER = canceller;
     }
 
-    function recieveLoanOwnership(
+    function receiveLoanOwnership(
         address,
         bytes32
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
         return address(this);
     }
 
     function callOnBehalfOf(
-        address _who,
+        address who,
         bytes32,
         uint256
     )
         onlyShortSell
         external
-        returns (bool _allowed)
+        returns (bool)
     {
-        return _who == caller;
+        return who == CALLER;
     }
 
     function cancelLoanCallOnBehalfOf(
-        address _who,
+        address who,
         bytes32
     )
         onlyShortSell
         external
-        returns (bool _allowed)
+        returns (bool)
     {
-        return _who == canceller;
+        return who == CANCELLER;
     }
 }

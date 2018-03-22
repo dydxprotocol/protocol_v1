@@ -11,7 +11,6 @@ const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
@@ -42,8 +41,17 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
 
   return tx;
 }
+async function callShort(shortSell, tx, safely = true) {
+  const shortId = web3Instance.utils.soliditySha3(
+    tx.loanOffering.loanHash,
+    0
+  );
 
-function callShort(shortSell, tx) {
+  let contains = await shortSell.containsShort.call(shortId);
+  if (safely) {
+    expect(contains).to.be.false;
+  }
+
   const addresses = [
     tx.owner,
     tx.loanOffering.underlyingToken,
@@ -59,10 +67,9 @@ function callShort(shortSell, tx) {
   ];
 
   const values256 = [
-    tx.loanOffering.rates.minimumDeposit,
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
-    tx.loanOffering.rates.minimumSellAmount,
+    tx.loanOffering.rates.minBaseToken,
     tx.loanOffering.rates.dailyInterestFee,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
@@ -86,7 +93,7 @@ function callShort(shortSell, tx) {
 
   const order = zeroExOrderToBytes(tx.buyOrder);
 
-  return shortSell.short(
+  let response = await shortSell.short(
     addresses,
     values256,
     values32,
@@ -95,6 +102,14 @@ function callShort(shortSell, tx) {
     order,
     { from: tx.seller }
   );
+
+  if (safely) {
+    contains = await shortSell.containsShort.call(shortId);
+    expect(contains).to.be.true;
+  }
+
+  response.id = shortId;
+  return response;
 }
 
 async function issueTokensAndSetAllowancesForShort(tx) {
@@ -170,50 +185,41 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 }
 
-async function doShort(accounts, _salt = DEFAULT_SALT, tokenized = false) {
+async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner = ADDRESSES.ZERO) {
   const [shortTx, shortSell] = await Promise.all([
     createShortSellTx(accounts, _salt),
     ShortSell.deployed()
   ]);
-  const shortId = web3Instance.utils.soliditySha3(
-    shortTx.loanOffering.loanHash,
-    0
-  );
-
-  const alreadyExists = await shortSell.containsShort.call(shortId);
-
-  expect(alreadyExists).to.be.false;
 
   await issueTokensAndSetAllowancesForShort(shortTx);
 
-  if (tokenized) {
-    shortTx.owner = ERC20ShortCreator.address;
-  }
+  shortTx.owner = shortOwner;
   const response = await callShort(shortSell, shortTx);
 
-  const contains = await shortSell.containsShort.call(shortId);
-  expect(contains).to.be.true;
-
-  shortTx.id = shortId;
+  shortTx.id = response.id;
   shortTx.response = response;
   return shortTx;
 }
 
 function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
+  const closer = from || shortTx.seller;
   return shortSell.closeShort(
     shortTx.id,
     closeAmount,
+    closer,
     ZeroExExchangeWrapper.address,
     zeroExOrderToBytes(sellOrder),
-    { from: from || shortTx.seller }
+    { from: closer }
   );
 }
 
 function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
+  const closer = from || shortTx.seller;
   return shortSell.closeShortDirectly(
     shortTx.id,
     closeAmount,
-    { from: from || shortTx.seller }
+    closer,
+    { from: closer }
   );
 }
 
@@ -254,10 +260,9 @@ function formatLoanOffering(loanOffering) {
   ];
 
   const values256 = [
-    loanOffering.rates.minimumDeposit,
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minimumSellAmount,
+    loanOffering.rates.minBaseToken,
     loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,

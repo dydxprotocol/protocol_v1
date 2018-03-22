@@ -5,26 +5,26 @@ import { ShortOwner } from "../short/interfaces/ShortOwner.sol";
 
 contract TestShortOwner is ShortOwner {
 
-    address public toReturn;
+    address public TO_RETURN;
 
     function TestShortOwner(
-        address _shortSell,
-        address _toReturn
+        address shortSell,
+        address toReturn
     )
         public
-        ShortOwner(_shortSell)
+        ShortOwner(shortSell)
     {
-        toReturn = _toReturn;
+        TO_RETURN = toReturn;
     }
 
-    function recieveShortOwnership(
+    function receiveShortOwnership(
         address,
         bytes32
     )
         onlyShortSell
         external
-        returns (address owner)
+        returns (address)
     {
-        return toReturn;
+        return TO_RETURN;
     }
 }

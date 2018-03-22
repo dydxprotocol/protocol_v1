@@ -27,7 +27,7 @@ library TokenInteract {
         return ERC20(token).allowance(owner, spender);
     }
 
-    function setAllowance(
+    function approve(
         address token,
         address spender,
         uint256 value

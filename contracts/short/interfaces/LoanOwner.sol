@@ -17,10 +17,10 @@ contract LoanOwner is OnlyShortSell {
     // -------------------------
 
     function LoanOwner(
-        address _shortSell
+        address shortSell
     )
         public
-        OnlyShortSell(_shortSell)
+        OnlyShortSell(shortSell)
     {
     }
 
@@ -29,18 +29,19 @@ contract LoanOwner is OnlyShortSell {
     // ----------------------------------------
 
     /**
-     * Function a contract must implement in order to recieve ownership of a loan sell via the
+     * Function a contract must implement in order to receive ownership of a loan sell via the
      * transferLoan function or the atomic-assign to the "owner" field in a loan offering.
      *
-     * @param  _from     Address of the previous owner
-     * @param  _shortId  Id of the short
-     * @return true on success, false or throw otherwise
+     * @param  from     Address of the previous owner
+     * @param  shortId  Id of the short
+     * @return          The address to pass loan ownership to. Own address to keep loan ownership,
+                        0x0 to reject loan ownership completely.
      */
-    function recieveLoanOwnership(
-        address _from,
-        bytes32 _shortId
+    function receiveLoanOwnership(
+        address from,
+        bytes32 shortId
     )
         onlyShortSell
         external
-        returns (address owner);
+        returns (address);
 }

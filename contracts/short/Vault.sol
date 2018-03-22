@@ -34,10 +34,10 @@ contract Vault is
 
     // Map from short id to map from token address to amount of that token attributed to the
     // particular short id.
-    mapping(bytes32 => mapping(address => uint256)) public balances;
+    mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.
-    mapping(address => uint256) public totalBalances;
+    mapping (address => uint256) public totalBalances;
 
     // -------------------------
     // ------ Constructor ------
@@ -59,7 +59,7 @@ contract Vault is
 
     /**
      * Transfers tokens from an address (that has approved the proxy) to the vault.
-     * @param  id      The vault which will recieve the tokens
+     * @param  id      The vault which will receive the tokens
      * @param  token   ERC20 token address
      * @param  from    Address from which the tokens will be taken
      * @param  amount  Number of the token to be sent

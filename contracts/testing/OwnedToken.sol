@@ -5,7 +5,7 @@ import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract OwnedToken is Ownable {
     uint256 supply;
-    mapping(address => uint256) balances;
+    mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
     event Transfer( address token, address from, address to, uint256 value);

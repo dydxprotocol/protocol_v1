@@ -67,7 +67,7 @@ library TransferInternal {
         }
 
         if (ContractHelper.isContract(newOwner)) {
-            address nextOwner = LoanOwner(newOwner).recieveLoanOwnership(oldOwner, shortId);
+            address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, shortId);
             if (nextOwner != newOwner) {
                 return grantLoanOwnership(shortId, newOwner, nextOwner);
             }
@@ -100,7 +100,7 @@ library TransferInternal {
         }
 
         if (ContractHelper.isContract(newOwner)) {
-            address nextOwner = ShortOwner(newOwner).recieveShortOwnership(oldOwner, shortId);
+            address nextOwner = ShortOwner(newOwner).receiveShortOwnership(oldOwner, shortId);
             if (nextOwner != newOwner) {
                 return grantShortOwnership(shortId, newOwner, nextOwner);
             }

@@ -63,7 +63,7 @@ library ShortImpl {
     function shortImpl(
         ShortSellState.State storage state,
         address[11] addresses,
-        uint256[11] values256,
+        uint256[10] values256,
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -181,14 +181,6 @@ library ShortImpl {
             ) <= transaction.loanOffering.rates.maxAmount
         );
         require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
-
-        uint256 minimumDeposit = MathHelpers.getPartialAmount(
-            transaction.shortAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minimumDeposit
-        );
-
-        require(transaction.depositAmount >= minimumDeposit);
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
 
         // Check no casting errors
@@ -196,7 +188,7 @@ library ShortImpl {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        // The minimum sell amount is validated after executing the sell
+        // The minimum base token is validated after executing the sell
     }
 
     function isValidSignature(
@@ -338,7 +330,7 @@ library ShortImpl {
             orderData
         );
 
-        validateMinimumSellAmount(
+        validateMinimumBaseToken(
             transaction,
             baseTokenReceived
         );
@@ -353,18 +345,19 @@ library ShortImpl {
         return baseTokenReceived;
     }
 
-    function validateMinimumSellAmount(
+    function validateMinimumBaseToken(
         ShortTx transaction,
         uint256 baseTokenReceived
     )
         internal
         pure
     {
+        uint256 totalBaseToken = baseTokenReceived.add(transaction.depositAmount);
         require(
-            baseTokenReceived >= MathHelpers.getPartialAmountRoundedUp(
+            totalBaseToken >= MathHelpers.getPartialAmountRoundedUp(
                 transaction.shortAmount,
                 transaction.loanOffering.rates.maxAmount,
-                transaction.loanOffering.rates.minimumSellAmount
+                transaction.loanOffering.rates.minBaseToken
             )
         );
     }
@@ -459,7 +452,7 @@ library ShortImpl {
 
     function parseShortTx(
         address[11] addresses,
-        uint256[11] values256,
+        uint256[10] values256,
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS
@@ -472,8 +465,8 @@ library ShortImpl {
             owner: addresses[0],
             underlyingToken: addresses[1],
             baseToken: addresses[2],
-            shortAmount: values256[9],
-            depositAmount: values256[10],
+            shortAmount: values256[8],
+            depositAmount: values256[9],
             loanOffering: parseLoanOffering(
                 addresses,
                 values256,
@@ -489,7 +482,7 @@ library ShortImpl {
 
     function parseLoanOffering(
         address[11] addresses,
-        uint256[11] values256,
+        uint256[10] values256,
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS
@@ -507,10 +500,10 @@ library ShortImpl {
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values256),
-            expirationTimestamp: values256[7],
+            expirationTimestamp: values256[6],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
-            salt: values256[8],
+            salt: values256[7],
             loanHash: 0,
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
@@ -525,20 +518,19 @@ library ShortImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[11] values256
+        uint256[10] values256
     )
         internal
         pure
         returns (ShortSellCommon.LoanRates _loanRates)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            minimumDeposit: values256[0],
-            maxAmount: values256[1],
-            minAmount: values256[2],
-            minimumSellAmount: values256[3],
-            dailyInterestFee: values256[4],
-            lenderFee: values256[5],
-            takerFee: values256[6]
+            maxAmount: values256[0],
+            minAmount: values256[1],
+            minBaseToken: values256[2],
+            dailyInterestFee: values256[3],
+            lenderFee: values256[4],
+            takerFee: values256[5]
         });
 
         return rates;
@@ -586,13 +578,12 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint256[9] _values)
+        returns (uint256[8] _values)
     {
         return [
-            transaction.loanOffering.rates.minimumDeposit,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
-            transaction.loanOffering.rates.minimumSellAmount,
+            transaction.loanOffering.rates.minBaseToken,
             transaction.loanOffering.rates.dailyInterestFee,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,

@@ -90,17 +90,16 @@ contract ShortSell is
      *
      * @param  values256  Values corresponding to:
      *
-     *  [0]  = loan minimum deposit
-     *  [1]  = loan maximum amount
-     *  [2]  = loan minimum amount
-     *  [3]  = loan minimum sell amount
-     *  [4]  = loan interest rate (amount of base tokens per day)
-     *  [5]  = loan lender fee
-     *  [6]  = loan taker fee
-     *  [7]  = loan expiration timestamp (in seconds)
-     *  [8]  = loan salt
-     *  [9]  = short amount
-     *  [10] = deposit amount
+     *  [0]  = loan maximum amount
+     *  [1]  = loan minimum amount
+     *  [2]  = loan minimum base token
+     *  [3]  = loan interest rate (amount of base tokens per day)
+     *  [4]  = loan lender fee
+     *  [5]  = loan taker fee
+     *  [6]  = loan expiration timestamp (in seconds)
+     *  [7]  = loan salt
+     *  [8]  = short amount
+     *  [9] = deposit amount
      *
      * @param  values32  Values corresponding to:
      *
@@ -114,7 +113,7 @@ contract ShortSell is
      */
     function short(
         address[11] addresses,
-        uint256[11] values256,
+        uint256[10] values256,
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -145,6 +144,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @param  exchangeWrapperAddress   address of the exchange wrapper
      * @param  order                    order object to be passed to the exchange wrapper
      * @return _amountClosed            amount of short closed
@@ -155,6 +155,7 @@ contract ShortSell is
     function closeShort(
         bytes32 shortId,
         uint256 requestedCloseAmount,
+        address payoutRecipient,
         address exchangeWrapperAddress,
         bytes order
     )
@@ -171,6 +172,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             exchangeWrapperAddress,
             order
         );
@@ -182,6 +184,7 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient          address to send remaining baseToken to after closing
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing
@@ -189,7 +192,8 @@ contract ShortSell is
      */
     function closeShortDirectly(
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedCloseAmount,
+        address payoutRecipient
     )
         external
         closeShortDirectlyStateControl
@@ -204,6 +208,7 @@ contract ShortSell is
             state,
             shortId,
             requestedCloseAmount,
+            payoutRecipient,
             address(0),
             new bytes(0)
         );
@@ -323,15 +328,14 @@ contract ShortSell is
      *
      * @param  values256        Values corresponding to:
      *
-     *  [0] = loan minimum deposit
-     *  [1] = loan maximum amount
-     *  [2] = loan minimum amount
-     *  [3] = loan minimum sell amount
-     *  [4] = loan interest rate
-     *  [5] = loan lender fee
-     *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
-     *  [8] = loan salt
+     *  [0] = loan maximum amount
+     *  [1] = loan minimum amount
+     *  [2] = loan minimum base token
+     *  [3] = loan interest rate
+     *  [4] = loan lender fee
+     *  [5] = loan taker fee
+     *  [6] = loan expiration timestamp (in seconds)
+     *  [7] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
@@ -343,7 +347,7 @@ contract ShortSell is
      */
     function cancelLoanOffering(
         address[9] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint32[2]  values32,
         uint256    cancelAmount
     )
@@ -379,15 +383,14 @@ contract ShortSell is
      *
      * @param  values256        Values corresponding to:
      *
-     *  [0] = loan minimum deposit
-     *  [1] = loan maximum amount
-     *  [2] = loan minimum amount
-     *  [3] = loan minimum sell amount
-     *  [4] = loan interest rate
-     *  [5] = loan lender fee
-     *  [6] = loan taker fee
-     *  [7] = loan expiration timestamp (in seconds)
-     *  [8] = loan salt
+     *  [0] = loan maximum amount
+     *  [1] = loan minimum amount
+     *  [2] = loan minimum base token
+     *  [3] = loan interest rate
+     *  [4] = loan lender fee
+     *  [5] = loan taker fee
+     *  [6] = loan expiration timestamp (in seconds)
+     *  [7] = loan salt
      *
      * @param  values32         Values corresponding to:
      *
@@ -396,7 +399,7 @@ contract ShortSell is
      */
     function approveLoanOffering(
         address[9] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint32[2]  values32
     )
         external

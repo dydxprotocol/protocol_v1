@@ -11,7 +11,7 @@ const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
-const SmartContractLender = artifacts.require("SmartContractLender");
+const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
@@ -54,12 +54,12 @@ describe('#short', () => {
         shortSell,
         feeToken,
         underlyingToken,
-        smartContractLender
+        testSmartContractLender
       ] = await Promise.all([
         ShortSell.deployed(),
         FeeToken.deployed(),
         UnderlyingToken.deployed(),
-        SmartContractLender.new(true)
+        TestSmartContractLender.new(true)
       ]);
 
       await issueTokensAndSetAllowancesForShort(shortTx);
@@ -73,23 +73,23 @@ describe('#short', () => {
       ]);
       await Promise.all([
         feeToken.transfer(
-          smartContractLender.address,
+          testSmartContractLender.address,
           lenderFeeTokenBalance,
           { from: shortTx.loanOffering.lender }
         ),
         underlyingToken.transfer(
-          smartContractLender.address,
+          testSmartContractLender.address,
           lenderUnderlyingTokenBalance,
           { from: shortTx.loanOffering.lender }
         )
       ]);
       await Promise.all([
-        smartContractLender.allow(
+        testSmartContractLender.allow(
           feeToken.address,
           ProxyContract.address,
           lenderFeeTokenBalance
         ),
-        smartContractLender.allow(
+        testSmartContractLender.allow(
           underlyingToken.address,
           ProxyContract.address,
           lenderUnderlyingTokenBalance
@@ -101,7 +101,7 @@ describe('#short', () => {
         ADDRESSES.ZERO);
 
       shortTx.loanOffering.signer = shortTx.loanOffering.lender;
-      shortTx.loanOffering.lender = smartContractLender.address;
+      shortTx.loanOffering.lender = testSmartContractLender.address;
       shortTx.loanOffering.owner = testCallLoanDelegator.address;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
@@ -244,7 +244,7 @@ async function checkSuccess(shortSell, shortTx) {
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestShortOwner.at(shortTx.owner).toReturn.call();
+      toReturn = await TestShortOwner.at(shortTx.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
@@ -257,7 +257,7 @@ async function checkSuccess(shortSell, shortTx) {
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestLoanOwner.at(shortTx.loanOffering.owner).toReturn.call();
+      toReturn = await TestLoanOwner.at(shortTx.loanOffering.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }

@@ -22,11 +22,11 @@ contract OnlyShortSell {
     // -------------------------
 
     function OnlyShortSell(
-        address _shortSell
+        address shortSell
     )
         public
     {
-        SHORT_SELL = _shortSell;
+        SHORT_SELL = shortSell;
     }
 
     // ---------------------------

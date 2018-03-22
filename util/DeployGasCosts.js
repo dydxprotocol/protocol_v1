@@ -1,11 +1,11 @@
-/*global web3, artifacts, describe, contract, it*/
+/*global artifacts, describe, contract, it*/
 
 const ShortSell = artifacts.require("ShortSell");
 const ERC20Short = artifacts.require("ERC20Short");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const { getGasCost } = require('../test/helpers/NodeHelper');
-const { ADDRESSES, BIGNUMBERS } = require('../test/helpers/Constants');
+const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../test/helpers/Constants');
 
 contract('Deploy Costs', () => {
   describe('ShortSell', () => {
@@ -51,9 +51,10 @@ contract('Deploy Costs', () => {
   describe('ERC20Short', () => {
     it('', async () => {
       const contract = await ERC20Short.new(
-        web3.fromUtf8("123456789"),
+        BYTES32.ZERO,
         ADDRESSES.TEST[0],
-        ADDRESSES.TEST[1]
+        ADDRESSES.TEST[1],
+        []
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);

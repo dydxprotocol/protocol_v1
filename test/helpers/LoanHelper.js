@@ -24,10 +24,9 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
     rates: {
-      minimumDeposit:    BIGNUMBERS.BASE_AMOUNT,
       maxAmount:         BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:         BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minimumSellAmount: BIGNUMBERS.BASE_AMOUNT.times(.01),
+      minBaseToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
       dailyInterestFee:  BIGNUMBERS.BASE_AMOUNT.times(.01),
       lenderFee:         BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:          BIGNUMBERS.BASE_AMOUNT.times(.02)
@@ -45,10 +44,9 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
 
 async function signLoanOffering(loanOffering) {
   const valuesHash = web3Instance.utils.soliditySha3(
-    loanOffering.rates.minimumDeposit,
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minimumSellAmount,
+    loanOffering.rates.minBaseToken,
     loanOffering.rates.dailyInterestFee,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,

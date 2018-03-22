@@ -56,10 +56,9 @@ library ShortSellCommon {
     }
 
     struct LoanRates {
-        uint256 minimumDeposit;
-        uint256 minimumSellAmount;
         uint256 maxAmount;
         uint256 minAmount;
+        uint256 minBaseToken;
         uint256 dailyInterestFee;
         uint256 lenderFee;
         uint256 takerFee;
@@ -72,12 +71,13 @@ library ShortSellCommon {
     }
 
     struct CloseShortTx {
-        Short short;
+        ShortSellCommon.Short short;
         uint256 currentShortAmount;
         bytes32 shortId;
         uint256 closeAmount;
         uint256 availableBaseToken;
         uint256 startingBaseToken;
+        address payoutRecipient;
     }
 
     // -------------------------------------------
@@ -160,10 +160,9 @@ library ShortSellCommon {
         returns (bytes32 _hash)
     {
         return keccak256(
-            loanOffering.rates.minimumDeposit,
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
-            loanOffering.rates.minimumSellAmount,
+            loanOffering.rates.minBaseToken,
             loanOffering.rates.dailyInterestFee,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
@@ -245,8 +244,13 @@ library ShortSellCommon {
     {
         // If not the short seller, requires short seller to approve msg.sender
         if (transaction.short.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller)
-                .closeOnBehalfOf(msg.sender, transaction.shortId, transaction.closeAmount);
+            uint256 allowedCloseAmount =
+                CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+                    msg.sender,
+                    transaction.payoutRecipient,
+                    transaction.shortId,
+                    transaction.closeAmount
+                );
 
             // Because the verifier may do accounting based on the number that it returns, revert
             // if the returned amount is larger than the remaining amount of the short.
@@ -258,21 +262,13 @@ library ShortSellCommon {
         require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
-    function updateStateForCloseShort(
+    function updateClosedAmount(
         ShortSellState.State storage state,
         CloseShortTx transaction
     )
         internal
     {
-        // If the whole short is closed, remove it from repo
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            cleanupShort(state, transaction.shortId);
-        } else {
-            uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
-            assert(newClosedAmount < transaction.short.shortAmount);
-
-            // Otherwise increment the closed amount on the short
-            state.shorts[transaction.shortId].closedAmount = newClosedAmount;
-        }
+        uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
+        state.shorts[transaction.shortId].closedAmount = newClosedAmount;
     }
 }
