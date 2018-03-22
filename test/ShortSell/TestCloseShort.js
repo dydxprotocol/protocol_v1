@@ -26,7 +26,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 
 describe('#closeShort', () => {
   contract('ShortSell', function(accounts) {
-    it('Successfully closes a short in increments', async () => {
+    it.only('Successfully closes a short in increments', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
         createSignedSellOrder(accounts),
