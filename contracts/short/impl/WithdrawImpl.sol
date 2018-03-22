@@ -117,7 +117,7 @@ library WithdrawImpl {
         // If not the lender, requires lender to approve msg.sender
         if (transaction.short.lender != msg.sender) {
             uint256 allowedWithdrawAmount =
-                WithdrawDelegator(transaction.short.seller).withdrawOnBehalfOf(
+                WithdrawDelegator(transaction.short.lender).withdrawOnBehalfOf(
                     msg.sender,
                     transaction.shortId,
                     transaction.closeAmount
