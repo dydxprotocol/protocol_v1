@@ -16,8 +16,10 @@ Source code for Ethereum Smart Contracts used by the dYdX Protocol
 Contains implementations for:
 
 - Short Sell
-- Tokenized Short
-- Custom 0x Exchange
+- ERC20 Short
+- ERC721 Short
+- Dutch Auction Short Closer
+- 0x Exchange Wrapper
 
 ### Development
 
