@@ -7,6 +7,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../../shared/Proxy.sol";
 import { WithdrawDelegator } from "../interfaces/WithdrawDelegator.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -100,7 +101,7 @@ library WithdrawImpl {
     }
 
     function validateWithdrawal(
-        CloseShortTx transaction
+        ShortSellCommon.CloseShortTx transaction
     )
         internal
     {
@@ -116,7 +117,7 @@ library WithdrawImpl {
         // If not the lender, requires lender to approve msg.sender
         if (transaction.short.lender != msg.sender) {
             uint256 allowedWithdrawAmount =
-                WithdrawalDelegator(transaction.short.seller).withdrawOnBehalfOf(
+                WithdrawDelegator(transaction.short.seller).withdrawOnBehalfOf(
                     msg.sender,
                     transaction.shortId,
                     transaction.closeAmount
