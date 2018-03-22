@@ -292,4 +292,37 @@ library CloseShortImpl {
         }
     }
 
+    // --------- Helper Functions ---------
+
+    /**
+     * Validate the CloseShortTx object created for closing a short.
+     * This function may throw, or it may simply modify parameters of the CloseShortTx object.
+     * Will not throw if the resulting object is valid.
+     * @param transaction  The transaction to validate
+     */
+    function validateCloseShortTx(
+        ShortSellCommon.CloseShortTx transaction
+    )
+        internal
+    {
+        // If not the short seller, requires short seller to approve msg.sender
+        if (transaction.short.seller != msg.sender) {
+            uint256 allowedCloseAmount =
+                CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+                    msg.sender,
+                    transaction.payoutRecipient,
+                    transaction.shortId,
+                    transaction.closeAmount
+                );
+
+            // Because the verifier may do accounting based on the number that it returns, revert
+            // if the returned amount is larger than the remaining amount of the short.
+            require(transaction.closeAmount >= allowedCloseAmount);
+            transaction.closeAmount = allowedCloseAmount;
+        }
+
+        require(transaction.closeAmount > 0);
+        require(transaction.closeAmount <= transaction.currentShortAmount);
+    }
+
 }

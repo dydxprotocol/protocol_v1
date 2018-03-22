@@ -6,7 +6,7 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../../shared/Proxy.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
+import { WithdrawDelegator } from "../interfaces/WithdrawDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -64,7 +64,7 @@ library WithdrawImpl {
             requestedCloseAmount,
             msg.sender
         );
-        ShortSellCommon.validateCloseShortTx(transaction); // may modify transaction
+        validateWithdrawal(transaction);
 
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
@@ -97,6 +97,39 @@ library WithdrawImpl {
             transaction.closeAmount,
             withdrawAmount
         );
+    }
+
+    function validateWithdrawal(
+        CloseShortTx transaction
+    )
+        internal
+    {
+        // Ask the short owner how much can be closed
+        uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+            msg.sender,
+            transaction.payoutRecipient,
+            transaction.shortId,
+            transaction.closeAmount
+        );
+        transaction.closeAmount = allowedCloseAmount;
+
+        // If not the lender, requires lender to approve msg.sender
+        if (transaction.short.lender != msg.sender) {
+            uint256 allowedWithdrawAmount =
+                WithdrawalDelegator(transaction.short.seller).withdrawOnBehalfOf(
+                    msg.sender,
+                    transaction.shortId,
+                    transaction.closeAmount
+                );
+
+            // Because the verifier may do accounting based on the number that it returns, revert
+            // if the returned amount is larger than the remaining amount of the short.
+            require(transaction.closeAmount >= allowedWithdrawAmount);
+            transaction.closeAmount = allowedWithdrawAmount;
+        }
+
+        require(transaction.closeAmount > 0);
+        require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
     function logEventOnClose(
