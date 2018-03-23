@@ -105,9 +105,9 @@ library ShortSellCommon {
         returns (uint256 _interestFee)
     {
         uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (endTimestamp > short.endDate) {
-            timeElapsed = uint256(short.endDate).sub(short.startTimestamp);
-        }
+        // if (endTimestamp > short.endDate) {
+        //     timeElapsed = uint256(short.endDate).sub(short.startTimestamp);
+        // }
 
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
         // payments. This would be an infeasiable attack in most scenarios due to low rounding error

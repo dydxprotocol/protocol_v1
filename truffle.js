@@ -9,10 +9,12 @@ module.exports = {
       network_id: "*",
       gas:4700000
     },
-    dev: {
+    development: {
       host: "localhost",
-      port: 8545,
-      network_id: "*"
+      port: 9545,
+      network_id: "*",
+      gasLimit: 6721975,
+      gasPrice: 0
     },
     coverage: {
       host: 'localhost',

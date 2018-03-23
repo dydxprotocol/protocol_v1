@@ -403,10 +403,10 @@ contract('ERC20Short', function(accounts) {
         await setUpShortTokens();
         await transferShortsToTokens();
         await returnTokensToSeller();
-        const startTime = await getBlockTimestamp(SHORTS.FULL.TX.response.receipt.blockNumber);
-        const endTime = SHORTS.FULL.TX.loanOffering.endDate;
-        const loanTime = endTime - startTime;
-        await wait(loanTime);
+        // const startTime = await getBlockTimestamp(SHORTS.FULL.TX.response.receipt.blockNumber);
+        // const endTime = SHORTS.FULL.TX.loanOffering.endDate;
+        // const loanTime = endTime - startTime;
+        // await wait(loanTime);
         await callInShorts();
         await wait(SHORTS.FULL.TX.loanOffering.callTimeLimit);
       }

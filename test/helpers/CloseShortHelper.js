@@ -283,8 +283,8 @@ async function getShortLifetime(shortTx, closeTx) {
   ]);
   const endDate = shortTx.loanOffering.endDate;
   let duration = shortClosedTimestamp - shortTimestamp;
-  if (duration > endDate) {
-    duration = endDate;
+  if (shortClosedTimestamp > endDate) {
+    duration = endDate - shortTx;
   }
   return duration;
 }
