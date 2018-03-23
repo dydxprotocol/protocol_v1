@@ -1,18 +1,18 @@
 pragma solidity 0.4.19;
 
-import { WithdrawDelegator } from "../short/interfaces/WithdrawDelegator.sol";
+import { LiquidateDelegator } from "../short/interfaces/LiquidateDelegator.sol";
 
 
-contract TestWithdrawDelegator is WithdrawDelegator {
+contract TestLiquidateDelegator is LiquidateDelegator {
 
     address public CLOSER;
 
-    function TestWithdrawDelegator(
+    function TestLiquidateDelegator(
         address shortSell,
         address closer
     )
         public
-        WithdrawDelegator(shortSell)
+        LiquidateDelegator(shortSell)
     {
         CLOSER = closer;
     }
@@ -28,7 +28,7 @@ contract TestWithdrawDelegator is WithdrawDelegator {
         return address(this);
     }
 
-    function withdrawOnBehalfOf(
+    function liquidateOnBehalfOf(
         address who,
         bytes32,
         uint256 requestedAmount

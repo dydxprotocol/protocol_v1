@@ -57,20 +57,20 @@ contract ShortSellEvents {
     );
 
     /**
-     * A loan was withdrawn
+     * A loan was liquidated
      */
-    event LoanWithdrawn(
+    event LoanLiquidated(
         bytes32 indexed id,
-        uint256 closeAmount,
+        uint256 liquidatedAmount,
         uint256 baseAmount
     );
 
     /**
-     * A loan was partially withdrawn
+     * A loan was partially liquidated
      */
-    event LoanPartiallyWithdrawn(
+    event LoanPartiallyLiquidated(
         bytes32 indexed id,
-        uint256 closeAmount,
+        uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 baseAmount
     );

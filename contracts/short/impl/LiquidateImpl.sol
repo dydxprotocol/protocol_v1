@@ -6,18 +6,18 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../../shared/Proxy.sol";
-import { WithdrawDelegator } from "../interfaces/WithdrawDelegator.sol";
+import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
- * @title WithdrawImpl
+ * @title LiquidateImpl
  * @author dYdX
  *
- * This library contains the implementation for the withdraw function of ShortSell
+ * This library contains the implementation for the liquidate function of ShortSell
  */
-library WithdrawImpl {
+library LiquidateImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -25,20 +25,20 @@ library WithdrawImpl {
     // ------------------------
 
     /**
-     * A loan was withdrawn
+     * A loan was liquidated
      */
-    event LoanWithdrawn(
+    event LoanLiquidated(
         bytes32 indexed id,
-        uint256 closeAmount,
+        uint256 liquidatedAmount,
         uint256 baseAmount
     );
 
     /**
-     * A loan was partially withdrawn
+     * A loan was partially liquidated
      */
-    event LoanPartiallyWithdrawn(
+    event LoanPartiallyLiquidated(
         bytes32 indexed id,
-        uint256 closeAmount,
+        uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 baseAmount
     );
@@ -47,10 +47,10 @@ library WithdrawImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function withdrawImpl(
+    function liquidateImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint256 requestedCloseAmount
+        uint256 requestedLiquidationAmount
     )
         public
         returns (
@@ -62,15 +62,15 @@ library WithdrawImpl {
         ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
             state,
             shortId,
-            requestedCloseAmount,
+            requestedLiquidationAmount,
             msg.sender
         );
-        validateWithdrawal(transaction);
+        validateLiquidation(transaction);
 
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
 
-        uint256 withdrawAmount = transaction.availableBaseToken;
+        uint256 liquidateAmount = transaction.availableBaseToken;
 
         Vault vault = Vault(state.VAULT);
 
@@ -78,7 +78,7 @@ library WithdrawImpl {
             shortId,
             transaction.short.baseToken,
             msg.sender,
-            withdrawAmount
+            liquidateAmount
         );
 
         // The ending base token balance of the vault should be the starting base token balance
@@ -90,16 +90,16 @@ library WithdrawImpl {
 
         logEventOnClose(
             transaction,
-            withdrawAmount
+            liquidateAmount
         );
 
         return (
             transaction.closeAmount,
-            withdrawAmount
+            liquidateAmount
         );
     }
 
-    function validateWithdrawal(
+    function validateLiquidation(
         ShortSellCommon.CloseShortTx transaction
     )
         internal
@@ -120,8 +120,8 @@ library WithdrawImpl {
 
         // If not the lender, requires lender to approve msg.sender
         if (transaction.short.lender != msg.sender) {
-            uint256 allowedWithdrawAmount =
-                WithdrawDelegator(transaction.short.lender).withdrawOnBehalfOf(
+            uint256 allowedLiquidationAmount =
+                LiquidateDelegator(transaction.short.lender).liquidateOnBehalfOf(
                     msg.sender,
                     transaction.shortId,
                     transaction.closeAmount
@@ -129,8 +129,8 @@ library WithdrawImpl {
 
             // Because the verifier may do accounting based on the number that it returns, revert
             // if the returned amount is larger than the remaining amount of the short.
-            require(transaction.closeAmount >= allowedWithdrawAmount);
-            transaction.closeAmount = allowedWithdrawAmount;
+            require(transaction.closeAmount >= allowedLiquidationAmount);
+            transaction.closeAmount = allowedLiquidationAmount;
         }
 
         require(transaction.closeAmount > 0);
@@ -144,13 +144,13 @@ library WithdrawImpl {
         internal
     {
         if (transaction.closeAmount == transaction.currentShortAmount) {
-            LoanWithdrawn(
+            LoanLiquidated(
                 transaction.shortId,
                 transaction.closeAmount,
                 baseTokenAmount
             );
         } else {
-            LoanPartiallyWithdrawn(
+            LoanPartiallyLiquidated(
                 transaction.shortId,
                 transaction.closeAmount,
                 transaction.currentShortAmount.sub(transaction.closeAmount),
