@@ -53,16 +53,6 @@ library CloseShortImpl {
     // ------- Structs -------
     // -----------------------
 
-    struct CloseShortTx {
-        ShortSellCommon.Short short;
-        uint256 currentShortAmount;
-        bytes32 shortId;
-        uint256 closeAmount;
-        uint256 availableBaseToken;
-        uint256 startingBaseToken;
-        address payoutRecipient;
-    }
-
     struct Order {
         address exchangeWrapperAddress;
         bytes orderData;
@@ -93,15 +83,16 @@ library CloseShortImpl {
         });
 
         // Create CloseShortTx and validate closeAmount
-        CloseShortTx memory transaction = parseCloseShortTx(
+        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
             state,
             shortId,
             requestedCloseAmount,
-            payoutRecipient);
+            payoutRecipient
+        );
         validateCloseShortTx(transaction); // may modify transaction
 
         // State updates
-        updateClosedAmount(state, transaction);
+        ShortSellCommon.updateClosedAmount(state, transaction);
 
         uint256 interestFee;
         uint256 buybackCost;
@@ -145,7 +136,7 @@ library CloseShortImpl {
      * @param transaction  The transaction to validate
      */
     function validateCloseShortTx(
-        CloseShortTx transaction
+        ShortSellCommon.CloseShortTx transaction
     )
         internal
     {
@@ -169,19 +160,11 @@ library CloseShortImpl {
         require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
-    function updateClosedAmount(
-        ShortSellState.State storage state,
-        CloseShortTx transaction
-    )
-        internal
-    {
-        uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
-        state.shorts[transaction.shortId].closedAmount = newClosedAmount;
-    }
+
 
     function sendTokens(
         ShortSellState.State storage state,
-        CloseShortTx transaction,
+        ShortSellCommon.CloseShortTx transaction,
         Order order
     )
         internal
@@ -236,7 +219,7 @@ library CloseShortImpl {
     }
 
     function getInterestFee(
-        CloseShortTx transaction
+        ShortSellCommon.CloseShortTx transaction
     )
         internal
         view
@@ -251,7 +234,7 @@ library CloseShortImpl {
 
     function buyBackUnderlyingToken(
         ShortSellState.State storage state,
-        CloseShortTx transaction,
+        ShortSellCommon.CloseShortTx transaction,
         Order order,
         uint256 underlyingTokenOwedToLender
     )
@@ -305,7 +288,7 @@ library CloseShortImpl {
 
     function sendBaseTokensOnClose(
         ShortSellState.State storage state,
-        CloseShortTx transaction,
+        ShortSellCommon.CloseShortTx transaction,
         uint256 buybackCost
     )
         internal
@@ -339,7 +322,7 @@ library CloseShortImpl {
     }
 
     function logEventOnClose(
-        CloseShortTx transaction,
+        ShortSellCommon.CloseShortTx transaction,
         uint256 interestFee,
         uint256 buybackCost,
         uint256 payoutBaseTokenAmount
@@ -366,36 +349,4 @@ library CloseShortImpl {
         }
     }
 
-    // -------- Parsing Functions -------
-
-    function parseCloseShortTx(
-        ShortSellState.State storage state,
-        bytes32 shortId,
-        uint256 requestedCloseAmount,
-        address payoutRecipient
-    )
-        internal
-        view
-        returns (CloseShortTx memory _tx)
-    {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
-        uint256 startingBaseToken = Vault(state.VAULT).balances(shortId, short.baseToken);
-        uint256 availableBaseToken = MathHelpers.getPartialAmount(
-            closeAmount,
-            currentShortAmount,
-            startingBaseToken
-        );
-
-        return CloseShortTx({
-            short: short,
-            currentShortAmount: currentShortAmount,
-            shortId: shortId,
-            closeAmount: closeAmount,
-            availableBaseToken: availableBaseToken,
-            startingBaseToken: startingBaseToken,
-            payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
-        });
-    }
 }

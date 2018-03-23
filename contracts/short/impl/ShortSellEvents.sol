@@ -57,6 +57,25 @@ contract ShortSellEvents {
     );
 
     /**
+     * A loan was liquidated
+     */
+    event LoanLiquidated(
+        bytes32 indexed id,
+        uint256 liquidatedAmount,
+        uint256 baseAmount
+    );
+
+    /**
+     * A loan was partially liquidated
+     */
+    event LoanPartiallyLiquidated(
+        bytes32 indexed id,
+        uint256 liquidatedAmount,
+        uint256 remainingAmount,
+        uint256 baseAmount
+    );
+
+    /**
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(

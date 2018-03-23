@@ -1,4 +1,4 @@
-/*global web3, artifacts, contract, describe, it, before, beforeEach,*/
+/*global web3, artifacts, contract, describe, it, before*/
 
 const chai = require('chai');
 const expect = chai.expect;

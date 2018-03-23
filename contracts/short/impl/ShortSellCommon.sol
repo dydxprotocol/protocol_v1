@@ -1,12 +1,14 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 
 
 /**
@@ -67,6 +69,16 @@ library ShortSellCommon {
         uint8 v;
         bytes32 r;
         bytes32 s;
+    }
+
+    struct CloseShortTx {
+        Short short;
+        uint256 currentShortAmount;
+        bytes32 shortId;
+        uint256 closeAmount;
+        uint256 availableBaseToken;
+        uint256 startingBaseToken;
+        address payoutRecipient;
     }
 
     // -------------------------------------------
@@ -187,5 +199,46 @@ library ShortSellCommon {
         require(short.startTimestamp != 0);
 
         return short;
+    }
+
+    function parseCloseShortTx(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        uint256 requestedCloseAmount,
+        address payoutRecipient
+    )
+        internal
+        view
+        returns (CloseShortTx memory _tx)
+    {
+        Short storage short = getShortObject(state, shortId);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+        uint256 startingBaseToken = Vault(state.VAULT).balances(shortId, short.baseToken);
+        uint256 availableBaseToken = MathHelpers.getPartialAmount(
+            closeAmount,
+            currentShortAmount,
+            startingBaseToken
+        );
+
+        return CloseShortTx({
+            short: short,
+            currentShortAmount: currentShortAmount,
+            shortId: shortId,
+            closeAmount: closeAmount,
+            availableBaseToken: availableBaseToken,
+            startingBaseToken: startingBaseToken,
+            payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
+        });
+    }
+
+    function updateClosedAmount(
+        ShortSellState.State storage state,
+        CloseShortTx transaction
+    )
+        internal
+    {
+        uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
+        state.shorts[transaction.shortId].closedAmount = newClosedAmount;
     }
 }

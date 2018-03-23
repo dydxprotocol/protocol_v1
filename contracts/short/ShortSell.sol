@@ -6,6 +6,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
+import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
@@ -106,7 +107,7 @@ contract ShortSell is
      *  [1] = loan maxDuration      (in seconds)
      *
      * @param  sigV       ECDSA v parameter for loan offering
-     * @param  sigRS      CDSA r and s parameters for loan offering
+     * @param  sigRS      ECDSA r and s parameters for loan offering
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
@@ -210,6 +211,38 @@ contract ShortSell is
             payoutRecipient,
             address(0),
             new bytes(0)
+        );
+    }
+
+    /**
+     * Liquidate loan position and withdraw base tokens from the vault. 
+     * Must be approved by the short seller (e.g., by requiring the lender to own part of the 
+     * short position, and burning in order to liquidate part of the loan).
+     *
+     * @param  shortId                        unique id for the short sell
+     * @param  requestedLiquidationAmount     amount of the loan to close. The amount closed
+     *                                        will be: min(requestedCloseAmount, currentShortAmount)
+     * @return _amountClosed                  amount of loan closed
+     * @return _baseTokenReceived             amount of base token received by the lender
+     *                                        after closing
+     */
+    function liquidate(
+        bytes32 shortId,
+        uint256 requestedLiquidationAmount
+    )
+        external
+        onlyWhileOperational
+        closeShortStateControl
+        nonReentrant
+        returns (
+            uint256 _amountClosed,
+            uint256 _baseTokenReceived
+        )
+    {
+        return LiquidateImpl.liquidateImpl(
+            state,
+            shortId,
+            requestedLiquidationAmount
         );
     }
 
