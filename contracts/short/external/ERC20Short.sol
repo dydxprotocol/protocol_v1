@@ -243,7 +243,6 @@ contract ERC20Short is
         external
         returns (uint256 baseTokenPayout)
     {
-
         uint256 value = balanceOf(who);
         require(value > 0);
         // If in OPEN state, but the short is closed, set to CLOSED state
