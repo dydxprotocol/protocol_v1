@@ -20,7 +20,7 @@ contract('InterestHelper', function(accounts) {
     it('', async () => {
       const total = new BigNumber('1e18');
       const percent = new BigNumber('1e18');
-      const seconds = new BigNumber(60 * 60 * 24 * 3); // don't be a round number
+      const seconds = new BigNumber(60 * 60 * 24 * 600); // don't be a round number
       const result = await contract.getCompoundedInterest.call(total, percent, seconds, false);
       console.log(result.toString());
       const gasCost = await contract.getCompoundedInterest(total, percent, seconds, false);

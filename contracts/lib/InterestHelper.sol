@@ -68,6 +68,10 @@ contract InterestHelper {
     function InterestHelper()
         public
     {
+        E = Fraction({
+            num: 340282366920938463463374607431768211455,
+            den: 125182886983370532117250726298150828301
+        });
     }
 
     // ------------------------------
