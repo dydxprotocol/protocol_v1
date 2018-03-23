@@ -16,13 +16,15 @@ contract InterestHelper {
     }
 
     // -------------------------
-    // ------ Constants ------
+    // ------ Constants --------
     // -------------------------
 
     Fraction public E;
 
-    uint256 constant maxRounds = 11;
-    // E^((1/2)^i)
+    /**
+     * Values such that
+     * (2^128 - 1) / BigArray[i] = E^(1 / 2^i)
+     */
     uint256[33] public BigArray = [
         340282366920938463463374607431768211455,
         206391688497133195273760705512282642279,
@@ -93,15 +95,13 @@ contract InterestHelper {
             uint256
         )
     {
-        if (roundToDay) {
-            secondsOfInterest = roundUpToNearestDay(secondsOfInterest);
-        }
+        uint256 interestTime = roundToDay ? roundUpToDay(secondsOfInterest) : secondsOfInterest;
         Fraction memory X = Fraction({
-            num: annualInterestRate * secondsOfInterest,
+            num: annualInterestRate * interestTime,
             den: (10**18) * (1 years)
         });
 
-        Fraction memory eToTheX = exp(X);
+        Fraction memory eToTheX = exp(X, 11, 5);
 
         // return x * e^RT
         return tokenAmount.mul(eToTheX.num).div(eToTheX.den);
@@ -125,15 +125,13 @@ contract InterestHelper {
         public
         returns (uint256)
     {
-        if (roundToDay) {
-            secondsOfInterest = roundUpToNearestDay(secondsOfInterest);
-        }
+        uint256 interestTime = roundToDay ? roundUpToDay(secondsOfInterest) : secondsOfInterest;
         Fraction memory X = Fraction({
-            num: annualInterestRate * secondsOfInterest,
+            num: annualInterestRate * interestTime,
             den: (10**18) * (1 years)
         });
 
-        Fraction memory eToTheX = exp(X);
+        Fraction memory eToTheX = exp(X, 11, 5);
 
         // return x / e^RT
         return tokenAmount.mul(eToTheX.den).div(eToTheX.num);
@@ -146,11 +144,15 @@ contract InterestHelper {
     /**
      * Returns e^X for any fraction X
      *
-     * @param  X  Exponent
-     * @return e^X
+     * @param  X                    Exponent
+     * @param  precomputePrecision  Accuracy of precomputed terms
+     * @param  maclaurinPrecision   Accuracy of Maclaurin terms
+     * @return                      e^X
      */
     function exp(
-        Fraction memory X
+        Fraction memory X,
+        uint256 precomputePrecision,
+        uint256 maclaurinPrecision
     )
         internal
         view
@@ -164,7 +166,7 @@ contract InterestHelper {
 
         // No need for fancy shit
         if (wholeNumberE == 0) {
-            return expHybrid(X);
+            return expHybrid(X, precomputePrecision, maclaurinPrecision);
         }
 
         Fraction memory remainderX = Fraction({ num: (X.num - X.den * wholeNumberE), den: X.den });
@@ -174,28 +176,33 @@ contract InterestHelper {
             result = fMul(result, E);
         }
 
-        return fMul(result, expHybrid(remainderX));
+        return fMul(result, expHybrid(remainderX, precomputePrecision, maclaurinPrecision));
     }
 
     /**
      * Returns e^X for any X < 1. Multiplies precomputed values to get close to the real value, then
      * Maclaurin Series approximation to reduce error.
      *
-     * @param  X  Exponent
-     * @return e^X
+     * @param  X                    Exponent
+     * @param  precomputePrecision  Accuracy of precomputed terms
+     * @param  maclaurinPrecision   Accuracy of Maclaurin terms
+     * @return                      e^X
      */
     function expHybrid(
-        Fraction memory X
+        Fraction memory X,
+        uint256 precomputePrecision,
+        uint256 maclaurinPrecision
     )
         internal
         view
         returns (Fraction memory)
     {
         assert(X.num < X.den);
+        assert(precomputePrecision <= BigArray.length);
 
         Fraction memory result = Fraction({ num: 1, den: 1 });
         uint256 d = 1;
-        for (uint256 i = 1; i <= maxRounds; i++) {
+        for (uint256 i = 1; i <= precomputePrecision; i++) {
             d *= 2;
 
             if (d.mul(X.num) >= X.den) {
@@ -204,18 +211,19 @@ contract InterestHelper {
                 result = fMul(result, Fraction({ num: 2**128-1, den: BigArray[i]}));
             }
         }
-        return fMul(result, expMaclaurin(X, /*numTerms=*/ 5));
+        return fMul(result, expMaclaurin(X, maclaurinPrecision));
     }
 
     /**
      * Returns e^X for any X, using Maclaurin Series approximation
      *
-     * @param  X  Exponent
-     * @return e^X
+     * @param  X           Exponent
+     * @param  precision   Accuracy of Maclaurin terms
+     * @return             e^X
      */
     function expMaclaurin(
         Fraction memory X,
-        uint256 numTerms
+        uint256 precision
     )
         internal
         pure
@@ -223,7 +231,7 @@ contract InterestHelper {
     {
         Fraction memory result = Fraction({ num: 1, den: 1 });
         Fraction memory Xtemp = Fraction({ num: 1, den: 1 });
-        for (uint256 i = 1; i <= numTerms; i++) {
+        for (uint256 i = 1; i <= precision; i++) {
             Xtemp = fMul(Xtemp, fDiv(X, i));
             result = fAdd(result, Xtemp);
         }
@@ -236,7 +244,7 @@ contract InterestHelper {
      * @param  numSeconds  The input
      * @return             The number of days in seconds
      */
-    function roundUpToNearestDay(
+    function roundUpToDay(
         uint256 numSeconds
     )
         internal
@@ -261,10 +269,12 @@ contract InterestHelper {
         internal
         returns (Fraction memory)
     {
-        return fBound(Fraction({
-            num: (a.num.mul(b.den)).add(b.num.mul(a.den)),
-            den: a.den.mul(b.den)
-        }));
+        return fBound(
+            Fraction({
+                num: (a.num.mul(b.den)).add(b.num.mul(a.den)),
+                den: a.den.mul(b.den)
+            })
+        );
     }
 
     function fSub(
@@ -275,10 +285,12 @@ contract InterestHelper {
         internal
         returns (Fraction memory)
     {
-        return fBound(Fraction({
-            num: (a.num.mul(b.den)).sub(b.num.mul(a.den)),
-            den: a.den.mul(b.den)
-        }));
+        return fBound(
+            Fraction({
+                num: (a.num.mul(b.den)).sub(b.num.mul(a.den)),
+                den: a.den.mul(b.den)
+            })
+        );
     }
 
     function fDiv(
@@ -289,10 +301,12 @@ contract InterestHelper {
         internal
         returns (Fraction memory)
     {
-        return fBound(Fraction({
-            num: a.num,
-            den: a.den.mul(d)
-        }));
+        return fBound(
+            Fraction({
+                num: a.num,
+                den: a.den.mul(d)
+            })
+        );
     }
 
     function fMul(
@@ -303,10 +317,12 @@ contract InterestHelper {
         internal
         returns (Fraction memory)
     {
-        return fBound(Fraction({
-            num: a.num.mul(b.num),
-            den: a.den.mul(b.den)
-        }));
+        return fBound(
+            Fraction({
+                num: a.num.mul(b.num),
+                den: a.den.mul(b.den)
+            })
+        );
     }
 
     function fMul(
@@ -317,10 +333,12 @@ contract InterestHelper {
         internal
         returns (Fraction memory)
     {
-        return fBound(Fraction({
-            num: a.num.mul(m),
-            den: a.den
-        }));
+        return fBound(
+            Fraction({
+                num: a.num.mul(m),
+                den: a.den
+            })
+        );
     }
 
     /**
