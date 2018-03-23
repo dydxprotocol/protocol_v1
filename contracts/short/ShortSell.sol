@@ -158,7 +158,6 @@ contract ShortSell is
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
      *  [7]  = short amount
-     *  [8]  = deposit amount
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      CDSA r and s parameters for loan offering
@@ -168,7 +167,7 @@ contract ShortSell is
     function addValueToShort(
         bytes32 shortId,
         address[7] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint8 sigV,
         bytes32[2] sigRS,
         bytes order
@@ -177,7 +176,7 @@ contract ShortSell is
         onlyWhileOperational
         nonReentrant
     {
-        return ShortImpl.addValueToShortImpl(
+        ShortImpl.addValueToShortImpl(
             state,
             shortId,
             addresses,

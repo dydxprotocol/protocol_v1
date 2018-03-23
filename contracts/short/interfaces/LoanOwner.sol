@@ -44,4 +44,13 @@ contract LoanOwner is OnlyShortSell {
         onlyShortSell
         external
         returns (address);
+
+    function additionalLoanValueAdded(
+        address from,
+        bytes32 shortId,
+        uint256 amountAdded
+    )
+        onlyShortSell
+        external
+        returns (bool);
 }

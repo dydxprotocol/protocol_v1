@@ -44,4 +44,13 @@ contract ShortOwner is OnlyShortSell {
         onlyShortSell
         external
         returns (address);
+
+    function additionalShortValueAdded(
+        address from,
+        bytes32 shortId,
+        uint256 amountAdded
+    )
+        onlyShortSell
+        external
+        returns (bool);
 }

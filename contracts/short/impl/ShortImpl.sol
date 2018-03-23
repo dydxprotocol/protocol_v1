@@ -9,6 +9,8 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
 
 
 /**
@@ -40,6 +42,20 @@ library ShortImpl {
         uint256 depositAmount,
         uint32 callTimeLimit,
         uint32 maxDuration
+    );
+
+    /*
+     * Value was added to a short sell
+     */
+    event ValueAddedToShort(
+        bytes32 indexed id,
+        address indexed shortSeller,
+        address indexed lender,
+        bytes32 loanHash,
+        address loanFeeRecipient,
+        uint256 amountAdded,
+        uint256 baseTokenFromSell,
+        uint256 depositAmount
     );
 
     // -----------------------
@@ -82,18 +98,16 @@ library ShortImpl {
 
         bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
 
-        uint256 minimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minBaseToken
-        );
-
-        shortInternalPreStateUpdate(
+        uint256 baseTokenReceived = shortInternalPreStateUpdate(
             state,
             transaction,
-            minimumBaseToken,
             shortId,
             orderData
+        );
+
+        validateMinimumBaseToken(
+            transaction,
+            baseTokenReceived
         );
 
         updateState(
@@ -124,10 +138,10 @@ library ShortImpl {
         ShortSellState.State storage state,
         bytes32 shortId,
         address[7] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint8 sigV,
         bytes32[2] sigRS,
-        bytes order
+        bytes orderData
     )
         public
     {
@@ -141,32 +155,33 @@ library ShortImpl {
             sigRS
         );
 
+        // Base token balance before transfering anything for this addition
         uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
         uint256 positionMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
-            shortAmount,
+            transaction.shortAmount,
             short.shortAmount,
             baseTokenBalance
         );
-        uint256 loanOfferingMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minBaseToken
-        );
 
-        require(loanOfferingMinimumBaseToken <= positionMinimumBaseToken);
-
-        shortInternalPreStateUpdate(
+        uint256 baseTokenReceived = shortInternalPreStateUpdate(
             state,
             transaction,
-            positionMinimumBaseToken,
             shortId,
             orderData
         );
 
+        require(baseTokenReceived <= positionMinimumBaseToken);
+        transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
+
+        validateMinimumBaseToken(
+            transaction,
+            baseTokenReceived
+        );
+
         updateStateForAddValue(
-            state,
+            transaction,
             shortId,
-            transaction
+            short
         );
 
         shortInternalPostStateUpdate(
@@ -176,6 +191,12 @@ library ShortImpl {
         );
 
         // LOG EVENT
+        recordValueAddedToShort(
+            transaction,
+            shortId,
+            short,
+            baseTokenReceived
+        );
     }
 
     // --------- Helper Functions ---------
@@ -183,7 +204,6 @@ library ShortImpl {
     function shortInternalPreStateUpdate(
         ShortSellState.State storage state,
         ShortTx memory transaction,
-        uint256 minimumBaseToken,
         bytes32 shortId,
         bytes orderData
     )
@@ -205,12 +225,6 @@ library ShortImpl {
             transaction,
             orderData,
             shortId
-        );
-
-        validateMinimumBaseToken(
-            transaction,
-            baseTokenReceived,
-            minimumBaseToken
         );
 
         return baseTokenReceived;
@@ -447,15 +461,19 @@ library ShortImpl {
 
     function validateMinimumBaseToken(
         ShortTx transaction,
-        uint256 baseTokenReceived,
-        uint256 minimumBaseToken
+        uint256 baseTokenReceived
     )
         internal
         pure
     {
         uint256 totalBaseToken = baseTokenReceived.add(transaction.depositAmount);
+        uint256 loanOfferingMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.minBaseToken
+        );
 
-        require(totalBaseToken >= minimumBaseToken);
+        require(totalBaseToken >= loanOfferingMinimumBaseToken);
     }
 
     function recordShortInitiated(
@@ -524,11 +542,59 @@ library ShortImpl {
 
     function updateStateForAddValue(
         ShortTx transaction,
+        bytes32 shortId,
         ShortSellCommon.Short storage short
     )
         internal
     {
+        // TODO
+        uint256 effectiveAmount = 1; // TODO !!! - change this when continuous interest merged
+        // TODO
 
+        short.shortAmount = short.shortAmount.add(effectiveAmount);
+
+        address seller = short.seller;
+        address lender = short.lender;
+
+        if (msg.sender != seller) {
+            require(
+                ShortOwner(seller).additionalShortValueAdded(
+                    msg.sender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
+
+        if (transaction.loanOffering.lender != lender) {
+            require(
+                LoanOwner(lender).additionalLoanValueAdded(
+                    transaction.loanOffering.lender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
+    }
+
+    function recordValueAddedToShort(
+        ShortTx transaction,
+        bytes32 shortId,
+        ShortSellCommon.Short storage short,
+        uint256 baseTokenFromSell
+    )
+        internal
+    {
+        ValueAddedToShort(
+            shortId,
+            short.seller,
+            short.lender,
+            transaction.loanOffering.loanHash,
+            transaction.loanOffering.feeRecipient,
+            transaction.shortAmount,
+            baseTokenFromSell,
+            transaction.depositAmount
+        );
     }
 
     // -------- Parsing Functions -------
@@ -691,7 +757,7 @@ library ShortImpl {
     function parseAddValueToShortTx(
         ShortSellCommon.Short storage short,
         address[7] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -704,7 +770,7 @@ library ShortImpl {
             underlyingToken: addresses[1],
             baseToken: addresses[2],
             shortAmount: values256[7],
-            depositAmount: values256[8],
+            depositAmount: 0, // Set later
             loanOffering: parseLoanOfferingFromAddValueTx(
                 short,
                 addresses,
@@ -721,7 +787,7 @@ library ShortImpl {
     function parseLoanOfferingFromAddValueTx(
         ShortSellCommon.Short storage short,
         address[7] addresses,
-        uint256[9] values256,
+        uint256[8] values256,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -757,7 +823,7 @@ library ShortImpl {
 
     function parseLoanOfferingRatesFromAddValueTx(
         ShortSellCommon.Short storage short,
-        uint256[9] values256
+        uint256[8] values256
     )
         internal
         view
