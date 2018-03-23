@@ -8,15 +8,16 @@ const BigNumber = require('bignumber.js');
 const Proxy = artifacts.require("Proxy");
 const TestToken = artifacts.require("TestToken");
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 contract('Proxy', function(accounts) {
-  const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
+  const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
   let contract, tokenA;
 
   beforeEach(async () => {
     [contract, tokenA] = await Promise.all([
-      Proxy.new(delay, gracePeriod),
+      Proxy.new(gracePeriod),
       TestToken.new(),
       TestToken.new()
     ]);
@@ -26,91 +27,7 @@ contract('Proxy', function(accounts) {
     it('sets constants correctly', async () => {
       const owner = await contract.owner.call();
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
-    });
-  });
-
-  describe('#grantTransferAuthorization', () => {
-    it('requires access to grant transfer authorization', async () => {
-      await expectThrow(
-        () => contract.grantTransferAuthorization(accounts[2], { from: accounts[1] })
-      );
-
-      const hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-    });
-
-    it('immediately grants transfer authorization', async () => {
-      let hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-
-      hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.true;
-    });
-
-    it('allows owner to grant transfer authorization', async () => {
-      let hasTransferAuth = await contract.transferAuthorized(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-
-      await contract.grantTransferAuthorization(accounts[2]);
-
-      hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.true;
-    });
-
-    it('does nothing if address is already authorized', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-
-      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.true;
-    });
-  });
-
-  describe('#revokeTransferAuthorization', () => {
-    it('requires access to revoke transfer authorization', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-
-      // A random address should not work
-      await expectThrow(
-        () => contract.revokeTransferAuthorization(accounts[2], { from: accounts[3] })
-      );
-      // Nor should an address with transfer authorization work
-      await expectThrow(
-        () => contract.revokeTransferAuthorization(accounts[4], { from: accounts[2] })
-      );
-
-      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.true;
-    });
-
-    it('immediately revokes transfer authorization', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      await contract.revokeTransferAuthorization(accounts[2], { from: accounts[1] });
-
-      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-    });
-
-    it('allows owner to revoke transfer authorization', async () => {
-      await contract.grantTransferAuthorization(accounts[2]);
-      await contract.revokeTransferAuthorization(accounts[2]);
-
-      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
-    });
-
-    it('does nothing if address is not authorized', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.revokeTransferAuthorization(accounts[2], { from: accounts[1] });
-
-      const hasTransferAuth = await contract.transferAuthorized.call(accounts[2]);
-      expect(hasTransferAuth).to.be.false;
+      validateStaticAccessControlledConstants(contract, gracePeriod);
     });
   });
 
@@ -120,11 +37,7 @@ contract('Proxy', function(accounts) {
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.grantAccess(accounts[1]);
-      // An address with access should not be able to call
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[1] })
-      );
-      // Nor should a random address
+      // A random address should not be able to call
       await expectThrow(
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[3] })
       );
@@ -138,8 +51,7 @@ contract('Proxy', function(accounts) {
     });
 
     it('fails on insufficient holder balance or allowance', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
+      await contract.grantAccess(accounts[2]);
       await expectThrow(
         () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
       );
@@ -168,8 +80,7 @@ contract('Proxy', function(accounts) {
     });
 
     it('sends tokens on sufficient balance/allowance when authorized', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
+      await contract.grantAccess(accounts[2]);
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] });
@@ -182,20 +93,6 @@ contract('Proxy', function(accounts) {
       expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
     });
-
-    it('does not transfer if paused', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.pause();
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
-      );
-
-      const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(num1);
-    });
   });
 
   describe('#transferTo', () => {
@@ -205,11 +102,8 @@ contract('Proxy', function(accounts) {
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.grantAccess(accounts[1]);
-      // An address with access should not be able to call
-      await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[1] })
-      );
-      // Nor should a random address
+
+      // A random address should not be able to call
       await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
       );
@@ -227,8 +121,7 @@ contract('Proxy', function(accounts) {
     });
 
     it('fails on insufficient holder balance or allowance', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
+      await contract.grantAccess(accounts[2]);
       await expectThrow(
         () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
@@ -257,8 +150,7 @@ contract('Proxy', function(accounts) {
     });
 
     it('sends tokens on sufficient balance/allowance when authorized', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
+      await contract.grantAccess(accounts[2]);
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] });
@@ -270,20 +162,6 @@ contract('Proxy', function(accounts) {
       ]);
       expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
-    });
-
-    it('does not transfer if paused', async () => {
-      await contract.grantAccess(accounts[1]);
-      await contract.grantTransferAuthorization(accounts[2], { from: accounts[1] });
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.pause();
-      await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
-      );
-
-      const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(num1);
     });
   });
 });

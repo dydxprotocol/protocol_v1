@@ -10,11 +10,16 @@ import { AccessControlledBase } from "./AccessControlledBase.sol";
  * @author dYdX
  *
  * Allows for functions to be access controled
- * Permissions cannot be changed
+ * Permissions cannot be changed after a short grace period
  */
 contract StaticAccessControlled is AccessControlledBase, Ownable {
     using SafeMath for uint256;
 
+    // -----------------------------
+    // ------ State Variables ------
+    // -----------------------------
+
+    // Timestamp after which no additional access can be granted
     uint256 public gracePeriodExpiration;
 
     // -------------------------

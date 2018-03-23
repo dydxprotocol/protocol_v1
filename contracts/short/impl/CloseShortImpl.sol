@@ -160,8 +160,6 @@ library CloseShortImpl {
         require(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
-
-
     function sendTokens(
         ShortSellState.State storage state,
         ShortSellCommon.CloseShortTx transaction,

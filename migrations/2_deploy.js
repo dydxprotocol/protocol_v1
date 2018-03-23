@@ -63,7 +63,7 @@ async function deployShortSellContracts(deployer) {
   ]);
 
   await Promise.all([
-    deployer.deploy(ProxyContract),
+    deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(CloseShortImpl),
     deployer.deploy(LiquidateImpl),
     deployer.deploy(ForceRecoverLoanImpl),
@@ -127,8 +127,8 @@ async function deployShortSellContracts(deployer) {
 async function authorizeOnProxy() {
   const proxy = await ProxyContract.deployed();
   await Promise.all([
-    proxy.grantTransferAuthorization(Vault.address),
-    proxy.grantTransferAuthorization(ShortSell.address)
+    proxy.grantAccess(Vault.address),
+    proxy.grantAccess(ShortSell.address)
   ]);
 }
 
