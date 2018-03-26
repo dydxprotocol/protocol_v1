@@ -38,7 +38,7 @@ library InterestImpl {
         uint256 roundToTimestep
     )
         public
-        view
+        pure
         returns (
             uint256
         )
@@ -69,7 +69,7 @@ library InterestImpl {
         uint256 roundToTimestep
     )
         public
-        view
+        pure
         returns (uint256)
     {
         Fraction256.Fraction memory percent = getCompoundedPercent(
@@ -100,17 +100,17 @@ library InterestImpl {
         uint256 roundToTimestep
     )
         internal
-        view
+        pure
         returns (Fraction256.Fraction memory)
     {
         uint256 interestTime = roundUpToTimestep(secondsOfInterest, roundToTimestep);
 
-        return Exponent.exp(
-            annualInterestRate * interestTime,
-            (10**18) * (1 years),
-            DEFAULT_PRECOMPUTE_PRECISION,
-            DEFAULT_MACLAURIN_PRECISION
-        );
+        Fraction256.Fraction memory rt = Fraction256.Fraction({
+            num: annualInterestRate * interestTime,
+            den: (10**18) * (1 years)
+        });
+
+        return Exponent.exp(rt, DEFAULT_PRECOMPUTE_PRECISION, DEFAULT_MACLAURIN_PRECISION);
     }
 
     /**

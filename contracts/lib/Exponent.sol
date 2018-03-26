@@ -26,15 +26,13 @@ library Exponent {
     /**
      * Returns e^X for any fraction X
      *
-     * @param  numerator            Numerator of X
-     * @param  denominator          Denominator of X
+     * @param  X                    The exponent
      * @param  precomputePrecision  Accuracy of precomputed terms
      * @param  maclaurinPrecision   Accuracy of Maclaurin terms
      * @return                      e^X
      */
     function exp(
-        uint256 numerator,
-        uint256 denominator,
+        Fraction256.Fraction memory X,
         uint256 precomputePrecision,
         uint256 maclaurinPrecision
     )
@@ -42,15 +40,13 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
-        assert(denominator > 0);
-        if (numerator == 0) { // e^0 = 1
+        X.bound();
+        if (X.num == 0) { // e^0 = 1
             return Fraction256.Fraction({ num: 1, den: 1 });
         }
 
-        Fraction256.Fraction memory X = Fraction256.Fraction({ num: numerator, den: denominator });
-
-        // get the value of the fraction (example: 9/4 is 2.25 so has integerValue of 2)
-        uint256 integerValue = numerator.div(denominator);
+        // get the integer value of the fraction (example: 9/4 is 2.25 so has integerValue of 2)
+        uint256 integerValue = X.num.div(X.den);
 
         // if X is less than 1, then just calculate X
         if (integerValue == 0) {
@@ -59,8 +55,8 @@ library Exponent {
 
         // subtract integerValue from X
         Fraction256.Fraction memory remainderX = Fraction256.Fraction({
-            num: (numerator.sub(denominator.mul(integerValue))),
-            den: denominator
+            num: X.num.sub(X.den.mul(integerValue)),
+            den: X.den
         });
 
         // multiply e^integerValue by e^(remainderX)
@@ -94,6 +90,7 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
+        X.bound();
         assert(X.num < X.den);
         // will also throw if precomputePrecision is larger than the array length in getDenominator
 
@@ -130,6 +127,7 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
+        X.bound();
         Fraction256.Fraction memory result = Fraction256.Fraction({ num: 1, den: 1 });
         Fraction256.Fraction memory Xtemp = Fraction256.Fraction({ num: 1, den: 1 });
         for (uint256 i = 1; i <= precision; i++) {
