@@ -6,24 +6,28 @@ chai.use(require('chai-bignumber')());
 
 const BigNumber = require('bignumber.js');
 
-const InterestHelper = artifacts.require("InterestHelper");
+const InterestImpl = artifacts.require("InterestImpl");
+const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { getGasCost } = require('../helpers/NodeHelper');
 
 contract('InterestHelper', function(accounts) {
   let contract;
+  let ONE_DAY = 60*60*24;
 
   describe('#getCompoundedInterest', () => {
     before('', async () => {
-      contract = await InterestHelper.deployed();
+      await TestInterestImpl.link('InterestImpl', InterestImpl.address);
+      contract = await TestInterestImpl.new();
     });
 
     it('', async () => {
       const total = new BigNumber('1e18');
       const percent = new BigNumber('1e18');
-      const seconds = new BigNumber(60 * 60 * 24 * 600); // don't be a round number
-      const result = await contract.getCompoundedInterest.call(total, percent, seconds, false);
+      const seconds = new BigNumber(60 * 60 * 24 * 365); // don't be a round number
+      const rounding = new BigNumber(0); // no rounding
+      const result = await contract.getCompoundedInterest.call(total, percent, seconds, rounding);
       console.log(result.toString());
-      const gasCost = await contract.getCompoundedInterest(total, percent, seconds, false);
+      const gasCost = await contract.getCompoundedInterest(total, percent, seconds, rounding);
       console.log(gasCost);
 
 
