@@ -11,6 +11,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ContractHelper } from "../../lib/ContractHelper.sol";
 
 
 /**
@@ -556,7 +557,7 @@ library ShortImpl {
         address seller = short.seller;
         address lender = short.lender;
 
-        if (msg.sender != seller) {
+        if (ContractHelper.isContract(seller)) {
             require(
                 ShortOwner(seller).additionalShortValueAdded(
                     msg.sender,
@@ -566,7 +567,7 @@ library ShortImpl {
             );
         }
 
-        if (transaction.loanOffering.lender != lender) {
+        if (ContractHelper.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
                     transaction.loanOffering.lender,
@@ -770,7 +771,7 @@ library ShortImpl {
             underlyingToken: addresses[1],
             baseToken: addresses[2],
             shortAmount: values256[7],
-            depositAmount: 0, // Set later
+            depositAmount: 0,
             loanOffering: parseLoanOfferingFromAddValueTx(
                 short,
                 addresses,
