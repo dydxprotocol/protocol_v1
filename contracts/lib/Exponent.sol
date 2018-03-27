@@ -19,10 +19,10 @@ library Exponent {
     // Number such that e is approximated by (MAX_NUMERATOR / E_DENOMINATOR)
     uint256 constant public E_DENOMINATOR = 125182886983370532117250726298150828301;
 
-    // Maximum precomputePrecision value since there is no value smaller than e^(1/(2^32))
+    // Number of precomputed integers, X, for E^((1/2)^X)
     uint256 constant public MAX_PRECOMPUTE_PRECISION = 32;
 
-    // Number of precomputed integers for E^X
+    // Number of precomputed integers, X, for E^X
     uint256 constant public NUM_PRECOMPUTED_INTEGERS = 32;
 
     // -----------------------------------------
@@ -47,17 +47,18 @@ library Exponent {
         returns (Fraction256.Fraction memory)
     {
         require(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
-        X.bound();
-        if (X.num == 0) { // e^0 = 1
-            return one();
+
+        Fraction256.Fraction memory Xcopy = X.copy().bound();
+        if (Xcopy.num == 0) { // e^0 = 1
+            return ONE();
         }
 
         // get the integer value of the fraction (example: 9/4 is 2.25 so has integerValue of 2)
-        uint256 integerX = X.num.div(X.den);
+        uint256 integerX = Xcopy.num.div(Xcopy.den);
 
         // if X is less than 1, then just calculate X
         if (integerX == 0) {
-            return expHybrid(X, precomputePrecision, maclaurinPrecision);
+            return expHybrid(Xcopy, precomputePrecision, maclaurinPrecision);
         }
 
         // get e^integerX
@@ -68,10 +69,10 @@ library Exponent {
             integerX -= NUM_PRECOMPUTED_INTEGERS;
         }
 
-        // multiply exp(decimal) by exp(integer)
+        // multiply e^integerX by e^decimalX
         Fraction256.Fraction memory decimalX = Fraction256.Fraction({
-            num: X.num % X.den,
-            den: X.den
+            num: Xcopy.num % Xcopy.den,
+            den: Xcopy.den
         });
         return expHybrid(decimalX, precomputePrecision, maclaurinPrecision).mul(expOfInt);
     }
@@ -94,15 +95,16 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
-        X.bound();
+        require(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
         assert(X.num < X.den);
-        if (X.num == 0) { // e^0 = 1
-            return one();
-        }
         // will also throw if precomputePrecision is larger than the array length in getDenominator
 
-        Fraction256.Fraction memory Xtemp = X.copy();
-        Fraction256.Fraction memory result = one();
+        Fraction256.Fraction memory Xtemp = X.copy().bound();
+        if (Xtemp.num == 0) { // e^0 = 1
+            return ONE();
+        }
+
+        Fraction256.Fraction memory result = ONE();
 
         uint256 d = 1; // 2^i
         for (uint256 i = 1; i <= precomputePrecision; i++) {
@@ -135,14 +137,15 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
-        X.bound();
-        if (X.num == 0) { // e^0 = 1
-            return one();
+        Fraction256.Fraction memory Xcopy = X.copy().bound();
+        if (Xcopy.num == 0) { // e^0 = 1
+            return ONE();
         }
-        Fraction256.Fraction memory result = one();
-        Fraction256.Fraction memory Xtemp = one();
+
+        Fraction256.Fraction memory result = ONE();
+        Fraction256.Fraction memory Xtemp = ONE();
         for (uint256 i = 1; i <= precision; i++) {
-            Xtemp = Xtemp.mul(X.div(i));
+            Xtemp = Xtemp.mul(Xcopy.div(i));
             result = result.add(Xtemp);
         }
         return result;
@@ -152,7 +155,7 @@ library Exponent {
     // ------ Helper Functions ------
     // ------------------------------
 
-    function one(
+    function ONE(
     )
         internal
         pure

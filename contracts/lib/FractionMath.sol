@@ -101,8 +101,8 @@ library FractionMath {
     }
 
     /**
-     * If necessary, reduces the numerator and denominator to be less than 2**127, attempting to
-     * keep the Fraction256.Fraction as accurate as possible
+     * Overwrites and returns the fraction with the numerator and denominator bounded to being less
+     * than 2**128. Attempts to keep the copied fraction as accurate as possible.
      */
     function bound(
         Fraction256.Fraction memory a
