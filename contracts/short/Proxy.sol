@@ -30,7 +30,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
     }
 
     // -----------------------------------------------------------
-    // ---- Transfer Authorized Only State Changing Functions ----
+    // ---- Authorized-Only State Changing Functions ----
     // -----------------------------------------------------------
 
     function transfer(
