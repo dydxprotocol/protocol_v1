@@ -6,7 +6,7 @@ import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContr
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
-import { Proxy } from "../shared/Proxy.sol";
+import { Proxy } from "./Proxy.sol";
 
 
 /**

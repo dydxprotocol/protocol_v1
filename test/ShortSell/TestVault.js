@@ -13,19 +13,18 @@ const {
 } = require('../helpers/AccessControlledHelper');
 
 contract('Vault', function(accounts) {
-  const [delay, gracePeriod] = [new BigNumber('123456'), new BigNumber('1234567')];
+  const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
   let proxy, vault, tokenA, tokenB;
 
   beforeEach('migrate smart contracts and set permissions', async () => {
-    proxy = await ProxyContract.new(delay, gracePeriod);
+    proxy = await ProxyContract.new(gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
       Vault.new(proxy.address, gracePeriod),
       TestToken.new(),
       TestToken.new()
     ]);
-    await proxy.grantAccess(accounts[0]);
-    await proxy.grantTransferAuthorization(vault.address, { from: accounts[0] });
+    await proxy.grantAccess(vault.address);
   });
 
   describe('Constructor', () => {

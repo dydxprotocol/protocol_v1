@@ -6,7 +6,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
-import { Proxy } from "../../shared/Proxy.sol";
+import { Proxy } from "../Proxy.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
@@ -159,8 +159,6 @@ library CloseShortImpl {
         require(transaction.closeAmount > 0);
         require(transaction.closeAmount <= transaction.currentShortAmount);
     }
-
-
 
     function sendTokens(
         ShortSellState.State storage state,

@@ -5,7 +5,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
-import { Proxy } from "../../shared/Proxy.sol";
+import { Proxy } from "../Proxy.sol";
 import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
