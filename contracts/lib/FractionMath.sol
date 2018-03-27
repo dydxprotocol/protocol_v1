@@ -15,12 +15,25 @@ library FractionMath {
         internal
         returns (Fraction256.Fraction memory)
     {
+        uint256 left = a.num.mul(b.den);
+        uint256 right = b.num.mul(a.den);
+        uint256 denominator = a.den.mul(b.den);
+        uint256 comparator = 2**255;
+
+        // prevent overflows
+        if (left >= comparator || right >= comparator) {
+            left = left.div(2);
+            right = right.div(2);
+            denominator = denominator.div(2);
+        }
+
         return bound(
             Fraction256.Fraction({
-                num: (a.num.mul(b.den)).add(b.num.mul(a.den)),
-                den: a.den.mul(b.den)
+                num: left.add(right),
+                den: denominator
             })
         );
+
     }
 
     function sub(
