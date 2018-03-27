@@ -215,8 +215,8 @@ contract ShortSell is
     }
 
     /**
-     * Liquidate loan position and withdraw base tokens from the vault. 
-     * Must be approved by the short seller (e.g., by requiring the lender to own part of the 
+     * Liquidate loan position and withdraw base tokens from the vault.
+     * Must be approved by the short seller (e.g., by requiring the lender to own part of the
      * short position, and burning in order to liquidate part of the loan).
      *
      * @param  shortId                        unique id for the short sell
