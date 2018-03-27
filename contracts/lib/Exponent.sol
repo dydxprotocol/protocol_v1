@@ -19,6 +19,12 @@ library Exponent {
     // Number such that e is approximated by (MAX_NUMERATOR / E_DENOMINATOR)
     uint256 constant public E_DENOMINATOR = 125182886983370532117250726298150828301;
 
+    // Maximum precomputePrecision value since there is no value smaller than e^(1/(2^32))
+    uint256 constant public MAX_PRECOMPUTE_PRECISION = 32;
+
+    // Number of precomputed integers for E^X
+    uint256 constant public NUM_PRECOMPUTED_INTEGERS = 32;
+
     // -----------------------------------------
     // ---- Public Implementation Functions ----
     // -----------------------------------------
@@ -40,36 +46,34 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
+        require(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
         X.bound();
         if (X.num == 0) { // e^0 = 1
-            return Fraction256.Fraction({ num: 1, den: 1 });
+            return one();
         }
 
         // get the integer value of the fraction (example: 9/4 is 2.25 so has integerValue of 2)
-        uint256 integerValue = X.num.div(X.den);
+        uint256 integerX = X.num.div(X.den);
 
         // if X is less than 1, then just calculate X
-        if (integerValue == 0) {
+        if (integerX == 0) {
             return expHybrid(X, precomputePrecision, maclaurinPrecision);
         }
 
-        // subtract integerValue from X
-        Fraction256.Fraction memory remainderX = Fraction256.Fraction({
-            num: X.num.sub(X.den.mul(integerValue)),
+        // get e^integerX
+        Fraction256.Fraction memory expOfInt =
+            getPrecomputedEToThe(integerX % NUM_PRECOMPUTED_INTEGERS);
+        while (integerX > NUM_PRECOMPUTED_INTEGERS) {
+            expOfInt = expOfInt.mul(getPrecomputedEToThe(NUM_PRECOMPUTED_INTEGERS));
+            integerX -= NUM_PRECOMPUTED_INTEGERS;
+        }
+
+        // multiply exp(decimal) by exp(integer)
+        Fraction256.Fraction memory decimalX = Fraction256.Fraction({
+            num: X.num % X.den,
             den: X.den
         });
-
-        // multiply e^integerValue by e^(remainderX)
-        Fraction256.Fraction memory E = Fraction256.Fraction({
-            num: MAX_NUMERATOR,
-            den: E_DENOMINATOR
-        });
-        Fraction256.Fraction memory result = E;
-        while (integerValue > 1) {
-            integerValue--;
-            result = result.mul(E);
-        }
-        return result.mul(expHybrid(remainderX, precomputePrecision, maclaurinPrecision));
+        return expHybrid(decimalX, precomputePrecision, maclaurinPrecision).mul(expOfInt);
     }
 
     /**
@@ -92,28 +96,32 @@ library Exponent {
     {
         X.bound();
         assert(X.num < X.den);
+        if (X.num == 0) { // e^0 = 1
+            return one();
+        }
         // will also throw if precomputePrecision is larger than the array length in getDenominator
 
-        Fraction256.Fraction memory result = Fraction256.Fraction({ num: 1, den: 1 });
-        uint256 d = 1;
+        Fraction256.Fraction memory Xtemp = X.copy();
+        Fraction256.Fraction memory result = one();
+
+        uint256 d = 1; // 2^i
         for (uint256 i = 1; i <= precomputePrecision; i++) {
             d *= 2;
 
-            if (d.mul(X.num) >= X.den) {
-                // otherwise we subtract 1/n from a
-                X.num = X.num.sub(X.den.div(d));
-                Fraction256.Fraction memory precomputedExp = Fraction256.Fraction({
-                    num: MAX_NUMERATOR,
-                    den: getPrecomputedDenominator(i)
-                });
-                result = result.mul(precomputedExp);
+            // if Fraction > 1/d, subtract 1/d and multiply result by precomputed e^(1/d)
+            if (d.mul(Xtemp.num) >= Xtemp.den) {
+                Xtemp.num = Xtemp.num.sub(Xtemp.den.div(d));
+                result = result.mul(getPrecomputedEToTheHalfToThe(i));
             }
         }
-        return result.mul(expMaclaurin(X, maclaurinPrecision));
+        return result.mul(expMaclaurin(Xtemp, maclaurinPrecision));
     }
 
     /**
      * Returns e^X for any X, using Maclaurin Series approximation
+     *
+     * e^X = SUM(X^n / n!) for n >= 0
+     * e^X = 1 + X/1! + X^2/2! + X^3/3! ...
      *
      * @param  X           Exponent
      * @param  precision   Accuracy of Maclaurin terms
@@ -128,8 +136,11 @@ library Exponent {
         returns (Fraction256.Fraction memory)
     {
         X.bound();
-        Fraction256.Fraction memory result = Fraction256.Fraction({ num: 1, den: 1 });
-        Fraction256.Fraction memory Xtemp = Fraction256.Fraction({ num: 1, den: 1 });
+        if (X.num == 0) { // e^0 = 1
+            return one();
+        }
+        Fraction256.Fraction memory result = one();
+        Fraction256.Fraction memory Xtemp = one();
         for (uint256 i = 1; i <= precision; i++) {
             Xtemp = Xtemp.mul(X.div(i));
             result = result.add(Xtemp);
@@ -141,18 +152,26 @@ library Exponent {
     // ------ Helper Functions ------
     // ------------------------------
 
-    /**
-     * Returns a number such that:
-     * MAX_NUMERATOR / getPrecomputedDenominator(index) = E^(1 / 2^index)
-     */
-    function getPrecomputedDenominator(
-        uint256 index
+    function one(
     )
         internal
         pure
-        returns (uint256)
+        returns (Fraction256.Fraction memory)
     {
-        return [
+        return Fraction256.Fraction({ num: 1, den: 1 });
+    }
+
+    /**
+     * Returns a fraction roughly equaling E^((1/2)^x) for integer x
+     */
+    function getPrecomputedEToTheHalfToThe(
+        uint256 x
+    )
+        internal
+        pure
+        returns (Fraction256.Fraction memory)
+    {
+        uint256 denominator = [
             125182886983370532117250726298150828301,
             206391688497133195273760705512282642279,
             265012173823417992016237332255925138361,
@@ -186,6 +205,63 @@ library Exponent {
             340282366604025813553891209601455838559,
             340282366762482138471739420386372790954,
             340282366841710300958333641874363209044
-        ][index];
+        ][x];
+        return Fraction256.Fraction({
+            num: MAX_NUMERATOR,
+            den: denominator
+        });
+    }
+
+
+
+    /**
+     * Returns a fraction roughly equaling E^(x) for integer x
+     */
+    function getPrecomputedEToThe(
+        uint256 x
+    )
+        internal
+        pure
+        returns (Fraction256.Fraction memory)
+    {
+        uint256 denominator = [
+            340282366920938463463374607431768211455,
+            125182886983370532117250726298150828301,
+            46052210507670172419625860892627118820,
+            16941661466271327126146327822211253888,
+            6232488952727653950957829210887653621,
+            2292804553036637136093891217529878878,
+            843475657686456657683449904934172134,
+            310297353591408453462393329342695980,
+            114152017036184782947077973323212575,
+            41994180235864621538772677139808695,
+            15448795557622704876497742989562086,
+            5683294276510101335127414470015662,
+            2090767122455392675095471286328463,
+            769150240628514374138961856925097,
+            282954560699298259527814398449860,
+            104093165666968799599694528310221,
+            38293735615330848145349245349513,
+            14087478058534870382224480725096,
+            5182493555688763339001418388912,
+            1906532833141383353974257736699,
+            701374233231058797338605168652,
+            258021160973090761055471434334,
+            94920680509187392077350434438,
+            34919366901332874995585576427,
+            12846117181722897538509298435,
+            4725822410035083116489797150,
+            1738532907279185132707372378,
+            639570514388029575350057932,
+            235284843422800231081973821,
+            86556456714490055457751527,
+            31842340925906738090071268,
+            11714142585413118080082437,
+            4309392228124372433711936
+        ][x];
+        return Fraction256.Fraction({
+            num: MAX_NUMERATOR,
+            den: denominator
+        });
     }
 }

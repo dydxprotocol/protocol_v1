@@ -16,7 +16,6 @@ contract TestInterestImpl {
         uint256 roundToTimestep
     )
         public
-        pure
         returns (
             uint256
         )
@@ -36,7 +35,6 @@ contract TestInterestImpl {
         uint256 roundToTimestep
     )
         public
-        pure
         returns (uint256)
     {
         return InterestImpl.getInverseCompoundedInterest(

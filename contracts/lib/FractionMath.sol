@@ -99,7 +99,7 @@ library FractionMath {
         returns (Fraction256.Fraction memory)
     {
         uint256 max = a.num > a.den ? a.num : a.den;
-        uint256 diff = (max >> 127) + 1;
+        uint256 diff = (max >> 128) + 1;
         if (diff > 1) {
             a.num = a.num.div(diff);
             a.den = a.den.div(diff);
@@ -114,6 +114,17 @@ library FractionMath {
         pure
         internal
     {
-        assert(a.num < 2**127 && a.den < 2**127 && a.den > 0);
+        assert(a.num < 2**128 && a.den < 2**128 && a.den > 0);
+    }
+
+
+    function copy(
+        Fraction256.Fraction memory a
+    )
+        pure
+        internal
+        returns (Fraction256.Fraction memory)
+    {
+        return Fraction256.Fraction({ num: a.num, den: a.den });
     }
 }

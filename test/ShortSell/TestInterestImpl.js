@@ -26,14 +26,14 @@ contract('InterestHelper', function(accounts) {
         new BigNumber('1e18'), // annual percent
         new BigNumber(60 * 60 * 24 * 365), // time
         new BigNumber(0)); // time rounding
-      expect(result).to.be.bignumber.equal('2718281828459045235'); // E^(100%)
+      expect(result).to.be.bignumber.equal('2718281828459045236'); // E^(100%)
 
       result = await contract.getCompoundedInterest.call(
         new BigNumber('1e18'), // total
         new BigNumber('1e17'), // annual percent
         new BigNumber(60 * 60 * 24 * 365 * 10), // time
         new BigNumber(0)); // time rounding
-      expect(result).to.be.bignumber.equal('2718281828459045235'); // E^(100%)
+      expect(result).to.be.bignumber.equal('2718281828459045236'); // E^(100%)
     });
 
     it('calculates < 100% correctly', async () => {
@@ -42,7 +42,7 @@ contract('InterestHelper', function(accounts) {
         new BigNumber('5e16'), // annual percent
         new BigNumber(60 * 60 * 24 * 3), // time
         new BigNumber(0)); // time rounding
-      expect(result).to.be.bignumber.equal('1000411043359288828'); // E^(5% * 3/365)
+      expect(result).to.be.bignumber.equal('1000411043359288829'); // E^(5% * 3/365)
     });
 
     it('calculates > 100% correctly', async () => {
@@ -51,7 +51,16 @@ contract('InterestHelper', function(accounts) {
         new BigNumber('1e18'), // annual percent
         new BigNumber(60 * 60 * 24 * 368), // time
         new BigNumber(0)); // time rounding
-      expect(result).to.be.bignumber.equal('2740715939567547184'); // E^(368/365)
+      expect(result).to.be.bignumber.equal('2740715939567547185'); // E^(368/365)
+    });
+
+    it('calculates > 3200% correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('1'), // total
+        new BigNumber('33e18'), // annual percent
+        new BigNumber(60 * 60 * 24 * 365), // time
+        new BigNumber(0)); // time rounding
+      expect(result).to.be.bignumber.equal('214643579785917'); // E^(368/365)
     });
 
     it('does timestep rounding correctly', async () => {
@@ -61,7 +70,7 @@ contract('InterestHelper', function(accounts) {
         new BigNumber('5e16'), // annual percent
         new BigNumber(60 * 60 * 24 * 2.5), // time
         new BigNumber(60 * 60 * 24)); // time rounding
-      expect(result).to.be.bignumber.equal('1000411043359288828'); // E^(5% * 3/365)
+      expect(result).to.be.bignumber.equal('1000411043359288829'); // E^(5% * 3/365)
 
       // Round 3 days up to the nearest year
       result = await contract.getCompoundedInterest.call(
@@ -69,7 +78,7 @@ contract('InterestHelper', function(accounts) {
         new BigNumber('1e18'), // annual percent
         new BigNumber(60 * 60 * 24 * 3), // time
         new BigNumber(60 * 60 * 24 * 365)); // time rounding
-      expect(result).to.be.bignumber.equal('2718281828459045235'); // E^(100%)
+      expect(result).to.be.bignumber.equal('2718281828459045236'); // E^(100%)
     });
 
     it('crashes for too-large of numbers', async () => {

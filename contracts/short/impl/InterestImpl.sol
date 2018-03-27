@@ -1,8 +1,9 @@
 pragma solidity 0.4.19;
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Fraction256 } from "../../lib/Fraction256.sol";
 import { Exponent } from "../../lib/Exponent.sol";
+import { Fraction256 } from "../../lib/Fraction256.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 library InterestImpl {
@@ -50,7 +51,11 @@ library InterestImpl {
         );
 
         // return x * e^RT
-        return tokenAmount.mul(percent.num).div(percent.den);
+        return MathHelpers.getPartialAmountRoundedUp(
+            percent.num,
+            percent.den,
+            tokenAmount
+        );
     }
 
     /**
@@ -106,7 +111,7 @@ library InterestImpl {
         uint256 interestTime = roundUpToTimestep(secondsOfInterest, roundToTimestep);
 
         Fraction256.Fraction memory rt = Fraction256.Fraction({
-            num: annualInterestRate * interestTime,
+            num: annualInterestRate.mul(interestTime),
             den: (10**18) * (1 years)
         });
 
@@ -128,17 +133,12 @@ library InterestImpl {
         pure
         returns (uint256)
     {
-        // our rounding formula will throw in this case, so just return 0
-        if (numSeconds == 0) {
-            return 0;
-        }
-
         // don't modify numSeconds if timestep is zero
         if (timeStep == 0) {
             return numSeconds;
         }
 
         // otherwise round numSeconds up to the nearest multiple of timeStep
-        return numSeconds.sub(1).div(timeStep).add(1).mul(timeStep);
+        return MathHelpers.divisionRoundedUp(numSeconds, timeStep).mul(timeStep);
     }
 }
