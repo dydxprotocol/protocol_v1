@@ -563,25 +563,21 @@ library ShortImpl {
         address seller = short.seller;
         address lender = short.lender;
 
-        if (ContractHelper.isContract(seller)) {
-            require(
-                ShortOwner(seller).additionalShortValueAdded(
-                    msg.sender,
-                    shortId,
-                    effectiveAmount
-                )
-            );
-        }
+        require(
+            ShortOwner(seller).additionalShortValueAdded(
+                msg.sender,
+                shortId,
+                effectiveAmount
+            )
+        );
 
-        if (ContractHelper.isContract(lender)) {
-            require(
-                LoanOwner(lender).additionalLoanValueAdded(
-                    transaction.loanOffering.lender,
-                    shortId,
-                    effectiveAmount
-                )
-            );
-        }
+        require(
+            LoanOwner(lender).additionalLoanValueAdded(
+                transaction.loanOffering.lender,
+                shortId,
+                effectiveAmount
+            )
+        );
 
         return effectiveAmount;
     }
