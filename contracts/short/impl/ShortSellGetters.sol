@@ -42,7 +42,7 @@ contract ShortSellGetters is ShortSellStorage {
             short.baseToken,
             short.shortAmount,
             short.closedAmount,
-            short.interestRate,
+            short.annualInterestRate,
             short.requiredDeposit,
             short.callTimeLimit,
             short.startTimestamp,
@@ -130,7 +130,7 @@ contract ShortSellGetters is ShortSellStorage {
         external
         returns (uint256 _interestRate)
     {
-        return state.shorts[id].interestRate;
+        return state.shorts[id].annualInterestRate;
     }
 
     function getShortRequiredDeposit(

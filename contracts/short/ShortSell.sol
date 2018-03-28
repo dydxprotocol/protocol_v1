@@ -510,22 +510,10 @@ contract ShortSell is
         }
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // In both branches of the conditional, endTimestamp may end up being past the maximum
-        // duration of the short, but calculateInterestFee() will bound it
-        uint256 endTimestamp;
-        if (
-            short.callTimestamp > 0
-            && block.timestamp > uint256(short.callTimestamp).add(short.callTimeLimit)
-        ) {
-            endTimestamp = uint256(short.callTimestamp).add(short.callTimeLimit);
-        } else {
-            endTimestamp = block.timestamp;
-        }
-
         return ShortSellCommon.calculateInterestFee(
             short,
             short.shortAmount.sub(short.closedAmount),
-            endTimestamp
+            block.timestamp
         );
     }
 

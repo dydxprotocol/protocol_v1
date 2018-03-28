@@ -65,7 +65,6 @@ async function deployShortSellContracts(deployer) {
 
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
-    deployer.deploy(CloseShortImpl),
     deployer.deploy(LiquidateImpl),
     deployer.deploy(InterestImpl),
     deployer.deploy(ForceRecoverLoanImpl),
@@ -74,6 +73,9 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(TransferImpl),
     deployer.deploy(ShortImpl)
   ]);
+
+  await CloseShortImpl.link('InterestImpl', InterestImpl.address);
+  await deployer.deploy(CloseShortImpl);
 
   // Link ShortSell function libraries
   await Promise.all([

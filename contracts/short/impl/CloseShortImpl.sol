@@ -174,7 +174,11 @@ library CloseShortImpl {
     {
         // Send underlying tokens to lender
         uint256 buybackCost = 0;
-        uint256 interestFee = getInterestFee(transaction);
+        uint256 interestFee = ShortSellCommon.calculateInterestFee(
+            transaction.short,
+            transaction.closeAmount,
+            block.timestamp
+        );
         uint256 underlyingTokenOwedToLender = transaction.closeAmount.add(interestFee);
 
         if (order.exchangeWrapperAddress == address(0)) {
@@ -213,20 +217,6 @@ library CloseShortImpl {
             interestFee,
             buybackCost,
             payoutBaseTokenAmount
-        );
-    }
-
-    function getInterestFee(
-        ShortSellCommon.CloseShortTx transaction
-    )
-        internal
-        view
-        returns (uint256 _interestFee)
-    {
-        return ShortSellCommon.calculateInterestFee(
-            transaction.short,
-            transaction.closeAmount,
-            block.timestamp
         );
     }
 

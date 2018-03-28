@@ -4,11 +4,15 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
+const BigNumber = require('bignumber.js');
+
+const InterestImpl = artifacts.require("InterestImpl");
+const TestInterestImpl = artifacts.require("TestInterestImpl");
 const Vault = artifacts.require("Vault");
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
+const { getPartialAmount } = require('../helpers/MathHelper');
 const { BIGNUMBERS } = require('./Constants');
 const { getBlockTimestamp } = require('./NodeHelper');
 const { getMaxInterestFee } = require('./ShortSellHelper');
@@ -48,7 +52,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   } = balances;
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender);
+  checkLenderBalances(balances, interestFee, shortTx, closeAmount);
 
   expect(sellerBaseToken).to.be.bignumber.equal(
     getPartialAmount(
@@ -138,34 +142,46 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
-function checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender) {
+function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
   const {
     lenderBaseToken,
     lenderUnderlyingToken,
   } = balances;
   expect(lenderBaseToken).to.be.bignumber.equal(0);
-  expect(lenderUnderlyingToken).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.maxAmount
-      .minus(shortTx.shortAmount)
-      .plus(underlyingTokenOwedToLender)
-  );
+
+  const one = new BigNumber(1);
+  const interestFeeErrorBounds = new BigNumber('.00001');
+
+  const minExpected = shortTx.loanOffering.rates.maxAmount
+    .minus(shortTx.shortAmount)
+    .plus(closeAmount)
+    .plus((one.minus(interestFeeErrorBounds)).times(interestFee));
+  const maxExpected = shortTx.loanOffering.rates.maxAmount
+    .minus(shortTx.shortAmount)
+    .plus(closeAmount)
+    .plus((one.plus(interestFeeErrorBounds)).times(interestFee));
+
+  expect(lenderUnderlyingToken).to.be.bignumber.at.least(minExpected);
+  expect(lenderUnderlyingToken).to.be.bignumber.at.most(maxExpected);
 }
 
 async function getInterestFee(shortTx, closeTx, closeAmount) {
-  const shortLifetime = await getShortLifetime(shortTx, closeTx);
-  const interestRate = getPartialAmount(
+  let shortLifetime = await getShortLifetime(shortTx, closeTx);
+
+  await TestInterestImpl.link('InterestImpl', InterestImpl.address);
+  const interestCalc = await TestInterestImpl.new();
+
+  const interest = await interestCalc.getCompoundedInterest.call(
     shortTx.shortAmount,
-    shortTx.loanOffering.rates.maxAmount,
-    shortTx.loanOffering.rates.dailyInterestFee,
-    true // roundsUp
+    shortTx.loanOffering.rates.annualInterestRate,
+    new BigNumber(shortLifetime),
+    BIGNUMBERS.ONE_DAY_IN_SECONDS
   );
-  return getQuotient3Over2(
+  return getPartialAmount(
     closeAmount,
-    shortLifetime,
-    interestRate,
     shortTx.shortAmount,
-    BIGNUMBERS.ONE_DAY_IN_SECONDS,
-    true // roundsUp
+    interest,
+    true // round up
   );
 }
 
@@ -262,7 +278,7 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
   );
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, interestFee, shortTx, underlyingTokenOwedToLender);
+  checkLenderBalances(balances, interestFee, shortTx, closeAmount);
   expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
     shortTx.shortAmount
       .plus(getMaxInterestFee(shortTx))

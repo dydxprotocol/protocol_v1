@@ -386,28 +386,6 @@ library ShortImpl {
         );
     }
 
-    function getPartialInterestRate(
-        ShortTx transaction
-    )
-        internal
-        pure
-        returns (uint256 _interestFee)
-    {
-        // Round up to disincentivize taking out smaller shorts in order to make reduced interest
-        // payments. This would be an infeasiable attack in most scenarios due to low rounding error
-        // and high transaction/gas fees, but is nonetheless theoretically possible.
-        uint256 partialInterestFee = MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.dailyInterestFee);
-
-        // Prevent overflows when calculating interest fees. Unused result, throws on overflow
-        // Should be the same calculation used in calculateInterestFee
-        transaction.shortAmount.mul(transaction.loanOffering.maxDuration).mul(partialInterestFee);
-
-        return partialInterestFee;
-    }
-
     function updateState(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -426,7 +404,7 @@ library ShortImpl {
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].interestRate = getPartialInterestRate(transaction);
+        state.shorts[shortId].annualInterestRate = transaction.loanOffering.rates.annualInterestRate;
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
         state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
@@ -528,7 +506,7 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            dailyInterestFee: values256[3],
+            annualInterestRate: values256[3],
             lenderFee: values256[4],
             takerFee: values256[5]
         });
@@ -584,7 +562,7 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minBaseToken,
-            transaction.loanOffering.rates.dailyInterestFee,
+            transaction.loanOffering.rates.annualInterestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,

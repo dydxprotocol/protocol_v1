@@ -221,18 +221,11 @@ async function checkSuccess(shortSell, shortTx) {
   expect(contains).to.equal(true);
   const short = await getShort(shortSell, shortId);
 
-  const proratedInterestRate =
-    getPartialAmount(
-      short.shortAmount,
-      shortTx.loanOffering.rates.maxAmount,
-      shortTx.loanOffering.rates.dailyInterestFee,
-      true // roundsUp
-    );
-
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
   expect(short.baseToken).to.equal(shortTx.baseToken);
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
-  expect(short.interestRate).to.be.bignumber.equal(proratedInterestRate);
+  expect(short.annualInterestRate).to.be.bignumber.equal(
+    shortTx.loanOffering.rates.annualInterestRate);
   expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
   expect(short.closedAmount).to.be.bignumber.equal(0);
   expect(short.callTimestamp).to.be.bignumber.equal(0);
