@@ -12,6 +12,7 @@ import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
+import { InterestImpl } from "./InterestImpl.sol";
 
 
 /**
@@ -136,36 +137,6 @@ library ShortImpl {
         return shortId;
     }
 
-    event Test(
-        address   signer,
-        address   owner,
-        address   taker,
-        address   feeRecipient,
-        address   lenderFeeToken,
-        address   takerFeeToken,
-        uint256   expirationTimestamp,
-        uint32    callTimeLimit,
-        uint32    maxDuration,
-        uint256   salt,
-        bytes32   loanHash
-    );
-
-    function log(ShortTx transaction) internal {
-        Test(
-            transaction.loanOffering.signer,
-            transaction.loanOffering.owner,
-            transaction.loanOffering.taker,
-            transaction.loanOffering.feeRecipient,
-            transaction.loanOffering.lenderFeeToken,
-            transaction.loanOffering.takerFeeToken,
-            transaction.loanOffering.expirationTimestamp,
-            transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration,
-            transaction.loanOffering.salt,
-            transaction.loanOffering.loanHash
-        );
-    }
-
     function addValueToShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -188,8 +159,6 @@ library ShortImpl {
             sigRS
         );
 
-        log(transaction);
-
         // Base token balance before transfering anything for this addition
         // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
         uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
@@ -200,8 +169,6 @@ library ShortImpl {
             shortId,
             orderData
         );
-
-        return 0;
 
         uint256 positionMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
             transaction.shortAmount,
@@ -256,7 +223,6 @@ library ShortImpl {
             state,
             transaction
         );
-        return 0;
 
         // First pull funds from lender and sell them. Prefer to do this first to make order
         // collisions use up less gas.
@@ -326,7 +292,6 @@ library ShortImpl {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
-        return;
         // Require the order to either be pre-approved on-chain or to have a valid signature
         require(
             state.isLoanApproved[transaction.loanOffering.loanHash]
@@ -591,30 +556,38 @@ library ShortImpl {
         internal
         returns (uint256 _effectiveAmountAdded)
     {
-        // TODO
-        uint256 effectiveAmount = 1; // TODO !!! - change this when continuous interest merged
-        // TODO
+        uint256 timeElapsed = ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp);
+        uint256 effectiveAmount = InterestImpl.getInverseCompoundedInterest(
+            transaction.shortAmount,
+            short.annualInterestRate,
+            timeElapsed,
+            1 days // TODO(brendan)
+        );
 
         short.shortAmount = short.shortAmount.add(effectiveAmount);
 
         address seller = short.seller;
         address lender = short.lender;
 
-        require(
-            ShortOwner(seller).additionalShortValueAdded(
-                msg.sender,
-                shortId,
-                effectiveAmount
-            )
-        );
+        if (msg.sender != seller || ContractHelper.isContract(seller)) {
+            require(
+                ShortOwner(seller).additionalShortValueAdded(
+                    msg.sender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
 
-        require(
-            LoanOwner(lender).additionalLoanValueAdded(
-                transaction.loanOffering.lender,
-                shortId,
-                effectiveAmount
-            )
-        );
+        if (transaction.loanOffering.lender != lender || ContractHelper.isContract(lender)) {
+            require(
+                LoanOwner(lender).additionalLoanValueAdded(
+                    transaction.loanOffering.lender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
 
         return effectiveAmount;
     }
@@ -877,7 +850,7 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            dailyInterestFee: short.interestRate,
+            annualInterestRate: short.annualInterestRate,
             lenderFee: values256[3],
             takerFee: values256[4]
         });

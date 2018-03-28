@@ -116,6 +116,24 @@ library ShortSellCommon {
         pure
         returns (uint256 _interestFee)
     {
+        uint256 timeElapsed = calculatePositionTimeElapsed(short, endTimestamp);
+
+        return InterestImpl.getCompoundedInterest(
+            closeAmount,
+            short.annualInterestRate,
+            timeElapsed,
+            1 days
+        );
+    }
+
+    function calculatePositionTimeElapsed(
+        Short short,
+        uint256 endTimestamp
+    )
+        internal
+        pure
+        returns (uint256 _timeElapsed)
+    {
         uint256 boundedEndTimestamp = endTimestamp;
         if (short.callTimestamp > 0) {
             boundedEndTimestamp = Math.min256(
@@ -123,25 +141,9 @@ library ShortSellCommon {
                 uint256(short.callTimestamp).add(short.callTimeLimit)
             );
         }
-        uint256 timeElapsed = Math.min256(
+        return Math.min256(
             short.maxDuration,
             boundedEndTimestamp.sub(short.startTimestamp)
-        );
-
-        uint256 interestRate = InterestImpl.getCompoundedInterest(
-            short.shortAmount,
-            short.annualInterestRate,
-            timeElapsed,
-            1 days
-        );
-
-        // Round up to disincentivize taking out smaller shorts in order to make reduced interest
-        // payments. This would be an infeasiable attack in most scenarios due to low rounding error
-        // and high transaction/gas fees, but is nonetheless theoretically possible.
-        return MathHelpers.getPartialAmountRoundedUp(
-            closeAmount,
-            short.shortAmount,
-            interestRate
         );
     }
 
