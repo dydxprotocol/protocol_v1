@@ -159,12 +159,8 @@ library ShortImpl {
         );
 
         // Base token balance before transfering anything for this addition
+        // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
         uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
-        uint256 positionMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
-            short.shortAmount,
-            baseTokenBalance
-        );
 
         uint256 baseTokenReceived = shortInternalPreStateUpdate(
             state,
@@ -173,6 +169,13 @@ library ShortImpl {
             orderData
         );
 
+        return 0;
+
+        uint256 positionMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.shortAmount,
+            short.shortAmount,
+            baseTokenBalance
+        );
         require(baseTokenReceived <= positionMinimumBaseToken);
         transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
 
@@ -221,6 +224,7 @@ library ShortImpl {
             state,
             transaction
         );
+        return 0;
 
         // First pull funds from lender and sell them. Prefer to do this first to make order
         // collisions use up less gas.
@@ -290,11 +294,13 @@ library ShortImpl {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
+        return;
         // Require the order to either be pre-approved on-chain or to have a valid signature
         require(
             state.isLoanApproved[transaction.loanOffering.loanHash]
             || isValidSignature(transaction.loanOffering)
         );
+
 
         // Validate the short amount is <= than max and >= min
         require(
