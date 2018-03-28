@@ -170,15 +170,15 @@ contract ERC721Short is
     }
 
     function additionalShortValueAdded(
-        address,
+        address from,
         bytes32 shortId,
-        uint256
+        uint256 /* amountAdded */
     )
         onlyShortSell
         external
         returns (bool)
     {
-        require(ownerOf(shortId) != address(0));
+        require(ownerOf(uint256(shortId)) != from);
         return true;
     }
 

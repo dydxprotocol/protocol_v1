@@ -97,6 +97,6 @@ contract ERC20ShortCreator is
         external
         returns (bool)
     {
-        require(false);
+        return false;
     }
 }

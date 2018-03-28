@@ -40,4 +40,16 @@ contract TestCloseShortDelegator is CloseShortDelegator {
     {
         return who == CLOSER ? requestedAmount : 0;
     }
+
+    function additionalShortValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }

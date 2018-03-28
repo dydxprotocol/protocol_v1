@@ -27,4 +27,16 @@ contract TestShortOwner is ShortOwner {
     {
         return TO_RETURN;
     }
+
+    function additionalShortValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }
