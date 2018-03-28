@@ -75,13 +75,12 @@ contract ShortSell is
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0]  = short owner (if 0, owner will be msg.sender)
+     *  [0]  = short owner
      *  [1]  = underlying token
      *  [2]  = base token
      *  [3]  = lender
-     *  [4]  = loan signer (if 0, lender will be the signer - otherwise lender must be a
-     *                      smart contract that implements LoanOfferingVerifier)
-     *  [5]  = loan owner (if 0, owner will be the lender)
+     *  [4]  = loan signer
+     *  [5]  = loan owner
      *  [6]  = loan taker
      *  [7]  = loan fee recipient
      *  [8]  = loan lender fee token
@@ -99,7 +98,7 @@ contract ShortSell is
      *  [6]  = loan expiration timestamp (in seconds)
      *  [7]  = loan salt
      *  [8]  = short amount
-     *  [9] = deposit amount
+     *  [9]  = deposit amount
      *
      * @param  values32  Values corresponding to:
      *

@@ -188,6 +188,10 @@ library ShortImpl {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
+        // Disallow zero address owners
+        require(transaction.owner != address(0));
+        require(transaction.loanOffering.owner != address(0));
+
         // The minimum base token is validated after executing the sell
     }
 
@@ -205,13 +209,7 @@ library ShortImpl {
             loanOffering.signature.s
         );
 
-        // If the signer field is 0, then the lender should have signed it
-        if (loanOffering.signer == address(0)) {
-            return loanOffering.lender == recoveredSigner;
-        } else {
-            // Otherwise the signer should have signed it
-            return loanOffering.signer == recoveredSigner;
-        }
+        return loanOffering.signer == recoveredSigner;
     }
 
     function getConsentIfSmartContractLender(
@@ -220,7 +218,9 @@ library ShortImpl {
     )
         internal
     {
-        if (transaction.loanOffering.signer != address(0)) {
+        // If the signer is not the lender, the lender must be a smart contract, and we must
+        // get its consent
+        if (transaction.loanOffering.signer != transaction.loanOffering.lender) {
             require(
                 LoanOfferingVerifier(transaction.loanOffering.lender).verifyLoanOffering(
                     getLoanOfferingAddresses(transaction),
@@ -434,18 +434,18 @@ library ShortImpl {
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
 
-        bool newLender = transaction.loanOffering.owner != address(0);
-        bool newSeller = transaction.owner != address(0);
+        bool newLender = transaction.loanOffering.owner != transaction.loanOffering.lender;
+        bool newSeller = transaction.owner != msg.sender;
 
         state.shorts[shortId].lender = TransferInternal.grantLoanOwnership(
             shortId,
             newLender ? transaction.loanOffering.lender : address(0),
-            newLender ? transaction.loanOffering.owner : transaction.loanOffering.lender);
+            transaction.loanOffering.owner);
 
         state.shorts[shortId].seller = TransferInternal.grantShortOwnership(
             shortId,
             newSeller ? msg.sender : address(0),
-            newSeller ? transaction.owner : msg.sender);
+            transaction.owner);
     }
 
     // -------- Parsing Functions -------

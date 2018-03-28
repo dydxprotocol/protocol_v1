@@ -29,7 +29,7 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
   ]);
 
   const tx = {
-    owner: ADDRESSES.ZERO,
+    owner: accounts[0],
     underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
     shortAmount: BIGNUMBERS.BASE_AMOUNT,
@@ -186,7 +186,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 }
 
-async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner = ADDRESSES.ZERO) {
+async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
   const [shortTx, shortSell] = await Promise.all([
     createShortSellTx(accounts, _salt),
     ShortSell.deployed()
@@ -194,7 +194,10 @@ async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner = ADDRESSES.ZE
 
   await issueTokensAndSetAllowancesForShort(shortTx);
 
-  shortTx.owner = shortOwner;
+  if (shortOwner) {
+    shortTx.owner = shortOwner;
+  }
+
   const response = await callShort(shortSell, shortTx);
 
   shortTx.id = response.id;

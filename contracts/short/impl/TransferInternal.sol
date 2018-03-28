@@ -72,6 +72,7 @@ library TransferInternal {
                 return grantLoanOwnership(shortId, newOwner, nextOwner);
             }
         }
+
         require (newOwner != address(0));
         return newOwner;
     }
@@ -105,6 +106,7 @@ library TransferInternal {
                 return grantShortOwnership(shortId, newOwner, nextOwner);
             }
         }
+
         require (newOwner != address(0));
         return newOwner;
     }
