@@ -25,6 +25,9 @@ describe('#addValueToShort', () => {
         '\tShortSell.addValueToShort (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
       );
 
+      console.log(shortTx.loanOffering);
+
+      expect(true).to.be.false;
     });
   });
 });

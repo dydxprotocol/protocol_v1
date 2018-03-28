@@ -136,6 +136,36 @@ library ShortImpl {
         return shortId;
     }
 
+    event Test(
+        address   signer,
+        address   owner,
+        address   taker,
+        address   feeRecipient,
+        address   lenderFeeToken,
+        address   takerFeeToken,
+        uint256   expirationTimestamp,
+        uint32    callTimeLimit,
+        uint32    maxDuration,
+        uint256   salt,
+        bytes32   loanHash
+    );
+
+    function log(ShortTx transaction) internal {
+        Test(
+            transaction.loanOffering.signer,
+            transaction.loanOffering.owner,
+            transaction.loanOffering.taker,
+            transaction.loanOffering.feeRecipient,
+            transaction.loanOffering.lenderFeeToken,
+            transaction.loanOffering.takerFeeToken,
+            transaction.loanOffering.expirationTimestamp,
+            transaction.loanOffering.callTimeLimit,
+            transaction.loanOffering.maxDuration,
+            transaction.loanOffering.salt,
+            transaction.loanOffering.loanHash
+        );
+    }
+
     function addValueToShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -157,6 +187,8 @@ library ShortImpl {
             sigV,
             sigRS
         );
+
+        log(transaction);
 
         // Base token balance before transfering anything for this addition
         // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
@@ -300,7 +332,6 @@ library ShortImpl {
             state.isLoanApproved[transaction.loanOffering.loanHash]
             || isValidSignature(transaction.loanOffering)
         );
-
 
         // Validate the short amount is <= than max and >= min
         require(
@@ -811,7 +842,7 @@ library ShortImpl {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             lender: addresses[0],
             signer: addresses[1],
-            owner: short.seller,
+            owner: short.lender,
             taker: addresses[2],
             feeRecipient: addresses[3],
             lenderFeeToken: addresses[4],
