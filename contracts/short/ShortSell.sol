@@ -157,10 +157,10 @@ contract ShortSell is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = short amount
+     *  [7]  = amount
      *
      * @param  sigV       ECDSA v parameter for loan offering
-     * @param  sigRS      CDSA r and s parameters for loan offering
+     * @param  sigRS      ECDSA r and s parameters for loan offering
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
@@ -175,8 +175,9 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
+        returns (uint256 _effectiveAmountAdded)
     {
-        ShortImpl.addValueToShortImpl(
+        return ShortImpl.addValueToShortImpl(
             state,
             shortId,
             addresses,

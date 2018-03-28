@@ -54,7 +54,8 @@ library ShortImpl {
         address indexed lender,
         bytes32 loanHash,
         address loanFeeRecipient,
-        uint256 amountAdded,
+        uint256 amountBorrowed,
+        uint256 effectiveAmountAdded,
         uint256 baseTokenFromSell,
         uint256 depositAmount
     );
@@ -111,7 +112,7 @@ library ShortImpl {
             baseTokenReceived
         );
 
-        updateState(
+        updateStateForNewShort(
             state,
             shortId,
             transaction
@@ -145,6 +146,7 @@ library ShortImpl {
         bytes orderData
     )
         public
+        returns (uint256 _effectiveAmountAdded)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -179,7 +181,7 @@ library ShortImpl {
             baseTokenReceived
         );
 
-        updateStateForAddValue(
+        uint256 effectiveAmountAdded = updateStateForAddValue(
             transaction,
             shortId,
             short
@@ -196,8 +198,11 @@ library ShortImpl {
             transaction,
             shortId,
             short,
-            baseTokenReceived
+            baseTokenReceived,
+            effectiveAmountAdded
         );
+
+        return effectiveAmountAdded;
     }
 
     // --------- Helper Functions ---------
@@ -501,7 +506,7 @@ library ShortImpl {
         );
     }
 
-    function updateState(
+    function updateStateForNewShort(
         ShortSellState.State storage state,
         bytes32 shortId,
         ShortTx transaction
@@ -547,6 +552,7 @@ library ShortImpl {
         ShortSellCommon.Short storage short
     )
         internal
+        returns (uint256 _effectiveAmountAdded)
     {
         // TODO
         uint256 effectiveAmount = 1; // TODO !!! - change this when continuous interest merged
@@ -576,13 +582,16 @@ library ShortImpl {
                 )
             );
         }
+
+        return effectiveAmount;
     }
 
     function recordValueAddedToShort(
         ShortTx transaction,
         bytes32 shortId,
         ShortSellCommon.Short storage short,
-        uint256 baseTokenFromSell
+        uint256 baseTokenFromSell,
+        uint256 effectiveAmountAdded
     )
         internal
     {
@@ -593,6 +602,7 @@ library ShortImpl {
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
             transaction.shortAmount,
+            effectiveAmountAdded,
             baseTokenFromSell,
             transaction.depositAmount
         );
@@ -767,9 +777,9 @@ library ShortImpl {
         returns (ShortTx memory)
     {
         ShortTx memory transaction = ShortTx({
-            owner: addresses[0],
-            underlyingToken: addresses[1],
-            baseToken: addresses[2],
+            owner: short.seller,
+            underlyingToken: short.underlyingToken,
+            baseToken: short.baseToken,
             shortAmount: values256[7],
             depositAmount: 0,
             loanOffering: parseLoanOfferingFromAddValueTx(

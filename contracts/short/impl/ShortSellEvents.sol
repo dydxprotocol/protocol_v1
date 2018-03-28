@@ -159,7 +159,8 @@ contract ShortSellEvents {
         address indexed lender,
         bytes32 loanHash,
         address loanFeeRecipient,
-        uint256 amountAdded,
+        uint256 amountBorrowed,
+        uint256 effectiveAmountAdded,
         uint256 baseTokenFromSell,
         uint256 depositAmount
     );
