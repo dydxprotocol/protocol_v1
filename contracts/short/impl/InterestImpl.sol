@@ -50,12 +50,12 @@ library InterestImpl {
             roundToTimestep
         );
 
-        // return x * e^RT
+        // return just the added interest, so X * e^RT - X
         return MathHelpers.getPartialAmountRoundedUp(
             percent.num,
             percent.den,
             tokenAmount
-        );
+        ).sub(tokenAmount);
     }
 
     /**

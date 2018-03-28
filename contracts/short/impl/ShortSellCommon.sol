@@ -9,6 +9,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
+import { InterestImpl } from "./InterestImpl.sol";
 
 
 /**
@@ -29,7 +30,7 @@ library ShortSellCommon {
         address baseToken;       // Immutable
         uint256 shortAmount;
         uint256 closedAmount;
-        uint256 interestRate;
+        uint256 annualInterestRate;
         uint256 requiredDeposit;
         uint32  callTimeLimit;
         uint32  startTimestamp;   // Immutable, cannot be 0
@@ -60,7 +61,7 @@ library ShortSellCommon {
         uint256 maxAmount;
         uint256 minAmount;
         uint256 minBaseToken;
-        uint256 dailyInterestFee;
+        uint256 annualInterestRate;
         uint256 lenderFee;
         uint256 takerFee;
     }
@@ -115,17 +116,32 @@ library ShortSellCommon {
         pure
         returns (uint256 _interestFee)
     {
-        uint256 timeElapsed = endTimestamp.sub(short.startTimestamp);
-        if (timeElapsed > short.maxDuration) {
-            timeElapsed = short.maxDuration;
+        uint256 boundedEndTimestamp = endTimestamp;
+        if (short.callTimestamp > 0) {
+            boundedEndTimestamp = Math.min256(
+                endTimestamp,
+                uint256(short.callTimestamp).add(short.callTimeLimit)
+            );
         }
+        uint256 timeElapsed = Math.min256(
+            short.maxDuration,
+            boundedEndTimestamp.sub(short.startTimestamp)
+        );
+
+        uint256 interestRate = InterestImpl.getCompoundedInterest(
+            short.shortAmount,
+            short.annualInterestRate,
+            timeElapsed,
+            1 days
+        );
 
         // Round up to disincentivize taking out smaller shorts in order to make reduced interest
         // payments. This would be an infeasiable attack in most scenarios due to low rounding error
         // and high transaction/gas fees, but is nonetheless theoretically possible.
-        return MathHelpers.getQuotient3Over2RoundedUp(
-            closeAmount, timeElapsed, short.interestRate, // numerators
-            short.shortAmount, 1 days                     // denominators
+        return MathHelpers.getPartialAmountRoundedUp(
+            closeAmount,
+            short.shortAmount,
+            interestRate
         );
     }
 
@@ -164,7 +180,7 @@ library ShortSellCommon {
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
             loanOffering.rates.minBaseToken,
-            loanOffering.rates.dailyInterestFee,
+            loanOffering.rates.annualInterestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,

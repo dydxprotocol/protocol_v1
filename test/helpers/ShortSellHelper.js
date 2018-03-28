@@ -71,7 +71,7 @@ async function callShort(shortSell, tx, safely = true) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minBaseToken,
-    tx.loanOffering.rates.dailyInterestFee,
+    tx.loanOffering.rates.annualInterestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -267,7 +267,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minBaseToken,
-    loanOffering.rates.dailyInterestFee,
+    loanOffering.rates.annualInterestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -328,7 +328,7 @@ async function getShort(shortSell, id) {
     baseToken,
     shortAmount,
     closedAmount,
-    interestRate,
+    annualInterestRate,
     requiredDeposit,
     callTimeLimit,
     startTimestamp,
@@ -343,7 +343,7 @@ async function getShort(shortSell, id) {
     baseToken,
     shortAmount,
     closedAmount,
-    interestRate,
+    annualInterestRate,
     requiredDeposit,
     callTimeLimit,
     startTimestamp,
@@ -401,7 +401,7 @@ function getMaxInterestFee(shortTx) {
   const interestRate = getPartialAmount(
     shortTx.shortAmount,
     shortTx.loanOffering.rates.maxAmount,
-    shortTx.loanOffering.rates.dailyInterestFee,
+    shortTx.loanOffering.rates.annualInterestRate,
     true // roundsUp
   );
   return getQuotient3Over2(

@@ -1,5 +1,6 @@
 /*global artifacts, web3*/
 
+const BigNumber = require('bignumber.js');
 const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -24,12 +25,12 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
     rates: {
-      maxAmount:         BIGNUMBERS.BASE_AMOUNT.times(3),
-      minAmount:         BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minBaseToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
-      dailyInterestFee:  BIGNUMBERS.BASE_AMOUNT.times(.01),
-      lenderFee:         BIGNUMBERS.BASE_AMOUNT.times(.01),
-      takerFee:          BIGNUMBERS.BASE_AMOUNT.times(.02)
+      maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
+      minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
+      minBaseToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
+      annualInterestRate: new BigNumber('365e16'),
+      lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
+      takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02)
     },
     expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
@@ -47,7 +48,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minBaseToken,
-    loanOffering.rates.dailyInterestFee,
+    loanOffering.rates.annualInterestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
