@@ -93,7 +93,7 @@ contract ShortSell is
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
      *  [2]  = loan minimum base token
-     *  [3]  = loan interest rate (amount of underlying tokens per day)
+     *  [3]  = loan interest rate (annual percentage times 10**18)
      *  [4]  = loan lender fee
      *  [5]  = loan taker fee
      *  [6]  = loan expiration timestamp (in seconds)
@@ -136,10 +136,9 @@ contract ShortSell is
     }
 
     /**
-     * Close a short sell. Only callable by short seller. Short seller must provide a 0x order
-     * offering at least as much underlying token as was loaned for the short sell. There must be
-     * enough base token left over after the trade to pay the lender the full owed interest fee.
-     * The short seller is sent base token = deposit + profit - interest fee
+     * Close a short sell. May be called by the short seller or with the approval of the short
+     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
+     * short position. The short seller is sent base token stored in the contract.
      *
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
@@ -150,7 +149,7 @@ contract ShortSell is
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing
-     * @return _interestFeeAmount       interest fee in base token paid to the lender
+     * @return _interestFeeAmount       interest fee in underlying token paid to the lender
      */
     function closeShort(
         bytes32 shortId,
@@ -188,7 +187,7 @@ contract ShortSell is
      * @return _amountClosed            amount of short closed
      * @return _baseTokenReceived       amount of base token received by the short seller
      *                                  after closing
-     * @return _interestFeeAmount       interest fee in base token paid to the lender
+     * @return _interestFeeAmount       interest fee in underlying token paid to the lender
      */
     function closeShortDirectly(
         bytes32 shortId,
@@ -288,7 +287,7 @@ contract ShortSell is
     /**
      * Function callable by a short sell lender after he has called in the loan, but the
      * short seller did not close the short sell before the call time limit. Used to recover the
-     * lender's original loaned amount of underlying token as well as any owed interest fee.
+     * base tokens held as collateral.
      *
      * @param  shortId  unique id for the short sell
      */
@@ -344,7 +343,7 @@ contract ShortSell is
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate
+     *  [3] = loan interest rate (annual percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
@@ -399,7 +398,7 @@ contract ShortSell is
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate
+     *  [3] = loan interest rate (annual percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
