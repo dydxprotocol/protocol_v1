@@ -26,6 +26,7 @@ module.exports = {
   BIGNUMBERS: {
     ZERO: new BigNumber(0),
     ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24),
+    ONE_YEAR_IN_SECONDS: new BigNumber(60 * 60 * 24 * 365),
     BASE_AMOUNT: new BigNumber('1e18')
   },
   BYTES32: {

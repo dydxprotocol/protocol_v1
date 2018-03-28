@@ -149,20 +149,11 @@ function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
   } = balances;
   expect(lenderBaseToken).to.be.bignumber.equal(0);
 
-  const one = new BigNumber(1);
-  const interestFeeErrorBounds = new BigNumber('.00001');
-
-  const minExpected = shortTx.loanOffering.rates.maxAmount
-    .minus(shortTx.shortAmount)
-    .plus(closeAmount)
-    .plus((one.minus(interestFeeErrorBounds)).times(interestFee));
-  const maxExpected = shortTx.loanOffering.rates.maxAmount
-    .minus(shortTx.shortAmount)
-    .plus(closeAmount)
-    .plus((one.plus(interestFeeErrorBounds)).times(interestFee));
-
-  expect(lenderUnderlyingToken).to.be.bignumber.at.least(minExpected);
-  expect(lenderUnderlyingToken).to.be.bignumber.at.most(maxExpected);
+  expect(lenderUnderlyingToken).to.be.bignumber.equal(
+    shortTx.loanOffering.rates.maxAmount
+      .minus(shortTx.shortAmount)
+      .plus(closeAmount)
+      .plus(interestFee));
 }
 
 async function getInterestFee(shortTx, closeTx, closeAmount) {
