@@ -36,8 +36,6 @@ describe('#addValueToShort', () => {
       console.log(
         '\tShortSell.addValueToShort (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
       );
-
-      expect(true).to.be.false;
     });
   });
 });
