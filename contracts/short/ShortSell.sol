@@ -135,7 +135,9 @@ contract ShortSell is
     }
 
     /**
-     * Add value to a short sell
+     * Add value to a short sell. Funds will be borrowed from the lender and sold as per short.
+     * The value added to the short will be equal to the effective amount lent, and will incorporate
+     * interest already earned by the position so far.
      *
      * @param  addresses  Addresses corresponding to:
      *
