@@ -18,10 +18,9 @@ library FractionMath {
         uint256 left = a.num.mul(b.den);
         uint256 right = b.num.mul(a.den);
         uint256 denominator = a.den.mul(b.den);
-        uint256 comparator = 2**255;
 
         // prevent overflows
-        if (left >= comparator || right >= comparator) {
+        if (left + right < left) { // if left + right overflows...
             left = left.div(2);
             right = right.div(2);
             denominator = denominator.div(2);
@@ -112,7 +111,7 @@ library FractionMath {
         returns (Fraction256.Fraction memory)
     {
         uint256 max = a.num > a.den ? a.num : a.den;
-        uint256 diff = (max >> 128) + 1;
+        uint256 diff = (max >> 127);
         if (diff > 1) {
             a.num = a.num.div(diff);
             a.den = a.den.div(diff);
