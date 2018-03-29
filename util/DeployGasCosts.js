@@ -19,9 +19,6 @@ contract('Deploy Costs', () => {
       const contract = await ShortSell.new(
         ADDRESSES.TEST[0],
         ADDRESSES.TEST[1],
-        ADDRESSES.TEST[2],
-        ADDRESSES.TEST[3],
-        ADDRESSES.TEST[4]
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
@@ -33,7 +30,6 @@ contract('Deploy Costs', () => {
     it('', async () => {
       const contract = await Vault.new(
         ADDRESSES.TEST[0],
-        ADDRESSES.TEST[1],
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -45,7 +41,6 @@ contract('Deploy Costs', () => {
   describe('Proxy', () => {
     it('', async () => {
       const contract = await ProxyContract.new(
-        BIGNUMBERS.ONE_DAY_IN_SECONDS,
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
@@ -72,19 +67,27 @@ contract('Deploy Costs', () => {
     it('', async () => {
       await TestInterestImpl.link('InterestImpl', InterestImpl.address);
       const contract = await TestInterestImpl.new();
-      const total = new BigNumber('1e18');
+      const tokens1 = new BigNumber('1e18');
+      const tokens2 = new BigNumber('1e40');
       const percent = new BigNumber('1e18');
       const rounding = new BigNumber(60 * 60 * 24); // no rounding
 
       async function printGasCost(seconds) {
-        const tx = await contract.getCompoundedInterest(total, percent, seconds, rounding);
-        console.log('\tInterestCalculation gas cost: ' + tx.receipt.gasUsed);
+        const tx = await contract.getCompoundedInterest(tokens1, percent, seconds, rounding);
+        console.log('\tInterestCalculation gas cost (small): ' + tx.receipt.gasUsed);
+      }
+
+      async function printGasCostLarge(seconds) {
+        const tx = await contract.getCompoundedInterest(tokens2, percent, seconds, rounding);
+        console.log('\tInterestCalculation gas cost (large): ' + tx.receipt.gasUsed);
       }
 
       await printGasCost(new BigNumber(60 * 60 * 24 * 1));
       await printGasCost(new BigNumber(60 * 60 * 24 * 5));
       await printGasCost(new BigNumber(60 * 60 * 24 * 364));
       await printGasCost(new BigNumber(60 * 60 * 24 * 365));
+      await printGasCostLarge(new BigNumber(60 * 60 * 24 * 1));
+      await printGasCostLarge(new BigNumber(60 * 60 * 24 * 365));
     });
   });
 });

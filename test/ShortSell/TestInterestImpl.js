@@ -8,11 +8,29 @@ const BigNumber = require('bignumber.js');
 
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const { getGasCost } = require('../helpers/NodeHelper');
 const { BIGNUMBERS } = require('../helpers/Constants');
 
-contract('InterestHelper', function(accounts) {
+contract('InterestHelper', function(_accounts) {
   let contract;
+
+  describe('#getNumBits', () => {
+    before('', async () => {
+      await TestInterestImpl.link('InterestImpl', InterestImpl.address);
+      contract = await TestInterestImpl.new();
+    });
+
+    it('works for 0 through 256', async () => {
+      let result = await contract.getNumBits.call(BIGNUMBERS.ZERO);
+      expect(result).to.be.bignumber.equal(0);
+
+      let n = new BigNumber(1);
+      for(let i = 0; i < 256; i++) {
+        let result = await contract.getNumBits.call(n);
+        expect(result).to.be.bignumber.equal(i + 1);
+        n = n.times(2);
+      }
+    });
+  });
 
   describe('#getCompoundedInterest', () => {
     before('', async () => {
@@ -81,8 +99,24 @@ contract('InterestHelper', function(accounts) {
       expect(result).to.be.bignumber.equal('1718281828459045236'); // E^(100%)
     });
 
-    it('crashes for too-large of numbers', async () => {
-      //TODO(brendanchou)
+    it('calculates tokenAmount > 2**128 correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('1e40'), // total
+        new BigNumber('5e16'), // annual percent
+        BIGNUMBERS.ONE_DAY_IN_SECONDS.times(3), // time
+        new BigNumber(0)); // time rounding
+      expect(result.dividedBy('1e22').toFixed(0, BigNumber.ROUND_CEIL))
+        .to.be.bignumber.equal('411043359288829'); // E^(5% * 3/365)
+    });
+
+    it('calculates tokenAmount > 2**255 correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('1e77'), // total
+        new BigNumber('5e16'), // annual percent
+        BIGNUMBERS.ONE_DAY_IN_SECONDS.times(3), // time
+        new BigNumber(0)); // time rounding
+      expect(result.dividedBy('1e59').toFixed(0, BigNumber.ROUND_CEIL))
+        .to.be.bignumber.equal('411043359288829'); // E^(5% * 3/365)
     });
   });
 

@@ -134,4 +134,30 @@ library MathHelpers {
     {
         return 2 ** 256 - 1;
     }
+
+    /**
+     * Returns the number of bits in a uint256. That is, the lowest number, x, such that n >> x == 0
+     * @param  n  The uint256 to get the number of bits in
+     * @return    The number of bits in n
+     */
+    function getNumBits(
+        uint256 n
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 first = 0;
+        uint256 last = 256;
+        while (first < last) {
+            uint256 check = (first + last) / 2;
+            if ((n >> check) == 0) {
+                last = check;
+            } else {
+                first = check + 1;
+            }
+        }
+        assert(first <= 256);
+        return first;
+    }
 }

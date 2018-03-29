@@ -130,7 +130,6 @@ library FractionMath {
         assert(a.num < 2**128 && a.den < 2**128 && a.den > 0);
     }
 
-
     function copy(
         Fraction256.Fraction memory a
     )

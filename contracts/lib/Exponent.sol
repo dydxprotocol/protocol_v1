@@ -155,8 +155,7 @@ library Exponent {
     // ------ Helper Functions ------
     // ------------------------------
 
-    function ONE(
-    )
+    function ONE()
         internal
         pure
         returns (Fraction256.Fraction memory)
@@ -214,8 +213,6 @@ library Exponent {
             den: denominator
         });
     }
-
-
 
     /**
      * Returns a fraction roughly equaling E^(x) for integer x
