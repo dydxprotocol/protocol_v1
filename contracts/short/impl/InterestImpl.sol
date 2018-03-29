@@ -140,38 +140,39 @@ library InterestImpl {
     }
 
     /**
-     * Returns n * f, trying to prevent overflow as much as possible. Useful for when the numerator
+     * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator
      * and denominator of f are less than 2**128.
      */
     function safeMultiplyUint256ByFraction(
         uint256 n,
         Fraction256.Fraction memory f
     )
-        private
+        internal
         pure
         returns (uint256)
     {
-        uint256 term1 = n / (2 ** 128); // first 128 bits
+        uint256 term1 = n.div(2 ** 128); // first 128 bits
         uint256 term2 = n % (2 ** 128); // second 128 bits
 
-        // uncommon scenario, requires n >= 2**128
+        // uncommon scenario, requires n >= 2**128. calculates term1 = term1 * f
         if (term1 > 0) {
             term1 = term1.mul(f.num);
             uint numBits = MathHelpers.getNumBits(term1);
 
             // reduce rounding error by shifting all the way to the left before dividing
             term1 = MathHelpers.divisionRoundedUp(
-                term1 << (256 - numBits),
+                term1 << (uint256(256).sub(numBits)),
                 f.den);
 
             // continue shifting or reduce shifting to get the right number
             if (numBits > 128) {
-                term1 = term1 << (numBits - 128);
+                term1 = term1 << (numBits.sub(128));
             } else if (numBits < 128) {
-                term1 = term1 >> (128 - numBits);
+                term1 = term1 >> (uint256(128).sub(numBits));
             }
         }
 
+        // calculates term2 = term2 * f
         term2 = MathHelpers.getPartialAmountRoundedUp(
             f.num,
             f.den,

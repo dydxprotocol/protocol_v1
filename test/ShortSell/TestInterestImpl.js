@@ -20,12 +20,12 @@ contract('InterestHelper', function(_accounts) {
     });
 
     it('works for 0 through 256', async () => {
-      let result = await contract.getNumBits.call(BIGNUMBERS.ZERO, false);
+      let result = await contract.getNumBits.call(BIGNUMBERS.ZERO);
       expect(result).to.be.bignumber.equal(0);
 
       let n = new BigNumber(1);
       for(let i = 0; i < 256; i++) {
-        let result = await contract.getNumBits.call(n, false);
+        let result = await contract.getNumBits.call(n);
         expect(result).to.be.bignumber.equal(i + 1);
         n = n.times(2);
       }
@@ -87,9 +87,7 @@ contract('InterestHelper', function(_accounts) {
         new BigNumber('1e18'), // total
         new BigNumber('5e16'), // annual percent
         BIGNUMBERS.ONE_DAY_IN_SECONDS.times(2.5), // time
-        BIGNUMBERS.ONE_DAY_IN_SECONDS, // time rounding
-        false,
-      );
+        BIGNUMBERS.ONE_DAY_IN_SECONDS); // time rounding
       expect(result).to.be.bignumber.equal('411043359288829'); // E^(5% * 3/365)
 
       // Round 3 days up to the nearest year
