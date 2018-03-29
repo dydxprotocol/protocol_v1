@@ -147,17 +147,6 @@ async function callAddValueToShort(shortSell, tx) {
 
   const order = zeroExOrderToBytes(tx.buyOrder);
 
-  console.log({
-    shortId,
-    addresses,
-    values256,
-    sigV,
-    sigRS,
-    order,
-  })
-
-  console.log(values256.map( v => v.toString() ))
-
   let response = await shortSell.addValueToShort(
     shortId,
     addresses,
