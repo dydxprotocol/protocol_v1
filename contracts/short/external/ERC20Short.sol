@@ -169,6 +169,7 @@ contract ERC20Short is
         uint256 amountAdded
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {
