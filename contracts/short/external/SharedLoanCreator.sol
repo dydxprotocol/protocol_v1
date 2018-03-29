@@ -1,6 +1,9 @@
 pragma solidity 0.4.19;
 
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { SharedLoan } from "./SharedLoan.sol";
 
 
 /**
@@ -14,7 +17,9 @@ import { LoanOwner } from "../interfaces/LoanOwner.sol";
  */
 /* solium-disable-next-line */
 contract SharedLoanCreator is
-    LoanOwner
+    NoOwner,
+    LoanOwner,
+    ReentrancyGuard
 {
     // -------------------
     // ------ Events -----
@@ -41,12 +46,55 @@ contract SharedLoanCreator is
         address[] trustedLoanCallers
     )
         public
-        ShortOwner(shortSell)
+        LoanOwner(shortSell)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
             TRUSTED_LOAN_CALLERS.push(trustedLoanCallers[i]);
         }
     }
 
+    // -----------------------------------
+    // ---- ShortSell Only Functions -----
+    // -----------------------------------
 
+    /**
+     * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan
+     * ownership to the SharedLoan. Called by ShortSell when a loan is transferred to this
+     * contract.
+     *
+     * @param  from  Address of the previous owner of the loan
+     * @return       Address of the new SharedLoan contract
+     */
+    function receiveLoanOwnership(
+        address from,
+        bytes32 shortId
+    )
+        onlyShortSell
+        nonReentrant
+        external
+        returns (address)
+    {
+        address sharedLoanAddress = new SharedLoan(
+            shortId,
+            SHORT_SELL,
+            from,
+            TRUSTED_LOAN_CALLERS
+        );
+
+        SharedLoanCreated(shortId, sharedLoanAddress);
+
+        return sharedLoanAddress;
+    }
+
+    function additionalLoanValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }
