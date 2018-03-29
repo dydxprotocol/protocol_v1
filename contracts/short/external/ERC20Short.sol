@@ -9,7 +9,6 @@ import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedE
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { Vault } from "../Vault.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
