@@ -169,6 +169,19 @@ contract ERC721Short is
         return address(this); // returning own address retains ownership of short
     }
 
+    function additionalShortValueAdded(
+        address from,
+        bytes32 shortId,
+        uint256 /* amountAdded */
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        require(ownerOf(uint256(shortId)) != from);
+        return true;
+    }
+
     /**
      * Called by ShortSell when an owner of this token is attempting to close some of the short
      * position. Implementation is required per ShortOwner contract in order to be used by

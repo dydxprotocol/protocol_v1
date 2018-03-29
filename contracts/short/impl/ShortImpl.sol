@@ -9,6 +9,10 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ContractHelper } from "../../lib/ContractHelper.sol";
+import { InterestImpl } from "./InterestImpl.sol";
 
 
 /**
@@ -40,6 +44,21 @@ library ShortImpl {
         uint256 depositAmount,
         uint32 callTimeLimit,
         uint32 maxDuration
+    );
+
+    /*
+     * Value was added to a short sell
+     */
+    event ValueAddedToShort(
+        bytes32 indexed id,
+        address indexed shortSeller,
+        address indexed lender,
+        bytes32 loanHash,
+        address loanFeeRecipient,
+        uint256 amountBorrowed,
+        uint256 effectiveAmountAdded,
+        uint256 baseTokenFromSell,
+        uint256 depositAmount
     );
 
     // -----------------------
@@ -82,40 +101,28 @@ library ShortImpl {
 
         bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
 
-        // Validate
-        validateShort(
+        uint256 baseTokenReceived = shortInternalPreStateUpdate(
             state,
             transaction,
-            shortId
+            shortId,
+            orderData
         );
 
-        // First pull funds from lender and sell them. Prefer to do this first to make order
-        // collisions use up less gas.
-        // NOTE: Doing this before updating state relies on #short being non-reentrant
-        transferFromLender(state, transaction);
-        uint256 baseTokenReceived = executeSell(
-            state,
+        validateMinimumBaseToken(
             transaction,
-            orderData,
-            shortId
+            baseTokenReceived
         );
 
-        updateState(
+        updateStateForNewShort(
             state,
             shortId,
             transaction
         );
 
-        // If the lender is a smart contract, call out to it to get its consent for this loan
-        // This is done after other validations/state updates as it is an external call
-        // NOTE: The short will exist in the Repo for this call
-        //       (possible other contract calls back into ShortSell)
-        getConsentIfSmartContractLender(transaction, shortId);
-
-        transferDepositAndFees(
+        shortInternalPostStateUpdate(
             state,
-            shortId,
-            transaction
+            transaction,
+            shortId
         );
 
         // LOG EVENT
@@ -130,7 +137,126 @@ library ShortImpl {
         return shortId;
     }
 
+    function addValueToShortImpl(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        address[7] addresses,
+        uint256[8] values256,
+        uint8 sigV,
+        bytes32[2] sigRS,
+        bytes orderData
+    )
+        public
+        returns (uint256 _effectiveAmountAdded)
+    {
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
+        ShortTx memory transaction = parseAddValueToShortTx(
+            short,
+            addresses,
+            values256,
+            sigV,
+            sigRS
+        );
+
+        // Base token balance before transfering anything for this addition
+        // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
+        uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
+
+        uint256 baseTokenReceived = shortInternalPreStateUpdate(
+            state,
+            transaction,
+            shortId,
+            orderData
+        );
+
+        uint256 positionMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.shortAmount,
+            short.shortAmount,
+            baseTokenBalance
+        );
+        require(baseTokenReceived <= positionMinimumBaseToken);
+        transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
+
+        validateMinimumBaseToken(
+            transaction,
+            baseTokenReceived
+        );
+
+        uint256 effectiveAmountAdded = updateStateForAddValue(
+            transaction,
+            shortId,
+            short
+        );
+
+        shortInternalPostStateUpdate(
+            state,
+            transaction,
+            shortId
+        );
+
+        // LOG EVENT
+        recordValueAddedToShort(
+            transaction,
+            shortId,
+            short,
+            baseTokenReceived,
+            effectiveAmountAdded
+        );
+
+        return effectiveAmountAdded;
+    }
+
     // --------- Helper Functions ---------
+
+    function shortInternalPreStateUpdate(
+        ShortSellState.State storage state,
+        ShortTx memory transaction,
+        bytes32 shortId,
+        bytes orderData
+    )
+        internal
+        returns (uint256 _baseTokenReceived)
+    {
+        // Validate
+        validateShort(
+            state,
+            transaction
+        );
+
+        // First pull funds from lender and sell them. Prefer to do this first to make order
+        // collisions use up less gas.
+        // NOTE: Doing this before updating state relies on #short being non-reentrant
+        transferFromLender(state, transaction);
+        uint256 baseTokenReceived = executeSell(
+            state,
+            transaction,
+            orderData,
+            shortId
+        );
+
+        return baseTokenReceived;
+    }
+
+    function shortInternalPostStateUpdate(
+        ShortSellState.State storage state,
+        ShortTx memory transaction,
+        bytes32 shortId
+    )
+        internal
+    {
+        // If the lender is a smart contract, call out to it to get its consent for this loan
+        // This is done after other validations/state updates as it is an external call
+        // NOTE: The short will exist in the Repo for this call
+        //       (possible other contract calls back into ShortSell)
+        getConsentIfSmartContractLender(transaction, shortId);
+
+        transferDepositAndFees(
+            state,
+            shortId,
+            transaction
+        );
+    }
 
     function getNextShortId(
         ShortSellState.State storage state,
@@ -140,25 +266,26 @@ library ShortImpl {
         view
         returns (bytes32 _shortId)
     {
-        return keccak256(
+        bytes32 shortId = keccak256(
             loanHash,
             state.loanNumbers[loanHash]
         );
+
+        // Make this shortId doesn't already exist
+        assert(!ShortSellCommon.containsShortImpl(state, shortId));
+
+        return shortId;
     }
 
     function validateShort(
         ShortSellState.State storage state,
-        ShortTx transaction,
-        bytes32 shortId
+        ShortTx transaction
     )
         internal
         view
     {
         // Disallow 0 value shorts
         require(transaction.shortAmount > 0);
-
-        // Make this shortId doesn't already exist
-        require(!ShortSellCommon.containsShortImpl(state, shortId));
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -330,11 +457,6 @@ library ShortImpl {
             orderData
         );
 
-        validateMinimumBaseToken(
-            transaction,
-            baseTokenReceived
-        );
-
         Vault(state.VAULT).transferToVault(
             shortId,
             transaction.baseToken,
@@ -353,13 +475,13 @@ library ShortImpl {
         pure
     {
         uint256 totalBaseToken = baseTokenReceived.add(transaction.depositAmount);
-        require(
-            totalBaseToken >= MathHelpers.getPartialAmountRoundedUp(
-                transaction.shortAmount,
-                transaction.loanOffering.rates.maxAmount,
-                transaction.loanOffering.rates.minBaseToken
-            )
+        uint256 loanOfferingMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.shortAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.minBaseToken
         );
+
+        require(totalBaseToken >= loanOfferingMinimumBaseToken);
     }
 
     function recordShortInitiated(
@@ -386,7 +508,7 @@ library ShortImpl {
         );
     }
 
-    function updateState(
+    function updateStateForNewShort(
         ShortSellState.State storage state,
         bytes32 shortId,
         ShortTx transaction
@@ -424,6 +546,72 @@ library ShortImpl {
             shortId,
             newSeller ? msg.sender : address(0),
             transaction.owner);
+    }
+
+    function updateStateForAddValue(
+        ShortTx transaction,
+        bytes32 shortId,
+        ShortSellCommon.Short storage short
+    )
+        internal
+        returns (uint256 _effectiveAmountAdded)
+    {
+        uint256 timeElapsed = ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp);
+        uint256 effectiveAmount = InterestImpl.getInverseCompoundedInterest(
+            transaction.shortAmount,
+            short.annualInterestRate,
+            timeElapsed,
+            1 days // TODO(brendan)
+        );
+
+        short.shortAmount = short.shortAmount.add(effectiveAmount);
+
+        address seller = short.seller;
+        address lender = short.lender;
+
+        if (msg.sender != seller || ContractHelper.isContract(seller)) {
+            require(
+                ShortOwner(seller).additionalShortValueAdded(
+                    msg.sender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
+
+        if (transaction.loanOffering.lender != lender || ContractHelper.isContract(lender)) {
+            require(
+                LoanOwner(lender).additionalLoanValueAdded(
+                    transaction.loanOffering.lender,
+                    shortId,
+                    effectiveAmount
+                )
+            );
+        }
+
+        return effectiveAmount;
+    }
+
+    function recordValueAddedToShort(
+        ShortTx transaction,
+        bytes32 shortId,
+        ShortSellCommon.Short storage short,
+        uint256 baseTokenFromSell,
+        uint256 effectiveAmountAdded
+    )
+        internal
+    {
+        ValueAddedToShort(
+            shortId,
+            short.seller,
+            short.lender,
+            transaction.loanOffering.loanHash,
+            transaction.loanOffering.feeRecipient,
+            transaction.shortAmount,
+            effectiveAmountAdded,
+            baseTokenFromSell,
+            transaction.depositAmount
+        );
     }
 
     // -------- Parsing Functions -------
@@ -581,5 +769,92 @@ library ShortImpl {
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration
         ];
+    }
+
+    function parseAddValueToShortTx(
+        ShortSellCommon.Short storage short,
+        address[7] addresses,
+        uint256[8] values256,
+        uint8 sigV,
+        bytes32[2] sigRS
+    )
+        internal
+        view
+        returns (ShortTx memory)
+    {
+        ShortTx memory transaction = ShortTx({
+            owner: short.seller,
+            underlyingToken: short.underlyingToken,
+            baseToken: short.baseToken,
+            shortAmount: values256[7],
+            depositAmount: 0,
+            loanOffering: parseLoanOfferingFromAddValueTx(
+                short,
+                addresses,
+                values256,
+                sigV,
+                sigRS
+            ),
+            exchangeWrapperAddress: addresses[6]
+        });
+
+        return transaction;
+    }
+
+    function parseLoanOfferingFromAddValueTx(
+        ShortSellCommon.Short storage short,
+        address[7] addresses,
+        uint256[8] values256,
+        uint8 sigV,
+        bytes32[2] sigRS
+    )
+        internal
+        view
+        returns (ShortSellCommon.LoanOffering memory)
+    {
+        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
+            lender: addresses[0],
+            signer: addresses[1],
+            owner: short.lender,
+            taker: addresses[2],
+            feeRecipient: addresses[3],
+            lenderFeeToken: addresses[4],
+            takerFeeToken: addresses[5],
+            rates: parseLoanOfferingRatesFromAddValueTx(short, values256),
+            expirationTimestamp: values256[5],
+            callTimeLimit: short.callTimeLimit,
+            maxDuration: short.maxDuration,
+            salt: values256[6],
+            loanHash: 0,
+            signature: parseLoanOfferingSignature(sigV, sigRS)
+        });
+
+        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
+            loanOffering,
+            short.baseToken,
+            short.underlyingToken
+        );
+
+        return loanOffering;
+    }
+
+    function parseLoanOfferingRatesFromAddValueTx(
+        ShortSellCommon.Short storage short,
+        uint256[8] values256
+    )
+        internal
+        view
+        returns (ShortSellCommon.LoanRates memory)
+    {
+        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
+            maxAmount: values256[0],
+            minAmount: values256[1],
+            minBaseToken: values256[2],
+            annualInterestRate: short.annualInterestRate,
+            lenderFee: values256[3],
+            takerFee: values256[4]
+        });
+
+        return rates;
     }
 }

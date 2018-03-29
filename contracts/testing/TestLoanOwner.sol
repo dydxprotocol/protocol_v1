@@ -27,4 +27,16 @@ contract TestLoanOwner is LoanOwner {
     {
         return TO_RETURN;
     }
+
+    function additionalLoanValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }

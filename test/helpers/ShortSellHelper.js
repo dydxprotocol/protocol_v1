@@ -11,7 +11,7 @@ const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
-const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
@@ -42,6 +42,7 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
 
   return tx;
 }
+
 async function callShort(shortSell, tx, safely = true) {
   const shortId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
@@ -108,6 +109,53 @@ async function callShort(shortSell, tx, safely = true) {
     contains = await shortSell.containsShort.call(shortId);
     expect(contains).to.be.true;
   }
+
+  response.id = shortId;
+  return response;
+}
+
+async function callAddValueToShort(shortSell, tx) {
+  const shortId = tx.id;
+
+  const addresses = [
+    tx.loanOffering.lender,
+    tx.loanOffering.signer,
+    tx.loanOffering.taker,
+    tx.loanOffering.feeRecipient,
+    tx.loanOffering.lenderFeeTokenAddress,
+    tx.loanOffering.takerFeeTokenAddress,
+    tx.exchangeWrapperAddress
+  ];
+
+  const values256 = [
+    tx.loanOffering.rates.maxAmount,
+    tx.loanOffering.rates.minAmount,
+    tx.loanOffering.rates.minBaseToken,
+    tx.loanOffering.rates.lenderFee,
+    tx.loanOffering.rates.takerFee,
+    tx.loanOffering.expirationTimestamp,
+    tx.loanOffering.salt,
+    tx.shortAmount
+  ];
+
+  const sigV = tx.loanOffering.signature.v;
+
+  const sigRS = [
+    tx.loanOffering.signature.r,
+    tx.loanOffering.signature.s,
+  ];
+
+  const order = zeroExOrderToBytes(tx.buyOrder);
+
+  let response = await shortSell.addValueToShort(
+    shortId,
+    addresses,
+    values256,
+    sigV,
+    sigRS,
+    order,
+    { from: tx.seller }
+  );
 
   response.id = shortId;
   return response;
@@ -432,5 +480,6 @@ module.exports = {
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
   callCloseShortDirectly,
-  getMaxInterestFee
+  getMaxInterestFee,
+  callAddValueToShort
 };

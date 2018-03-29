@@ -56,13 +56,6 @@ function maybeDeploy0x(deployer, network) {
 }
 
 async function deployShortSellContracts(deployer) {
-  await deployer.deploy(TransferInternal);
-
-  await Promise.all([
-    ShortSell.link('TransferInternal', TransferInternal.address),
-    TransferImpl.link('TransferInternal', TransferInternal.address)
-  ]);
-
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(LiquidateImpl),
@@ -70,12 +63,18 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
-    deployer.deploy(TransferImpl),
-    deployer.deploy(ShortImpl)
+    deployer.deploy(TransferImpl)
   ]);
 
-  await CloseShortImpl.link('InterestImpl', InterestImpl.address);
-  await deployer.deploy(CloseShortImpl);
+  await Promise.all([
+    CloseShortImpl.link('InterestImpl', InterestImpl.address),
+    ShortImpl.link('InterestImpl', InterestImpl.address)
+  ]);
+
+  await Promise.all([
+    deployer.deploy(CloseShortImpl),
+    deployer.deploy(ShortImpl)
+  ]);
 
   // Link ShortSell function libraries
   await Promise.all([

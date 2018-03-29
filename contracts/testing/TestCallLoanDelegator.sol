@@ -53,4 +53,16 @@ contract TestCallLoanDelegator is CallLoanDelegator {
     {
         return who == CANCELLER;
     }
+
+    function additionalLoanValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }

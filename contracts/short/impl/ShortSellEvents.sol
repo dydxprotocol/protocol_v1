@@ -149,4 +149,19 @@ contract ShortSellEvents {
         address indexed from,
         address indexed to
     );
+
+    /*
+     * Value was added to a short sell
+     */
+    event ValueAddedToShort(
+        bytes32 indexed id,
+        address indexed shortSeller,
+        address indexed lender,
+        bytes32 loanHash,
+        address loanFeeRecipient,
+        uint256 amountBorrowed,
+        uint256 effectiveAmountAdded,
+        uint256 baseTokenFromSell,
+        uint256 depositAmount
+    );
 }

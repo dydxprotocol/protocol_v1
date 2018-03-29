@@ -38,4 +38,16 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
     {
         return who == RECOVERER;
     }
+
+    function additionalLoanValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }

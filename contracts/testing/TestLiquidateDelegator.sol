@@ -39,4 +39,16 @@ contract TestLiquidateDelegator is LiquidateDelegator {
     {
         return who == CLOSER ? requestedAmount : 0;
     }
+
+    function additionalLoanValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }

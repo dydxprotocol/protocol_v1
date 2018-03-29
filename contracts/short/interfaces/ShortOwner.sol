@@ -44,4 +44,25 @@ contract ShortOwner is OnlyShortSell {
         onlyShortSell
         external
         returns (address);
+
+    /**
+     * Function a contract must implement in order to allow additional value to be added onto
+     * an owned short. ShortSell will call this on the owner of a short
+     * during ShortSell#addValueToShort. If true is returned, the implementing contract can assume
+     * the additional value was added.
+     *
+     * @param  from         address initiating the addition of funds to the position
+     * @param  shortId      id of the short
+     * @param  amountAdded  amount to be added to the position
+     * @return              true if the contract consents to additional value being added,
+     *                      false otherwise
+     */
+    function additionalShortValueAdded(
+        address from,
+        bytes32 shortId,
+        uint256 amountAdded
+    )
+        onlyShortSell
+        external
+        returns (bool);
 }

@@ -87,4 +87,16 @@ contract ERC20ShortCreator is
 
         return tokenAddress;
     }
+
+    function additionalShortValueAdded(
+        address,
+        bytes32,
+        uint256
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        return false;
+    }
 }
