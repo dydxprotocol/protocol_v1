@@ -275,18 +275,18 @@ contract ERC20Short is
         external
         returns (uint256 quoteTokenPayout)
     {
-        uint256 value = balanceOf(who);
-
-        if (value == 0) {
-            return 0;
-        }
-
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
         require(state == State.CLOSED);
+
+        uint256 value = balanceOf(who);
+
+        if (value == 0) {
+            return 0;
+        }
 
         uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
 
