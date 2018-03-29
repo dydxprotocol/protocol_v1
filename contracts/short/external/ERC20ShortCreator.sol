@@ -23,7 +23,6 @@ contract ERC20ShortCreator is
     ShortOwner,
     ReentrancyGuard
 {
-
     // -------------------
     // ------ Events -----
     // -------------------
@@ -56,9 +55,9 @@ contract ERC20ShortCreator is
         }
     }
 
-    // -------------------------------
-    // ------ Public functions -------
-    // -------------------------------
+    // ---------------------------------
+    // --- ShortSell Only Functions ----
+    // ---------------------------------
 
     /**
      * Implementation of ShortOwner functionality. Creates a new ERC20Short and assigns short
