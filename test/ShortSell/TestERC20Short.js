@@ -30,7 +30,7 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Short', function(accounts) {
-  let baseToken
+  let baseToken;
 
   let SHORTS = {
     FULL: {

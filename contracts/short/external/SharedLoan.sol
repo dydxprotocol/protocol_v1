@@ -4,6 +4,8 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
+import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
@@ -20,6 +22,7 @@ import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 /* solium-disable-next-line */
 contract SharedLoan is
     CallLoanDelegator,
+    ForceRecoverLoanDelegator,
     ReentrancyGuard
 {
     using SafeMath for uint256;
@@ -75,12 +78,12 @@ contract SharedLoan is
     // Address of the short's underlyingToken. Cached for convenience and lower-cost withdrawals
     address public underlyingToken;
 
-    uint256 totalAmount;
-    uint256 totalWithdrawn;
+    uint256 public totalAmount;
+    uint256 public totalWithdrawn;
 
-    mapping (address => uint256) private balances;
+    mapping (address => uint256) public balances;
 
-    mapping (address => uint256) private amountWithdrawn;
+    mapping (address => uint256) public amountWithdrawn;
 
     // -------------------------
     // ------ Constructor ------
@@ -93,7 +96,7 @@ contract SharedLoan is
         address[] trustedLoanCallers
     )
         public
-        CallLoanDelegator(shortSell)
+        LoanOwner(shortSell)
     {
         SHORT_ID = shortId;
         state = State.UNINITIALIZED;
@@ -197,6 +200,22 @@ contract SharedLoan is
         return TRUSTED_LOAN_CALLERS[who];
     }
 
+    function forceRecoverLoanOnBehalfOf(
+        address /* who */,
+        bytes32 shortId
+    )
+        onlyShortSell
+        external
+        returns (bool)
+    {
+        assert(state == State.OPEN);
+        assert(SHORT_ID == shortId);
+
+        state = State.CLOSED;
+
+        return true;
+    }
+
     // -----------------------------------------
     // ---- Public State Changing Functions ----
     // -----------------------------------------
@@ -206,7 +225,35 @@ contract SharedLoan is
     )
         nonReentrant
         external
-        returns (uint256 _underlyingTokenPayout)
+        returns (
+            uint256 _underlyingTokenPayout,
+            uint256 _baseTokenPayout
+        )
+    {
+        updateStateOnClosed();
+        require(state == State.OPEN || state == State.CLOSED);
+
+        return (
+            withdrawUnderlyingTokens(who),
+            withdrawBaseTokens(who)
+        );
+    }
+
+    function updateStateOnClosed()
+        internal
+    {
+        if (state != State.CLOSED) {
+            if (ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
+                state = State.CLOSED;
+            }
+        }
+    }
+
+    function withdrawUnderlyingTokens(
+        address who
+    )
+        internal
+        returns (uint256)
     {
         uint256 currentUnderlyingTokenBalance = TokenInteract.balanceOf(
             underlyingToken,
@@ -235,5 +282,18 @@ contract SharedLoan is
         );
 
         return allowedAmount;
+    }
+
+    function withdrawBaseTokens(
+        address who
+    )
+        internal
+        returns (uint256)
+    {
+        if (state != State.CLOSED) {
+            return 0;
+        }
+
+
     }
 }
