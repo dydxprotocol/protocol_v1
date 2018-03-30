@@ -534,6 +534,7 @@ library ShortImpl {
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
         state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
+        state.shorts[shortId].compoundingPeriod = transaction.loanOffering.rates.compoundingPeriod;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;

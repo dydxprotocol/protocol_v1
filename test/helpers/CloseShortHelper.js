@@ -148,7 +148,6 @@ function checkLenderBalances(balances, interestFee, shortTx, closeAmount) {
     lenderUnderlyingToken,
   } = balances;
   expect(lenderBaseToken).to.be.bignumber.equal(0);
-
   expect(lenderUnderlyingToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
@@ -265,7 +264,7 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
   checkLenderBalances(balances, interestFee, shortTx, closeAmount);
-  const maxInterest = await getMaxInterestFee(shortTx)
+  const maxInterest = await getMaxInterestFee(shortTx);
   expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
     shortTx.shortAmount
       .plus(maxInterest)
