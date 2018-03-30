@@ -18,7 +18,6 @@ const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
 const { createLoanOffering } = require('./LoanHelper');
-const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 

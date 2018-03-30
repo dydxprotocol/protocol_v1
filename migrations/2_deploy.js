@@ -16,7 +16,6 @@ const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
-const TransferInternal = artifacts.require("TransferInternal");
 const InterestImpl = artifacts.require("InterestImpl");
 
 // For testing

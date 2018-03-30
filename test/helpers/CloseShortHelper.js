@@ -13,7 +13,6 @@ const BaseToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const { getPartialAmount } = require('../helpers/MathHelper');
-const { BIGNUMBERS } = require('./Constants');
 const { getBlockTimestamp } = require('./NodeHelper');
 const { getMaxInterestFee } = require('./ShortSellHelper');
 

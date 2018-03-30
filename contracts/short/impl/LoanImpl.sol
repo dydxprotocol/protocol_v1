@@ -212,20 +212,20 @@ library LoanImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender:              addresses[2],
-            signer:              addresses[3],
-            owner:               addresses[4],
-            taker:               addresses[5],
-            feeRecipient:        addresses[6],
-            lenderFeeToken:      addresses[7],
-            takerFeeToken:       addresses[8],
-            rates:               parseLoanOfferRates(values256, values32),
+            lender: addresses[2],
+            signer: addresses[3],
+            owner: addresses[4],
+            taker: addresses[5],
+            feeRecipient: addresses[6],
+            lenderFeeToken: addresses[7],
+            takerFeeToken: addresses[8],
+            rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[6],
-            callTimeLimit:       values32[0],
-            maxDuration:         values32[1],
-            salt:                values256[7],
-            loanHash:            0,
-            signature:           ShortSellCommon.Signature({
+            callTimeLimit: values32[0],
+            maxDuration: values32[1],
+            salt: values256[7],
+            loanHash: 0,
+            signature: ShortSellCommon.Signature({
                 v: 0,
                 r: "0x",
                 s: "0x"
@@ -250,13 +250,13 @@ library LoanImpl {
         returns (ShortSellCommon.LoanRates _loanRates)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            maxAmount:          values256[0],
-            minAmount:          values256[1],
-            minBaseToken:       values256[2],
+            maxAmount: values256[0],
+            minAmount: values256[1],
+            minBaseToken: values256[2],
             annualInterestRate: values256[3],
-            lenderFee:          values256[4],
-            takerFee:           values256[5],
-            compoundingPeriod:  values32[2]
+            lenderFee: values256[4],
+            takerFee: values256[5],
+            compoundingPeriod: values32[2]
         });
 
         return rates;

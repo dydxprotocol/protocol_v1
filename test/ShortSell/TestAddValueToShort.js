@@ -17,7 +17,6 @@ const {
   getShort,
   callAddValueToShort
 } = require('../helpers/ShortSellHelper');
-const { BIGNUMBERS } = require('../helpers/Constants');
 const {
   getShortLifetime
 } = require('../helpers/CloseShortHelper');
