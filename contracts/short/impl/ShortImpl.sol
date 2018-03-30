@@ -42,10 +42,10 @@ library ShortImpl {
         uint256 shortAmount,
         uint256 baseTokenFromSell,
         uint256 depositAmount,
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint32  callTimeLimit,
         uint32  maxDuration,
-        uint32  compoundingPeriod
+        uint32  interestPeriod
     );
 
     /*
@@ -505,10 +505,10 @@ library ShortImpl {
             transaction.shortAmount,
             baseTokenReceived,
             transaction.depositAmount,
-            transaction.loanOffering.rates.annualInterestRate,
+            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.compoundingPeriod
+            transaction.loanOffering.rates.interestPeriod
         );
     }
 
@@ -530,11 +530,11 @@ library ShortImpl {
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].annualInterestRate = transaction.loanOffering.rates.annualInterestRate;
+        state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
         state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
-        state.shorts[shortId].compoundingPeriod = transaction.loanOffering.rates.compoundingPeriod;
+        state.shorts[shortId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -564,9 +564,9 @@ library ShortImpl {
         uint256 timeElapsed = ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp);
         uint256 effectiveAmount = InterestImpl.getInverseCompoundedInterest(
             transaction.shortAmount,
-            short.annualInterestRate,
+            short.interestRate,
             timeElapsed,
-            short.compoundingPeriod
+            short.interestPeriod
         );
 
         short.shortAmount = short.shortAmount.add(effectiveAmount);
@@ -700,10 +700,10 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            annualInterestRate: values256[3],
+            interestRate: values256[3],
             lenderFee: values256[4],
             takerFee: values256[5],
-            compoundingPeriod: values32[2]
+            interestPeriod: values32[2]
         });
 
         return rates;
@@ -757,7 +757,7 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minBaseToken,
-            transaction.loanOffering.rates.annualInterestRate,
+            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,
@@ -775,7 +775,7 @@ library ShortImpl {
         return [
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.compoundingPeriod
+            transaction.loanOffering.rates.interestPeriod
         ];
     }
 
@@ -858,10 +858,10 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            annualInterestRate: short.annualInterestRate,
+            interestRate: short.interestRate,
             lenderFee: values256[3],
             takerFee: values256[4],
-            compoundingPeriod: short.compoundingPeriod
+            interestPeriod: short.interestPeriod
         });
 
         return rates;

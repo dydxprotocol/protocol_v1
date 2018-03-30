@@ -253,10 +253,10 @@ library LoanImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            annualInterestRate: values256[3],
+            interestRate: values256[3],
             lenderFee: values256[4],
             takerFee: values256[5],
-            compoundingPeriod: values32[2]
+            interestPeriod: values32[2]
         });
 
         return rates;

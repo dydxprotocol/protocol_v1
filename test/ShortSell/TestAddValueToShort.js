@@ -52,9 +52,9 @@ describe('#addValueToShort', () => {
 
       const effectiveAmount = await interestCalc.getInverseCompoundedInterest.call(
         shortTx.shortAmount,
-        shortTx.loanOffering.rates.annualInterestRate,
+        shortTx.loanOffering.rates.interestRate,
         new BigNumber(lifetime),
-        shortTx.loanOffering.rates.compoundingPeriod
+        shortTx.loanOffering.rates.interestPeriod
       );
 
       expect(short.shortAmount).to.be.bignumber.eq(shortTx.shortAmount.plus(effectiveAmount));

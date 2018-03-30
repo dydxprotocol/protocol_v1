@@ -14,7 +14,7 @@ contract TestInterestImpl {
 
     function getCompoundedInterest(
         uint256 tokenAmount,
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint256 secondsOfInterest,
         uint256 roundToTimestep
     )
@@ -28,7 +28,7 @@ contract TestInterestImpl {
         }
         return InterestImpl.getCompoundedInterest(
             tokenAmount,
-            annualInterestRate,
+            interestRate,
             secondsOfInterest,
             roundToTimestep
         );
@@ -36,7 +36,7 @@ contract TestInterestImpl {
 
     function getInverseCompoundedInterest(
         uint256 tokenAmount,
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint256 secondsOfInterest,
         uint256 roundToTimestep
     )
@@ -48,7 +48,7 @@ contract TestInterestImpl {
         }
         return InterestImpl.getInverseCompoundedInterest(
             tokenAmount,
-            annualInterestRate,
+            interestRate,
             secondsOfInterest,
             roundToTimestep
         );

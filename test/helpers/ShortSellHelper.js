@@ -73,7 +73,7 @@ async function callShort(shortSell, tx, safely = true) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minBaseToken,
-    tx.loanOffering.rates.annualInterestRate,
+    tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -85,7 +85,7 @@ async function callShort(shortSell, tx, safely = true) {
   const values32 = [
     tx.loanOffering.callTimeLimit,
     tx.loanOffering.maxDuration,
-    tx.loanOffering.rates.compoundingPeriod
+    tx.loanOffering.rates.interestPeriod
   ];
 
   const sigV = tx.loanOffering.signature.v;
@@ -317,7 +317,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minBaseToken,
-    loanOffering.rates.annualInterestRate,
+    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -327,7 +327,7 @@ function formatLoanOffering(loanOffering) {
   const values32 = [
     loanOffering.callTimeLimit,
     loanOffering.maxDuration,
-    loanOffering.rates.compoundingPeriod
+    loanOffering.rates.interestPeriod
   ];
 
   return { addresses, values256, values32 };
@@ -384,7 +384,7 @@ async function getShort(shortSell, id) {
     [
       shortAmount,
       closedAmount,
-      annualInterestRate,
+      interestRate,
       requiredDeposit
     ],
     [
@@ -392,7 +392,7 @@ async function getShort(shortSell, id) {
       startTimestamp,
       callTimestamp,
       maxDuration,
-      compoundingPeriod
+      interestPeriod
     ]
   ] = await shortSell.getShort.call(id);
 
@@ -401,13 +401,13 @@ async function getShort(shortSell, id) {
     baseToken,
     shortAmount,
     closedAmount,
-    annualInterestRate,
+    interestRate,
     requiredDeposit,
     callTimeLimit,
     startTimestamp,
     callTimestamp,
     maxDuration,
-    compoundingPeriod,
+    interestPeriod,
     lender,
     seller
   };
@@ -462,9 +462,9 @@ async function getMaxInterestFee(shortTx) {
 
   const interest = await interestCalc.getCompoundedInterest.call(
     shortTx.shortAmount,
-    shortTx.loanOffering.rates.annualInterestRate,
+    shortTx.loanOffering.rates.interestRate,
     shortTx.loanOffering.maxDuration,
-    shortTx.loanOffering.rates.compoundingPeriod,
+    shortTx.loanOffering.rates.interestPeriod,
   );
   return interest;
 }

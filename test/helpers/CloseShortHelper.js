@@ -162,9 +162,9 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
 
   const interest = await interestCalc.getCompoundedInterest.call(
     closeAmount,
-    shortTx.loanOffering.rates.annualInterestRate,
+    shortTx.loanOffering.rates.interestRate,
     new BigNumber(shortLifetime),
-    shortTx.loanOffering.rates.compoundingPeriod,
+    shortTx.loanOffering.rates.interestPeriod,
   );
   return interest;
 }

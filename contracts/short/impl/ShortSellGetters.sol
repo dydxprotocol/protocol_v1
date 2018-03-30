@@ -24,14 +24,14 @@ contract ShortSellGetters is ShortSellStorage {
      *  Values corresponding to:
      *    [0] = shortAmount
      *    [1] = closedAmount
-     *    [2] = annualInterestRate
+     *    [2] = interestRate
      *    [3] = requiredDeposit
      *  Values corresponding to:
      *    [0] = callTimeLimit
      *    [1] = startTimestamp
      *    [2] = callTimestamp
      *    [3] = maxDuration
-     *    [4] = compoundingPeriod
+     *    [4] = interestPeriod
      */
     function getShort(
         bytes32 id
@@ -56,7 +56,7 @@ contract ShortSellGetters is ShortSellStorage {
             [
                 short.shortAmount,
                 short.closedAmount,
-                short.annualInterestRate,
+                short.interestRate,
                 short.requiredDeposit
             ],
             [
@@ -64,7 +64,7 @@ contract ShortSellGetters is ShortSellStorage {
                 short.startTimestamp,
                 short.callTimestamp,
                 short.maxDuration,
-                short.compoundingPeriod
+                short.interestPeriod
             ]
         );
     }
@@ -146,7 +146,7 @@ contract ShortSellGetters is ShortSellStorage {
         external
         returns (uint256 _interestRate)
     {
-        return state.shorts[id].annualInterestRate;
+        return state.shorts[id].interestRate;
     }
 
     function getShortRequiredDeposit(
@@ -199,13 +199,13 @@ contract ShortSellGetters is ShortSellStorage {
         return state.shorts[id].maxDuration;
     }
 
-    function getShortCompoundingPeriod(
+    function getShortinterestPeriod(
         bytes32 id
     )
         view
         external
         returns (uint32 _maxDuration)
     {
-        return state.shorts[id].compoundingPeriod;
+        return state.shorts[id].interestPeriod;
     }
 }

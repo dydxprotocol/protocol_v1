@@ -46,7 +46,7 @@ contract LoanOfferingVerifier {
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = interest compounding period (in seconds)
+     *  [2] = interest update period (in seconds)
      *
      * @return              true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur

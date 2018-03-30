@@ -29,14 +29,14 @@ library InterestImpl {
      * I = P * e^(R*T)
      *
      * @param  tokenAmount         Amount of tokens lent
-     * @param  annualInterestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
+     * @param  interestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
      * @param  roundToTimestep     If non-zero, round number of seconds _up_ to the nearest multiple
      * @return                     Total amount of tokens owed. Greater than tokenAmount.
      */
     function getCompoundedInterest(
         uint256 tokenAmount,
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint256 secondsOfInterest,
         uint256 roundToTimestep
     )
@@ -47,7 +47,7 @@ library InterestImpl {
         )
     {
         Fraction256.Fraction memory percent = getCompoundedPercent(
-            annualInterestRate,
+            interestRate,
             secondsOfInterest,
             roundToTimestep
         );
@@ -59,14 +59,14 @@ library InterestImpl {
      * Returns effective number of shares lent when lending after a delay.
      *
      * @param  tokenAmount         Amount of tokens lent
-     * @param  annualInterestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
+     * @param  interestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
      * @param  roundToTimestep     If non-zero, round number of seconds _up_ to the nearest multiple
      * @return                     Effective number of tokens lent. Less than tokenAmount.
      */
     function getInverseCompoundedInterest(
         uint256 tokenAmount,
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint256 secondsOfInterest,
         uint256 roundToTimestep
     )
@@ -75,7 +75,7 @@ library InterestImpl {
         returns (uint256)
     {
         Fraction256.Fraction memory percent = getCompoundedPercent(
-            annualInterestRate,
+            interestRate,
             secondsOfInterest,
             roundToTimestep
         );
@@ -91,13 +91,13 @@ library InterestImpl {
     /**
      * Returns a fraction estimate of E^(R*T)
      *
-     * @param  annualInterestRate  R in the equation; Annual interest percentage times 10**18
+     * @param  interestRate  R in the equation; Annual interest percentage times 10**18
      * @param  secondsOfInterest   T in the equation; Number of seconds of accruing interest
      * @param  roundToTimestep     Modifies T by rounding it up to the nearest multiple
      * @return                     E^(R*T)
      */
     function getCompoundedPercent(
-        uint256 annualInterestRate,
+        uint256 interestRate,
         uint256 secondsOfInterest,
         uint256 roundToTimestep
     )
@@ -108,7 +108,7 @@ library InterestImpl {
         uint256 interestTime = roundUpToTimestep(secondsOfInterest, roundToTimestep);
 
         Fraction256.Fraction memory rt = Fraction256.Fraction({
-            num: annualInterestRate.mul(interestTime),
+            num: interestRate.mul(interestTime),
             den: (10**18) * (1 years)
         });
 

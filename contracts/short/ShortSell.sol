@@ -92,7 +92,7 @@ contract ShortSell is
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
      *  [2]  = loan minimum base token
-     *  [3]  = loan interest rate (annual percentage times 10**18)
+     *  [3]  = loan interest rate (annual nominal percentage times 10**18)
      *  [4]  = loan lender fee
      *  [5]  = loan taker fee
      *  [6]  = loan expiration timestamp (in seconds)
@@ -104,7 +104,7 @@ contract ShortSell is
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest compounding period (in seconds)
+     *  [2] = loan interest update period (in seconds)
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
@@ -399,7 +399,7 @@ contract ShortSell is
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate (annual percentage times 10**18)
+     *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
@@ -409,7 +409,7 @@ contract ShortSell is
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest compounding period (in seconds)
+     *  [2] = loan interest update period (in seconds)
      *
      * @param  cancelAmount     Amount to cancel
      * @return _cancelledAmount Amount that was cancelled
@@ -455,7 +455,7 @@ contract ShortSell is
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate (annual percentage times 10**18)
+     *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
@@ -465,7 +465,7 @@ contract ShortSell is
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest compounding period (in seconds)
+     *  [2] = loan interest update period (in seconds)
      */
     function approveLoanOffering(
         address[9] addresses,
