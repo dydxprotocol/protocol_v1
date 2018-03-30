@@ -42,8 +42,10 @@ library ShortImpl {
         uint256 shortAmount,
         uint256 baseTokenFromSell,
         uint256 depositAmount,
-        uint32 callTimeLimit,
-        uint32 maxDuration
+        uint256 annualInterestRate,
+        uint32  callTimeLimit,
+        uint32  maxDuration,
+        uint32  compoundingPeriod
     );
 
     /*
@@ -83,7 +85,7 @@ library ShortImpl {
         ShortSellState.State storage state,
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS,
         bytes orderData
@@ -503,8 +505,10 @@ library ShortImpl {
             transaction.shortAmount,
             baseTokenReceived,
             transaction.depositAmount,
+            transaction.loanOffering.rates.annualInterestRate,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.maxDuration,
+            transaction.loanOffering.rates.compoundingPeriod
         );
     }
 
@@ -561,7 +565,7 @@ library ShortImpl {
             transaction.shortAmount,
             short.annualInterestRate,
             timeElapsed,
-            1 days // TODO(brendan)
+            short.compoundingPeriod
         );
 
         short.shortAmount = short.shortAmount.add(effectiveAmount);
@@ -619,7 +623,7 @@ library ShortImpl {
     function parseShortTx(
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -649,7 +653,7 @@ library ShortImpl {
     function parseLoanOffering(
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -658,20 +662,20 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[3],
-            signer: addresses[4],
-            owner: addresses[5],
-            taker: addresses[6],
-            feeRecipient: addresses[7],
-            lenderFeeToken: addresses[8],
-            takerFeeToken: addresses[9],
-            rates: parseLoanOfferRates(values256),
+            lender:              addresses[3],
+            signer:              addresses[4],
+            owner:               addresses[5],
+            taker:               addresses[6],
+            feeRecipient:        addresses[7],
+            lenderFeeToken:      addresses[8],
+            takerFeeToken:       addresses[9],
+            rates:               parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[6],
-            callTimeLimit: values32[0],
-            maxDuration: values32[1],
-            salt: values256[7],
-            loanHash: 0,
-            signature: parseLoanOfferingSignature(sigV, sigRS)
+            callTimeLimit:       values32[0],
+            maxDuration:         values32[1],
+            salt:                values256[7],
+            loanHash:            0,
+            signature:           parseLoanOfferingSignature(sigV, sigRS)
         });
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
@@ -684,19 +688,21 @@ library ShortImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[10] values256
+        uint256[10] values256,
+        uint32[3] values32
     )
         internal
         pure
         returns (ShortSellCommon.LoanRates _loanRates)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            maxAmount: values256[0],
-            minAmount: values256[1],
-            minBaseToken: values256[2],
+            maxAmount:          values256[0],
+            minAmount:          values256[1],
+            minBaseToken:       values256[2],
             annualInterestRate: values256[3],
-            lenderFee: values256[4],
-            takerFee: values256[5]
+            lenderFee:          values256[4],
+            takerFee:           values256[5],
+            compoundingPeriod:  values32[2]
         });
 
         return rates;
@@ -763,11 +769,12 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint32[2] _values)
+        returns (uint32[3] _values)
     {
         return [
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.maxDuration,
+            transaction.loanOffering.rates.compoundingPeriod
         ];
     }
 
@@ -783,18 +790,18 @@ library ShortImpl {
         returns (ShortTx memory)
     {
         ShortTx memory transaction = ShortTx({
-            owner: short.seller,
-            underlyingToken: short.underlyingToken,
-            baseToken: short.baseToken,
-            shortAmount: values256[7],
-            depositAmount: 0,
-            loanOffering: parseLoanOfferingFromAddValueTx(
-                short,
-                addresses,
-                values256,
-                sigV,
-                sigRS
-            ),
+            owner:                  short.seller,
+            underlyingToken:        short.underlyingToken,
+            baseToken:              short.baseToken,
+            shortAmount:            values256[7],
+            depositAmount:          0,
+            loanOffering:           parseLoanOfferingFromAddValueTx(
+                                        short,
+                                        addresses,
+                                        values256,
+                                        sigV,
+                                        sigRS
+                                    ),
             exchangeWrapperAddress: addresses[6]
         });
 
@@ -813,20 +820,20 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering memory)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[0],
-            signer: addresses[1],
-            owner: short.lender,
-            taker: addresses[2],
-            feeRecipient: addresses[3],
-            lenderFeeToken: addresses[4],
-            takerFeeToken: addresses[5],
-            rates: parseLoanOfferingRatesFromAddValueTx(short, values256),
+            lender:              addresses[0],
+            signer:              addresses[1],
+            owner:               short.lender,
+            taker:               addresses[2],
+            feeRecipient:        addresses[3],
+            lenderFeeToken:      addresses[4],
+            takerFeeToken:       addresses[5],
+            rates:               parseLoanOfferingRatesFromAddValueTx(short, values256),
             expirationTimestamp: values256[5],
-            callTimeLimit: short.callTimeLimit,
-            maxDuration: short.maxDuration,
-            salt: values256[6],
-            loanHash: 0,
-            signature: parseLoanOfferingSignature(sigV, sigRS)
+            callTimeLimit:       short.callTimeLimit,
+            maxDuration:         short.maxDuration,
+            salt:                values256[6],
+            loanHash:            0,
+            signature:           parseLoanOfferingSignature(sigV, sigRS)
         });
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
@@ -847,12 +854,13 @@ library ShortImpl {
         returns (ShortSellCommon.LoanRates memory)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
-            maxAmount: values256[0],
-            minAmount: values256[1],
-            minBaseToken: values256[2],
+            maxAmount:          values256[0],
+            minAmount:          values256[1],
+            minBaseToken:       values256[2],
             annualInterestRate: short.annualInterestRate,
-            lenderFee: values256[3],
-            takerFee: values256[4]
+            lenderFee:          values256[3],
+            takerFee:           values256[4],
+            compoundingPeriod:  short.compoundingPeriod
         });
 
         return rates;

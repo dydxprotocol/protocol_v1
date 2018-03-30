@@ -14,6 +14,24 @@ contract ShortSellGetters is ShortSellStorage {
     /**
      * Get a Short by id. This does not validate the short exists. If the short does not exist
      * all 0's will be returned.
+     * @param  id  unique ID of the short
+     * @return
+     *   Addresses corresponding to:
+     *    [0] = underlyingToken
+     *    [1] = baseToken
+     *    [2] = lender
+     *    [3] = seller
+     *  Values corresponding to:
+     *    [0] = shortAmount
+     *    [1] = closedAmount
+     *    [2] = annualInterestRate
+     *    [3] = requiredDeposit
+     *  Values corresponding to:
+     *    [0] = callTimeLimit
+     *    [1] = startTimestamp
+     *    [2] = callTimestamp
+     *    [3] = maxDuration
+     *    [4] = compoundingPeriod
      */
     function getShort(
         bytes32 id
@@ -21,35 +39,33 @@ contract ShortSellGetters is ShortSellStorage {
         view
         external
         returns (
-            address underlyingToken,
-            address baseToken,
-            uint256 shortAmount,
-            uint256 closedAmount,
-            uint256 interestRate,
-            uint256 requiredDeposit,
-            uint32 callTimeLimit,
-            uint32 startTimestamp,
-            uint32 callTimestamp,
-            uint32 maxDuration,
-            address lender,
-            address seller
+            address[4],
+            uint256[4],
+            uint32[5]
         )
     {
         ShortSellCommon.Short storage short = state.shorts[id];
 
         return (
-            short.underlyingToken,
-            short.baseToken,
-            short.shortAmount,
-            short.closedAmount,
-            short.annualInterestRate,
-            short.requiredDeposit,
-            short.callTimeLimit,
-            short.startTimestamp,
-            short.callTimestamp,
-            short.maxDuration,
-            short.lender,
-            short.seller
+            [
+                short.underlyingToken,
+                short.baseToken,
+                short.lender,
+                short.seller
+            ],
+            [
+                short.shortAmount,
+                short.closedAmount,
+                short.annualInterestRate,
+                short.requiredDeposit
+            ],
+            [
+                short.callTimeLimit,
+                short.startTimestamp,
+                short.callTimestamp,
+                short.maxDuration,
+                short.compoundingPeriod
+            ]
         );
     }
 
@@ -181,5 +197,15 @@ contract ShortSellGetters is ShortSellStorage {
         returns (uint32 _maxDuration)
     {
         return state.shorts[id].maxDuration;
+    }
+
+    function getShortCompoundingPeriod(
+        bytes32 id
+    )
+        view
+        external
+        returns (uint32 _maxDuration)
+    {
+        return state.shorts[id].compoundingPeriod;
     }
 }

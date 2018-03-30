@@ -30,7 +30,8 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       minBaseToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
       annualInterestRate: new BigNumber('365e16'),
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
-      takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02)
+      takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
+      compoundingPeriod:  BIGNUMBERS.ONE_DAY_IN_SECONDS
     },
     expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
@@ -51,6 +52,7 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.annualInterestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
+    { type: 'uint32', value: loanOffering.rates.compoundingPeriod },
     loanOffering.expirationTimestamp,
     { type: 'uint32', value: loanOffering.callTimeLimit },
     { type: 'uint32', value: loanOffering.maxDuration },

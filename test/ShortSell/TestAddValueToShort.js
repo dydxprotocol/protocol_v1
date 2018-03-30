@@ -55,7 +55,7 @@ describe('#addValueToShort', () => {
         shortTx.shortAmount,
         shortTx.loanOffering.rates.annualInterestRate,
         new BigNumber(lifetime),
-        BIGNUMBERS.ONE_DAY_IN_SECONDS
+        shortTx.loanOffering.rates.compoundingPeriod
       );
 
       expect(short.shortAmount).to.be.bignumber.eq(shortTx.shortAmount.plus(effectiveAmount));

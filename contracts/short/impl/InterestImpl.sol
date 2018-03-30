@@ -130,8 +130,8 @@ library InterestImpl {
         pure
         returns (uint256)
     {
-        // don't modify numSeconds if timestep is zero
-        if (timeStep == 0) {
+        // don't modify numSeconds if timestep is 0 or 1
+        if (timeStep <= 1) {
             return numSeconds;
         }
 

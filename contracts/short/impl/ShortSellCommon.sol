@@ -36,6 +36,7 @@ library ShortSellCommon {
         uint32  startTimestamp;     // Immutable, cannot be 0
         uint32  callTimestamp;
         uint32  maxDuration;        // Immutable
+        uint32  compoundingPeriod;  // Immutable
         address lender;
         address seller;
     }
@@ -64,6 +65,7 @@ library ShortSellCommon {
         uint256 annualInterestRate;
         uint256 lenderFee;
         uint256 takerFee;
+        uint32  compoundingPeriod;
     }
 
     struct Signature {
@@ -122,7 +124,7 @@ library ShortSellCommon {
             closeAmount,
             short.annualInterestRate,
             timeElapsed,
-            1 days
+            short.compoundingPeriod
         );
     }
 
@@ -185,6 +187,7 @@ library ShortSellCommon {
             loanOffering.rates.annualInterestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
+            loanOffering.rates.compoundingPeriod,
             loanOffering.expirationTimestamp,
             loanOffering.callTimeLimit,
             loanOffering.maxDuration,

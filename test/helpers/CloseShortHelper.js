@@ -163,17 +163,12 @@ async function getInterestFee(shortTx, closeTx, closeAmount) {
   const interestCalc = await TestInterestImpl.new();
 
   const interest = await interestCalc.getCompoundedInterest.call(
-    shortTx.shortAmount,
+    closeAmount,
     shortTx.loanOffering.rates.annualInterestRate,
     new BigNumber(shortLifetime),
-    BIGNUMBERS.ONE_DAY_IN_SECONDS
+    shortTx.loanOffering.rates.compoundingPeriod,
   );
-  return getPartialAmount(
-    closeAmount,
-    shortTx.shortAmount,
-    interest,
-    true // round up
-  );
+  return interest;
 }
 
 async function getBalances(shortSell, shortTx, sellOrder) {
@@ -270,9 +265,10 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
 
   checkSmartContractBalances(balances, shortTx, closeAmount);
   checkLenderBalances(balances, interestFee, shortTx, closeAmount);
+  const maxInterest = await getMaxInterestFee(shortTx)
   expect(balances.sellerUnderlyingToken).to.be.bignumber.equal(
     shortTx.shortAmount
-      .plus(getMaxInterestFee(shortTx))
+      .plus(maxInterest)
       .minus(underlyingTokenOwedToLender)
   );
 
