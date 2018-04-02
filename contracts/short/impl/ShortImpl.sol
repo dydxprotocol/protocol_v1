@@ -143,7 +143,7 @@ library ShortImpl {
             transaction.underlyingToken,
             transaction.baseToken,
             transaction.loanOffering.feeRecipient,
-            transaction.shortAmount,
+            transaction.effectiveAmount,
             baseTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.rates.interestRate,
@@ -164,13 +164,13 @@ library ShortImpl {
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.shortAmount);
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
-        state.shorts[shortId].shortAmount = transaction.shortAmount;
+        state.shorts[shortId].shortAmount = transaction.effectiveAmount;
         state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
@@ -211,7 +211,8 @@ library ShortImpl {
             owner: addresses[0],
             underlyingToken: addresses[1],
             baseToken: addresses[2],
-            shortAmount: values256[8],
+            effectiveAmount: values256[8],
+            lenderAmount: values256[8],
             depositAmount: values256[9],
             loanOffering: parseLoanOffering(
                 addresses,

@@ -13,7 +13,7 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
-const { getInterestFee } = require('../helpers/CloseShortHelper');
+const { getOwedAmount } = require('../helpers/CloseShortHelper');
 const { getMaxInterestFee } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -137,7 +137,7 @@ contract('DutchAuctionCloser', function(accounts) {
         closeAmount,
         DutchAuctionCloser.address,
         { from: dutchBidder });
-      const interest1 = await getInterestFee(shortTx, closeTx1, closeAmount);
+      const owedAmount1 = await getOwedAmount(shortTx, closeTx1, closeAmount);
 
       // closing the other half is fine
       const closeTx2 = await shortSellContract.closeShortDirectly(
@@ -145,7 +145,7 @@ contract('DutchAuctionCloser', function(accounts) {
         closeAmount,
         DutchAuctionCloser.address,
         { from: dutchBidder });
-      const interest2 = await getInterestFee(shortTx, closeTx2, closeAmount);
+      const owedAmount2 = await getOwedAmount(shortTx, closeTx2, closeAmount);
 
       // cannot close half a third time
       await expectThrow(
@@ -168,9 +168,8 @@ contract('DutchAuctionCloser', function(accounts) {
       // check amounts
       expect(underlyingBidder).to.be.bignumber.equal(
         startingBidderUnderlyingToken
-          .minus(closeAmount.times(2))
-          .minus(interest1)
-          .minus(interest2)
+          .minus(owedAmount1)
+          .minus(owedAmount2)
       );
       expect(baseSeller.plus(baseBidder)).to.be.bignumber.equal(baseVault);
     });

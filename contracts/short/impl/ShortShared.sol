@@ -28,7 +28,8 @@ library ShortShared {
         address owner;
         address underlyingToken;
         address baseToken;
-        uint256 shortAmount;
+        uint256 effectiveAmount;
+        uint256 lenderAmount;
         uint256 depositAmount;
         ShortSellCommon.LoanOffering loanOffering;
         address exchangeWrapperAddress;
@@ -95,7 +96,7 @@ library ShortShared {
         view
     {
         // Disallow 0 value shorts
-        require(transaction.shortAmount > 0);
+        require(transaction.effectiveAmount > 0);
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -110,14 +111,14 @@ library ShortShared {
 
         // Validate the short amount is <= than max and >= min
         require(
-            transaction.shortAmount.add(
+            transaction.effectiveAmount.add(
                 ShortSellCommon.getUnavailableLoanOfferingAmountImpl(
                     state,
                     transaction.loanOffering.loanHash
                 )
             ) <= transaction.loanOffering.rates.maxAmount
         );
-        require(transaction.shortAmount >= transaction.loanOffering.rates.minAmount);
+        require(transaction.effectiveAmount >= transaction.loanOffering.rates.minAmount);
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
 
         // Check no casting errors
@@ -180,7 +181,7 @@ library ShortShared {
             transaction.underlyingToken,
             transaction.loanOffering.lender,
             transaction.exchangeWrapperAddress,
-            transaction.shortAmount
+            transaction.lenderAmount
         );
     }
 
@@ -221,12 +222,12 @@ library ShortShared {
         Proxy proxy = Proxy(state.PROXY);
 
         uint256 lenderFee = MathHelpers.getPartialAmount(
-            transaction.shortAmount,
+            transaction.lenderAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.lenderFee
         );
         uint256 takerFee = MathHelpers.getPartialAmount(
-            transaction.shortAmount,
+            transaction.lenderAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.takerFee
         );
@@ -263,7 +264,7 @@ library ShortShared {
             transaction.baseToken,
             transaction.underlyingToken,
             msg.sender,
-            transaction.shortAmount,
+            transaction.lenderAmount,
             orderData
         );
 
@@ -286,7 +287,7 @@ library ShortShared {
     {
         uint256 totalBaseToken = baseTokenReceived.add(transaction.depositAmount);
         uint256 loanOfferingMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
+            transaction.effectiveAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minBaseToken
         );

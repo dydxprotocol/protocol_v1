@@ -9,7 +9,6 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
-import { InterestImpl } from "./InterestImpl.sol";
 import { ShortShared } from "./ShortShared.sol";
 
 /**
@@ -55,9 +54,15 @@ library AddValueToShortImpl {
         bytes orderData
     )
         public
-        returns (uint256 _effectiveAmountAdded)
+        returns (uint256 _underlyingTokenPulledFromLender)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
+        uint256 lenderAmount = ShortSellCommon.calculateOwedAmount(
+            short,
+            values256[7],
+            block.timestamp
+        );
 
         ShortShared.ShortTx memory transaction = parseAddValueToShortTx(
             short,
@@ -65,7 +70,8 @@ library AddValueToShortImpl {
             values256,
             values32,
             sigV,
-            sigRS
+            sigRS,
+            lenderAmount
         );
 
         // Base token balance before transfering anything for this addition
@@ -96,7 +102,8 @@ library AddValueToShortImpl {
             baseTokenReceived
         );
 
-        uint256 effectiveAmountAdded = updateState(
+        updateState(
+            state,
             transaction,
             shortId,
             short
@@ -113,11 +120,10 @@ library AddValueToShortImpl {
             transaction,
             shortId,
             short,
-            baseTokenReceived,
-            effectiveAmountAdded
+            baseTokenReceived
         );
 
-        return effectiveAmountAdded;
+        return transaction.lenderAmount;
     }
 
     // --------- Helper Functions ---------
@@ -135,7 +141,7 @@ library AddValueToShortImpl {
         uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
-            transaction.shortAmount,
+            transaction.effectiveAmount,
             short.shortAmount,
             baseTokenBalance
         );
@@ -158,22 +164,18 @@ library AddValueToShortImpl {
     }
 
     function updateState(
+        ShortSellState.State storage state,
         ShortShared.ShortTx transaction,
         bytes32 shortId,
         ShortSellCommon.Short storage short
     )
         internal
-        returns (uint256 _effectiveAmountAdded)
     {
-        uint256 timeElapsed = ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp);
-        uint256 effectiveAmount = InterestImpl.getInverseCompoundedInterest(
-            transaction.shortAmount,
-            short.interestRate,
-            timeElapsed,
-            short.interestPeriod
-        );
+        short.shortAmount = short.shortAmount.add(transaction.effectiveAmount);
 
-        short.shortAmount = short.shortAmount.add(effectiveAmount);
+        // Update global amounts for the loan and lender
+        state.loanFills[transaction.loanOffering.loanHash] =
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
 
         address seller = short.seller;
         address lender = short.lender;
@@ -183,7 +185,7 @@ library AddValueToShortImpl {
                 ShortOwner(seller).additionalShortValueAdded(
                     msg.sender,
                     shortId,
-                    effectiveAmount
+                    transaction.effectiveAmount
                 )
             );
         }
@@ -193,20 +195,17 @@ library AddValueToShortImpl {
                 LoanOwner(lender).additionalLoanValueAdded(
                     transaction.loanOffering.lender,
                     shortId,
-                    effectiveAmount
+                    transaction.effectiveAmount
                 )
             );
         }
-
-        return effectiveAmount;
     }
 
     function recordValueAddedToShort(
         ShortShared.ShortTx transaction,
         bytes32 shortId,
         ShortSellCommon.Short storage short,
-        uint256 baseTokenFromSell,
-        uint256 effectiveAmountAdded
+        uint256 baseTokenFromSell
     )
         internal
     {
@@ -216,8 +215,8 @@ library AddValueToShortImpl {
             short.lender,
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
-            transaction.shortAmount,
-            effectiveAmountAdded,
+            transaction.lenderAmount,
+            transaction.effectiveAmount,
             baseTokenFromSell,
             transaction.depositAmount
         );
@@ -231,7 +230,8 @@ library AddValueToShortImpl {
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
-        bytes32[2] sigRS
+        bytes32[2] sigRS,
+        uint256 lenderAmount
     )
         internal
         view
@@ -241,7 +241,8 @@ library AddValueToShortImpl {
             owner: short.seller,
             underlyingToken: short.underlyingToken,
             baseToken: short.baseToken,
-            shortAmount: values256[7],
+            effectiveAmount: values256[7],
+            lenderAmount: lenderAmount,
             depositAmount: 0,
             loanOffering: parseLoanOfferingFromAddValueTx(
                 short,

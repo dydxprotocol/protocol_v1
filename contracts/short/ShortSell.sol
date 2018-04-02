@@ -161,7 +161,8 @@ contract ShortSell is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = amount
+     *  [7]  = amount to add to the position (NOTE: the amount pulled from the lender will be
+     *                                              >= this amount)
      *
      * @param  values32  Values corresponding to:
      *
@@ -185,7 +186,7 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
-        returns (uint256 _effectiveAmountAdded)
+        returns (uint256 _underlyingTokenPulledFromLender)
     {
         return AddValueToShortImpl.addValueToShortImpl(
             state,
@@ -228,7 +229,7 @@ contract ShortSell is
         returns (
             uint256 _amountClosed,
             uint256 _baseTokenReceived,
-            uint256 _interestFeeAmount
+            uint256 _underlyingTokenPaidToLender
         )
     {
         return CloseShortImpl.closeShortImpl(
@@ -562,7 +563,7 @@ contract ShortSell is
         return Vault(state.VAULT).balances(shortId, state.shorts[shortId].baseToken);
     }
 
-    function getShortInterestFee(
+    function getShortOwedAmount(
         bytes32 shortId
     )
         view
@@ -572,9 +573,10 @@ contract ShortSell is
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
+
         ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
 
-        return ShortSellCommon.calculateInterestFee(
+        return ShortSellCommon.calculateOwedAmount(
             shortObject,
             shortObject.shortAmount.sub(shortObject.closedAmount),
             block.timestamp

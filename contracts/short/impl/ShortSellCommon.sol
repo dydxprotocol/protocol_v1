@@ -110,7 +110,7 @@ library ShortSellCommon {
         state.closedShorts[shortId] = true;
     }
 
-    function calculateInterestFee(
+    function calculateOwedAmount(
         Short short,
         uint256 closeAmount,
         uint256 endTimestamp

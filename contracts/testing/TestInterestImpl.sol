@@ -35,26 +35,6 @@ contract TestInterestImpl {
         );
     }
 
-    function getInverseCompoundedInterest(
-        uint256 tokenAmount,
-        uint256 interestRate,
-        uint256 secondsOfInterest,
-        uint256 roundToTimestep
-    )
-        public
-        returns (uint256)
-    {
-        if (false) {
-            test = 1;
-        }
-        return InterestImpl.getInverseCompoundedInterest(
-            tokenAmount,
-            interestRate,
-            secondsOfInterest,
-            roundToTimestep
-        );
-    }
-
     function getNumBits(
         uint256 n
     )
