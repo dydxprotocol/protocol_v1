@@ -76,7 +76,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       // grant tokens and set permissions for bidder
       const numTokens = await UnderlyingTokenContract.balanceOf(dutchBidder);
-      const targetTokens = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
+      const maxInterest = await getMaxInterestFee(shortTx);
+      const targetTokens = shortTx.shortAmount.plus(maxInterest);
 
       if (numTokens < targetTokens) {
         await UnderlyingTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
@@ -126,6 +127,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('succeeds for full short', async () => {
       await wait(callTimeLimit * 3 / 4);
 
+      const startingBidderUnderlyingToken = await UnderlyingTokenContract.balanceOf(dutchBidder);
       const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
       const closeAmount = shortTx.shortAmount.div(2);
 
@@ -164,7 +166,6 @@ contract('DutchAuctionCloser', function(accounts) {
       ]);
 
       // check amounts
-      const startingBidderUnderlyingToken = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
       expect(underlyingBidder).to.be.bignumber.equal(
         startingBidderUnderlyingToken
           .minus(closeAmount.times(2))

@@ -203,7 +203,8 @@ contract('ERC721Short', function(accounts) {
     const unapprovedAcct = accounts[9];
 
     async function initUnderlying(account) {
-      const amount = shortTx.shortAmount.plus(getMaxInterestFee(shortTx));
+      const maxInterest = await getMaxInterestFee(shortTx);
+      const amount = shortTx.shortAmount.plus(maxInterest);
       await underlyingToken.issueTo(account, amount);
       await underlyingToken.approve(ProxyContract.address, amount, { from: account });
     }

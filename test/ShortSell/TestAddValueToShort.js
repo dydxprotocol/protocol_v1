@@ -17,7 +17,6 @@ const {
   getShort,
   callAddValueToShort
 } = require('../helpers/ShortSellHelper');
-const { BIGNUMBERS } = require('../helpers/Constants');
 const {
   getShortLifetime
 } = require('../helpers/CloseShortHelper');
@@ -53,9 +52,9 @@ describe('#addValueToShort', () => {
 
       const effectiveAmount = await interestCalc.getInverseCompoundedInterest.call(
         shortTx.shortAmount,
-        shortTx.loanOffering.rates.annualInterestRate,
+        shortTx.loanOffering.rates.interestRate,
         new BigNumber(lifetime),
-        BIGNUMBERS.ONE_DAY_IN_SECONDS
+        shortTx.loanOffering.rates.interestPeriod
       );
 
       expect(short.shortAmount).to.be.bignumber.eq(shortTx.shortAmount.plus(effectiveAmount));

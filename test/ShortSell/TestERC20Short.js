@@ -132,14 +132,16 @@ contract('ERC20Short', function(accounts) {
   }
 
   async function grantDirectCloseTokensToSeller(act = null) {
+    const maxInterestFull = await getMaxInterestFee(SHORTS.FULL.TX);
+    const maxInterestPart = await getMaxInterestFee(SHORTS.PART.TX);
     await issueTokenToAccountInAmountAndApproveProxy(
       underlyingToken,
       act ? act : SHORTS.FULL.TX.seller,
-      SHORTS.FULL.NUM_TOKENS.plus(getMaxInterestFee(SHORTS.FULL.TX)));
+      SHORTS.FULL.NUM_TOKENS.plus(maxInterestFull));
     await issueTokenToAccountInAmountAndApproveProxy(
       underlyingToken,
       act ? act : SHORTS.PART.TX.seller,
-      SHORTS.PART.NUM_TOKENS.plus(getMaxInterestFee(SHORTS.PART.TX)));
+      SHORTS.PART.NUM_TOKENS.plus(maxInterestPart));
   }
 
   async function callInShorts() {

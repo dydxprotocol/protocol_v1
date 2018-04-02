@@ -14,33 +14,25 @@ library ShortSellHelper {
         returns (ShortSellCommon.Short memory _short)
     {
         var (
-            underlyingToken,
-            baseToken,
-            shortAmount,
-            closedAmount,
-            annualInterestRate,
-            requiredDeposit,
-            callTimeLimit,
-            startTimestamp,
-            callTimestamp,
-            maxDuration,
-            lender,
-            seller
+            addresses,
+            values256,
+            values32
         ) = ShortSell(SHORT_SELL).getShort(shortId);
 
         return ShortSellCommon.Short({
-            underlyingToken: underlyingToken,
-            baseToken: baseToken,
-            shortAmount: shortAmount,
-            closedAmount: closedAmount,
-            annualInterestRate: annualInterestRate,
-            requiredDeposit: requiredDeposit,
-            callTimeLimit: callTimeLimit,
-            startTimestamp: startTimestamp,
-            callTimestamp: callTimestamp,
-            maxDuration: maxDuration,
-            lender: lender,
-            seller: seller
+            underlyingToken: addresses[0],
+            baseToken: addresses[1],
+            shortAmount: values256[0],
+            closedAmount: values256[1],
+            interestRate: values256[2],
+            requiredDeposit: values256[3],
+            callTimeLimit: values32[0],
+            startTimestamp: values32[1],
+            callTimestamp: values32[2],
+            maxDuration: values32[3],
+            interestPeriod: values32[4],
+            lender: addresses[2],
+            seller: addresses[3]
         });
     }
 }

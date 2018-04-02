@@ -19,7 +19,7 @@ contract LoanOfferingVerifier {
      * occurred. This means that verifyLoanOffering can also be used to update internal contract
      * state on a loan.
      *
-     * @param  addresses        Array of addresses:
+     * @param  addresses  Array of addresses:
      *
      *  [0] = underlying token
      *  [1] = base token
@@ -31,7 +31,7 @@ contract LoanOfferingVerifier {
      *  [7] = loan lender fee token
      *  [8] = loan taker fee token
      *
-     * @param  values256        Values corresponding to:
+     * @param  values256  Values corresponding to:
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
@@ -42,10 +42,11 @@ contract LoanOfferingVerifier {
      *  [6] = loan expiration timestamp (in seconds)
      *  [7] = loan salt
      *
-     * @param  values32         Values corresponding to:
+     * @param  values32  Values corresponding to:
      *
-     *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *  [2] = interest update period (in seconds)
      *
      * @return              true if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
@@ -53,7 +54,7 @@ contract LoanOfferingVerifier {
     function verifyLoanOffering(
         address[9] addresses,
         uint256[8] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         bytes32 shortId
     )
         external

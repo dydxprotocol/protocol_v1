@@ -42,8 +42,10 @@ library ShortImpl {
         uint256 shortAmount,
         uint256 baseTokenFromSell,
         uint256 depositAmount,
-        uint32 callTimeLimit,
-        uint32 maxDuration
+        uint256 interestRate,
+        uint32  callTimeLimit,
+        uint32  maxDuration,
+        uint32  interestPeriod
     );
 
     /*
@@ -83,7 +85,7 @@ library ShortImpl {
         ShortSellState.State storage state,
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS,
         bytes orderData
@@ -503,8 +505,10 @@ library ShortImpl {
             transaction.shortAmount,
             baseTokenReceived,
             transaction.depositAmount,
+            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.maxDuration,
+            transaction.loanOffering.rates.interestPeriod
         );
     }
 
@@ -526,10 +530,11 @@ library ShortImpl {
         state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].shortAmount = transaction.shortAmount;
-        state.shorts[shortId].annualInterestRate = transaction.loanOffering.rates.annualInterestRate;
+        state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.shorts[shortId].startTimestamp = uint32(block.timestamp);
         state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
+        state.shorts[shortId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
         state.shorts[shortId].closedAmount = 0;
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
@@ -559,9 +564,9 @@ library ShortImpl {
         uint256 timeElapsed = ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp);
         uint256 effectiveAmount = InterestImpl.getInverseCompoundedInterest(
             transaction.shortAmount,
-            short.annualInterestRate,
+            short.interestRate,
             timeElapsed,
-            1 days // TODO(brendan)
+            short.interestPeriod
         );
 
         short.shortAmount = short.shortAmount.add(effectiveAmount);
@@ -619,7 +624,7 @@ library ShortImpl {
     function parseShortTx(
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -649,7 +654,7 @@ library ShortImpl {
     function parseLoanOffering(
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS
     )
@@ -665,7 +670,7 @@ library ShortImpl {
             feeRecipient: addresses[7],
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
-            rates: parseLoanOfferRates(values256),
+            rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[6],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
@@ -684,7 +689,8 @@ library ShortImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[10] values256
+        uint256[10] values256,
+        uint32[3] values32
     )
         internal
         pure
@@ -694,9 +700,10 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            annualInterestRate: values256[3],
+            interestRate: values256[3],
             lenderFee: values256[4],
-            takerFee: values256[5]
+            takerFee: values256[5],
+            interestPeriod: values32[2]
         });
 
         return rates;
@@ -750,7 +757,7 @@ library ShortImpl {
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minBaseToken,
-            transaction.loanOffering.rates.annualInterestRate,
+            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,
@@ -763,11 +770,12 @@ library ShortImpl {
     )
         internal
         pure
-        returns (uint32[2] _values)
+        returns (uint32[3] _values)
     {
         return [
             transaction.loanOffering.callTimeLimit,
-            transaction.loanOffering.maxDuration
+            transaction.loanOffering.maxDuration,
+            transaction.loanOffering.rates.interestPeriod
         ];
     }
 
@@ -850,9 +858,10 @@ library ShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minBaseToken: values256[2],
-            annualInterestRate: short.annualInterestRate,
+            interestRate: short.interestRate,
             lenderFee: values256[3],
-            takerFee: values256[4]
+            takerFee: values256[4],
+            interestPeriod: short.interestPeriod
         });
 
         return rates;

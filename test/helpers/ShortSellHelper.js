@@ -11,12 +11,13 @@ const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
+const InterestImpl = artifacts.require("InterestImpl");
+const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
 const { createLoanOffering } = require('./LoanHelper');
-const { getPartialAmount, getQuotient3Over2 } = require('../helpers/MathHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -72,7 +73,7 @@ async function callShort(shortSell, tx, safely = true) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minBaseToken,
-    tx.loanOffering.rates.annualInterestRate,
+    tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -83,7 +84,8 @@ async function callShort(shortSell, tx, safely = true) {
 
   const values32 = [
     tx.loanOffering.callTimeLimit,
-    tx.loanOffering.maxDuration
+    tx.loanOffering.maxDuration,
+    tx.loanOffering.rates.interestPeriod
   ];
 
   const sigV = tx.loanOffering.signature.v;
@@ -315,7 +317,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minBaseToken,
-    loanOffering.rates.annualInterestRate,
+    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -324,7 +326,8 @@ function formatLoanOffering(loanOffering) {
 
   const values32 = [
     loanOffering.callTimeLimit,
-    loanOffering.maxDuration
+    loanOffering.maxDuration,
+    loanOffering.rates.interestPeriod
   ];
 
   return { addresses, values256, values32 };
@@ -372,18 +375,25 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
 
 async function getShort(shortSell, id) {
   const [
-    underlyingToken,
-    baseToken,
-    shortAmount,
-    closedAmount,
-    annualInterestRate,
-    requiredDeposit,
-    callTimeLimit,
-    startTimestamp,
-    callTimestamp,
-    maxDuration,
-    lender,
-    seller
+    [
+      underlyingToken,
+      baseToken,
+      lender,
+      seller
+    ],
+    [
+      shortAmount,
+      closedAmount,
+      interestRate,
+      requiredDeposit
+    ],
+    [
+      callTimeLimit,
+      startTimestamp,
+      callTimestamp,
+      maxDuration,
+      interestPeriod
+    ]
   ] = await shortSell.getShort.call(id);
 
   return {
@@ -391,12 +401,13 @@ async function getShort(shortSell, id) {
     baseToken,
     shortAmount,
     closedAmount,
-    annualInterestRate,
+    interestRate,
     requiredDeposit,
     callTimeLimit,
     startTimestamp,
     callTimestamp,
     maxDuration,
+    interestPeriod,
     lender,
     seller
   };
@@ -429,7 +440,7 @@ async function issueForDirectClose(shortTx) {
 
   // Issue to the short seller the maximum amount of underlying token they could have to pay
 
-  const maxInterestFee = getMaxInterestFee(shortTx);
+  const maxInterestFee = await getMaxInterestFee(shortTx);
   const maxUnderlyingTokenOwed = shortTx.shortAmount.plus(maxInterestFee);
 
   await Promise.all([
@@ -445,18 +456,17 @@ async function issueForDirectClose(shortTx) {
   ]);
 }
 
-function getMaxInterestFee(shortTx) {
-  const interestRate = getPartialAmount(
+async function getMaxInterestFee(shortTx) {
+  await TestInterestImpl.link('InterestImpl', InterestImpl.address);
+  const interestCalc = await TestInterestImpl.new();
+
+  const interest = await interestCalc.getCompoundedInterest.call(
     shortTx.shortAmount,
-    shortTx.loanOffering.rates.maxAmount,
-    shortTx.loanOffering.rates.annualInterestRate,
-    true // roundsUp
+    shortTx.loanOffering.rates.interestRate,
+    shortTx.loanOffering.maxDuration,
+    shortTx.loanOffering.rates.interestPeriod,
   );
-  return getQuotient3Over2(
-    shortTx.shortAmount, shortTx.loanOffering.maxDuration, interestRate,
-    shortTx.shortAmount, BIGNUMBERS.ONE_DAY_IN_SECONDS,
-    true
-  );
+  return interest;
 }
 
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {

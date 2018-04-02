@@ -92,7 +92,7 @@ contract ShortSell is
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
      *  [2]  = loan minimum base token
-     *  [3]  = loan interest rate (annual percentage times 10**18)
+     *  [3]  = loan interest rate (annual nominal percentage times 10**18)
      *  [4]  = loan lender fee
      *  [5]  = loan taker fee
      *  [6]  = loan expiration timestamp (in seconds)
@@ -102,8 +102,9 @@ contract ShortSell is
      *
      * @param  values32  Values corresponding to:
      *
-     *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *  [2] = loan interest update period (in seconds)
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
@@ -113,7 +114,7 @@ contract ShortSell is
     function short(
         address[11] addresses,
         uint256[10] values256,
-        uint32[2] values32,
+        uint32[3] values32,
         uint8 sigV,
         bytes32[2] sigRS,
         bytes order
@@ -381,7 +382,7 @@ contract ShortSell is
     /**
      * Cancel an amount of a loan offering. Only callable by the offering's lender.
      *
-     * @param  addresses        Array of addresses:
+     * @param  addresses  Array of addresses:
      *
      *  [0] = underlying token
      *  [1] = base token
@@ -393,21 +394,22 @@ contract ShortSell is
      *  [7] = loan lender fee token
      *  [8] = loan taker fee token
      *
-     * @param  values256        Values corresponding to:
+     * @param  values256  Values corresponding to:
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate (annual percentage times 10**18)
+     *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
      *  [7] = loan salt
      *
-     * @param  values32         Values corresponding to:
+     * @param  values32  Values corresponding to:
      *
-     *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *  [2] = loan interest update period (in seconds)
      *
      * @param  cancelAmount     Amount to cancel
      * @return _cancelledAmount Amount that was cancelled
@@ -415,7 +417,7 @@ contract ShortSell is
     function cancelLoanOffering(
         address[9] addresses,
         uint256[8] values256,
-        uint32[2]  values32,
+        uint32[3]  values32,
         uint256    cancelAmount
     )
         external
@@ -436,7 +438,7 @@ contract ShortSell is
      * On-chain approve a loan offering. Meant for smart contracts to approve loans with a
      * transaction rather than a signature.
      *
-     * @param  addresses        Array of addresses:
+     * @param  addresses  Array of addresses:
      *
      *  [0] = underlying token
      *  [1] = base token
@@ -448,26 +450,27 @@ contract ShortSell is
      *  [7] = loan lender fee token
      *  [8] = loan taker fee token
      *
-     * @param  values256        Values corresponding to:
+     * @param  values256  Values corresponding to:
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum base token
-     *  [3] = loan interest rate (annual percentage times 10**18)
+     *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
      *  [6] = loan expiration timestamp (in seconds)
      *  [7] = loan salt
      *
-     * @param  values32         Values corresponding to:
+     * @param  values32  Values corresponding to:
      *
-     *  [0] = loan call time limit  (in seconds)
-     *  [1] = loan maxDuration      (in seconds)
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *  [2] = loan interest update period (in seconds)
      */
     function approveLoanOffering(
         address[9] addresses,
         uint256[8] values256,
-        uint32[2]  values32
+        uint32[3]  values32
     )
         external
         onlyWhileOperational
