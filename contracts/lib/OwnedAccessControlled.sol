@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { AccessControlledBase } from "./AccessControlledBase.sol";
@@ -23,7 +24,7 @@ contract OwnedAccessControlled is AccessControlledBase, Ownable {
         external
     {
         authorized[who] = true;
-        AccessGranted(who);
+        emit AccessGranted(who);
     }
 
     function revokeAccess(
@@ -33,6 +34,6 @@ contract OwnedAccessControlled is AccessControlledBase, Ownable {
         external
     {
         authorized[who] = false;
-        AccessRevoked(who);
+        emit AccessRevoked(who);
     }
 }

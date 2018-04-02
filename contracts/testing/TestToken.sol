@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -22,7 +23,7 @@ contract TestToken {
     function issueTo(address who, uint256 amount) public {
         supply = supply.add(amount);
         balances[who] = balances[who].add(amount);
-        Issue(address(this), who, amount);
+        emit Issue(address(this), who, amount);
     }
 
     function totalSupply() public view returns (uint256 _supply) {
@@ -53,7 +54,7 @@ contract TestToken {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] = balances[to].add(value);
-            Transfer(
+            emit Transfer(
                 address(this),
                 msg.sender,
                 to,
@@ -70,7 +71,7 @@ contract TestToken {
             balances[to] = balances[to].add(value);
             balances[from] = balances[from].sub(value);
             allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
-            Transfer(
+            emit Transfer(
                 address(this),
                 from,
                 to,
@@ -84,7 +85,7 @@ contract TestToken {
 
     function approve( address spender, uint256 value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
-        Approval(
+        emit Approval(
             address(this),
             msg.sender,
             spender,

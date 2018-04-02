@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -108,7 +109,7 @@ contract ShortSellAdmin is Ownable {
         external
     {
         if (state != operationState) {
-            OperationStateChanged(
+            emit OperationStateChanged(
                 operationState,
                 state
             );

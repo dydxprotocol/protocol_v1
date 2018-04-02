@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellState } from "./ShortSellState.sol";
@@ -82,7 +83,7 @@ library ForceRecoverLoanImpl {
         );
 
         // Log an event
-        LoanForceRecovered(
+        emit LoanForceRecovered(
             shortId,
             lenderBaseTokenAmount
         );

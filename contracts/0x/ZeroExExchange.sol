@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
 
 import "./ZeroExProxy.sol";
 import "./base/ZeroExToken.sol";
@@ -139,24 +139,24 @@ contract ZeroExExchange is ZeroExSafeMath {
         ));
 
         if (block.timestamp >= order.expirationTimestampInSec) {
-            LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
+            emit LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
             return 0;
         }
 
         uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
         filledTakerTokenAmount = min256(fillTakerTokenAmount, remainingTakerTokenAmount);
         if (filledTakerTokenAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
+            emit LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
             return 0;
         }
 
         if (isRoundingError(filledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount)) {
-            LogError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), order.orderHash);
+            emit LogError(uint8(Errors.ROUNDING_ERROR_TOO_LARGE), order.orderHash);
             return 0;
         }
 
         if (!shouldThrowOnInsufficientBalanceOrAllowance && !isTransferable(order, filledTakerTokenAmount)) {
-            LogError(uint8(Errors.INSUFFICIENT_BALANCE_OR_ALLOWANCE), order.orderHash);
+            emit LogError(uint8(Errors.INSUFFICIENT_BALANCE_OR_ALLOWANCE), order.orderHash);
             return 0;
         }
 
@@ -198,7 +198,7 @@ contract ZeroExExchange is ZeroExSafeMath {
             }
         }
 
-        LogFill(
+        emit LogFill(
             order.maker,
             msg.sender,
             order.feeRecipient,
@@ -244,20 +244,20 @@ contract ZeroExExchange is ZeroExSafeMath {
         require(order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && cancelTakerTokenAmount > 0);
 
         if (block.timestamp >= order.expirationTimestampInSec) {
-            LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
+            emit LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
             return 0;
         }
 
         uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
         uint256 cancelledTakerTokenAmount = min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
         if (cancelledTakerTokenAmount == 0) {
-            LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
+            emit LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
             return 0;
         }
 
         cancelled[order.orderHash] = safeAdd(cancelled[order.orderHash], cancelledTakerTokenAmount);
 
-        LogCancel(
+        emit LogCancel(
             order.maker,
             order.feeRecipient,
             order.makerToken,

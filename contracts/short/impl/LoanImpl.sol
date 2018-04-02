@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -95,7 +96,7 @@ library LoanImpl {
         short.callTimestamp = uint32(block.timestamp);
         short.requiredDeposit = requiredDeposit;
 
-        LoanCalled(
+        emit LoanCalled(
             shortId,
             short.lender,
             short.seller,
@@ -124,7 +125,7 @@ library LoanImpl {
         state.shorts[shortId].callTimestamp = 0;
         state.shorts[shortId].requiredDeposit = 0;
 
-        LoanCallCanceled(
+        emit LoanCallCanceled(
             shortId,
             short.lender,
             short.seller,
@@ -164,7 +165,7 @@ library LoanImpl {
         state.loanCancels[loanOffering.loanHash] =
             state.loanCancels[loanOffering.loanHash].add(amountToCancel);
 
-        LoanOfferingCanceled(
+        emit LoanOfferingCanceled(
             loanOffering.loanHash,
             loanOffering.lender,
             loanOffering.feeRecipient,
@@ -193,7 +194,7 @@ library LoanImpl {
 
         state.isLoanApproved[loanOffering.loanHash] = true;
 
-        LoanOfferingApproved(
+        emit LoanOfferingApproved(
             loanOffering.loanHash,
             loanOffering.lender,
             loanOffering.feeRecipient

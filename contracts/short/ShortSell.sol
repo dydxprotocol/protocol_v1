@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
@@ -550,9 +551,8 @@ contract ShortSell is
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        return Vault(state.VAULT).balances(shortId, short.baseToken);
+        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].baseToken);
     }
 
     function getShortInterestFee(
@@ -565,11 +565,11 @@ contract ShortSell is
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
 
         return ShortSellCommon.calculateInterestFee(
-            short,
-            short.shortAmount.sub(short.closedAmount),
+            shortObject,
+            shortObject.shortAmount.sub(shortObject.closedAmount),
             block.timestamp
         );
     }
@@ -591,9 +591,7 @@ contract ShortSell is
         external
         returns(bool _isCalled)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-
-        return (short.callTimestamp > 0);
+        return (state.shorts[shortId].callTimestamp > 0);
     }
 
     function isShortClosed(

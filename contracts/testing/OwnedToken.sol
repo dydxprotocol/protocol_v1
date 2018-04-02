@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -44,7 +45,7 @@ contract OwnedToken is Ownable {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
-            Transfer(
+            emit Transfer(
                 address(this),
                 msg.sender,
                 to,
@@ -61,7 +62,7 @@ contract OwnedToken is Ownable {
             balances[to] += value;
             balances[from] -= value;
             allowed[from][msg.sender] -= value;
-            Transfer(
+            emit Transfer(
                 address(this),
                 from,
                 to,
@@ -75,7 +76,7 @@ contract OwnedToken is Ownable {
 
     function approve( address spender, uint256 value ) public returns (bool ok) {
         allowed[msg.sender][spender] = value;
-        Approval(
+        emit Approval(
             address(this),
             msg.sender,
             spender,

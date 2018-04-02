@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
 
 import "./base/ZeroExToken.sol";
 import "./base/ZeroExOwnable.sol";
@@ -60,7 +60,7 @@ contract ZeroExProxy is ZeroExOwnable {
     {
         authorized[target] = true;
         authorities.push(target);
-        LogAuthorizedAddressAdded(target, msg.sender);
+        emit LogAuthorizedAddressAdded(target, msg.sender);
     }
 
     /// @dev Removes authorizion of an address.
@@ -78,7 +78,7 @@ contract ZeroExProxy is ZeroExOwnable {
                 break;
             }
         }
-        LogAuthorizedAddressRemoved(target, msg.sender);
+        emit LogAuthorizedAddressRemoved(target, msg.sender);
     }
 
     /// @dev Calls into ERC20 Token contract, invoking transferFrom.

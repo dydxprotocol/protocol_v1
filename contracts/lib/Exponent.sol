@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { Fraction256 } from "./Fraction256.sol";
 import { FractionMath } from "./FractionMath.sol";

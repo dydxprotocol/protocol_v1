@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { ShortSell } from "../../ShortSell.sol";
 import { ShortSellCommon } from "../../impl/ShortSellCommon.sol";
@@ -13,7 +14,11 @@ library ShortSellHelper {
         view
         returns (ShortSellCommon.Short memory _short)
     {
-        var (
+        address[4] memory addresses;
+        uint256[4] memory values256;
+        uint32[5] memory values32;
+
+        (
             addresses,
             values256,
             values32

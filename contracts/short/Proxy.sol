@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Pausable } from "zeppelin-solidity/contracts/lifecycle/Pausable.sol";

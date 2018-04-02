@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -54,6 +55,7 @@ contract ERC721Short is
     function ERC721Short(
         address _shortSell
     )
+        ERC721Token("dYdX Short Sells", "dYdX")
         public
         CloseShortDelegator(_shortSell)
     {
@@ -81,7 +83,7 @@ contract ERC721Short is
 
         if (approvedClosers[msg.sender][closer] != isApproved) {
             approvedClosers[msg.sender][closer] = isApproved;
-            CloserApproval(msg.sender, closer, isApproved);
+            emit CloserApproval(msg.sender, closer, isApproved);
         }
     }
 
@@ -104,7 +106,7 @@ contract ERC721Short is
     {
         if (approvedRecipients[msg.sender][recipient] != isApproved) {
             approvedRecipients[msg.sender][recipient] = isApproved;
-            RecipientApproval(msg.sender, recipient, isApproved);
+            emit RecipientApproval(msg.sender, recipient, isApproved);
         }
     }
 
@@ -123,7 +125,7 @@ contract ERC721Short is
     {
         uint256 tokenId = uint256(shortId);
         require(msg.sender == ownerOf(tokenId));
-        _burn(tokenId); // requires msg.sender to be owner
+        _burn(msg.sender, tokenId); // requires msg.sender to be owner
         ShortSell(SHORT_SELL).transferShort(shortId, to);
     }
 
@@ -140,7 +142,7 @@ contract ERC721Short is
         external
     {
         require(!ShortSell(SHORT_SELL).containsShort(shortId));
-        _burn(uint256(shortId));
+        _burn(ownerOf(uint256(shortId)), uint256(shortId));
     }
 
     // ---------------------------------

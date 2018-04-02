@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -155,10 +156,10 @@ contract ERC20Short is
         baseToken = short.baseToken;
 
         // Record event
-        Initialized(SHORT_ID, currentShortAmount);
+        emit Initialized(SHORT_ID, currentShortAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        Transfer(address(0), INITIAL_TOKEN_HOLDER, currentShortAmount);
+        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentShortAmount);
 
         return address(this); // returning own address retains ownership of short
     }
@@ -213,9 +214,9 @@ contract ERC20Short is
         // completely closed. All token holders are then entitled to the  baseTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
-            ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
+            emit ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
             state = State.CLOSED;
-            CompletelyClosed();
+            emit CompletelyClosed();
         } else {
             // For non-approved closers or recipients, we check token balances for closer.
             // payoutRecipient can be whatever the token holder wants.
@@ -224,11 +225,11 @@ contract ERC20Short is
             require(allowedAmount > 0);
             balances[closer] = balance.sub(allowedAmount);
             totalSupply_ = totalSupply_.sub(allowedAmount);  // asserts (allowedAmount <= totalSupply_)
-            TokensRedeemedForClose(closer, allowedAmount);
+            emit TokensRedeemedForClose(closer, allowedAmount);
 
             if (totalSupply_ == 0) {
                 state = State.CLOSED;
-                CompletelyClosed();
+                emit CompletelyClosed();
             }
         }
         return allowedAmount;
@@ -265,7 +266,7 @@ contract ERC20Short is
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
-            CompletelyClosed();
+            emit CompletelyClosed();
         }
         require(state == State.CLOSED);
 
@@ -285,7 +286,7 @@ contract ERC20Short is
         // Send the redeemer their proportion of base token
         TokenInteract.transfer(baseToken, who, baseTokenPayout);
 
-        TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
+        emit TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
     }
 
     // -----------------------------------
