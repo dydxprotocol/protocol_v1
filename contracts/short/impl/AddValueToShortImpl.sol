@@ -157,7 +157,17 @@ library AddValueToShortImpl {
         view
     {
         require(baseTokenReceived <= positionMinimumBaseToken);
-        require(short.maxDuration <= transaction.loanOffering.maxDuration);
+
+        uint256 positionEndTimestamp = startTimestamp.add(short.maxDuration);
+        uint256 remainingPositionDuration;
+
+        if (block.timestamp >= positionEndTimestamp) {
+            remainingPositionDuration = 0;
+        } else {
+            remainingPositionDuration = positionEndTimestamp.sub(block.timestamp);
+        }
+
+        require(remainingPositionDuration <= transaction.loanOffering.maxDuration);
         require(short.callTimeLimit >= transaction.loanOffering.callTimeLimit);
 
         transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
