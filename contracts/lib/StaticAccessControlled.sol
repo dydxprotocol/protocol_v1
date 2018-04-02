@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -47,7 +48,7 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
     {
         require(block.timestamp < gracePeriodExpiration);
 
-        AccessGranted(who);
+        emit AccessGranted(who);
         authorized[who] = true;
     }
 }

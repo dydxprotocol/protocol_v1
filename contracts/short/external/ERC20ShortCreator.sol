@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -83,7 +84,7 @@ contract ERC20ShortCreator is
             TRUSTED_RECIPIENTS
         );
 
-        ERC20ShortCreated(shortId, tokenAddress);
+        emit ERC20ShortCreated(shortId, tokenAddress);
 
         return tokenAddress;
     }

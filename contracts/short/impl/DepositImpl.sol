@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
@@ -67,7 +68,7 @@ library DepositImpl {
                 // Cancel the loan call
                 short.callTimestamp = 0;
 
-                LoanCallCanceled(
+                emit LoanCallCanceled(
                     shortId,
                     short.lender,
                     msg.sender,
@@ -78,7 +79,7 @@ library DepositImpl {
             }
         }
 
-        AdditionalDeposit(
+        emit AdditionalDeposit(
             shortId,
             depositAmount,
             msg.sender

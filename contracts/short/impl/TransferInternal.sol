@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
@@ -63,7 +64,7 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            LoanTransfered(shortId, oldOwner, newOwner);
+            emit LoanTransfered(shortId, oldOwner, newOwner);
         }
 
         if (ContractHelper.isContract(newOwner)) {
@@ -97,7 +98,7 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            ShortTransfered(shortId, oldOwner, newOwner);
+            emit ShortTransfered(shortId, oldOwner, newOwner);
         }
 
         if (ContractHelper.isContract(newOwner)) {

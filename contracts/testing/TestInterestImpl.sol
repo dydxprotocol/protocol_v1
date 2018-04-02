@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { InterestImpl } from "../short/impl/InterestImpl.sol";
 import { MathHelpers } from "../lib/MathHelpers.sol";

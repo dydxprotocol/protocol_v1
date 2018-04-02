@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -122,7 +123,7 @@ contract DutchAuctionCloser is
         uint256 bidderReward = payoutBaseToken.sub(auctionPrice);
         TokenInteract.transfer(baseToken, shortCloser, bidderReward);
 
-        ShortClosedByDutchAuction(
+        emit ShortClosedByDutchAuction(
             shortId,
             shortSeller,
             shortCloser,

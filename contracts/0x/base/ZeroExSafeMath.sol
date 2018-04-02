@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+
 
 contract ZeroExSafeMath {
     function safeMul(uint256 a, uint256 b) internal pure returns (uint256) {

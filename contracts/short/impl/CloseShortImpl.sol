@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -318,7 +319,7 @@ library CloseShortImpl {
         internal
     {
         if (transaction.closeAmount == transaction.currentShortAmount) {
-            ShortClosed(
+            emit ShortClosed(
                 transaction.shortId,
                 transaction.closeAmount,
                 interestFee,
@@ -326,7 +327,7 @@ library CloseShortImpl {
                 buybackCost
             );
         } else {
-            ShortPartiallyClosed(
+            emit ShortPartiallyClosed(
                 transaction.shortId,
                 transaction.closeAmount,
                 transaction.currentShortAmount.sub(transaction.closeAmount),

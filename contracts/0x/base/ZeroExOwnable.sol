@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+
 
 /*
  * Ownable
@@ -6,7 +7,6 @@ pragma solidity 0.4.19;
  * Base contract with an owner.
  * Provides onlyOwner modifier, which prevents function from running if it is called by anyone other than the owner.
  */
-
 contract ZeroExOwnable {
     address public owner;
 
