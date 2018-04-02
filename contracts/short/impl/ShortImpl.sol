@@ -11,6 +11,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortShared } from "./ShortShared.sol";
 
+
 /**
  * @title ShortImpl
  * @author dYdX

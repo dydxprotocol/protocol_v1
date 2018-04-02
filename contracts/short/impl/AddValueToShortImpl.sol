@@ -11,6 +11,7 @@ import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { ShortShared } from "./ShortShared.sol";
 
+
 /**
  * @title ShortImpl
  * @author dYdX
