@@ -7,6 +7,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
+import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
 import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
@@ -115,10 +116,10 @@ contract ShortSell is
     function short(
         address[11] addresses,
         uint256[10] values256,
-        uint32[3] values32,
-        uint8 sigV,
-        bytes32[2] sigRS,
-        bytes order
+        uint32[3]   values32,
+        uint8       sigV,
+        bytes32[2]  sigRS,
+        bytes       order
     )
         external
         onlyWhileOperational
@@ -144,8 +145,7 @@ contract ShortSell is
      * @param  addresses  Addresses corresponding to:
      *
      *  [0]  = lender
-     *  [1]  = loan signer (if 0, lender will be the signer - otherwise lender must be a
-     *                      smart contract that implements LoanOfferingVerifier)
+     *  [1]  = loan signer
      *  [2]  = loan taker
      *  [3]  = loan fee recipient
      *  [4]  = loan lender fee token
@@ -163,29 +163,36 @@ contract ShortSell is
      *  [6]  = loan salt
      *  [7]  = amount
      *
+     * @param  values32  Values corresponding to:
+     *
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
     function addValueToShort(
-        bytes32 shortId,
-        address[7] addresses,
-        uint256[8] values256,
-        uint8 sigV,
-        bytes32[2] sigRS,
-        bytes order
+        bytes32     shortId,
+        address[7]  addresses,
+        uint256[8]  values256,
+        uint32[2]   values32,
+        uint8       sigV,
+        bytes32[2]  sigRS,
+        bytes       order
     )
         external
         onlyWhileOperational
         nonReentrant
         returns (uint256 _effectiveAmountAdded)
     {
-        return ShortImpl.addValueToShortImpl(
+        return AddValueToShortImpl.addValueToShortImpl(
             state,
             shortId,
             addresses,
             values256,
+            values32,
             sigV,
             sigRS,
             order
@@ -213,7 +220,7 @@ contract ShortSell is
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapperAddress,
-        bytes order
+        bytes   order
     )
         external
         closeShortStateControl
