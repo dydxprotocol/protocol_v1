@@ -14,9 +14,9 @@ library ShortSellHelper {
         view
         returns (ShortSellCommon.Short memory _short)
     {
-        address[4] addresses;
-        uint256[4] values256;
-        uint32[5] values32;
+        address[4] memory addresses;
+        uint256[4] memory values256;
+        uint32[5] memory values32;
 
         (
             addresses,

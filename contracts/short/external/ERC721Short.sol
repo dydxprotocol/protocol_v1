@@ -55,6 +55,7 @@ contract ERC721Short is
     function ERC721Short(
         address _shortSell
     )
+        ERC721Token("dYdX Short Sells", "dYdX")
         public
         CloseShortDelegator(_shortSell)
     {
