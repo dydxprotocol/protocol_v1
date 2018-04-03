@@ -59,20 +59,13 @@ library AddValueToShortImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        uint256 lenderAmount = ShortSellCommon.calculateOwedAmount(
-            short,
-            values256[7],
-            block.timestamp
-        );
-
         ShortShared.ShortTx memory transaction = parseAddValueToShortTx(
             short,
             addresses,
             values256,
             values32,
             sigV,
-            sigRS,
-            lenderAmount
+            sigRS
         );
 
         // Base token balance before transfering anything for this addition
@@ -163,7 +156,7 @@ library AddValueToShortImpl {
             ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp));
 
         require(positionTimeRemaining <= transaction.loanOffering.maxDuration);
-        require(short.callTimeLimit >= transaction.loanOffering.callTimeLimit);
+        require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
         transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
     }
@@ -185,6 +178,8 @@ library AddValueToShortImpl {
         address seller = short.seller;
         address lender = short.lender;
 
+        // Unless msg.sender is the position short seller and is not a smart contract, call out
+        // to the short seller to ensure they consent to value being added
         if (msg.sender != seller || ContractHelper.isContract(seller)) {
             require(
                 ShortOwner(seller).additionalShortValueAdded(
@@ -195,6 +190,8 @@ library AddValueToShortImpl {
             );
         }
 
+        // Unless the loan offering's is the owner of the loan position and is not a smart contract,
+        // call out to the owner of the loan position to ensure they consent to value being added
         if (transaction.loanOffering.lender != lender || ContractHelper.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
@@ -235,8 +232,7 @@ library AddValueToShortImpl {
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
-        bytes32[2] sigRS,
-        uint256 lenderAmount
+        bytes32[2] sigRS
     )
         internal
         view
@@ -247,7 +243,11 @@ library AddValueToShortImpl {
             underlyingToken: short.underlyingToken,
             baseToken: short.baseToken,
             effectiveAmount: values256[7],
-            lenderAmount: lenderAmount,
+            lenderAmount: ShortSellCommon.calculateOwedAmount(
+                short,
+                values256[7],
+                block.timestamp
+            ),
             depositAmount: 0,
             loanOffering: parseLoanOfferingFromAddValueTx(
                 short,
