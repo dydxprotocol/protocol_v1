@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -81,7 +82,7 @@ contract SharedLoanCreator is
             TRUSTED_LOAN_CALLERS
         );
 
-        SharedLoanCreated(shortId, sharedLoanAddress);
+        emit SharedLoanCreated(shortId, sharedLoanAddress);
 
         return sharedLoanAddress;
     }
@@ -92,6 +93,7 @@ contract SharedLoanCreator is
         uint256
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {

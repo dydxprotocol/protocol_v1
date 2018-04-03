@@ -1,4 +1,5 @@
-pragma solidity 0.4.19;
+pragma solidity 0.4.21;
+pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -9,6 +10,7 @@ import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { ShortSell } from "../ShortSell.sol";
 
 
 /**
@@ -56,7 +58,8 @@ contract SharedLoan is
 
     event TokensWithdrawn(
         address indexed who,
-        uint256 amount
+        uint256 underlyingTokenAmount,
+        uint256 baseTokenAmount
     );
 
     // ---------------------------
@@ -77,13 +80,15 @@ contract SharedLoan is
 
     // Address of the short's underlyingToken. Cached for convenience and lower-cost withdrawals
     address public underlyingToken;
+    address public baseToken;
 
     uint256 public totalAmount;
-    uint256 public totalWithdrawn;
+    uint256 public totalAmountFullyWithdrawn;
+    uint256 public totalUnderlyingTokenWithdrawnEarly;
 
     mapping (address => uint256) public balances;
 
-    mapping (address => uint256) public amountWithdrawn;
+    mapping (address => uint256) public underlyingTokenWithdrawnEarly;
 
     // -------------------------
     // ------ Constructor ------
@@ -142,11 +147,12 @@ contract SharedLoan is
         totalAmount = currentShortAmount;
         balances[INITIAL_LENDER] = currentShortAmount;
         underlyingToken = short.underlyingToken;
+        baseToken = short.baseToken;
 
         // Record event
-        Initialized(SHORT_ID, currentShortAmount);
+        emit Initialized(SHORT_ID, currentShortAmount);
 
-        BalanceAdded(
+        emit BalanceAdded(
             INITIAL_LENDER,
             currentShortAmount
         );
@@ -233,11 +239,38 @@ contract SharedLoan is
         updateStateOnClosed();
         require(state == State.OPEN || state == State.CLOSED);
 
-        return (
+        if (balances[who] == 0) {
+            return (0, 0);
+        }
+
+        uint256 underlyingTokenWithdrawn;
+        uint256 baseTokenWithdrawn;
+
+        (
             withdrawUnderlyingTokens(who),
             withdrawBaseTokens(who)
         );
+
+        if (state == State.CLOSED) {
+            totalAmountFullyWithdrawn = totalAmountFullyWithdrawn.add(balances[who]);
+            balances[who] = 0;
+        }
+
+        emit TokensWithdrawn(
+            who,
+            underlyingTokenWithdrawn,
+            baseTokenWithdrawn
+        );
+
+        return (
+            underlyingTokenWithdrawn,
+            baseTokenWithdrawn
+        );
     }
+
+    // --------------------------------
+    // ------ Internal Functions ------
+    // --------------------------------
 
     function updateStateOnClosed()
         internal
@@ -259,27 +292,27 @@ contract SharedLoan is
             underlyingToken,
             address(this));
 
-        uint256 totalUnderlyingEverHeld = currentUnderlyingTokenBalance.add(totalWithdrawn);
+        uint256 totalUnderlyingTokenEverHeld = currentUnderlyingTokenBalance.add(
+            totalUnderlyingTokenWithdrawnEarly);
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
             totalAmount,
-            totalUnderlyingEverHeld
-        ).sub(amountWithdrawn[who]);
+            totalUnderlyingTokenEverHeld
+        ).sub(underlyingTokenWithdrawnEarly[who]);
 
         if (allowedAmount == 0) {
             return 0;
         }
 
-        amountWithdrawn[who] = amountWithdrawn[who].add(allowedAmount);
-        totalWithdrawn = totalWithdrawn.add(allowedAmount);
+        if (state == State.OPEN) {
+            underlyingTokenWithdrawnEarly[who] =
+                underlyingTokenWithdrawnEarly[who].add(allowedAmount);
+            totalUnderlyingTokenWithdrawnEarly =
+                totalUnderlyingTokenWithdrawnEarly.add(allowedAmount);
+        }
 
         TokenInteract.transfer(underlyingToken, who, allowedAmount);
-
-        TokensWithdrawn(
-            who,
-            allowedAmount
-        );
 
         return allowedAmount;
     }
@@ -294,6 +327,22 @@ contract SharedLoan is
             return 0;
         }
 
+        uint256 currentBaseTokenBalance = TokenInteract.balanceOf(
+            baseToken,
+            address(this));
 
+        uint256 allowedAmount = MathHelpers.getPartialAmount(
+            balances[who],
+            totalAmount.sub(totalAmountFullyWithdrawn),
+            currentBaseTokenBalance
+        );
+
+        if (allowedAmount == 0) {
+            return 0;
+        }
+
+        TokenInteract.transfer(baseToken, who, allowedAmount);
+
+        return allowedAmount;
     }
 }
