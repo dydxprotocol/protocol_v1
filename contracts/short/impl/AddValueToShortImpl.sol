@@ -190,8 +190,9 @@ library AddValueToShortImpl {
             );
         }
 
-        // Unless the loan offering's is the owner of the loan position and is not a smart contract,
-        // call out to the owner of the loan position to ensure they consent to value being added
+        // Unless the loan offering's lender is the owner of the loan position and is not a smart
+        // contract, call out to the owner of the loan position to ensure they consent
+        // to value being added
         if (transaction.loanOffering.lender != lender || ContractHelper.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
