@@ -101,7 +101,8 @@ contract SharedLoan is
         address[] trustedLoanCallers
     )
         public
-        LoanOwner(shortSell)
+        ForceRecoverLoanDelegator(shortSell)
+        CallLoanDelegator(shortSell)
     {
         SHORT_ID = shortId;
         state = State.UNINITIALIZED;
@@ -166,6 +167,7 @@ contract SharedLoan is
         uint256 amountAdded
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {
@@ -183,6 +185,7 @@ contract SharedLoan is
         uint256 /* depositAmount */
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {
@@ -197,6 +200,7 @@ contract SharedLoan is
         bytes32 shortId
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {
@@ -211,6 +215,7 @@ contract SharedLoan is
         bytes32 shortId
     )
         onlyShortSell
+        nonReentrant
         external
         returns (bool)
     {
