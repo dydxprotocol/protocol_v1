@@ -139,7 +139,7 @@ library ShortImpl {
         emit ShortInitiated(
             shortId,
             shortSeller,
-            transaction.loanOffering.lender,
+            transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
             transaction.underlyingToken,
             transaction.baseToken,
@@ -181,12 +181,12 @@ library ShortImpl {
         state.shorts[shortId].requiredDeposit = 0;
         state.shorts[shortId].callTimestamp = 0;
 
-        bool newLender = transaction.loanOffering.owner != transaction.loanOffering.lender;
+        bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newSeller = transaction.owner != msg.sender;
 
         state.shorts[shortId].lender = TransferInternal.grantLoanOwnership(
             shortId,
-            newLender ? transaction.loanOffering.lender : address(0),
+            newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
         state.shorts[shortId].seller = TransferInternal.grantShortOwnership(
@@ -240,7 +240,7 @@ library ShortImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[3],
+            payer: addresses[3],
             signer: addresses[4],
             owner: addresses[5],
             taker: addresses[6],

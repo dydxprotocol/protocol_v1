@@ -68,7 +68,7 @@ contract ShortSell is
      * be shorted
      *
      * 1 - base token deposit is transfered from the short seller to Vault
-     * 2 - underlying token is transfered from lender to Vault
+     * 2 - underlying token is transfered from loan payer to Vault
      * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
      * 4 - use the provided 0x buy order to sell the loaned underlying token for base token.
      *     base token received from the sell is also stored in Vault
@@ -80,7 +80,7 @@ contract ShortSell is
      *  [0]  = short owner
      *  [1]  = underlying token
      *  [2]  = base token
-     *  [3]  = lender
+     *  [3]  = loan payer
      *  [4]  = loan signer
      *  [5]  = loan owner
      *  [6]  = loan taker
@@ -138,13 +138,13 @@ contract ShortSell is
     }
 
     /**
-     * Add value to a short sell. Funds will be borrowed from the lender and sold as per short.
+     * Add value to a short sell. Funds will be borrowed from the loan payer and sold as per short.
      * The value added to the short will be equal to the effective amount lent, and will incorporate
      * interest already earned by the position so far.
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0]  = lender
+     *  [0]  = loan payer
      *  [1]  = loan signer
      *  [2]  = loan taker
      *  [3]  = loan fee recipient
@@ -350,9 +350,8 @@ contract ShortSell is
     }
 
     /**
-     * Function callable by a short sell lender after he has called in the loan, but the
-     * short seller did not close the short sell before the call time limit. Used to recover the
-     * base tokens held as collateral.
+     * Function callable by the lender after the loan has been called-in for the call time limit but
+     * remains unclosed. Used to recover the base tokens held as collateral.
      *
      * @param  shortId  unique id for the short sell
      */
@@ -395,9 +394,9 @@ contract ShortSell is
      *
      *  [0] = underlying token
      *  [1] = base token
-     *  [2] = lender
-     *  [3] = signer
-     *  [4] = owner
+     *  [2] = loan payer
+     *  [3] = loan signer
+     *  [4] = loan owner
      *  [5] = loan taker
      *  [6] = loan fee recipient
      *  [7] = loan lender fee token
@@ -451,9 +450,9 @@ contract ShortSell is
      *
      *  [0] = underlying token
      *  [1] = base token
-     *  [2] = lender
-     *  [3] = signer
-     *  [4] = owner
+     *  [2] = loan payer
+     *  [3] = loan signer
+     *  [4] = loan owner
      *  [5] = loan taker
      *  [6] = loan fee recipient
      *  [7] = loan lender fee token
