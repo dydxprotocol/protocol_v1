@@ -534,7 +534,7 @@ contract ShortSell is
     )
         view
         external
-        returns (bool exists)
+        returns (bool)
     {
         return ShortSellCommon.containsShortImpl(state, shortId);
     }
@@ -544,7 +544,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _quoteTokenBalance)
+        returns (uint256)
     {
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
@@ -558,7 +558,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _interestFeeOwed)
+        returns (uint256)
     {
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
@@ -578,7 +578,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _unavailableAmount)
+        returns (uint256)
     {
         return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
     }
@@ -588,7 +588,7 @@ contract ShortSell is
     )
         view
         external
-        returns(bool _isCalled)
+        returns(bool)
     {
         return (state.shorts[shortId].callTimestamp > 0);
     }
@@ -598,7 +598,7 @@ contract ShortSell is
     )
         view
         external
-        returns (bool _isClosed)
+        returns (bool)
     {
         return state.closedShorts[shortId];
     }
@@ -608,7 +608,7 @@ contract ShortSell is
     function VAULT()
         view
         external
-        returns (address _VAULT)
+        returns (address)
     {
         return state.VAULT;
     }
@@ -616,7 +616,7 @@ contract ShortSell is
     function PROXY()
         view
         external
-        returns (address _PROXY)
+        returns (address)
     {
         return state.PROXY;
     }
@@ -626,7 +626,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _filledAmount)
+        returns (uint256)
     {
         return state.loanFills[loanHash];
     }
@@ -636,7 +636,7 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _cancelledAmount)
+        returns (uint256)
     {
         return state.loanCancels[loanHash];
     }
@@ -646,8 +646,8 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _cancelledAmount)
+        returns (uint256)
     {
-        return state.loanCancels[loanHash];
+        return state.loanNumbers[loanHash];
     }
 }
