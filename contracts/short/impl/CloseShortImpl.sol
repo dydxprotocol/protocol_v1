@@ -33,7 +33,7 @@ library CloseShortImpl {
     event ShortClosed(
         bytes32 indexed id,
         uint256 closeAmount,
-        uint256 interestFee,
+        uint256 underlyingTokenPaidToLender,
         uint256 payoutBaseTokenAmount,
         uint256 buybackCost
     );
@@ -45,7 +45,7 @@ library CloseShortImpl {
         bytes32 indexed id,
         uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 interestFee,
+        uint256 underlyingTokenPaidToLender,
         uint256 payoutBaseTokenAmount,
         uint256 buybackCost
     );
@@ -75,7 +75,7 @@ library CloseShortImpl {
         returns (
             uint256 _amountClosed,
             uint256 _baseTokenReceived,
-            uint256 _interestFeeAmount
+            uint256 _underlyingTokenPaidToLender
         )
     {
         Order memory order = Order({
@@ -95,12 +95,12 @@ library CloseShortImpl {
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
 
-        uint256 interestFee;
+        uint256 underlyingTokenPaidToLender;
         uint256 buybackCost;
         uint256 payoutBaseTokenAmount;
 
         (
-            interestFee,
+            underlyingTokenPaidToLender,
             buybackCost,
             payoutBaseTokenAmount
         ) = sendTokens(
@@ -116,7 +116,7 @@ library CloseShortImpl {
 
         logEventOnClose(
             transaction,
-            interestFee,
+            underlyingTokenPaidToLender,
             buybackCost,
             payoutBaseTokenAmount
         );
@@ -124,7 +124,7 @@ library CloseShortImpl {
         return (
             transaction.closeAmount,
             payoutBaseTokenAmount,
-            interestFee
+            underlyingTokenPaidToLender
         );
     }
 
@@ -168,19 +168,18 @@ library CloseShortImpl {
     )
         internal
         returns (
-            uint256 _interestFee,
+            uint256 _underlyingTokenPaidToLender,
             uint256 _buybackCost,
             uint256 _payoutBaseTokenAmount
         )
     {
         // Send underlying tokens to lender
         uint256 buybackCost = 0;
-        uint256 interestFee = ShortSellCommon.calculateInterestFee(
+        uint256 underlyingTokenOwedToLender = ShortSellCommon.calculateOwedAmount(
             transaction.short,
             transaction.closeAmount,
             block.timestamp
         );
-        uint256 underlyingTokenOwedToLender = transaction.closeAmount.add(interestFee);
 
         if (order.exchangeWrapperAddress == address(0)) {
             // no buy order; send underlying tokens directly from the closer to the lender
@@ -215,7 +214,7 @@ library CloseShortImpl {
         );
 
         return (
-            interestFee,
+            underlyingTokenOwedToLender,
             buybackCost,
             payoutBaseTokenAmount
         );
@@ -312,7 +311,7 @@ library CloseShortImpl {
 
     function logEventOnClose(
         ShortSellCommon.CloseShortTx transaction,
-        uint256 interestFee,
+        uint256 underlyingTokenPaidToLender,
         uint256 buybackCost,
         uint256 payoutBaseTokenAmount
     )
@@ -322,7 +321,7 @@ library CloseShortImpl {
             emit ShortClosed(
                 transaction.shortId,
                 transaction.closeAmount,
-                interestFee,
+                underlyingTokenPaidToLender,
                 payoutBaseTokenAmount,
                 buybackCost
             );
@@ -331,7 +330,7 @@ library CloseShortImpl {
                 transaction.shortId,
                 transaction.closeAmount,
                 transaction.currentShortAmount.sub(transaction.closeAmount),
-                interestFee,
+                underlyingTokenPaidToLender,
                 payoutBaseTokenAmount,
                 buybackCost
             );

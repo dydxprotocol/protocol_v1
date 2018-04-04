@@ -140,6 +140,11 @@ async function callAddValueToShort(shortSell, tx) {
     tx.shortAmount
   ];
 
+  const values32 = [
+    tx.loanOffering.callTimeLimit,
+    tx.loanOffering.maxDuration
+  ];
+
   const sigV = tx.loanOffering.signature.v;
 
   const sigRS = [
@@ -153,6 +158,7 @@ async function callAddValueToShort(shortSell, tx) {
     shortId,
     addresses,
     values256,
+    values32,
     sigV,
     sigRS,
     order,

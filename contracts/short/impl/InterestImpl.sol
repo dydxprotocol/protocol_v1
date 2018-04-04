@@ -53,36 +53,7 @@ library InterestImpl {
             roundToTimestep
         );
 
-        return safeMultiplyUint256ByFraction(tokenAmount, percent).sub(tokenAmount) ;
-    }
-
-    /**
-     * Returns effective number of shares lent when lending after a delay.
-     *
-     * @param  tokenAmount         Amount of tokens lent
-     * @param  interestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
-     * @param  secondsOfInterest   Number of seconds that interest has been accruing
-     * @param  roundToTimestep     If non-zero, round number of seconds _up_ to the nearest multiple
-     * @return                     Effective number of tokens lent. Less than tokenAmount.
-     */
-    function getInverseCompoundedInterest(
-        uint256 tokenAmount,
-        uint256 interestRate,
-        uint256 secondsOfInterest,
-        uint256 roundToTimestep
-    )
-        public
-        pure
-        returns (uint256)
-    {
-        Fraction256.Fraction memory percent = getCompoundedPercent(
-            interestRate,
-            secondsOfInterest,
-            roundToTimestep
-        );
-
-        // return x / e^RT
-        return tokenAmount.mul(percent.den).div(percent.num);
+        return safeMultiplyUint256ByFraction(tokenAmount, percent);
     }
 
     // ------------------------------

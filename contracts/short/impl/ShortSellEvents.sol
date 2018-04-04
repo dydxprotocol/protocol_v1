@@ -41,7 +41,7 @@ contract ShortSellEvents {
     event ShortClosed(
         bytes32 indexed id,
         uint256 closeAmount,
-        uint256 interestFee,
+        uint256 underlyingTokenPaidToLender,
         uint256 shortSellerBaseToken,
         uint256 buybackCost
     );
@@ -53,7 +53,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 interestFee,
+        uint256 underlyingTokenPaidToLender,
         uint256 shortSellerBaseToken,
         uint256 buybackCost
     );

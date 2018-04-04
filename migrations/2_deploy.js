@@ -10,6 +10,7 @@ const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC721Short = artifacts.require("ERC721Short");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ShortImpl = artifacts.require("ShortImpl");
+const AddValueToShortImpl = artifacts.require("AddValueToShortImpl");
 const CloseShortImpl = artifacts.require("CloseShortImpl");
 const LiquidateImpl = artifacts.require("LiquidateImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
@@ -62,17 +63,18 @@ async function deployShortSellContracts(deployer) {
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
-    deployer.deploy(TransferImpl)
+    deployer.deploy(TransferImpl),
+    deployer.deploy(ShortImpl),
   ]);
 
   await Promise.all([
     CloseShortImpl.link('InterestImpl', InterestImpl.address),
-    ShortImpl.link('InterestImpl', InterestImpl.address)
+    AddValueToShortImpl.link('InterestImpl', InterestImpl.address),
   ]);
 
   await Promise.all([
     deployer.deploy(CloseShortImpl),
-    deployer.deploy(ShortImpl)
+    deployer.deploy(AddValueToShortImpl),
   ]);
 
   // Link ShortSell function libraries
@@ -84,7 +86,8 @@ async function deployShortSellContracts(deployer) {
     ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
     ShortSell.link('LoanImpl', LoanImpl.address),
     ShortSell.link('DepositImpl', DepositImpl.address),
-    ShortSell.link('TransferImpl', TransferImpl.address)
+    ShortSell.link('TransferImpl', TransferImpl.address),
+    ShortSell.link('AddValueToShortImpl', AddValueToShortImpl.address)
   ]);
 
   await deployer.deploy(
