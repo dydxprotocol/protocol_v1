@@ -5,18 +5,19 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { ShortSellState } from "./impl/ShortSellState.sol";
-import { ShortImpl } from "./impl/ShortImpl.sol";
 import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
-import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
-import { LoanImpl } from "./impl/LoanImpl.sol";
-import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
+import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
+import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
+import { LoanGetters } from "./impl/LoanGetters.sol";
+import { LoanImpl } from "./impl/LoanImpl.sol";
+import { ShortGetters } from "./impl/ShortGetters.sol";
+import { ShortImpl } from "./impl/ShortImpl.sol";
+import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
-import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
-import { ShortSellGetters } from "./impl/ShortSellGetters.sol";
+import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 import { Vault } from "./Vault.sol";
@@ -36,7 +37,8 @@ contract ShortSell is
     ShortSellStorage,
     ShortSellEvents,
     ShortSellAdmin,
-    ShortSellGetters {
+    LoanGetters,
+    ShortGetters {
 
     using SafeMath for uint256;
 
@@ -529,83 +531,7 @@ contract ShortSell is
     // ----- Public Constant Functions -----
     // -------------------------------------
 
-    function containsShort(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (bool)
-    {
-        return ShortSellCommon.containsShortImpl(state, shortId);
-    }
-
-    function getShortBalance(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (uint256)
-    {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
-            return 0;
-        }
-
-        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
-    }
-
-    function getShortOwedAmount(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (uint256)
-    {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
-            return 0;
-        }
-
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
-
-        return ShortSellCommon.calculateOwedAmount(
-            shortObject,
-            shortObject.shortAmount.sub(shortObject.closedAmount),
-            block.timestamp
-        );
-    }
-
-    function getUnavailableLoanOfferingAmount(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
-    }
-
-    function isShortCalled(
-        bytes32 shortId
-    )
-        view
-        external
-        returns(bool)
-    {
-        return (state.shorts[shortId].callTimestamp > 0);
-    }
-
-    function isShortClosed(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (bool)
-    {
-        return state.closedShorts[shortId];
-    }
-
-    // ----- Public State Variable Getters -----
-
-    function VAULT()
+    function getVaultAddress()
         view
         external
         returns (address)
@@ -613,41 +539,11 @@ contract ShortSell is
         return state.VAULT;
     }
 
-    function PROXY()
+    function getProxyAddress()
         view
         external
         returns (address)
     {
         return state.PROXY;
-    }
-
-    function loanFills(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return state.loanFills[loanHash];
-    }
-
-    function loanCancels(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return state.loanCancels[loanHash];
-    }
-
-    function loanNumbers(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return state.loanNumbers[loanHash];
     }
 }

@@ -1,4 +1,4 @@
-/*global artifacts, contract, describe, it, beforeEach*/
+/*global artifacts, contract, describe, it, afterEach, beforeEach*/
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -7,16 +7,17 @@ const BigNumber = require('bignumber.js');
 
 const Proxy = artifacts.require("Proxy");
 const TestToken = artifacts.require("TestToken");
+const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 
 contract('Proxy', function(accounts) {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
-  let contract, tokenA;
+  let contract, tokenA, tokenB;
 
   beforeEach(async () => {
-    [contract, tokenA] = await Promise.all([
+    [contract, tokenA, tokenB] = await Promise.all([
       Proxy.new(gracePeriod),
       TestToken.new(),
       TestToken.new()
@@ -31,71 +32,7 @@ contract('Proxy', function(accounts) {
     });
   });
 
-  describe('#transfer', () => {
-    const holder1 = accounts[4];
-    it('only allows transfer authorized address to call', async () => {
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.grantAccess(accounts[1]);
-      // A random address should not be able to call
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[3] })
-      );
-      // Nor should the owner
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1,)
-      );
-
-      const balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(num1);
-    });
-
-    it('fails on insufficient holder balance or allowance', async () => {
-      await contract.grantAccess(accounts[2]);
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
-      );
-
-      let balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(0);
-
-      await tokenA.issue(num1, { from: holder1 });
-      await expectThrow(
-        () => contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] })
-      );
-
-      balance = await tokenA.balanceOf.call(holder1);
-      expect(balance).to.be.bignumber.equal(num1);
-
-      await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] });
-
-      let balance2;
-      [balance, balance2] = await Promise.all([
-        tokenA.balanceOf.call(holder1),
-        tokenA.balanceOf.call(accounts[2])
-      ]);
-      expect(balance).to.be.bignumber.equal(0);
-      expect(balance2).to.be.bignumber.equal(num1);
-    });
-
-    it('sends tokens on sufficient balance/allowance when authorized', async () => {
-      await contract.grantAccess(accounts[2]);
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.transfer(tokenA.address, holder1, num1, { from: accounts[2] });
-
-      let balance2, balance;
-      [balance, balance2] = await Promise.all([
-        tokenA.balanceOf.call(holder1),
-        tokenA.balanceOf.call(accounts[2])
-      ]);
-      expect(balance).to.be.bignumber.equal(0);
-      expect(balance2).to.be.bignumber.equal(num1);
-    });
-  });
-
-  describe('#transferTo', () => {
+  describe('#transferTokens', () => {
     const holder1 = accounts[4];
     const recipient = accounts[5];
     it('only allows transfer authorized address to call', async () => {
@@ -104,12 +41,12 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[1]);
 
       // A random address should not be able to call
-      await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
+      await expectThrow(() =>
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
       );
       // Nor should the owner
       await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1,)
+        () => contract.transferTokens(tokenA.address, holder1, recipient, num1,)
       );
 
       const [balance, balance2] = await Promise.all([
@@ -122,23 +59,24 @@ contract('Proxy', function(accounts) {
 
     it('fails on insufficient holder balance or allowance', async () => {
       await contract.grantAccess(accounts[2]);
-      await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
+      await expectThrow(() =>
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
       expect(balance).to.be.bignumber.equal(0);
 
       await tokenA.issue(num1, { from: holder1 });
-      await expectThrow(
-        () => contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
+      await expectThrow(() =>
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
       balance = await tokenA.balanceOf.call(holder1);
       expect(balance).to.be.bignumber.equal(num1);
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] });
+      await contract.transferTokens(
+        tokenA.address, holder1, recipient, num1, { from: accounts[2] });
 
       let balance2;
       [balance, balance2] = await Promise.all([
@@ -153,7 +91,8 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[2]);
       await tokenA.issue(num1, { from: holder1 });
       await tokenA.approve(contract.address, num1, { from: holder1 });
-      await contract.transferTo(tokenA.address, holder1, recipient, num1, { from: accounts[2] });
+      await contract.transferTokens(
+        tokenA.address, holder1, recipient, num1, { from: accounts[2] });
 
       let balance2, balance;
       [balance, balance2] = await Promise.all([
@@ -162,6 +101,68 @@ contract('Proxy', function(accounts) {
       ]);
       expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
+    });
+  });
+
+  describe('#available', () => {
+    let account;
+    const num1 = new BigNumber('1e18');
+    const num2 = new BigNumber('5e18');
+
+    async function expectAvailable(expected) {
+      const available = await contract.available.call(account, tokenA.address);
+      expect(available).to.be.bignumber.equal(expected);
+    }
+
+    afterEach('check available returns zero for non-relevant token', async () => {
+      const availableB = await contract.available.call(account, tokenB.address);
+      expect(availableB).to.be.bignumber.equal(BIGNUMBERS.ZERO);
+    });
+
+    it('correct for positive balance == allowance', async () => {
+      account = accounts[5];
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.issue(num2, { from: account });
+      await tokenA.approve(contract.address, num2, { from: account });
+
+      await expectAvailable(num2);
+    });
+
+    it('correct for zero balance == allowance', async () => {
+      account = accounts[6];
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.issue(BIGNUMBERS.ZERO, { from: account });
+      await tokenA.approve(contract.address, BIGNUMBERS.ZERO, { from: account });
+
+      await expectAvailable(BIGNUMBERS.ZERO);
+    });
+
+    it('correct for balance > allowance', async () => {
+      account = accounts[7];
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.issue(num2, { from: account });
+
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.approve(contract.address, num1, { from: account });
+
+      await expectAvailable(num1);
+    });
+
+    it('correct for balance < allowance', async () => {
+      account = accounts[8];
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.approve(contract.address, num2, { from: account });
+
+      await expectAvailable(BIGNUMBERS.ZERO);
+
+      await tokenA.issue(num1, { from: account });
+
+      await expectAvailable(num1);
     });
   });
 });
