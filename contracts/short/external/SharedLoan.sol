@@ -84,7 +84,7 @@ contract SharedLoan is
 
     uint256 public totalAmount;
     uint256 public totalAmountFullyWithdrawn;
-    uint256 public totalUnderlyingTokenWithdrawnEarly;
+    uint256 public totalUnderlyingTokenWithdrawn;
 
     mapping (address => uint256) public balances;
 
@@ -241,20 +241,16 @@ contract SharedLoan is
             uint256 _baseTokenPayout
         )
     {
-        updateStateOnClosed();
         require(state == State.OPEN || state == State.CLOSED);
+
+        updateStateOnClosed();
 
         if (balances[who] == 0) {
             return (0, 0);
         }
 
-        uint256 underlyingTokenWithdrawn;
-        uint256 baseTokenWithdrawn;
-
-        (
-            withdrawUnderlyingTokens(who),
-            withdrawBaseTokens(who)
-        );
+        uint256 underlyingTokenWithdrawn = withdrawUnderlyingTokens(who);
+        uint256 baseTokenWithdrawn = withdrawBaseTokens(who);
 
         if (state == State.CLOSED) {
             totalAmountFullyWithdrawn = totalAmountFullyWithdrawn.add(balances[who]);
@@ -298,7 +294,7 @@ contract SharedLoan is
             address(this));
 
         uint256 totalUnderlyingTokenEverHeld = currentUnderlyingTokenBalance.add(
-            totalUnderlyingTokenWithdrawnEarly);
+            totalUnderlyingTokenWithdrawn);
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
@@ -310,11 +306,11 @@ contract SharedLoan is
             return 0;
         }
 
+        totalUnderlyingTokenWithdrawn =
+            totalUnderlyingTokenWithdrawn.add(allowedAmount);
         if (state == State.OPEN) {
             underlyingTokenWithdrawnEarly[who] =
                 underlyingTokenWithdrawnEarly[who].add(allowedAmount);
-            totalUnderlyingTokenWithdrawnEarly =
-                totalUnderlyingTokenWithdrawnEarly.add(allowedAmount);
         }
 
         TokenInteract.transfer(underlyingToken, who, allowedAmount);
