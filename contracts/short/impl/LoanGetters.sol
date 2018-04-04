@@ -1,7 +1,6 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellStorage } from "./ShortSellStorage.sol";
 
@@ -14,7 +13,6 @@ import { ShortSellStorage } from "./ShortSellStorage.sol";
  * state of any loan hash stored in the dYdX protocol.
  */
 contract LoanGetters is ShortSellStorage {
-    using SafeMath for uint256;
 
     // -------------------------------------
     // ----- Public Constant Functions -----

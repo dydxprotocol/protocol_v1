@@ -35,9 +35,10 @@ contract Proxy is StaticAccessControlled, NoOwner {
 
     /**
      * Transfers tokens from an address (that has set allowance on the proxy) to another address.
+     *
      * @param  token  The address of the ERC20 token
-     * @param  from   The address from which to transfer the tokens
-     * @param  to     The address to which to transfer the tokens
+     * @param  from   The address to transfer token from
+     * @param  to     The address to transfer tokens to
      * @param  value  The number of tokens to transfer
      */
     function transferTokens(
@@ -64,6 +65,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
     /**
      * Getter function to get the amount of token that the proxy is able to move for a particular
      * address. The minimum of 1) the balance of that address and 2) the allowance given to proxy.
+     *
      * @param  who    The owner of the tokens
      * @param  token  The address of the ERC20 token
      * @return The number of tokens able to be moved by the proxy from the address specified

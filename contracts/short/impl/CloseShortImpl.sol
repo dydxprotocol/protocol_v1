@@ -238,7 +238,7 @@ library CloseShortImpl {
             order.orderData
         );
 
-        // Need to enough quote token locked in Vault to pay for both 1) buyback and 2) interest fee
+        // Require enough quote token in Vault to pay for both 1) buyback and 2) interest fee
         require(quoteTokenPrice <= transaction.availableQuoteToken);
 
         // Send the requisite quote token to do the buyback from vault to exchange wrapper
