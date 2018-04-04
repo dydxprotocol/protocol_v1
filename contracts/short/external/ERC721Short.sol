@@ -192,7 +192,7 @@ contract ERC721Short is
      * amount of the short position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param payoutRecipient  Address of the recipient of any quote tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short

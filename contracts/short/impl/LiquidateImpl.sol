@@ -31,7 +31,7 @@ library LiquidateImpl {
     event LoanLiquidated(
         bytes32 indexed id,
         uint256 liquidatedAmount,
-        uint256 baseAmount
+        uint256 quoteAmount
     );
 
     /**
@@ -41,7 +41,7 @@ library LiquidateImpl {
         bytes32 indexed id,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
-        uint256 baseAmount
+        uint256 quoteAmount
     );
 
     // -------------------------------------------
@@ -56,7 +56,7 @@ library LiquidateImpl {
         public
         returns (
             uint256 _amountClosed,
-            uint256 _baseTokenReceived
+            uint256 _quoteTokenReceived
         )
     {
         // Create CloseShortTx and validate closeAmount
@@ -71,22 +71,22 @@ library LiquidateImpl {
         // State updates
         ShortSellCommon.updateClosedAmount(state, transaction);
 
-        uint256 liquidateAmount = transaction.availableBaseToken;
+        uint256 liquidateAmount = transaction.availableQuoteToken;
 
         Vault vault = Vault(state.VAULT);
 
         vault.transferFromVault(
             shortId,
-            transaction.short.baseToken,
+            transaction.short.quoteToken,
             msg.sender,
             liquidateAmount
         );
 
-        // The ending base token balance of the vault should be the starting base token balance
-        // minus the available base token amount
+        // The ending quote token balance of the vault should be the starting quote token balance
+        // minus the available quote token amount
         assert(
-            vault.balances(shortId, transaction.short.baseToken)
-            == transaction.startingBaseToken.sub(transaction.availableBaseToken)
+            vault.balances(shortId, transaction.short.quoteToken)
+            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
         );
 
         logEventOnClose(
@@ -140,7 +140,7 @@ library LiquidateImpl {
 
     function logEventOnClose(
         ShortSellCommon.CloseShortTx transaction,
-        uint256 baseTokenAmount
+        uint256 quoteTokenAmount
     )
         internal
     {
@@ -148,14 +148,14 @@ library LiquidateImpl {
             emit LoanLiquidated(
                 transaction.shortId,
                 transaction.closeAmount,
-                baseTokenAmount
+                quoteTokenAmount
             );
         } else {
             emit LoanPartiallyLiquidated(
                 transaction.shortId,
                 transaction.closeAmount,
                 transaction.currentShortAmount.sub(transaction.closeAmount),
-                baseTokenAmount
+                quoteTokenAmount
             );
         }
     }

@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ERC721Short = artifacts.require("ERC721Short");
-const BaseToken = artifacts.require("TokenA");
+const QuoteToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
@@ -26,7 +26,7 @@ const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
   let shortSellContract, VaultContract, ERC721ShortContract;
-  let UnderlyingTokenContract, BaseTokenContract;
+  let UnderlyingTokenContract, QuoteTokenContract;
   let shortTx;
   const dutchBidder = accounts[9];
 
@@ -36,13 +36,13 @@ contract('DutchAuctionCloser', function(accounts) {
       VaultContract,
       ERC721ShortContract,
       UnderlyingTokenContract,
-      BaseTokenContract,
+      QuoteTokenContract,
     ] = await Promise.all([
       ShortSell.deployed(),
       Vault.deployed(),
       ERC721Short.deployed(),
       UnderlyingToken.deployed(),
-      BaseToken.deployed(),
+      QuoteToken.deployed(),
     ]);
   });
 
@@ -128,7 +128,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       const startingBidderUnderlyingToken = await UnderlyingTokenContract.balanceOf(dutchBidder);
-      const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
+      const quoteVault = await VaultContract.balances.call(shortTx.id, QuoteToken.address);
       const closeAmount = shortTx.shortAmount.div(2);
 
       // closing half is fine
@@ -157,12 +157,12 @@ contract('DutchAuctionCloser', function(accounts) {
 
       const [
         underlyingBidder,
-        baseSeller,
-        baseBidder
+        quoteSeller,
+        quoteBidder
       ] = await Promise.all([
         UnderlyingTokenContract.balanceOf.call(dutchBidder),
-        BaseTokenContract.balanceOf.call(shortTx.seller),
-        BaseTokenContract.balanceOf.call(dutchBidder),
+        QuoteTokenContract.balanceOf.call(shortTx.seller),
+        QuoteTokenContract.balanceOf.call(dutchBidder),
       ]);
 
       // check amounts
@@ -171,7 +171,7 @@ contract('DutchAuctionCloser', function(accounts) {
           .minus(owedAmount1)
           .minus(owedAmount2)
       );
-      expect(baseSeller.plus(baseBidder)).to.be.bignumber.equal(baseVault);
+      expect(quoteSeller.plus(quoteBidder)).to.be.bignumber.equal(quoteVault);
     });
   });
 });

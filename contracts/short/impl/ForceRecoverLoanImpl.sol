@@ -39,7 +39,7 @@ library ForceRecoverLoanImpl {
         bytes32 shortId
     )
         public
-        returns (uint256 _baseTokenAmount)
+        returns (uint256 _quoteTokenAmount)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -67,12 +67,12 @@ library ForceRecoverLoanImpl {
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderBaseTokenAmount = vault.balances(shortId, short.baseToken);
+        uint256 lenderQuoteTokenAmount = vault.balances(shortId, short.quoteToken);
         vault.transferFromVault(
             shortId,
-            short.baseToken,
+            short.quoteToken,
             short.lender,
-            lenderBaseTokenAmount
+            lenderQuoteTokenAmount
         );
 
         // Delete the short
@@ -85,9 +85,9 @@ library ForceRecoverLoanImpl {
         // Log an event
         emit LoanForceRecovered(
             shortId,
-            lenderBaseTokenAmount
+            lenderQuoteTokenAmount
         );
 
-        return lenderBaseTokenAmount;
+        return lenderQuoteTokenAmount;
     }
 }

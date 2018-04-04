@@ -174,7 +174,7 @@ contract('ERC20Short', function(accounts) {
         expect(tsc.SHORT_ID).to.equal(short.ID);
         expect(tsc.state.equals(TOKENIZED_SHORT_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc.baseToken).to.equal(ADDRESSES.ZERO);
+        expect(tsc.quoteToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
         expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
         for (let i in short.TRUSTED_RECIPIENTS) {
@@ -214,11 +214,11 @@ contract('ERC20Short', function(accounts) {
         expect(tsc2.SHORT_ID).to.equal(SHORT.ID);
         expect(tsc2.state.equals(TOKENIZED_SHORT_STATE.OPEN)).to.be.true;
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc2.baseToken).to.equal(short.baseToken);
+        expect(tsc2.quoteToken).to.equal(short.quoteToken);
 
         // explicity make sure some things have changed
         expect(tsc2.state.equals(tsc1.state)).to.be.false;
-        expect(tsc2.baseToken).to.not.equal(tsc1.baseToken);
+        expect(tsc2.quoteToken).to.not.equal(tsc1.quoteToken);
 
         // explicity make sure some things have not changed
         expect(tsc2.SHORT_ID).to.equal(tsc1.SHORT_ID);

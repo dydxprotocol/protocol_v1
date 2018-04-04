@@ -26,7 +26,7 @@ library ShortSellHelper {
 
         return ShortSellCommon.Short({
             underlyingToken: addresses[0],
-            baseToken: addresses[1],
+            quoteToken: addresses[1],
             shortAmount: values256[0],
             closedAmount: values256[1],
             interestRate: values256[2],

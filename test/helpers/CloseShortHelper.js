@@ -9,7 +9,7 @@ const BigNumber = require('bignumber.js');
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
 const Vault = artifacts.require("Vault");
-const BaseToken = artifacts.require("TokenA");
+const QuoteToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const { getPartialAmount } = require('../helpers/MathHelper');
@@ -28,12 +28,12 @@ module.exports = {
 
 async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
   const underlyingTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
-  const baseTokenFromSell = getPartialAmount(
+  const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,
     closeAmount
   );
-  const baseTokenBuybackCost = getPartialAmount(
+  const quoteTokenBuybackCost = getPartialAmount(
     sellOrder.takerTokenAmount,
     sellOrder.makerTokenAmount,
     underlyingTokenOwedToLender
@@ -41,8 +41,8 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
 
   const balances = await getBalances(shortSell, shortTx, sellOrder);
   const {
-    sellerBaseToken,
-    externalSellerBaseToken,
+    sellerQuoteToken,
+    externalSellerQuoteToken,
     externalSellerUnderlyingToken,
     sellerFeeToken,
     externalSellerFeeToken,
@@ -52,15 +52,15 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
   checkSmartContractBalances(balances, shortTx, closeAmount);
   checkLenderBalances(balances, underlyingTokenOwedToLender, shortTx);
 
-  expect(sellerBaseToken).to.be.bignumber.equal(
+  expect(sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       shortTx.shortAmount,
       shortTx.depositAmount
-    ).plus(baseTokenFromSell)
-      .minus(baseTokenBuybackCost)
+    ).plus(quoteTokenFromSell)
+      .minus(quoteTokenBuybackCost)
   );
-  expect(externalSellerBaseToken).to.be.bignumber.equal(baseTokenBuybackCost);
+  expect(externalSellerQuoteToken).to.be.bignumber.equal(quoteTokenBuybackCost);
   expect(externalSellerUnderlyingToken).to.be.bignumber.equal(
     sellOrder.makerTokenAmount.minus(underlyingTokenOwedToLender)
   );
@@ -116,7 +116,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
 }
 
 function checkSmartContractBalances(balances, shortTx, closeAmount) {
-  const startingShortBaseTokenAmount = getPartialAmount(
+  const startingShortQuoteTokenAmount = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,
     shortTx.shortAmount
@@ -124,28 +124,28 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
   const expectedShortBalance = getPartialAmount(
     shortTx.shortAmount.minus(closeAmount),
     shortTx.shortAmount,
-    startingShortBaseTokenAmount
+    startingShortQuoteTokenAmount
   );
 
   const {
     vaultFeeToken,
-    vaultBaseToken,
+    vaultQuoteToken,
     vaultUnderlyingToken,
     shortBalance
   } = balances;
 
   expect(vaultFeeToken).to.be.bignumber.equal(0);
-  expect(vaultBaseToken).to.be.bignumber.equal(expectedShortBalance);
+  expect(vaultQuoteToken).to.be.bignumber.equal(expectedShortBalance);
   expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
 function checkLenderBalances(balances, underlyingTokenOwedToLender, shortTx) {
   const {
-    lenderBaseToken,
+    lenderQuoteToken,
     lenderUnderlyingToken,
   } = balances;
-  expect(lenderBaseToken).to.be.bignumber.equal(0);
+  expect(lenderQuoteToken).to.be.bignumber.equal(0);
   expect(lenderUnderlyingToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount
       .minus(shortTx.shortAmount)
@@ -170,27 +170,27 @@ async function getOwedAmount(shortTx, closeTx, closeAmount) {
 async function getBalances(shortSell, shortTx, sellOrder) {
   const [
     underlyingToken,
-    baseToken,
+    quoteToken,
     feeToken
   ] = await Promise.all([
     UnderlyingToken.deployed(),
-    BaseToken.deployed(),
+    QuoteToken.deployed(),
     FeeToken.deployed(),
   ]);
 
-  let externalSellerBaseToken,
+  let externalSellerQuoteToken,
     externalSellerUnderlyingToken,
     externalSellerFeeToken,
     feeRecipientFeeToken;
 
   if (sellOrder) {
     [
-      externalSellerBaseToken,
+      externalSellerQuoteToken,
       externalSellerUnderlyingToken,
       externalSellerFeeToken,
       feeRecipientFeeToken,
     ] = await Promise.all([
-      baseToken.balanceOf.call(sellOrder.maker),
+      quoteToken.balanceOf.call(sellOrder.maker),
       underlyingToken.balanceOf.call(sellOrder.maker),
       feeToken.balanceOf.call(sellOrder.maker),
       feeToken.balanceOf.call(sellOrder.feeRecipient),
@@ -198,43 +198,43 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   }
 
   const [
-    sellerBaseToken,
+    sellerQuoteToken,
     sellerUnderlyingToken,
 
-    lenderBaseToken,
+    lenderQuoteToken,
     lenderUnderlyingToken,
 
     sellerFeeToken,
 
     vaultFeeToken,
-    vaultBaseToken,
+    vaultQuoteToken,
     vaultUnderlyingToken,
 
     shortBalance
   ] = await Promise.all([
-    baseToken.balanceOf.call(shortTx.seller),
+    quoteToken.balanceOf.call(shortTx.seller),
     underlyingToken.balanceOf.call(shortTx.seller),
 
-    baseToken.balanceOf.call(shortTx.loanOffering.lender),
+    quoteToken.balanceOf.call(shortTx.loanOffering.lender),
     underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
 
     feeToken.balanceOf.call(shortTx.seller),
 
     feeToken.balanceOf.call(Vault.address),
-    baseToken.balanceOf.call(Vault.address),
+    quoteToken.balanceOf.call(Vault.address),
     underlyingToken.balanceOf.call(Vault.address),
 
     shortSell.getShortBalance.call(shortTx.id)
   ]);
 
   return {
-    sellerBaseToken,
+    sellerQuoteToken,
     sellerUnderlyingToken,
 
-    lenderBaseToken,
+    lenderQuoteToken,
     lenderUnderlyingToken,
 
-    externalSellerBaseToken,
+    externalSellerQuoteToken,
     externalSellerUnderlyingToken,
     externalSellerFeeToken,
     sellerFeeToken,
@@ -242,7 +242,7 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     feeRecipientFeeToken,
 
     vaultFeeToken,
-    vaultBaseToken,
+    vaultQuoteToken,
     vaultUnderlyingToken,
 
     shortBalance
@@ -252,7 +252,7 @@ async function getBalances(shortSell, shortTx, sellOrder) {
 async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount) {
   const underlyingTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
   const balances = await getBalances(shortSell, shortTx);
-  const baseTokenFromSell = getPartialAmount(
+  const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,
     closeAmount
@@ -267,13 +267,13 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
       .minus(underlyingTokenOwedToLender)
   );
 
-  expect(balances.sellerBaseToken).to.be.bignumber.equal(
+  expect(balances.sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       shortTx.shortAmount,
       shortTx.depositAmount
     )
-      .plus(baseTokenFromSell)
+      .plus(quoteTokenFromSell)
   );
 }
 

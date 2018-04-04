@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 
 const ShortSell = artifacts.require("ShortSell");
-const BaseToken = artifacts.require("TokenA");
+const QuoteToken = artifacts.require("TokenA");
 const UnderlyingToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
@@ -222,7 +222,7 @@ async function checkSuccess(shortSell, shortTx) {
   const short = await getShort(shortSell, shortId);
 
   expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
-  expect(short.baseToken).to.equal(shortTx.baseToken);
+  expect(short.quoteToken).to.equal(shortTx.quoteToken);
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
   expect(short.interestRate).to.be.bignumber.equal(
     shortTx.loanOffering.rates.interestRate);
@@ -259,21 +259,21 @@ async function checkSuccess(shortSell, shortTx) {
 
   const balance = await shortSell.getShortBalance.call(shortId);
 
-  const baseTokenFromSell = getPartialAmount(
+  const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,
     shortTx.shortAmount
   );
 
-  expect(balance).to.be.bignumber.equal(baseTokenFromSell.plus(shortTx.depositAmount));
+  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(shortTx.depositAmount));
 
   const [
     underlyingToken,
-    baseToken,
+    quoteToken,
     feeToken
   ] = await Promise.all([
     UnderlyingToken.deployed(),
-    BaseToken.deployed(),
+    QuoteToken.deployed(),
     FeeToken.deployed()
   ]);
 
@@ -281,9 +281,9 @@ async function checkSuccess(shortSell, shortTx) {
     lenderUnderlyingToken,
     makerUnderlyingToken,
     vaultUnderlyingToken,
-    sellerBaseToken,
-    makerBaseToken,
-    vaultBaseToken,
+    sellerQuoteToken,
+    makerQuoteToken,
+    vaultQuoteToken,
     lenderFeeToken,
     makerFeeToken,
     vaultFeeToken,
@@ -292,9 +292,9 @@ async function checkSuccess(shortSell, shortTx) {
     underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
     underlyingToken.balanceOf.call(shortTx.buyOrder.maker),
     underlyingToken.balanceOf.call(Vault.address),
-    baseToken.balanceOf.call(shortTx.seller),
-    baseToken.balanceOf.call(shortTx.buyOrder.maker),
-    baseToken.balanceOf.call(Vault.address),
+    quoteToken.balanceOf.call(shortTx.seller),
+    quoteToken.balanceOf.call(shortTx.buyOrder.maker),
+    quoteToken.balanceOf.call(Vault.address),
     feeToken.balanceOf.call(shortTx.loanOffering.lender),
     feeToken.balanceOf.call(shortTx.buyOrder.maker),
     feeToken.balanceOf.call(Vault.address),
@@ -308,11 +308,11 @@ async function checkSuccess(shortSell, shortTx) {
   );
   expect(makerUnderlyingToken).to.be.bignumber.equal(shortTx.shortAmount);
   expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
-  expect(sellerBaseToken).to.be.bignumber.equal(0);
-  expect(makerBaseToken).to.be.bignumber.equal(
-    shortTx.buyOrder.makerTokenAmount.minus(baseTokenFromSell)
+  expect(sellerQuoteToken).to.be.bignumber.equal(0);
+  expect(makerQuoteToken).to.be.bignumber.equal(
+    shortTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
   );
-  expect(vaultBaseToken).to.be.bignumber.equal(baseTokenFromSell.plus(shortTx.depositAmount));
+  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(shortTx.depositAmount));
   expect(lenderFeeToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.lenderFee
       .minus(

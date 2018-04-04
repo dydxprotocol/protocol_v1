@@ -67,11 +67,11 @@ contract ShortSell is
      * signed loan offering as well as a signed 0x buy order for the underlying token to
      * be shorted
      *
-     * 1 - base token deposit is transfered from the short seller to Vault
+     * 1 - quote token deposit is transfered from the short seller to Vault
      * 2 - underlying token is transfered from loan payer to Vault
      * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
-     * 4 - use the provided 0x buy order to sell the loaned underlying token for base token.
-     *     base token received from the sell is also stored in Vault
+     * 4 - use the provided 0x buy order to sell the loaned underlying token for quote token.
+     *     quote token received from the sell is also stored in Vault
      * 5 - add details of the short sell to repo
      * 6 - Short event recorded
      *
@@ -79,7 +79,7 @@ contract ShortSell is
      *
      *  [0]  = short owner
      *  [1]  = underlying token
-     *  [2]  = base token
+     *  [2]  = quote token
      *  [3]  = loan payer
      *  [4]  = loan signer
      *  [5]  = loan owner
@@ -93,7 +93,7 @@ contract ShortSell is
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
-     *  [2]  = loan minimum base token
+     *  [2]  = loan minimum quote token
      *  [3]  = loan interest rate (annual nominal percentage times 10**18)
      *  [4]  = loan lender fee
      *  [5]  = loan taker fee
@@ -156,7 +156,7 @@ contract ShortSell is
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
-     *  [2]  = loan minimum base token
+     *  [2]  = loan minimum quote token
      *  [3]  = loan lender fee
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
@@ -203,16 +203,16 @@ contract ShortSell is
     /**
     * Close a short sell. May be called by the short seller or with the approval of the short
     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
-    * short position. The short seller is sent base token stored in the contract.
+    * short position. The short seller is sent quote token stored in the contract.
      *
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient          address to send remaining baseToken to after closing
+     * @param  payoutRecipient          address to send remaining quoteToken to after closing
      * @param  exchangeWrapperAddress   address of the exchange wrapper
      * @param  order                    order object to be passed to the exchange wrapper
      * @return _amountClosed            amount of short closed
-     * @return _baseTokenReceived       amount of base token received by the short seller
+     * @return _quoteTokenReceived       amount of quote token received by the short seller
      *                                  after closing
      * @return _interestFeeAmount       interest fee in underlying token paid to the lender
      */
@@ -228,7 +228,7 @@ contract ShortSell is
         nonReentrant
         returns (
             uint256 _amountClosed,
-            uint256 _baseTokenReceived,
+            uint256 _quoteTokenReceived,
             uint256 _underlyingTokenPaidToLender
         )
     {
@@ -248,9 +248,9 @@ contract ShortSell is
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient          address to send remaining baseToken to after closing
+     * @param  payoutRecipient          address to send remaining quoteToken to after closing
      * @return _amountClosed            amount of short closed
-     * @return _baseTokenReceived       amount of base token received by the short seller
+     * @return _quoteTokenReceived       amount of quote token received by the short seller
      *                                  after closing
      * @return _interestFeeAmount       interest fee in underlying token paid to the lender
      */
@@ -264,7 +264,7 @@ contract ShortSell is
         nonReentrant
         returns (
             uint256 _amountClosed,
-            uint256 _baseTokenReceived,
+            uint256 _quoteTokenReceived,
             uint256 _interestFeeAmount
         )
     {
@@ -279,7 +279,7 @@ contract ShortSell is
     }
 
     /**
-     * Liquidate loan position and withdraw base tokens from the vault.
+     * Liquidate loan position and withdraw quote tokens from the vault.
      * Must be approved by the short seller (e.g., by requiring the lender to own part of the
      * short position, and burning in order to liquidate part of the loan).
      *
@@ -287,7 +287,7 @@ contract ShortSell is
      * @param  requestedLiquidationAmount     amount of the loan to close. The amount closed
      *                                        will be: min(requestedCloseAmount, currentShortAmount)
      * @return _amountClosed                  amount of loan closed
-     * @return _baseTokenReceived             amount of base token received by the lender
+     * @return _quoteTokenReceived             amount of quote token received by the lender
      *                                        after closing
      */
     function liquidate(
@@ -300,7 +300,7 @@ contract ShortSell is
         nonReentrant
         returns (
             uint256 _amountClosed,
-            uint256 _baseTokenReceived
+            uint256 _quoteTokenReceived
         )
     {
         return LiquidateImpl.liquidateImpl(
@@ -351,7 +351,7 @@ contract ShortSell is
 
     /**
      * Function callable by the lender after the loan has been called-in for the call time limit but
-     * remains unclosed. Used to recover the base tokens held as collateral.
+     * remains unclosed. Used to recover the quote tokens held as collateral.
      *
      * @param  shortId  unique id for the short sell
      */
@@ -360,17 +360,17 @@ contract ShortSell is
     )
         external
         nonReentrant
-        returns (uint256 _baseTokenAmount)
+        returns (uint256 _quoteTokenAmount)
     {
         return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, shortId);
     }
 
     /**
-     * Deposit additional base token as colateral for a short sell loan. Cancels loan call if:
+     * Deposit additional quote token as colateral for a short sell loan. Cancels loan call if:
      * 0 < short.requiredDeposit < depositAmount
      *
      * @param  shortId          unique id for the short sell
-     * @param  depositAmount    additional amount in base token to deposit
+     * @param  depositAmount    additional amount in quote token to deposit
      */
     function deposit(
         bytes32 shortId,
@@ -393,7 +393,7 @@ contract ShortSell is
      * @param  addresses  Array of addresses:
      *
      *  [0] = underlying token
-     *  [1] = base token
+     *  [1] = quote token
      *  [2] = loan payer
      *  [3] = loan signer
      *  [4] = loan owner
@@ -406,7 +406,7 @@ contract ShortSell is
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
-     *  [2] = loan minimum base token
+     *  [2] = loan minimum quote token
      *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
@@ -449,7 +449,7 @@ contract ShortSell is
      * @param  addresses  Array of addresses:
      *
      *  [0] = underlying token
-     *  [1] = base token
+     *  [1] = quote token
      *  [2] = loan payer
      *  [3] = loan signer
      *  [4] = loan owner
@@ -462,7 +462,7 @@ contract ShortSell is
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
-     *  [2] = loan minimum base token
+     *  [2] = loan minimum quote token
      *  [3] = loan interest rate (annual nominal percentage times 10**18)
      *  [4] = loan lender fee
      *  [5] = loan taker fee
@@ -553,13 +553,13 @@ contract ShortSell is
     )
         view
         external
-        returns (uint256 _baseTokenBalance)
+        returns (uint256 _quoteTokenBalance)
     {
         if (!ShortSellCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].baseToken);
+        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
     }
 
     function getShortOwedAmount(

@@ -19,7 +19,7 @@ contract ShortSellGetters is ShortSellStorage {
      * @return
      *   Addresses corresponding to:
      *    [0] = underlyingToken
-     *    [1] = baseToken
+     *    [1] = quoteToken
      *    [2] = lender
      *    [3] = seller
      *  Values corresponding to:
@@ -50,7 +50,7 @@ contract ShortSellGetters is ShortSellStorage {
         return (
             [
                 short.underlyingToken,
-                short.baseToken,
+                short.quoteToken,
                 short.lender,
                 short.seller
             ],
@@ -90,14 +90,14 @@ contract ShortSellGetters is ShortSellStorage {
         return state.shorts[id].seller;
     }
 
-    function getShortBaseToken(
+    function getShortQuoteToken(
         bytes32 id
     )
         view
         external
-        returns (address _baseToken)
+        returns (address _quoteToken)
     {
-        return state.shorts[id].baseToken;
+        return state.shorts[id].quoteToken;
     }
 
     function getShortUnderlyingToken(

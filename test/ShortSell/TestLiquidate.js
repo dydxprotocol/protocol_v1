@@ -32,31 +32,31 @@ describe('#liquidate', () => {
   }
 
   contract('ShortSell', function(accounts) {
-    it('allows a lender to liquidate base tokens', async () => {
+    it('allows a lender to liquidate quote tokens', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configureShort(initialHolder, accounts);
 
-      const baseToken = await ERC20.at(shortTx.baseToken);
-      const lenderBaseBefore = await baseToken.balanceOf(lender);
-      expect(lenderBaseBefore.toNumber()).to.equal(0);
+      const quoteToken = await ERC20.at(shortTx.quoteToken);
+      const lenderQuoteBefore = await quoteToken.balanceOf(lender);
+      expect(lenderQuoteBefore.toNumber()).to.equal(0);
 
-      const baseBalance = await shortSell.getShortBalance(shortTx.id);
+      const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
-      // Liquidate base tokens by burning short tokens
+      // Liquidate quote tokens by burning short tokens
       await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
 
       // It should burn the short tokens
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);
 
-      // It should liquidate the correct amount of the base balance
-      const lenderBaseAfter = await baseToken.balanceOf(lender);
-      expect(lenderBaseAfter.toNumber()).to.equal(baseBalance.toNumber() * LIQUIDATE_PERCENT);
+      // It should liquidate the correct amount of the quote balance
+      const lenderQuoteAfter = await quoteToken.balanceOf(lender);
+      expect(lenderQuoteAfter.toNumber()).to.equal(quoteBalance.toNumber() * LIQUIDATE_PERCENT);
     });
   });
 
   contract('ShortSell', function(accounts) {
-    it('allows liquidating base tokens if the lender is a smart contract', async () => {
+    it('allows liquidating quote tokens if the lender is a smart contract', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configureShort(initialHolder, accounts);
 
@@ -65,20 +65,20 @@ describe('#liquidate', () => {
       // Transfer the loan to the liquidate delegator
       await shortSell.transferLoan(shortTx.id, liquidateDelegator.address, { from: lender });
 
-      const baseToken = await ERC20.at(shortTx.baseToken);
-      const lenderBaseBefore = await baseToken.balanceOf(lender);
-      expect(lenderBaseBefore.toNumber()).to.equal(0);
+      const quoteToken = await ERC20.at(shortTx.quoteToken);
+      const lenderQuoteBefore = await quoteToken.balanceOf(lender);
+      expect(lenderQuoteBefore.toNumber()).to.equal(0);
 
-      const baseBalance = await shortSell.getShortBalance(shortTx.id);
+      const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
-      // Liquidate base tokens by burning short tokens
+      // Liquidate quote tokens by burning short tokens
       await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
 
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);
 
-      const lenderBaseAfter = await baseToken.balanceOf(lender);
-      expect(lenderBaseAfter.toNumber()).to.equal(baseBalance.toNumber() * LIQUIDATE_PERCENT);
+      const lenderQuoteAfter = await quoteToken.balanceOf(lender);
+      expect(lenderQuoteAfter.toNumber()).to.equal(quoteBalance.toNumber() * LIQUIDATE_PERCENT);
     });
   });
 });

@@ -3,7 +3,7 @@
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
-const BaseToken = artifacts.require('TokenA');
+const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -132,14 +132,14 @@ describe('ShortSellAdmin', () => {
 
     contract('ShortSell', accounts => {
       it('Allows #deposit while OPERATIONAL', async () => {
-        const [shortSell, baseToken] = await Promise.all([
+        const [shortSell, quoteToken] = await Promise.all([
           ShortSell.deployed(),
-          BaseToken.deployed()
+          QuoteToken.deployed()
         ]);
         const shortTx = await doShort(accounts);
         const amount = new BigNumber(1000);
-        await baseToken.issue(amount, { from: shortTx.seller });
-        await baseToken.approve(ProxyContract.address, amount, { from: shortTx.seller });
+        await quoteToken.issue(amount, { from: shortTx.seller });
+        await quoteToken.approve(ProxyContract.address, amount, { from: shortTx.seller });
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(() => shortSell.deposit(
