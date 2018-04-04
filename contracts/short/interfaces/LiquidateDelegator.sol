@@ -31,7 +31,8 @@ contract LiquidateDelegator is LoanOwner {
 
     /**
      * Function a contract must implement in order to let other addresses call liquidate() for the
-     * lender position. This allows lenders to use more complex logic to control their lending positions.
+     * lender position. This allows lenders to use more complex logic to control their lending
+     * positions.
      *
      * NOTE: If returning non-zero, this contract must assume that ShortSell will either revert the
      * entire transaction or that the specified amount of the short position was successfully

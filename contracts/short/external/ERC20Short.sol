@@ -62,14 +62,14 @@ contract ERC20Short is
     // The short was completely closed and tokens can be withdrawn
     event CompletelyClosed();
 
-    // A user burns tokens in order to withdraw quote tokens after the short has been closed
-    event TokensRedeemedAfterForceClose(
+    // A user burned tokens to withdraw quote tokens from this contract after the short was closed
+    event TokensRedeemedAfterClose(
         address indexed redeemer,
         uint256 tokensRedeemed,
         uint256 quoteTokenPayout
     );
 
-    // A user burns tokens in order to partially close the short
+    // A user burned tokens in order to partially close the short
     event TokensRedeemedForClose(
         address indexed redeemer,
         uint256 closeAmount
@@ -211,7 +211,7 @@ contract ERC20Short is
         uint256 allowedAmount;
 
         // Tokens are not burned when a trusted recipient is used, but we require the short to be
-        // completely closed. All token holders are then entitled to the  quoteTokens in the contract
+        // completely closed. All token holders are then entitled to the quoteTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
             emit ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
@@ -224,7 +224,7 @@ contract ERC20Short is
             allowedAmount = Math.min256(requestedAmount, balance);
             require(allowedAmount > 0);
             balances[closer] = balance.sub(allowedAmount);
-            totalSupply_ = totalSupply_.sub(allowedAmount);  // asserts (allowedAmount <= totalSupply_)
+            totalSupply_ = totalSupply_.sub(allowedAmount);
             emit TokensRedeemedForClose(closer, allowedAmount);
 
             if (totalSupply_ == 0) {
@@ -236,9 +236,8 @@ contract ERC20Short is
     }
 
     /**
-     * Withdraw quote tokens from this contract for any of the short that was closed via
-     * forceRecoverLoan(). If all quote tokens were returned to the lender, then this contract may
-     * not be entitled to any tokens and therefore the token holders are not entitled to any tokens.
+     * Withdraw quote tokens from this contract for any of the short that was closed via external
+     * means (such as an auction-closing mechanism)
      *
      * NOTE: It is possible that this contract could be sent quote token by external sources
      * other than from the ShortSell contract. In this case the payout for token holders
@@ -286,7 +285,7 @@ contract ERC20Short is
         // Send the redeemer their proportion of quote token
         TokenInteract.transfer(quoteToken, who, quoteTokenPayout);
 
-        emit TokensRedeemedAfterForceClose(who, value, quoteTokenPayout);
+        emit TokensRedeemedAfterClose(who, value, quoteTokenPayout);
     }
 
     // -----------------------------------

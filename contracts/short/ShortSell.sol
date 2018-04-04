@@ -64,16 +64,7 @@ contract ShortSell is
 
     /**
      * Initiate a short sell. Called by the short seller. Short seller must provide both a
-     * signed loan offering as well as a signed 0x buy order for the base token to
-     * be shorted
-     *
-     * 1 - quote token deposit is transfered from the short seller to Vault
-     * 2 - base token is transfered from loan payer to Vault
-     * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
-     * 4 - use the provided 0x buy order to sell the loaned base token for quote token.
-     *     quote token received from the sell is also stored in Vault
-     * 5 - add details of the short sell to repo
-     * 6 - Short event recorded
+     * signed loan offering as well as a signed buy order for the base token to be shorted.
      *
      * @param  addresses  Addresses corresponding to:
      *
