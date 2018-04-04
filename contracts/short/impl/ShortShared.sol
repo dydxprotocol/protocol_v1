@@ -156,11 +156,10 @@ library ShortShared {
     )
         internal
     {
-        // If the signer is not the lender, the lender must be a smart contract, and we must
-        // get its consent
-        if (transaction.loanOffering.signer != transaction.loanOffering.lender) {
+        // If the signer != payer, get consent from payer
+        if (transaction.loanOffering.signer != transaction.loanOffering.payer) {
             require(
-                LoanOfferingVerifier(transaction.loanOffering.lender).verifyLoanOffering(
+                LoanOfferingVerifier(transaction.loanOffering.payer).verifyLoanOffering(
                     getLoanOfferingAddresses(transaction),
                     getLoanOfferingValues256(transaction),
                     getLoanOfferingValues32(transaction),
@@ -179,7 +178,7 @@ library ShortShared {
         // Transfer underlying token to the exchange wrapper
         Proxy(state.PROXY).transferTo(
             transaction.underlyingToken,
-            transaction.loanOffering.lender,
+            transaction.loanOffering.payer,
             transaction.exchangeWrapperAddress,
             transaction.lenderAmount
         );
@@ -235,7 +234,7 @@ library ShortShared {
         if (lenderFee > 0) {
             proxy.transferTo(
                 transaction.loanOffering.lenderFeeToken,
-                transaction.loanOffering.lender,
+                transaction.loanOffering.payer,
                 transaction.loanOffering.feeRecipient,
                 lenderFee
             );
@@ -305,7 +304,7 @@ library ShortShared {
         return [
             transaction.underlyingToken,
             transaction.baseToken,
-            transaction.loanOffering.lender,
+            transaction.loanOffering.payer,
             transaction.loanOffering.signer,
             transaction.loanOffering.owner,
             transaction.loanOffering.taker,

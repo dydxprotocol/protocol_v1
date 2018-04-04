@@ -193,10 +193,10 @@ library AddValueToShortImpl {
         // Unless the loan offering's lender is the owner of the loan position and is not a smart
         // contract, call out to the owner of the loan position to ensure they consent
         // to value being added
-        if (transaction.loanOffering.lender != lender || ContractHelper.isContract(lender)) {
+        if (transaction.loanOffering.payer != lender || ContractHelper.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
-                    transaction.loanOffering.lender,
+                    transaction.loanOffering.payer,
                     shortId,
                     transaction.effectiveAmount
                 )
@@ -277,7 +277,7 @@ library AddValueToShortImpl {
         returns (ShortSellCommon.LoanOffering memory)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[0],
+            payer: addresses[0],
             signer: addresses[1],
             owner: short.lender,
             taker: addresses[2],

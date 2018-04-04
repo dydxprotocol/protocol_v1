@@ -53,7 +53,7 @@ library LoanImpl {
      */
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
-        address indexed lender,
+        address indexed payer,
         address indexed feeRecipient,
         uint256 cancelAmount
     );
@@ -63,7 +63,7 @@ library LoanImpl {
      */
     event LoanOfferingApproved(
         bytes32 indexed loanHash,
-        address indexed lender,
+        address indexed payer,
         address indexed feeRecipient
     );
 
@@ -149,7 +149,7 @@ library LoanImpl {
             values32
         );
 
-        require(loanOffering.lender == msg.sender);
+        require(msg.sender == loanOffering.payer || msg.sender == loanOffering.signer);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
         uint256 remainingAmount = loanOffering.rates.maxAmount.sub(
@@ -167,7 +167,7 @@ library LoanImpl {
 
         emit LoanOfferingCanceled(
             loanOffering.loanHash,
-            loanOffering.lender,
+            loanOffering.payer,
             loanOffering.feeRecipient,
             amountToCancel
         );
@@ -189,14 +189,14 @@ library LoanImpl {
             values32
         );
 
-        require(loanOffering.lender == msg.sender);
+        require(loanOffering.payer == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
         state.isLoanApproved[loanOffering.loanHash] = true;
 
         emit LoanOfferingApproved(
             loanOffering.loanHash,
-            loanOffering.lender,
+            loanOffering.payer,
             loanOffering.feeRecipient
         );
     }
@@ -213,7 +213,7 @@ library LoanImpl {
         returns (ShortSellCommon.LoanOffering _loanOffering)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
-            lender: addresses[2],
+            payer: addresses[2],
             signer: addresses[3],
             owner: addresses[4],
             taker: addresses[5],
