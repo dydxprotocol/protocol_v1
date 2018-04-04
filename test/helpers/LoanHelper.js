@@ -1,8 +1,8 @@
 /*global artifacts, web3*/
 
 const BigNumber = require('bignumber.js');
-const BaseToken = artifacts.require("TokenA");
-const UnderlyingToken = artifacts.require("TokenB");
+const QuoteToken = artifacts.require("TokenA");
+const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroEx = require('0x.js').ZeroEx;
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
@@ -15,8 +15,8 @@ const web3Instance = new Web3(web3.currentProvider);
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
-    underlyingToken: UnderlyingToken.address,
     baseToken: BaseToken.address,
+    quoteToken: QuoteToken.address,
     lender: accounts[1],
     signer: accounts[1],
     owner: accounts[1],
@@ -27,7 +27,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     rates: {
       maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minBaseToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
+      minQuoteToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
       interestRate: new BigNumber('365e16'),
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
@@ -48,7 +48,7 @@ async function signLoanOffering(loanOffering) {
   const valuesHash = web3Instance.utils.soliditySha3(
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minBaseToken,
+    loanOffering.rates.minQuoteToken,
     loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
@@ -60,8 +60,8 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
-    loanOffering.underlyingToken,
     loanOffering.baseToken,
+    loanOffering.quoteToken,
     loanOffering.lender,
     loanOffering.signer,
     loanOffering.owner,

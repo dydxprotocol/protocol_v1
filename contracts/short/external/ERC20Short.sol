@@ -23,7 +23,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
  *
  * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
- * entitled to some amount of base tokens after settlement.
+ * entitled to some amount of quote tokens after settlement.
  */
  /* solium-disable-next-line */
 contract ERC20Short is
@@ -62,11 +62,11 @@ contract ERC20Short is
     // The short was completely closed and tokens can be withdrawn
     event CompletelyClosed();
 
-    // A user burns tokens in order to withdraw base tokens after the short has been closed
+    // A user burns tokens in order to withdraw quote tokens after the short has been closed
     event TokensRedeemedAfterForceClose(
         address indexed redeemer,
         uint256 tokensRedeemed,
-        uint256 baseTokenPayout
+        uint256 quoteTokenPayout
     );
 
     // A user burns tokens in order to partially close the short
@@ -91,8 +91,8 @@ contract ERC20Short is
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the short's baseToken. Cached for convenience and lower-cost withdrawals
-    address public baseToken;
+    // Address of the short's quoteToken. Cached for convenience and lower-cost withdrawals
+    address public quoteToken;
 
     // Symbol to be ERC20 compliant with frontends
     string public symbol = "DYDX-S";
@@ -153,7 +153,7 @@ contract ERC20Short is
         state = State.OPEN;
         totalSupply_ = currentShortAmount;
         balances[INITIAL_TOKEN_HOLDER] = currentShortAmount;
-        baseToken = short.baseToken;
+        quoteToken = short.quoteToken;
 
         // Record event
         emit Initialized(SHORT_ID, currentShortAmount);
@@ -189,7 +189,7 @@ contract ERC20Short is
      * amount of the short position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of any base tokens paid out
+     * @param payoutRecipient  Address of the recipient of any quote tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
@@ -211,7 +211,7 @@ contract ERC20Short is
         uint256 allowedAmount;
 
         // Tokens are not burned when a trusted recipient is used, but we require the short to be
-        // completely closed. All token holders are then entitled to the  baseTokens in the contract
+        // completely closed. All token holders are then entitled to the  quoteTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
             emit ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
@@ -236,11 +236,11 @@ contract ERC20Short is
     }
 
     /**
-     * Withdraw base tokens from this contract for any of the short that was closed via
-     * forceRecoverLoan(). If all base tokens were returned to the lender, then this contract may
+     * Withdraw quote tokens from this contract for any of the short that was closed via
+     * forceRecoverLoan(). If all quote tokens were returned to the lender, then this contract may
      * not be entitled to any tokens and therefore the token holders are not entitled to any tokens.
      *
-     * NOTE: It is possible that this contract could be sent base token by external sources
+     * NOTE: It is possible that this contract could be sent quote token by external sources
      * other than from the ShortSell contract. In this case the payout for token holders
      * would be greater than just that from the short sell payout. This is fine because
      * nobody has incentive to send this contract extra funds, and if they do then it's
@@ -259,7 +259,7 @@ contract ERC20Short is
     )
         nonReentrant
         external
-        returns (uint256 baseTokenPayout)
+        returns (uint256 quoteTokenPayout)
     {
         uint256 value = balanceOf(who);
         require(value > 0);
@@ -270,23 +270,23 @@ contract ERC20Short is
         }
         require(state == State.CLOSED);
 
-        uint256 baseTokenBalance = TokenInteract.balanceOf(baseToken, address(this));
+        uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        baseTokenPayout = MathHelpers.getPartialAmount(
+        quoteTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
-            baseTokenBalance
+            quoteTokenBalance
         );
 
         // Destroy the tokens
         delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
-        // Send the redeemer their proportion of base token
-        TokenInteract.transfer(baseToken, who, baseTokenPayout);
+        // Send the redeemer their proportion of quote token
+        TokenInteract.transfer(quoteToken, who, quoteTokenPayout);
 
-        emit TokensRedeemedAfterForceClose(who, value, baseTokenPayout);
+        emit TokensRedeemedAfterForceClose(who, value, quoteTokenPayout);
     }
 
     // -----------------------------------
@@ -294,11 +294,11 @@ contract ERC20Short is
     // -----------------------------------
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the short's underlyingToken
+     * ERC20 decimals function. Returns the same number of decimals as the short's baseToken
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The number of decimal places, or revert if the underlyingToken has no such function.
+     * @return The number of decimal places, or revert if the baseToken has no such function.
      */
     function decimals()
         external
@@ -307,7 +307,7 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                ShortSell(SHORT_SELL).getShortUnderlyingToken(SHORT_ID)
+                ShortSell(SHORT_SELL).getShortBaseToken(SHORT_ID)
             ).decimals();
     }
 

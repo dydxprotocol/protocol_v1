@@ -16,7 +16,7 @@ async function getERC20ShortConstants(ERC20Short) {
     name,
     symbol,
     INITIAL_TOKEN_HOLDER,
-    baseToken,
+    quoteToken,
     totalSupply
   ] = await Promise.all([
     ERC20Short.SHORT_SELL.call(),
@@ -25,7 +25,7 @@ async function getERC20ShortConstants(ERC20Short) {
     ERC20Short.name.call(),
     ERC20Short.symbol.call(),
     ERC20Short.INITIAL_TOKEN_HOLDER.call(),
-    ERC20Short.baseToken.call(),
+    ERC20Short.quoteToken.call(),
     ERC20Short.totalSupply.call(),
   ]);
   return {
@@ -35,7 +35,7 @@ async function getERC20ShortConstants(ERC20Short) {
     name,
     symbol,
     INITIAL_TOKEN_HOLDER,
-    baseToken,
+    quoteToken,
     totalSupply
   };
 }

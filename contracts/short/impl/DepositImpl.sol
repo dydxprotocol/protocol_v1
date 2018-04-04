@@ -55,7 +55,7 @@ library DepositImpl {
 
         Vault(state.VAULT).transferToVault(
             shortId,
-            short.baseToken,
+            short.quoteToken,
             msg.sender,
             depositAmount
         );

@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 
 const ShortSell = artifacts.require("ShortSell");
-const BaseToken = artifacts.require("TokenA");
+const QuoteToken = artifacts.require("TokenA");
 const ProxyContract = artifacts.require("Proxy");
 
 const {
@@ -19,13 +19,13 @@ describe('#addValueToShort', () => {
   contract('ShortSell', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const shortTx = await doShort(accounts);
-      const [shortSell, baseToken] = await Promise.all([
+      const [shortSell, quoteToken] = await Promise.all([
         ShortSell.deployed(),
-        BaseToken.deployed()
+        QuoteToken.deployed()
       ]);
 
-      await baseToken.issueTo(shortTx.seller, shortTx.depositAmount);
-      await baseToken.approve(
+      await quoteToken.issueTo(shortTx.seller, shortTx.depositAmount);
+      await quoteToken.approve(
         ProxyContract.address,
         shortTx.depositAmount,
         { from: shortTx.seller }

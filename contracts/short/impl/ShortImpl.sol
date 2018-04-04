@@ -33,11 +33,11 @@ library ShortImpl {
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,
-        address underlyingToken,
         address baseToken,
+        address quoteToken,
         address loanFeeRecipient,
         uint256 shortAmount,
-        uint256 baseTokenFromSell,
+        uint256 quoteTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
         uint32  callTimeLimit,
@@ -71,16 +71,16 @@ library ShortImpl {
 
         bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
 
-        uint256 baseTokenReceived = ShortShared.shortInternalPreStateUpdate(
+        uint256 quoteTokenReceived = ShortShared.shortInternalPreStateUpdate(
             state,
             transaction,
             shortId,
             orderData
         );
 
-        ShortShared.validateMinimumBaseToken(
+        ShortShared.validateMinimumQuoteToken(
             transaction,
-            baseTokenReceived
+            quoteTokenReceived
         );
 
         updateState(
@@ -101,7 +101,7 @@ library ShortImpl {
             shortId,
             msg.sender,
             transaction,
-            baseTokenReceived
+            quoteTokenReceived
         );
 
         return shortId;
@@ -132,7 +132,7 @@ library ShortImpl {
         bytes32 shortId,
         address shortSeller,
         ShortShared.ShortTx transaction,
-        uint256 baseTokenReceived
+        uint256 quoteTokenReceived
     )
         internal
     {
@@ -141,11 +141,11 @@ library ShortImpl {
             shortSeller,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
-            transaction.underlyingToken,
             transaction.baseToken,
+            transaction.quoteToken,
             transaction.loanOffering.feeRecipient,
             transaction.effectiveAmount,
-            baseTokenReceived,
+            quoteTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
@@ -169,8 +169,8 @@ library ShortImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.shorts[shortId].underlyingToken = transaction.underlyingToken;
         state.shorts[shortId].baseToken = transaction.baseToken;
+        state.shorts[shortId].quoteToken = transaction.quoteToken;
         state.shorts[shortId].shortAmount = transaction.effectiveAmount;
         state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
         state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
@@ -210,8 +210,8 @@ library ShortImpl {
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
             owner: addresses[0],
-            underlyingToken: addresses[1],
-            baseToken: addresses[2],
+            baseToken: addresses[1],
+            quoteToken: addresses[2],
             effectiveAmount: values256[8],
             lenderAmount: values256[8],
             depositAmount: values256[9],
@@ -276,7 +276,7 @@ library ShortImpl {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minBaseToken: values256[2],
+            minQuoteToken: values256[2],
             interestRate: values256[3],
             lenderFee: values256[4],
             takerFee: values256[5],

@@ -36,7 +36,7 @@ library AddValueToShortImpl {
         address loanFeeRecipient,
         uint256 amountBorrowed,
         uint256 effectiveAmountAdded,
-        uint256 baseTokenFromSell,
+        uint256 quoteTokenFromSell,
         uint256 depositAmount
     );
 
@@ -55,7 +55,7 @@ library AddValueToShortImpl {
         bytes orderData
     )
         public
-        returns (uint256 _underlyingTokenPulledFromLender)
+        returns (uint256 _baseTokenPulledFromLender)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -68,16 +68,16 @@ library AddValueToShortImpl {
             sigRS
         );
 
-        // Base token balance before transfering anything for this addition
+        // Quote token balance before transfering anything for this addition
         // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
-        uint256 positionMinimumBaseToken = getPositionMinimumBaseToken(
+        uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
             shortId,
             state,
             transaction,
             short
         );
 
-        uint256 baseTokenReceived = ShortShared.shortInternalPreStateUpdate(
+        uint256 quoteTokenReceived = ShortShared.shortInternalPreStateUpdate(
             state,
             transaction,
             shortId,
@@ -87,13 +87,13 @@ library AddValueToShortImpl {
         validateAndSetDepositAmount(
             transaction,
             short,
-            positionMinimumBaseToken,
-            baseTokenReceived
+            positionMinimumQuoteToken,
+            quoteTokenReceived
         );
 
-        ShortShared.validateMinimumBaseToken(
+        ShortShared.validateMinimumQuoteToken(
             transaction,
-            baseTokenReceived
+            quoteTokenReceived
         );
 
         updateState(
@@ -114,7 +114,7 @@ library AddValueToShortImpl {
             transaction,
             shortId,
             short,
-            baseTokenReceived
+            quoteTokenReceived
         );
 
         return transaction.lenderAmount;
@@ -122,7 +122,7 @@ library AddValueToShortImpl {
 
     // --------- Helper Functions ---------
 
-    function getPositionMinimumBaseToken(
+    function getPositionMinimumQuoteToken(
         bytes32 shortId,
         ShortSellState.State storage state,
         ShortShared.ShortTx transaction,
@@ -132,25 +132,25 @@ library AddValueToShortImpl {
         view
         returns (uint256)
     {
-        uint256 baseTokenBalance = Vault(state.VAULT).balances(shortId, transaction.baseToken);
+        uint256 quoteTokenBalance = Vault(state.VAULT).balances(shortId, transaction.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             transaction.effectiveAmount,
             short.shortAmount,
-            baseTokenBalance
+            quoteTokenBalance
         );
     }
 
     function validateAndSetDepositAmount(
         ShortShared.ShortTx transaction,
         ShortSellCommon.Short storage short,
-        uint256 positionMinimumBaseToken,
-        uint256 baseTokenReceived
+        uint256 positionMinimumQuoteToken,
+        uint256 quoteTokenReceived
     )
         internal
         view
     {
-        require(baseTokenReceived <= positionMinimumBaseToken);
+        require(quoteTokenReceived <= positionMinimumQuoteToken);
 
         uint256 positionTimeRemaining = uint256(short.maxDuration).sub(
             ShortSellCommon.calculatePositionTimeElapsed(short, block.timestamp));
@@ -158,7 +158,7 @@ library AddValueToShortImpl {
         require(positionTimeRemaining <= transaction.loanOffering.maxDuration);
         require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
-        transaction.depositAmount = positionMinimumBaseToken.sub(baseTokenReceived);
+        transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenReceived);
     }
 
     function updateState(
@@ -208,7 +208,7 @@ library AddValueToShortImpl {
         ShortShared.ShortTx transaction,
         bytes32 shortId,
         ShortSellCommon.Short storage short,
-        uint256 baseTokenFromSell
+        uint256 quoteTokenFromSell
     )
         internal
     {
@@ -220,7 +220,7 @@ library AddValueToShortImpl {
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
             transaction.effectiveAmount,
-            baseTokenFromSell,
+            quoteTokenFromSell,
             transaction.depositAmount
         );
     }
@@ -241,8 +241,8 @@ library AddValueToShortImpl {
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
             owner: short.seller,
-            underlyingToken: short.underlyingToken,
             baseToken: short.baseToken,
+            quoteToken: short.quoteToken,
             effectiveAmount: values256[7],
             lenderAmount: ShortSellCommon.calculateOwedAmount(
                 short,
@@ -295,8 +295,8 @@ library AddValueToShortImpl {
 
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
-            short.baseToken,
-            short.underlyingToken
+            short.quoteToken,
+            short.baseToken
         );
 
         return loanOffering;
@@ -313,7 +313,7 @@ library AddValueToShortImpl {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minBaseToken: values256[2],
+            minQuoteToken: values256[2],
             interestRate: short.interestRate,
             lenderFee: values256[3],
             takerFee: values256[4],

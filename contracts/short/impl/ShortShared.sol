@@ -26,8 +26,8 @@ library ShortShared {
 
     struct ShortTx {
         address owner;
-        address underlyingToken;
         address baseToken;
+        address quoteToken;
         uint256 effectiveAmount;
         uint256 lenderAmount;
         uint256 depositAmount;
@@ -46,7 +46,7 @@ library ShortShared {
         bytes orderData
     )
         internal
-        returns (uint256 _baseTokenReceived)
+        returns (uint256 _quoteTokenReceived)
     {
         // Validate
         validateShort(
@@ -58,14 +58,14 @@ library ShortShared {
         // collisions use up less gas.
         // NOTE: Doing this before updating state relies on #short being non-reentrant
         transferFromLender(state, transaction);
-        uint256 baseTokenReceived = executeSell(
+        uint256 quoteTokenReceived = executeSell(
             state,
             transaction,
             orderData,
             shortId
         );
 
-        return baseTokenReceived;
+        return quoteTokenReceived;
     }
 
     function shortInternalPostStateUpdate(
@@ -130,7 +130,7 @@ library ShortShared {
         require(transaction.owner != address(0));
         require(transaction.loanOffering.owner != address(0));
 
-        // The minimum base token is validated after executing the sell
+        // The minimum quote token is validated after executing the sell
     }
 
     function isValidSignature(
@@ -175,9 +175,9 @@ library ShortShared {
     )
         internal
     {
-        // Transfer underlying token to the exchange wrapper
+        // Transfer base token to the exchange wrapper
         Proxy(state.PROXY).transferTo(
-            transaction.underlyingToken,
+            transaction.baseToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapperAddress,
             transaction.lenderAmount
@@ -191,11 +191,11 @@ library ShortShared {
     )
         internal
     {
-        // Transfer base token deposit from the short seller
+        // Transfer quote token deposit from the short seller
         if (transaction.depositAmount > 0) {
             Vault(state.VAULT).transferToVault(
                 shortId,
-                transaction.baseToken,
+                transaction.quoteToken,
                 msg.sender,
                 transaction.depositAmount
             );
@@ -257,11 +257,11 @@ library ShortShared {
         bytes32 shortId
     )
         internal
-        returns (uint256 _baseTokenReceived)
+        returns (uint256 _quoteTokenReceived)
     {
-        uint256 baseTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
+        uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
+            transaction.quoteToken,
             transaction.baseToken,
-            transaction.underlyingToken,
             msg.sender,
             transaction.lenderAmount,
             orderData
@@ -269,29 +269,29 @@ library ShortShared {
 
         Vault(state.VAULT).transferToVault(
             shortId,
-            transaction.baseToken,
+            transaction.quoteToken,
             transaction.exchangeWrapperAddress,
-            baseTokenReceived
+            quoteTokenReceived
         );
 
-        return baseTokenReceived;
+        return quoteTokenReceived;
     }
 
-    function validateMinimumBaseToken(
+    function validateMinimumQuoteToken(
         ShortTx transaction,
-        uint256 baseTokenReceived
+        uint256 quoteTokenReceived
     )
         internal
         pure
     {
-        uint256 totalBaseToken = baseTokenReceived.add(transaction.depositAmount);
-        uint256 loanOfferingMinimumBaseToken = MathHelpers.getPartialAmountRoundedUp(
+        uint256 totalQuoteToken = quoteTokenReceived.add(transaction.depositAmount);
+        uint256 loanOfferingMinimumQuoteToken = MathHelpers.getPartialAmountRoundedUp(
             transaction.effectiveAmount,
             transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minBaseToken
+            transaction.loanOffering.rates.minQuoteToken
         );
 
-        require(totalBaseToken >= loanOfferingMinimumBaseToken);
+        require(totalQuoteToken >= loanOfferingMinimumQuoteToken);
     }
 
     function getLoanOfferingAddresses(
@@ -302,8 +302,8 @@ library ShortShared {
         returns (address[9] _addresses)
     {
         return [
-            transaction.underlyingToken,
             transaction.baseToken,
+            transaction.quoteToken,
             transaction.loanOffering.payer,
             transaction.loanOffering.signer,
             transaction.loanOffering.owner,
@@ -324,7 +324,7 @@ library ShortShared {
         return [
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
-            transaction.loanOffering.rates.minBaseToken,
+            transaction.loanOffering.rates.minQuoteToken,
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,

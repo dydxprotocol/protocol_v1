@@ -10,7 +10,7 @@ chai.use(require('chai-bignumber')());
 const ERC721Short = artifacts.require("ERC721Short");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
-const UnderlyingToken = artifacts.require("TokenB");
+const BaseToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -29,18 +29,18 @@ function uint256(shortId) {
 }
 
 contract('ERC721Short', function(accounts) {
-  let shortSellContract, ERC721ShortContract, underlyingToken;
+  let shortSellContract, ERC721ShortContract, baseToken;
   let salt = 1111;
 
   before('retrieve deployed contracts', async () => {
     [
       shortSellContract,
       ERC721ShortContract,
-      underlyingToken
+      baseToken
     ] = await Promise.all([
       ShortSell.deployed(),
       ERC721Short.deployed(),
-      UnderlyingToken.deployed()
+      BaseToken.deployed()
     ]);
   });
 
@@ -202,11 +202,11 @@ contract('ERC721Short', function(accounts) {
     const approvedRecipient = accounts[7];
     const unapprovedAcct = accounts[9];
 
-    async function initUnderlying(account) {
+    async function initBase(account) {
       const maxInterest = await getMaxInterestFee(shortTx);
       const amount = shortTx.shortAmount.plus(maxInterest);
-      await underlyingToken.issueTo(account, amount);
-      await underlyingToken.approve(ProxyContract.address, amount, { from: account });
+      await baseToken.issueTo(account, amount);
+      await baseToken.approve(ProxyContract.address, amount, { from: account });
     }
 
     beforeEach('sets up short', async () => {
@@ -216,7 +216,7 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds for owner', async () => {
-      await initUnderlying(shortTx.seller);
+      await initBase(shortTx.seller);
       await shortSellContract.closeShortDirectly(
         shortTx.id,
         shortTx.shortAmount,
@@ -226,7 +226,7 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds for approved recipients', async () => {
-      await initUnderlying(unapprovedAcct);
+      await initBase(unapprovedAcct);
       await shortSellContract.closeShortDirectly(
         shortTx.id,
         shortTx.shortAmount,
@@ -236,7 +236,7 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds for approved closers', async () => {
-      await initUnderlying(approvedCloser);
+      await initBase(approvedCloser);
       await shortSellContract.closeShortDirectly(
         shortTx.id,
         shortTx.shortAmount,
@@ -246,7 +246,7 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('fails for non-approved recipients/closers', async () => {
-      await initUnderlying(unapprovedAcct);
+      await initBase(unapprovedAcct);
       await expectThrow(() => shortSellContract.closeShortDirectly(
         shortTx.id,
         shortTx.shortAmount,

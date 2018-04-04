@@ -92,12 +92,12 @@ describe('#short', () => {
     });
 
     contract('ShortSell', accounts => {
-      it('fails on too low base token amount', async () => {
+      it('fails on too low quote token amount', async () => {
         const shortTx = await createShortSellTx(accounts);
 
         await issueTokensAndSetAllowancesForShort(shortTx);
 
-        shortTx.loanOffering.rates.minBaseToken = BIGNUMBERS.BASE_AMOUNT.times(100);
+        shortTx.loanOffering.rates.minQuoteToken = BIGNUMBERS.BASE_AMOUNT.times(100);
         shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
         const shortSell = await ShortSell.deployed();

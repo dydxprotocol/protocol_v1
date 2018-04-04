@@ -253,7 +253,7 @@ library LoanImpl {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minBaseToken: values256[2],
+            minQuoteToken: values256[2],
             interestRate: values256[3],
             lenderFee: values256[4],
             takerFee: values256[5],

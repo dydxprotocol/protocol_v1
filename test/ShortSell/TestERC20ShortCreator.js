@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC20Short = artifacts.require("ERC20Short");
-const BaseToken = artifacts.require("TokenA");
+const QuoteToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
 const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
@@ -60,7 +60,7 @@ contract('ERC20ShortCreator', function(accounts) {
         tokenShortId,
         tokenState,
         tokenHolder,
-        tokenBaseToken,
+        tokenQuoteToken,
         totalSupply,
         ownerSupply,
       ] = await Promise.all([
@@ -68,7 +68,7 @@ contract('ERC20ShortCreator', function(accounts) {
         shortTokenContract.SHORT_ID.call(),
         shortTokenContract.state.call(),
         shortTokenContract.INITIAL_TOKEN_HOLDER.call(),
-        shortTokenContract.baseToken.call(),
+        shortTokenContract.quoteToken.call(),
         shortTokenContract.totalSupply.call(),
         shortTokenContract.balanceOf.call(originalSeller),
       ]);
@@ -77,7 +77,7 @@ contract('ERC20ShortCreator', function(accounts) {
       expect(tokenShortId).to.equal(shortTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_SHORT_STATE.OPEN);
       expect(tokenHolder).to.equal(originalSeller);
-      expect(tokenBaseToken).to.equal(BaseToken.address);
+      expect(tokenQuoteToken).to.equal(QuoteToken.address);
       expect(totalSupply).to.be.bignumber.equal(remainingShortAmount);
       expect(ownerSupply).to.be.bignumber.equal(remainingShortAmount);
     }

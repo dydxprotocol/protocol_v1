@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
-const BaseToken = artifacts.require('TokenA');
+const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const {
   doShort,
@@ -17,9 +17,9 @@ const {
 describe('#deposit', () => {
   contract('ShortSell', function(accounts) {
     it('deposits additional funds into the short position', async () => {
-      const [shortSell, baseToken] = await Promise.all([
+      const [shortSell, quoteToken] = await Promise.all([
         ShortSell.deployed(),
-        BaseToken.deployed()
+        QuoteToken.deployed()
       ]);
       const shortTx = await doShort(accounts);
 
@@ -27,7 +27,7 @@ describe('#deposit', () => {
         from: shortTx.seller,
         shortSell,
         shortTx,
-        baseToken,
+        quoteToken,
         printGas: true,
       });
     });
@@ -35,9 +35,9 @@ describe('#deposit', () => {
 
   contract('ShortSell', function(accounts) {
     it('allows anyone to deposit', async () => {
-      const [shortSell, baseToken] = await Promise.all([
+      const [shortSell, quoteToken] = await Promise.all([
         ShortSell.deployed(),
-        BaseToken.deployed()
+        QuoteToken.deployed()
       ]);
       const shortTx = await doShort(accounts);
 
@@ -45,16 +45,16 @@ describe('#deposit', () => {
         from: accounts[0],
         shortSell,
         shortTx,
-        baseToken,
+        quoteToken,
       });
     });
   });
 
   contract('ShortSell', function(accounts) {
     it('allows anyone to deposit', async () => {
-      const [shortSell, baseToken] = await Promise.all([
+      const [shortSell, quoteToken] = await Promise.all([
         ShortSell.deployed(),
-        BaseToken.deployed()
+        QuoteToken.deployed()
       ]);
       const { shortTx } = await doShortAndCall(accounts);
 
@@ -64,7 +64,7 @@ describe('#deposit', () => {
         from: accounts[0],
         shortSell,
         shortTx,
-        baseToken,
+        quoteToken,
         amount: requiredDeposit.minus(5)
       });
 
@@ -78,7 +78,7 @@ describe('#deposit', () => {
         from: accounts[0],
         shortSell,
         shortTx,
-        baseToken,
+        quoteToken,
         amount: 5
       });
 
@@ -95,13 +95,13 @@ async function doDeposit({
   from,
   shortSell,
   shortTx,
-  baseToken,
+  quoteToken,
   printGas = false,
   amount = new BigNumber(1000)
 }) {
   const initialBalance = await shortSell.getShortBalance.call(shortTx.id);
-  await baseToken.issue(amount, { from });
-  await baseToken.approve(ProxyContract.address, amount, { from });
+  await quoteToken.issue(amount, { from });
+  await quoteToken.approve(ProxyContract.address, amount, { from });
 
   const tx = await shortSell.deposit(
     shortTx.id,

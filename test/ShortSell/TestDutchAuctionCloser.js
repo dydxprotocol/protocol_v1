@@ -7,8 +7,8 @@ chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ERC721Short = artifacts.require("ERC721Short");
-const BaseToken = artifacts.require("TokenA");
-const UnderlyingToken = artifacts.require("TokenB");
+const QuoteToken = artifacts.require("TokenA");
+const BaseToken = artifacts.require("TokenB");
 const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
@@ -26,7 +26,7 @@ const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
   let shortSellContract, VaultContract, ERC721ShortContract;
-  let UnderlyingTokenContract, BaseTokenContract;
+  let BaseTokenContract, QuoteTokenContract;
   let shortTx;
   const dutchBidder = accounts[9];
 
@@ -35,14 +35,14 @@ contract('DutchAuctionCloser', function(accounts) {
       shortSellContract,
       VaultContract,
       ERC721ShortContract,
-      UnderlyingTokenContract,
       BaseTokenContract,
+      QuoteTokenContract,
     ] = await Promise.all([
       ShortSell.deployed(),
       Vault.deployed(),
       ERC721Short.deployed(),
-      UnderlyingToken.deployed(),
       BaseToken.deployed(),
+      QuoteToken.deployed(),
     ]);
   });
 
@@ -75,13 +75,13 @@ contract('DutchAuctionCloser', function(accounts) {
       callTimeLimit = shortTx.loanOffering.callTimeLimit;
 
       // grant tokens and set permissions for bidder
-      const numTokens = await UnderlyingTokenContract.balanceOf(dutchBidder);
+      const numTokens = await BaseTokenContract.balanceOf(dutchBidder);
       const maxInterest = await getMaxInterestFee(shortTx);
       const targetTokens = shortTx.shortAmount.plus(maxInterest);
 
       if (numTokens < targetTokens) {
-        await UnderlyingTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
-        await UnderlyingTokenContract.approve(
+        await BaseTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
+        await BaseTokenContract.approve(
           ProxyContract.address,
           targetTokens,
           { from: dutchBidder });
@@ -127,8 +127,8 @@ contract('DutchAuctionCloser', function(accounts) {
     it('succeeds for full short', async () => {
       await wait(callTimeLimit * 3 / 4);
 
-      const startingBidderUnderlyingToken = await UnderlyingTokenContract.balanceOf(dutchBidder);
-      const baseVault = await VaultContract.balances.call(shortTx.id, BaseToken.address);
+      const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
+      const quoteVault = await VaultContract.balances.call(shortTx.id, QuoteToken.address);
       const closeAmount = shortTx.shortAmount.div(2);
 
       // closing half is fine
@@ -156,22 +156,22 @@ contract('DutchAuctionCloser', function(accounts) {
           { from: dutchBidder }));
 
       const [
-        underlyingBidder,
-        baseSeller,
-        baseBidder
+        baseBidder,
+        quoteSeller,
+        quoteBidder
       ] = await Promise.all([
-        UnderlyingTokenContract.balanceOf.call(dutchBidder),
-        BaseTokenContract.balanceOf.call(shortTx.seller),
         BaseTokenContract.balanceOf.call(dutchBidder),
+        QuoteTokenContract.balanceOf.call(shortTx.seller),
+        QuoteTokenContract.balanceOf.call(dutchBidder),
       ]);
 
       // check amounts
-      expect(underlyingBidder).to.be.bignumber.equal(
-        startingBidderUnderlyingToken
+      expect(baseBidder).to.be.bignumber.equal(
+        startingBidderBaseToken
           .minus(owedAmount1)
           .minus(owedAmount2)
       );
-      expect(baseSeller.plus(baseBidder)).to.be.bignumber.equal(baseVault);
+      expect(quoteSeller.plus(quoteBidder)).to.be.bignumber.equal(quoteVault);
     });
   });
 });

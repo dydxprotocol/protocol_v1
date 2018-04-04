@@ -27,8 +27,8 @@ library ShortSellCommon {
     // -----------------------
 
     struct Short {
-        address underlyingToken;    // Immutable
-        address baseToken;          // Immutable
+        address baseToken;    // Immutable
+        address quoteToken;          // Immutable
         uint256 shortAmount;
         uint256 closedAmount;
         uint256 interestRate; // Immutable
@@ -62,7 +62,7 @@ library ShortSellCommon {
     struct LoanRates {
         uint256 maxAmount;
         uint256 minAmount;
-        uint256 minBaseToken;
+        uint256 minQuoteToken;
         uint256 interestRate;
         uint256 lenderFee;
         uint256 takerFee;
@@ -80,8 +80,8 @@ library ShortSellCommon {
         uint256 currentShortAmount;
         bytes32 shortId;
         uint256 closeAmount;
-        uint256 availableBaseToken;
-        uint256 startingBaseToken;
+        uint256 availableQuoteToken;
+        uint256 startingQuoteToken;
         address payoutRecipient;
     }
 
@@ -152,8 +152,8 @@ library ShortSellCommon {
 
     function getLoanOfferingHash(
         LoanOffering loanOffering,
-        address baseToken,
-        address underlyingToken
+        address quoteToken,
+        address baseToken
     )
         internal
         view
@@ -161,8 +161,8 @@ library ShortSellCommon {
     {
         return keccak256(
             address(this),
-            underlyingToken,
             baseToken,
+            quoteToken,
             loanOffering.payer,
             loanOffering.signer,
             loanOffering.owner,
@@ -184,7 +184,7 @@ library ShortSellCommon {
         return keccak256(
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
-            loanOffering.rates.minBaseToken,
+            loanOffering.rates.minQuoteToken,
             loanOffering.rates.interestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
@@ -236,11 +236,11 @@ library ShortSellCommon {
         Short storage short = getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
-        uint256 startingBaseToken = Vault(state.VAULT).balances(shortId, short.baseToken);
-        uint256 availableBaseToken = MathHelpers.getPartialAmount(
+        uint256 startingQuoteToken = Vault(state.VAULT).balances(shortId, short.quoteToken);
+        uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
-            startingBaseToken
+            startingQuoteToken
         );
 
         return CloseShortTx({
@@ -248,8 +248,8 @@ library ShortSellCommon {
             currentShortAmount: currentShortAmount,
             shortId: shortId,
             closeAmount: closeAmount,
-            availableBaseToken: availableBaseToken,
-            startingBaseToken: startingBaseToken,
+            availableQuoteToken: availableQuoteToken,
+            startingQuoteToken: startingQuoteToken,
             payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
         });
     }
