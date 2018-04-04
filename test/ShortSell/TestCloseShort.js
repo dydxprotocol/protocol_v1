@@ -111,7 +111,7 @@ describe('#closeShort', () => {
     it('Successfully closes a short directly in increments', async () => {
       const shortTx = await doShort(accounts);
 
-      // Give the short seller enough underlying token to close
+      // Give the short seller enough base token to close
       await issueForDirectClose(shortTx);
 
       const shortSell = await ShortSell.deployed();

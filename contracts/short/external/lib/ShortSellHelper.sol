@@ -25,7 +25,7 @@ library ShortSellHelper {
         ) = ShortSell(SHORT_SELL).getShort(shortId);
 
         return ShortSellCommon.Short({
-            underlyingToken: addresses[0],
+            baseToken: addresses[0],
             quoteToken: addresses[1],
             shortAmount: values256[0],
             closedAmount: values256[1],

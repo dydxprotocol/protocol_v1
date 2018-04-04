@@ -22,7 +22,7 @@ contract LoanOfferingVerifier {
      *
      * @param  addresses  Array of addresses:
      *
-     *  [0] = underlying token
+     *  [0] = base token
      *  [1] = quote token
      *  [2] = lender
      *  [3] = signer

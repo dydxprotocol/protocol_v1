@@ -27,7 +27,7 @@ library ShortSellCommon {
     // -----------------------
 
     struct Short {
-        address underlyingToken;    // Immutable
+        address baseToken;    // Immutable
         address quoteToken;          // Immutable
         uint256 shortAmount;
         uint256 closedAmount;
@@ -153,7 +153,7 @@ library ShortSellCommon {
     function getLoanOfferingHash(
         LoanOffering loanOffering,
         address quoteToken,
-        address underlyingToken
+        address baseToken
     )
         internal
         view
@@ -161,7 +161,7 @@ library ShortSellCommon {
     {
         return keccak256(
             address(this),
-            underlyingToken,
+            baseToken,
             quoteToken,
             loanOffering.payer,
             loanOffering.signer,

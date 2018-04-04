@@ -2,7 +2,7 @@
 
 const BigNumber = require('bignumber.js');
 const QuoteToken = artifacts.require("TokenA");
-const UnderlyingToken = artifacts.require("TokenB");
+const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroEx = require('0x.js').ZeroEx;
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
@@ -15,7 +15,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
-    underlyingToken: UnderlyingToken.address,
+    baseToken: BaseToken.address,
     quoteToken: QuoteToken.address,
     lender: accounts[1],
     signer: accounts[1],
@@ -60,7 +60,7 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,
-    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.quoteToken,
     loanOffering.lender,
     loanOffering.signer,

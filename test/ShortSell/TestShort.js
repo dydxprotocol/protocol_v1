@@ -7,7 +7,7 @@ const Web3 = require('web3');
 
 const ShortSell = artifacts.require("ShortSell");
 const QuoteToken = artifacts.require("TokenA");
-const UnderlyingToken = artifacts.require("TokenB");
+const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
@@ -53,12 +53,12 @@ describe('#short', () => {
       const [
         shortSell,
         feeToken,
-        underlyingToken,
+        baseToken,
         testSmartContractLender
       ] = await Promise.all([
         ShortSell.deployed(),
         FeeToken.deployed(),
-        UnderlyingToken.deployed(),
+        BaseToken.deployed(),
         TestSmartContractLender.new(true)
       ]);
 
@@ -66,10 +66,10 @@ describe('#short', () => {
 
       const [
         lenderFeeTokenBalance,
-        lenderUnderlyingTokenBalance
+        lenderBaseTokenBalance
       ] = await Promise.all([
         feeToken.balanceOf.call(shortTx.loanOffering.lender),
-        underlyingToken.balanceOf.call(shortTx.loanOffering.lender)
+        baseToken.balanceOf.call(shortTx.loanOffering.lender)
       ]);
       await Promise.all([
         feeToken.transfer(
@@ -77,9 +77,9 @@ describe('#short', () => {
           lenderFeeTokenBalance,
           { from: shortTx.loanOffering.lender }
         ),
-        underlyingToken.transfer(
+        baseToken.transfer(
           testSmartContractLender.address,
-          lenderUnderlyingTokenBalance,
+          lenderBaseTokenBalance,
           { from: shortTx.loanOffering.lender }
         )
       ]);
@@ -90,9 +90,9 @@ describe('#short', () => {
           lenderFeeTokenBalance
         ),
         testSmartContractLender.allow(
-          underlyingToken.address,
+          baseToken.address,
           ProxyContract.address,
-          lenderUnderlyingTokenBalance
+          lenderBaseTokenBalance
         )
       ]);
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
@@ -221,7 +221,7 @@ async function checkSuccess(shortSell, shortTx) {
   expect(contains).to.equal(true);
   const short = await getShort(shortSell, shortId);
 
-  expect(short.underlyingToken).to.equal(shortTx.underlyingToken);
+  expect(short.baseToken).to.equal(shortTx.baseToken);
   expect(short.quoteToken).to.equal(shortTx.quoteToken);
   expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
   expect(short.interestRate).to.be.bignumber.equal(
@@ -268,19 +268,19 @@ async function checkSuccess(shortSell, shortTx) {
   expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(shortTx.depositAmount));
 
   const [
-    underlyingToken,
+    baseToken,
     quoteToken,
     feeToken
   ] = await Promise.all([
-    UnderlyingToken.deployed(),
+    BaseToken.deployed(),
     QuoteToken.deployed(),
     FeeToken.deployed()
   ]);
 
   const [
-    lenderUnderlyingToken,
-    makerUnderlyingToken,
-    vaultUnderlyingToken,
+    lenderBaseToken,
+    makerBaseToken,
+    vaultBaseToken,
     sellerQuoteToken,
     makerQuoteToken,
     vaultQuoteToken,
@@ -289,9 +289,9 @@ async function checkSuccess(shortSell, shortTx) {
     vaultFeeToken,
     sellerFeeToken
   ] = await Promise.all([
-    underlyingToken.balanceOf.call(shortTx.loanOffering.lender),
-    underlyingToken.balanceOf.call(shortTx.buyOrder.maker),
-    underlyingToken.balanceOf.call(Vault.address),
+    baseToken.balanceOf.call(shortTx.loanOffering.lender),
+    baseToken.balanceOf.call(shortTx.buyOrder.maker),
+    baseToken.balanceOf.call(Vault.address),
     quoteToken.balanceOf.call(shortTx.seller),
     quoteToken.balanceOf.call(shortTx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
@@ -303,11 +303,11 @@ async function checkSuccess(shortSell, shortTx) {
     feeToken.balanceOf.call(shortTx.loanOffering.feeRecipient),
   ]);
 
-  expect(lenderUnderlyingToken).to.be.bignumber.equal(
+  expect(lenderBaseToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount.minus(shortTx.shortAmount)
   );
-  expect(makerUnderlyingToken).to.be.bignumber.equal(shortTx.shortAmount);
-  expect(vaultUnderlyingToken).to.be.bignumber.equal(0);
+  expect(makerBaseToken).to.be.bignumber.equal(shortTx.shortAmount);
+  expect(vaultBaseToken).to.be.bignumber.equal(0);
   expect(sellerQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
     shortTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)

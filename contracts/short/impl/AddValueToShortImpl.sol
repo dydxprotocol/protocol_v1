@@ -55,7 +55,7 @@ library AddValueToShortImpl {
         bytes orderData
     )
         public
-        returns (uint256 _underlyingTokenPulledFromLender)
+        returns (uint256 _baseTokenPulledFromLender)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -241,7 +241,7 @@ library AddValueToShortImpl {
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
             owner: short.seller,
-            underlyingToken: short.underlyingToken,
+            baseToken: short.baseToken,
             quoteToken: short.quoteToken,
             effectiveAmount: values256[7],
             lenderAmount: ShortSellCommon.calculateOwedAmount(
@@ -296,7 +296,7 @@ library AddValueToShortImpl {
         loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
             loanOffering,
             short.quoteToken,
-            short.underlyingToken
+            short.baseToken
         );
 
         return loanOffering;

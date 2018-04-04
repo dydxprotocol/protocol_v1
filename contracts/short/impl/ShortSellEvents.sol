@@ -23,7 +23,7 @@ contract ShortSellEvents {
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,
-        address underlyingToken,
+        address baseToken,
         address quoteToken,
         address loanFeeRecipient,
         uint256 shortAmount,
@@ -41,7 +41,7 @@ contract ShortSellEvents {
     event ShortClosed(
         bytes32 indexed id,
         uint256 closeAmount,
-        uint256 underlyingTokenPaidToLender,
+        uint256 baseTokenPaidToLender,
         uint256 shortSellerQuoteToken,
         uint256 buybackCost
     );
@@ -53,7 +53,7 @@ contract ShortSellEvents {
         bytes32 indexed id,
         uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 underlyingTokenPaidToLender,
+        uint256 baseTokenPaidToLender,
         uint256 shortSellerQuoteToken,
         uint256 buybackCost
     );

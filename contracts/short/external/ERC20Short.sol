@@ -294,11 +294,11 @@ contract ERC20Short is
     // -----------------------------------
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the short's underlyingToken
+     * ERC20 decimals function. Returns the same number of decimals as the short's baseToken
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The number of decimal places, or revert if the underlyingToken has no such function.
+     * @return The number of decimal places, or revert if the baseToken has no such function.
      */
     function decimals()
         external
@@ -307,7 +307,7 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                ShortSell(SHORT_SELL).getShortUnderlyingToken(SHORT_ID)
+                ShortSell(SHORT_SELL).getShortBaseToken(SHORT_ID)
             ).decimals();
     }
 

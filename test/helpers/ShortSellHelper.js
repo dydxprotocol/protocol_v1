@@ -6,7 +6,7 @@ const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
 const QuoteToken = artifacts.require("TokenA");
-const UnderlyingToken = artifacts.require("TokenB");
+const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
@@ -31,7 +31,7 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
 
   const tx = {
     owner: accounts[0],
-    underlyingToken: UnderlyingToken.address,
+    baseToken: BaseToken.address,
     quoteToken: QuoteToken.address,
     shortAmount: BIGNUMBERS.BASE_AMOUNT,
     depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
@@ -57,7 +57,7 @@ async function callShort(shortSell, tx, safely = true) {
 
   const addresses = [
     tx.owner,
-    tx.loanOffering.underlyingToken,
+    tx.loanOffering.baseToken,
     tx.loanOffering.quoteToken,
     tx.loanOffering.lender,
     tx.loanOffering.signer,
@@ -170,14 +170,14 @@ async function callAddValueToShort(shortSell, tx) {
 }
 
 async function issueTokensAndSetAllowancesForShort(tx) {
-  const [underlyingToken, quoteToken, feeToken] = await Promise.all([
-    UnderlyingToken.deployed(),
+  const [baseToken, quoteToken, feeToken] = await Promise.all([
+    BaseToken.deployed(),
     QuoteToken.deployed(),
     FeeToken.deployed()
   ]);
 
   await Promise.all([
-    underlyingToken.issueTo(
+    baseToken.issueTo(
       tx.loanOffering.lender,
       tx.loanOffering.rates.maxAmount
     ),
@@ -204,7 +204,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 
   return Promise.all([
-    underlyingToken.approve(
+    baseToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
       { from: tx.loanOffering.lender }
@@ -308,7 +308,7 @@ function callApproveLoanOffering(shortSell, loanOffering, from) {
 
 function formatLoanOffering(loanOffering) {
   const addresses = [
-    loanOffering.underlyingToken,
+    loanOffering.baseToken,
     loanOffering.quoteToken,
     loanOffering.lender,
     loanOffering.signer,
@@ -340,13 +340,13 @@ function formatLoanOffering(loanOffering) {
 }
 
 async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
-  const [underlyingToken, feeToken] = await Promise.all([
-    UnderlyingToken.deployed(),
+  const [baseToken, feeToken] = await Promise.all([
+    BaseToken.deployed(),
     FeeToken.deployed(),
   ]);
 
   await Promise.all([
-    underlyingToken.issueTo(
+    baseToken.issueTo(
       sellOrder.maker,
       sellOrder.makerTokenAmount
     ),
@@ -361,7 +361,7 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
   ]);
 
   return Promise.all([
-    underlyingToken.approve(
+    baseToken.approve(
       ZeroExProxy.address,
       sellOrder.makerTokenAmount,
       { from: sellOrder.maker }
@@ -382,7 +382,7 @@ async function issueTokensAndSetAllowancesForClose(shortTx, sellOrder) {
 async function getShort(shortSell, id) {
   const [
     [
-      underlyingToken,
+      baseToken,
       quoteToken,
       lender,
       seller
@@ -403,7 +403,7 @@ async function getShort(shortSell, id) {
   ] = await shortSell.getShort.call(id);
 
   return {
-    underlyingToken,
+    baseToken,
     quoteToken,
     shortAmount,
     closedAmount,
@@ -424,10 +424,10 @@ async function doShortAndCall(
   _salt = DEFAULT_SALT,
   _requiredDeposit = new BigNumber(10)
 ) {
-  const [shortSell, vault, underlyingToken] = await Promise.all([
+  const [shortSell, vault, baseToken] = await Promise.all([
     ShortSell.deployed(),
     Vault.deployed(),
-    UnderlyingToken.deployed()
+    BaseToken.deployed()
   ]);
 
   const shortTx = await doShort(accounts, _salt);
@@ -438,25 +438,25 @@ async function doShortAndCall(
     { from: shortTx.loanOffering.lender }
   );
 
-  return { shortSell, vault, underlyingToken, shortTx, callTx };
+  return { shortSell, vault, baseToken, shortTx, callTx };
 }
 
 async function issueForDirectClose(shortTx) {
-  const underlyingToken = await UnderlyingToken.deployed();
+  const baseToken = await BaseToken.deployed();
 
-  // Issue to the short seller the maximum amount of underlying token they could have to pay
+  // Issue to the short seller the maximum amount of base token they could have to pay
 
   const maxInterestFee = await getMaxInterestFee(shortTx);
-  const maxUnderlyingTokenOwed = shortTx.shortAmount.plus(maxInterestFee);
+  const maxBaseTokenOwed = shortTx.shortAmount.plus(maxInterestFee);
 
   await Promise.all([
-    underlyingToken.issueTo(
+    baseToken.issueTo(
       shortTx.seller,
-      maxUnderlyingTokenOwed
+      maxBaseTokenOwed
     ),
-    underlyingToken.approve(
+    baseToken.approve(
       ProxyContract.address,
-      maxUnderlyingTokenOwed,
+      maxBaseTokenOwed,
       { from: shortTx.seller }
     )
   ]);

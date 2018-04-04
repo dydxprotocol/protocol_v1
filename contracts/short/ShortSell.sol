@@ -64,13 +64,13 @@ contract ShortSell is
 
     /**
      * Initiate a short sell. Called by the short seller. Short seller must provide both a
-     * signed loan offering as well as a signed 0x buy order for the underlying token to
+     * signed loan offering as well as a signed 0x buy order for the base token to
      * be shorted
      *
      * 1 - quote token deposit is transfered from the short seller to Vault
-     * 2 - underlying token is transfered from loan payer to Vault
+     * 2 - base token is transfered from loan payer to Vault
      * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
-     * 4 - use the provided 0x buy order to sell the loaned underlying token for quote token.
+     * 4 - use the provided 0x buy order to sell the loaned base token for quote token.
      *     quote token received from the sell is also stored in Vault
      * 5 - add details of the short sell to repo
      * 6 - Short event recorded
@@ -78,7 +78,7 @@ contract ShortSell is
      * @param  addresses  Addresses corresponding to:
      *
      *  [0]  = short owner
-     *  [1]  = underlying token
+     *  [1]  = base token
      *  [2]  = quote token
      *  [3]  = loan payer
      *  [4]  = loan signer
@@ -186,7 +186,7 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
-        returns (uint256 _underlyingTokenPulledFromLender)
+        returns (uint256 _baseTokenPulledFromLender)
     {
         return AddValueToShortImpl.addValueToShortImpl(
             state,
@@ -214,7 +214,7 @@ contract ShortSell is
      * @return _amountClosed            amount of short closed
      * @return _quoteTokenReceived       amount of quote token received by the short seller
      *                                  after closing
-     * @return _interestFeeAmount       interest fee in underlying token paid to the lender
+     * @return _interestFeeAmount       interest fee in base token paid to the lender
      */
     function closeShort(
         bytes32 shortId,
@@ -229,7 +229,7 @@ contract ShortSell is
         returns (
             uint256 _amountClosed,
             uint256 _quoteTokenReceived,
-            uint256 _underlyingTokenPaidToLender
+            uint256 _baseTokenPaidToLender
         )
     {
         return CloseShortImpl.closeShortImpl(
@@ -243,7 +243,7 @@ contract ShortSell is
     }
 
     /**
-     * Helper to close a short sell by paying underlying token directly from the short seller
+     * Helper to close a short sell by paying base token directly from the short seller
      *
      * @param  shortId                  unique id for the short sell
      * @param  requestedCloseAmount     amount of the short position to close. The amount closed
@@ -252,7 +252,7 @@ contract ShortSell is
      * @return _amountClosed            amount of short closed
      * @return _quoteTokenReceived       amount of quote token received by the short seller
      *                                  after closing
-     * @return _interestFeeAmount       interest fee in underlying token paid to the lender
+     * @return _interestFeeAmount       interest fee in base token paid to the lender
      */
     function closeShortDirectly(
         bytes32 shortId,
@@ -392,7 +392,7 @@ contract ShortSell is
      *
      * @param  addresses  Array of addresses:
      *
-     *  [0] = underlying token
+     *  [0] = base token
      *  [1] = quote token
      *  [2] = loan payer
      *  [3] = loan signer
@@ -448,7 +448,7 @@ contract ShortSell is
      *
      * @param  addresses  Array of addresses:
      *
-     *  [0] = underlying token
+     *  [0] = base token
      *  [1] = quote token
      *  [2] = loan payer
      *  [3] = loan signer

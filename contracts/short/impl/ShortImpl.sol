@@ -33,7 +33,7 @@ library ShortImpl {
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,
-        address underlyingToken,
+        address baseToken,
         address quoteToken,
         address loanFeeRecipient,
         uint256 shortAmount,
@@ -141,7 +141,7 @@ library ShortImpl {
             shortSeller,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
-            transaction.underlyingToken,
+            transaction.baseToken,
             transaction.quoteToken,
             transaction.loanOffering.feeRecipient,
             transaction.effectiveAmount,
@@ -169,7 +169,7 @@ library ShortImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.shorts[shortId].underlyingToken = transaction.underlyingToken;
+        state.shorts[shortId].baseToken = transaction.baseToken;
         state.shorts[shortId].quoteToken = transaction.quoteToken;
         state.shorts[shortId].shortAmount = transaction.effectiveAmount;
         state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
@@ -210,7 +210,7 @@ library ShortImpl {
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
             owner: addresses[0],
-            underlyingToken: addresses[1],
+            baseToken: addresses[1],
             quoteToken: addresses[2],
             effectiveAmount: values256[8],
             lenderAmount: values256[8],

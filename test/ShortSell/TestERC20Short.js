@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 
 const ShortSell = artifacts.require("ShortSell");
 const ERC20Short = artifacts.require("ERC20Short");
-const UnderlyingToken = artifacts.require("TokenB");
+const BaseToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../helpers/Constants');
 const {
   callCloseShort,
@@ -30,7 +30,7 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Short', function(accounts) {
-  let underlyingToken
+  let baseToken
 
   let SHORTS = {
     FULL: {
@@ -60,10 +60,10 @@ contract('ERC20Short', function(accounts) {
   before('Set up Proxy, ShortSell accounts', async () => {
     [
       CONTRACTS.SHORT_SELL,
-      underlyingToken
+      baseToken
     ] = await Promise.all([
       ShortSell.deployed(),
-      UnderlyingToken.deployed()
+      BaseToken.deployed()
     ]);
   });
 
@@ -135,11 +135,11 @@ contract('ERC20Short', function(accounts) {
     const maxInterestFull = await getMaxInterestFee(SHORTS.FULL.TX);
     const maxInterestPart = await getMaxInterestFee(SHORTS.PART.TX);
     await issueTokenToAccountInAmountAndApproveProxy(
-      underlyingToken,
+      baseToken,
       act ? act : SHORTS.FULL.TX.seller,
       SHORTS.FULL.NUM_TOKENS.plus(maxInterestFull));
     await issueTokenToAccountInAmountAndApproveProxy(
-      underlyingToken,
+      baseToken,
       act ? act : SHORTS.PART.TX.seller,
       SHORTS.PART.NUM_TOKENS.plus(maxInterestPart));
   }
@@ -253,9 +253,9 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if not transferred', async () => {
-      // give underlying tokens to token holder
+      // give base tokens to token holder
       issueTokenToAccountInAmountAndApproveProxy(
-        underlyingToken,
+        baseToken,
         INITIAL_TOKEN_HOLDER,
         SHORTS.FULL.NUM_TOKENS + SHORTS.PART.NUM_TOKENS);
 
@@ -271,7 +271,7 @@ contract('ERC20Short', function(accounts) {
       }
     });
 
-    it('fails if user does not have the amount of underlyingToken required', async () => {
+    it('fails if user does not have the amount of baseToken required', async () => {
       await transferShortsToTokens();
       await Promise.all([
         SHORTS.FULL.TOKEN_CONTRACT.transfer(accounts[0], SHORTS.FULL.NUM_TOKENS,
@@ -492,7 +492,7 @@ contract('ERC20Short', function(accounts) {
   });
 
   describe('#decimals', () => {
-    it('returns decimal value of underlyingToken', async () => {
+    it('returns decimal value of baseToken', async () => {
       await setUpShorts();
       await setUpShortTokens();
       await transferShortsToTokens();
@@ -501,13 +501,13 @@ contract('ERC20Short', function(accounts) {
         const SHORT = SHORTS[type];
         const [decimal, expectedDecimal] = await Promise.all([
           SHORT.TOKEN_CONTRACT.decimals.call(),
-          underlyingToken.decimals.call()
+          baseToken.decimals.call()
         ]);
         expect(decimal).to.be.bignumber.equal(expectedDecimal);
       }
     });
 
-    it('returns decimal value of underlyingToken, even if not initialized', async () => {
+    it('returns decimal value of baseToken, even if not initialized', async () => {
       await setUpShorts();
       const tokenContract = await ERC20Short.new(
         SHORTS.FULL.ID,
@@ -516,7 +516,7 @@ contract('ERC20Short', function(accounts) {
         []);
       const [decimal, expectedDecimal] = await Promise.all([
         tokenContract.decimals.call(),
-        underlyingToken.decimals.call()
+        baseToken.decimals.call()
       ]);
       expect(decimal).to.be.bignumber.equal(expectedDecimal);
     });

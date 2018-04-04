@@ -26,7 +26,7 @@ library ShortShared {
 
     struct ShortTx {
         address owner;
-        address underlyingToken;
+        address baseToken;
         address quoteToken;
         uint256 effectiveAmount;
         uint256 lenderAmount;
@@ -175,9 +175,9 @@ library ShortShared {
     )
         internal
     {
-        // Transfer underlying token to the exchange wrapper
+        // Transfer base token to the exchange wrapper
         Proxy(state.PROXY).transferTo(
-            transaction.underlyingToken,
+            transaction.baseToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapperAddress,
             transaction.lenderAmount
@@ -261,7 +261,7 @@ library ShortShared {
     {
         uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
             transaction.quoteToken,
-            transaction.underlyingToken,
+            transaction.baseToken,
             msg.sender,
             transaction.lenderAmount,
             orderData
@@ -302,7 +302,7 @@ library ShortShared {
         returns (address[9] _addresses)
     {
         return [
-            transaction.underlyingToken,
+            transaction.baseToken,
             transaction.quoteToken,
             transaction.loanOffering.payer,
             transaction.loanOffering.signer,
