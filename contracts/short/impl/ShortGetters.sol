@@ -2,15 +2,92 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellStorage } from "./ShortSellStorage.sol";
 
 
-contract ShortSellGetters is ShortSellStorage {
+/**
+ * @title ShortGetters
+ * @author dYdX
+ *
+ * A collection of public constant getter functions that allow users and applications to read the
+ * state of any short stored in the dYdX protocol.
+ */
+contract ShortGetters is ShortSellStorage {
     using SafeMath for uint256;
+
     // -------------------------------------
     // ----- Public Constant Functions -----
     // -------------------------------------
+
+    function containsShort(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (bool)
+    {
+        return ShortSellCommon.containsShortImpl(state, shortId);
+    }
+
+    function isShortCalled(
+        bytes32 shortId
+    )
+        view
+        external
+        returns(bool)
+    {
+        return (state.shorts[shortId].callTimestamp > 0);
+    }
+
+    function isShortClosed(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (bool)
+    {
+        return state.closedShorts[shortId];
+    }
+
+    function getShortBalance(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (uint256)
+    {
+        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
+            return 0;
+        }
+
+        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
+    }
+
+    function getShortOwedAmount(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (uint256)
+    {
+        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
+            return 0;
+        }
+
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+
+        return ShortSellCommon.calculateOwedAmount(
+            shortObject,
+            shortObject.shortAmount.sub(shortObject.closedAmount),
+            block.timestamp
+        );
+    }
+
+    // --------------------------
+    // ----- All Properties -----
+    // --------------------------
 
     /**
      * Get a Short by id. This does not validate the short exists. If the short does not exist
@@ -69,6 +146,10 @@ contract ShortSellGetters is ShortSellStorage {
             ]
         );
     }
+
+    // ---------------------------------
+    // ----- Individual Properties -----
+    // ---------------------------------
 
     function getShortLender(
         bytes32 id

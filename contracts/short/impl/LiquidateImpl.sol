@@ -107,12 +107,13 @@ library LiquidateImpl {
     {
         // If not the short seller, requires short seller to approve msg.sender
         if (msg.sender != transaction.short.seller) {
-            uint256 allowedCloseAmount = CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
-                msg.sender,
-                transaction.payoutRecipient,
-                transaction.shortId,
-                transaction.closeAmount
-            );
+            uint256 allowedCloseAmount =
+                CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+                    msg.sender,
+                    transaction.payoutRecipient,
+                    transaction.shortId,
+                    transaction.closeAmount
+                );
             // Because the verifier may do accounting based on the number that it returns, revert
             // if the returned amount is larger than the remaining amount of the short.
             require(transaction.closeAmount >= allowedCloseAmount);

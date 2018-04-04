@@ -183,7 +183,7 @@ library CloseShortImpl {
 
         if (order.exchangeWrapperAddress == address(0)) {
             // no buy order; send base tokens directly from the closer to the lender
-            Proxy(state.PROXY).transferTo(
+            Proxy(state.PROXY).transferTokens(
                 transaction.short.baseToken,
                 msg.sender,
                 transaction.short.lender,
@@ -238,8 +238,7 @@ library CloseShortImpl {
             order.orderData
         );
 
-        // We need to have enough quote token locked in the the close's vault to pay
-        // for both the buyback and the interest fee
+        // Require enough quote token in Vault to pay for both 1) buyback and 2) interest fee
         require(quoteTokenPrice <= transaction.availableQuoteToken);
 
         // Send the requisite quote token to do the buyback from vault to exchange wrapper
@@ -264,7 +263,7 @@ library CloseShortImpl {
         assert(receivedBaseToken == baseTokenOwedToLender);
 
         // Transfer base token from the exchange wrapper to the lender
-        Proxy(state.PROXY).transferTo(
+        Proxy(state.PROXY).transferTokens(
             transaction.short.baseToken,
             order.exchangeWrapperAddress,
             transaction.short.lender,

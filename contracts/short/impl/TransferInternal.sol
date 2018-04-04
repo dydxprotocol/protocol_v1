@@ -6,7 +6,6 @@ import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellGetters } from "./ShortSellGetters.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 
 

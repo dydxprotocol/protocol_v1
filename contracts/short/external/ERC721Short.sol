@@ -6,7 +6,6 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSellGetters } from "../impl/ShortSellGetters.sol";
 import { ShortSell } from "../ShortSell.sol";
 
 

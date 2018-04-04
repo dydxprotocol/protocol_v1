@@ -176,7 +176,7 @@ library ShortShared {
         internal
     {
         // Transfer base token to the exchange wrapper
-        Proxy(state.PROXY).transferTo(
+        Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapperAddress,
@@ -232,7 +232,7 @@ library ShortShared {
         );
 
         if (lenderFee > 0) {
-            proxy.transferTo(
+            proxy.transferTokens(
                 transaction.loanOffering.lenderFeeToken,
                 transaction.loanOffering.payer,
                 transaction.loanOffering.feeRecipient,
@@ -241,7 +241,7 @@ library ShortShared {
         }
 
         if (takerFee > 0) {
-            proxy.transferTo(
+            proxy.transferTokens(
                 transaction.loanOffering.takerFeeToken,
                 msg.sender,
                 transaction.loanOffering.feeRecipient,

@@ -228,8 +228,8 @@ library LoanImpl {
             loanHash: 0,
             signature: ShortSellCommon.Signature({
                 v: 0,
-                r: "0x",
-                s: "0x"
+                r: "",
+                s: ""
             })
         });
 

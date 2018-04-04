@@ -76,7 +76,12 @@ contract Vault is
         requiresAuthorization
     {
         // First send tokens to this contract
-        Proxy(PROXY).transfer(token, from, amount);
+        Proxy(PROXY).transferTokens(
+            token,
+            from,
+            address(this),
+            amount
+        );
 
         // Then increment balances
         balances[id][token] = balances[id][token].add(amount);

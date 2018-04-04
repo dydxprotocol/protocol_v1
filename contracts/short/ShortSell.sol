@@ -5,18 +5,19 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { ShortSellState } from "./impl/ShortSellState.sol";
-import { ShortImpl } from "./impl/ShortImpl.sol";
 import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
-import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
-import { LoanImpl } from "./impl/LoanImpl.sol";
-import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
+import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
+import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
+import { LoanGetters } from "./impl/LoanGetters.sol";
+import { LoanImpl } from "./impl/LoanImpl.sol";
+import { ShortGetters } from "./impl/ShortGetters.sol";
+import { ShortImpl } from "./impl/ShortImpl.sol";
+import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
 import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
-import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
-import { ShortSellGetters } from "./impl/ShortSellGetters.sol";
+import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 import { Vault } from "./Vault.sol";
@@ -36,7 +37,8 @@ contract ShortSell is
     ShortSellStorage,
     ShortSellEvents,
     ShortSellAdmin,
-    ShortSellGetters {
+    LoanGetters,
+    ShortGetters {
 
     using SafeMath for uint256;
 
@@ -64,16 +66,7 @@ contract ShortSell is
 
     /**
      * Initiate a short sell. Called by the short seller. Short seller must provide both a
-     * signed loan offering as well as a signed 0x buy order for the base token to
-     * be shorted
-     *
-     * 1 - quote token deposit is transfered from the short seller to Vault
-     * 2 - base token is transfered from loan payer to Vault
-     * 3 - if there is a taker fee for the buy order, transfer it from short seller to Vault
-     * 4 - use the provided 0x buy order to sell the loaned base token for quote token.
-     *     quote token received from the sell is also stored in Vault
-     * 5 - add details of the short sell to repo
-     * 6 - Short event recorded
+     * signed loan offering as well as a signed buy order for the base token to be shorted.
      *
      * @param  addresses  Addresses corresponding to:
      *
@@ -538,125 +531,19 @@ contract ShortSell is
     // ----- Public Constant Functions -----
     // -------------------------------------
 
-    function containsShort(
-        bytes32 shortId
-    )
+    function getVaultAddress()
         view
         external
-        returns (bool exists)
-    {
-        return ShortSellCommon.containsShortImpl(state, shortId);
-    }
-
-    function getShortBalance(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (uint256 _quoteTokenBalance)
-    {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
-            return 0;
-        }
-
-        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
-    }
-
-    function getShortOwedAmount(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (uint256 _interestFeeOwed)
-    {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
-            return 0;
-        }
-
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
-
-        return ShortSellCommon.calculateOwedAmount(
-            shortObject,
-            shortObject.shortAmount.sub(shortObject.closedAmount),
-            block.timestamp
-        );
-    }
-
-    function getUnavailableLoanOfferingAmount(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256 _unavailableAmount)
-    {
-        return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
-    }
-
-    function isShortCalled(
-        bytes32 shortId
-    )
-        view
-        external
-        returns(bool _isCalled)
-    {
-        return (state.shorts[shortId].callTimestamp > 0);
-    }
-
-    function isShortClosed(
-        bytes32 shortId
-    )
-        view
-        external
-        returns (bool _isClosed)
-    {
-        return state.closedShorts[shortId];
-    }
-
-    // ----- Public State Variable Getters -----
-
-    function VAULT()
-        view
-        external
-        returns (address _VAULT)
+        returns (address)
     {
         return state.VAULT;
     }
 
-    function PROXY()
+    function getProxyAddress()
         view
         external
-        returns (address _PROXY)
+        returns (address)
     {
         return state.PROXY;
-    }
-
-    function loanFills(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256 _filledAmount)
-    {
-        return state.loanFills[loanHash];
-    }
-
-    function loanCancels(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256 _cancelledAmount)
-    {
-        return state.loanCancels[loanHash];
-    }
-
-    function loanNumbers(
-        bytes32 loanHash
-    )
-        view
-        external
-        returns (uint256 _cancelledAmount)
-    {
-        return state.loanCancels[loanHash];
     }
 }
