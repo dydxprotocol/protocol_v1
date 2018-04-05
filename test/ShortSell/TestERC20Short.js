@@ -30,7 +30,7 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Short', function(accounts) {
-  let baseToken
+  let baseToken;
 
   let SHORTS = {
     FULL: {
@@ -427,7 +427,7 @@ contract('ERC20Short', function(accounts) {
       }
     );
 
-    it('fails when caller never had any tokens', async () => {
+    it('returns 0 when caller never had any tokens', async () => {
       // close half, force recover, then some random person can't withdraw any funds
       await grantDirectCloseTokensToSeller();
       const rando = accounts[9];
@@ -440,11 +440,13 @@ contract('ERC20Short', function(accounts) {
           SHORT.NUM_TOKENS.div(2)
         );
         await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
-        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(rando, { from: rando }));
+        const amount = await transact(SHORT.TOKEN_CONTRACT.withdraw, rando, { from: rando });
+
+        expect(amount).to.be.bignumber.eq(0);
       }
     });
 
-    it('fails when short is completely closed', async () => {
+    it('returns 0 when short is completely closed', async () => {
       // close the short completely and then try to withdraw
       await grantDirectCloseTokensToSeller();
       for (let type in SHORTS) {
@@ -457,7 +459,9 @@ contract('ERC20Short', function(accounts) {
           SHORT.NUM_TOKENS
         );
         await expectThrow(() => CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender }));
-        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
+        const amount = await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
+
+        expect(amount).to.be.bignumber.eq(0);
       }
     });
 

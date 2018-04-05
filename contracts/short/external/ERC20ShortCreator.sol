@@ -4,7 +4,6 @@ pragma experimental "v0.5.0";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ERC20Short } from "./ERC20Short.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 
@@ -23,7 +22,6 @@ contract ERC20ShortCreator is
     ShortOwner,
     ReentrancyGuard
 {
-
     // -------------------
     // ------ Events -----
     // -------------------
@@ -56,9 +54,9 @@ contract ERC20ShortCreator is
         }
     }
 
-    // -------------------------------
-    // ------ Public functions -------
-    // -------------------------------
+    // -----------------------------------
+    // ---- ShortSell Only Functions -----
+    // -----------------------------------
 
     /**
      * Implementation of ShortOwner functionality. Creates a new ERC20Short and assigns short

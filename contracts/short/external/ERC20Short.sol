@@ -9,7 +9,6 @@ import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedE
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { Vault } from "../Vault.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSell } from "../ShortSell.sol";
@@ -47,29 +46,40 @@ contract ERC20Short is
     // -------- Events --------
     // ------------------------
 
-    // The ERC20Short was successfully initialized
+    /**
+     * This ERC20Short was successfully initialized
+     */
     event Initialized(
         bytes32 shortId,
         uint256 initialSupply
     );
-    // The short was completely closed and tokens can be withdrawn
+
+    /**
+     * The short was completely closed and tokens can be withdrawn
+     */
     event ClosedByTrustedParty(
         address closer,
         address payoutRecipient,
         uint256 closeAmount
     );
 
-    // The short was completely closed and tokens can be withdrawn
+    /**
+     * The short was completely closed and tokens can be withdrawn
+     */
     event CompletelyClosed();
 
-    // A user burned tokens to withdraw quote tokens from this contract after the short was closed
-    event TokensRedeemedAfterClose(
+    /**
+     * A user burned tokens to withdraw quote tokens from this contract after the short was closed
+     */
+    event TokensRedeemedAfterForceClose(
         address indexed redeemer,
         uint256 tokensRedeemed,
         uint256 quoteTokenPayout
     );
 
-    // A user burned tokens in order to partially close the short
+    /**
+     * A user burned tokens in order to partially close the short
+     */
     event TokensRedeemedForClose(
         address indexed redeemer,
         uint256 closeAmount
@@ -119,12 +129,12 @@ contract ERC20Short is
         }
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // -------------------------------------
+    // ----- Short Sell Only Functions -----
+    // -------------------------------------
 
     /**
-     * Called by the ShortSell contract when anyone transfers ownership of a short to this contract.
+     * Called by ShortSell when anyone transfers ownership of a short to this contract.
      * This function initializes the tokenization of the short given and returns this address to
      * indicate to ShortSell that it is willing to take ownership of the short.
      *
@@ -147,7 +157,7 @@ contract ERC20Short is
 
         ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        require(currentShortAmount > 0);
+        assert(currentShortAmount > 0);
 
         // set relevant constants
         state = State.OPEN;
@@ -164,6 +174,15 @@ contract ERC20Short is
         return address(this); // returning own address retains ownership of short
     }
 
+    /**
+     * Called by ShortSell when additional value is added onto the short position this contract
+     * owns. Tokens are minted and assigned to the address that added the value.
+     *
+     * @param  from         Address that added the value to the short position
+     * @param  shortId      Unique ID of the short
+     * @param  amountAdded  Amount that was added to the short
+     * @return              true to indicate that this contract consents to value being added
+     */
     function additionalShortValueAdded(
         address from,
         bytes32 shortId,
@@ -174,9 +193,13 @@ contract ERC20Short is
         external
         returns (bool)
     {
-        require(shortId == SHORT_ID);
+        assert(shortId == SHORT_ID);
 
         balances[from] = balances[from].add(amountAdded);
+        totalSupply_ = totalSupply_.add(amountAdded);
+
+        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
+        emit Transfer(address(0), from, amountAdded);
 
         return true;
     }
@@ -205,8 +228,8 @@ contract ERC20Short is
         external
         returns (uint256)
     {
-        require(state == State.OPEN);
-        require(SHORT_ID == shortId);
+        assert(state == State.OPEN);
+        assert(SHORT_ID == shortId);
 
         uint256 allowedAmount;
 
@@ -232,8 +255,13 @@ contract ERC20Short is
                 emit CompletelyClosed();
             }
         }
+
         return allowedAmount;
     }
+
+    // -----------------------------------------
+    // ---- Public State Changing Functions ----
+    // -----------------------------------------
 
     /**
      * Withdraw quote tokens from this contract for any of the short that was closed via external
@@ -260,14 +288,18 @@ contract ERC20Short is
         external
         returns (uint256 quoteTokenPayout)
     {
-        uint256 value = balanceOf(who);
-        require(value > 0);
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
         require(state == State.CLOSED);
+
+        uint256 value = balanceOf(who);
+
+        if (value == 0) {
+            return 0;
+        }
 
         uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
 
@@ -285,7 +317,9 @@ contract ERC20Short is
         // Send the redeemer their proportion of quote token
         TokenInteract.transfer(quoteToken, who, quoteTokenPayout);
 
-        emit TokensRedeemedAfterClose(who, value, quoteTokenPayout);
+        emit TokensRedeemedAfterForceClose(who, value, quoteTokenPayout);
+
+        return quoteTokenPayout;
     }
 
     // -----------------------------------
@@ -331,10 +365,13 @@ contract ERC20Short is
         return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
     }
 
-    // ----------------------------------
-    // ---- ShortCustodian Functions ----
-    // ----------------------------------
-
+    /**
+     * Implements ShortCustodian functionality. Called by external contracts to see where to pay
+     * tokens as a result of closing a short on behalf of this contract
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          Address of this contract. Indicates funds should be sent to this contract
+     */
     function getShortSellDeedHolder(
         bytes32 shortId
     )

@@ -83,7 +83,7 @@ library LoanImpl {
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
             require(
-                CallLoanDelegator(short.lender).callOnBehalfOf(msg.sender, shortId, requiredDeposit)
+                CallLoanDelegator(short.lender).callInLoanOnBehalfOf(msg.sender, shortId, requiredDeposit)
             );
         }
 

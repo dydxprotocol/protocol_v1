@@ -41,7 +41,7 @@ contract CallLoanDelegator is LoanOwner {
      * @param depositAmount  Amount of quoteToken deposit that will be required to cancel the call
      * @return               true if the user is allowed to call-in the short, false otherwise
      */
-    function callOnBehalfOf(
+    function callInLoanOnBehalfOf(
         address who,
         bytes32 shortId,
         uint256 depositAmount
