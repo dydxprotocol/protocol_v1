@@ -117,36 +117,60 @@ library ShortSellCommon {
     )
         internal
         pure
-        returns (uint256 _interestFee)
+        returns (uint256)
     {
-        uint256 timeElapsed = calculatePositionTimeElapsed(short, endTimestamp);
+        uint256 timeElapsed = calculateEffectiveTimeElapsed(short, endTimestamp);
 
         return InterestImpl.getCompoundedInterest(
             closeAmount,
             short.interestRate,
-            timeElapsed,
-            short.interestPeriod
+            timeElapsed
         );
     }
 
-    function calculatePositionTimeElapsed(
+    function calculateEffectiveTimeElapsed(
+        Short short,
+        uint256 timestamp
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 elapsed = timestamp.sub(short.startTimestamp);
+
+        // round up to interestPeriod
+        uint256 period = short.interestPeriod;
+        if (period > 1) {
+            elapsed = MathHelpers.divisionRoundedUp(elapsed, period).mul(period);
+        }
+
+        // bound by maxDuration
+        return Math.min256(
+            elapsed,
+            short.maxDuration
+        );
+    }
+
+    function calculateEffectiveTimeElapsed(
         Short short,
         uint256 endTimestamp
     )
         internal
         pure
-        returns (uint256 _timeElapsed)
+        returns (uint256)
     {
-        uint256 boundedEndTimestamp = endTimestamp;
-        if (short.callTimestamp > 0) {
-            boundedEndTimestamp = Math.min256(
-                endTimestamp,
-                uint256(short.callTimestamp).add(short.callTimeLimit)
-            );
+        uint256 elapsed = endTimestamp.sub(short.startTimestamp);
+
+        // round up to interestPeriod
+        uint256 period = short.interestPeriod;
+        if (period > 1) {
+            elapsed = MathHelpers.divisionRoundedUp(elapsed, period).mul(period);
         }
+
+        // bound by maxDuration
         return Math.min256(
-            short.maxDuration,
-            boundedEndTimestamp.sub(short.startTimestamp)
+            elapsed,
+            short.maxDuration
         );
     }
 

@@ -70,15 +70,14 @@ contract('Deploy Costs', () => {
       const tokens1 = new BigNumber('1e18');
       const tokens2 = new BigNumber('1e40');
       const percent = new BigNumber('1e18');
-      const rounding = new BigNumber(60 * 60 * 24); // no rounding
 
       async function printGasCost(seconds) {
-        const tx = await contract.getCompoundedInterest(tokens1, percent, seconds, rounding);
+        const tx = await contract.getCompoundedInterest(tokens1, percent, seconds);
         console.log('\tInterestCalculation gas cost (small): ' + tx.receipt.gasUsed);
       }
 
       async function printGasCostLarge(seconds) {
-        const tx = await contract.getCompoundedInterest(tokens2, percent, seconds, rounding);
+        const tx = await contract.getCompoundedInterest(tokens2, percent, seconds);
         console.log('\tInterestCalculation gas cost (large): ' + tx.receipt.gasUsed);
       }
 

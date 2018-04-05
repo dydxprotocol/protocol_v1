@@ -65,6 +65,27 @@ contract ShortGetters is ShortSellStorage {
         return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
     }
 
+    function getTimeUntilInterestIncrease(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (uint256)
+    {
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+
+        uint256 nextStep = ShortSellCommon.calculateEffectiveTimeElapsed(
+            shortObject,
+            block.timestamp
+        );
+
+        if (block.timestamp > nextStep) { // past maxDuration
+            return 0;
+        } else {
+            return nextStep.add(1).sub(block.timestamp);
+        }
+    }
+
     function getShortOwedAmount(
         bytes32 shortId
     )

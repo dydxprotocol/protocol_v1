@@ -30,35 +30,6 @@ library MathHelpers {
     }
 
     /**
-     * Calculates quotient given 3 numerators and 2 denominators
-     *
-     * @param numerator1    Numerator 1
-     * @param numerator2    Numerator 2
-     * @param numerator3    Numerator 3
-     * @param denominator1  Denominator 1
-     * @param denominator2  Denominator 2
-     * @return rounded-up quotient
-     */
-    function getQuotient3Over2RoundedUp(
-        uint256 numerator1,
-        uint256 numerator2,
-        uint256 numerator3,
-        uint256 denominator1,
-        uint256 denominator2
-    )
-        internal
-        pure
-        returns (
-            uint256 quotient
-        )
-    {
-        // Multiply everything before dividing to reduce rounding error as much as possible
-        return divisionRoundedUp(
-            numerator1.mul(numerator2).mul(numerator3),
-            denominator1.mul(denominator2));
-    }
-
-    /**
      * Calculates partial value given a numerator and denominator, rounded up.
      *
      * @param numerator    Numerator
@@ -102,22 +73,6 @@ library MathHelpers {
             return 0;
         }
         return numerator.sub(1).div(denominator).add(1);
-    }
-
-    /**
-     * Calculates and returns the maximum value for a uint32 in solidity
-     *
-     * @return the maximum value for uint32
-     */
-    function maxUint32(
-    )
-        internal
-        pure
-        returns (
-            uint32 max
-        )
-    {
-        return 2 ** 32 - 1;
     }
 
     /**
