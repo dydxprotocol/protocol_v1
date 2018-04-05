@@ -134,7 +134,7 @@ contract ERC20Short is
     // -------------------------------------
 
     /**
-     * Called by the ShortSell contract when anyone transfers ownership of a short to this contract.
+     * Called by ShortSell when anyone transfers ownership of a short to this contract.
      * This function initializes the tokenization of the short given and returns this address to
      * indicate to ShortSell that it is willing to take ownership of the short.
      *
@@ -174,6 +174,15 @@ contract ERC20Short is
         return address(this); // returning own address retains ownership of short
     }
 
+    /**
+     * Called by ShortSell when additional value is added onto the short position this contract
+     * owns. Tokens are minted and assigned to the address that added the value.
+     *
+     * @param  from         Address that added the value to the short position
+     * @param  shortId      Unique ID of the short
+     * @param  amountAdded  Amount that was added to the short
+     * @return              true to indicate this contracts consents to value being added
+     */
     function additionalShortValueAdded(
         address from,
         bytes32 shortId,
@@ -184,9 +193,13 @@ contract ERC20Short is
         external
         returns (bool)
     {
-        require(shortId == SHORT_ID);
+        assert(shortId == SHORT_ID);
 
         balances[from] = balances[from].add(amountAdded);
+        totalSupply_ = totalSupply_.add(amountAdded);
+
+        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
+        emit Transfer(address(0), from, amountAdded);
 
         return true;
     }
@@ -352,10 +365,13 @@ contract ERC20Short is
         return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
     }
 
-    // ----------------------------------
-    // ---- ShortCustodian Functions ----
-    // ----------------------------------
-
+    /**
+     * Implements ShortCustodian functionality. Called by external contracts to see where to pay
+     * tokens as a result of closing a short on behalf of this contract
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          Address of this contract. Indicates funds should be sent to this contract
+     */
     function getShortSellDeedHolder(
         bytes32 shortId
     )
