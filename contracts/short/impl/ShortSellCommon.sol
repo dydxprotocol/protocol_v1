@@ -151,29 +151,6 @@ library ShortSellCommon {
         );
     }
 
-    function calculateEffectiveTimeElapsed(
-        Short short,
-        uint256 endTimestamp
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        uint256 elapsed = endTimestamp.sub(short.startTimestamp);
-
-        // round up to interestPeriod
-        uint256 period = short.interestPeriod;
-        if (period > 1) {
-            elapsed = MathHelpers.divisionRoundedUp(elapsed, period).mul(period);
-        }
-
-        // bound by maxDuration
-        return Math.min256(
-            elapsed,
-            short.maxDuration
-        );
-    }
-
     function getLoanOfferingHash(
         LoanOffering loanOffering,
         address quoteToken,
