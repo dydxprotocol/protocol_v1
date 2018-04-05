@@ -8,6 +8,7 @@ const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
+const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort,
   doShortAndCall,
@@ -51,7 +52,27 @@ describe('#deposit', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('allows anyone to deposit', async () => {
+    it('fails on zero-amount deposit', async () => {
+      const [shortSell, quoteToken] = await Promise.all([
+        ShortSell.deployed(),
+        QuoteToken.deployed()
+      ]);
+      const shortTx = await doShort(accounts);
+
+      await expectThrow(() =>
+        doDeposit({
+          from: accounts[0],
+          shortSell,
+          shortTx,
+          quoteToken,
+          amount: 0
+        })
+      );
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('allows anyone to deposit in increments', async () => {
       const [shortSell, quoteToken] = await Promise.all([
         ShortSell.deployed(),
         QuoteToken.deployed()

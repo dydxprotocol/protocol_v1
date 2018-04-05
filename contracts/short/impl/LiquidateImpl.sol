@@ -136,7 +136,7 @@ library LiquidateImpl {
         }
 
         require(transaction.closeAmount > 0);
-        require(transaction.closeAmount <= transaction.currentShortAmount);
+        assert(transaction.closeAmount <= transaction.currentShortAmount);
     }
 
     function logEventOnClose(

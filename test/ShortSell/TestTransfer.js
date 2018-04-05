@@ -36,6 +36,14 @@ describe('#transferShort', () => {
       expect(seller.toLowerCase()).to.eq(shortTx.seller.toLowerCase());
     });
 
+    it('fails if transferring to self', async () => {
+      await expectThrow(() => shortSell.transferShort(
+        shortTx.id,
+        shortTx.seller,
+        { from: shortTx.seller }
+      ));
+    });
+
     it('transfers ownership of a short', async () => {
       const tx = await shortSell.transferShort(
         shortTx.id,
@@ -73,7 +81,8 @@ describe('#transferShort', () => {
       const shortTx = await doShort(accounts);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
         shortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
 
       const tx = await shortSell.transferShort(shortTx.id,
         testCloseShortDelegator.address,
@@ -90,7 +99,8 @@ describe('#transferShort', () => {
       const shortTx = await doShort(accounts);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
         shortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
       const testShortOwner = await TestShortOwner.new(
         ShortSell.address,
         testCloseShortDelegator.address);
@@ -101,6 +111,38 @@ describe('#transferShort', () => {
       const { seller } = await getShort(shortSell, shortTx.id);
       expect(seller.toLowerCase()).to.eq(testCloseShortDelegator.address.toLowerCase());
       console.log('\tShortSell.transferShort gas used (chains thru): ' + tx.receipt.gasUsed);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('fails to transfer to a contract that transfers to 0x0', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+      const testShortOwner = await TestShortOwner.new(
+        ShortSell.address,
+        ADDRESSES.ZERO);
+
+      await expectThrow(() =>
+        shortSell.transferShort(shortTx.id,
+          testShortOwner.address,
+          { from: shortTx.seller })
+      );
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('fails to transfer to a contract that transfers back to original owner', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+      const testShortOwner = await TestShortOwner.new(
+        ShortSell.address,
+        shortTx.seller);
+
+      await expectThrow(() =>
+        shortSell.transferShort(shortTx.id,
+          testShortOwner.address,
+          { from: shortTx.seller })
+      );
     });
   });
 
@@ -137,6 +179,14 @@ describe('#transferLoan', () => {
       const { lender } = await getShort(shortSell, shortTx.id);
 
       expect(lender.toLowerCase()).to.eq(shortTx.loanOffering.lender.toLowerCase());
+    });
+
+    it('fails if transferring to self', async () => {
+      await expectThrow( () => shortSell.transferLoan(
+        shortTx.id,
+        shortTx.loanOffering.lender,
+        { from: shortTx.loanOffering.lender }
+      ));
     });
 
     it('transfers ownership of a loan', async () => {
@@ -207,6 +257,38 @@ describe('#transferLoan', () => {
       const { lender } = await getShort(shortSell, shortTx.id);
       expect(lender.toLowerCase()).to.eq(testCallLoanDelegator.address.toLowerCase());
       console.log('\tShortSell.transferLoan gas used (chain thru): ' + tx.receipt.gasUsed);
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('fails to transfer to a contract that transfers to 0x0', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+      const testLoanOwner = await TestLoanOwner.new(
+        shortSell.address,
+        ADDRESSES.ZERO);
+
+      await expectThrow(() =>
+        shortSell.transferLoan(shortTx.id,
+          testLoanOwner.address,
+          { from: shortTx.loanOffering.lender })
+      );
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('fails to transfer to a contract that transfers back to original owner', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await doShort(accounts);
+      const testLoanOwner = await TestLoanOwner.new(
+        shortSell.address,
+        shortTx.loanOffering.lender);
+
+      await expectThrow(() =>
+        shortSell.transferLoan(shortTx.id,
+          testLoanOwner.address,
+          { from: shortTx.loanOffering.lender })
+      );
     });
   });
 
