@@ -44,7 +44,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         return who == CALLER;
     }
 
-    function cancelLoancallInLoanOnBehalfOf(
+    function cancelLoanCallOnBehalfOf(
         address who,
         bytes32
     )

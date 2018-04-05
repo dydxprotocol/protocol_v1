@@ -61,7 +61,7 @@ contract CallLoanDelegator is LoanOwner {
      * @param shortId        Id of the short being call-canceled
      * @return               true if the user is allowed to cancel the short call, false otherwise
      */
-    function cancelLoancallInLoanOnBehalfOf(
+    function cancelLoanCallOnBehalfOf(
         address who,
         bytes32 shortId
     )

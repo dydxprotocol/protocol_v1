@@ -181,7 +181,7 @@ contract ERC20Short is
      * @param  from         Address that added the value to the short position
      * @param  shortId      Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
-     * @return              true to indicate this contracts consents to value being added
+     * @return              true to indicate that this contract consents to value being added
      */
     function additionalShortValueAdded(
         address from,

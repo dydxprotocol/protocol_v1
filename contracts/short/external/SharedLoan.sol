@@ -183,7 +183,7 @@ contract SharedLoan is
      * @param  from         Address that lent the additional tokens
      * @param  shortId      Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
-     * @return              true to indicate this contracts consents to value being added
+     * @return              true to indicate that this contract consents to value being added
      */
     function additionalLoanValueAdded(
         address from,
@@ -242,7 +242,7 @@ contract SharedLoan is
      * @return          true to consent to the loan call being canceled if the initiator is a
      *                  trusted loan caller, false otherwise
      */
-    function cancelLoancallInLoanOnBehalfOf(
+    function cancelLoanCallOnBehalfOf(
         address who,
         bytes32 shortId
     )
@@ -372,17 +372,17 @@ contract SharedLoan is
         internal
         returns (uint256)
     {
-        uint256 currentbaseTokenBalance = TokenInteract.balanceOf(
+        uint256 currentBaseTokenBalance = TokenInteract.balanceOf(
             baseToken,
             address(this));
 
-        uint256 totalbaseTokenEverHeld = currentbaseTokenBalance.add(
+        uint256 totalBaseTokenEverHeld = currentBaseTokenBalance.add(
             totalBaseTokenWithdrawn);
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
             totalAmount,
-            totalbaseTokenEverHeld
+            totalBaseTokenEverHeld
         ).sub(baseTokenWithdrawnEarly[who]);
 
         if (allowedAmount == 0) {
@@ -411,14 +411,14 @@ contract SharedLoan is
             return 0;
         }
 
-        uint256 currentquoteTokenBalance = TokenInteract.balanceOf(
+        uint256 currentQuoteTokenBalance = TokenInteract.balanceOf(
             quoteToken,
             address(this));
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
             totalAmount.sub(totalAmountFullyWithdrawn),
-            currentquoteTokenBalance
+            currentQuoteTokenBalance
         );
 
         if (allowedAmount == 0) {
