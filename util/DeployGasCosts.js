@@ -63,7 +63,7 @@ contract('Deploy Costs', () => {
     });
   });
 
-  describe.only('InterestImpl', () => {
+  describe('InterestImpl', () => {
     it('', async () => {
       await TestInterestImpl.link('InterestImpl', InterestImpl.address);
       const contract = await TestInterestImpl.new();
