@@ -12,8 +12,11 @@ const ProxyContract = artifacts.require("Proxy");
 const {
   doShort,
   getShort,
-  callAddValueToShort
+  callAddValueToShort,
+  createShortSellTx
 } = require('../helpers/ShortSellHelper');
+
+let salt = 200;
 
 describe('#addValueToShort', () => {
   contract('ShortSell', function(accounts) {
@@ -23,6 +26,8 @@ describe('#addValueToShort', () => {
         ShortSell.deployed(),
         QuoteToken.deployed()
       ]);
+
+      const addValueTx = await createShortSellTx(accounts, salt++);
 
       await quoteToken.issueTo(shortTx.seller, shortTx.depositAmount);
       await quoteToken.approve(
