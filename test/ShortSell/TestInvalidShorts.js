@@ -364,11 +364,21 @@ describe('#closeShort', () => {
 
     contract('ShortSell', accounts => {
       it('Fails if interest fee cannot be paid', async() => {
-        const shortTx = await doShort(accounts);
+        const shortTx = await createShortSellTx(accounts);
         const [sellOrder, shortSell] = await Promise.all([
           createSignedSellOrder(accounts),
           ShortSell.deployed()
         ]);
+
+        // Set the interest fee super high so it can't be paid
+        shortTx.loanOffering.rates.interestRate = new BigNumber('4000e6');
+        shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+
+        await issueTokensAndSetAllowancesForShort(shortTx);
+        const tx = await callShort(shortSell, shortTx);
+
+        shortTx.id = tx.id;
+        shortTx.response = tx;
 
         // Wait for interest fee to accrue
         await wait(shortTx.loanOffering.maxDuration);
