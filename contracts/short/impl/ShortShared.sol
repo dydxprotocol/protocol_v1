@@ -130,6 +130,9 @@ library ShortShared {
         require(transaction.owner != address(0));
         require(transaction.loanOffering.owner != address(0));
 
+        // The interest rounding period cannot be longer than max duration
+        require(transaction.loanOffering.interestPeriod <= transaction.loanOffering.maxDuration);
+
         // The minimum quote token is validated after executing the sell
     }
 
