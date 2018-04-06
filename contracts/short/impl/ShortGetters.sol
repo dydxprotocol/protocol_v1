@@ -185,7 +185,7 @@ contract ShortGetters is ShortSellStorage {
         uint256 amount,
         uint32  timestamp
     )
-        view
+        /* TODO view */
         external
         returns (uint256)
     {

@@ -44,6 +44,8 @@ library AddValueToShortImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
+    event Test2(uint256 effectiveAmount, uint256 lenderAmount);
+
     function addValueToShortImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
@@ -76,6 +78,10 @@ library AddValueToShortImpl {
             transaction,
             short
         );
+
+        emit Test2(transaction.effectiveAmount, transaction.lenderAmount);
+
+        return 0;
 
         uint256 quoteTokenReceived = ShortShared.shortInternalPreStateUpdate(
             state,
@@ -239,7 +245,7 @@ library AddValueToShortImpl {
         bytes32[2] sigRS
     )
         internal
-        view
+        /* TODO view */
         returns (ShortShared.ShortTx memory)
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
