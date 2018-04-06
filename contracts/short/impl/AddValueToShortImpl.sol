@@ -153,13 +153,15 @@ library AddValueToShortImpl {
         require(quoteTokenReceived <= positionMinimumQuoteToken);
         require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
-        uint256 absoluteTimeRemaining = uint256(short.maxDuration).sub(
-            block.timestamp.sub(short.startTimestamp));
-        require(absoluteTimeRemaining <= transaction.loanOffering.maxDuration);
+        // require the short to end no later than the loanOffering's maximum acceptable end time
+        uint256 shortEndTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
+        uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
+        require(shortEndTimestamp <= offeringEndTimestamp);
 
+        // require the possibility for the lender to gain interest
         uint256 effectiveTimeRemaining = uint256(short.maxDuration).sub(
             ShortSellCommon.calculateEffectiveTimeElapsed(short, block.timestamp));
-        require(effectiveTimeRemaining > 0); // otherwise lender gains no interest
+        require(effectiveTimeRemaining > 0);
 
         transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenReceived);
     }

@@ -114,6 +114,8 @@ contract ShortGetters is ShortSellStorage {
         if (block.timestamp > nextStep) { // past maxDuration
             return 0;
         } else {
+            // nextStep is the final second at which the calculated interest fee is the same as it
+            // is currently, so add 1 to get the correct value
             return nextStep.add(1).sub(block.timestamp);
         }
     }
