@@ -32,14 +32,12 @@ library InterestImpl {
      * @param  tokenAmount         Amount of tokens lent
      * @param  interestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
-     * @param  roundToTimestep     If non-zero, round number of seconds _up_ to the nearest multiple
      * @return                     Total amount of tokens owed. Greater than tokenAmount.
      */
     function getCompoundedInterest(
         uint256 tokenAmount,
         uint256 interestRate,
-        uint256 secondsOfInterest,
-        uint256 roundToTimestep
+        uint256 secondsOfInterest
     )
         public
         pure
@@ -47,10 +45,15 @@ library InterestImpl {
             uint256
         )
     {
-        Fraction256.Fraction memory percent = getCompoundedPercent(
-            interestRate,
-            secondsOfInterest,
-            roundToTimestep
+        Fraction256.Fraction memory rt = Fraction256.Fraction({
+            num: interestRate.mul(secondsOfInterest),
+            den: (10**18) * (1 years)
+        });
+
+        Fraction256.Fraction memory percent = Exponent.exp(
+            rt,
+            DEFAULT_PRECOMPUTE_PRECISION,
+            DEFAULT_MACLAURIN_PRECISION
         );
 
         return safeMultiplyUint256ByFraction(tokenAmount, percent);
@@ -59,57 +62,6 @@ library InterestImpl {
     // ------------------------------
     // ------ Helper Functions ------
     // ------------------------------
-
-    /**
-     * Returns a fraction estimate of E^(R*T)
-     *
-     * @param  interestRate  R in the equation; Annual interest percentage times 10**18
-     * @param  secondsOfInterest   T in the equation; Number of seconds of accruing interest
-     * @param  roundToTimestep     Modifies T by rounding it up to the nearest multiple
-     * @return                     E^(R*T)
-     */
-    function getCompoundedPercent(
-        uint256 interestRate,
-        uint256 secondsOfInterest,
-        uint256 roundToTimestep
-    )
-        internal
-        pure
-        returns (Fraction256.Fraction memory)
-    {
-        uint256 interestTime = roundUpToTimestep(secondsOfInterest, roundToTimestep);
-
-        Fraction256.Fraction memory rt = Fraction256.Fraction({
-            num: interestRate.mul(interestTime),
-            den: (10**18) * (1 years)
-        });
-
-        return Exponent.exp(rt, DEFAULT_PRECOMPUTE_PRECISION, DEFAULT_MACLAURIN_PRECISION);
-    }
-
-    /**
-     * Round up a number of seconds to the nearest multiple of timeStep
-     *
-     * @param  numSeconds  The input in seconds
-     * @param  timeStep    The size of the time multiple to round up to in seconds
-     * @return             An integer multiple of timeStep
-     */
-    function roundUpToTimestep(
-        uint256 numSeconds,
-        uint256 timeStep
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        // don't modify numSeconds if timestep is 0 or 1
-        if (timeStep <= 1) {
-            return numSeconds;
-        }
-
-        // otherwise round numSeconds up to the nearest multiple of timeStep
-        return MathHelpers.divisionRoundedUp(numSeconds, timeStep).mul(timeStep);
-    }
 
     /**
      * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator

@@ -22,8 +22,7 @@ module.exports = {
   checkLenderBalances,
   getOwedAmount,
   getBalances,
-  checkSuccessCloseDirectly,
-  getShortLifetime,
+  checkSuccessCloseDirectly
 };
 
 async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
@@ -154,6 +153,10 @@ function checkLenderBalances(balances, baseTokenOwedToLender, shortTx) {
 
 async function getOwedAmount(shortTx, closeTx, closeAmount) {
   let shortLifetime = await getShortLifetime(shortTx, closeTx);
+  let interestPeriod = shortTx.loanOffering.rates.interestPeriod;
+  if (interestPeriod.gt(1)) {
+    shortLifetime = getPartialAmount(shortLifetime, interestPeriod, 1, true).times(interestPeriod);
+  }
 
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
   const interestCalc = await TestInterestImpl.new();
@@ -161,8 +164,7 @@ async function getOwedAmount(shortTx, closeTx, closeAmount) {
   const getOwedAmount = await interestCalc.getCompoundedInterest.call(
     closeAmount,
     shortTx.loanOffering.rates.interestRate,
-    new BigNumber(shortLifetime),
-    shortTx.loanOffering.rates.interestPeriod,
+    shortLifetime
   );
   return getOwedAmount;
 }
@@ -287,5 +289,5 @@ async function getShortLifetime(shortTx, closeTx) {
   if (duration > maxDuration) {
     duration = maxDuration;
   }
-  return duration;
+  return new BigNumber(duration);
 }

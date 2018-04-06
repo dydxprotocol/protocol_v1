@@ -469,8 +469,7 @@ async function getMaxInterestFee(shortTx) {
   const interest = await interestCalc.getCompoundedInterest.call(
     shortTx.shortAmount,
     shortTx.loanOffering.rates.interestRate,
-    shortTx.loanOffering.maxDuration,
-    shortTx.loanOffering.rates.interestPeriod,
+    shortTx.loanOffering.maxDuration
   );
   return interest;
 }

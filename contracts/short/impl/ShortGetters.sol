@@ -21,6 +21,12 @@ contract ShortGetters is ShortSellStorage {
     // ----- Public Constant Functions -----
     // -------------------------------------
 
+    /**
+     * Gets if a short is currently open
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          True if the short is exists and is open
+     */
     function containsShort(
         bytes32 shortId
     )
@@ -31,6 +37,12 @@ contract ShortGetters is ShortSellStorage {
         return ShortSellCommon.containsShortImpl(state, shortId);
     }
 
+    /**
+     * Gets if a short is currently margin-called
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          True if the short is margin-called
+     */
     function isShortCalled(
         bytes32 shortId
     )
@@ -41,6 +53,12 @@ contract ShortGetters is ShortSellStorage {
         return (state.shorts[shortId].callTimestamp > 0);
     }
 
+    /**
+     * Gets if a short was previously closed
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          True if the short is now closed
+     */
     function isShortClosed(
         bytes32 shortId
     )
@@ -51,6 +69,12 @@ contract ShortGetters is ShortSellStorage {
         return state.closedShorts[shortId];
     }
 
+    /**
+     * Gets the number of quote tokens currently locked up in Vault for a particular short
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          The number of quote tokens
+     */
     function getShortBalance(
         bytes32 shortId
     )
@@ -65,6 +89,44 @@ contract ShortGetters is ShortSellStorage {
         return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
     }
 
+    /**
+     * Gets the time until the interest fee charged for the short will increase.
+     * Returns 1 if the interest fee increases every second.
+     * Returns 0 if the interest fee will never increase again.
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          The number of seconds until the interest fee will increase
+     */
+    function getTimeUntilInterestIncrease(
+        bytes32 shortId
+    )
+        view
+        external
+        returns (uint256)
+    {
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+
+        uint256 nextStep = ShortSellCommon.calculateEffectiveTimeElapsed(
+            shortObject,
+            block.timestamp
+        );
+
+        if (block.timestamp > nextStep) { // past maxDuration
+            return 0;
+        } else {
+            // nextStep is the final second at which the calculated interest fee is the same as it
+            // is currently, so add 1 to get the correct value
+            return nextStep.add(1).sub(block.timestamp);
+        }
+    }
+
+    /**
+     * Gets the amount of base tokens currently needed to close the short completely, including
+     * interest fees.
+     *
+     * @param  shortId  Unique ID of the short
+     * @return          The number of base tokens
+     */
     function getShortOwedAmount(
         bytes32 shortId
     )
@@ -92,6 +154,7 @@ contract ShortGetters is ShortSellStorage {
     /**
      * Get a Short by id. This does not validate the short exists. If the short does not exist
      * all 0's will be returned.
+     *
      * @param  id  unique ID of the short
      * @return
      *   Addresses corresponding to:
