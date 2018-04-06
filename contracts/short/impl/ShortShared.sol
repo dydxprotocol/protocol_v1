@@ -103,10 +103,10 @@ library ShortShared {
             require(msg.sender == transaction.loanOffering.taker);
         }
 
-        // Require the order to either be pre-approved on-chain or to have a valid signature
+        // Require the order to either have a valid signature or be pre-approved on-chain
         require(
-            state.isLoanApproved[transaction.loanOffering.loanHash]
-            || isValidSignature(transaction.loanOffering)
+            isValidSignature(transaction.loanOffering)
+            || state.approvedLoans[transaction.loanOffering.loanHash]
         );
 
         // Validate the short amount is <= than max and >= min

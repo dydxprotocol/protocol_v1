@@ -191,8 +191,9 @@ library LoanImpl {
 
         require(loanOffering.payer == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
+        require(!state.approvedLoans[loanOffering.loanHash]);
 
-        state.isLoanApproved[loanOffering.loanHash] = true;
+        state.approvedLoans[loanOffering.loanHash] = true;
 
         emit LoanOfferingApproved(
             loanOffering.loanHash,

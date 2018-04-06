@@ -57,4 +57,14 @@ contract LoanGetters is ShortSellStorage {
     {
         return state.loanNumbers[loanHash];
     }
+
+    function isLoanApproved(
+        bytes32 loanHash
+    )
+        view
+        external
+        returns (bool)
+    {
+        return state.approvedLoans[loanHash];
+    }
 }

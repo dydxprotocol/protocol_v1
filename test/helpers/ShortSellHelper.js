@@ -313,15 +313,26 @@ async function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) 
   return tx;
 }
 
-function callApproveLoanOffering(shortSell, loanOffering, from) {
+async function callApproveLoanOffering(shortSell, loanOffering, from) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
-  return shortSell.approveLoanOffering(
+  const tx = await shortSell.approveLoanOffering(
     addresses,
     values256,
     values32,
     { from: from || loanOffering.payer }
   );
+
+  const approved = await shortSell.isLoanApproved.call(loanOffering.loanHash);
+  expect(approved).to.be.true;
+
+  expectLog(tx.logs[0], 'LoanOfferingApproved', {
+    loanHash: loanOffering.loanHash,
+    lender: loanOffering.payer,
+    feeRecipient: loanOffering.feeRecipient
+  });
+
+  return tx;
 }
 
 function formatLoanOffering(loanOffering) {
