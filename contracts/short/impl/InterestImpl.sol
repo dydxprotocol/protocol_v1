@@ -30,7 +30,8 @@ library InterestImpl {
      * I = P * e^(R*T)
      *
      * @param  tokenAmount         Amount of tokens lent
-     * @param  interestRate        Annual interest percentage times 10**6. (example: 5% = 5e6)
+     * @param  interestRate        Annual nominal interest percentage times 10**6.
+     *                             (example: 5% = 5e6)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
      * @return                     Total amount of tokens owed. Greater than tokenAmount.
      */
