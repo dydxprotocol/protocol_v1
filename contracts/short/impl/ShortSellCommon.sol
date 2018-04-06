@@ -27,19 +27,19 @@ library ShortSellCommon {
     // -----------------------
 
     struct Short {
-        address baseToken;    // Immutable
-        address quoteToken;          // Immutable
-        uint256 shortAmount;
-        uint256 closedAmount;
-        uint256 interestRate; // Immutable
-        uint256 requiredDeposit;
-        uint32  callTimeLimit;      // Immutable
-        uint32  startTimestamp;     // Immutable, cannot be 0
-        uint32  callTimestamp;
-        uint32  maxDuration;        // Immutable
-        uint32  interestPeriod;  // Immutable
+        address baseToken;       // Immutable
+        address quoteToken;      // Immutable
         address lender;
         address seller;
+        uint256 shortAmount;
+        uint256 closedAmount;
+        uint256 requiredDeposit;
+        uint32  callTimeLimit;   // Immutable
+        uint32  startTimestamp;  // Immutable, cannot be 0
+        uint32  callTimestamp;
+        uint32  maxDuration;     // Immutable
+        uint32  interestRate;    // Immutable
+        uint32  interestPeriod;  // Immutable
     }
 
     struct LoanOffering {
@@ -63,9 +63,9 @@ library ShortSellCommon {
         uint256 maxAmount;
         uint256 minAmount;
         uint256 minQuoteToken;
-        uint256 interestRate;
         uint256 lenderFee;
         uint256 takerFee;
+        uint32  interestRate;
         uint32  interestPeriod;
     }
 
@@ -233,14 +233,14 @@ library ShortSellCommon {
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
             loanOffering.rates.minQuoteToken,
-            loanOffering.rates.interestRate,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
-            loanOffering.rates.interestPeriod,
             loanOffering.expirationTimestamp,
+            loanOffering.salt,
             loanOffering.callTimeLimit,
             loanOffering.maxDuration,
-            loanOffering.salt
+            loanOffering.rates.interestRate,
+            loanOffering.rates.interestPeriod
         );
     }
 

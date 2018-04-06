@@ -216,14 +216,14 @@ contract ShortGetters is ShortSellStorage {
      *  Values corresponding to:
      *    [0] = shortAmount
      *    [1] = closedAmount
-     *    [2] = interestRate
-     *    [3] = requiredDeposit
+     *    [2] = requiredDeposit
      *  Values corresponding to:
      *    [0] = callTimeLimit
      *    [1] = startTimestamp
      *    [2] = callTimestamp
      *    [3] = maxDuration
-     *    [4] = interestPeriod
+     *    [4] = interestRate
+     *    [5] = interestPeriod
      */
     function getShort(
         bytes32 id
@@ -232,8 +232,8 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (
             address[4],
-            uint256[4],
-            uint32[5]
+            uint256[3],
+            uint32[6]
         )
     {
         ShortSellCommon.Short storage short = state.shorts[id];
@@ -248,7 +248,6 @@ contract ShortGetters is ShortSellStorage {
             [
                 short.shortAmount,
                 short.closedAmount,
-                short.interestRate,
                 short.requiredDeposit
             ],
             [
@@ -256,6 +255,7 @@ contract ShortGetters is ShortSellStorage {
                 short.startTimestamp,
                 short.callTimestamp,
                 short.maxDuration,
+                short.interestRate,
                 short.interestPeriod
             ]
         );
