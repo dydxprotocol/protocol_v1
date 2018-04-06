@@ -23,12 +23,12 @@ describe('#liquidate', () => {
     // Transfer the short position from the short seller to the ERC20 short token
     await shortSell.transferShort(shortTx.id, erc20Short.address, { from: shortTx.seller });
 
-    lender = shortTx.loanOffering.lender;
+    lender = shortTx.loanOffering.payer;
 
     const totalSupply = await erc20Short.totalSupply();
     // Transfer 20% of the short position to the lender
     shortAmount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20Short.transfer(shortTx.loanOffering.lender, shortAmount, { from: initialHolder });
+    await erc20Short.transfer(shortTx.loanOffering.payer, shortAmount, { from: initialHolder });
   }
 
   contract('ShortSell', function(accounts) {

@@ -70,7 +70,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await shortSellContract.callInLoan(
         shortTx.id,
         0, /*requiredDeposit*/
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       );
       callTimeLimit = shortTx.loanOffering.callTimeLimit;
 

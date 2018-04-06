@@ -141,7 +141,7 @@ library LoanImpl {
         uint256    cancelAmount
     )
         public
-        returns (uint256 _cancelledAmount)
+        returns (uint256 _canceledAmount)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,

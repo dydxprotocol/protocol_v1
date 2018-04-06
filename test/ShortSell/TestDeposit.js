@@ -8,7 +8,9 @@ const BigNumber = require('bignumber.js');
 const ShortSell = artifacts.require("ShortSell");
 const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
+const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { expectLog } = require('../helpers/EventHelper');
 const {
   doShort,
   doShortAndCall,
@@ -18,53 +20,45 @@ const {
 describe('#deposit', () => {
   contract('ShortSell', function(accounts) {
     it('deposits additional funds into the short position', async () => {
-      const [shortSell, quoteToken] = await Promise.all([
-        ShortSell.deployed(),
-        QuoteToken.deployed()
-      ]);
-      const shortTx = await doShort(accounts);
 
-      await doDeposit({
+      const shortTx = await doShort(accounts);
+      const amount = new BigNumber(1000);
+
+      const tx = await doDeposit({
         from: shortTx.seller,
-        shortSell,
         shortTx,
-        quoteToken,
         printGas: true,
+        amount: amount
+      });
+
+      expectLog(tx.logs[0], 'AdditionalDeposit', {
+        id: shortTx.id,
+        amount: amount,
+        depositor: shortTx.seller
       });
     });
   });
 
   contract('ShortSell', function(accounts) {
-    it('allows anyone to deposit', async () => {
-      const [shortSell, quoteToken] = await Promise.all([
-        ShortSell.deployed(),
-        QuoteToken.deployed()
-      ]);
+    it('doesnt allow anyone but short seller to deposit', async () => {
       const shortTx = await doShort(accounts);
-
-      await doDeposit({
-        from: accounts[0],
-        shortSell,
-        shortTx,
-        quoteToken,
-      });
+      await expectThrow(() =>
+        doDeposit({
+          from: accounts[9],
+          shortTx,
+        })
+      );
     });
   });
 
   contract('ShortSell', function(accounts) {
-    it('fails on zero-amount deposit', async () => {
-      const [shortSell, quoteToken] = await Promise.all([
-        ShortSell.deployed(),
-        QuoteToken.deployed()
-      ]);
+    it('fails for invalid shortId', async () => {
       const shortTx = await doShort(accounts);
 
       await expectThrow(() =>
         doDeposit({
-          from: accounts[0],
-          shortSell,
-          shortTx,
-          quoteToken,
+          from: shortTx.seller,
+          shortTx: { id: BYTES32.BAD_ID },
           amount: 0
         })
       );
@@ -72,20 +66,29 @@ describe('#deposit', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('allows anyone to deposit in increments', async () => {
-      const [shortSell, quoteToken] = await Promise.all([
-        ShortSell.deployed(),
-        QuoteToken.deployed()
-      ]);
+    it('fails on zero-amount deposit', async () => {
+      const shortTx = await doShort(accounts);
+
+      await expectThrow(() =>
+        doDeposit({
+          from: shortTx.seller,
+          shortTx,
+          amount: 0
+        })
+      );
+    });
+  });
+
+  contract('ShortSell', function(accounts) {
+    it('allows deposit in increments', async () => {
+      const shortSell = await ShortSell.deployed();
       const { shortTx } = await doShortAndCall(accounts);
 
       let { requiredDeposit } = await getShort(shortSell, shortTx.id);
 
       await doDeposit({
-        from: accounts[0],
-        shortSell,
+        from: shortTx.seller,
         shortTx,
-        quoteToken,
         amount: requiredDeposit.minus(5)
       });
 
@@ -95,12 +98,18 @@ describe('#deposit', () => {
       expect(requiredDeposit).to.be.bignumber.eq(5);
       expect(callTimestamp).to.be.bignumber.gt(new BigNumber(0));
 
-      await doDeposit({
-        from: accounts[0],
-        shortSell,
+      const amount2 = 5;
+      const tx2 = await doDeposit({
+        from: shortTx.seller,
         shortTx,
-        quoteToken,
-        amount: 5
+        amount: amount2
+      });
+
+      expectLog(tx2.logs[1], 'LoanCallCanceled', {
+        id: shortTx.id,
+        lender: shortTx.loanOffering.owner,
+        shortSeller: shortTx.seller,
+        depositAmount: amount2
       });
 
       short = await getShort(shortSell, shortTx.id);
@@ -114,12 +123,15 @@ describe('#deposit', () => {
 
 async function doDeposit({
   from,
-  shortSell,
   shortTx,
-  quoteToken,
   printGas = false,
   amount = new BigNumber(1000)
 }) {
+  const [shortSell, quoteToken] = await Promise.all([
+    ShortSell.deployed(),
+    QuoteToken.deployed()
+  ]);
+
   const initialBalance = await shortSell.getShortBalance.call(shortTx.id);
   await quoteToken.issue(amount, { from });
   await quoteToken.approve(ProxyContract.address, amount, { from });
@@ -137,4 +149,12 @@ async function doDeposit({
   const newBalance = await shortSell.getShortBalance.call(shortTx.id);
 
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
+
+  expectLog(tx.logs[0], 'AdditionalDeposit', {
+    id: shortTx.id,
+    amount: amount,
+    depositor: from
+  });
+
+  return tx;
 }

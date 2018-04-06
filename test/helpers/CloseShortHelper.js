@@ -219,8 +219,8 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     quoteToken.balanceOf.call(shortTx.seller),
     baseToken.balanceOf.call(shortTx.seller),
 
-    quoteToken.balanceOf.call(shortTx.loanOffering.lender),
-    baseToken.balanceOf.call(shortTx.loanOffering.lender),
+    quoteToken.balanceOf.call(shortTx.loanOffering.payer),
+    baseToken.balanceOf.call(shortTx.loanOffering.payer),
 
     feeToken.balanceOf.call(shortTx.seller),
 

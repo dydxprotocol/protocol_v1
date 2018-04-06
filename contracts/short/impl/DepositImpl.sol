@@ -52,6 +52,7 @@ library DepositImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
         require(depositAmount > 0);
+        require(msg.sender == short.seller);
 
         Vault(state.VAULT).transferToVault(
             shortId,
@@ -60,6 +61,13 @@ library DepositImpl {
             depositAmount
         );
 
+        emit AdditionalDeposit(
+            shortId,
+            depositAmount,
+            msg.sender
+        );
+
+        // cancel loan call if applicable
         uint256 requiredDeposit = short.requiredDeposit;
         if (short.callTimestamp > 0 && requiredDeposit > 0) {
             if (depositAmount >= requiredDeposit) {
@@ -78,11 +86,5 @@ library DepositImpl {
                 short.requiredDeposit = short.requiredDeposit.sub(depositAmount);
             }
         }
-
-        emit AdditionalDeposit(
-            shortId,
-            depositAmount,
-            msg.sender
-        );
     }
 }

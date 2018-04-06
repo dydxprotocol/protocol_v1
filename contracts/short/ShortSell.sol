@@ -413,7 +413,7 @@ contract ShortSell is
      *  [3] = loan interest update period (in seconds)
      *
      * @param  cancelAmount     Amount to cancel
-     * @return _cancelledAmount Amount that was cancelled
+     * @return _canceledAmount Amount that was canceled
      */
     function cancelLoanOffering(
         address[9] addresses,
@@ -424,7 +424,7 @@ contract ShortSell is
         external
         cancelLoanOfferingStateControl
         nonReentrant
-        returns (uint256 _cancelledAmount)
+        returns (uint256 _canceledAmount)
     {
         return LoanImpl.cancelLoanOfferingImpl(
             state,

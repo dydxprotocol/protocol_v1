@@ -150,12 +150,12 @@ contract('ERC20Short', function(accounts) {
       CONTRACTS.SHORT_SELL.callInLoan(
         SHORTS.FULL.ID,
         requiredDeposit,
-        { from : SHORTS.FULL.TX.loanOffering.lender }
+        { from : SHORTS.FULL.TX.loanOffering.payer }
       ),
       CONTRACTS.SHORT_SELL.callInLoan(
         SHORTS.PART.ID,
         requiredDeposit,
-        { from : SHORTS.PART.TX.loanOffering.lender }
+        { from : SHORTS.PART.TX.loanOffering.payer }
       ),
     ]);
   }
@@ -433,7 +433,7 @@ contract('ERC20Short', function(accounts) {
       const rando = accounts[9];
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
-        const lender = SHORT.TX.loanOffering.lender;
+        const lender = SHORT.TX.loanOffering.payer;
         await callCloseShortDirectly(
           CONTRACTS.SHORT_SELL,
           SHORT.TX,
@@ -452,7 +452,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
-        const lender = SHORT.TX.loanOffering.lender;
+        const lender = SHORT.TX.loanOffering.payer;
         await callCloseShortDirectly(
           CONTRACTS.SHORT_SELL,
           SHORT.TX,
@@ -485,7 +485,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         const seller = SHORT.TX.seller;
-        const lender = SHORT.TX.loanOffering.lender;
+        const lender = SHORT.TX.loanOffering.payer;
 
         await CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender });
 

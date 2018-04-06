@@ -18,6 +18,7 @@ const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
 const { createLoanOffering } = require('./LoanHelper');
+const { expectLog } = require('./EventHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -59,7 +60,7 @@ async function callShort(shortSell, tx, safely = true) {
     tx.owner,
     tx.loanOffering.baseToken,
     tx.loanOffering.quoteToken,
-    tx.loanOffering.lender,
+    tx.loanOffering.payer,
     tx.loanOffering.signer,
     tx.loanOffering.owner,
     tx.loanOffering.taker,
@@ -120,7 +121,7 @@ async function callAddValueToShort(shortSell, tx) {
   const shortId = tx.id;
 
   const addresses = [
-    tx.loanOffering.lender,
+    tx.loanOffering.payer,
     tx.loanOffering.signer,
     tx.loanOffering.taker,
     tx.loanOffering.feeRecipient,
@@ -178,7 +179,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
 
   await Promise.all([
     baseToken.issueTo(
-      tx.loanOffering.lender,
+      tx.loanOffering.payer,
       tx.loanOffering.rates.maxAmount
     ),
     quoteToken.issueTo(
@@ -194,7 +195,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       tx.buyOrder.makerFee
     ),
     feeToken.issueTo(
-      tx.loanOffering.lender,
+      tx.loanOffering.payer,
       tx.loanOffering.rates.lenderFee
     ),
     feeToken.issueTo(
@@ -207,7 +208,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
     baseToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
-      { from: tx.loanOffering.lender }
+      { from: tx.loanOffering.payer }
     ),
     quoteToken.approve(
       ProxyContract.address,
@@ -227,7 +228,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
     feeToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.lenderFee,
-      { from: tx.loanOffering.lender }
+      { from: tx.loanOffering.payer }
     ),
     feeToken.approve(
       ProxyContract.address,
@@ -283,16 +284,33 @@ function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
   );
 }
 
-function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
+async function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
-  return shortSell.cancelLoanOffering(
+  const canceledAmount1 = await shortSell.loanCancels.call(loanOffering.loanHash);
+  const tx = await shortSell.cancelLoanOffering(
     addresses,
     values256,
     values32,
     cancelAmount,
-    { from: from || loanOffering.lender }
+    { from: from || loanOffering.payer }
   );
+  const canceledAmount2 = await shortSell.loanCancels.call(loanOffering.loanHash);
+
+  const expectedCanceledAmount = BigNumber.min(
+    canceledAmount1.plus(cancelAmount),
+    loanOffering.rates.maxAmount
+  );
+  expect(canceledAmount2).to.be.bignumber.equal(expectedCanceledAmount);
+
+  expectLog(tx.logs[0], 'LoanOfferingCanceled', {
+    loanHash: loanOffering.loanHash,
+    lender: loanOffering.payer,
+    feeRecipient: loanOffering.feeRecipient,
+    cancelAmount: canceledAmount2.minus(canceledAmount1)
+  });
+
+  return tx;
 }
 
 function callApproveLoanOffering(shortSell, loanOffering, from) {
@@ -302,7 +320,7 @@ function callApproveLoanOffering(shortSell, loanOffering, from) {
     addresses,
     values256,
     values32,
-    { from: from || loanOffering.lender }
+    { from: from || loanOffering.payer }
   );
 }
 
@@ -310,7 +328,7 @@ function formatLoanOffering(loanOffering) {
   const addresses = [
     loanOffering.baseToken,
     loanOffering.quoteToken,
-    loanOffering.lender,
+    loanOffering.payer,
     loanOffering.signer,
     loanOffering.owner,
     loanOffering.taker,
@@ -435,7 +453,7 @@ async function doShortAndCall(
   const callTx = await shortSell.callInLoan(
     shortTx.id,
     _requiredDeposit,
-    { from: shortTx.loanOffering.lender }
+    { from: shortTx.loanOffering.payer }
   );
 
   return { shortSell, vault, baseToken, shortTx, callTx };

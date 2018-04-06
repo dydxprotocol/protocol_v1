@@ -1,7 +1,6 @@
 /*global artifacts, contract, describe, it*/
 
 const chai = require('chai');
-const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
@@ -19,16 +18,9 @@ describe('#cancelLoanOffering', () => {
       const shortTx = await createShortSellTx(accounts);
       const cancelAmount = new BigNumber(1000);
 
-      const tx = await callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        cancelAmount
-      );
+      const tx = await callCancelLoanOffer(shortSell, shortTx.loanOffering, cancelAmount);
+
       console.log('\tShortSell.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
-
-      const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
-
-      expect(canceledAmount).to.be.bignumber.equal(cancelAmount);
     });
   });
 
@@ -39,20 +31,9 @@ describe('#cancelLoanOffering', () => {
       const cancelAmount = new BigNumber(1000);
       const cancelAmount2 = new BigNumber(2000);
 
-      await callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        cancelAmount
-      );
-      await callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        cancelAmount2
-      );
+      await callCancelLoanOffer(shortSell, shortTx.loanOffering, cancelAmount);
 
-      const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
-
-      expect(canceledAmount).to.be.bignumber.equal(cancelAmount.plus(cancelAmount2));
+      await callCancelLoanOffer(shortSell, shortTx.loanOffering, cancelAmount2);
     });
   });
 
@@ -62,20 +43,9 @@ describe('#cancelLoanOffering', () => {
       const shortTx = await createShortSellTx(accounts);
       const cancelAmount = shortTx.loanOffering.rates.maxAmount.times(2).div(3).floor();
 
-      await callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        cancelAmount
-      );
-      await callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        cancelAmount
-      );
+      await callCancelLoanOffer(shortSell, shortTx.loanOffering, cancelAmount);
 
-      const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
-
-      expect(canceledAmount).to.be.bignumber.equal(shortTx.loanOffering.rates.maxAmount);
+      await callCancelLoanOffer(shortSell, shortTx.loanOffering, cancelAmount);
     });
   });
 
@@ -84,16 +54,13 @@ describe('#cancelLoanOffering', () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await createShortSellTx(accounts);
 
-      await expectThrow( () => callCancelLoanOffer(
-        shortSell,
-        shortTx.loanOffering,
-        shortTx.loanOffering.rates.maxAmount,
-        accounts[6]
-      ));
-
-      const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
-
-      expect(canceledAmount).to.be.bignumber.equal(0);
+      await expectThrow(() =>
+        callCancelLoanOffer(
+          shortSell,
+          shortTx.loanOffering,
+          shortTx.loanOffering.rates.maxAmount,
+          accounts[9])
+      );
     });
   });
 

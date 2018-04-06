@@ -22,18 +22,18 @@ library TransferInternal {
     // ------------------------
 
     /**
-     * Ownership of a loan was transfered to a new address
+     * Ownership of a loan was transferred to a new address
      */
-    event LoanTransfered(
+    event LoanTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to
     );
 
     /**
-     * Ownership of a short was transfered to a new address
+     * Ownership of a short was transferred to a new address
      */
-    event ShortTransfered(
+    event ShortTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to
@@ -63,7 +63,7 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            emit LoanTransfered(shortId, oldOwner, newOwner);
+            emit LoanTransferred(shortId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {
@@ -97,7 +97,7 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            emit ShortTransfered(shortId, oldOwner, newOwner);
+            emit ShortTransferred(shortId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {

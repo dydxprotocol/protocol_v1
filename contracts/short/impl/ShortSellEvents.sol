@@ -135,18 +135,18 @@ contract ShortSellEvents {
     );
 
     /**
-     * Ownership of a loan was transfered to a new address
+     * Ownership of a loan was transferred to a new address
      */
-    event LoanTransfered(
+    event LoanTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to
     );
 
     /**
-     * Ownership of a short was transfered to a new address
+     * Ownership of a short was transferred to a new address
      */
-    event ShortTransfered(
+    event ShortTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to
