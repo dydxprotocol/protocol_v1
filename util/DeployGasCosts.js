@@ -63,13 +63,13 @@ contract('Deploy Costs', () => {
     });
   });
 
-  describe('InterestImpl', () => {
+  describe.only('InterestImpl', () => {
     it('', async () => {
       await TestInterestImpl.link('InterestImpl', InterestImpl.address);
       const contract = await TestInterestImpl.new();
       const tokens1 = new BigNumber('1e18');
       const tokens2 = new BigNumber('1e40');
-      const percent = new BigNumber('1e18');
+      const percent = new BigNumber('1e6');
 
       async function printGasCost(seconds) {
         const tx = await contract.getCompoundedInterest(tokens1, percent, seconds);
