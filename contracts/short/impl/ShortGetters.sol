@@ -134,16 +134,67 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
-            return 0;
-        }
-
         ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
 
         return ShortSellCommon.calculateOwedAmount(
             shortObject,
             shortObject.shortAmount.sub(shortObject.closedAmount),
             block.timestamp
+        );
+    }
+
+    /**
+     * Gets the amount of base tokens needed to close a given amount of the short at a given time,
+     * including interest fees.
+     *
+     * @param  shortId      Unique ID of the short
+     * @param  shortId      Amount of short being closed
+     * @param  timestamp    Block timestamp in seconds of close
+     * @return              The number of base tokens owed at the given time and amount
+     */
+    function getShortOwedAmountAtTime(
+        bytes32 shortId,
+        uint256 amount,
+        uint32  timestamp
+    )
+        view
+        external
+        returns (uint256)
+    {
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+
+        return ShortSellCommon.calculateOwedAmount(
+            shortObject,
+            amount,
+            timestamp
+        );
+    }
+
+    /**
+     * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
+     * onto the short at a given time.
+     *
+     * @param  shortId      Unique ID of the short
+     * @param  shortId      Amount being added to short
+     * @param  timestamp    Block timestamp in seconds of addition
+     * @return              The number of base tokens that can be borrowed at the given
+     *                      time and amount
+     */
+    function getLenderAmountForAddValueAtTime(
+        bytes32 shortId,
+        uint256 amount,
+        uint32  timestamp
+    )
+        view
+        external
+        returns (uint256)
+    {
+        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+
+        return ShortSellCommon.calculateLenderAmountForAddValue(
+            shortObject,
+            amount,
+            timestamp
         );
     }
 
