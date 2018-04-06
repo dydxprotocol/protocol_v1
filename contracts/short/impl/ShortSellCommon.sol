@@ -128,6 +128,9 @@ library ShortSellCommon {
         );
     }
 
+    /**
+     * Calculates time elapsed rounded up to the nearest interestPeriod
+     */
     function calculateEffectiveTimeElapsed(
         Short short,
         uint256 timestamp
@@ -142,6 +145,50 @@ library ShortSellCommon {
         uint256 period = short.interestPeriod;
         if (period > 1) {
             elapsed = MathHelpers.divisionRoundedUp(elapsed, period).mul(period);
+        }
+
+        // bound by maxDuration
+        return Math.min256(
+            elapsed,
+            short.maxDuration
+        );
+    }
+
+    function calculateLenderAmountForAddValue(
+        Short short,
+        uint256 addAmount,
+        uint256 endTimestamp
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(short, endTimestamp);
+
+        return InterestImpl.getCompoundedInterest(
+            addAmount,
+            short.interestRate,
+            timeElapsed
+        );
+    }
+
+    /**
+     * Calculates time elapsed rounded down to the nearest interestPeriod
+     */
+    function calculateEffectiveTimeElapsedForNewLender(
+        Short short,
+        uint256 timestamp
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 elapsed = timestamp.sub(short.startTimestamp);
+
+        // round down to interestPeriod
+        uint256 period = short.interestPeriod;
+        if (period > 1) {
+            elapsed = elapsed.div(period).mul(period);
         }
 
         // bound by maxDuration
