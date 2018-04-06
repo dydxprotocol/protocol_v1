@@ -81,12 +81,12 @@ contract('Deploy Costs', () => {
         console.log('\tInterestCalculation gas cost (large): ' + tx.receipt.gasUsed);
       }
 
-      await printGasCost(new BigNumber(60 * 60 * 24 * 1));
-      await printGasCost(new BigNumber(60 * 60 * 24 * 5));
-      await printGasCost(new BigNumber(60 * 60 * 24 * 364));
-      await printGasCost(new BigNumber(60 * 60 * 24 * 365));
-      await printGasCostLarge(new BigNumber(60 * 60 * 24 * 1));
-      await printGasCostLarge(new BigNumber(60 * 60 * 24 * 365));
+      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS));
+      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 5));
+      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS* 364));
+      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
+      await printGasCostLarge(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 1));
+      await printGasCostLarge(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
     });
   });
 });
