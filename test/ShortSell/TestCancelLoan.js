@@ -60,16 +60,17 @@ describe('#cancelLoanOffering', () => {
     it('only cancels up to the maximum amount', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await createShortSellTx(accounts);
+      const cancelAmount = shortTx.loanOffering.rates.maxAmount.times(2).div(3).floor();
 
       await callCancelLoanOffer(
         shortSell,
         shortTx.loanOffering,
-        shortTx.loanOffering.rates.maxAmount
+        cancelAmount
       );
       await callCancelLoanOffer(
         shortSell,
         shortTx.loanOffering,
-        shortTx.loanOffering.rates.maxAmount
+        cancelAmount
       );
 
       const canceledAmount = await shortSell.loanCancels.call(shortTx.loanOffering.loanHash);
@@ -95,4 +96,36 @@ describe('#cancelLoanOffering', () => {
       expect(canceledAmount).to.be.bignumber.equal(0);
     });
   });
+
+  //TODO: when we can roll-back evm time after this super long wait
+  /*
+  contract('ShortSell', function(_accounts) {
+    it('does not cancel if past expirationTimestamp anyway', async () => {
+      const shortSell = await ShortSell.deployed();
+      const shortTx = await createShortSellTx(accounts);
+      const cancelAmount = shortTx.loanOffering.rates.maxAmount.div(4);
+
+      await callCancelLoanOffer(
+        shortSell,
+        shortTx.loanOffering,
+        cancelAmount
+      );
+      await callCancelLoanOffer(
+        shortSell,
+        shortTx.loanOffering,
+        cancelAmount
+      );
+
+      await wait(shortTx.loanOffering.expirationTimestamp);
+
+      await expectThrow(() =>
+        callCancelLoanOffer(
+          shortSell,
+          shortTx.loanOffering,
+          cancelAmount
+        )
+      );
+    });
+  });
+  */
 });

@@ -7,15 +7,18 @@ import { CloseShortDelegator } from "../short/interfaces/CloseShortDelegator.sol
 contract TestCloseShortDelegator is CloseShortDelegator {
 
     address public CLOSER;
+    bool public IS_DEGENERATE; // if true, returns more than requestedAmount;
 
     function TestCloseShortDelegator(
         address shortSell,
-        address closer
+        address closer,
+        bool isDegenerate
     )
         public
         CloseShortDelegator(shortSell)
     {
         CLOSER = closer;
+        IS_DEGENERATE = isDegenerate;
     }
 
     function receiveShortOwnership(
@@ -39,7 +42,8 @@ contract TestCloseShortDelegator is CloseShortDelegator {
         external
         returns (uint256)
     {
-        return who == CLOSER ? requestedAmount : 0;
+        uint256 amount = (IS_DEGENERATE ? requestedAmount + 1 : requestedAmount);
+        return who == CLOSER ? amount : 0;
     }
 
     function additionalShortValueAdded(

@@ -27,13 +27,13 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     rates: {
       maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minQuoteToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
-      interestRate: new BigNumber('365e16'),
+      minQuoteToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
+      interestRate:       new BigNumber('365e16'), // 3.65% nominal per year
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
-      interestPeriod:  BIGNUMBERS.ONE_DAY_IN_SECONDS
+      interestPeriod:     BIGNUMBERS.ONE_DAY_IN_SECONDS
     },
-    expirationTimestamp: 1000000000000, // 31.69 millennia from 1970
+    expirationTimestamp:  1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
     salt: _salt

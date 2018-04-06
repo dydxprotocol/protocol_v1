@@ -84,6 +84,7 @@ contract ShortSellAdmin is Ownable {
     modifier closeShortStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
             || operationState == OperationState.CLOSE_ONLY
         );
         _;
@@ -92,6 +93,7 @@ contract ShortSellAdmin is Ownable {
     modifier closeShortDirectlyStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
             || operationState == OperationState.CLOSE_ONLY
             || operationState == OperationState.CLOSE_DIRECTLY_ONLY
         );

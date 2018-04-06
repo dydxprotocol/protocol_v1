@@ -155,7 +155,8 @@ describe('#short', () => {
         ADDRESSES.ZERO);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
         ShortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = testCloseShortDelegator.address;
@@ -175,7 +176,8 @@ describe('#short', () => {
         ADDRESSES.ZERO);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
         ShortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
       const testLoanOwner = await TestLoanOwner.new(
         ShortSell.address,
         testCallLoanDelegator.address);

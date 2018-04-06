@@ -158,28 +158,6 @@ describe('ShortSellAdmin', () => {
     });
 
     contract('ShortSell', accounts => {
-      it('Only allows #cancelLoanOffering while OPERATIONAL', async () => {
-        const shortSell = await ShortSell.deployed();
-        const shortTx = await createShortSellTx(accounts);
-        const cancelAmount = new BigNumber(1000);
-
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(() => callCancelLoanOffer(
-          shortSell,
-          shortTx.loanOffering,
-          cancelAmount
-        ));
-
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
-        await callCancelLoanOffer(
-          shortSell,
-          shortTx.loanOffering,
-          cancelAmount
-        );
-      });
-    });
-
-    contract('ShortSell', accounts => {
       it('Only allows #approveLoanOffering while OPERATIONAL', async () => {
         const shortTx = await createShortSellTx(accounts);
         const shortSell = await ShortSell.deployed();
@@ -201,8 +179,60 @@ describe('ShortSellAdmin', () => {
     });
   });
 
+  describe('#cancelLoanStateControl', () => {
+    const cancelAmount = new BigNumber(100);
+
+    async function test(accounts, state, shouldFail = false) {
+      const shortTx = await doShort(accounts);
+      const shortSell = await ShortSell.deployed();
+      await issueForDirectClose(shortTx);
+
+      await shortSell.setOperationState(state);
+      if (shouldFail) {
+        await expectThrow(() =>
+          callCancelLoanOffer(
+            shortSell,
+            shortTx.loanOffering,
+            cancelAmount
+          )
+        );
+      } else {
+        await callCancelLoanOffer(
+          shortSell,
+          shortTx.loanOffering,
+          cancelAmount
+        );
+      }
+    }
+
+    contract('ShortSell', accounts => {
+      it('Allows #cancelLoanOffering while OPERATIONAL', async () => {
+        await test(accounts, OperationState.OPERATIONAL);
+      });
+    });
+
+    contract('ShortSell', accounts => {
+      it('Allows #cancelLoanOffering while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
+      });
+    });
+
+    contract('ShortSell', accounts => {
+      it('Disallows #cancelLoanOffering while CLOSE_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_ONLY, true);
+      });
+    });
+
+    contract('ShortSell', accounts => {
+      it('Disallows #cancelLoanOffering while CLOSE_DIRECTLY_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY, true);
+      });
+    });
+  });
+
   describe('#closeShortStateControl', () => {
     const closeAmount = new BigNumber(100);
+
     async function test(accounts, state, shouldFail = false) {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
@@ -222,6 +252,12 @@ describe('ShortSellAdmin', () => {
     contract('ShortSell', accounts => {
       it('Allows #closeShort while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
+      });
+    });
+
+    contract('ShortSell', accounts => {
+      it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
@@ -257,8 +293,20 @@ describe('ShortSellAdmin', () => {
     });
 
     contract('ShortSell', accounts => {
+      it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
+      });
+    });
+
+    contract('ShortSell', accounts => {
       it('Allows #closeShort while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
+      });
+    });
+
+    contract('ShortSell', accounts => {
+      it('Allows #closeShort while CLOSE_DIRECTLY_ONLY', async () => {
+        await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY);
       });
     });
   });
