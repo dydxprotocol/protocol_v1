@@ -28,7 +28,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
       minQuoteToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
-      interestRate:       new BigNumber('365e16'), // 3.65% nominal per year
+      interestRate:       new BigNumber('365e4'), // 3.65% nominal per year
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
       interestPeriod:     BIGNUMBERS.ONE_DAY_IN_SECONDS
@@ -49,14 +49,14 @@ async function signLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minQuoteToken,
-    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
-    { type: 'uint32', value: loanOffering.rates.interestPeriod },
     loanOffering.expirationTimestamp,
+    loanOffering.salt,
     { type: 'uint32', value: loanOffering.callTimeLimit },
     { type: 'uint32', value: loanOffering.maxDuration },
-    loanOffering.salt
+    { type: 'uint32', value: loanOffering.rates.interestRate },
+    { type: 'uint32', value: loanOffering.rates.interestPeriod }
   );
   const hash = web3Instance.utils.soliditySha3(
     ShortSell.address,

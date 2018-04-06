@@ -136,8 +136,8 @@ library LoanImpl {
     function cancelLoanOfferingImpl(
         ShortSellState.State storage state,
         address[9] addresses,
-        uint256[8] values256,
-        uint32[3]  values32,
+        uint256[7] values256,
+        uint32[4]  values32,
         uint256    cancelAmount
     )
         public
@@ -178,8 +178,8 @@ library LoanImpl {
     function approveLoanOfferingImpl(
         ShortSellState.State storage state,
         address[9] addresses,
-        uint256[8] values256,
-        uint32[3]  values32
+        uint256[7] values256,
+        uint32[4]  values32
     )
         public
     {
@@ -205,8 +205,8 @@ library LoanImpl {
 
     function parseLoanOffering(
         address[9] addresses,
-        uint256[8] values256,
-        uint32[3]  values32
+        uint256[7] values256,
+        uint32[4]  values32
     )
         internal
         view
@@ -221,10 +221,10 @@ library LoanImpl {
             lenderFeeToken: addresses[7],
             takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values256, values32),
-            expirationTimestamp: values256[6],
+            expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
-            salt: values256[7],
+            salt: values256[6],
             loanHash: 0,
             signature: ShortSellCommon.Signature({
                 v: 0,
@@ -243,8 +243,8 @@ library LoanImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[8] values256,
-        uint32[3] values32
+        uint256[7] values256,
+        uint32[4] values32
     )
         internal
         pure
@@ -254,10 +254,10 @@ library LoanImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minQuoteToken: values256[2],
-            interestRate: values256[3],
-            lenderFee: values256[4],
-            takerFee: values256[5],
-            interestPeriod: values32[2]
+            interestRate: values32[2],
+            lenderFee: values256[3],
+            takerFee: values256[4],
+            interestPeriod: values32[3]
         });
 
         return rates;

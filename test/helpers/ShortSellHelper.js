@@ -73,7 +73,6 @@ async function callShort(shortSell, tx, safely = true) {
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
     tx.loanOffering.rates.minQuoteToken,
-    tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -85,6 +84,7 @@ async function callShort(shortSell, tx, safely = true) {
   const values32 = [
     tx.loanOffering.callTimeLimit,
     tx.loanOffering.maxDuration,
+    tx.loanOffering.rates.interestRate,
     tx.loanOffering.rates.interestPeriod
   ];
 
@@ -323,7 +323,6 @@ function formatLoanOffering(loanOffering) {
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
     loanOffering.rates.minQuoteToken,
-    loanOffering.rates.interestRate,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -333,6 +332,7 @@ function formatLoanOffering(loanOffering) {
   const values32 = [
     loanOffering.callTimeLimit,
     loanOffering.maxDuration,
+    loanOffering.rates.interestRate,
     loanOffering.rates.interestPeriod
   ];
 
@@ -390,7 +390,6 @@ async function getShort(shortSell, id) {
     [
       shortAmount,
       closedAmount,
-      interestRate,
       requiredDeposit
     ],
     [
@@ -398,6 +397,7 @@ async function getShort(shortSell, id) {
       startTimestamp,
       callTimestamp,
       maxDuration,
+      interestRate,
       interestPeriod
     ]
   ] = await shortSell.getShort.call(id);

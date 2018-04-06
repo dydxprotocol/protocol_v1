@@ -30,7 +30,7 @@ library InterestImpl {
      * I = P * e^(R*T)
      *
      * @param  tokenAmount         Amount of tokens lent
-     * @param  interestRate  Annual interest percentage times 10**18. (example: 5% = 5e16)
+     * @param  interestRate        Annual interest percentage times 10**6. (example: 5% = 5e6)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
      * @return                     Total amount of tokens owed. Greater than tokenAmount.
      */
@@ -47,7 +47,7 @@ library InterestImpl {
     {
         Fraction256.Fraction memory rt = Fraction256.Fraction({
             num: interestRate.mul(secondsOfInterest),
-            den: (10**18) * (1 years)
+            den: (10**8) * (1 years)
         });
 
         Fraction256.Fraction memory percent = Exponent.exp(
