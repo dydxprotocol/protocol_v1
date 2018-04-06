@@ -113,6 +113,24 @@ async function callShort(shortSell, tx, safely = true) {
     expect(contains).to.be.true;
   }
 
+  expectLog(response.logs[0], 'ShortInitiated', {
+    id: shortId,
+    shortSeller: tx.seller,
+    lender: tx.loanOffering.payer,
+    loanHash: tx.loanOffering.loanHash,
+    baseToken: tx.loanOffering.baseToken,
+    quoteToken: tx.loanOffering.quoteToken,
+    loanFeeRecipient: tx.loanOffering.feeRecipient,
+    shortAmount: tx.shortAmount,
+    quoteTokenFromSell:
+      tx.shortAmount.times(tx.buyOrder.makerTokenAmount).div(tx.buyOrder.takerTokenAmount),
+    depositAmount: tx.depositAmount,
+    interestRate: tx.loanOffering.rates.interestRate,
+    callTimeLimit: tx.loanOffering.callTimeLimit,
+    maxDuration: tx.loanOffering.maxDuration,
+    interestPeriod: tx.loanOffering.rates.interestPeriod
+  });
+
   response.id = shortId;
   return response;
 }

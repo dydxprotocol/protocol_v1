@@ -61,30 +61,32 @@ library DepositImpl {
             depositAmount
         );
 
+        // cancel loan call if applicable
+        bool loanCanceled = false;
+        uint256 requiredDeposit = short.requiredDeposit;
+        if (short.callTimestamp > 0 && requiredDeposit > 0) {
+            if (depositAmount >= requiredDeposit) {
+                short.requiredDeposit = 0;
+                short.callTimestamp = 0;
+                loanCanceled = true;
+            } else {
+                short.requiredDeposit = short.requiredDeposit.sub(depositAmount);
+            }
+        }
+
         emit AdditionalDeposit(
             shortId,
             depositAmount,
             msg.sender
         );
 
-        // cancel loan call if applicable
-        uint256 requiredDeposit = short.requiredDeposit;
-        if (short.callTimestamp > 0 && requiredDeposit > 0) {
-            if (depositAmount >= requiredDeposit) {
-                short.requiredDeposit = 0;
-
-                // Cancel the loan call
-                short.callTimestamp = 0;
-
-                emit LoanCallCanceled(
-                    shortId,
-                    short.lender,
-                    msg.sender,
-                    depositAmount
-                );
-            } else {
-                short.requiredDeposit = short.requiredDeposit.sub(depositAmount);
-            }
+        if (loanCanceled) {
+            emit LoanCallCanceled(
+                shortId,
+                short.lender,
+                msg.sender,
+                depositAmount
+            );
         }
     }
 }

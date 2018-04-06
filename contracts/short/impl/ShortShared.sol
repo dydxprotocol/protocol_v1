@@ -145,6 +145,13 @@ library ShortShared {
         pure
         returns (bool _isValid)
     {
+        if (loanOffering.signature.v == 0
+            && loanOffering.signature.r == ""
+            && loanOffering.signature.s == ""
+        ) {
+            return false;
+        }
+
         address recoveredSigner = ecrecover(
             keccak256("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
             loanOffering.signature.v,
