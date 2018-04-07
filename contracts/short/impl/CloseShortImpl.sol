@@ -32,17 +32,8 @@ library CloseShortImpl {
      */
     event ShortClosed(
         bytes32 indexed id,
-        uint256 closeAmount,
-        uint256 baseTokenPaidToLender,
-        uint256 payoutQuoteTokenAmount,
-        uint256 buybackCost
-    );
-
-    /**
-     * A short sell was partially closed
-     */
-    event ShortPartiallyClosed(
-        bytes32 indexed id,
+        address closer,
+        address payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
@@ -316,24 +307,16 @@ library CloseShortImpl {
     )
         internal
     {
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            emit ShortClosed(
-                transaction.shortId,
-                transaction.closeAmount,
-                baseTokenPaidToLender,
-                payoutQuoteTokenAmount,
-                buybackCost
-            );
-        } else {
-            emit ShortPartiallyClosed(
-                transaction.shortId,
-                transaction.closeAmount,
-                transaction.currentShortAmount.sub(transaction.closeAmount),
-                baseTokenPaidToLender,
-                payoutQuoteTokenAmount,
-                buybackCost
-            );
-        }
+        emit ShortClosed(
+            transaction.shortId,
+            msg.sender,
+            transaction.payoutRecipient,
+            transaction.closeAmount,
+            transaction.currentShortAmount.sub(transaction.closeAmount),
+            baseTokenPaidToLender,
+            payoutQuoteTokenAmount,
+            buybackCost
+        );
     }
 
 }

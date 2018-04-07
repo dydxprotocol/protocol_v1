@@ -184,6 +184,18 @@ async function callAddValueToShort(shortSell, tx) {
     { from: tx.seller }
   );
 
+  expectLog(response.logs[0], 'ValueAddedToShort', {
+    id: shortId,
+    shortSeller: tx.seller,
+    lender: tx.loanOffering.payer,
+    loanHash: tx.loanOffering.loanHash,
+    loanFeeRecipient: tx.loanOffering.feeRecipient,
+    amountBorrowed: "unspecified",
+    effectiveAmountAdded: tx.shortAmount,
+    quoteTokenFromSell: "unspecified",
+    depositAmount: "unspecified"
+  });
+
   response.id = shortId;
   return response;
 }
@@ -280,26 +292,83 @@ async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
   return shortTx;
 }
 
-function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from) {
+async function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from, recipient) {
   const closer = from || shortTx.seller;
-  return shortSell.closeShort(
+  recipient = recipient || closer;
+
+  const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+
+  const tx = await shortSell.closeShort(
     shortTx.id,
     closeAmount,
-    closer,
+    recipient,
     ZeroExExchangeWrapper.address,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
+
+  const actualCloseAmount = BigNumber.min(startAmount, closeAmount);
+
+  expectLog(tx.logs[0], 'ShortClosed', {
+    id: shortTx.id,
+    closer: closer,
+    payoutRecipient: recipient,
+    closeAmount: actualCloseAmount,
+    remainingAmount: startAmount.minus(actualCloseAmount),
+    baseTokenPaidToLender: "unspecified",
+    shortSellerQuoteToken: "unspecified",
+    buybackCost: "unspecified"
+  });
+
+  return tx;
 }
 
-function callCloseShortDirectly(shortSell, shortTx, closeAmount, from) {
+async function callCloseShortDirectly(shortSell, shortTx, closeAmount, from, recipient) {
   const closer = from || shortTx.seller;
-  return shortSell.closeShortDirectly(
+  recipient = recipient || closer;
+
+  const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+
+  const tx = await shortSell.closeShortDirectly(
     shortTx.id,
     closeAmount,
-    closer,
+    recipient,
     { from: closer }
   );
+
+  const actualCloseAmount = BigNumber.min(startAmount, closeAmount);
+
+  expectLog(tx.logs[0], 'ShortClosed', {
+    id: shortTx.id,
+    closer: closer,
+    payoutRecipient: recipient,
+    closeAmount: actualCloseAmount,
+    remainingAmount: startAmount.minus(actualCloseAmount),
+    baseTokenPaidToLender: "unspecified",
+    shortSellerQuoteToken: "unspecified",
+    buybackCost: 0
+  });
+
+  return tx;
+}
+
+async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
+  const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+  const startQuote = await shortSell.getShortBalance.call(shortTx.id);
+
+  const tx = await shortSell.liquidate(shortTx.id, liquidateAmount, { from: from });
+
+  const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
+
+  expectLog(tx.logs[0], 'LoanLiquidated', {
+    id: shortTx.id,
+    liquidator: from,
+    liquidatedAmount: actualLiquidateAmount,
+    remainingAmount: startAmount.minus(actualLiquidateAmount),
+    quoteAmount: actualLiquidateAmount.times(startQuote).div(startAmount)
+  });
+
+  return tx;
 }
 
 async function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
@@ -536,12 +605,13 @@ module.exports = {
   issueTokensAndSetAllowancesForClose,
   callCancelLoanOffer,
   callCloseShort,
+  callCloseShortDirectly,
+  callLiquidate,
   getShort,
   doShortAndCall,
   issueForDirectClose,
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
-  callCloseShortDirectly,
   getMaxInterestFee,
   callAddValueToShort
 };

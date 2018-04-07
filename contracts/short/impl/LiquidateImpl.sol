@@ -30,15 +30,7 @@ library LiquidateImpl {
      */
     event LoanLiquidated(
         bytes32 indexed id,
-        uint256 liquidatedAmount,
-        uint256 quoteAmount
-    );
-
-    /**
-     * A loan was partially liquidated
-     */
-    event LoanPartiallyLiquidated(
-        bytes32 indexed id,
+        address liquidator,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 quoteAmount
@@ -145,20 +137,13 @@ library LiquidateImpl {
     )
         internal
     {
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            emit LoanLiquidated(
-                transaction.shortId,
-                transaction.closeAmount,
-                quoteTokenAmount
-            );
-        } else {
-            emit LoanPartiallyLiquidated(
-                transaction.shortId,
-                transaction.closeAmount,
-                transaction.currentShortAmount.sub(transaction.closeAmount),
-                quoteTokenAmount
-            );
-        }
+        emit LoanLiquidated(
+            transaction.shortId,
+            msg.sender,
+            transaction.closeAmount,
+            transaction.currentShortAmount.sub(transaction.closeAmount),
+            quoteTokenAmount
+        );
     }
 
 }

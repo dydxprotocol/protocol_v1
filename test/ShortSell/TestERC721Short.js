@@ -18,7 +18,8 @@ const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
-  getMaxInterestFee
+  getMaxInterestFee,
+  callCloseShortDirectly
 } = require('../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
@@ -217,41 +218,45 @@ contract('ERC721Short', function(accounts) {
 
     it('succeeds for owner', async () => {
       await initBase(shortTx.seller);
-      await shortSellContract.closeShortDirectly(
-        shortTx.id,
+      await callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         shortTx.shortAmount,
-        unapprovedAcct,
-        { from: shortTx.seller }
+        shortTx.seller,
+        unapprovedAcct
       );
     });
 
     it('succeeds for approved recipients', async () => {
       await initBase(unapprovedAcct);
-      await shortSellContract.closeShortDirectly(
-        shortTx.id,
+      await callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         shortTx.shortAmount,
-        approvedRecipient,
-        { from: unapprovedAcct }
+        unapprovedAcct,
+        approvedRecipient
       );
     });
 
     it('succeeds for approved closers', async () => {
       await initBase(approvedCloser);
-      await shortSellContract.closeShortDirectly(
-        shortTx.id,
+      await callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         shortTx.shortAmount,
-        unapprovedAcct,
-        { from: approvedCloser }
+        approvedCloser,
+        unapprovedAcct
       );
     });
 
     it('fails for non-approved recipients/closers', async () => {
       await initBase(unapprovedAcct);
-      await expectThrow(() => shortSellContract.closeShortDirectly(
-        shortTx.id,
+      await expectThrow(() => callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         shortTx.shortAmount,
         unapprovedAcct,
-        { from: unapprovedAcct }
+        unapprovedAcct
       ));
     });
   });

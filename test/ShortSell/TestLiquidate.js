@@ -4,7 +4,7 @@ const ShortSell = artifacts.require('ShortSell');
 const TestLiquidateDelegator = artifacts.require('TestLiquidateDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
-const { doShort } = require('../helpers/ShortSellHelper');
+const { doShort, callLiquidate } = require('../helpers/ShortSellHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 const expect = require('chai').expect;
 
@@ -43,7 +43,7 @@ describe('#liquidate', () => {
       const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
+      await callLiquidate(shortSell, shortTx, shortAmount, lender);
 
       // It should burn the short tokens
       const lenderShortAfter = await erc20Short.balanceOf(lender);
@@ -72,7 +72,7 @@ describe('#liquidate', () => {
       const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
+      await callLiquidate(shortSell, shortTx, shortAmount, lender);
 
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);
