@@ -2,13 +2,13 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { ShortShared } from "./ShortShared.sol";
 
 
@@ -183,7 +183,7 @@ library AddValueToShortImpl {
 
         // Unless msg.sender is the position short seller and is not a smart contract, call out
         // to the short seller to ensure they consent to value being added
-        if (msg.sender != seller || ContractHelper.isContract(seller)) {
+        if (msg.sender != seller || AddressUtils.isContract(seller)) {
             require(
                 ShortOwner(seller).additionalShortValueAdded(
                     msg.sender,
@@ -196,7 +196,7 @@ library AddValueToShortImpl {
         // Unless the loan offering's lender is the owner of the loan position and is not a smart
         // contract, call out to the owner of the loan position to ensure they consent
         // to value being added
-        if (transaction.loanOffering.payer != lender || ContractHelper.isContract(lender)) {
+        if (transaction.loanOffering.payer != lender || AddressUtils.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
                     transaction.loanOffering.payer,

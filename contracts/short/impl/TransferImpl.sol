@@ -2,7 +2,6 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ShortSellState } from "./ShortSellState.sol";

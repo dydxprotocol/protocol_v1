@@ -1,8 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ShortSellState } from "./ShortSellState.sol";
@@ -66,7 +66,7 @@ library TransferInternal {
             emit LoanTransfered(shortId, oldOwner, newOwner);
         }
 
-        if (ContractHelper.isContract(newOwner)) {
+        if (AddressUtils.isContract(newOwner)) {
             address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, shortId);
             if (nextOwner != newOwner) {
                 return grantLoanOwnership(shortId, newOwner, nextOwner);
@@ -100,7 +100,7 @@ library TransferInternal {
             emit ShortTransfered(shortId, oldOwner, newOwner);
         }
 
-        if (ContractHelper.isContract(newOwner)) {
+        if (AddressUtils.isContract(newOwner)) {
             address nextOwner = ShortOwner(newOwner).receiveShortOwnership(oldOwner, shortId);
             if (nextOwner != newOwner) {
                 return grantShortOwnership(shortId, newOwner, nextOwner);
