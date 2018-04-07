@@ -7,7 +7,6 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { InterestImpl } from "./InterestImpl.sol";

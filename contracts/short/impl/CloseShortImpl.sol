@@ -3,12 +3,12 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../Proxy.sol";
-import { ContractHelper } from "../../lib/ContractHelper.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
@@ -293,7 +293,7 @@ library CloseShortImpl {
             payoutQuoteTokenAmount
         );
 
-        if (ContractHelper.isContract(transaction.payoutRecipient)) {
+        if (AddressUtils.isContract(transaction.payoutRecipient)) {
             PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
                 transaction.shortId,
                 transaction.closeAmount,
