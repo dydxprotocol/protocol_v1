@@ -15,6 +15,8 @@ const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const { getOwedAmount } = require('../helpers/CloseShortHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
+const { signLoanOffering } = require('../helpers/LoanHelper');
+const { expectThrow } = require('../helpers/ExpectHelper');
 
 const {
   doShort,
@@ -27,38 +29,18 @@ let salt = DEFAULT_SALT + 1;
 
 describe('#addValueToShort', () => {
   contract('ShortSell', function(accounts) {
-    it.only('succeeds on valid inputs', async () => {
-      const shortTx = await doShort(accounts);
-      const [shortSell, baseToken, quoteToken, feeToken] = await Promise.all([
-        ShortSell.deployed(),
-        BaseToken.deployed(),
-        QuoteToken.deployed(),
-        FeeToken.deployed()
-      ]);
-
-      const [
+    it('succeeds on valid inputs', async () => {
+      const {
+        shortTx,
+        addValueTx,
+        shortSell,
+        baseToken,
+        quoteToken,
+        feeToken,
         startingShortBalance,
         startingBalances,
-        addValueTx
-      ] = await Promise.all([
-        shortSell.getShortBalance.call(shortTx.id),
-        getBalances(shortTx, baseToken, quoteToken, feeToken),
-        createShortSellTx(accounts, salt++)
-      ]);
-
-      addValueTx.shortAmount = addValueTx.shortAmount.div(4);
-      addValueTx.id = shortTx.id;
-
-      const sellerStartingQuoteToken = shortTx.depositAmount.times(2);
-      await quoteToken.issueTo(shortTx.seller, sellerStartingQuoteToken);
-      await quoteToken.approve(
-        ProxyContract.address,
-        sellerStartingQuoteToken,
-        { from: shortTx.seller }
-      );
-
-      // Wait until the next interest period
-      await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
+        sellerStartingQuoteToken
+      } = await setup(accounts);
 
       const tx = await callAddValueToShort(shortSell, addValueTx);
 
@@ -128,25 +110,120 @@ describe('#addValueToShort', () => {
 
   contract('ShortSell', function(accounts) {
     it('allows a loan offering with longer maxDuration to be used', async () => {
+      const {
+        shortTx,
+        addValueTx,
+        shortSell,
+      } = await setup(accounts);
+
+      addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration * 2;
+      addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
+
+      await callAddValueToShort(shortSell, addValueTx);
+
+      const short = await getShort(shortSell, shortTx.id);
+
+      expect(short.shortAmount).to.be.bignumber.eq(
+        shortTx.shortAmount.plus(addValueTx.shortAmount)
+      );
     });
   });
 
   contract('ShortSell', function(accounts) {
     it('does not allow a loan offering with shorter maxDuration to be used', async () => {
+      const {
+        addValueTx,
+        shortSell,
+      } = await setup(accounts);
+
+      addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration / 10;
+      addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
+
+      await expectThrow(() => callAddValueToShort(shortSell, addValueTx));
     });
   });
 
   contract('ShortSell', function(accounts) {
     it('allows a loan offering with longer callTimeLimit to be used', async () => {
+      const {
+        shortTx,
+        addValueTx,
+        shortSell,
+      } = await setup(accounts);
+
+      addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit * 2;
+      addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
+
+      await callAddValueToShort(shortSell, addValueTx);
+
+      const short = await getShort(shortSell, shortTx.id);
+
+      expect(short.shortAmount).to.be.bignumber.eq(
+        shortTx.shortAmount.plus(addValueTx.shortAmount)
+      );
     });
   });
 
   contract('ShortSell', function(accounts) {
     it('does not allow a loan offering with shorter callTimeLimit to be used', async () => {
+      const {
+        addValueTx,
+        shortSell,
+      } = await setup(accounts);
+
+      addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit - 1;
+      addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
+
+      await expectThrow(() => callAddValueToShort(shortSell, addValueTx));
     });
   });
-
 });
+
+async function setup(accounts) {
+  const shortTx = await doShort(accounts);
+  const [shortSell, baseToken, quoteToken, feeToken] = await Promise.all([
+    ShortSell.deployed(),
+    BaseToken.deployed(),
+    QuoteToken.deployed(),
+    FeeToken.deployed()
+  ]);
+
+  const [
+    startingShortBalance,
+    startingBalances,
+    addValueTx
+  ] = await Promise.all([
+    shortSell.getShortBalance.call(shortTx.id),
+    getBalances(shortTx, baseToken, quoteToken, feeToken),
+    createShortSellTx(accounts, salt++)
+  ]);
+
+  addValueTx.shortAmount = addValueTx.shortAmount.div(4);
+  addValueTx.id = shortTx.id;
+
+  const sellerStartingQuoteToken = shortTx.depositAmount.times(2);
+  await quoteToken.issueTo(shortTx.seller, sellerStartingQuoteToken);
+  await quoteToken.approve(
+    ProxyContract.address,
+    sellerStartingQuoteToken,
+    { from: shortTx.seller }
+  );
+
+  // Wait until the next interest period
+  await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
+
+  return {
+    shortTx,
+    addValueTx,
+    shortSell,
+    baseToken,
+    quoteToken,
+    feeToken,
+    startingShortBalance,
+    startingBalances,
+    sellerStartingQuoteToken
+  };
+}
 
 async function getBalances(tx, baseToken, quoteToken, feeToken) {
   const [
