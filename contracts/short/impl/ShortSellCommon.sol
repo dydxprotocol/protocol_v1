@@ -154,19 +154,16 @@ library ShortSellCommon {
         );
     }
 
-    event TestA(uint256 timeElapsed, uint256 addAmount, uint256 interestRate, uint256 timestamp);
     function calculateLenderAmountForAddValue(
         Short short,
         uint256 addAmount,
         uint256 endTimestamp
     )
         internal
-        /* TODO pure */
+        pure
         returns (uint256)
     {
         uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(short, endTimestamp);
-
-        emit TestA(timeElapsed, addAmount, short.interestRate, block.timestamp);
 
         return InterestImpl.getCompoundedInterest(
             addAmount,

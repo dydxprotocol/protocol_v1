@@ -15,7 +15,6 @@ const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const { getOwedAmount } = require('../helpers/CloseShortHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
-const { getBlockTimestamp } = require('../helpers/NodeHelper');
 
 const {
   doShort,
@@ -60,17 +59,6 @@ describe('#addValueToShort', () => {
 
       // Wait until the next interest period
       await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
-
-      let balances = {};
-      Object.assign(balances, startingBalances);
-      Object.keys(balances).forEach( k => balances[k] = balances[k].toString() );
-      console.log({
-        addAmount: addValueTx.shortAmount.toString(),
-        balances
-      })
-
-      const startTs = await getBlockTimestamp(shortTx.response.receipt.blockNumber);
-      console.log('START TS: ' + startTs);
 
       const tx = await callAddValueToShort(shortSell, addValueTx);
 
