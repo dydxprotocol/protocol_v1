@@ -22,7 +22,8 @@ module.exports = {
   checkLenderBalances,
   getOwedAmount,
   getBalances,
-  checkSuccessCloseDirectly
+  checkSuccessCloseDirectly,
+  getShortLifetime
 };
 
 async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
@@ -151,11 +152,12 @@ function checkLenderBalances(balances, baseTokenOwedToLender, shortTx) {
       .plus(baseTokenOwedToLender));
 }
 
-async function getOwedAmount(shortTx, closeTx, closeAmount) {
+async function getOwedAmount(shortTx, closeTx, closeAmount, roundUpToPeriod = true) {
   let shortLifetime = await getShortLifetime(shortTx, closeTx);
   let interestPeriod = shortTx.loanOffering.rates.interestPeriod;
   if (interestPeriod.gt(1)) {
-    shortLifetime = getPartialAmount(shortLifetime, interestPeriod, 1, true).times(interestPeriod);
+    shortLifetime = getPartialAmount(
+      shortLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
   }
 
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
@@ -279,10 +281,10 @@ async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmoun
   );
 }
 
-async function getShortLifetime(shortTx, closeTx) {
+async function getShortLifetime(shortTx, tx) {
   const [shortTimestamp, shortClosedTimestamp] = await Promise.all([
     getBlockTimestamp(shortTx.response.receipt.blockNumber),
-    getBlockTimestamp(closeTx.receipt.blockNumber)
+    getBlockTimestamp(tx.receipt.blockNumber)
   ]);
   const maxDuration = shortTx.loanOffering.maxDuration;
   let duration = shortClosedTimestamp - shortTimestamp;

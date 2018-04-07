@@ -18,7 +18,7 @@ const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
 const TestShortOwner = artifacts.require("TestShortOwner");
 const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
-
+const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const web3Instance = new Web3(web3.currentProvider);
 
 const {
@@ -282,34 +282,32 @@ async function checkSuccess(shortSell, shortTx) {
   const [
     lenderBaseToken,
     makerBaseToken,
-    vaultBaseToken,
+    exchangeWrapperBaseToken,
     sellerQuoteToken,
     makerQuoteToken,
     vaultQuoteToken,
     lenderFeeToken,
     makerFeeToken,
-    vaultFeeToken,
+    exchangeWrapperFeeToken,
     sellerFeeToken
   ] = await Promise.all([
     baseToken.balanceOf.call(shortTx.loanOffering.lender),
     baseToken.balanceOf.call(shortTx.buyOrder.maker),
-    baseToken.balanceOf.call(Vault.address),
+    baseToken.balanceOf.call(ExchangeWrapper.address),
     quoteToken.balanceOf.call(shortTx.seller),
     quoteToken.balanceOf.call(shortTx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
     feeToken.balanceOf.call(shortTx.loanOffering.lender),
     feeToken.balanceOf.call(shortTx.buyOrder.maker),
-    feeToken.balanceOf.call(Vault.address),
+    feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(shortTx.seller),
-    feeToken.balanceOf.call(shortTx.buyOrder.feeRecipient),
-    feeToken.balanceOf.call(shortTx.loanOffering.feeRecipient),
   ]);
 
   expect(lenderBaseToken).to.be.bignumber.equal(
     shortTx.loanOffering.rates.maxAmount.minus(shortTx.shortAmount)
   );
   expect(makerBaseToken).to.be.bignumber.equal(shortTx.shortAmount);
-  expect(vaultBaseToken).to.be.bignumber.equal(0);
+  expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
   expect(sellerQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
     shortTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
@@ -325,7 +323,7 @@ async function checkSuccess(shortSell, shortTx) {
         )
       )
   );
-  expect(vaultFeeToken).to.be.bignumber.equal(0);
+  expect(exchangeWrapperFeeToken).to.be.bignumber.equal(0);
   expect(makerFeeToken).to.be.bignumber.equal(
     shortTx.buyOrder.makerFee
       .minus(

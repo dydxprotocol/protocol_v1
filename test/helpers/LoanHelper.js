@@ -35,7 +35,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     },
     expirationTimestamp:  1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
-    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS,
+    maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS.toNumber(),
     salt: _salt
   };
 
