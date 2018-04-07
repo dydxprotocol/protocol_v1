@@ -134,11 +134,21 @@ library AddValueToShortImpl {
     {
         uint256 quoteTokenBalance = Vault(state.VAULT).balances(shortId, transaction.quoteToken);
 
-        return MathHelpers.getPartialAmountRoundedUp(
+        uint256 minimumQuoteTokenRoundedDown = MathHelpers.getPartialAmountRoundedUp(
             transaction.effectiveAmount,
             short.shortAmount,
             quoteTokenBalance
         );
+
+        if (
+            quoteTokenBalance.div(short.shortAmount)
+            == quoteTokenBalance.add(minimumQuoteTokenRoundedDown)
+                .div(short.shortAmount.add(short.shortAmount))
+        ) {
+            return minimumQuoteTokenRoundedDown;
+        }
+
+        return minimumQuoteTokenRoundedDown.add(1);
     }
 
     function validateAndSetDepositAmount(
