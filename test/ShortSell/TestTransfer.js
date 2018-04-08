@@ -29,17 +29,31 @@ describe('#transferShort', () => {
     return;
   }
 
-  async function transferShort(shortTx, to, from, expectedSeller) {
+  async function transferShort(shortTx, to, from, expectedSeller = null) {
+    expectedSeller = expectedSeller || to;
     const tx = await shortSell.transferShort(shortTx.id, to, { from: from});
 
-    expectLog(tx.logs[0], 'ShortTransferred', {
-      id: shortTx.id,
-      from: from,
-      to: to
-    });
+    if (expectedSeller === to) {
+      expectLog(tx.logs[0], 'ShortTransferred', {
+        id: shortTx.id,
+        from: from,
+        to: to
+      });
+    } else {
+      expectLog(tx.logs[0], 'ShortTransferred', {
+        id: shortTx.id,
+        from: from,
+        to: to
+      });
+      expectLog(tx.logs[1], 'ShortTransferred', {
+        id: shortTx.id,
+        from: to,
+        to: expectedSeller
+      });
+    }
 
     const seller = await shortSell.getShortSeller(shortTx.id);
-    expect(seller.toLowerCase()).to.eq((expectedSeller || to).toLowerCase());
+    expect(seller.toLowerCase()).to.eq((expectedSeller).toLowerCase());
 
     return tx;
   }
@@ -159,17 +173,31 @@ describe('#transferLoan', () => {
     return;
   }
 
-  async function transferLoan(shortTx, to, from, expectedLender) {
+  async function transferLoan(shortTx, to, from, expectedLender = null) {
+    expectedLender = expectedLender || to;
     const tx = await shortSell.transferLoan(shortTx.id, to, { from: from});
 
-    expectLog(tx.logs[0], 'LoanTransferred', {
-      id: shortTx.id,
-      from: from,
-      to: to
-    });
+    if (expectedLender === to) {
+      expectLog(tx.logs[0], 'LoanTransferred', {
+        id: shortTx.id,
+        from: from,
+        to: to
+      });
+    } else {
+      expectLog(tx.logs[0], 'LoanTransferred', {
+        id: shortTx.id,
+        from: from,
+        to: to
+      });
+      expectLog(tx.logs[1], 'LoanTransferred', {
+        id: shortTx.id,
+        from: to,
+        to: expectedLender
+      });
+    }
 
     const lender = await shortSell.getShortLender(shortTx.id);
-    expect(lender.toLowerCase()).to.eq((expectedLender || to).toLowerCase());
+    expect(lender.toLowerCase()).to.eq((expectedLender).toLowerCase());
 
     return tx;
   }

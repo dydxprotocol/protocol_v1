@@ -19,6 +19,7 @@ const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
 const { createLoanOffering } = require('./LoanHelper');
 const { expectLog } = require('./EventHelper');
+const { transact } = require('./ContractHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -130,6 +131,38 @@ async function callShort(shortSell, tx, safely = true) {
     maxDuration: tx.loanOffering.maxDuration,
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
+  
+  const newSeller = await shortSell.getShortSeller.call(shortId);
+  const newLender = await shortSell.getShortLender.call(shortId);
+  let logIndex = 0;
+  if (tx.loanOffering.owner !== tx.loanOffering.payer) {
+    expectLog(response.logs[++logIndex], 'LoanTransferred', {
+      id: shortId,
+      from: tx.loanOffering.payer,
+      to: tx.loanOffering.owner
+    });
+    if (newLender !== tx.loanOffering.owner) {
+      expectLog(response.logs[++logIndex], 'LoanTransferred', {
+        id: shortId,
+        from: tx.loanOffering.owner,
+        to: newLender
+      });
+    }
+  }
+  if (tx.owner !== tx.seller) {
+    expectLog(response.logs[++logIndex], 'ShortTransferred', {
+      id: shortId,
+      from: tx.seller,
+      to: tx.owner
+    });
+    if (newSeller !== tx.owner) {
+      expectLog(response.logs[++logIndex], 'ShortTransferred', {
+        id: shortId,
+        from: tx.owner,
+        to: newSeller
+      });
+    }
+  }
 
   response.id = shortId;
   return response;
@@ -292,13 +325,21 @@ async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
   return shortTx;
 }
 
-async function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from, recipient) {
+async function callCloseShort(
+  shortSell,
+  shortTx,
+  sellOrder,
+  closeAmount,
+  from = null,
+  recipient = null
+) {
   const closer = from || shortTx.seller;
   recipient = recipient || closer;
 
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
 
-  const tx = await shortSell.closeShort(
+  const tx = await transact(
+    shortSell.closeShort,
     shortTx.id,
     closeAmount,
     recipient,
@@ -306,8 +347,9 @@ async function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from, 
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
+  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
 
-  const actualCloseAmount = BigNumber.min(startAmount, closeAmount);
+  const actualCloseAmount = startAmount.minus(endAmount);
 
   expectLog(tx.logs[0], 'ShortClosed', {
     id: shortTx.id,
@@ -323,20 +365,29 @@ async function callCloseShort(shortSell, shortTx, sellOrder, closeAmount, from, 
   return tx;
 }
 
-async function callCloseShortDirectly(shortSell, shortTx, closeAmount, from, recipient) {
+async function callCloseShortDirectly(
+  shortSell,
+  shortTx,
+  closeAmount,
+  from = null,
+  recipient = null
+) {
   const closer = from || shortTx.seller;
   recipient = recipient || closer;
 
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
 
-  const tx = await shortSell.closeShortDirectly(
+  const tx = await transact(
+    shortSell.closeShortDirectly,
     shortTx.id,
     closeAmount,
     recipient,
     { from: closer }
   );
 
-  const actualCloseAmount = BigNumber.min(startAmount, closeAmount);
+  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+
+  const actualCloseAmount = startAmount.minus(endAmount);
 
   expectLog(tx.logs[0], 'ShortClosed', {
     id: shortTx.id,
@@ -356,7 +407,12 @@ async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
   const startQuote = await shortSell.getShortBalance.call(shortTx.id);
 
-  const tx = await shortSell.liquidate(shortTx.id, liquidateAmount, { from: from });
+  const tx = await transact(
+    shortSell.liquidate,
+    shortTx.id,
+    liquidateAmount,
+    { from: from }
+  );
 
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
@@ -371,7 +427,12 @@ async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
   return tx;
 }
 
-async function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) {
+async function callCancelLoanOffer(
+  shortSell,
+  loanOffering,
+  cancelAmount,
+  from = null
+) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
   const canceledAmount1 = await shortSell.loanCancels.call(loanOffering.loanHash);
@@ -400,7 +461,11 @@ async function callCancelLoanOffer(shortSell, loanOffering, cancelAmount, from) 
   return tx;
 }
 
-async function callApproveLoanOffering(shortSell, loanOffering, from) {
+async function callApproveLoanOffering(
+  shortSell,
+  loanOffering,
+  from = null
+) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
   const tx = await shortSell.approveLoanOffering(

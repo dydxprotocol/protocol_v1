@@ -6,6 +6,8 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 function expectLog(log, name, params) {
+  expect(log, name).to.be.not.equal(undefined);
+
   expect(log.event).to.be.equal(name);
 
   for (let key in params) {
