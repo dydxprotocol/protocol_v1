@@ -17,9 +17,11 @@ const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder } = require('./0xHelper');
-const { createLoanOffering } = require('./LoanHelper');
-const { expectLog } = require('./EventHelper');
 const { transact } = require('./ContractHelper');
+const { expectLog } = require('./EventHelper');
+const { createLoanOffering } = require('./LoanHelper');
+const { getPartialAmount } = require('../helpers/MathHelper');
+const { getBlockTimestamp } = require('./NodeHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -131,7 +133,7 @@ async function callShort(shortSell, tx, safely = true) {
     maxDuration: tx.loanOffering.maxDuration,
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
-  
+
   const newSeller = await shortSell.getShortSeller.call(shortId);
   const newLender = await shortSell.getShortLender.call(shortId);
   let logIndex = 0;
@@ -217,16 +219,32 @@ async function callAddValueToShort(shortSell, tx) {
     { from: tx.seller }
   );
 
+  const [time1, time2, shortAmount, quoteTokenAmount] = await Promise.all([
+    shortSell.getShortStartTimestamp.call(shortId),
+    getBlockTimestamp(response.receipt.blockNumber),
+    shortSell.getShortUnclosedAmount.call(shortId),
+    shortSell.getShortBalance.call(shortId)
+  ]);
+  const owed = await getOwedAmountRaw(
+    new BigNumber(time2).minus(time1),
+    tx.loanOffering.rates.interestPeriod,
+    tx.loanOffering.rates.interestRate,
+    tx.shortAmount,
+    false);
+  const quoteTokenFromSell =
+    owed.times(tx.buyOrder.makerTokenAmount).div(tx.buyOrder.takerTokenAmount);
+  const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
+
   expectLog(response.logs[0], 'ValueAddedToShort', {
     id: shortId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
-    amountBorrowed: "unspecified",
+    amountBorrowed: owed,
     effectiveAmountAdded: tx.shortAmount,
-    quoteTokenFromSell: "unspecified",
-    depositAmount: "unspecified"
+    quoteTokenFromSell: quoteTokenFromSell,
+    depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
   });
 
   response.id = shortId;
@@ -653,6 +671,23 @@ async function getMaxInterestFee(shortTx) {
     shortTx.loanOffering.maxDuration
   );
   return interest;
+}
+
+async function getOwedAmountRaw(timeDiff, interestPeriod, interestRate, amount, roundUpToPeriod = true) {
+  if (interestPeriod.gt(1)) {
+    timeDiff = getPartialAmount(
+      timeDiff, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
+  }
+
+  await TestInterestImpl.link('InterestImpl', InterestImpl.address);
+  const interestCalc = await TestInterestImpl.new();
+
+  const owedAmount = await interestCalc.getCompoundedInterest.call(
+    amount,
+    interestRate,
+    timeDiff
+  );
+  return owedAmount;
 }
 
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
