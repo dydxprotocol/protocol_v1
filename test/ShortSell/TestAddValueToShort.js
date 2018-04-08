@@ -55,7 +55,7 @@ describe('#addValueToShort', () => {
       );
 
       expect(short.seller).to.eq(shortTx.owner);
-      expect(short.lender).to.eq(shortTx.loanOffering.lender);
+      expect(short.lender).to.eq(shortTx.loanOffering.payer);
       expect(short.baseToken).to.eq(shortTx.baseToken);
       expect(short.quoteToken).to.eq(shortTx.quoteToken);
       expect(short.closedAmount).to.be.bignumber.eq(0);
@@ -238,13 +238,13 @@ async function getBalances(tx, baseToken, quoteToken, feeToken) {
     exchangeWrapperFeeToken,
     sellerFeeToken
   ] = await Promise.all([
-    baseToken.balanceOf.call(tx.loanOffering.lender),
+    baseToken.balanceOf.call(tx.loanOffering.payer),
     baseToken.balanceOf.call(tx.buyOrder.maker),
     baseToken.balanceOf.call(ExchangeWrapper.address),
     quoteToken.balanceOf.call(tx.seller),
     quoteToken.balanceOf.call(tx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
-    feeToken.balanceOf.call(tx.loanOffering.lender),
+    feeToken.balanceOf.call(tx.loanOffering.payer),
     feeToken.balanceOf.call(tx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(tx.seller),
