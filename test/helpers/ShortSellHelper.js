@@ -116,6 +116,13 @@ async function callShort(shortSell, tx, safely = true) {
     expect(contains).to.be.true;
   }
 
+  await expectLogShort(shortSell, shortId, tx, response);
+
+  response.id = shortId;
+  return response;
+}
+
+async function expectLogShort(shortSell, shortId, tx, response) {
   expectLog(response.logs[0], 'ShortInitiated', {
     id: shortId,
     shortSeller: tx.seller,
@@ -165,9 +172,6 @@ async function callShort(shortSell, tx, safely = true) {
       });
     }
   }
-
-  response.id = shortId;
-  return response;
 }
 
 async function callAddValueToShort(shortSell, tx) {
@@ -219,18 +223,31 @@ async function callAddValueToShort(shortSell, tx) {
     { from: tx.seller }
   );
 
+  await expectAddValueToShortLog(
+    shortSell,
+    tx,
+    response
+  );
+
+  response.id = shortId;
+  return response;
+}
+
+async function expectAddValueToShortLog(shortSell, tx, response) {
+  const shortId = tx.id;
   const [time1, time2, shortAmount, quoteTokenAmount] = await Promise.all([
     shortSell.getShortStartTimestamp.call(shortId),
     getBlockTimestamp(response.receipt.blockNumber),
     shortSell.getShortUnclosedAmount.call(shortId),
     shortSell.getShortBalance.call(shortId)
   ]);
-  const owed = await getOwedAmountRaw(
+  const owed = await getOwedAmountForTime(
     new BigNumber(time2).minus(time1),
     tx.loanOffering.rates.interestPeriod,
     tx.loanOffering.rates.interestRate,
     tx.shortAmount,
-    false);
+    false
+  );
   const quoteTokenFromSell =
     owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
   const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
@@ -246,9 +263,6 @@ async function callAddValueToShort(shortSell, tx) {
     quoteTokenFromSell: quoteTokenFromSell,
     depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
   });
-
-  response.id = shortId;
-  return response;
 }
 
 async function issueTokensAndSetAllowancesForShort(tx) {
@@ -354,9 +368,8 @@ async function callCloseShort(
   const closer = from || shortTx.seller;
   recipient = recipient || closer;
 
-  const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
-  const quoteTokenAmount = await shortSell.getShortBalance.call(shortTx.id);
-  const time1 = await shortSell.getShortStartTimestamp.call(shortTx.id);
+  const { startAmount, startQuote, startTimestamp } =
+    await getPreCloseVariables(shortSell, shortTx.id);
 
   const tx = await transact(
     shortSell.closeShort,
@@ -368,30 +381,19 @@ async function callCloseShort(
     { from: closer }
   );
 
-  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
-  const actualCloseAmount = startAmount.minus(endAmount);
-  const time2 = await getBlockTimestamp(tx.receipt.blockNumber);
-  const owed = await getOwedAmountRaw(
-    new BigNumber(time2).minus(time1),
-    shortTx.loanOffering.rates.interestPeriod,
-    shortTx.loanOffering.rates.interestRate,
-    actualCloseAmount,
-    true);
-  const partialQuoteToken =
-    actualCloseAmount.div(startAmount).times(quoteTokenAmount);
-  const buybackCost =
-    owed.div(sellOrder.makerTokenAmount).times(sellOrder.takerTokenAmount);
-
-  expectLog(tx.logs[0], 'ShortClosed', {
-    id: shortTx.id,
-    closer: closer,
-    payoutRecipient: recipient,
-    closeAmount: actualCloseAmount,
-    remainingAmount: startAmount.minus(actualCloseAmount),
-    baseTokenPaidToLender: owed,
-    quoteTokenPayout: partialQuoteToken.minus(buybackCost),
-    buybackCost: buybackCost
-  });
+  await expectCloseLog(
+    shortSell,
+    {
+      shortTx,
+      sellOrder,
+      closer,
+      recipient,
+      startAmount,
+      startQuote,
+      startTimestamp,
+      tx
+    }
+  );
 
   return tx;
 }
@@ -406,9 +408,8 @@ async function callCloseShortDirectly(
   const closer = from || shortTx.seller;
   recipient = recipient || closer;
 
-  const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
-  const quoteTokenAmount = await shortSell.getShortBalance.call(shortTx.id);
-  const time1 = await shortSell.getShortStartTimestamp.call(shortTx.id);
+  const { startAmount, startQuote, startTimestamp } =
+    await getPreCloseVariables(shortSell, shortTx.id);
 
   const tx = await transact(
     shortSell.closeShortDirectly,
@@ -418,28 +419,77 @@ async function callCloseShortDirectly(
     { from: closer }
   );
 
-  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
-  const actualCloseAmount = startAmount.minus(endAmount);
-  const time2 = await getBlockTimestamp(tx.receipt.blockNumber);
-  const owed = await getOwedAmountRaw(
-    new BigNumber(time2).minus(time1),
-    shortTx.loanOffering.rates.interestPeriod,
-    shortTx.loanOffering.rates.interestRate,
-    actualCloseAmount,
-    true);
-
-  expectLog(tx.logs[0], 'ShortClosed', {
-    id: shortTx.id,
-    closer: closer,
-    payoutRecipient: recipient,
-    closeAmount: actualCloseAmount,
-    remainingAmount: startAmount.minus(actualCloseAmount),
-    baseTokenPaidToLender: owed,
-    quoteTokenPayout: actualCloseAmount.div(startAmount).times(quoteTokenAmount),
-    buybackCost: 0
-  });
+  await expectCloseLog(
+    shortSell,
+    {
+      shortTx,
+      closer,
+      recipient,
+      startAmount,
+      startQuote,
+      startTimestamp,
+      tx
+    }
+  );
 
   return tx;
+}
+
+async function getPreCloseVariables(shortSell, shortId) {
+  const [
+    startAmount,
+    startQuote,
+    startTimestamp
+  ] = await Promise.all([
+    shortSell.getShortUnclosedAmount.call(shortId),
+    shortSell.getShortBalance.call(shortId),
+    shortSell.getShortStartTimestamp.call(shortId)
+  ]);
+  return {
+    startAmount,
+    startQuote,
+    startTimestamp
+  }
+}
+
+async function expectCloseLog(shortSell, params) {
+  const [
+    endAmount,
+    endQuote,
+    endTimestamp
+  ] = await Promise.all([
+    shortSell.getShortUnclosedAmount.call(params.shortTx.id),
+    shortSell.getShortBalance.call(params.shortTx.id),
+    getBlockTimestamp(params.tx.receipt.blockNumber)
+  ]);
+  const actualCloseAmount = params.startAmount.minus(endAmount);
+
+  const owed = await getOwedAmountForTime(
+    new BigNumber(endTimestamp).minus(params.startTimestamp),
+    params.shortTx.loanOffering.rates.interestPeriod,
+    params.shortTx.loanOffering.rates.interestRate,
+    actualCloseAmount,
+    true
+  );
+  const buybackCost = params.sellOrder
+    ? owed.div(params.sellOrder.makerTokenAmount).times(params.sellOrder.takerTokenAmount)
+    : 0;
+  const quoteTokenPayout =
+    actualCloseAmount.div(params.startAmount).times(params.startQuote).minus(buybackCost);
+
+  expect(endQuote).to.be.bignumber.equal(
+    params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
+
+  expectLog(params.tx.logs[0], 'ShortClosed', {
+    id: params.shortTx.id,
+    closer: params.closer,
+    payoutRecipient: params.recipient,
+    closeAmount: actualCloseAmount,
+    remainingAmount: params.startAmount.minus(actualCloseAmount),
+    baseTokenPaidToLender: owed,
+    quoteTokenPayout: quoteTokenPayout,
+    buybackCost: buybackCost
+  });
 }
 
 async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
@@ -698,7 +748,7 @@ async function getMaxInterestFee(shortTx) {
   return interest;
 }
 
-async function getOwedAmountRaw(
+async function getOwedAmountForTime(
   timeDiff,
   interestPeriod,
   interestRate,
