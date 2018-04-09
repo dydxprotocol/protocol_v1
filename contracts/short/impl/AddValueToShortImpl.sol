@@ -73,7 +73,7 @@ library AddValueToShortImpl {
         uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
             shortId,
             state,
-            transaction,
+            transaction.effectiveAmount,
             short
         );
 
@@ -98,10 +98,15 @@ library AddValueToShortImpl {
 
         updateState(
             state,
-            transaction,
+            short,
             shortId,
-            short
+            transaction.effectiveAmount,
+            transaction.loanOffering.payer
         );
+
+        // Update global amounts for the loan
+        state.loanFills[transaction.loanOffering.loanHash] =
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
 
         ShortShared.shortInternalPostStateUpdate(
             state,
@@ -120,22 +125,69 @@ library AddValueToShortImpl {
         return transaction.lenderAmount;
     }
 
+    function addValueToShortDirectlyImpl(
+        ShortSellState.State storage state,
+        bytes32 shortId,
+        uint256 amount
+    )
+        public
+        returns (uint256 _quoteTokenAmount)
+    {
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
+        uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
+            shortId,
+            state,
+            amount,
+            short
+        );
+
+        Vault(state.VAULT).transferToVault(
+            shortId,
+            short.quoteToken,
+            msg.sender,
+            quoteTokenAmount
+        );
+
+        updateState(
+            state,
+            short,
+            shortId,
+            amount,
+            msg.sender
+        );
+
+        emit ValueAddedToShort(
+            shortId,
+            msg.sender,
+            msg.sender,
+            "",
+            address(0),
+            0,
+            amount,
+            0,
+            quoteTokenAmount
+        );
+
+        return quoteTokenAmount;
+    }
+
     // --------- Helper Functions ---------
 
     function getPositionMinimumQuoteToken(
         bytes32 shortId,
         ShortSellState.State storage state,
-        ShortShared.ShortTx transaction,
+        uint256 effectiveAmount,
         ShortSellCommon.Short storage short
     )
         internal
         view
         returns (uint256)
     {
-        uint256 quoteTokenBalance = Vault(state.VAULT).balances(shortId, transaction.quoteToken);
+        uint256 quoteTokenBalance = Vault(state.VAULT).balances(shortId, short.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
-            transaction.effectiveAmount,
+            effectiveAmount,
             short.shortAmount,
             quoteTokenBalance
         );
@@ -166,17 +218,16 @@ library AddValueToShortImpl {
 
     function updateState(
         ShortSellState.State storage state,
-        ShortShared.ShortTx transaction,
+        ShortSellCommon.Short storage short,
         bytes32 shortId,
-        ShortSellCommon.Short storage short
+        uint256 effectiveAmount,
+        address loanPayer
     )
         internal
     {
-        short.shortAmount = short.shortAmount.add(transaction.effectiveAmount);
+        short.shortAmount = short.shortAmount.add(effectiveAmount);
 
-        // Update global amounts for the loan and lender
-        state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
+
 
         address seller = short.seller;
         address lender = short.lender;
@@ -188,7 +239,7 @@ library AddValueToShortImpl {
                 ShortOwner(seller).additionalShortValueAdded(
                     msg.sender,
                     shortId,
-                    transaction.effectiveAmount
+                    effectiveAmount
                 )
             );
         }
@@ -196,12 +247,12 @@ library AddValueToShortImpl {
         // Unless the loan offering's lender is the owner of the loan position and is not a smart
         // contract, call out to the owner of the loan position to ensure they consent
         // to value being added
-        if (transaction.loanOffering.payer != lender || AddressUtils.isContract(lender)) {
+        if (loanPayer != lender || AddressUtils.isContract(lender)) {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
-                    transaction.loanOffering.payer,
+                    loanPayer,
                     shortId,
-                    transaction.effectiveAmount
+                    effectiveAmount
                 )
             );
         }

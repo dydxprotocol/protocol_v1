@@ -193,6 +193,22 @@ contract ShortSell is
         );
     }
 
+    function addValueToShortDirectly(
+        bytes32 shortId,
+        uint256 amount
+    )
+        external
+        onlyWhileOperational
+        nonReentrant
+        returns (uint256 _quoteTokenAmount)
+    {
+        return AddValueToShortImpl.addValueToShortDirectlyImpl(
+            state,
+            shortId,
+            amount
+        );
+    }
+
     /**
     * Close a short sell. May be called by the short seller or with the approval of the short
     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
