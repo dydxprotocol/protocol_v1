@@ -9,23 +9,23 @@ contract OwnedToken is Ownable {
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer( address token, address from, address to, uint256 value);
-    event Approval( address token, address owner, address spender, uint256 value);
+    event Transfer(address token, address from, address to, uint256 value);
+    event Approval(address token, address owner, address spender, uint256 value);
 
 
     function issueTo(address who, uint256 amount) onlyOwner external {
         balances[who] = balances[who] + amount;
     }
 
-    function totalSupply() view public returns (uint256 _supply) {
+    function totalSupply() view public returns (uint256) {
         return supply;
     }
 
-    function balanceOf( address who ) view public returns (uint256 value) {
+    function balanceOf(address who ) view public returns (uint256) {
         return balances[who];
     }
 
-    function allowance( address owner, address spender ) view public returns (uint256 _allowance) {
+    function allowance(address owner, address spender ) view public returns (uint256) {
         return allowed[owner][spender];
     }
 
@@ -41,7 +41,7 @@ contract OwnedToken is Ownable {
         return 18;
     }
 
-    function transfer( address to, uint256 value) public returns (bool ok) {
+    function transfer(address to, uint256 value) public returns (bool) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] += value;
@@ -57,7 +57,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function transferFrom( address from, address to, uint256 value) public returns (bool ok) {
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] += value;
             balances[from] -= value;
@@ -74,7 +74,7 @@ contract OwnedToken is Ownable {
         }
     }
 
-    function approve( address spender, uint256 value ) public returns (bool ok) {
+    function approve(address spender, uint256 value ) public returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
             address(this),

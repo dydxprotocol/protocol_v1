@@ -6,7 +6,6 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -148,7 +147,7 @@ library LoanImpl {
         uint256    cancelAmount
     )
         public
-        returns (uint256 _canceledAmount)
+        returns (uint256)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
@@ -221,7 +220,7 @@ library LoanImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering _loanOffering)
+        returns (ShortSellCommon.LoanOffering memory)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             payer: addresses[2],
@@ -259,7 +258,7 @@ library LoanImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.LoanRates _loanRates)
+        returns (ShortSellCommon.LoanRates memory)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],

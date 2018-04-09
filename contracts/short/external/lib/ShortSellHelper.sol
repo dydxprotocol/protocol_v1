@@ -12,7 +12,7 @@ library ShortSellHelper {
     )
         internal
         view
-        returns (ShortSellCommon.Short memory _short)
+        returns (ShortSellCommon.Short memory)
     {
         address[4] memory addresses;
         uint256[3] memory values256;

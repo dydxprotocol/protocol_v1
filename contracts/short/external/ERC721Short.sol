@@ -26,15 +26,15 @@ contract ERC721Short is
     // --------------------
 
     event CloserApproval(
-        address indexed _owner,
-        address indexed _approved,
-        bool _isApproved
+        address indexed owner,
+        address indexed approved,
+        bool isApproved
     );
 
     event RecipientApproval(
-        address indexed _owner,
-        address indexed _approved,
-        bool _isApproved
+        address indexed owner,
+        address indexed approved,
+        bool isApproved
     );
 
     // -----------------------------
@@ -52,11 +52,11 @@ contract ERC721Short is
     // -------------------------
 
     function ERC721Short(
-        address _shortSell
+        address shortSell
     )
         ERC721Token("dYdX Short Sells", "dYdX")
         public
-        CloseShortDelegator(_shortSell)
+        CloseShortDelegator(shortSell)
     {
     }
 

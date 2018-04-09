@@ -4,7 +4,6 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 import { Proxy } from "./Proxy.sol";
@@ -45,13 +44,13 @@ contract Vault is
     // -------------------------
 
     function Vault(
-        address _proxy,
+        address proxy,
         uint256 gracePeriod
     )
         StaticAccessControlled(gracePeriod)
         public
     {
-        PROXY = _proxy;
+        PROXY = proxy;
     }
 
     // --------------------------------------------------
@@ -72,7 +71,6 @@ contract Vault is
         uint256 amount
     )
         external
-        nonReentrant
         requiresAuthorization
     {
         // First send tokens to this contract
@@ -108,7 +106,6 @@ contract Vault is
         uint256 amount
     )
         external
-        nonReentrant
         requiresAuthorization
     {
         // Next line also asserts that (balances[id][token] >= amount);

@@ -51,19 +51,19 @@ contract ZeroExExchangeWrapper is
     address public ZRX;
 
     function ZeroExExchangeWrapper(
-        address _shortSell,
-        address _dydxProxy,
-        address _0xExchange,
-        address _0xProxy,
-        address _zrx
+        address shortSell,
+        address dydxProxy,
+        address zrxExchange,
+        address zrxProxy,
+        address zrxToken
     )
         public
     {
-        SHORT_SELL = _shortSell;
-        DYDX_PROXY = _dydxProxy;
-        ZERO_EX_EXCHANGE = _0xExchange;
-        ZERO_EX_PROXY = _0xProxy;
-        ZRX = _zrx;
+        SHORT_SELL = shortSell;
+        DYDX_PROXY = dydxProxy;
+        ZERO_EX_EXCHANGE = zrxExchange;
+        ZERO_EX_PROXY = zrxProxy;
+        ZRX = zrxToken;
 
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
@@ -249,7 +249,7 @@ contract ZeroExExchangeWrapper is
     )
         internal
         pure
-        returns (Order _order)
+        returns (Order memory)
     {
         Order memory order;
 

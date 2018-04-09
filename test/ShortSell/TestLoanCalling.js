@@ -187,7 +187,7 @@ describe('#cancelLoanCall', () => {
 
       const shortCalledTimestamp = await getCallTimestamp(callTx);
 
-      await expectThrow( () => shortSell.cancelLoanCall(
+      await expectThrow(() => shortSell.cancelLoanCall(
         shortTx.id,
         { from: accounts[6] }
       ));

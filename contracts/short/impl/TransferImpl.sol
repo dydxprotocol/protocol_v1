@@ -1,9 +1,6 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { TransferInternal } from "./TransferInternal.sol";

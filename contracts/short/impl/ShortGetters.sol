@@ -270,7 +270,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (address _lender)
+        returns (address)
     {
         return state.shorts[id].lender;
     }
@@ -280,7 +280,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (address _seller)
+        returns (address)
     {
         return state.shorts[id].seller;
     }
@@ -290,7 +290,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (address _quoteToken)
+        returns (address)
     {
         return state.shorts[id].quoteToken;
     }
@@ -300,7 +300,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (address _baseToken)
+        returns (address)
     {
         return state.shorts[id].baseToken;
     }
@@ -310,7 +310,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint256 _shortAmount)
+        returns (uint256)
     {
         return state.shorts[id].shortAmount;
     }
@@ -320,7 +320,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint256 _closedAmount)
+        returns (uint256)
     {
         return state.shorts[id].closedAmount;
     }
@@ -330,7 +330,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint256 _closedAmount)
+        returns (uint256)
     {
         return state.shorts[id].shortAmount.sub(state.shorts[id].closedAmount);
     }
@@ -340,7 +340,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint256 _interestRate)
+        returns (uint256)
     {
         return state.shorts[id].interestRate;
     }
@@ -350,7 +350,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint256 _requiredDeposit)
+        returns (uint256)
     {
         return state.shorts[id].requiredDeposit;
     }
@@ -360,7 +360,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint32 _startTimestamp)
+        returns (uint32)
     {
         return state.shorts[id].startTimestamp;
     }
@@ -370,7 +370,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint32 _callTimestamp)
+        returns (uint32)
     {
         return state.shorts[id].callTimestamp;
     }
@@ -380,7 +380,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint32 _callTimeLimit)
+        returns (uint32)
     {
         return state.shorts[id].callTimeLimit;
     }
@@ -390,7 +390,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint32 _maxDuration)
+        returns (uint32)
     {
         return state.shorts[id].maxDuration;
     }
@@ -400,7 +400,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns (uint32 _maxDuration)
+        returns (uint32)
     {
         return state.shorts[id].interestPeriod;
     }

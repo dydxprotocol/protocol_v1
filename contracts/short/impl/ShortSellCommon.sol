@@ -5,8 +5,6 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { InterestImpl } from "./InterestImpl.sol";
 
@@ -83,7 +81,7 @@ library ShortSellCommon {
     )
         view
         internal
-        returns (uint256 _unavailableAmount)
+        returns (uint256)
     {
         return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
@@ -193,7 +191,7 @@ library ShortSellCommon {
     )
         internal
         view
-        returns (bytes32 _hash)
+        returns (bytes32)
     {
         return keccak256(
             address(this),
@@ -215,7 +213,7 @@ library ShortSellCommon {
     )
         internal
         pure
-        returns (bytes32 _hash)
+        returns (bytes32)
     {
         return keccak256(
             loanOffering.rates.maxAmount,
@@ -238,7 +236,7 @@ library ShortSellCommon {
     )
         view
         internal
-        returns (bool exists)
+        returns (bool)
     {
         return state.shorts[id].startTimestamp != 0;
     }
@@ -249,7 +247,7 @@ library ShortSellCommon {
     )
         internal
         view
-        returns (Short storage _short)
+        returns (Short storage)
     {
         Short storage short = state.shorts[shortId];
 

@@ -3,8 +3,6 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { Vault } from "../Vault.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
@@ -60,7 +58,7 @@ library ShortImpl {
         bytes orderData
     )
         public
-        returns (bytes32 _shortId)
+        returns (bytes32)
     {
         ShortShared.ShortTx memory transaction = parseShortTx(
             addresses,
@@ -113,7 +111,7 @@ library ShortImpl {
     )
         internal
         view
-        returns (bytes32 _shortId)
+        returns (bytes32)
     {
         bytes32 shortId = keccak256(
             loanHash,
@@ -202,7 +200,7 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortShared.ShortTx _transaction)
+        returns (ShortShared.ShortTx memory)
     {
         ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
             owner: addresses[0],
@@ -234,7 +232,7 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering _loanOffering)
+        returns (ShortSellCommon.LoanOffering memory)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             payer: addresses[3],
@@ -268,7 +266,7 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.LoanRates _loanRates)
+        returns (ShortSellCommon.LoanRates memory)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],
@@ -289,7 +287,7 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.Signature _signature)
+        returns (ShortSellCommon.Signature memory)
     {
         ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
             v: sigV,

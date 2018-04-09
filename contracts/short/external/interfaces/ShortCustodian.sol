@@ -14,12 +14,12 @@ contract ShortCustodian {
      * tokens as a result of closing a short on behalf of another contract.
      *
      * @param  shortId      Unique ID of the short
-     * @return _deedHolder  Address that is
+     * @return              Address of the true owner of the short position
      */
     function getShortSellDeedHolder(
         bytes32 shortId
     )
         external
         view
-        returns (address _deedHolder);
+        returns (address);
 }

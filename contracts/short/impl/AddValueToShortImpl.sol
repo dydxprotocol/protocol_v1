@@ -59,7 +59,7 @@ library AddValueToShortImpl {
         bytes orderData
     )
         public
-        returns (uint256 _baseTokenPulledFromLender)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -115,7 +115,7 @@ library AddValueToShortImpl {
         uint256 amount
     )
         public
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -447,7 +447,7 @@ library AddValueToShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.Signature _signature)
+        returns (ShortSellCommon.Signature memory)
     {
         ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
             v: sigV,

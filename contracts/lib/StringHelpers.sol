@@ -17,7 +17,7 @@ library StringHelpers {
     )
         internal
         pure
-        returns (bytes _return)
+        returns (bytes)
     {
         uint256 lengthA = stringA.length;
         uint256 lengthB = stringB.length;
@@ -44,7 +44,7 @@ library StringHelpers {
     )
         internal
         pure
-        returns (bytes _return)
+        returns (bytes)
     {
         bytes memory numberAsString = new bytes(64);
         uint256 number = uint256(input);

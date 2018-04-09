@@ -2,11 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
 
 
 /**
@@ -59,7 +56,7 @@ library TransferInternal {
         address newOwner
     )
         internal
-        returns (address _newOwner)
+        returns (address)
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
@@ -93,7 +90,7 @@ library TransferInternal {
         address newOwner
     )
         internal
-        returns (address _newOwner)
+        returns (address)
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {

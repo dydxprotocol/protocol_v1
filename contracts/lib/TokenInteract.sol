@@ -11,7 +11,7 @@ library TokenInteract {
     )
         internal
         view
-        returns (uint256 _balance)
+        returns (uint256)
     {
         return ERC20(token).balanceOf(owner);
     }
@@ -23,7 +23,7 @@ library TokenInteract {
     )
         internal
         view
-        returns (uint256 _balance)
+        returns (uint256)
     {
         return ERC20(token).allowance(owner, spender);
     }

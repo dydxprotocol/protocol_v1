@@ -279,14 +279,14 @@ contract ERC20Short is
      * carry out such an attack.
      *
      * @param  who  Address of the account to withdraw for
-     * @return The number of tokens withdrawn
+     * @return The number of quote tokens withdrawn
      */
     function withdraw(
         address who
     )
         nonReentrant
         external
-        returns (uint256 quoteTokenPayout)
+        returns (uint256)
     {
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
@@ -304,7 +304,7 @@ contract ERC20Short is
         uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        quoteTokenPayout = MathHelpers.getPartialAmount(
+        uint256 quoteTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
             quoteTokenBalance
@@ -377,7 +377,7 @@ contract ERC20Short is
     )
         external
         view
-        returns (address deedHolder)
+        returns (address)
     {
         require(shortId == SHORT_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract

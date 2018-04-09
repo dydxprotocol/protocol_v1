@@ -18,7 +18,7 @@ module.exports = {
 async function validateStaticAccessControlledConstants(
   contract,
   expectedGracePeriod) {
-  const contractGracePeriodExpiration = await contract.gracePeriodExpiration.call();
+  const contractGracePeriodExpiration = await contract.GRACE_PERIOD_EXPIRATION.call();
 
   const blockNumber = await getBlockNumber(contract.transactionHash);
   const creationTimeStamp = await getBlockTimestamp(blockNumber);

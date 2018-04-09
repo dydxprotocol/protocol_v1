@@ -243,7 +243,7 @@ describe('ShortSellAdmin', () => {
 
       await shortSell.setOperationState(state);
       if (shouldFail) {
-        await expectThrow( () => callCloseShort(shortSell, shortTx, sellOrder, closeAmount) );
+        await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, closeAmount) );
       } else {
         await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
       }

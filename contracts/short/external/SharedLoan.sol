@@ -6,7 +6,6 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
@@ -308,18 +307,16 @@ contract SharedLoan is
      * quote token (if the loan was force recovered). Callable at any time
      *
      * @param  who                  Lender to withdraw for
-     * @return _baseTokenPayout     Amount of base token paid out
-     * @return _quoteTokenPayout    Amount of quote token paid out
+     * @return                      Values corresponding to:
+     *  1) Amount of base token paid out
+     *  2) Amount of quote token paid out
      */
     function withdraw(
         address who
     )
         nonReentrant
         public
-        returns (
-            uint256 _baseTokenPayout,
-            uint256 _quoteTokenPayout
-        )
+        returns (uint256, uint256)
     {
         require(state == State.OPEN || state == State.CLOSED);
 

@@ -6,7 +6,6 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { Vault } from "../Vault.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -39,20 +38,17 @@ library ForceRecoverLoanImpl {
         bytes32 shortId
     )
         public
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // Can only force recover after the entire call period has elapsed
-        // This can either be after the loan was called or after the maxDuration of the short
-        // position has elapsed (plus the call time)
-        require( /* solium-disable-next-line */
-            (
-                short.callTimestamp > 0
-                && block.timestamp >= uint256(short.callTimestamp).add(uint256(short.callTimeLimit))
-            ) || (
-                block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
-            )
+        // Can only force recover after either:
+        // 1) The loan was called and the call period has elapsed
+        // 2) The maxDuration of the short has elapsed
+        require(
+            short.callTimestamp > 0
+            && block.timestamp >= uint256(short.callTimestamp).add(short.callTimeLimit)
+            || block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
         );
 
         // If not the lender, requires the lender to approve msg.sender

@@ -3,11 +3,9 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
@@ -19,8 +17,7 @@ import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
  */
  /* solium-disable-next-line */
 contract DutchAuctionCloser is
-    PayoutRecipient,
-    ReentrancyGuard {
+    PayoutRecipient {
     using SafeMath for uint256;
 
     // ------------------------

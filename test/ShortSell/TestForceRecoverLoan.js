@@ -70,7 +70,7 @@ describe('#forceRecoverLoan', () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: accounts[7] }
       ));
@@ -94,7 +94,7 @@ describe('#forceRecoverLoan', () => {
         testForceRecoverLoanDelegator.address,
         { from: shortTx.loanOffering.payer });
 
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: accounts[6] }
       ));
@@ -137,7 +137,7 @@ describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));

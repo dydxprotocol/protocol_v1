@@ -76,7 +76,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
     )
         view
         external
-        returns (uint256 _allowance)
+        returns (uint256)
     {
         return Math.min256(
             TokenInteract.allowance(token, who, address(this)),
