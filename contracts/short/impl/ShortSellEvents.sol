@@ -45,7 +45,7 @@ contract ShortSellEvents {
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
-        uint256 shortSellerQuoteToken,
+        uint256 quoteTokenPayout,
         uint256 buybackCost
     );
 

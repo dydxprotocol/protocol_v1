@@ -47,23 +47,26 @@ library LiquidateImpl {
     )
         public
         returns (
-            uint256 _amountClosed,
-            uint256 _quoteTokenReceived
+            uint256, // amountClosed
+            uint256  // quoteTokenReceived
         )
     {
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
         // Create CloseShortTx and validate closeAmount
-        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
-            state,
+        uint256 liquidationAmount = validateLiquidationAmount(
+            short,
             shortId,
             requestedLiquidationAmount,
             msg.sender
         );
-        validateLiquidation(transaction);
-
-        // State updates
-        ShortSellCommon.updateClosedAmount(state, transaction);
-
-        uint256 liquidateAmount = transaction.availableQuoteToken;
+        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
+            state,
+            short,
+            shortId,
+            liquidationAmount,
+            msg.sender
+        );
 
         Vault vault = Vault(state.VAULT);
 
@@ -71,7 +74,7 @@ library LiquidateImpl {
             shortId,
             transaction.short.quoteToken,
             msg.sender,
-            liquidateAmount
+            transaction.availableQuoteToken
         );
 
         // The ending quote token balance of the vault should be the starting quote token balance
@@ -81,59 +84,66 @@ library LiquidateImpl {
             == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
         );
 
-        logEventOnClose(
-            transaction,
-            liquidateAmount
-        );
+        // Delete the short, or just increase the closedAmount
+        if (transaction.closeAmount == transaction.currentShortAmount) {
+            ShortSellCommon.cleanupShort(state, transaction.shortId);
+        } else {
+            short.closedAmount = short.closedAmount.add(transaction.closeAmount);
+        }
+
+        logEventOnLiquidate(transaction);
 
         return (
             transaction.closeAmount,
-            liquidateAmount
+            transaction.availableQuoteToken
         );
     }
 
-    function validateLiquidation(
-        ShortSellCommon.CloseShortTx transaction
+    function validateLiquidationAmount(
+        ShortSellCommon.Short storage short,
+        bytes32 shortId,
+        uint256 requestedLiquidationAmount,
+        address payoutRecipient
     )
         internal
+        returns (uint256)
     {
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 newLiquidationAmount = Math.min256(requestedLiquidationAmount, currentShortAmount);
+
         // If not the short seller, requires short seller to approve msg.sender
-        if (msg.sender != transaction.short.seller) {
+        if (short.seller != msg.sender) {
             uint256 allowedCloseAmount =
-                CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
+                CloseShortDelegator(short.seller).closeOnBehalfOf(
                     msg.sender,
-                    transaction.payoutRecipient,
-                    transaction.shortId,
-                    transaction.closeAmount
+                    payoutRecipient,
+                    shortId,
+                    newLiquidationAmount
                 );
-            // Because the verifier may do accounting based on the number that it returns, revert
-            // if the returned amount is larger than the remaining amount of the short.
-            require(transaction.closeAmount >= allowedCloseAmount);
-            transaction.closeAmount = allowedCloseAmount;
+            require(allowedCloseAmount <= newLiquidationAmount);
+            newLiquidationAmount = allowedCloseAmount;
         }
 
         // If not the lender, requires lender to approve msg.sender
-        if (transaction.short.lender != msg.sender) {
+        if (short.lender != msg.sender) {
             uint256 allowedLiquidationAmount =
-                LiquidateDelegator(transaction.short.lender).liquidateOnBehalfOf(
+                LiquidateDelegator(short.lender).liquidateOnBehalfOf(
                     msg.sender,
-                    transaction.shortId,
-                    transaction.closeAmount
+                    shortId,
+                    newLiquidationAmount
                 );
-
-            // Because the verifier may do accounting based on the number that it returns, revert
-            // if the returned amount is larger than the remaining amount of the short.
-            require(transaction.closeAmount >= allowedLiquidationAmount);
-            transaction.closeAmount = allowedLiquidationAmount;
+            require(allowedLiquidationAmount <= newLiquidationAmount);
+            newLiquidationAmount = allowedLiquidationAmount;
         }
 
-        require(transaction.closeAmount > 0);
-        assert(transaction.closeAmount <= transaction.currentShortAmount);
+        require(newLiquidationAmount > 0);
+        assert(newLiquidationAmount <= currentShortAmount);
+        assert(newLiquidationAmount <= requestedLiquidationAmount);
+        return newLiquidationAmount;
     }
 
-    function logEventOnClose(
-        ShortSellCommon.CloseShortTx transaction,
-        uint256 quoteTokenAmount
+    function logEventOnLiquidate(
+        ShortSellCommon.CloseShortTx transaction
     )
         internal
     {
@@ -142,7 +152,7 @@ library LiquidateImpl {
             msg.sender,
             transaction.closeAmount,
             transaction.currentShortAmount.sub(transaction.closeAmount),
-            quoteTokenAmount
+            transaction.availableQuoteToken
         );
     }
 

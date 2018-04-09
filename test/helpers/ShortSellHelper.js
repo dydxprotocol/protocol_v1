@@ -126,7 +126,7 @@ async function callShort(shortSell, tx, safely = true) {
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     shortAmount: tx.shortAmount,
     quoteTokenFromSell:
-      tx.shortAmount.times(tx.buyOrder.makerTokenAmount).div(tx.buyOrder.takerTokenAmount),
+      tx.shortAmount.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
     depositAmount: tx.depositAmount,
     interestRate: tx.loanOffering.rates.interestRate,
     callTimeLimit: tx.loanOffering.callTimeLimit,
@@ -232,7 +232,7 @@ async function callAddValueToShort(shortSell, tx) {
     tx.shortAmount,
     false);
   const quoteTokenFromSell =
-    owed.times(tx.buyOrder.makerTokenAmount).div(tx.buyOrder.takerTokenAmount);
+    owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
   const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
 
   expectLog(response.logs[0], 'ValueAddedToShort', {
@@ -355,6 +355,8 @@ async function callCloseShort(
   recipient = recipient || closer;
 
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+  const quoteTokenAmount = await shortSell.getShortBalance.call(shortTx.id);
+  const time1 = await shortSell.getShortStartTimestamp.call(shortTx.id);
 
   const tx = await transact(
     shortSell.closeShort,
@@ -365,9 +367,20 @@ async function callCloseShort(
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
-  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
 
+  const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
   const actualCloseAmount = startAmount.minus(endAmount);
+  const time2 = await getBlockTimestamp(tx.receipt.blockNumber);
+  const owed = await getOwedAmountRaw(
+    new BigNumber(time2).minus(time1),
+    shortTx.loanOffering.rates.interestPeriod,
+    shortTx.loanOffering.rates.interestRate,
+    actualCloseAmount,
+    true);
+  const partialQuoteToken =
+    actualCloseAmount.div(startAmount).times(quoteTokenAmount);
+  const buybackCost =
+    owed.div(sellOrder.makerTokenAmount).times(sellOrder.takerTokenAmount);
 
   expectLog(tx.logs[0], 'ShortClosed', {
     id: shortTx.id,
@@ -375,9 +388,9 @@ async function callCloseShort(
     payoutRecipient: recipient,
     closeAmount: actualCloseAmount,
     remainingAmount: startAmount.minus(actualCloseAmount),
-    baseTokenPaidToLender: "unspecified",
-    shortSellerQuoteToken: "unspecified",
-    buybackCost: "unspecified"
+    baseTokenPaidToLender: owed,
+    quoteTokenPayout: partialQuoteToken.minus(buybackCost),
+    buybackCost: buybackCost
   });
 
   return tx;
@@ -394,6 +407,8 @@ async function callCloseShortDirectly(
   recipient = recipient || closer;
 
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
+  const quoteTokenAmount = await shortSell.getShortBalance.call(shortTx.id);
+  const time1 = await shortSell.getShortStartTimestamp.call(shortTx.id);
 
   const tx = await transact(
     shortSell.closeShortDirectly,
@@ -404,8 +419,14 @@ async function callCloseShortDirectly(
   );
 
   const endAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
-
   const actualCloseAmount = startAmount.minus(endAmount);
+  const time2 = await getBlockTimestamp(tx.receipt.blockNumber);
+  const owed = await getOwedAmountRaw(
+    new BigNumber(time2).minus(time1),
+    shortTx.loanOffering.rates.interestPeriod,
+    shortTx.loanOffering.rates.interestRate,
+    actualCloseAmount,
+    true);
 
   expectLog(tx.logs[0], 'ShortClosed', {
     id: shortTx.id,
@@ -413,8 +434,8 @@ async function callCloseShortDirectly(
     payoutRecipient: recipient,
     closeAmount: actualCloseAmount,
     remainingAmount: startAmount.minus(actualCloseAmount),
-    baseTokenPaidToLender: "unspecified",
-    shortSellerQuoteToken: "unspecified",
+    baseTokenPaidToLender: owed,
+    quoteTokenPayout: actualCloseAmount.div(startAmount).times(quoteTokenAmount),
     buybackCost: 0
   });
 
@@ -673,7 +694,13 @@ async function getMaxInterestFee(shortTx) {
   return interest;
 }
 
-async function getOwedAmountRaw(timeDiff, interestPeriod, interestRate, amount, roundUpToPeriod = true) {
+async function getOwedAmountRaw(
+  timeDiff,
+  interestPeriod,
+  interestRate,
+  amount,
+  roundUpToPeriod = true
+) {
   if (interestPeriod.gt(1)) {
     timeDiff = getPartialAmount(
       timeDiff, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
@@ -681,7 +708,6 @@ async function getOwedAmountRaw(timeDiff, interestPeriod, interestRate, amount, 
 
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
   const interestCalc = await TestInterestImpl.new();
-
   const owedAmount = await interestCalc.getCompoundedInterest.call(
     amount,
     interestRate,

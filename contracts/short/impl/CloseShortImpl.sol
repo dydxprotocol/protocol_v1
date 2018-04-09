@@ -37,7 +37,7 @@ library CloseShortImpl {
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
-        uint256 payoutQuoteTokenAmount,
+        uint256 quoteTokenPayout,
         uint256 buybackCost
     );
 
@@ -64,9 +64,9 @@ library CloseShortImpl {
     )
         public
         returns (
-            uint256 _amountClosed,
-            uint256 _quoteTokenReceived,
-            uint256 _baseTokenPaidToLender
+            uint256, // amountClosed
+            uint256 quoteTokenPayout,
+            uint256 baseTokenPaidToLender
         )
     {
         Order memory order = Order({
@@ -74,82 +74,86 @@ library CloseShortImpl {
             orderData: orderData
         });
 
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+
         // Create CloseShortTx and validate closeAmount
-        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
-            state,
+        uint256 closeAmount = validateCloseAmount(
+            short,
             shortId,
             requestedCloseAmount,
             payoutRecipient
         );
-        validateCloseShortTx(transaction); // may modify transaction
+        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
+            state,
+            short,
+            shortId,
+            closeAmount,
+            payoutRecipient
+        );
 
-        // State updates
-        ShortSellCommon.updateClosedAmount(state, transaction);
-
-        uint256 baseTokenPaidToLender;
         uint256 buybackCost;
-        uint256 payoutQuoteTokenAmount;
-
         (
             baseTokenPaidToLender,
             buybackCost,
-            payoutQuoteTokenAmount
+            quoteTokenPayout
         ) = sendTokens(
             state,
             transaction,
             order
         );
 
-        // Delete the short if it is now completely closed
+        // Delete the short, or just increase the closedAmount
         if (transaction.closeAmount == transaction.currentShortAmount) {
             ShortSellCommon.cleanupShort(state, transaction.shortId);
+        } else {
+            short.closedAmount = short.closedAmount.add(transaction.closeAmount);
         }
 
         logEventOnClose(
             transaction,
             baseTokenPaidToLender,
             buybackCost,
-            payoutQuoteTokenAmount
+            quoteTokenPayout
         );
 
         return (
             transaction.closeAmount,
-            payoutQuoteTokenAmount,
+            quoteTokenPayout,
             baseTokenPaidToLender
         );
     }
 
     // --------- Helper Functions ---------
 
-    /**
-     * Validate the CloseShortTx object created for closing a short.
-     * This function may throw, or it may simply modify parameters of the CloseShortTx object.
-     * Will not throw if the resulting object is valid.
-     * @param transaction  The transaction to validate
-     */
-    function validateCloseShortTx(
-        ShortSellCommon.CloseShortTx transaction
+    function validateCloseAmount(
+        ShortSellCommon.Short storage short,
+        bytes32 shortId,
+        uint256 requestedCloseAmount,
+        address payoutRecipient
     )
         internal
+        returns(uint256)
     {
-        // If not the short seller, requires short seller to approve msg.sender
-        if (transaction.short.seller != msg.sender) {
-            uint256 allowedCloseAmount =
-                CloseShortDelegator(transaction.short.seller).closeOnBehalfOf(
-                    msg.sender,
-                    transaction.payoutRecipient,
-                    transaction.shortId,
-                    transaction.closeAmount
-                );
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 newCloseAmount = Math.min256(requestedCloseAmount, currentShortAmount);
 
-            // Because the verifier may do accounting based on the number that it returns, revert
-            // if the returned amount is larger than the remaining amount of the short.
-            require(transaction.closeAmount >= allowedCloseAmount);
-            transaction.closeAmount = allowedCloseAmount;
+        // If not the short seller, requires short seller to approve msg.sender
+        if (short.seller != msg.sender) {
+            uint256 allowedCloseAmount =
+                CloseShortDelegator(short.seller).closeOnBehalfOf(
+                    msg.sender,
+                    payoutRecipient,
+                    shortId,
+                    newCloseAmount
+                );
+            require(allowedCloseAmount <= newCloseAmount);
+            newCloseAmount = allowedCloseAmount;
         }
 
-        require(transaction.closeAmount > 0);
-        assert(transaction.closeAmount <= transaction.currentShortAmount);
+        require(newCloseAmount > 0);
+        assert(newCloseAmount <= currentShortAmount);
+        assert(newCloseAmount <= requestedCloseAmount);
+        return newCloseAmount;
     }
 
     function sendTokens(
@@ -159,9 +163,9 @@ library CloseShortImpl {
     )
         internal
         returns (
-            uint256 _baseTokenPaidToLender,
-            uint256 _buybackCost,
-            uint256 _payoutQuoteTokenAmount
+            uint256, // baseTokenPaidToLender
+            uint256, // buybackCost
+            uint256  // quoteTokenPayout
         )
     {
         // Send base tokens to lender
@@ -191,7 +195,7 @@ library CloseShortImpl {
         }
 
         // Send quote tokens to the correct parties
-        uint256 payoutQuoteTokenAmount = sendQuoteTokensOnClose(
+        uint256 quoteTokenPayout = sendQuoteTokensOnClose(
             state,
             transaction,
             buybackCost
@@ -207,7 +211,7 @@ library CloseShortImpl {
         return (
             baseTokenOwedToLender,
             buybackCost,
-            payoutQuoteTokenAmount
+            quoteTokenPayout
         );
     }
 
@@ -270,18 +274,18 @@ library CloseShortImpl {
         uint256 buybackCost
     )
         internal
-        returns (uint256 _payoutQuoteTokenAmount)
+        returns (uint256 _quoteTokenPayout)
     {
         Vault vault = Vault(state.VAULT);
 
         // Send remaining quote token to payoutRecipient
-        uint256 payoutQuoteTokenAmount = transaction.availableQuoteToken.sub(buybackCost);
+        uint256 quoteTokenPayout = transaction.availableQuoteToken.sub(buybackCost);
 
         vault.transferFromVault(
             transaction.shortId,
             transaction.short.quoteToken,
             transaction.payoutRecipient,
-            payoutQuoteTokenAmount
+            quoteTokenPayout
         );
 
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
@@ -291,19 +295,19 @@ library CloseShortImpl {
                 msg.sender,
                 transaction.short.seller,
                 transaction.short.quoteToken,
-                payoutQuoteTokenAmount,
+                quoteTokenPayout,
                 transaction.availableQuoteToken
             );
         }
 
-        return payoutQuoteTokenAmount;
+        return quoteTokenPayout;
     }
 
     function logEventOnClose(
         ShortSellCommon.CloseShortTx transaction,
         uint256 baseTokenPaidToLender,
         uint256 buybackCost,
-        uint256 payoutQuoteTokenAmount
+        uint256 quoteTokenPayout
     )
         internal
     {
@@ -314,7 +318,7 @@ library CloseShortImpl {
             transaction.closeAmount,
             transaction.currentShortAmount.sub(transaction.closeAmount),
             baseTokenPaidToLender,
-            payoutQuoteTokenAmount,
+            quoteTokenPayout,
             buybackCost
         );
     }
