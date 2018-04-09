@@ -48,7 +48,7 @@ contract ShortGetters is ShortSellStorage {
     )
         view
         external
-        returns(bool)
+        returns (bool)
     {
         return (state.shorts[shortId].callTimestamp > 0);
     }

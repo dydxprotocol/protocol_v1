@@ -40,8 +40,8 @@ contract ShortSellEvents {
      */
     event ShortClosed(
         bytes32 indexed id,
-        address closer,
-        address payoutRecipient,
+        address indexed closer,
+        address indexed payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
@@ -54,7 +54,7 @@ contract ShortSellEvents {
      */
     event LoanLiquidated(
         bytes32 indexed id,
-        address liquidator,
+        address indexed liquidator,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 quoteAmount

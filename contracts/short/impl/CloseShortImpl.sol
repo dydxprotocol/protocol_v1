@@ -32,8 +32,8 @@ library CloseShortImpl {
      */
     event ShortClosed(
         bytes32 indexed id,
-        address closer,
-        address payoutRecipient,
+        address indexed closer,
+        address indexed payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
@@ -76,13 +76,13 @@ library CloseShortImpl {
 
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // Create CloseShortTx and validate closeAmount
-        uint256 closeAmount = validateCloseAmount(
+        uint256 closeAmount = getApprovedCloseAmount(
             short,
             shortId,
             requestedCloseAmount,
             payoutRecipient
         );
+
         ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
             state,
             short,
@@ -125,14 +125,14 @@ library CloseShortImpl {
 
     // --------- Helper Functions ---------
 
-    function validateCloseAmount(
+    function getApprovedCloseAmount(
         ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint256 requestedCloseAmount,
         address payoutRecipient
     )
         internal
-        returns(uint256)
+        returns (uint256)
     {
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 newCloseAmount = Math.min256(requestedCloseAmount, currentShortAmount);

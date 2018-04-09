@@ -23,13 +23,13 @@ describe('#approveLoanOffering', () => {
   });
 
   contract('ShortSell', function(accounts) {
-    it('fails if already approved', async () => {
+    it('succeeds without event if already approved', async () => {
       const shortSell = await ShortSell.deployed();
       const shortTx = await createShortSellTx(accounts);
 
       await callApproveLoanOffering(shortSell, shortTx.loanOffering);
 
-      await expectThrow(() => callApproveLoanOffering(shortSell, shortTx.loanOffering));
+      await callApproveLoanOffering(shortSell, shortTx.loanOffering);
     });
   });
 

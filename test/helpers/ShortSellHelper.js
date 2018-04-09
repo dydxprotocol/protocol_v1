@@ -507,6 +507,8 @@ async function callApproveLoanOffering(
 ) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
+  const wasApproved = await shortSell.isLoanApproved.call(loanOffering.loanHash);
+
   const tx = await shortSell.approveLoanOffering(
     addresses,
     values256,
@@ -517,11 +519,13 @@ async function callApproveLoanOffering(
   const approved = await shortSell.isLoanApproved.call(loanOffering.loanHash);
   expect(approved).to.be.true;
 
-  expectLog(tx.logs[0], 'LoanOfferingApproved', {
-    loanHash: loanOffering.loanHash,
-    lender: loanOffering.payer,
-    feeRecipient: loanOffering.feeRecipient
-  });
+  if (!wasApproved) {
+    expectLog(tx.logs[0], 'LoanOfferingApproved', {
+      loanHash: loanOffering.loanHash,
+      lender: loanOffering.payer,
+      feeRecipient: loanOffering.feeRecipient
+    });
+  }
 
   return tx;
 }

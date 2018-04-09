@@ -30,7 +30,7 @@ library LiquidateImpl {
      */
     event LoanLiquidated(
         bytes32 indexed id,
-        address liquidator,
+        address indexed liquidator,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 quoteAmount
@@ -53,13 +53,13 @@ library LiquidateImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // Create CloseShortTx and validate closeAmount
-        uint256 liquidationAmount = validateLiquidationAmount(
+        uint256 liquidationAmount = getApprovedLiquidationAmount(
             short,
             shortId,
             requestedLiquidationAmount,
             msg.sender
         );
+
         ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
             state,
             short,
@@ -99,7 +99,7 @@ library LiquidateImpl {
         );
     }
 
-    function validateLiquidationAmount(
+    function getApprovedLiquidationAmount(
         ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint256 requestedLiquidationAmount,

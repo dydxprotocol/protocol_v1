@@ -83,7 +83,6 @@ library ShortImpl {
             quoteTokenReceived
         );
 
-        // Log event (one level of indirection to reduce number of variables for solidity compiler)
         // Comes before updateState() so that ShortInitiated event is before Transferred events
         recordShortInitiated(
             shortId,
