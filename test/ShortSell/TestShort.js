@@ -116,8 +116,8 @@ describe('#short', () => {
   contract('ShortSell', function(accounts) {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const shortSell = await ShortSell.deployed();
-      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, ADDRESSES.ZERO);
-      const testShortOwner = await TestShortOwner.new(ShortSell.address, ADDRESSES.ZERO);
+      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, ADDRESSES.ZERO, false);
+      const testShortOwner = await TestShortOwner.new(ShortSell.address, ADDRESSES.ZERO, false);
 
       const shortTx1 = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx1);
@@ -180,10 +180,12 @@ describe('#short', () => {
         false);
       const testLoanOwner = await TestLoanOwner.new(
         ShortSell.address,
-        testCallLoanDelegator.address);
+        testCallLoanDelegator.address,
+        false);
       const testShortOwner = await TestShortOwner.new(
         ShortSell.address,
-        testCloseShortDelegator.address);
+        testCloseShortDelegator.address,
+        false);
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = testShortOwner.address;

@@ -97,7 +97,6 @@ library AddValueToShortImpl {
         );
 
         updateState(
-            state,
             short,
             shortId,
             transaction.effectiveAmount,
@@ -150,7 +149,6 @@ library AddValueToShortImpl {
         );
 
         updateState(
-            state,
             short,
             shortId,
             amount,
@@ -217,7 +215,6 @@ library AddValueToShortImpl {
     }
 
     function updateState(
-        ShortSellState.State storage state,
         ShortSellCommon.Short storage short,
         bytes32 shortId,
         uint256 effectiveAmount,
@@ -226,8 +223,6 @@ library AddValueToShortImpl {
         internal
     {
         short.shortAmount = short.shortAmount.add(effectiveAmount);
-
-
 
         address seller = short.seller;
         address lender = short.lender;

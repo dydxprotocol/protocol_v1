@@ -10,6 +10,8 @@ const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ProxyContract = artifacts.require("Proxy");
+const TestShortOwner = artifacts.require("TestShortOwner");
+const TestLoanOwner = artifacts.require("TestLoanOwner");
 const { DEFAULT_SALT } = require('../helpers/Constants');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -22,7 +24,9 @@ const {
   doShort,
   getShort,
   callAddValueToShort,
-  createShortSellTx
+  createShortSellTx,
+  issueTokensAndSetAllowancesForShort,
+  callShort
 } = require('../helpers/ShortSellHelper');
 
 let salt = DEFAULT_SALT + 1;
@@ -177,89 +181,179 @@ describe('#addValueToShort', () => {
       await expectThrow(() => callAddValueToShort(shortSell, addValueTx));
     });
   });
+
+  async function getBalances(tx, baseToken, quoteToken, feeToken) {
+    const [
+      lenderBaseToken,
+      makerBaseToken,
+      exchangeWrapperBaseToken,
+      sellerQuoteToken,
+      makerQuoteToken,
+      vaultQuoteToken,
+      lenderFeeToken,
+      makerFeeToken,
+      exchangeWrapperFeeToken,
+      sellerFeeToken
+    ] = await Promise.all([
+      baseToken.balanceOf.call(tx.loanOffering.payer),
+      baseToken.balanceOf.call(tx.buyOrder.maker),
+      baseToken.balanceOf.call(ExchangeWrapper.address),
+      quoteToken.balanceOf.call(tx.seller),
+      quoteToken.balanceOf.call(tx.buyOrder.maker),
+      quoteToken.balanceOf.call(Vault.address),
+      feeToken.balanceOf.call(tx.loanOffering.payer),
+      feeToken.balanceOf.call(tx.buyOrder.maker),
+      feeToken.balanceOf.call(ExchangeWrapper.address),
+      feeToken.balanceOf.call(tx.seller),
+    ]);
+
+    return {
+      lenderBaseToken,
+      makerBaseToken,
+      exchangeWrapperBaseToken,
+      sellerQuoteToken,
+      makerQuoteToken,
+      vaultQuoteToken,
+      lenderFeeToken,
+      makerFeeToken,
+      exchangeWrapperFeeToken,
+      sellerFeeToken
+    }
+  }
+
+  async function setup(accounts) {
+    const shortTx = await doShort(accounts);
+    const [shortSell, baseToken, quoteToken, feeToken] = await Promise.all([
+      ShortSell.deployed(),
+      BaseToken.deployed(),
+      QuoteToken.deployed(),
+      FeeToken.deployed()
+    ]);
+
+    const [
+      startingShortBalance,
+      startingBalances,
+      addValueTx
+    ] = await Promise.all([
+      shortSell.getShortBalance.call(shortTx.id),
+      getBalances(shortTx, baseToken, quoteToken, feeToken),
+      createShortSellTx(accounts, salt++)
+    ]);
+
+    addValueTx.shortAmount = addValueTx.shortAmount.div(4);
+    addValueTx.id = shortTx.id;
+
+    const sellerStartingQuoteToken = shortTx.depositAmount.times(2);
+    await quoteToken.issueTo(shortTx.seller, sellerStartingQuoteToken);
+    await quoteToken.approve(
+      ProxyContract.address,
+      sellerStartingQuoteToken,
+      { from: shortTx.seller }
+    );
+
+    // Wait until the next interest period
+    await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
+
+    return {
+      shortTx,
+      addValueTx,
+      shortSell,
+      baseToken,
+      quoteToken,
+      feeToken,
+      startingShortBalance,
+      startingBalances,
+      sellerStartingQuoteToken
+    };
+  }
 });
 
-async function setup(accounts) {
-  const shortTx = await doShort(accounts);
-  const [shortSell, baseToken, quoteToken, feeToken] = await Promise.all([
-    ShortSell.deployed(),
-    BaseToken.deployed(),
-    QuoteToken.deployed(),
-    FeeToken.deployed()
-  ]);
+describe('#addValueToShortDirectly', () => {
+  contract('ShortSell', function(accounts) {
+    it('succeeds on valid inputs', async () => {
+      const [
+        shortTx,
+        shortSell,
+        quoteToken,
+        testShortOwner,
+        testLoanOwner
+      ] = await Promise.all([
+        createShortSellTx(accounts),
+        ShortSell.deployed(),
+        QuoteToken.deployed(),
+        TestShortOwner.new(ShortSell.address, "1", true),
+        TestLoanOwner.new(ShortSell.address, "1", true),
+      ]);
 
-  const [
-    startingShortBalance,
-    startingBalances,
-    addValueTx
-  ] = await Promise.all([
-    shortSell.getShortBalance.call(shortTx.id),
-    getBalances(shortTx, baseToken, quoteToken, feeToken),
-    createShortSellTx(accounts, salt++)
-  ]);
+      shortTx.owner = testShortOwner.address;
+      shortTx.loanOffering.owner = testLoanOwner.address;
+      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
-  addValueTx.shortAmount = addValueTx.shortAmount.div(4);
-  addValueTx.id = shortTx.id;
+      await issueTokensAndSetAllowancesForShort(shortTx);
+      const response = await callShort(shortSell, shortTx);
+      shortTx.id = response.id;
 
-  const sellerStartingQuoteToken = shortTx.depositAmount.times(2);
-  await quoteToken.issueTo(shortTx.seller, sellerStartingQuoteToken);
-  await quoteToken.approve(
-    ProxyContract.address,
-    sellerStartingQuoteToken,
-    { from: shortTx.seller }
-  );
+      const [ownsShort, ownsLoan, startingShortBalance] = await Promise.all([
+        testShortOwner.hasReceived.call(shortTx.id, shortTx.seller),
+        testLoanOwner.hasReceived.call(shortTx.id, shortTx.loanOffering.payer),
+        shortSell.getShortBalance.call(shortTx.id),
+      ]);
 
-  // Wait until the next interest period
-  await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
+      expect(ownsShort).to.be.true;
+      expect(ownsLoan).to.be.true;
 
-  return {
-    shortTx,
-    addValueTx,
-    shortSell,
-    baseToken,
-    quoteToken,
-    feeToken,
-    startingShortBalance,
-    startingBalances,
-    sellerStartingQuoteToken
-  };
-}
+      const addAmount = shortTx.shortAmount.div(2);
+      const adder = accounts[8];
+      const quoteTokenAmount = getPartialAmount(
+        addAmount,
+        shortTx.shortAmount,
+        startingShortBalance,
+        true
+      );
 
-async function getBalances(tx, baseToken, quoteToken, feeToken) {
-  const [
-    lenderBaseToken,
-    makerBaseToken,
-    exchangeWrapperBaseToken,
-    sellerQuoteToken,
-    makerQuoteToken,
-    vaultQuoteToken,
-    lenderFeeToken,
-    makerFeeToken,
-    exchangeWrapperFeeToken,
-    sellerFeeToken
-  ] = await Promise.all([
-    baseToken.balanceOf.call(tx.loanOffering.payer),
-    baseToken.balanceOf.call(tx.buyOrder.maker),
-    baseToken.balanceOf.call(ExchangeWrapper.address),
-    quoteToken.balanceOf.call(tx.seller),
-    quoteToken.balanceOf.call(tx.buyOrder.maker),
-    quoteToken.balanceOf.call(Vault.address),
-    feeToken.balanceOf.call(tx.loanOffering.payer),
-    feeToken.balanceOf.call(tx.buyOrder.maker),
-    feeToken.balanceOf.call(ExchangeWrapper.address),
-    feeToken.balanceOf.call(tx.seller),
-  ]);
+      await quoteToken.issueTo(
+        adder,
+        quoteTokenAmount
+      );
+      await quoteToken.approve(
+        ProxyContract.address,
+        quoteTokenAmount,
+        { from: adder }
+      );
 
-  return {
-    lenderBaseToken,
-    makerBaseToken,
-    exchangeWrapperBaseToken,
-    sellerQuoteToken,
-    makerQuoteToken,
-    vaultQuoteToken,
-    lenderFeeToken,
-    makerFeeToken,
-    exchangeWrapperFeeToken,
-    sellerFeeToken
-  }
-}
+      const tx = await shortSell.addValueToShortDirectly(
+        shortTx.id,
+        addAmount,
+        { from: adder }
+      );
+
+      console.log('\tShortSell.addValueToShortDirectly gas used: ' + tx.receipt.gasUsed);
+
+      const short = await getShort(shortSell, shortTx.id);
+
+      expect(short.shortAmount).to.be.bignumber.eq(
+        shortTx.shortAmount.plus(addAmount)
+      );
+
+      const finalShortBalance = await shortSell.getShortBalance.call(shortTx.id);
+      const startingQuoteTokenPerUnit = startingShortBalance.div(shortTx.shortAmount);
+      const finalQuoteTokenPerUnit = finalShortBalance.div(shortTx.shortAmount.plus(addAmount));
+
+      expect(finalQuoteTokenPerUnit).to.be.bignumber.eq(startingQuoteTokenPerUnit);
+
+      const [
+        adderQuoteToken,
+        adderShortValueAdded,
+        adderLoanValueAdded
+      ] = await Promise.all([
+        quoteToken.balanceOf.call(adder),
+        testShortOwner.valueAdded.call(shortTx.id, adder),
+        testLoanOwner.valueAdded.call(shortTx.id, adder),
+      ]);
+
+      expect(adderQuoteToken).to.be.bignumber.eq(0);
+      expect(adderShortValueAdded).to.be.bignumber.eq(addAmount);
+      expect(adderLoanValueAdded).to.be.bignumber.eq(addAmount);
+    });
+  });
+});
