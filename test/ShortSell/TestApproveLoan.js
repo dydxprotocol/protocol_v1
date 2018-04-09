@@ -1,57 +1,81 @@
-/*global artifacts, contract, describe, it*/
+/*global artifacts, contract, describe, before, it*/
 
 const chai = require('chai');
 chai.use(require('chai-bignumber')());
+const BigNumber = require('bignumber.js');
 
 const ShortSell = artifacts.require("ShortSell");
-const {
-  createShortSellTx,
-  callApproveLoanOffering
-} = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { createLoanOffering, signLoanOffering} = require('../helpers/LoanHelper');
+const { getBlockTimestamp } = require('../helpers/NodeHelper');
+const { callApproveLoanOffering } = require('../helpers/ShortSellHelper');
 
 describe('#approveLoanOffering', () => {
-  contract('ShortSell', function(accounts) {
-    it('approves a loan offering', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await createShortSellTx(accounts);
+  let shortSell;
+  let additionalSalt = 888;
 
-      const tx = await callApproveLoanOffering(shortSell, shortTx.loanOffering);
+  async function getNewLoanOffering(accounts) {
+    let loanOffering = await createLoanOffering(accounts);
+    loanOffering.salt += (additionalSalt++);
+    loanOffering.signature = await signLoanOffering(loanOffering);
+    return loanOffering;
+  }
+
+  contract('ShortSell', function(accounts) {
+    before('get shortSell', async () => {
+      shortSell = await ShortSell.deployed();
+    });
+
+    it('approves a loan offering', async () => {
+      const loanOffering = await getNewLoanOffering(accounts);
+
+      const tx = await callApproveLoanOffering(shortSell, loanOffering);
 
       console.log('\tShortSell.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
     });
-  });
 
-  contract('ShortSell', function(accounts) {
     it('succeeds without event if already approved', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await createShortSellTx(accounts);
+      const loanOffering = await getNewLoanOffering(accounts);
 
-      await callApproveLoanOffering(shortSell, shortTx.loanOffering);
+      await callApproveLoanOffering(shortSell, loanOffering);
 
-      await callApproveLoanOffering(shortSell, shortTx.loanOffering);
+      await callApproveLoanOffering(shortSell, loanOffering);
     });
-  });
 
-  contract('ShortSell', function(accounts) {
     it('fails if not approved by the payer', async () => {
-      const shortSell = await ShortSell.deployed();
-      const shortTx = await createShortSellTx(accounts);
+      const loanOffering = await getNewLoanOffering(accounts);
 
       await expectThrow(() =>
         callApproveLoanOffering(
           shortSell,
-          shortTx.loanOffering,
+          loanOffering,
           accounts[9])
       );
     });
-  });
 
-  //TODO: when we can roll-back evm time after this super long wait
-  /*
-  contract('ShortSell', function(_accounts) {
     it('does not approve if past expirationTimestamp anyway', async () => {
+      const loanOffering = await getNewLoanOffering(accounts);
+
+      const tx = await callApproveLoanOffering(shortSell, loanOffering);
+      const now = await getBlockTimestamp(tx.receipt.blockNumber);
+
+      // Test unexpired loan offering
+      let loanOfferingGood = Object.assign({}, loanOffering);
+      loanOfferingGood.expirationTimestamp = new BigNumber(now).plus(1000);
+      loanOfferingGood.signature = await signLoanOffering(loanOfferingGood);
+      await callApproveLoanOffering(
+        shortSell,
+        loanOfferingGood
+      );
+
+      // Test expired loan offering
+      let loanOfferingBad = Object.assign({}, loanOffering);
+      loanOfferingBad.expirationTimestamp = new BigNumber(now);
+      loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
+      await expectThrow(() => callApproveLoanOffering(
+        shortSell,
+        loanOfferingBad
+      ));
     });
   });
-  */
 });
