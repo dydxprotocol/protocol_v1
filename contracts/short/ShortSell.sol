@@ -193,6 +193,14 @@ contract ShortSell is
         );
     }
 
+    /**
+     * Add value to a short sell by directly putting up quote token. The adder will serve as both
+     * the lender and seller.
+     *
+     * @param shortId   Unique ID of the short sell
+     * @param amount    Amount (in base token) to add to the short
+     * @return          Quote token pulled from the adder
+     */
     function addValueToShortDirectly(
         bytes32 shortId,
         uint256 amount
