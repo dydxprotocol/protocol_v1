@@ -14,7 +14,7 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
 const { getOwedAmount } = require('../helpers/CloseShortHelper');
-const { getMaxInterestFee } = require('../helpers/ShortSellHelper');
+const { getMaxInterestFee, callCloseShortDirectly } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   doShort
@@ -70,7 +70,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await shortSellContract.callInLoan(
         shortTx.id,
         0, /*requiredDeposit*/
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       );
       callTimeLimit = shortTx.loanOffering.callTimeLimit;
 
@@ -94,34 +94,37 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await wait(callTimeLimit * 3 / 4);
 
-      await expectThrow(
-        () => shortSellContract.closeShortDirectly(
-          shortTx.id,
-          shortTx.shortAmount.div(2),
-          DutchAuctionCloser.address,
-          { from: dutchBidder }));
+      await expectThrow(() => callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
+        shortTx.shortAmount.div(2),
+        dutchBidder,
+        DutchAuctionCloser.address
+      ));
     });
 
     it('fails if bid too early', async () => {
       await wait(callTimeLimit / 4);
 
-      await expectThrow(
-        () => shortSellContract.closeShortDirectly(
-          shortTx.id,
-          shortTx.shortAmount.div(2),
-          DutchAuctionCloser.address,
-          { from: dutchBidder }));
+      await expectThrow(() => callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
+        shortTx.shortAmount.div(2),
+        dutchBidder,
+        DutchAuctionCloser.address
+      ));
     });
 
     it('fails if bid too late', async () => {
       await wait(callTimeLimit + 1);
 
-      await expectThrow(
-        () => shortSellContract.closeShortDirectly(
-          shortTx.id,
-          shortTx.shortAmount.div(2),
-          DutchAuctionCloser.address,
-          { from: dutchBidder }));
+      await expectThrow(() => callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
+        shortTx.shortAmount.div(2),
+        dutchBidder,
+        DutchAuctionCloser.address
+      ));
     });
 
     it('succeeds for full short', async () => {
@@ -132,28 +135,33 @@ contract('DutchAuctionCloser', function(accounts) {
       const closeAmount = shortTx.shortAmount.div(2);
 
       // closing half is fine
-      const closeTx1 = await shortSellContract.closeShortDirectly(
-        shortTx.id,
+      const closeTx1 = await callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         closeAmount,
-        DutchAuctionCloser.address,
-        { from: dutchBidder });
+        dutchBidder,
+        DutchAuctionCloser.address
+      );
       const owedAmount1 = await getOwedAmount(shortTx, closeTx1, closeAmount);
 
       // closing the other half is fine
-      const closeTx2 = await shortSellContract.closeShortDirectly(
-        shortTx.id,
+      const closeTx2 = await callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
         closeAmount,
-        DutchAuctionCloser.address,
-        { from: dutchBidder });
+        dutchBidder,
+        DutchAuctionCloser.address
+      );
       const owedAmount2 = await getOwedAmount(shortTx, closeTx2, closeAmount);
 
       // cannot close half a third time
-      await expectThrow(
-        () => shortSellContract.closeShortDirectly(
-          shortTx.id,
-          closeAmount,
-          DutchAuctionCloser.address,
-          { from: dutchBidder }));
+      await expectThrow(() => callCloseShortDirectly(
+        shortSellContract,
+        shortTx,
+        closeAmount,
+        dutchBidder,
+        DutchAuctionCloser.address
+      ));
 
       const [
         baseBidder,

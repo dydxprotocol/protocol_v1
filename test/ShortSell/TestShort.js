@@ -68,19 +68,19 @@ describe('#short', () => {
         lenderFeeTokenBalance,
         lenderBaseTokenBalance
       ] = await Promise.all([
-        feeToken.balanceOf.call(shortTx.loanOffering.lender),
-        baseToken.balanceOf.call(shortTx.loanOffering.lender)
+        feeToken.balanceOf.call(shortTx.loanOffering.payer),
+        baseToken.balanceOf.call(shortTx.loanOffering.payer)
       ]);
       await Promise.all([
         feeToken.transfer(
           testSmartContractLender.address,
           lenderFeeTokenBalance,
-          { from: shortTx.loanOffering.lender }
+          { from: shortTx.loanOffering.payer }
         ),
         baseToken.transfer(
           testSmartContractLender.address,
           lenderBaseTokenBalance,
-          { from: shortTx.loanOffering.lender }
+          { from: shortTx.loanOffering.payer }
         )
       ]);
       await Promise.all([
@@ -100,8 +100,8 @@ describe('#short', () => {
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      shortTx.loanOffering.signer = shortTx.loanOffering.lender;
-      shortTx.loanOffering.lender = testSmartContractLender.address;
+      shortTx.loanOffering.signer = shortTx.loanOffering.payer;
+      shortTx.loanOffering.payer = testSmartContractLender.address;
       shortTx.loanOffering.owner = testCallLoanDelegator.address;
       shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
 
@@ -248,7 +248,7 @@ async function checkSuccess(shortSell, shortTx) {
 
   // if atomic owner is specified, then expect it
   if (shortTx.loanOffering.owner === ADDRESSES.ZERO) {
-    expect(short.lender).to.equal(shortTx.loanOffering.lender);
+    expect(short.lender).to.equal(shortTx.loanOffering.payer);
   } else {
     let toReturn = null;
     try {
@@ -291,13 +291,13 @@ async function checkSuccess(shortSell, shortTx) {
     exchangeWrapperFeeToken,
     sellerFeeToken
   ] = await Promise.all([
-    baseToken.balanceOf.call(shortTx.loanOffering.lender),
+    baseToken.balanceOf.call(shortTx.loanOffering.payer),
     baseToken.balanceOf.call(shortTx.buyOrder.maker),
     baseToken.balanceOf.call(ExchangeWrapper.address),
     quoteToken.balanceOf.call(shortTx.seller),
     quoteToken.balanceOf.call(shortTx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
-    feeToken.balanceOf.call(shortTx.loanOffering.lender),
+    feeToken.balanceOf.call(shortTx.loanOffering.payer),
     feeToken.balanceOf.call(shortTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(shortTx.seller),

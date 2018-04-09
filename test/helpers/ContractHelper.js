@@ -11,6 +11,8 @@ async function transact(contractFunction /* , ... */){
   const restOfArgs = [].slice.call(arguments).slice(1);
   const retValue =
     await contractFunction.call.apply(null, restOfArgs);
-  await contractFunction.apply(null, restOfArgs);
-  return retValue;
+  const tx =
+    await contractFunction.apply(null, restOfArgs);
+  tx.result = retValue;
+  return tx;
 }

@@ -4,7 +4,7 @@ const ShortSell = artifacts.require('ShortSell');
 const TestLiquidateDelegator = artifacts.require('TestLiquidateDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
-const { doShort } = require('../helpers/ShortSellHelper');
+const { doShort, callLiquidate } = require('../helpers/ShortSellHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 const expect = require('chai').expect;
 
@@ -23,12 +23,12 @@ describe('#liquidate', () => {
     // Transfer the short position from the short seller to the ERC20 short token
     await shortSell.transferShort(shortTx.id, erc20Short.address, { from: shortTx.seller });
 
-    lender = shortTx.loanOffering.lender;
+    lender = shortTx.loanOffering.payer;
 
     const totalSupply = await erc20Short.totalSupply();
     // Transfer 20% of the short position to the lender
     shortAmount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20Short.transfer(shortTx.loanOffering.lender, shortAmount, { from: initialHolder });
+    await erc20Short.transfer(shortTx.loanOffering.payer, shortAmount, { from: initialHolder });
   }
 
   contract('ShortSell', function(accounts) {
@@ -43,7 +43,7 @@ describe('#liquidate', () => {
       const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
+      await callLiquidate(shortSell, shortTx, shortAmount, lender);
 
       // It should burn the short tokens
       const lenderShortAfter = await erc20Short.balanceOf(lender);
@@ -72,7 +72,7 @@ describe('#liquidate', () => {
       const quoteBalance = await shortSell.getShortBalance(shortTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await shortSell.liquidate(shortTx.id, shortAmount, { from: lender });
+      await callLiquidate(shortSell, shortTx, shortAmount, lender);
 
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);

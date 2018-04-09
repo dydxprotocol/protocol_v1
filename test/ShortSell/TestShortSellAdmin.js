@@ -113,19 +113,19 @@ describe('ShortSellAdmin', () => {
         await shortSell.callInLoan(
           shortTx.id,
           new BigNumber(10),
-          { from: shortTx.loanOffering.lender }
+          { from: shortTx.loanOffering.payer }
         );
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(() => shortSell.cancelLoanCall(
           shortTx.id,
-          { from: shortTx.loanOffering.lender }
+          { from: shortTx.loanOffering.payer }
         ));
 
         await shortSell.setOperationState(OperationState.OPERATIONAL);
         await shortSell.cancelLoanCall(
           shortTx.id,
-          { from: shortTx.loanOffering.lender }
+          { from: shortTx.loanOffering.payer }
         );
       });
     });

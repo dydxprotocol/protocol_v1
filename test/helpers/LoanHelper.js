@@ -17,7 +17,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
     baseToken: BaseToken.address,
     quoteToken: QuoteToken.address,
-    lender: accounts[1],
+    payer: accounts[1],
     signer: accounts[1],
     owner: accounts[1],
     taker: ZeroEx.NULL_ADDRESS,
@@ -62,7 +62,7 @@ async function signLoanOffering(loanOffering) {
     ShortSell.address,
     loanOffering.baseToken,
     loanOffering.quoteToken,
-    loanOffering.lender,
+    loanOffering.payer,
     loanOffering.signer,
     loanOffering.owner,
     loanOffering.taker,
@@ -75,7 +75,7 @@ async function signLoanOffering(loanOffering) {
   loanOffering.loanHash = hash;
 
   const signer = loanOffering.signer === ZeroEx.NULL_ADDRESS
-    ? loanOffering.lender : loanOffering.signer;
+    ? loanOffering.payer : loanOffering.signer;
 
   const signature = await promisify(web3Instance.eth.sign)(
     hash, signer

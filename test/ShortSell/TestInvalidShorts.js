@@ -309,7 +309,7 @@ describe('#closeShort', () => {
           ShortSell.deployed()
         ]);
 
-        shortTx.seller = shortTx.loanOffering.lender;
+        shortTx.seller = shortTx.loanOffering.payer;
         await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
         await expectThrow(() => callCloseShort(shortSell, shortTx, sellOrder, shortTx.shortAmount));
       });

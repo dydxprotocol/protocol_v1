@@ -13,6 +13,7 @@ const {
   doShortAndCall
 } = require('../helpers/ShortSellHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { expectLog } = require('../helpers/EventHelper');
 
 describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
@@ -24,7 +25,7 @@ describe('#forceRecoverLoan', () => {
 
       const tx = await shortSell.forceRecoverLoan(
         shortTx.id,
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       );
 
       console.log('\tShortSell.forceRecoverLoan gas used: ' + tx.receipt.gasUsed);
@@ -46,7 +47,7 @@ describe('#forceRecoverLoan', () => {
         quoteToken.balanceOf.call(vault.address),
         shortSell.containsShort.call(shortTx.id),
         shortSell.isShortClosed.call(shortTx.id),
-        quoteToken.balanceOf.call(shortTx.loanOffering.lender)
+        quoteToken.balanceOf.call(shortTx.loanOffering.payer)
       ]);
 
       expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
@@ -56,6 +57,11 @@ describe('#forceRecoverLoan', () => {
       expect(shortExists).to.be.false;
       expect(isShortClosed).to.be.true;
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
+
+      expectLog(tx.logs[0], 'LoanForceRecovered', {
+        id: shortTx.id,
+        amount: quoteTokenBalance
+      });
     });
   });
 
@@ -86,7 +92,7 @@ describe('#forceRecoverLoan', () => {
       await shortSell.transferLoan(
         shortTx.id,
         testForceRecoverLoanDelegator.address,
-        { from: shortTx.loanOffering.lender });
+        { from: shortTx.loanOffering.payer });
 
       await expectThrow( () => shortSell.forceRecoverLoan(
         shortTx.id,
@@ -133,7 +139,7 @@ describe('#forceRecoverLoan', () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
       await expectThrow( () => shortSell.forceRecoverLoan(
         shortTx.id,
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       ));
     });
   });
@@ -151,14 +157,14 @@ describe('#forceRecoverLoan', () => {
       await wait(almostMaxDuration);
       await expectThrow(() => shortSell.forceRecoverLoan(
         shortTx.id,
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       ));
 
       // now it's okay because current time is past maxDuration+callTimeLimit
       await wait(callTimeLimit + 100);
       await shortSell.forceRecoverLoan(
         shortTx.id,
-        { from: shortTx.loanOffering.lender }
+        { from: shortTx.loanOffering.payer }
       );
     });
   });

@@ -83,6 +83,14 @@ library ShortImpl {
             quoteTokenReceived
         );
 
+        // Comes before updateState() so that ShortInitiated event is before Transferred events
+        recordShortInitiated(
+            shortId,
+            msg.sender,
+            transaction,
+            quoteTokenReceived
+        );
+
         updateState(
             state,
             shortId,
@@ -93,15 +101,6 @@ library ShortImpl {
             state,
             transaction,
             shortId
-        );
-
-        // LOG EVENT
-        // one level of indirection in order to number of variables for solidity compiler
-        recordShortInitiated(
-            shortId,
-            msg.sender,
-            transaction,
-            quoteTokenReceived
         );
 
         return shortId;

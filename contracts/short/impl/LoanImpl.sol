@@ -141,7 +141,7 @@ library LoanImpl {
         uint256    cancelAmount
     )
         public
-        returns (uint256 _cancelledAmount)
+        returns (uint256 _canceledAmount)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
@@ -192,7 +192,11 @@ library LoanImpl {
         require(loanOffering.payer == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
-        state.isLoanApproved[loanOffering.loanHash] = true;
+        if (state.approvedLoans[loanOffering.loanHash]) {
+            return;
+        }
+
+        state.approvedLoans[loanOffering.loanHash] = true;
 
         emit LoanOfferingApproved(
             loanOffering.loanHash,

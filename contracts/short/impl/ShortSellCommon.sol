@@ -272,6 +272,7 @@ library ShortSellCommon {
 
     function parseCloseShortTx(
         ShortSellState.State storage state,
+        Short storage short,
         bytes32 shortId,
         uint256 requestedCloseAmount,
         address payoutRecipient
@@ -280,7 +281,6 @@ library ShortSellCommon {
         view
         returns (CloseShortTx memory _tx)
     {
-        Short storage short = getShortObject(state, shortId);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
         uint256 startingQuoteToken = Vault(state.VAULT).balances(shortId, short.quoteToken);
@@ -299,15 +299,5 @@ library ShortSellCommon {
             startingQuoteToken: startingQuoteToken,
             payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
         });
-    }
-
-    function updateClosedAmount(
-        ShortSellState.State storage state,
-        CloseShortTx transaction
-    )
-        internal
-    {
-        uint256 newClosedAmount = transaction.short.closedAmount.add(transaction.closeAmount);
-        state.shorts[transaction.shortId].closedAmount = newClosedAmount;
     }
 }

@@ -6,6 +6,8 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 function expectLog(log, name, params) {
+  expect(log, name).to.be.not.equal(undefined);
+
   expect(log.event).to.be.equal(name);
 
   for (let key in params) {
@@ -14,17 +16,19 @@ function expectLog(log, name, params) {
     const actual = log.args[key];
 
     if (expected === "unspecified") {
-      expect(actual).to.be.not.equal(undefined);
-    } else if (actual instanceof BigNumber || expected instanceof BigNumber) {
-      expect(actual).to.be.bignumber.equal(new BigNumber(params[key]));
+      expect(actual, key).to.be.not.equal(undefined);
+    } else if (actual instanceof Object || expected instanceof Object) {
+      expect(actual, key).to.be.bignumber.equal(new BigNumber(params[key]));
     } else {
-      console.log(actual, expected);
-      expect(actual).to.be.equal(expected);
+      expect(actual, key).to.be.equal(expected);
     }
   }
 
   for (let key in log.args) {
-    expect(params[key] !== undefined);
+    expect(
+      params[key] !== undefined && params[key] !== null,
+      'did not test for \'' + key + '\' in the event \'' + name + '\''
+    ).to.be.true;
   }
 }
 

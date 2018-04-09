@@ -55,7 +55,7 @@ contract CallLoanDelegator is LoanOwner {
      * the loan-side of a short position.
      *
      * NOTE: If returning true, this contract must assume that ShortSell will either revert the
-     * entire transaction or that the loan call was successfully cancelled
+     * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
      * @param shortId        Id of the short being call-canceled

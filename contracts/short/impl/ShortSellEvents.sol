@@ -40,21 +40,12 @@ contract ShortSellEvents {
      */
     event ShortClosed(
         bytes32 indexed id,
-        uint256 closeAmount,
-        uint256 baseTokenPaidToLender,
-        uint256 shortSellerQuoteToken,
-        uint256 buybackCost
-    );
-
-    /**
-     * A short sell was partially closed
-     */
-    event ShortPartiallyClosed(
-        bytes32 indexed id,
+        address indexed closer,
+        address indexed payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
-        uint256 shortSellerQuoteToken,
+        uint256 quoteTokenPayout,
         uint256 buybackCost
     );
 
@@ -63,15 +54,7 @@ contract ShortSellEvents {
      */
     event LoanLiquidated(
         bytes32 indexed id,
-        uint256 liquidatedAmount,
-        uint256 quoteAmount
-    );
-
-    /**
-     * A loan was partially liquidated
-     */
-    event LoanPartiallyLiquidated(
-        bytes32 indexed id,
+        address indexed liquidator,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
         uint256 quoteAmount
@@ -135,18 +118,18 @@ contract ShortSellEvents {
     );
 
     /**
-     * Ownership of a loan was transfered to a new address
+     * Ownership of a loan was transferred to a new address
      */
-    event LoanTransfered(
+    event LoanTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to
     );
 
     /**
-     * Ownership of a short was transfered to a new address
+     * Ownership of a short was transferred to a new address
      */
-    event ShortTransfered(
+    event ShortTransferred(
         bytes32 indexed id,
         address indexed from,
         address indexed to

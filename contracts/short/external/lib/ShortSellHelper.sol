@@ -25,19 +25,19 @@ library ShortSellHelper {
         ) = ShortSell(SHORT_SELL).getShort(shortId);
 
         return ShortSellCommon.Short({
-            baseToken:       addresses[0],
-            quoteToken:      addresses[1],
-            lender:          addresses[2],
-            seller:          addresses[3],
-            shortAmount:     values256[0],
-            closedAmount:    values256[1],
+            baseToken: addresses[0],
+            quoteToken: addresses[1],
+            lender: addresses[2],
+            seller: addresses[3],
+            shortAmount: values256[0],
+            closedAmount: values256[1],
             requiredDeposit: values256[2],
-            callTimeLimit:   values32[0],
-            startTimestamp:  values32[1],
-            callTimestamp:   values32[2],
-            maxDuration:     values32[3],
-            interestRate:    values32[4],
-            interestPeriod:  values32[5]
+            callTimeLimit: values32[0],
+            startTimestamp: values32[1],
+            callTimestamp: values32[2],
+            maxDuration: values32[3],
+            interestRate: values32[4],
+            interestPeriod: values32[5]
         });
     }
 }
