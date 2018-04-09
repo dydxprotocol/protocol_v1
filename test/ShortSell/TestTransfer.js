@@ -116,7 +116,8 @@ describe('#transferShort', () => {
         false);
       const testShortOwner = await TestShortOwner.new(
         ShortSell.address,
-        testCloseShortDelegator.address);
+        testCloseShortDelegator.address,
+        false);
 
       const tx = await transferShort(
         shortTx,
@@ -133,7 +134,8 @@ describe('#transferShort', () => {
       shortTx = await doShort(accounts);
       const testShortOwner = await TestShortOwner.new(
         ShortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
 
       await transferShort_THROW(shortTx, testShortOwner.address, shortTx.seller);
     });
@@ -145,7 +147,8 @@ describe('#transferShort', () => {
       shortTx = await doShort(accounts);
       const testShortOwner = await TestShortOwner.new(
         ShortSell.address,
-        shortTx.seller);
+        shortTx.seller,
+        false);
 
       await transferShort_THROW(shortTx, testShortOwner.address, shortTx.seller);
     });
@@ -260,7 +263,8 @@ describe('#transferLoan', () => {
         ADDRESSES.ZERO);
       const testLoanOwner = await TestLoanOwner.new(
         shortSell.address,
-        testCallLoanDelegator.address);
+        testCallLoanDelegator.address,
+        false);
 
       const tx = await transferLoan(
         shortTx,
@@ -277,7 +281,8 @@ describe('#transferLoan', () => {
       shortTx = await doShort(accounts);
       const testLoanOwner = await TestLoanOwner.new(
         shortSell.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+        false);
 
       await transferLoan_THROW(shortTx, testLoanOwner.address, shortTx.loanOffering.payer);
     });
@@ -289,7 +294,8 @@ describe('#transferLoan', () => {
       shortTx = await doShort(accounts);
       const testLoanOwner = await TestLoanOwner.new(
         shortSell.address,
-        shortTx.loanOffering.payer);
+        shortTx.loanOffering.payer,
+        false);
 
       await transferLoan_THROW(shortTx, testLoanOwner.address, shortTx.loanOffering.payer);
     });
