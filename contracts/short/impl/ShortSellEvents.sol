@@ -142,6 +142,8 @@ contract ShortSellEvents {
         bytes32 indexed id,
         address indexed shortSeller,
         address indexed lender,
+        address shortOwner,
+        address loanOwner,
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,

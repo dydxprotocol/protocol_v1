@@ -32,6 +32,8 @@ library AddValueToShortImpl {
         bytes32 indexed id,
         address indexed shortSeller,
         address indexed lender,
+        address shortOwner,
+        address loanOwner,
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,
@@ -159,6 +161,8 @@ library AddValueToShortImpl {
             shortId,
             msg.sender,
             msg.sender,
+            short.seller,
+            short.lender,
             "",
             address(0),
             0,
@@ -263,6 +267,8 @@ library AddValueToShortImpl {
     {
         emit ValueAddedToShort(
             shortId,
+            msg.sender,
+            transaction.loanOffering.payer,
             short.seller,
             short.lender,
             transaction.loanOffering.loanHash,

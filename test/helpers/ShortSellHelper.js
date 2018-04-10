@@ -256,6 +256,8 @@ async function expectAddValueToShortLog(shortSell, tx, response) {
     id: shortId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
+    shortOwner: tx.owner,
+    loanOwner: tx.loanOffering.owner,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
