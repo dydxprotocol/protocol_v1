@@ -30,7 +30,7 @@ const {
 
 let salt = DEFAULT_SALT + 1;
 
-describe.only('#addValueToShort', () => {
+describe('#addValueToShort', () => {
   contract('ShortSell', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const {
