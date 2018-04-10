@@ -4,8 +4,9 @@ import string
 import os
 import os.path
 import glob
+import copy
 
-
+# overwrite a single file, fixing the import lines
 def fixImports(filepath):
     itHasStarted = False
     preLines = []
@@ -23,24 +24,25 @@ def fixImports(filepath):
                 postLines.append(line)
 
     # remove unused import lines
+    ogImportLines = copy.deepcopy(importLines);
     importLines = [x for x in importLines if any(x[2] in line for line in postLines)]
 
     # remove duplicate import lines
     temp = set()
-    importLines = [x for x in importLines if x[2] not in temp and (temp.add(x[2] or True))]
+    importLines = [x for x in importLines if x[2] not in temp and (temp.add(x[2]) or True)]
 
     # sort import lines
     sortedImportLines = []
     for line in importLines:
         sortedImportLines.append(line)
     sortedImportLines = sorted(
-        set(sortedImportLines),
+        sortedImportLines,
         key = lambda l:(os.path.dirname(l[5]),
         os.path.basename(l[5]))
     )
 
-    if sortedImportLines != importLines:
-        print(filepath.replace(dir_path, "protocol") + " modified")
+    if sortedImportLines != ogImportLines:
+        print("modified " + filepath.replace(dir_path, "protocol"))
 
     with open(filepath, 'w') as output:
         output.writelines(preLines)
