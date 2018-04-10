@@ -1,10 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { Vault } from "./Vault.sol";
 import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
@@ -15,12 +12,14 @@ import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ShortGetters } from "./impl/ShortGetters.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
-import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
-import { Vault } from "./Vault.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 /**

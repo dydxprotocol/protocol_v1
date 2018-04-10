@@ -1,11 +1,11 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 
 
 /**

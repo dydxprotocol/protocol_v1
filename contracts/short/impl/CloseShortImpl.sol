@@ -1,13 +1,12 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { CloseShortShared } from "./CloseShortShared.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../Vault.sol";
 import { Proxy } from "../Proxy.sol";
+import { Vault } from "../Vault.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**

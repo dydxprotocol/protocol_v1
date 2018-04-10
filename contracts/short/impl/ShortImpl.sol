@@ -1,13 +1,13 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { TransferInternal } from "./TransferInternal.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortShared } from "./ShortShared.sol";
+import { TransferInternal } from "./TransferInternal.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
