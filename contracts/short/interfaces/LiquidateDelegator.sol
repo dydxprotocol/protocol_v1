@@ -39,12 +39,14 @@ contract LiquidateDelegator is LoanOwner {
      * closed. Returning 0 will indicate an error and cause ShortSell to throw.
      *
      * @param liquidator       Address of the caller of the close function
+     * @param payoutRecipient  Address of the recipient of quote tokens paid out
      * @param shortId          Id of the short being closed
      * @param requestedAmount  Amount of the loan being closed
      * @return                 The amount the user is allowed to close for the specified loan
      */
     function liquidateOnBehalfOf(
         address liquidator,
+        address payoutRecipient,
         bytes32 shortId,
         uint256 requestedAmount
     )

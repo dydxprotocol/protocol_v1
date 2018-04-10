@@ -58,7 +58,6 @@ function maybeDeploy0x(deployer, network) {
 async function deployShortSellContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
-    deployer.deploy(LiquidateImpl),
     deployer.deploy(InterestImpl),
     deployer.deploy(ForceRecoverLoanImpl),
     deployer.deploy(LoanImpl),
@@ -69,11 +68,13 @@ async function deployShortSellContracts(deployer) {
 
   await Promise.all([
     CloseShortImpl.link('InterestImpl', InterestImpl.address),
+    LiquidateImpl.link('InterestImpl', InterestImpl.address),
     AddValueToShortImpl.link('InterestImpl', InterestImpl.address),
   ]);
 
   await Promise.all([
     deployer.deploy(CloseShortImpl),
+    deployer.deploy(LiquidateImpl),
     deployer.deploy(AddValueToShortImpl),
   ]);
 

@@ -2,15 +2,9 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { CloseShortShared } from "./CloseShortShared.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../Vault.sol";
-import { Proxy } from "../Proxy.sol";
-import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -49,29 +43,21 @@ library LiquidateImpl {
         address payoutRecipient
     )
         public
-        returns (
-            uint256, // amountClosed
-            uint256  // quoteTokenReceived
-        )
+        returns (uint256, uint256)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
-
-        uint256 liquidationAmount = CloseShortShared.getApprovedLiquidationAmount(
-            short,
+        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.createCloseShortTx(
+            state,
             shortId,
             requestedLiquidationAmount,
-            payoutRecipient
+            payoutRecipient,
+            true
         );
 
-        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.parseCloseShortTx(
+        uint256 quoteTokenPayout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
             state,
-            short,
-            shortId,
-            liquidationAmount,
-            payoutRecipient
+            transaction,
+            0 // No buyback cost
         );
-
-        sendTokens(state, transaction);
 
         CloseShortShared.closeShortStateUpdate(state, transaction);
 
@@ -79,37 +65,11 @@ library LiquidateImpl {
 
         return (
             transaction.closeAmount,
-            transaction.availableQuoteToken
+            quoteTokenPayout
         );
     }
 
     // --------- Helper Functions ---------
-
-    function sendTokens(
-        ShortSellState.State storage state,
-        CloseShortShared.CloseShortTx transaction
-    )
-        internal
-        returns (uint256)
-    {
-        Vault vault = Vault(state.VAULT);
-
-        vault.transferFromVault(
-            transaction.shortId,
-            transaction.short.quoteToken,
-            msg.sender,
-            transaction.availableQuoteToken
-        );
-
-        // The ending quote token balance of the vault should be the starting quote token balance
-        // minus the available quote token amount
-        assert(
-            vault.balances(transaction.shortId, transaction.short.quoteToken)
-            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
-        );
-
-        return transaction.availableQuoteToken;
-    }
 
     function logEventOnLiquidate(
         CloseShortShared.CloseShortTx transaction
@@ -119,6 +79,7 @@ library LiquidateImpl {
         emit LoanLiquidated(
             transaction.shortId,
             msg.sender,
+            transaction.payoutRecipient,
             transaction.closeAmount,
             transaction.currentShortAmount.sub(transaction.closeAmount),
             transaction.availableQuoteToken

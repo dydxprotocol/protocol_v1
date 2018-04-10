@@ -10,6 +10,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
+import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 
 
 /**
@@ -26,14 +27,22 @@ library CloseShortShared {
     // -----------------------
 
     struct CloseShortTx {
-        ShortSellCommon.Short short;
-        uint256 currentShortAmount;
         bytes32 shortId;
+        uint256 currentShortAmount;
         uint256 closeAmount;
-        uint256 availableQuoteToken;
+        uint256 baseTokenOwed;
         uint256 startingQuoteToken;
+        uint256 availableQuoteToken;
         address payoutRecipient;
+        address baseToken;
+        address quoteToken;
+        address shortSeller;
+        address shortLender;
     }
+
+    // -------------------------------------------
+    // ---- Internal Implementation Functions ----
+    // -------------------------------------------
 
     function closeShortStateUpdate(
         ShortSellState.State storage state,
@@ -50,110 +59,161 @@ library CloseShortShared {
         }
     }
 
-    function getApprovedCloseAmount(
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint256 requestedCloseAmount,
-        address payoutRecipient
+    function sendQuoteTokensToPayoutRecipient(
+        ShortSellState.State storage state,
+        CloseShortShared.CloseShortTx memory transaction,
+        uint256 buybackCost
     )
         internal
         returns (uint256)
     {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 newCloseAmount = Math.min256(requestedCloseAmount, currentShortAmount);
+        // Send remaining quote token to payoutRecipient
+        uint256 quoteTokenPayout = transaction.availableQuoteToken.sub(buybackCost);
 
-        // If not the short seller, requires short seller to approve msg.sender
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount =
-                CloseShortDelegator(short.seller).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    shortId,
-                    newCloseAmount
-                );
-            require(allowedCloseAmount <= newCloseAmount);
-            newCloseAmount = allowedCloseAmount;
+        Vault(state.VAULT).transferFromVault(
+            transaction.shortId,
+            transaction.quoteToken,
+            transaction.payoutRecipient,
+            quoteTokenPayout
+        );
+
+        if (AddressUtils.isContract(transaction.payoutRecipient)) {
+            PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
+                transaction.shortId,
+                transaction.closeAmount,
+                msg.sender,
+                transaction.shortSeller,
+                transaction.quoteToken,
+                quoteTokenPayout,
+                transaction.availableQuoteToken
+            );
         }
 
-        require(newCloseAmount > 0);
-        assert(newCloseAmount <= currentShortAmount);
-        assert(newCloseAmount <= requestedCloseAmount);
-        return newCloseAmount;
+        // The ending quote token balance of the vault should be the starting quote token balance
+        // minus the available quote token amount
+        assert(
+            Vault(state.VAULT).balances(transaction.shortId, transaction.quoteToken)
+            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
+        );
+
+        return quoteTokenPayout;
     }
 
-    function getApprovedLiquidationAmount(
-        ShortSellCommon.Short storage short,
+    function createCloseShortTx(
+        ShortSellState.State storage state,
         bytes32 shortId,
-        uint256 requestedLiquidationAmount,
-        address payoutRecipient
+        uint256 requestedAmount,
+        address payoutRecipient,
+        bool isLiquidation
     )
         internal
-        returns (uint256)
+        returns (CloseShortTx memory)
     {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 newLiquidationAmount = Math.min256(requestedLiquidationAmount, currentShortAmount);
+        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // If not the short seller, requires short seller to approve msg.sender
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount =
-                CloseShortDelegator(short.seller).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    shortId,
-                    newLiquidationAmount
-                );
-            require(allowedCloseAmount <= newLiquidationAmount);
-            newLiquidationAmount = allowedCloseAmount;
-        }
+        uint256 closeAmount = getApprovedAmount(
+            short,
+            shortId,
+            requestedAmount,
+            payoutRecipient,
+            isLiquidation
+        );
 
-        // If not the lender, requires lender to approve msg.sender
-        if (short.lender != msg.sender) {
-            uint256 allowedLiquidationAmount =
-                LiquidateDelegator(short.lender).liquidateOnBehalfOf(
-                    msg.sender,
-                    shortId,
-                    newLiquidationAmount
-                );
-            require(allowedLiquidationAmount <= newLiquidationAmount);
-            newLiquidationAmount = allowedLiquidationAmount;
-        }
-
-        require(newLiquidationAmount > 0);
-        assert(newLiquidationAmount <= currentShortAmount);
-        assert(newLiquidationAmount <= requestedLiquidationAmount);
-        return newLiquidationAmount;
+        return parseCloseShortTx(
+            state,
+            short,
+            shortId,
+            closeAmount,
+            payoutRecipient,
+            isLiquidation
+        );
     }
 
     function parseCloseShortTx(
         ShortSellState.State storage state,
         ShortSellCommon.Short storage short,
         bytes32 shortId,
-        uint256 requestedCloseAmount,
-        address payoutRecipient
+        uint256 closeAmount,
+        address payoutRecipient,
+        bool isLiquidation
     )
         internal
         view
-        returns (CloseShortTx memory _tx)
+        returns (CloseShortTx memory)
     {
         require(payoutRecipient != address(0));
 
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
         uint256 startingQuoteToken = Vault(state.VAULT).balances(shortId, short.quoteToken);
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
             startingQuoteToken
         );
+        uint256 baseTokenOwed = 0;
+        if (!isLiquidation) {
+            baseTokenOwed = ShortSellCommon.calculateOwedAmount(
+                short,
+                closeAmount,
+                block.timestamp
+            );
+        }
 
         return CloseShortTx({
-            short: short,
-            currentShortAmount: currentShortAmount,
             shortId: shortId,
+            currentShortAmount: currentShortAmount,
             closeAmount: closeAmount,
-            availableQuoteToken: availableQuoteToken,
+            baseTokenOwed: baseTokenOwed,
             startingQuoteToken: startingQuoteToken,
-            payoutRecipient: payoutRecipient
+            availableQuoteToken: availableQuoteToken,
+            payoutRecipient: payoutRecipient,
+            baseToken: short.baseToken,
+            quoteToken: short.quoteToken,
+            shortSeller: short.seller,
+            shortLender: short.lender
         });
+    }
+
+    function getApprovedAmount(
+        ShortSellCommon.Short storage short,
+        bytes32 shortId,
+        uint256 requestedAmount,
+        address payoutRecipient,
+        bool requireLenderApproval
+    )
+        internal
+        returns (uint256)
+    {
+        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 newAmount = Math.min256(requestedAmount, currentShortAmount);
+
+        // If not the short seller, requires short seller to approve msg.sender
+        if (short.seller != msg.sender) {
+            uint256 allowedCloseAmount = CloseShortDelegator(short.seller).closeOnBehalfOf(
+                msg.sender,
+                payoutRecipient,
+                shortId,
+                newAmount
+            );
+            require(allowedCloseAmount <= newAmount);
+            newAmount = allowedCloseAmount;
+        }
+
+        // If not the lender, requires lender to approve msg.sender
+        if (requireLenderApproval && short.lender != msg.sender) {
+            uint256 allowedLiquidationAmount = LiquidateDelegator(short.lender).liquidateOnBehalfOf(
+                msg.sender,
+                payoutRecipient,
+                shortId,
+                newAmount
+            );
+            require(allowedLiquidationAmount <= newAmount);
+            newAmount = allowedLiquidationAmount;
+        }
+
+        require(newAmount > 0);
+        assert(newAmount <= currentShortAmount);
+        assert(newAmount <= requestedAmount);
+        return newAmount;
     }
 }
