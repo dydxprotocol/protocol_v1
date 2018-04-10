@@ -55,9 +55,10 @@ contract ShortSellEvents {
     event LoanLiquidated(
         bytes32 indexed id,
         address indexed liquidator,
+        address indexed payoutRecipient,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
-        uint256 quoteAmount
+        uint256 quoteTokenPayout
     );
 
     /**

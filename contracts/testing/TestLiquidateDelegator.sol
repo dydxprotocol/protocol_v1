@@ -31,6 +31,7 @@ contract TestLiquidateDelegator is LiquidateDelegator {
 
     function liquidateOnBehalfOf(
         address who,
+        address,
         bytes32,
         uint256 requestedAmount
     )

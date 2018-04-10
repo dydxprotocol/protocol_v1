@@ -303,13 +303,15 @@ contract ShortSell is
      * @param  shortId                        unique id for the short sell
      * @param  requestedLiquidationAmount     amount of the loan to close. The amount closed
      *                                        will be: min(requestedCloseAmount, currentShortAmount)
+     * @param  payoutRecipient                address to send quoteToken payout to
      * @return _amountClosed                  amount of loan closed
      * @return _quoteTokenReceived             amount of quote token received by the lender
      *                                        after closing
      */
     function liquidate(
         bytes32 shortId,
-        uint256 requestedLiquidationAmount
+        uint256 requestedLiquidationAmount,
+        address payoutRecipient
     )
         external
         onlyWhileOperational
@@ -323,7 +325,8 @@ contract ShortSell is
         return LiquidateImpl.liquidateImpl(
             state,
             shortId,
-            requestedLiquidationAmount
+            requestedLiquidationAmount,
+            payoutRecipient
         );
     }
 

@@ -84,13 +84,14 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  shortId          Id of the short
-     * @param  closeAmount      Amount of the short that was closed
-     * @param  shortCloser      Address of the account or contract that closed the short
-     * @param  shortSeller      Address of the owner of the short
+     * @param  shortId           Id of the short
+     * @param  closeAmount       Amount of the short that was closed
+     * @param  shortCloser       Address of the account or contract that closed the short
+     * @param  shortSeller       Address of the owner of the short
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
+     * @return                   True if approved by the reciever
      */
     function receiveCloseShortPayout(
         bytes32 shortId,
@@ -103,6 +104,7 @@ contract DutchAuctionCloser is
     )
         onlyShortSell
         external
+        returns (bool)
     {
         uint256 auctionStartTimestamp;
         uint256 auctionEndTimestamp;
@@ -131,6 +133,8 @@ contract DutchAuctionCloser is
             bidderReward,
             auctionPrice
         );
+
+        return true;
     }
 
     // -----------------------------------
