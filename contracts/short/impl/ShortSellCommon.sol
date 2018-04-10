@@ -8,7 +8,6 @@ import { Vault } from "../Vault.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { InterestImpl } from "./InterestImpl.sol";
 
 
@@ -72,16 +71,6 @@ library ShortSellCommon {
         uint8 v;
         bytes32 r;
         bytes32 s;
-    }
-
-    struct CloseShortTx {
-        Short short;
-        uint256 currentShortAmount;
-        bytes32 shortId;
-        uint256 closeAmount;
-        uint256 availableQuoteToken;
-        uint256 startingQuoteToken;
-        address payoutRecipient;
     }
 
     // -------------------------------------------
@@ -268,36 +257,5 @@ library ShortSellCommon {
         require(short.startTimestamp != 0);
 
         return short;
-    }
-
-    function parseCloseShortTx(
-        ShortSellState.State storage state,
-        Short storage short,
-        bytes32 shortId,
-        uint256 requestedCloseAmount,
-        address payoutRecipient
-    )
-        internal
-        view
-        returns (CloseShortTx memory _tx)
-    {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 closeAmount = Math.min256(requestedCloseAmount, currentShortAmount);
-        uint256 startingQuoteToken = Vault(state.VAULT).balances(shortId, short.quoteToken);
-        uint256 availableQuoteToken = MathHelpers.getPartialAmount(
-            closeAmount,
-            currentShortAmount,
-            startingQuoteToken
-        );
-
-        return CloseShortTx({
-            short: short,
-            currentShortAmount: currentShortAmount,
-            shortId: shortId,
-            closeAmount: closeAmount,
-            availableQuoteToken: availableQuoteToken,
-            startingQuoteToken: startingQuoteToken,
-            payoutRecipient: (payoutRecipient == address(0)) ? msg.sender : payoutRecipient
-        });
     }
 }

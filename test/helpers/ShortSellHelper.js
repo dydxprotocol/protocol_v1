@@ -494,14 +494,22 @@ async function expectCloseLog(shortSell, params) {
   });
 }
 
-async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
+async function callLiquidate(
+  shortSell,
+  shortTx,
+  liquidateAmount,
+  from,
+  payoutRecipient = null
+) {
   const startAmount = await shortSell.getShortUnclosedAmount.call(shortTx.id);
   const startQuote = await shortSell.getShortBalance.call(shortTx.id);
 
+  payoutRecipient = payoutRecipient || from
   const tx = await transact(
     shortSell.liquidate,
     shortTx.id,
     liquidateAmount,
+    payoutRecipient,
     { from: from }
   );
 
@@ -510,9 +518,10 @@ async function callLiquidate(shortSell, shortTx, liquidateAmount, from) {
   expectLog(tx.logs[0], 'LoanLiquidated', {
     id: shortTx.id,
     liquidator: from,
+    payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,
     remainingAmount: startAmount.minus(actualLiquidateAmount),
-    quoteAmount: actualLiquidateAmount.times(startQuote).div(startAmount)
+    quoteTokenPayout: actualLiquidateAmount.times(startQuote).div(startAmount)
   });
 
   return tx;

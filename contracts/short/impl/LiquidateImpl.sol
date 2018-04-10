@@ -4,6 +4,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { CloseShortShared } from "./CloseShortShared.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../Proxy.sol";
@@ -31,9 +32,10 @@ library LiquidateImpl {
     event LoanLiquidated(
         bytes32 indexed id,
         address indexed liquidator,
+        address indexed payoutRecipient,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
-        uint256 quoteAmount
+        uint256 quoteTokenPayout
     );
 
     // -------------------------------------------
@@ -43,7 +45,8 @@ library LiquidateImpl {
     function liquidateImpl(
         ShortSellState.State storage state,
         bytes32 shortId,
-        uint256 requestedLiquidationAmount
+        uint256 requestedLiquidationAmount,
+        address payoutRecipient
     )
         public
         returns (
@@ -53,43 +56,24 @@ library LiquidateImpl {
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        uint256 liquidationAmount = getApprovedLiquidationAmount(
+        uint256 liquidationAmount = CloseShortShared.getApprovedLiquidationAmount(
             short,
             shortId,
             requestedLiquidationAmount,
-            msg.sender
+            payoutRecipient
         );
 
-        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
+        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.parseCloseShortTx(
             state,
             short,
             shortId,
             liquidationAmount,
-            msg.sender
+            payoutRecipient
         );
 
-        Vault vault = Vault(state.VAULT);
+        sendTokens(state, transaction);
 
-        vault.transferFromVault(
-            shortId,
-            transaction.short.quoteToken,
-            msg.sender,
-            transaction.availableQuoteToken
-        );
-
-        // The ending quote token balance of the vault should be the starting quote token balance
-        // minus the available quote token amount
-        assert(
-            vault.balances(shortId, transaction.short.quoteToken)
-            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
-        );
-
-        // Delete the short, or just increase the closedAmount
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            ShortSellCommon.cleanupShort(state, transaction.shortId);
-        } else {
-            short.closedAmount = short.closedAmount.add(transaction.closeAmount);
-        }
+        CloseShortShared.closeShortStateUpdate(state, transaction);
 
         logEventOnLiquidate(transaction);
 
@@ -99,51 +83,36 @@ library LiquidateImpl {
         );
     }
 
-    function getApprovedLiquidationAmount(
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint256 requestedLiquidationAmount,
-        address payoutRecipient
+    // --------- Helper Functions ---------
+
+    function sendTokens(
+        ShortSellState.State storage state,
+        CloseShortShared.CloseShortTx transaction
     )
         internal
         returns (uint256)
     {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 newLiquidationAmount = Math.min256(requestedLiquidationAmount, currentShortAmount);
+        Vault vault = Vault(state.VAULT);
 
-        // If not the short seller, requires short seller to approve msg.sender
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount =
-                CloseShortDelegator(short.seller).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    shortId,
-                    newLiquidationAmount
-                );
-            require(allowedCloseAmount <= newLiquidationAmount);
-            newLiquidationAmount = allowedCloseAmount;
-        }
+        vault.transferFromVault(
+            transaction.shortId,
+            transaction.short.quoteToken,
+            msg.sender,
+            transaction.availableQuoteToken
+        );
 
-        // If not the lender, requires lender to approve msg.sender
-        if (short.lender != msg.sender) {
-            uint256 allowedLiquidationAmount =
-                LiquidateDelegator(short.lender).liquidateOnBehalfOf(
-                    msg.sender,
-                    shortId,
-                    newLiquidationAmount
-                );
-            require(allowedLiquidationAmount <= newLiquidationAmount);
-            newLiquidationAmount = allowedLiquidationAmount;
-        }
+        // The ending quote token balance of the vault should be the starting quote token balance
+        // minus the available quote token amount
+        assert(
+            vault.balances(transaction.shortId, transaction.short.quoteToken)
+            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
+        );
 
-        require(newLiquidationAmount > 0);
-        assert(newLiquidationAmount <= currentShortAmount);
-        assert(newLiquidationAmount <= requestedLiquidationAmount);
-        return newLiquidationAmount;
+        return transaction.availableQuoteToken;
     }
 
     function logEventOnLiquidate(
-        ShortSellCommon.CloseShortTx transaction
+        CloseShortShared.CloseShortTx transaction
     )
         internal
     {

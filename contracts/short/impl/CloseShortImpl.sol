@@ -6,6 +6,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { CloseShortShared } from "./CloseShortShared.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { Proxy } from "../Proxy.sol";
@@ -69,21 +70,16 @@ library CloseShortImpl {
             uint256 baseTokenPaidToLender
         )
     {
-        Order memory order = Order({
-            exchangeWrapperAddress: exchangeWrapperAddress,
-            orderData: orderData
-        });
-
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        uint256 closeAmount = getApprovedCloseAmount(
+        uint256 closeAmount = CloseShortShared.getApprovedCloseAmount(
             short,
             shortId,
             requestedCloseAmount,
             payoutRecipient
         );
 
-        ShortSellCommon.CloseShortTx memory transaction = ShortSellCommon.parseCloseShortTx(
+        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.parseCloseShortTx(
             state,
             short,
             shortId,
@@ -99,20 +95,17 @@ library CloseShortImpl {
         ) = sendTokens(
             state,
             transaction,
-            order
+            Order({
+                exchangeWrapperAddress: exchangeWrapperAddress,
+                orderData: orderData
+            })
         );
 
-        // Delete the short, or just increase the closedAmount
-        if (transaction.closeAmount == transaction.currentShortAmount) {
-            ShortSellCommon.cleanupShort(state, transaction.shortId);
-        } else {
-            short.closedAmount = short.closedAmount.add(transaction.closeAmount);
-        }
+        CloseShortShared.closeShortStateUpdate(state, transaction);
 
         logEventOnClose(
             transaction,
             baseTokenPaidToLender,
-            buybackCost,
             quoteTokenPayout
         );
 
@@ -125,40 +118,9 @@ library CloseShortImpl {
 
     // --------- Helper Functions ---------
 
-    function getApprovedCloseAmount(
-        ShortSellCommon.Short storage short,
-        bytes32 shortId,
-        uint256 requestedCloseAmount,
-        address payoutRecipient
-    )
-        internal
-        returns (uint256)
-    {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
-        uint256 newCloseAmount = Math.min256(requestedCloseAmount, currentShortAmount);
-
-        // If not the short seller, requires short seller to approve msg.sender
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount =
-                CloseShortDelegator(short.seller).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    shortId,
-                    newCloseAmount
-                );
-            require(allowedCloseAmount <= newCloseAmount);
-            newCloseAmount = allowedCloseAmount;
-        }
-
-        require(newCloseAmount > 0);
-        assert(newCloseAmount <= currentShortAmount);
-        assert(newCloseAmount <= requestedCloseAmount);
-        return newCloseAmount;
-    }
-
     function sendTokens(
         ShortSellState.State storage state,
-        ShortSellCommon.CloseShortTx transaction,
+        CloseShortShared.CloseShortTx transaction,
         Order order
     )
         internal
@@ -217,7 +179,7 @@ library CloseShortImpl {
 
     function buyBackBaseToken(
         ShortSellState.State storage state,
-        ShortSellCommon.CloseShortTx transaction,
+        CloseShortShared.CloseShortTx transaction,
         Order order,
         uint256 baseTokenOwedToLender
     )
@@ -270,7 +232,7 @@ library CloseShortImpl {
 
     function sendQuoteTokensOnClose(
         ShortSellState.State storage state,
-        ShortSellCommon.CloseShortTx transaction,
+        CloseShortShared.CloseShortTx transaction,
         uint256 buybackCost
     )
         internal
@@ -304,9 +266,8 @@ library CloseShortImpl {
     }
 
     function logEventOnClose(
-        ShortSellCommon.CloseShortTx transaction,
+        CloseShortShared.CloseShortTx transaction,
         uint256 baseTokenPaidToLender,
-        uint256 buybackCost,
         uint256 quoteTokenPayout
     )
         internal
@@ -319,7 +280,7 @@ library CloseShortImpl {
             transaction.currentShortAmount.sub(transaction.closeAmount),
             baseTokenPaidToLender,
             quoteTokenPayout,
-            buybackCost
+            transaction.availableQuoteToken.sub(quoteTokenPayout)
         );
     }
 
