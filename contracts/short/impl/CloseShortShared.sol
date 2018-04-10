@@ -78,14 +78,16 @@ library CloseShortShared {
         );
 
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
-            PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
-                transaction.shortId,
-                transaction.closeAmount,
-                msg.sender,
-                transaction.shortSeller,
-                transaction.quoteToken,
-                quoteTokenPayout,
-                transaction.availableQuoteToken
+            require(
+                PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
+                    transaction.shortId,
+                    transaction.closeAmount,
+                    msg.sender,
+                    transaction.shortSeller,
+                    transaction.quoteToken,
+                    quoteTokenPayout,
+                    transaction.availableQuoteToken
+                )
             );
         }
 
