@@ -2,9 +2,9 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Vault } from "../Vault.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellStorage } from "./ShortSellStorage.sol";
+import { Vault } from "../Vault.sol";
 
 
 /**
@@ -206,27 +206,31 @@ contract ShortGetters is ShortSellStorage {
      * Get a Short by id. This does not validate the short exists. If the short does not exist
      * all 0's will be returned.
      *
-     * @param  id  unique ID of the short
-     * @return
-     *   Addresses corresponding to:
-     *    [0] = baseToken
-     *    [1] = quoteToken
-     *    [2] = lender
-     *    [3] = seller
-     *  Values corresponding to:
-     *    [0] = shortAmount
-     *    [1] = closedAmount
-     *    [2] = requiredDeposit
-     *  Values corresponding to:
-     *    [0] = callTimeLimit
-     *    [1] = startTimestamp
-     *    [2] = callTimestamp
-     *    [3] = maxDuration
-     *    [4] = interestRate
-     *    [5] = interestPeriod
+     * @param  shortId  Unique ID of the short
+     * @return          Addresses corresponding to:
+     *
+     *                  [0] = baseToken
+     *                  [1] = quoteToken
+     *                  [2] = lender
+     *                  [3] = seller
+     *
+     *                  Values corresponding to:
+     *
+     *                  [0] = shortAmount
+     *                  [1] = closedAmount
+     *                  [2] = requiredDeposit
+     *
+     *                  Values corresponding to:
+     *
+     *                  [0] = callTimeLimit
+     *                  [1] = startTimestamp
+     *                  [2] = callTimestamp
+     *                  [3] = maxDuration
+     *                  [4] = interestRate
+     *                  [5] = interestPeriod
      */
     function getShort(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
@@ -236,7 +240,7 @@ contract ShortGetters is ShortSellStorage {
             uint32[6]
         )
     {
-        ShortSellCommon.Short storage short = state.shorts[id];
+        ShortSellCommon.Short storage short = state.shorts[shortId];
 
         return (
             [
@@ -266,142 +270,142 @@ contract ShortGetters is ShortSellStorage {
     // ---------------------------------
 
     function getShortLender(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (address _lender)
+        returns (address)
     {
-        return state.shorts[id].lender;
+        return state.shorts[shortId].lender;
     }
 
     function getShortSeller(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (address _seller)
+        returns (address)
     {
-        return state.shorts[id].seller;
+        return state.shorts[shortId].seller;
     }
 
     function getShortQuoteToken(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (address _quoteToken)
+        returns (address)
     {
-        return state.shorts[id].quoteToken;
+        return state.shorts[shortId].quoteToken;
     }
 
     function getShortBaseToken(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (address _baseToken)
+        returns (address)
     {
-        return state.shorts[id].baseToken;
+        return state.shorts[shortId].baseToken;
     }
 
     function getShortAmount(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint256 _shortAmount)
+        returns (uint256)
     {
-        return state.shorts[id].shortAmount;
+        return state.shorts[shortId].shortAmount;
     }
 
     function getShortClosedAmount(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint256 _closedAmount)
+        returns (uint256)
     {
-        return state.shorts[id].closedAmount;
+        return state.shorts[shortId].closedAmount;
     }
 
     function getShortUnclosedAmount(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint256 _closedAmount)
+        returns (uint256)
     {
-        return state.shorts[id].shortAmount.sub(state.shorts[id].closedAmount);
+        return state.shorts[shortId].shortAmount.sub(state.shorts[shortId].closedAmount);
     }
 
     function getShortInterestRate(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint256 _interestRate)
+        returns (uint256)
     {
-        return state.shorts[id].interestRate;
+        return state.shorts[shortId].interestRate;
     }
 
     function getShortRequiredDeposit(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint256 _requiredDeposit)
+        returns (uint256)
     {
-        return state.shorts[id].requiredDeposit;
+        return state.shorts[shortId].requiredDeposit;
     }
 
     function getShortStartTimestamp(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint32 _startTimestamp)
+        returns (uint32)
     {
-        return state.shorts[id].startTimestamp;
+        return state.shorts[shortId].startTimestamp;
     }
 
     function getShortCallTimestamp(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint32 _callTimestamp)
+        returns (uint32)
     {
-        return state.shorts[id].callTimestamp;
+        return state.shorts[shortId].callTimestamp;
     }
 
     function getShortCallTimeLimit(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint32 _callTimeLimit)
+        returns (uint32)
     {
-        return state.shorts[id].callTimeLimit;
+        return state.shorts[shortId].callTimeLimit;
     }
 
     function getShortMaxDuration(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint32 _maxDuration)
+        returns (uint32)
     {
-        return state.shorts[id].maxDuration;
+        return state.shorts[shortId].maxDuration;
     }
 
     function getShortinterestPeriod(
-        bytes32 id
+        bytes32 shortId
     )
         view
         external
-        returns (uint32 _maxDuration)
+        returns (uint32)
     {
-        return state.shorts[id].interestPeriod;
+        return state.shorts[shortId].interestPeriod;
     }
 }

@@ -1,16 +1,15 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { ShortSell } from "../ShortSell.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
-import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
-import { ShortSell } from "../ShortSell.sol";
+import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
+import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
+import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 
 
 /**
@@ -76,7 +75,7 @@ contract SharedLoan is
     // Initial lender of the position
     address public INITIAL_LENDER;
 
-    // id of the short this contract is lending for
+    // Unique ID of the short this contract is lending for
     bytes32 public SHORT_ID;
 
     // Addresses that can call in the loan
@@ -140,7 +139,7 @@ contract SharedLoan is
      *
      *  param  (unused)
      * @param  shortId  Unique ID of the short
-     * @return          this address on success, throw otherwise
+     * @return          This address on success, throw otherwise
      */
     function receiveLoanOwnership(
         address /* from */,
@@ -183,7 +182,7 @@ contract SharedLoan is
      * @param  from         Address that lent the additional tokens
      * @param  shortId      Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
-     * @return              true to indicate that this contract consents to value being added
+     * @return              True to indicate that this contract consents to value being added
      */
     function additionalLoanValueAdded(
         address from,
@@ -211,10 +210,10 @@ contract SharedLoan is
     /**
      * Called by ShortSell when another address attempts to margin call the loan this contract owns
      *
-     * @param  who      address attempting to initiate the loan call
-     * @param  shortId  ID of the short
+     * @param  who      Address attempting to initiate the loan call
+     * @param  shortId  Unique ID of the short
      *  param  (unused)
-     * @return          true to consent to the loan being called if the initiator is a trusted
+     * @return          True to consent to the loan being called if the initiator is a trusted
      *                  loan caller, false otherwise
      */
     function callInLoanOnBehalfOf(
@@ -237,9 +236,9 @@ contract SharedLoan is
      * Called by ShortSell when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
-     * @param  who      address attempting to initiate the loan call cancel
-     * @param  shortId  ID of the short
-     * @return          true to consent to the loan call being canceled if the initiator is a
+     * @param  who      Address attempting to initiate the loan call cancel
+     * @param  shortId  Unique ID of the short
+     * @return          True to consent to the loan call being canceled if the initiator is a
      *                  trusted loan caller, false otherwise
      */
     function cancelLoanCallOnBehalfOf(
@@ -263,8 +262,8 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  shortId  ID of the short
-     * @return          true to consent to the loan being force recovered
+     * @param  shortId  Unique ID of the short
+     * @return          True to consent to the loan being force recovered
      */
     function forceRecoverLoanOnBehalfOf(
         address /* who */,
@@ -308,18 +307,16 @@ contract SharedLoan is
      * quote token (if the loan was force recovered). Callable at any time
      *
      * @param  who                  Lender to withdraw for
-     * @return _baseTokenPayout     Amount of base token paid out
-     * @return _quoteTokenPayout    Amount of quote token paid out
+     * @return                      Values corresponding to:
+     *  1) Amount of base token paid out
+     *  2) Amount of quote token paid out
      */
     function withdraw(
         address who
     )
         nonReentrant
         public
-        returns (
-            uint256 _baseTokenPayout,
-            uint256 _quoteTokenPayout
-        )
+        returns (uint256, uint256)
     {
         require(state == State.OPEN || state == State.CLOSED);
 

@@ -14,7 +14,7 @@ import { AccessControlledBase } from "./AccessControlledBase.sol";
  */
 contract OwnedAccessControlled is AccessControlledBase, Ownable {
     // -------------------------------------------
-    // --- Owner Only State Changing Functions ---
+    // --- Owner-Only State-Changing Functions ---
     // -------------------------------------------
 
     function grantAccess(

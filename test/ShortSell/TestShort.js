@@ -123,13 +123,13 @@ describe('#short', () => {
       await issueTokensAndSetAllowancesForShort(shortTx1);
       shortTx1.owner = testLoanOwner.address; // loan owner can't take short
       shortTx1.loanOffering.signature = await signLoanOffering(shortTx1.loanOffering);
-      await expectThrow(() => callShort(shortSell, shortTx1));
+      await expectThrow( callShort(shortSell, shortTx1));
 
       const shortTx2 = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx2);
       shortTx2.loanOffering.owner = testShortOwner.address; // short owner can't take loan
       shortTx2.loanOffering.signature = await signLoanOffering(shortTx2.loanOffering);
-      await expectThrow(() => callShort(shortSell, shortTx2));
+      await expectThrow( callShort(shortSell, shortTx2));
     });
   });
 

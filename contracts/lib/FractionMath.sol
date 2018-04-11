@@ -1,10 +1,16 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { Fraction256 } from "./Fraction256.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Fraction256 } from "./Fraction256.sol";
 
 
+/**
+ * @title FractionMath
+ * @author dYdX
+ *
+ * This library contains safe math functions for manipulating fractions
+ */
 library FractionMath {
     using SafeMath for uint256;
 

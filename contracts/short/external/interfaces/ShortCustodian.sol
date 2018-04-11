@@ -5,6 +5,9 @@ pragma experimental "v0.5.0";
 /**
  * @title ShortCustodian
  * @author dYdX
+ *
+ * Interface to interact with other second-layer contracts. For contracts that own short sell
+ * positions as a proxy for other addresses.
  */
  /* solium-disable-next-line */
 contract ShortCustodian {
@@ -14,12 +17,12 @@ contract ShortCustodian {
      * tokens as a result of closing a short on behalf of another contract.
      *
      * @param  shortId      Unique ID of the short
-     * @return _deedHolder  Address that is
+     * @return              Address of the true owner of the short position
      */
     function getShortSellDeedHolder(
         bytes32 shortId
     )
         external
         view
-        returns (address _deedHolder);
+        returns (address);
 }

@@ -2,12 +2,11 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Proxy } from "./Proxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
-import { Proxy } from "./Proxy.sol";
 
 
 /**
@@ -23,8 +22,7 @@ import { Proxy } from "./Proxy.sol";
 contract Vault is
     StaticAccessControlled,
     HasNoEther,
-    HasNoContracts,
-    ReentrancyGuard {
+    HasNoContracts {
     using SafeMath for uint256;
 
     // ---------------------------
@@ -33,8 +31,8 @@ contract Vault is
 
     address public PROXY;
 
-    // Map from short id to map from token address to amount of that token attributed to the
-    // particular short id.
+    // Map from short ID to map from token address to amount of that token attributed to the
+    // particular short ID
     mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.
@@ -45,17 +43,17 @@ contract Vault is
     // -------------------------
 
     function Vault(
-        address _proxy,
+        address proxy,
         uint256 gracePeriod
     )
         StaticAccessControlled(gracePeriod)
         public
     {
-        PROXY = _proxy;
+        PROXY = proxy;
     }
 
     // --------------------------------------------------
-    // ---- Authorized Only State Changing Functions ----
+    // ---- Authorized-Only State-Changing Functions ----
     // --------------------------------------------------
 
     /**
@@ -72,7 +70,6 @@ contract Vault is
         uint256 amount
     )
         external
-        nonReentrant
         requiresAuthorization
     {
         // First send tokens to this contract
@@ -96,10 +93,10 @@ contract Vault is
     /**
      * Transfers a certain amount of funds to an address.
      *
-     * @param  id          The vault from which to send the tokens
-     * @param  token       ERC20 token address
-     * @param  to          Address to transfer tokens to
-     * @param  amount      Number of the token to be sent
+     * @param  id      The vault from which to send the tokens
+     * @param  token   ERC20 token address
+     * @param  to      Address to transfer tokens to
+     * @param  amount  Number of the token to be sent
      */
     function transferFromVault(
         bytes32 id,
@@ -108,7 +105,6 @@ contract Vault is
         uint256 amount
     )
         external
-        nonReentrant
         requiresAuthorization
     {
         // Next line also asserts that (balances[id][token] >= amount);

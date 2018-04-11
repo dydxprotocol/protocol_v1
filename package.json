@@ -16,7 +16,8 @@
     "coverage": "./node_modules/.bin/solidity-coverage",
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
-    "debug": "truffle debug"
+    "debug": "truffle debug",
+    "dydxlint": "python util/formatimport.py"
   },
   "repository": {
     "type": "git",

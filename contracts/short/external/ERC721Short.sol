@@ -1,17 +1,21 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
+import { ShortSell } from "../ShortSell.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSell } from "../ShortSell.sol";
 
 
 /**
  * @title ERC721Short
  * @author dYdX
+ *
+ * Contract used to tokenize short positions as ERC721-compliant non-fungible tokens. Holding the
+ * token allows the holder to close the short position. Functionality is added to let users approve
+ * other addresses to close their shorts for them.
  */
  /* solium-disable-next-line */
 contract ERC721Short is
@@ -26,15 +30,15 @@ contract ERC721Short is
     // --------------------
 
     event CloserApproval(
-        address indexed _owner,
-        address indexed _approved,
-        bool _isApproved
+        address indexed owner,
+        address indexed approved,
+        bool isApproved
     );
 
     event RecipientApproval(
-        address indexed _owner,
-        address indexed _approved,
-        bool _isApproved
+        address indexed owner,
+        address indexed approved,
+        bool isApproved
     );
 
     // -----------------------------
@@ -52,11 +56,11 @@ contract ERC721Short is
     // -------------------------
 
     function ERC721Short(
-        address _shortSell
+        address shortSell
     )
         ERC721Token("dYdX Short Sells", "dYdX")
         public
-        CloseShortDelegator(_shortSell)
+        CloseShortDelegator(shortSell)
     {
     }
 
@@ -192,7 +196,7 @@ contract ERC721Short is
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Id of the short being closed
+     * @param shortId          Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */

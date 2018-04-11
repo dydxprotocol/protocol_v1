@@ -4,6 +4,12 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
+/**
+ * @title MathHelpers
+ * @author dYdX
+ *
+ * This library helps with common math functions in Solidity
+ */
 library MathHelpers {
     using SafeMath for uint256;
 
@@ -13,7 +19,7 @@ library MathHelpers {
      * @param numerator    Numerator
      * @param denominator  Denominator
      * @param target       Value to calculate partial of
-     * @return rounded-up result of target * numerator / denominator
+     * @return             Rounded-up result of target * numerator / denominator
      */
     function getPartialAmount(
         uint256 numerator,
@@ -35,7 +41,7 @@ library MathHelpers {
      * @param numerator    Numerator
      * @param denominator  Denominator
      * @param target       Value to calculate partial of
-     * @return rounded-up result of target * numerator / denominator
+     * @return             Rounded-up result of target * numerator / denominator
      */
     function getPartialAmountRoundedUp(
         uint256 numerator,
@@ -54,9 +60,9 @@ library MathHelpers {
     /**
      * Calculates division given a numerator and denominator, rounded up.
      *
-     * @param numerator Numerator.
-     * @param denominator Denominator.
-     * @return rounded-up result of numerator / denominator
+     * @param numerator    Numerator.
+     * @param denominator  Denominator.
+     * @return             Rounded-up result of numerator / denominator
      */
     function divisionRoundedUp(
         uint256 numerator,
@@ -78,7 +84,7 @@ library MathHelpers {
     /**
      * Calculates and returns the maximum value for a uint256 in solidity
      *
-     * @return the maximum value for uint256
+     * @return  The maximum value for uint256
      */
     function maxUint256(
     )
@@ -93,6 +99,7 @@ library MathHelpers {
 
     /**
      * Returns the number of bits in a uint256. That is, the lowest number, x, such that n >> x == 0
+     *
      * @param  n  The uint256 to get the number of bits in
      * @return    The number of bits in n
      */

@@ -158,7 +158,7 @@ contract('Vault', function(accounts) {
       await tokenA.approve(proxy.address, num1.times(3), { from: holder1 });
       await vault.grantAccess(accounts[1]);
       await expectThrow(
-        () => vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[2] })
+        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[2] })
       );
 
       await checkBalances();
@@ -171,11 +171,11 @@ contract('Vault', function(accounts) {
       await vault.grantAccess(accounts[1]);
 
       await expectThrow(
-        () => vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
+        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
       );
       await tokenA.issue(num1.times(3), { from: holder1 });
       await expectThrow(
-        () => vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
+        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
       );
 
       const [balance, totalBalance, tokenBalance] = await Promise.all([
@@ -267,12 +267,12 @@ contract('Vault', function(accounts) {
 
       // not okay to overwithdraw, even though those tokens are technically credited to the vault
       await expectAssertFailure(
-        () => vault.transferFromVault(id, tokenA.address, receiver, num1, { from: receiver })
+        vault.transferFromVault(id, tokenA.address, receiver, num1, { from: receiver })
       );
 
       // not okay to withdraw from a bad id
       await expectAssertFailure(
-        () => vault.transferFromVault(id2, tokenA.address, receiver, num1, { from: receiver })
+        vault.transferFromVault(id2, tokenA.address, receiver, num1, { from: receiver })
       );
 
       await checkBalances();
@@ -286,7 +286,7 @@ contract('Vault', function(accounts) {
     it('Does not allow unauthorized addresses to send', async () => {
       // holder1 is not an approved address and therefore cannot simply take their funds back
       await expectThrow(
-        () => vault.transferFromVault(id, tokenA.address, holder1, num1, { from: holder1 })
+        vault.transferFromVault(id, tokenA.address, holder1, num1, { from: holder1 })
       );
 
       await checkBalances();

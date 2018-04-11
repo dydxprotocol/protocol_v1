@@ -1,12 +1,11 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -31,7 +30,7 @@ library LoanImpl {
      * The loan for a short sell was called in
      */
     event LoanCalled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 requiredDeposit
@@ -41,7 +40,7 @@ library LoanImpl {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount
@@ -148,7 +147,7 @@ library LoanImpl {
         uint256    cancelAmount
     )
         public
-        returns (uint256 _canceledAmount)
+        returns (uint256)
     {
         ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
@@ -221,7 +220,7 @@ library LoanImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering _loanOffering)
+        returns (ShortSellCommon.LoanOffering memory)
     {
         ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
             payer: addresses[2],
@@ -259,7 +258,7 @@ library LoanImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.LoanRates _loanRates)
+        returns (ShortSellCommon.LoanRates memory)
     {
         ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
             maxAmount: values256[0],

@@ -59,7 +59,7 @@ describe('#forceRecoverLoan', () => {
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
       expectLog(tx.logs[0], 'LoanForceRecovered', {
-        id: shortTx.id,
+        shortId: shortTx.id,
         amount: quoteTokenBalance
       });
     });
@@ -70,7 +70,7 @@ describe('#forceRecoverLoan', () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow( shortSell.forceRecoverLoan(
         shortTx.id,
         { from: accounts[7] }
       ));
@@ -94,7 +94,7 @@ describe('#forceRecoverLoan', () => {
         testForceRecoverLoanDelegator.address,
         { from: shortTx.loanOffering.payer });
 
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow( shortSell.forceRecoverLoan(
         shortTx.id,
         { from: accounts[6] }
       ));
@@ -137,7 +137,7 @@ describe('#forceRecoverLoan', () => {
   contract('ShortSell', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
-      await expectThrow( () => shortSell.forceRecoverLoan(
+      await expectThrow( shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));
@@ -155,7 +155,7 @@ describe('#forceRecoverLoan', () => {
 
       // loan was not called and it is too early
       await wait(almostMaxDuration);
-      await expectThrow(() => shortSell.forceRecoverLoan(
+      await expectThrow( shortSell.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));

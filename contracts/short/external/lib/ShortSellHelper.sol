@@ -5,6 +5,12 @@ import { ShortSell } from "../../ShortSell.sol";
 import { ShortSellCommon } from "../../impl/ShortSellCommon.sol";
 
 
+/**
+ * @title ShortSellHelper
+ * @author dYdX
+ *
+ * This library contains helper functions for interacting with ShortSell
+ */
 library ShortSellHelper {
     function getShort(
         address SHORT_SELL,
@@ -12,7 +18,7 @@ library ShortSellHelper {
     )
         internal
         view
-        returns (ShortSellCommon.Short memory _short)
+        returns (ShortSellCommon.Short memory)
     {
         address[4] memory addresses;
         uint256[3] memory values256;

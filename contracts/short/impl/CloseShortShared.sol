@@ -1,13 +1,13 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";

@@ -72,7 +72,7 @@ describe('#closeShort', () => {
       const closeAmount = shortTx.shortAmount.div(2);
 
       await expectThrow(
-        () => callCloseShort(
+        callCloseShort(
           shortSell,
           shortTx,
           sellOrder,

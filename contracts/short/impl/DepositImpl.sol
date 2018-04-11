@@ -24,7 +24,7 @@ library DepositImpl {
      * Additional deposit for a short sell was posted by the short seller
      */
     event AdditionalDeposit(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         uint256 amount,
         address depositor
     );
@@ -33,7 +33,7 @@ library DepositImpl {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount

@@ -1,26 +1,27 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
-import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
+import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
+import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 
 
 /**
  * @title DutchAuctionCloser
  * @author dYdX
+ *
+ * Contract for allowing anyone to close a called-in short by using a Dutch auction mechanism to
+ * give a fair price to the short seller. Price paid to the short seller decreases linearly over
+ * time.
  */
  /* solium-disable-next-line */
 contract DutchAuctionCloser is
-    PayoutRecipient,
-    ReentrancyGuard {
+    PayoutRecipient {
     using SafeMath for uint256;
 
     // ------------------------
@@ -77,14 +78,14 @@ contract DutchAuctionCloser is
         CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
 
-    // ----------------------------------------
-    // ---- Public State Chaning functions ----
-    // ----------------------------------------
+    // -------------------------------------------------
+    // ---- ShortSell-Only State-Changing Functions ----
+    // -------------------------------------------------
 
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  shortId           Id of the short
+     * @param  shortId           Unique ID of the short
      * @param  closeAmount       Amount of the short that was closed
      * @param  shortCloser       Address of the account or contract that closed the short
      * @param  shortSeller       Address of the owner of the short

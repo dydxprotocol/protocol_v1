@@ -1,9 +1,9 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 
@@ -68,7 +68,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
      *
      * @param  who    The owner of the tokens
      * @param  token  The address of the ERC20 token
-     * @return The number of tokens able to be moved by the proxy from the address specified
+     * @return        The number of tokens able to be moved by the proxy from the address specified
      */
     function available(
         address who,
@@ -76,7 +76,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
     )
         view
         external
-        returns (uint256 _allowance)
+        returns (uint256)
     {
         return Math.min256(
             TokenInteract.allowance(token, who, address(this)),

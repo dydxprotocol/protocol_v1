@@ -37,8 +37,8 @@ contract ForceRecoverLoanDelegator is LoanOwner {
      * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
-     * @param shortId        Id of the short being call-canceled
-     * @return               true if the user is allowed to cancel the short call, false otherwise
+     * @param shortId        Unique ID of the short
+     * @return               True if the user is allowed to cancel the short call, false otherwise
      */
     function forceRecoverLoanOnBehalfOf(
         address who,

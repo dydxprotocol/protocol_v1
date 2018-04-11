@@ -8,6 +8,13 @@ import { FractionMath } from "../../lib/FractionMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
+/**
+ * @title InterestImpl
+ * @author dYdX
+ *
+ * A library that calculates continuously compounded interest for principal, time period, and
+ * interest rate.
+ */
 library InterestImpl {
     using SafeMath for uint256;
     using FractionMath for Fraction256.Fraction;

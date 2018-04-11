@@ -26,15 +26,15 @@ contract TestToken {
         emit Issue(address(this), who, amount);
     }
 
-    function totalSupply() public view returns (uint256 _supply) {
+    function totalSupply() public view returns (uint256) {
         return supply;
     }
 
-    function balanceOf( address who ) public view returns (uint256 value) {
+    function balanceOf(address who) public view returns (uint256) {
         return balances[who];
     }
 
-    function allowance( address owner, address spender ) public view returns (uint256 _allowance) {
+    function allowance(address owner, address spender) public view returns (uint256) {
         return allowed[owner][spender];
     }
 
@@ -50,7 +50,7 @@ contract TestToken {
         return 18;
     }
 
-    function transfer( address to, uint256 value) public returns (bool ok) {
+    function transfer(address to, uint256 value) public returns (bool) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] -= value;
             balances[to] = balances[to].add(value);
@@ -66,7 +66,7 @@ contract TestToken {
         }
     }
 
-    function transferFrom( address from, address to, uint256 value) public returns (bool ok) {
+    function transferFrom(address from, address to, uint256 value) public returns (bool) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] = balances[to].add(value);
             balances[from] = balances[from].sub(value);
@@ -83,7 +83,7 @@ contract TestToken {
         }
     }
 
-    function approve( address spender, uint256 value ) public returns (bool ok) {
+    function approve(address spender, uint256 value) public returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
             address(this),

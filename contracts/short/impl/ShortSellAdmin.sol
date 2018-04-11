@@ -101,7 +101,7 @@ contract ShortSellAdmin is Ownable {
     }
 
     // -----------------------------------------
-    // -- Owner Only State Changing Functions --
+    // -- Owner-Only State-Changing Functions --
     // -----------------------------------------
 
     function setOperationState(

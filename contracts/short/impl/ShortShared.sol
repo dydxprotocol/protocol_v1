@@ -4,11 +4,11 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
-import { Vault } from "../Vault.sol";
 import { Proxy } from "../Proxy.sol";
+import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**
@@ -47,10 +47,7 @@ library ShortShared {
         bytes orderData
     )
         internal
-        returns (
-            uint256 /* quoteTokenFromSell */,
-            uint256 /* totalQuoteTokenReceived */
-        )
+        returns (uint256, uint256)
     {
         // Validate
         validateShort(
@@ -163,7 +160,7 @@ library ShortShared {
     )
         internal
         pure
-        returns (bool _isValid)
+        returns (bool)
     {
         if (loanOffering.signature.v == 0
             && loanOffering.signature.r == ""
@@ -296,7 +293,7 @@ library ShortShared {
         uint256 sellAmount
     )
         internal
-        returns (uint256 _quoteTokenReceived)
+        returns (uint256)
     {
         uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
             transaction.quoteToken,
@@ -337,7 +334,7 @@ library ShortShared {
     )
         internal
         pure
-        returns (address[9] _addresses)
+        returns (address[9])
     {
         return [
             transaction.baseToken,
@@ -357,7 +354,7 @@ library ShortShared {
     )
         internal
         pure
-        returns (uint256[8] _values)
+        returns (uint256[8])
     {
         return [
             transaction.loanOffering.rates.maxAmount,
@@ -376,7 +373,7 @@ library ShortShared {
     )
         internal
         pure
-        returns (uint32[3] _values)
+        returns (uint32[3])
     {
         return [
             transaction.loanOffering.callTimeLimit,

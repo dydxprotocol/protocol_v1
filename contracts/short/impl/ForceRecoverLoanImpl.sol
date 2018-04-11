@@ -2,11 +2,10 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellState } from "./ShortSellState.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { ShortSellState } from "./ShortSellState.sol";
 import { Vault } from "../Vault.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -26,7 +25,7 @@ library ForceRecoverLoanImpl {
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         uint256 amount
     );
 
@@ -39,17 +38,17 @@ library ForceRecoverLoanImpl {
         bytes32 shortId
     )
         public
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
-        // Can only force recover after the entire call period has elapsed
-        // This can either be after the loan was called or after the maxDuration of the short
-        // position has elapsed (plus the call time)
+        // Can only force recover after either:
+        // 1) The loan was called and the call period has elapsed
+        // 2) The maxDuration of the short has elapsed
         require( /* solium-disable-next-line */
             (
                 short.callTimestamp > 0
-                && block.timestamp >= uint256(short.callTimestamp).add(uint256(short.callTimeLimit))
+                && block.timestamp >= uint256(short.callTimestamp).add(short.callTimeLimit)
             ) || (
                 block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
             )

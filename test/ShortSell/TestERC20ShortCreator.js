@@ -48,7 +48,7 @@ contract('ERC20ShortCreator', function(accounts) {
       }
 
       // cannot read from past the length of the array
-      await expectAssertFailure(() => contract.TRUSTED_RECIPIENTS.call(numRecipients));
+      await expectAssertFailure(contract.TRUSTED_RECIPIENTS.call(numRecipients));
     });
   });
 
@@ -85,7 +85,8 @@ contract('ERC20ShortCreator', function(accounts) {
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
       await expectThrow(
-        () => ERC20ShortCreatorContract.receiveShortOwnership(accounts[0], badId));
+        ERC20ShortCreatorContract.receiveShortOwnership(accounts[0], badId)
+      );
     });
 
     it('succeeds for new short', async () => {

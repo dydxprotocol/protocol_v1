@@ -41,12 +41,12 @@ contract('Proxy', function(accounts) {
       await contract.grantAccess(accounts[1]);
 
       // A random address should not be able to call
-      await expectThrow(() =>
+      await expectThrow(
         contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
       );
       // Nor should the owner
       await expectThrow(
-        () => contract.transferTokens(tokenA.address, holder1, recipient, num1,)
+        contract.transferTokens(tokenA.address, holder1, recipient, num1,)
       );
 
       const [balance, balance2] = await Promise.all([
@@ -59,7 +59,7 @@ contract('Proxy', function(accounts) {
 
     it('fails on insufficient holder balance or allowance', async () => {
       await contract.grantAccess(accounts[2]);
-      await expectThrow(() =>
+      await expectThrow(
         contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 
@@ -67,7 +67,7 @@ contract('Proxy', function(accounts) {
       expect(balance).to.be.bignumber.equal(0);
 
       await tokenA.issue(num1, { from: holder1 });
-      await expectThrow(() =>
+      await expectThrow(
         contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
       );
 

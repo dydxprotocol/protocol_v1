@@ -2,6 +2,12 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 
+/**
+ * @title StringHelpers
+ * @author dYdX
+ *
+ * This library helps with string manipulation in Solidity
+ */
 library StringHelpers {
 
     /**
@@ -9,7 +15,7 @@ library StringHelpers {
      *
      * @param  stringA  The string that goes first
      * @param  stringB  The string that goes second
-     * @return The two strings concatenated
+     * @return          The two strings concatenated
      */
     function strcat(
         bytes stringA,
@@ -17,7 +23,7 @@ library StringHelpers {
     )
         internal
         pure
-        returns (bytes _return)
+        returns (bytes)
     {
         uint256 lengthA = stringA.length;
         uint256 lengthB = stringB.length;
@@ -37,14 +43,14 @@ library StringHelpers {
      * Translates a bytes32 into an ascii hexadecimal representation of those bytes
      *
      * @param  input  The bytes to convert to hexadecimal
-     * @return A representation of the bytes in ascii hexadecimal
+     * @return        A representation of the bytes in ascii hexadecimal
      */
     function bytes32ToHex(
         bytes32 input
     )
         internal
         pure
-        returns (bytes _return)
+        returns (bytes)
     {
         bytes memory numberAsString = new bytes(64);
         uint256 number = uint256(input);

@@ -1,8 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { AccessControlledBase } from "./AccessControlledBase.sol";
 
 
@@ -21,23 +21,23 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
     // -----------------------------
 
     // Timestamp after which no additional access can be granted
-    uint256 public gracePeriodExpiration;
+    uint256 public GRACE_PERIOD_EXPIRATION;
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function StaticAccessControlled(
-        uint256 _gracePeriod
+        uint256 gracePeriod
     )
         Ownable()
         public
     {
-        gracePeriodExpiration = block.timestamp.add(_gracePeriod);
+        GRACE_PERIOD_EXPIRATION = block.timestamp.add(gracePeriod);
     }
 
     // -------------------------------------------
-    // --- Owner Only State Changing Functions ---
+    // --- Owner-Only State-Changing Functions ---
     // -------------------------------------------
 
     function grantAccess(
@@ -46,7 +46,7 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
         onlyOwner
         external
     {
-        require(block.timestamp < gracePeriodExpiration);
+        require(block.timestamp < GRACE_PERIOD_EXPIRATION);
 
         emit AccessGranted(who);
         authorized[who] = true;

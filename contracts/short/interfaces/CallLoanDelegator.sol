@@ -37,9 +37,9 @@ contract CallLoanDelegator is LoanOwner {
      * entire transaction or that the loan was successfully called-in
      *
      * @param who            Address of the caller of the callInLoan function
-     * @param shortId        Id of the short being called
+     * @param shortId        Unique ID of the short
      * @param depositAmount  Amount of quoteToken deposit that will be required to cancel the call
-     * @return               true if the user is allowed to call-in the short, false otherwise
+     * @return               True if the user is allowed to call-in the short, false otherwise
      */
     function callInLoanOnBehalfOf(
         address who,
@@ -58,8 +58,8 @@ contract CallLoanDelegator is LoanOwner {
      * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
-     * @param shortId        Id of the short being call-canceled
-     * @return               true if the user is allowed to cancel the short call, false otherwise
+     * @param shortId        Unique ID of the short
+     * @return               True if the user is allowed to cancel the short call, false otherwise
      */
     function cancelLoanCallOnBehalfOf(
         address who,

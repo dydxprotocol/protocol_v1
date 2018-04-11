@@ -125,7 +125,7 @@ async function callShort(shortSell, tx, safely = true) {
 
 async function expectLogShort(shortSell, shortId, tx, response) {
   expectLog(response.logs[0], 'ShortInitiated', {
-    id: shortId,
+    shortId: shortId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
@@ -147,13 +147,13 @@ async function expectLogShort(shortSell, shortId, tx, response) {
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
     expectLog(response.logs[++logIndex], 'LoanTransferred', {
-      id: shortId,
+      shortId: shortId,
       from: tx.loanOffering.payer,
       to: tx.loanOffering.owner
     });
     if (newLender !== tx.loanOffering.owner) {
       expectLog(response.logs[++logIndex], 'LoanTransferred', {
-        id: shortId,
+        shortId: shortId,
         from: tx.loanOffering.owner,
         to: newLender
       });
@@ -161,13 +161,13 @@ async function expectLogShort(shortSell, shortId, tx, response) {
   }
   if (tx.owner !== tx.seller) {
     expectLog(response.logs[++logIndex], 'ShortTransferred', {
-      id: shortId,
+      shortId: shortId,
       from: tx.seller,
       to: tx.owner
     });
     if (newSeller !== tx.owner) {
       expectLog(response.logs[++logIndex], 'ShortTransferred', {
-        id: shortId,
+        shortId: shortId,
         from: tx.owner,
         to: newSeller
       });
@@ -255,7 +255,7 @@ async function expectAddValueToShortLog(shortSell, tx, response) {
   const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
 
   expectLog(response.logs[0], 'ValueAddedToShort', {
-    id: shortId,
+    shortId: shortId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
     shortOwner: tx.owner,
@@ -485,7 +485,7 @@ async function expectCloseLog(shortSell, params) {
     params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
 
   expectLog(params.tx.logs[0], 'ShortClosed', {
-    id: params.shortTx.id,
+    shortId: params.shortTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
@@ -518,7 +518,7 @@ async function callLiquidate(
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
   expectLog(tx.logs[0], 'LoanLiquidated', {
-    id: shortTx.id,
+    shortId: shortTx.id,
     liquidator: from,
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,

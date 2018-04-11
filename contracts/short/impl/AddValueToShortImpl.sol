@@ -1,20 +1,20 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { ShortSellState } from "./ShortSellState.sol";
+import { ShortShared } from "./ShortShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ShortSellState } from "./ShortSellState.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortShared } from "./ShortShared.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 
 /**
- * @title ShortImpl
+ * @title AddValueToShortImpl
  * @author dYdX
  *
  * This library contains the implementation for the addValueToShort function of ShortSell
@@ -30,7 +30,7 @@ library AddValueToShortImpl {
      * Value was added to a short sell
      */
     event ValueAddedToShort(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed shortSeller,
         address indexed lender,
         address shortOwner,
@@ -59,7 +59,7 @@ library AddValueToShortImpl {
         bytes orderData
     )
         public
-        returns (uint256 _baseTokenPulledFromLender)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -115,7 +115,7 @@ library AddValueToShortImpl {
         uint256 amount
     )
         public
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
@@ -447,7 +447,7 @@ library AddValueToShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.Signature _signature)
+        returns (ShortSellCommon.Signature memory)
     {
         ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
             v: sigV,

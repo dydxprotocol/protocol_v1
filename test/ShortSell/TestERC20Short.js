@@ -239,7 +239,7 @@ contract('ERC20Short', function(accounts) {
         const seller = SHORT.TX.seller;
         const amount = SHORT.TX.shortAmount;
         await expectThrow(
-          () => SHORT.TOKEN_CONTRACT.closeOnBehalfOf(
+          SHORT.TOKEN_CONTRACT.closeOnBehalfOf(
             seller, seller, SHORT.ID, amount.div(2))
         );
       }
@@ -262,7 +262,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => callCloseShortDirectly(
+          callCloseShortDirectly(
             CONTRACTS.SHORT_SELL,
             SHORT.TX,
             SHORT.NUM_TOKENS,
@@ -283,7 +283,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => callCloseShortDirectly(
+          callCloseShortDirectly(
             CONTRACTS.SHORT_SELL,
             SHORT.TX,
             SHORT.NUM_TOKENS,
@@ -301,7 +301,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => callCloseShortDirectly(
+          callCloseShortDirectly(
             CONTRACTS.SHORT_SELL,
             SHORT.TX,
             0,
@@ -359,7 +359,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in SHORTS) {
         const SHORT = SHORTS[type];
         await expectThrow(
-          () => callCloseShortDirectly(
+          callCloseShortDirectly(
             CONTRACTS.SHORT_SELL,
             SHORT.TX,
             SHORT.NUM_TOKENS,
@@ -386,7 +386,7 @@ contract('ERC20Short', function(accounts) {
 
         // try again
         await expectThrow(
-          () => callCloseShortDirectly(
+          callCloseShortDirectly(
             CONTRACTS.SHORT_SELL,
             SHORT.TX,
             SHORT.NUM_TOKENS,
@@ -455,7 +455,7 @@ contract('ERC20Short', function(accounts) {
           SHORT.TX,
           SHORT.NUM_TOKENS
         );
-        await expectThrow(() => CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender }));
+        await expectThrow( CONTRACTS.SHORT_SELL.forceRecoverLoan(SHORT.ID, { from: lender }));
         const tx = await transact(SHORT.TOKEN_CONTRACT.withdraw, seller, { from: seller });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -473,7 +473,7 @@ contract('ERC20Short', function(accounts) {
           SHORT.TX,
           SHORT.NUM_TOKENS.div(2)
         );
-        await expectThrow(() => SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
+        await expectThrow( SHORT.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
       }
     });
 

@@ -2,11 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { ShortSellState } from "./ShortSellState.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
 
 
 /**
@@ -25,7 +22,7 @@ library TransferInternal {
      * Ownership of a loan was transferred to a new address
      */
     event LoanTransferred(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed from,
         address indexed to
     );
@@ -34,7 +31,7 @@ library TransferInternal {
      * Ownership of a short was transferred to a new address
      */
     event ShortTransferred(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed from,
         address indexed to
     );
@@ -50,8 +47,8 @@ library TransferInternal {
      * @param  shortId   The unique ID of the short
      * @param  oldOwner  The previous owner of the loan
      * @param  newOwner  The intended owner of the loan
-     * @return The address that the intended owner wishes to assign the loan to (may be the same
-     * as the intended owner). Zero if ownership is rejected.
+     * @return           The address that the intended owner wishes to assign the loan to (may be
+     *                   the same as the intended owner). Zero if ownership is rejected.
      */
     function grantLoanOwnership(
         bytes32 shortId,
@@ -59,7 +56,7 @@ library TransferInternal {
         address newOwner
     )
         internal
-        returns (address _newOwner)
+        returns (address)
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
@@ -84,8 +81,8 @@ library TransferInternal {
      * @param  shortId   The unique ID of the short
      * @param  oldOwner  The previous owner of the short
      * @param  newOwner  The intended owner of the short
-     * @return The address that the intended owner wishes to assign the short to (may be the same
-     * as the intended owner). Zero if ownership is rejected.
+     * @return           The address that the intended owner wishes to assign the short to (may be
+     *                   the same as the intended owner). Zero if ownership is rejected.
      */
     function grantShortOwnership(
         bytes32 shortId,
@@ -93,7 +90,7 @@ library TransferInternal {
         address newOwner
     )
         internal
-        returns (address _newOwner)
+        returns (address)
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {

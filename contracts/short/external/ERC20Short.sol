@@ -1,26 +1,26 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import { ShortSell } from "../ShortSell.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
+import { TokenInteract } from "../../lib/TokenInteract.sol";
+import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
-import { ShortSell } from "../ShortSell.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
 
 
 /**
  * @title ERC20Short
  * @author dYdX
  *
- * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
+ * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
  * entitled to some amount of quote tokens after settlement.
  */
@@ -92,7 +92,7 @@ contract ERC20Short is
     // All tokens will initially be allocated to this address
     address public INITIAL_TOKEN_HOLDER;
 
-    // id of the short this contract is tokenizing
+    // Unique ID of the short this contract is tokenizing
     bytes32 public SHORT_ID;
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
@@ -140,7 +140,7 @@ contract ERC20Short is
      *
      *  param  (unused)
      * @param  shortId  Unique ID of the short
-     * @return          this address on success, throw otherwise
+     * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
         address /* from */,
@@ -181,7 +181,7 @@ contract ERC20Short is
      * @param  from         Address that added the value to the short position
      * @param  shortId      Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
-     * @return              true to indicate that this contract consents to value being added
+     * @return              True to indicate that this contract consents to value being added
      */
     function additionalShortValueAdded(
         address from,
@@ -213,7 +213,7 @@ contract ERC20Short is
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Id of the short being closed
+     * @param shortId          Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */
@@ -279,14 +279,14 @@ contract ERC20Short is
      * carry out such an attack.
      *
      * @param  who  Address of the account to withdraw for
-     * @return The number of tokens withdrawn
+     * @return      The number of quote tokens withdrawn
      */
     function withdraw(
         address who
     )
         nonReentrant
         external
-        returns (uint256 quoteTokenPayout)
+        returns (uint256)
     {
         // If in OPEN state, but the short is closed, set to CLOSED state
         if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
@@ -304,7 +304,7 @@ contract ERC20Short is
         uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        quoteTokenPayout = MathHelpers.getPartialAmount(
+        uint256 quoteTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
             quoteTokenBalance
@@ -331,7 +331,7 @@ contract ERC20Short is
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The number of decimal places, or revert if the baseToken has no such function.
+     * @return  The number of decimal places, or revert if the baseToken has no such function.
      */
     function decimals()
         external
@@ -350,7 +350,7 @@ contract ERC20Short is
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The name of the short token which includes the hexadecimal shortId of the short
+     * @return  The name of the short token which includes the hexadecimal shortId of the short
      */
     function name()
         external
@@ -377,7 +377,7 @@ contract ERC20Short is
     )
         external
         view
-        returns (address deedHolder)
+        returns (address)
     {
         require(shortId == SHORT_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract

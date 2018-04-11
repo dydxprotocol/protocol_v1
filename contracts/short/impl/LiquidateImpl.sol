@@ -2,7 +2,6 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { CloseShortShared } from "./CloseShortShared.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 
@@ -24,7 +23,7 @@ library LiquidateImpl {
      * A loan was liquidated
      */
     event LoanLiquidated(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,

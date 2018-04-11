@@ -1,10 +1,11 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { Vault } from "./Vault.sol";
 import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
 import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
@@ -15,12 +16,10 @@ import { LoanImpl } from "./impl/LoanImpl.sol";
 import { ShortGetters } from "./impl/ShortGetters.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
 import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
-import { ShortSellCommon } from "./impl/ShortSellCommon.sol";
 import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
 import { ShortSellState } from "./impl/ShortSellState.sol";
 import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
-import { Vault } from "./Vault.sol";
 
 
 /**
@@ -47,16 +46,16 @@ contract ShortSell is
     // -------------------------
 
     function ShortSell(
-        address _vault,
-        address _proxy
+        address vault,
+        address proxy
     )
         Ownable()
         ShortSellAdmin()
         public
     {
         state = ShortSellState.State({
-            VAULT: _vault,
-            PROXY: _proxy
+            VAULT: vault,
+            PROXY: proxy
         });
     }
 
@@ -107,8 +106,8 @@ contract ShortSell is
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      order object to be passed to the exchange wrapper
-     * @return _shortId   unique identifier for the short sell
+     * @param  order      Order object to be passed to the exchange wrapper
+     * @return            Unique ID for the new short
      */
     function short(
         address[11] addresses,
@@ -122,7 +121,7 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
-        returns (bytes32 _shortId)
+        returns (bytes32)
     {
         return ShortImpl.shortImpl(
             state,
@@ -174,8 +173,8 @@ contract ShortSell is
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      order object to be passed to the exchange wrapper
-     * @return _shortId   unique identifier for the short sell
+     * @param  order      Order object to be passed to the exchange wrapper
+     * @return            Amount of base tokens pulled from the lender
      */
     function addValueToShort(
         bytes32     shortId,
@@ -190,7 +189,7 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
-        returns (uint256 _baseTokenPulledFromLender)
+        returns (uint256)
     {
         return AddValueToShortImpl.addValueToShortImpl(
             state,
@@ -211,7 +210,7 @@ contract ShortSell is
      *
      * @param shortId   Unique ID of the short sell
      * @param amount    Amount (in base token) to add to the short
-     * @return          Quote token pulled from the adder
+     * @return          Amount of quote token pulled from the adder
      */
     function addValueToShortDirectly(
         bytes32 shortId,
@@ -220,7 +219,7 @@ contract ShortSell is
         external
         onlyWhileOperational
         nonReentrant
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         return AddValueToShortImpl.addValueToShortDirectlyImpl(
             state,
@@ -234,16 +233,16 @@ contract ShortSell is
     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
     * short position. The short seller is sent quote token stored in the contract.
      *
-     * @param  shortId                  unique id for the short sell
-     * @param  requestedCloseAmount     amount of the short position to close. The amount closed
+     * @param  shortId                  Unique ID for the short sell
+     * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient          address to send remaining quoteToken to after closing
-     * @param  exchangeWrapperAddress   address of the exchange wrapper
-     * @param  order                    order object to be passed to the exchange wrapper
-     * @return _amountClosed            amount of short closed
-     * @return _quoteTokenReceived       amount of quote token received by the short seller
-     *                                  after closing
-     * @return _interestFeeAmount       interest fee in base token paid to the lender
+     * @param  payoutRecipient          Address to send remaining quoteToken to after closing
+     * @param  exchangeWrapperAddress   Address of the exchange wrapper
+     * @param  order                    Order object to be passed to the exchange wrapper
+     * @return                          Values corresponding to:
+     *                                  1) Amount of short closed
+     *                                  2) Amount of quote token recieved by the payoutRecipient
+     *                                  3) Amount of base token paid as interest fee to the lender
      */
     function closeShort(
         bytes32 shortId,
@@ -255,11 +254,7 @@ contract ShortSell is
         external
         closeShortStateControl
         nonReentrant
-        returns (
-            uint256 _amountClosed,
-            uint256 _quoteTokenReceived,
-            uint256 _baseTokenPaidToLender
-        )
+        returns (uint256, uint256, uint256)
     {
         return CloseShortImpl.closeShortImpl(
             state,
@@ -274,14 +269,14 @@ contract ShortSell is
     /**
      * Helper to close a short sell by paying base token directly from the short seller
      *
-     * @param  shortId                  unique id for the short sell
-     * @param  requestedCloseAmount     amount of the short position to close. The amount closed
+     * @param  shortId                  Unique ID for the short sell
+     * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient          address to send remaining quoteToken to after closing
-     * @return _amountClosed            amount of short closed
-     * @return _quoteTokenReceived       amount of quote token received by the short seller
-     *                                  after closing
-     * @return _interestFeeAmount       interest fee in base token paid to the lender
+     * @param  payoutRecipient          Address to send remaining quoteToken to after closing
+     * @return                          Values corresponding to:
+     *                                  1) Amount of short closed
+     *                                  2) Amount of quote token received by the payoutRecipient
+     *                                  3) Amount of base token paid as interest fee to the lender
      */
     function closeShortDirectly(
         bytes32 shortId,
@@ -291,11 +286,7 @@ contract ShortSell is
         external
         closeShortDirectlyStateControl
         nonReentrant
-        returns (
-            uint256 _amountClosed,
-            uint256 _quoteTokenReceived,
-            uint256 _interestFeeAmount
-        )
+        returns (uint256, uint256, uint256)
     {
         return CloseShortImpl.closeShortImpl(
             state,
@@ -312,13 +303,12 @@ contract ShortSell is
      * Must be approved by the short seller (e.g., by requiring the lender to own part of the
      * short position, and burning in order to liquidate part of the loan).
      *
-     * @param  shortId                        unique id for the short sell
-     * @param  requestedLiquidationAmount     amount of the loan to close. The amount closed
-     *                                        will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient                address to send quoteToken payout to
-     * @return _amountClosed                  amount of loan closed
-     * @return _quoteTokenReceived             amount of quote token received by the lender
-     *                                        after closing
+     * @param  shortId                     Unique ID for the short sell
+     * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
+     *                                     will be: min(requestedCloseAmount, currentShortAmount)
+     * @return                             Values corresponding to:
+     *                                     1) Amount of short closed
+     *                                     2) Amount of quote token recieved by the msg.sender
      */
     function liquidate(
         bytes32 shortId,
@@ -326,13 +316,9 @@ contract ShortSell is
         address payoutRecipient
     )
         external
-        onlyWhileOperational
         closeShortStateControl
         nonReentrant
-        returns (
-            uint256 _amountClosed,
-            uint256 _quoteTokenReceived
-        )
+        returns (uint256, uint256)
     {
         return LiquidateImpl.liquidateImpl(
             state,
@@ -349,8 +335,8 @@ contract ShortSell is
      * close the short and repay the loan. If the short seller does not close the short, the
      * lender can use forceRecoverLoan to recover his funds.
      *
-     * @param  shortId          unique id for the short sell
-     * @param  requiredDeposit  amount of deposit the short seller must put up to cancel the call
+     * @param  shortId          Unique ID for the short sell
+     * @param  requiredDeposit  Amount of deposit the short seller must put up to cancel the call
      */
     function callInLoan(
         bytes32 shortId,
@@ -369,7 +355,7 @@ contract ShortSell is
     /**
      * Cancel a loan call. Only callable by the short sell's lender
      *
-     * @param  shortId  unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      */
     function cancelLoanCall(
         bytes32 shortId
@@ -385,14 +371,14 @@ contract ShortSell is
      * Function callable by the lender after the loan has been called-in for the call time limit but
      * remains unclosed. Used to recover the quote tokens held as collateral.
      *
-     * @param  shortId  unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      */
     function forceRecoverLoan(
         bytes32 shortId
     )
         external
         nonReentrant
-        returns (uint256 _quoteTokenAmount)
+        returns (uint256)
     {
         return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, shortId);
     }
@@ -401,8 +387,8 @@ contract ShortSell is
      * Deposit additional quote token as colateral for a short sell loan. Cancels loan call if:
      * 0 < short.requiredDeposit < depositAmount
      *
-     * @param  shortId          unique id for the short sell
-     * @param  depositAmount    additional amount in quote token to deposit
+     * @param  shortId          Unique ID for the short sell
+     * @param  depositAmount    Additional amount in quote token to deposit
      */
     function deposit(
         bytes32 shortId,
@@ -452,7 +438,7 @@ contract ShortSell is
      *  [3] = loan interest update period (in seconds)
      *
      * @param  cancelAmount     Amount to cancel
-     * @return _canceledAmount Amount that was canceled
+     * @return                  Amount that was canceled
      */
     function cancelLoanOffering(
         address[9] addresses,
@@ -463,7 +449,7 @@ contract ShortSell is
         external
         cancelLoanOfferingStateControl
         nonReentrant
-        returns (uint256 _canceledAmount)
+        returns (uint256)
     {
         return LoanImpl.cancelLoanOfferingImpl(
             state,
@@ -529,8 +515,8 @@ contract ShortSell is
      * to all payouts for this loan. Only callable by the lender for a short. If the "who"
      * param is a contract, it must implement the LoanOwner interface.
      *
-     * @param  shortId  unique id for the short sell
-     * @param  who      new owner of the loan
+     * @param  shortId  Unique ID for the short sell
+     * @param  who      New owner of the loan
      */
     function transferLoan(
         bytes32 shortId,
@@ -550,8 +536,8 @@ contract ShortSell is
      * to all payouts for this short. Only callable by the short seller for a short. If the "who"
      * param is a contract, it must implement the ShortOwner interface.
      *
-     * @param  shortId  unique id for the short sell
-     * @param  who      new owner of the short
+     * @param  shortId  Unique ID for the short sell
+     * @param  who      New owner of the short
      */
     function transferShort(
         bytes32 shortId,

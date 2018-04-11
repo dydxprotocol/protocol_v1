@@ -63,7 +63,7 @@ describe('ShortSellAdmin', () => {
       it('Does not allow invalid OperationStates', async () => {
         const shortSell = await ShortSell.deployed();
 
-        await expectAssertFailure(() => shortSell.setOperationState(7));
+        await expectAssertFailure(shortSell.setOperationState(7));
         await expectOperationState(shortSell, OperationState.OPERATIONAL);
       });
     });
@@ -73,7 +73,7 @@ describe('ShortSellAdmin', () => {
         const shortSell = await ShortSell.deployed();
 
         await expectThrow(
-          () => shortSell.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] })
+          shortSell.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] })
         );
         await expectOperationState(shortSell, OperationState.OPERATIONAL);
       });
@@ -98,7 +98,7 @@ describe('ShortSellAdmin', () => {
         await issueTokensAndSetAllowancesForShort(shortTx);
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(() => callShort(shortSell, shortTx));
+        await expectThrow( callShort(shortSell, shortTx));
 
         await shortSell.setOperationState(OperationState.OPERATIONAL);
         await callShort(shortSell, shortTx);
@@ -117,7 +117,7 @@ describe('ShortSellAdmin', () => {
         );
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(() => shortSell.cancelLoanCall(
+        await expectThrow( shortSell.cancelLoanCall(
           shortTx.id,
           { from: shortTx.loanOffering.payer }
         ));
@@ -142,7 +142,7 @@ describe('ShortSellAdmin', () => {
         await quoteToken.approve(ProxyContract.address, amount, { from: shortTx.seller });
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(() => shortSell.deposit(
+        await expectThrow( shortSell.deposit(
           shortTx.id,
           amount,
           { from: shortTx.seller }
@@ -165,7 +165,7 @@ describe('ShortSellAdmin', () => {
         await issueTokensAndSetAllowancesForShort(shortTx);
 
         await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(() => callApproveLoanOffering(
+        await expectThrow( callApproveLoanOffering(
           shortSell,
           shortTx.loanOffering
         ));
@@ -189,7 +189,7 @@ describe('ShortSellAdmin', () => {
 
       await shortSell.setOperationState(state);
       if (shouldFail) {
-        await expectThrow(() =>
+        await expectThrow(
           callCancelLoanOffer(
             shortSell,
             shortTx.loanOffering,
@@ -243,7 +243,7 @@ describe('ShortSellAdmin', () => {
 
       await shortSell.setOperationState(state);
       if (shouldFail) {
-        await expectThrow( () => callCloseShort(shortSell, shortTx, sellOrder, closeAmount) );
+        await expectThrow( callCloseShort(shortSell, shortTx, sellOrder, closeAmount) );
       } else {
         await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
       }
