@@ -110,6 +110,8 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
+        require(filledTakerTokenAmount == requestedFillAmount);
+
         uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
             order.makerTokenAmount,
             order.takerTokenAmount,
@@ -128,6 +130,24 @@ contract ZeroExExchangeWrapper is
     // ---------------------------------
     // --- Public Constant Functions ---
     // ---------------------------------
+
+    function exchange(
+        address /* makerToken */,
+        address /* takerToken */,
+        uint256 requestedFillAmount,
+        bytes orderData
+    )
+        external
+        returns (uint256)
+    {
+        Order memory order = parseOrder(orderData);
+
+        return MathHelpers.getPartialAmount(
+            requestedFillAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+    }
 
     function getTakerTokenPrice(
         address /* makerToken */,

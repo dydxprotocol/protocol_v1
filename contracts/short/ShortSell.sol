@@ -103,15 +103,20 @@ contract ShortSell is
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
+     * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
+     *                              quote token. If false, margin deposit will be pulled in base
+     *                              token, and then sold along with the base token borrowed from
+     *                              the lender
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
     function short(
         address[11] addresses,
-        uint256[9] values256,
+        uint256[9]  values256,
         uint32[4]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,
+        bool        depositInQuoteToken,
         bytes       order
     )
         external
@@ -126,6 +131,7 @@ contract ShortSell is
             values32,
             sigV,
             sigRS,
+            depositInQuoteToken,
             order
         );
     }
@@ -164,6 +170,10 @@ contract ShortSell is
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
+     * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
+     *                              quote token. If false, margin deposit will be pulled in base
+     *                              token, and then sold along with the base token borrowed from
+     *                              the lender
      * @param  order      order object to be passed to the exchange wrapper
      * @return _shortId   unique identifier for the short sell
      */
@@ -174,6 +184,7 @@ contract ShortSell is
         uint32[2]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,
+        bool        depositInQuoteToken,
         bytes       order
     )
         external
@@ -189,6 +200,7 @@ contract ShortSell is
             values32,
             sigV,
             sigRS,
+            depositInQuoteToken,
             order
         );
     }

@@ -32,6 +32,26 @@ contract ExchangeWrapper {
         returns (uint256);
 
     /**
+     * Get amount of makerToken that will be paid our by exchange for a given trade
+     *
+     * @param  makerToken           Address of the maker token, the token to recieve
+     * @param  takerToken           Address of the taker token, the token to pay
+     * @param  requestedFillAmount  Amount of taker token being paid
+     * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
+     * @return                      The amount of makerToken that would be recieved as a result of
+     *                              taking this trade
+     */
+    function getTradeMakerTokenAmount(
+        address makerToken,
+        address takerToken,
+        uint256 requestedFillAmount,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256);
+
+    /**
      * Get amount of takerToken required to buy a certain amount of makerToken given some orderData.
      *
      * @param  makerToken         Address of the maker token, the token to recieve
