@@ -57,7 +57,7 @@ describe('#cancelLoanOffering', () => {
     it('only allows the lender to cancel', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
 
-      await expectThrow(() =>
+      await expectThrow(
         callCancelLoanOffer(
           shortSell,
           loanOffering,
@@ -92,7 +92,7 @@ describe('#cancelLoanOffering', () => {
       let loanOfferingBad = Object.assign({}, loanOffering);
       loanOfferingBad.expirationTimestamp = new BigNumber(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
-      await expectThrow(() => callCancelLoanOffer(
+      await expectThrow( callCancelLoanOffer(
         shortSell,
         loanOfferingBad,
         cancelAmount

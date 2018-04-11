@@ -56,7 +56,7 @@ contract('ERC721Short', function(accounts) {
   describe('#receiveShortOwnership', () => {
     it('fails for arbitrary caller', async () => {
       await expectThrow(
-        () => ERC721ShortContract.receiveShortOwnership(accounts[0], BYTES32.BAD_ID));
+        ERC721ShortContract.receiveShortOwnership(accounts[0], BYTES32.BAD_ID));
     });
 
     it('succeeds for new short', async () => {
@@ -87,7 +87,7 @@ contract('ERC721Short', function(accounts) {
   describe('#getShortSellDeedHolder', () => {
     it('fails for bad shortId', async () => {
       await expectThrow(
-        () => ERC721ShortContract.getShortSellDeedHolder(BYTES32.BAD_ID));
+        ERC721ShortContract.getShortSellDeedHolder(BYTES32.BAD_ID));
     });
 
     it('succeeds for owned short', async () => {
@@ -131,7 +131,7 @@ contract('ERC721Short', function(accounts) {
 
     it('throws when address approves itself', async () => {
       await expectThrow(
-        () => ERC721ShortContract.approveCloser(helper, true, { from: helper }));
+        ERC721ShortContract.approveCloser(helper, true, { from: helper }));
     });
   });
 
@@ -181,19 +181,19 @@ contract('ERC721Short', function(accounts) {
 
     it('succeeds when called by ownerOf', async () => {
       await ERC721ShortContract.transferShort(shortTx.id, receiver, { from: shortSeller });
-      await expectThrow(() => ERC721ShortContract.ownerOf.call(uint256(shortTx.id)));
+      await expectThrow( ERC721ShortContract.ownerOf.call(uint256(shortTx.id)));
       const newOwner = await shortSellContract.getShortSeller.call(shortTx.id);
       expect(newOwner).to.equal(receiver);
     });
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        () => ERC721ShortContract.transferShort(shortTx.id, receiver, { from: accounts[2] }));
+        ERC721ShortContract.transferShort(shortTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existant short', async () => {
       await expectThrow(
-        () => ERC721ShortContract.transferShort(BYTES32.BAD_ID, receiver, { from: shortSeller }));
+        ERC721ShortContract.transferShort(BYTES32.BAD_ID, receiver, { from: shortSeller }));
     });
   });
 
@@ -251,7 +251,7 @@ contract('ERC721Short', function(accounts) {
 
     it('fails for non-approved recipients/closers', async () => {
       await initBase(unapprovedAcct);
-      await expectThrow(() => callCloseShortDirectly(
+      await expectThrow( callCloseShortDirectly(
         shortSellContract,
         shortTx,
         shortTx.shortAmount,

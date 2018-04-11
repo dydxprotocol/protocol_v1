@@ -75,7 +75,7 @@ describe('#callInLoan', () => {
       shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await expectThrow(() => shortSell.callInLoan(
+      await expectThrow( shortSell.callInLoan(
         shortTx.id,
         REQUIRED_DEPOSIT,
         { from: accounts[6] }
@@ -104,7 +104,7 @@ describe('#callInLoan', () => {
       let short = await getShort(shortSell, shortTx.id);
       expect(short.callTimestamp).to.be.bignumber.equal(0);
 
-      await expectThrow(() => shortSell.callInLoan(
+      await expectThrow( shortSell.callInLoan(
         shortTx.id,
         REQUIRED_DEPOSIT,
         { from: accounts[6] }
@@ -127,7 +127,7 @@ describe('#callInLoan', () => {
 
       await callInLoan(shortTx);
 
-      await expectThrow(() => shortSell.callInLoan(
+      await expectThrow( shortSell.callInLoan(
         shortTx.id,
         REQUIRED_DEPOSIT.plus(REQUIRED_DEPOSIT),
         { from: shortTx.loanOffering.payer }
@@ -187,7 +187,7 @@ describe('#cancelLoanCall', () => {
 
       const shortCalledTimestamp = await getCallTimestamp(callTx);
 
-      await expectThrow(() => shortSell.cancelLoanCall(
+      await expectThrow( shortSell.cancelLoanCall(
         shortTx.id,
         { from: accounts[6] }
       ));
@@ -203,7 +203,7 @@ describe('#cancelLoanCall', () => {
       shortSell = await ShortSell.deployed();
       const shortTx = await doShort(accounts);
 
-      await expectThrow(() => shortSell.cancelLoanCall(
+      await expectThrow( shortSell.cancelLoanCall(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));
@@ -227,7 +227,7 @@ describe('#cancelLoanCall', () => {
       let short = await getShort(shortSell, shortTx.id);
       expect(short.callTimestamp).to.be.bignumber.not.equal(0);
 
-      await expectThrow(() => shortSell.cancelLoanCall(
+      await expectThrow( shortSell.cancelLoanCall(
         shortTx.id,
         { from: accounts[6] }
       ));

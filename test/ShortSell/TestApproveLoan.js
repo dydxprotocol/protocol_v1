@@ -45,7 +45,7 @@ describe('#approveLoanOffering', () => {
     it('fails if not approved by the payer', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
 
-      await expectThrow(() =>
+      await expectThrow(
         callApproveLoanOffering(
           shortSell,
           loanOffering,
@@ -72,7 +72,7 @@ describe('#approveLoanOffering', () => {
       let loanOfferingBad = Object.assign({}, loanOffering);
       loanOfferingBad.expirationTimestamp = new BigNumber(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
-      await expectThrow(() => callApproveLoanOffering(
+      await expectThrow( callApproveLoanOffering(
         shortSell,
         loanOfferingBad
       ));

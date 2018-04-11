@@ -1,18 +1,18 @@
 const expect = require('chai').expect;
 
 // For solidity function calls that violate require()
-async function expectThrow(call) {
+async function expectThrow(promise) {
   try {
-    await call();
+    await promise;
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, 'Exception while processing transaction: revert');
   }
 }
 // For solidity function calls that violate assert()
-async function expectAssertFailure(call) {
+async function expectAssertFailure(promise) {
   try {
-    await call();
+    await promise;
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, 'Exception while processing transaction: invalid opcode');

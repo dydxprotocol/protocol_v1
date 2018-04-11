@@ -145,7 +145,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration / 10;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow(() => callAddValueToShort(shortSell, addValueTx));
+      await expectThrow( callAddValueToShort(shortSell, addValueTx));
     });
   });
 
@@ -187,7 +187,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit - 1;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow(() => callAddValueToShort(shortSell, addValueTx));
+      await expectThrow( callAddValueToShort(shortSell, addValueTx));
     });
   });
 

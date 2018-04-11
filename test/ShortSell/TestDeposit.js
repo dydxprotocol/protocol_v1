@@ -42,7 +42,7 @@ describe('#deposit', () => {
   contract('ShortSell', function(accounts) {
     it('doesnt allow anyone but short seller to deposit', async () => {
       const shortTx = await doShort(accounts);
-      await expectThrow(() =>
+      await expectThrow(
         doDeposit({
           from: accounts[9],
           shortTx,
@@ -55,7 +55,7 @@ describe('#deposit', () => {
     it('fails for invalid shortId', async () => {
       const shortTx = await doShort(accounts);
 
-      await expectThrow(() =>
+      await expectThrow(
         doDeposit({
           from: shortTx.seller,
           shortTx: { id: BYTES32.BAD_ID },
@@ -69,7 +69,7 @@ describe('#deposit', () => {
     it('fails on zero-amount deposit', async () => {
       const shortTx = await doShort(accounts);
 
-      await expectThrow(() =>
+      await expectThrow(
         doDeposit({
           from: shortTx.seller,
           shortTx,

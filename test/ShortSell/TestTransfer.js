@@ -21,7 +21,7 @@ describe('#transferShort', () => {
 
   async function transferShort_THROW(shortTx, to, from) {
     const originalSeller = await shortSell.getShortSeller(shortTx.id);
-    await expectThrow(() =>
+    await expectThrow(
       shortSell.transferShort(shortTx.id, to, { from: from })
     );
     const seller = await shortSell.getShortSeller(shortTx.id);
@@ -168,7 +168,7 @@ describe('#transferLoan', () => {
 
   async function transferLoan_THROW(shortTx, to, from,) {
     const originalLender = await shortSell.getShortLender(shortTx.id);
-    await expectThrow(() =>
+    await expectThrow(
       shortSell.transferLoan(shortTx.id, to, { from: from })
     );
     const lender = await shortSell.getShortLender(shortTx.id);
