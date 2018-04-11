@@ -44,7 +44,7 @@ contract CloseShortDelegator is ShortOwner {
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Id of the short being closed
+     * @param shortId          Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */

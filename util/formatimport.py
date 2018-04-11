@@ -101,13 +101,9 @@ def main():
     for dir,_,_ in os.walk(dir_path+"/contracts"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
 
-    whitelistedFiles = [
-        "contracts/0x",
-        "contracts/interfaces",
-        "Migrations.sol",
-        "/Test",
-        "/test"
-    ]
+    whitelistedFiles = open(dir_path + "/.soliumignore", 'r').readlines()
+    whitelistedFiles = [x.strip() for x in whitelistedFiles]
+
     files = [x for x in files if not any(white in x for white in whitelistedFiles)]
 
     everythingOkay = True

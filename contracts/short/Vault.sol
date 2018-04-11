@@ -31,8 +31,8 @@ contract Vault is
 
     address public PROXY;
 
-    // Map from short id to map from token address to amount of that token attributed to the
-    // particular short id.
+    // Map from short ID to map from token address to amount of that token attributed to the
+    // particular short ID
     mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.
@@ -93,10 +93,10 @@ contract Vault is
     /**
      * Transfers a certain amount of funds to an address.
      *
-     * @param  id          The vault from which to send the tokens
-     * @param  token       ERC20 token address
-     * @param  to          Address to transfer tokens to
-     * @param  amount      Number of the token to be sent
+     * @param  id      The vault from which to send the tokens
+     * @param  token   ERC20 token address
+     * @param  to      Address to transfer tokens to
+     * @param  amount  Number of the token to be sent
      */
     function transferFromVault(
         bytes32 id,

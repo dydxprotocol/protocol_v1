@@ -106,8 +106,8 @@ contract ShortSell is
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      order object to be passed to the exchange wrapper
-     * @return            Unique identifier for the new short
+     * @param  order      Order object to be passed to the exchange wrapper
+     * @return            Unique ID for the new short
      */
     function short(
         address[11] addresses,
@@ -173,7 +173,7 @@ contract ShortSell is
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      order object to be passed to the exchange wrapper
+     * @param  order      Order object to be passed to the exchange wrapper
      * @return            Amount of base tokens pulled from the lender
      */
     function addValueToShort(
@@ -233,12 +233,12 @@ contract ShortSell is
     * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
     * short position. The short seller is sent quote token stored in the contract.
      *
-     * @param  shortId                  unique id for the short sell
-     * @param  requestedCloseAmount     amount of the short position to close. The amount closed
+     * @param  shortId                  Unique ID for the short sell
+     * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
-     * @param  payoutRecipient          address to send remaining quoteToken to after closing
-     * @param  exchangeWrapperAddress   address of the exchange wrapper
-     * @param  order                    order object to be passed to the exchange wrapper
+     * @param  payoutRecipient          Address to send remaining quoteToken to after closing
+     * @param  exchangeWrapperAddress   Address of the exchange wrapper
+     * @param  order                    Order object to be passed to the exchange wrapper
      * @return                          Values corresponding to:
      *                                  1) Amount of short closed
      *                                  2) Amount of quote token recieved by the payoutRecipient
@@ -269,7 +269,7 @@ contract ShortSell is
     /**
      * Helper to close a short sell by paying base token directly from the short seller
      *
-     * @param  shortId                  Unique id for the short sell
+     * @param  shortId                  Unique ID for the short sell
      * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
@@ -303,7 +303,7 @@ contract ShortSell is
      * Must be approved by the short seller (e.g., by requiring the lender to own part of the
      * short position, and burning in order to liquidate part of the loan).
      *
-     * @param  shortId                     Unique id for the short sell
+     * @param  shortId                     Unique ID for the short sell
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
      *                                     will be: min(requestedCloseAmount, currentShortAmount)
      * @return                             Values corresponding to:
@@ -335,7 +335,7 @@ contract ShortSell is
      * close the short and repay the loan. If the short seller does not close the short, the
      * lender can use forceRecoverLoan to recover his funds.
      *
-     * @param  shortId          Unique id for the short sell
+     * @param  shortId          Unique ID for the short sell
      * @param  requiredDeposit  Amount of deposit the short seller must put up to cancel the call
      */
     function callInLoan(
@@ -355,7 +355,7 @@ contract ShortSell is
     /**
      * Cancel a loan call. Only callable by the short sell's lender
      *
-     * @param  shortId  Unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      */
     function cancelLoanCall(
         bytes32 shortId
@@ -371,7 +371,7 @@ contract ShortSell is
      * Function callable by the lender after the loan has been called-in for the call time limit but
      * remains unclosed. Used to recover the quote tokens held as collateral.
      *
-     * @param  shortId  Unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      */
     function forceRecoverLoan(
         bytes32 shortId
@@ -387,7 +387,7 @@ contract ShortSell is
      * Deposit additional quote token as colateral for a short sell loan. Cancels loan call if:
      * 0 < short.requiredDeposit < depositAmount
      *
-     * @param  shortId          Unique id for the short sell
+     * @param  shortId          Unique ID for the short sell
      * @param  depositAmount    Additional amount in quote token to deposit
      */
     function deposit(
@@ -515,7 +515,7 @@ contract ShortSell is
      * to all payouts for this loan. Only callable by the lender for a short. If the "who"
      * param is a contract, it must implement the LoanOwner interface.
      *
-     * @param  shortId  Unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      * @param  who      New owner of the loan
      */
     function transferLoan(
@@ -536,7 +536,7 @@ contract ShortSell is
      * to all payouts for this short. Only callable by the short seller for a short. If the "who"
      * param is a contract, it must implement the ShortOwner interface.
      *
-     * @param  shortId  Unique id for the short sell
+     * @param  shortId  Unique ID for the short sell
      * @param  who      New owner of the short
      */
     function transferShort(

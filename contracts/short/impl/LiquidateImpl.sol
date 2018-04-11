@@ -23,7 +23,7 @@ library LiquidateImpl {
      * A loan was liquidated
      */
     event LoanLiquidated(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,

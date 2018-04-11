@@ -34,7 +34,7 @@ contract ShortOwner is OnlyShortSell {
      * transferShort function or the atomic-assign to the "owner" field when opening a short.
      *
      * @param  from     Address of the previous owner
-     * @param  shortId  Id of the short that was reassigned
+     * @param  shortId  Unique ID of the short
      * @return          The address to pass short ownership to. Own address to keep short ownership,
                         0x0 to reject loan ownership completely.
      */
@@ -52,10 +52,10 @@ contract ShortOwner is OnlyShortSell {
      * during ShortSell#addValueToShort. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
-     * @param  from         address initiating the addition of funds to the position
-     * @param  shortId      id of the short
-     * @param  amountAdded  amount to be added to the position
-     * @return              true if the contract consents to additional value being added,
+     * @param  from         Address initiating the addition of funds to the position
+     * @param  shortId      Unique ID of the short
+     * @param  amountAdded  Amount to be added to the position
+     * @return              True if the contract consents to additional value being added,
      *                      false otherwise
      */
     function additionalShortValueAdded(

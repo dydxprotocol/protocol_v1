@@ -49,7 +49,7 @@ contract LoanOfferingVerifier {
      *  [1] = loan maxDuration (in seconds)
      *  [2] = interest update period (in seconds)
      *
-     * @return              true if the contract consents to this loan, false if not.
+     * @return              True if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(

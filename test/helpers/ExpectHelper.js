@@ -9,7 +9,6 @@ async function expectThrow(call) {
     assertCertainError(e, 'Exception while processing transaction: revert');
   }
 }
-
 // For solidity function calls that violate assert()
 async function expectAssertFailure(call) {
   try {

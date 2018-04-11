@@ -68,7 +68,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
      *
      * @param  who    The owner of the tokens
      * @param  token  The address of the ERC20 token
-     * @return The number of tokens able to be moved by the proxy from the address specified
+     * @return        The number of tokens able to be moved by the proxy from the address specified
      */
     function available(
         address who,

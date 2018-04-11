@@ -92,7 +92,7 @@ contract ERC20Short is
     // All tokens will initially be allocated to this address
     address public INITIAL_TOKEN_HOLDER;
 
-    // id of the short this contract is tokenizing
+    // Unique ID of the short this contract is tokenizing
     bytes32 public SHORT_ID;
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
@@ -213,7 +213,7 @@ contract ERC20Short is
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Id of the short being closed
+     * @param shortId          Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */
@@ -331,7 +331,7 @@ contract ERC20Short is
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The number of decimal places, or revert if the baseToken has no such function.
+     * @return  The number of decimal places, or revert if the baseToken has no such function.
      */
     function decimals()
         external
@@ -350,7 +350,7 @@ contract ERC20Short is
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return The name of the short token which includes the hexadecimal shortId of the short
+     * @return  The name of the short token which includes the hexadecimal shortId of the short
      */
     function name()
         external

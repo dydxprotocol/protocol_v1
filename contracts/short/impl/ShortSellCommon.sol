@@ -231,13 +231,13 @@ library ShortSellCommon {
 
     function containsShortImpl(
         ShortSellState.State storage state,
-        bytes32 id
+        bytes32 shortId
     )
         view
         internal
         returns (bool)
     {
-        return state.shorts[id].startTimestamp != 0;
+        return state.shorts[shortId].startTimestamp != 0;
     }
 
     function getShortObject(

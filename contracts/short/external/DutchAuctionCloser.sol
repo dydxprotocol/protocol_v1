@@ -14,6 +14,7 @@ import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
 /**
  * @title DutchAuctionCloser
  * @author dYdX
+ *
  */
  /* solium-disable-next-line */
 contract DutchAuctionCloser is
@@ -81,7 +82,7 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  shortId           Id of the short
+     * @param  shortId           Unique ID of the short
      * @param  closeAmount       Amount of the short that was closed
      * @param  shortCloser       Address of the account or contract that closed the short
      * @param  shortSeller       Address of the owner of the short

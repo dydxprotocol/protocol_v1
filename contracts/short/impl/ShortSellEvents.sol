@@ -19,7 +19,7 @@ contract ShortSellEvents {
      * A short sell occurred
      */
     event ShortInitiated(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,
@@ -39,7 +39,7 @@ contract ShortSellEvents {
      * A short sell was closed
      */
     event ShortClosed(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed closer,
         address indexed payoutRecipient,
         uint256 closeAmount,
@@ -53,7 +53,7 @@ contract ShortSellEvents {
      * A loan was liquidated
      */
     event LoanLiquidated(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
@@ -65,7 +65,7 @@ contract ShortSellEvents {
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         uint256 amount
     );
 
@@ -73,7 +73,7 @@ contract ShortSellEvents {
      * The loan for a short sell was called in
      */
     event LoanCalled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 requiredDeposit
@@ -83,7 +83,7 @@ contract ShortSellEvents {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount
@@ -113,7 +113,7 @@ contract ShortSellEvents {
      * Additional deposit for a short sell was posted by the short seller
      */
     event AdditionalDeposit(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         uint256 amount,
         address depositor
     );
@@ -122,7 +122,7 @@ contract ShortSellEvents {
      * Ownership of a loan was transferred to a new address
      */
     event LoanTransferred(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed from,
         address indexed to
     );
@@ -131,7 +131,7 @@ contract ShortSellEvents {
      * Ownership of a short was transferred to a new address
      */
     event ShortTransferred(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed from,
         address indexed to
     );
@@ -140,7 +140,7 @@ contract ShortSellEvents {
      * Value was added to a short sell
      */
     event ValueAddedToShort(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed shortSeller,
         address indexed lender,
         address shortOwner,

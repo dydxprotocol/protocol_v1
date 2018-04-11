@@ -26,7 +26,7 @@ library CloseShortImpl {
      * A short sell was closed
      */
     event ShortClosed(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed closer,
         address indexed payoutRecipient,
         uint256 closeAmount,

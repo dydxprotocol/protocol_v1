@@ -32,7 +32,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx.logs[0], 'AdditionalDeposit', {
-        id: shortTx.id,
+        shortId: shortTx.id,
         amount: amount,
         depositor: shortTx.seller
       });
@@ -106,7 +106,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx2.logs[1], 'LoanCallCanceled', {
-        id: shortTx.id,
+        shortId: shortTx.id,
         lender: shortTx.loanOffering.owner,
         shortSeller: shortTx.seller,
         depositAmount: amount2
@@ -151,7 +151,7 @@ async function doDeposit({
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 
   expectLog(tx.logs[0], 'AdditionalDeposit', {
-    id: shortTx.id,
+    shortId: shortTx.id,
     amount: amount,
     depositor: from
   });

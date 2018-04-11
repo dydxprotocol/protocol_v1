@@ -30,7 +30,7 @@ library LoanImpl {
      * The loan for a short sell was called in
      */
     event LoanCalled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 requiredDeposit
@@ -40,7 +40,7 @@ library LoanImpl {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount

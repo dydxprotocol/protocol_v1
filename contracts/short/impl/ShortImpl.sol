@@ -27,7 +27,7 @@ library ShortImpl {
      * A short sell occurred
      */
     event ShortInitiated(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,

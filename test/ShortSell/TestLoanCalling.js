@@ -40,7 +40,7 @@ describe('#callInLoan', () => {
       { from: from}
     );
     expectLog(tx.logs[0], 'LoanCalled', {
-      id: shortTx.id,
+      shortId: shortTx.id,
       lender: lender,
       shortSeller: seller,
       requiredDeposit: deposit
@@ -152,7 +152,7 @@ describe('#cancelLoanCall', () => {
       { from: from }
     );
     expectLog(tx.logs[0], 'LoanCallCanceled', {
-      id: shortTx.id,
+      shortId: shortTx.id,
       lender: lender,
       shortSeller: seller,
       depositAmount: 0

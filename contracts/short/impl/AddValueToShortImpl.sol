@@ -30,7 +30,7 @@ library AddValueToShortImpl {
      * Value was added to a short sell
      */
     event ValueAddedToShort(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         address indexed shortSeller,
         address indexed lender,
         address shortOwner,

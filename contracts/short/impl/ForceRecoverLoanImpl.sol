@@ -25,7 +25,7 @@ library ForceRecoverLoanImpl {
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(
-        bytes32 indexed id,
+        bytes32 indexed shortId,
         uint256 amount
     );
 
@@ -45,10 +45,13 @@ library ForceRecoverLoanImpl {
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
         // 2) The maxDuration of the short has elapsed
-        require(
-            short.callTimestamp > 0
-            && block.timestamp >= uint256(short.callTimestamp).add(short.callTimeLimit)
-            || block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
+        require( /* solium-disable-next-line */
+            (
+                short.callTimestamp > 0
+                && block.timestamp >= uint256(short.callTimestamp).add(short.callTimeLimit)
+            ) || (
+                block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
+            )
         );
 
         // If not the lender, requires the lender to approve msg.sender

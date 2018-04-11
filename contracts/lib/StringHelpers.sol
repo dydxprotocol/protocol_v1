@@ -15,7 +15,7 @@ library StringHelpers {
      *
      * @param  stringA  The string that goes first
      * @param  stringB  The string that goes second
-     * @return The two strings concatenated
+     * @return          The two strings concatenated
      */
     function strcat(
         bytes stringA,
@@ -43,7 +43,7 @@ library StringHelpers {
      * Translates a bytes32 into an ascii hexadecimal representation of those bytes
      *
      * @param  input  The bytes to convert to hexadecimal
-     * @return A representation of the bytes in ascii hexadecimal
+     * @return        A representation of the bytes in ascii hexadecimal
      */
     function bytes32ToHex(
         bytes32 input
