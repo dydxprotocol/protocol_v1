@@ -8,8 +8,8 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortShared } from "./ShortShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 
 

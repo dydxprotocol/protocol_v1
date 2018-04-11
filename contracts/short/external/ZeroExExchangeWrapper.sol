@@ -1,13 +1,13 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ZeroExExchangeInterface } from "../../interfaces/ZeroExExchangeInterface.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { ZeroExExchangeInterface } from "../../interfaces/ZeroExExchangeInterface.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { TokenInteract } from "../../lib/TokenInteract.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
