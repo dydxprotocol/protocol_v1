@@ -56,6 +56,7 @@ library ShortImpl {
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
+        bool depositInQuoteToken,
         bytes orderData
     )
         public
@@ -66,21 +67,19 @@ library ShortImpl {
             values256,
             values32,
             sigV,
-            sigRS
+            sigRS,
+            depositInQuoteToken
         );
 
         bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
 
-        uint256 quoteTokenReceived = ShortShared.shortInternalPreStateUpdate(
+        uint256 quoteTokenFromSell;
+
+        (quoteTokenFromSell,) = ShortShared.shortInternalPreStateUpdate(
             state,
             transaction,
             shortId,
             orderData
-        );
-
-        ShortShared.validateMinimumQuoteToken(
-            transaction,
-            quoteTokenReceived
         );
 
         // Comes before updateState() so that ShortInitiated event is before Transferred events
@@ -88,7 +87,7 @@ library ShortImpl {
             shortId,
             msg.sender,
             transaction,
-            quoteTokenReceived
+            quoteTokenFromSell
         );
 
         updateState(
@@ -198,7 +197,8 @@ library ShortImpl {
         uint256[9] values256,
         uint32[4] values32,
         uint8 sigV,
-        bytes32[2] sigRS
+        bytes32[2] sigRS,
+        bool depositInQuoteToken
     )
         internal
         view
@@ -218,7 +218,8 @@ library ShortImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapperAddress: addresses[10]
+            exchangeWrapperAddress: addresses[10],
+            depositInQuoteToken: depositInQuoteToken
         });
 
         return transaction;

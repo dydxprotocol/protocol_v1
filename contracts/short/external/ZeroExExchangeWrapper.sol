@@ -7,6 +7,7 @@ import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContr
 import { ZeroExExchangeInterface } from "../../interfaces/ZeroExExchangeInterface.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
@@ -18,7 +19,8 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 /* solium-disable-next-line */
 contract ZeroExExchangeWrapper is
     HasNoEther,
-    HasNoContracts {
+    HasNoContracts,
+    ExchangeWrapper {
     using SafeMath for uint256;
 
     struct Order {
@@ -110,6 +112,8 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
+        require(filledTakerTokenAmount == requestedFillAmount);
+
         uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
             order.makerTokenAmount,
             order.takerTokenAmount,
@@ -129,6 +133,25 @@ contract ZeroExExchangeWrapper is
     // --- Public Constant Functions ---
     // ---------------------------------
 
+    function getTradeMakerTokenAmount(
+        address /* makerToken */,
+        address /* takerToken */,
+        uint256 requestedFillAmount,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        Order memory order = parseOrder(orderData);
+
+        return MathHelpers.getPartialAmount(
+            requestedFillAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+    }
+
     function getTakerTokenPrice(
         address /* makerToken */,
         address /* takerToken */,
@@ -136,7 +159,7 @@ contract ZeroExExchangeWrapper is
         bytes orderData
     )
         external
-        pure
+        view
         returns (uint256)
     {
         Order memory order = parseOrder(orderData);

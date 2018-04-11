@@ -33,6 +33,7 @@ library ShortShared {
         uint256 depositAmount;
         ShortSellCommon.LoanOffering loanOffering;
         address exchangeWrapperAddress;
+        bool depositInQuoteToken;
     }
 
     // -------------------------------------------
@@ -46,7 +47,10 @@ library ShortShared {
         bytes orderData
     )
         internal
-        returns (uint256 _quoteTokenReceived)
+        returns (
+            uint256 /* quoteTokenFromSell */,
+            uint256 /* totalQuoteTokenReceived */
+        )
     {
         // Validate
         validateShort(
@@ -58,14 +62,31 @@ library ShortShared {
         // collisions use up less gas.
         // NOTE: Doing this before updating state relies on #short being non-reentrant
         transferFromLender(state, transaction);
-        uint256 quoteTokenReceived = executeSell(
+
+        // Transfer deposit from the short seller
+        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, shortId);
+
+        uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
+            : transaction.lenderAmount.add(transaction.depositAmount);
+
+        uint256 quoteTokenFromSell = executeSell(
             state,
             transaction,
             orderData,
-            shortId
+            shortId,
+            sellAmount
         );
 
-        return quoteTokenReceived;
+        uint256 totalQuoteTokenReceived = quoteTokenFromDeposit.add(quoteTokenFromSell);
+        validateMinimumQuoteToken(
+            transaction,
+            totalQuoteTokenReceived
+        );
+
+        return (
+            quoteTokenFromSell,
+            totalQuoteTokenReceived
+        );
     }
 
     function shortInternalPostStateUpdate(
@@ -81,9 +102,8 @@ library ShortShared {
         //       (possible other contract calls back into ShortSell)
         getConsentIfSmartContractLender(transaction, shortId);
 
-        transferDepositAndFees(
+        transferLoanFees(
             state,
-            shortId,
             transaction
         );
     }
@@ -196,27 +216,33 @@ library ShortShared {
         );
     }
 
-    function transferDepositAndFees(
+    function transferDeposit(
         ShortSellState.State storage state,
-        bytes32 shortId,
-        ShortTx transaction
+        ShortTx transaction,
+        bytes32 shortId
     )
         internal
+        returns (uint256 /* quoteTokenFromDeposit */)
     {
-        // Transfer quote token deposit from the short seller
         if (transaction.depositAmount > 0) {
-            Vault(state.VAULT).transferToVault(
-                shortId,
-                transaction.quoteToken,
-                msg.sender,
-                transaction.depositAmount
-            );
+            if (transaction.depositInQuoteToken) {
+                Vault(state.VAULT).transferToVault(
+                    shortId,
+                    transaction.quoteToken,
+                    msg.sender,
+                    transaction.depositAmount
+                );
+                return transaction.depositAmount;
+            } else {
+                Proxy(state.PROXY).transferTokens(
+                    transaction.baseToken,
+                    msg.sender,
+                    transaction.exchangeWrapperAddress,
+                    transaction.depositAmount
+                );
+                return 0;
+            }
         }
-
-        transferLoanFees(
-            state,
-            transaction
-        );
     }
 
     function transferLoanFees(
@@ -266,7 +292,8 @@ library ShortShared {
         ShortSellState.State storage state,
         ShortTx transaction,
         bytes orderData,
-        bytes32 shortId
+        bytes32 shortId,
+        uint256 sellAmount
     )
         internal
         returns (uint256 _quoteTokenReceived)
@@ -275,7 +302,7 @@ library ShortShared {
             transaction.quoteToken,
             transaction.baseToken,
             msg.sender,
-            transaction.lenderAmount,
+            sellAmount,
             orderData
         );
 
@@ -291,19 +318,18 @@ library ShortShared {
 
     function validateMinimumQuoteToken(
         ShortTx transaction,
-        uint256 quoteTokenReceived
+        uint256 totalQuoteTokenReceived
     )
         internal
         pure
     {
-        uint256 totalQuoteToken = quoteTokenReceived.add(transaction.depositAmount);
         uint256 loanOfferingMinimumQuoteToken = MathHelpers.getPartialAmountRoundedUp(
             transaction.effectiveAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minQuoteToken
         );
 
-        require(totalQuoteToken >= loanOfferingMinimumQuoteToken);
+        require(totalQuoteTokenReceived >= loanOfferingMinimumQuoteToken);
     }
 
     function getLoanOfferingAddresses(

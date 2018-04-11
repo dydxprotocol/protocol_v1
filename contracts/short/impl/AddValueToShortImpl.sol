@@ -10,6 +10,7 @@ import { ShortSellState } from "./ShortSellState.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ShortShared } from "./ShortShared.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
@@ -54,6 +55,7 @@ library AddValueToShortImpl {
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
+        bool depositInQuoteToken,
         bytes orderData
     )
         public
@@ -67,35 +69,16 @@ library AddValueToShortImpl {
             values256,
             values32,
             sigV,
-            sigRS
+            sigRS,
+            depositInQuoteToken
         );
 
-        // Quote token balance before transfering anything for this addition
-        // NOTE: this must be done before executing the sell in shortInternalPreStateUpdate
-        uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
-            shortId,
+        uint256 quoteTokenFromSell = preStateUpdate(
             state,
-            transaction.effectiveAmount,
-            short
-        );
-
-        uint256 quoteTokenReceived = ShortShared.shortInternalPreStateUpdate(
-            state,
-            transaction,
-            shortId,
-            orderData
-        );
-
-        validateAndSetDepositAmount(
             transaction,
             short,
-            positionMinimumQuoteToken,
-            quoteTokenReceived
-        );
-
-        ShortShared.validateMinimumQuoteToken(
-            transaction,
-            quoteTokenReceived
+            shortId,
+            orderData
         );
 
         updateState(
@@ -120,7 +103,7 @@ library AddValueToShortImpl {
             transaction,
             shortId,
             short,
-            quoteTokenReceived
+            quoteTokenFromSell
         );
 
         return transaction.lenderAmount;
@@ -176,6 +159,107 @@ library AddValueToShortImpl {
 
     // --------- Helper Functions ---------
 
+    function preStateUpdate(
+        ShortSellState.State storage state,
+        ShortShared.ShortTx transaction,
+        ShortSellCommon.Short storage short,
+        bytes32 shortId,
+        bytes orderData
+    )
+        internal
+        returns (uint256 /* quoteTokenFromSell */)
+    {
+        validate(transaction, short);
+        uint256 positionMinimumQuoteToken = setDepositAmount(
+            state,
+            transaction,
+            short,
+            shortId,
+            orderData
+        );
+
+        uint256 quoteTokenFromSell;
+        uint256 totalQuoteTokenReceived;
+
+        (quoteTokenFromSell, totalQuoteTokenReceived) = ShortShared.shortInternalPreStateUpdate(
+            state,
+            transaction,
+            shortId,
+            orderData
+        );
+
+        // This should always be true unless there is a faulty ExchangeWrapper (i.e. the
+        // ExchangeWrapper traded at a different price from what it said it would)
+        assert(positionMinimumQuoteToken == totalQuoteTokenReceived);
+
+        return quoteTokenFromSell;
+    }
+
+    function validate(
+        ShortShared.ShortTx transaction,
+        ShortSellCommon.Short storage short
+    )
+        internal
+        view
+    {
+        require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
+
+        // require the short to end no later than the loanOffering's maximum acceptable end time
+        uint256 shortEndTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
+        uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
+        require(shortEndTimestamp <= offeringEndTimestamp);
+
+        // Do not allow value to be added after the max duration
+        require(block.timestamp < shortEndTimestamp);
+    }
+
+    function setDepositAmount(
+        ShortSellState.State storage state,
+        ShortShared.ShortTx transaction,
+        ShortSellCommon.Short storage short,
+        bytes32 shortId,
+        bytes orderData
+    )
+        internal
+        view // Does modify transaction
+        returns (uint256 /* positionMinimumQuoteToken */)
+    {
+        // Amount of quote token we need to add to the position to maintain the position's ratio
+        // of quote token to base token
+        uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
+            shortId,
+            state,
+            transaction.effectiveAmount,
+            short
+        );
+
+        if (transaction.depositInQuoteToken) {
+            uint256 quoteTokenFromSell = ExchangeWrapper(transaction.exchangeWrapperAddress)
+                .getTradeMakerTokenAmount(
+                    transaction.quoteToken,
+                    transaction.baseToken,
+                    transaction.lenderAmount,
+                    orderData
+                );
+
+            require(quoteTokenFromSell <= positionMinimumQuoteToken);
+            transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenFromSell);
+        } else {
+            uint256 baseTokenToSell = ExchangeWrapper(transaction.exchangeWrapperAddress)
+                .getTakerTokenPrice(
+                    transaction.quoteToken,
+                    transaction.baseToken,
+                    positionMinimumQuoteToken,
+                    orderData
+                );
+
+            require(transaction.lenderAmount <= baseTokenToSell);
+            transaction.depositAmount = baseTokenToSell.sub(transaction.lenderAmount);
+        }
+
+        return positionMinimumQuoteToken;
+    }
+
     function getPositionMinimumQuoteToken(
         bytes32 shortId,
         ShortSellState.State storage state,
@@ -193,29 +277,6 @@ library AddValueToShortImpl {
             short.shortAmount,
             quoteTokenBalance
         );
-    }
-
-    function validateAndSetDepositAmount(
-        ShortShared.ShortTx transaction,
-        ShortSellCommon.Short storage short,
-        uint256 positionMinimumQuoteToken,
-        uint256 quoteTokenReceived
-    )
-        internal
-        view
-    {
-        require(quoteTokenReceived <= positionMinimumQuoteToken);
-        require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
-
-        // require the short to end no later than the loanOffering's maximum acceptable end time
-        uint256 shortEndTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
-        uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
-        require(shortEndTimestamp <= offeringEndTimestamp);
-
-        // Do not allow value to be added after the max duration
-        require(block.timestamp < shortEndTimestamp);
-
-        transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenReceived);
     }
 
     function updateState(
@@ -288,7 +349,8 @@ library AddValueToShortImpl {
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
-        bytes32[2] sigRS
+        bytes32[2] sigRS,
+        bool depositInQuoteToken
     )
         internal
         view
@@ -313,7 +375,8 @@ library AddValueToShortImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapperAddress: addresses[6]
+            exchangeWrapperAddress: addresses[6],
+            depositInQuoteToken: depositInQuoteToken
         });
 
         return transaction;
