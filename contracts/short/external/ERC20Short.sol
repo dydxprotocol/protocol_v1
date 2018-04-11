@@ -20,7 +20,7 @@ import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
  * @title ERC20Short
  * @author dYdX
  *
- * This contract is used to tokenize short positions and allow them to be used as ERC20-compliant
+ * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
  * entitled to some amount of quote tokens after settlement.
  */

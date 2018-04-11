@@ -5,6 +5,9 @@ pragma experimental "v0.5.0";
 /**
  * @title ShortCustodian
  * @author dYdX
+ *
+ * Interface to interact with other second-layer contracts. For contracts that own short sell
+ * positions as a proxy for other addresses.
  */
  /* solium-disable-next-line */
 contract ShortCustodian {

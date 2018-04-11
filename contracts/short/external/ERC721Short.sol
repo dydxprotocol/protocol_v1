@@ -12,6 +12,10 @@ import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 /**
  * @title ERC721Short
  * @author dYdX
+ *
+ * Contract used to tokenize short positions as ERC721-compliant non-fungible tokens. Holding the
+ * token allows the holder to close the short position. Functionality is added to let users approve
+ * other addresses to close their shorts for them.
  */
  /* solium-disable-next-line */
 contract ERC721Short is

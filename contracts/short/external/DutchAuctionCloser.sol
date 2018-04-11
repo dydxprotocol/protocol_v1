@@ -15,6 +15,9 @@ import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
  * @title DutchAuctionCloser
  * @author dYdX
  *
+ * Contract for allowing anyone to close a called-in short by using a Dutch auction mechanism to
+ * give a fair price to the short seller. Price paid to the short seller decreases linearly over
+ * time.
  */
  /* solium-disable-next-line */
 contract DutchAuctionCloser is
