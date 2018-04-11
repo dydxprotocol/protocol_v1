@@ -1,6 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
@@ -8,8 +10,6 @@ import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**

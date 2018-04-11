@@ -7,17 +7,20 @@ import glob
 import copy
 
 # overwrite a single file, fixing the import lines
-def fixImports(dir, filepath, dryRun):
+def lintImports(dir, filepath):
     itHasStarted = False
+    intoCodeSection = False
     preLines = []
     importLines = []
     postLines = []
     # parse entire file
     for line in open(filepath, 'r').readlines():
-        if (line.startswith('import')):
+        if (not intoCodeSection and line.lstrip().startswith('import')):
             itHasStarted = True
-            importLines.append(line.split(" "))
+            importLines.append(line.lstrip().split(" "))
         else:
+            if (line.startswith('contract') or line.startswith('library')):
+                intoCodeSection = True
             if not itHasStarted:
                 preLines.append(line)
             else:
@@ -37,26 +40,55 @@ def fixImports(dir, filepath, dryRun):
         sortedImportLines.append(line)
     sortedImportLines = sorted(
         sortedImportLines,
-        key = lambda l:(os.path.dirname(l[5]),
-        os.path.basename(l[5]))
+        key = lambda l:(
+            l[5][1] == '.',
+            os.path.dirname(l[5]),
+            os.path.basename(l[5])
+    )
     )
 
     if sortedImportLines != ogImportLines:
         niceFilePath = filepath.replace(dir, "protocol")
-        if dryRun:
-            print("\nin file '" + niceFilePath +"':\n")
-            print "".join([" ".join(x) for x in ogImportLines])
-            print("\t>>> SHOULD BE >>>\n")
-            print "".join([" ".join(x) for x in sortedImportLines])
-            print ""
-        else:
+        if "fix" in sys.argv:
             print("modified " + niceFilePath)
             with open(filepath, 'w') as output:
                 output.writelines(preLines)
                 output.writelines(" ".join(line) for line in sortedImportLines)
                 output.writelines(postLines)
+        else:
+            print("\nin file '" + niceFilePath +"':\n")
+            print "".join([" ".join(x) for x in ogImportLines])
+            print("\t>>> SHOULD BE >>>\n")
+            print "".join([" ".join(x) for x in sortedImportLines])
+            print ""
         return False
     return True
+
+
+def lintCommentHeader(dir, filepath, solidityVersion):
+    fileName = os.path.basename(filepath)
+    strippedFileName = fileName.split(".sol")[0]
+    titleLine = " * @title " + strippedFileName + "\n"
+    authorLine = " * @author dYdX\n"
+    blankLine = " *\n"
+    solidityLine = "pragma solidity " + solidityVersion + ";\n"
+    allLines = open(filepath, 'r').readlines()
+
+    everythingOkay = True
+    if titleLine not in allLines:
+        print "No title (or incorrect title) line in " + fileName
+        everythingOkay = False
+    if authorLine not in allLines:
+        print "No author (or incorrect author) line in " + fileName
+        everythingOkay = False
+    if blankLine not in allLines:
+        print "Unlikely to be a proper file-level comment in " + fileName
+        everythingOkay = False
+    if solidityLine != allLines[0]:
+        print "Unlikely to be using solidity version " + solidityVersion + " in " + fileName
+        everythingOkay = False
+
+    return everythingOkay
 
 
 def main():
@@ -68,11 +100,20 @@ def main():
 
     for dir,_,_ in os.walk(dir_path+"/contracts"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
-    files = [x for x in files if "contracts/0x" not in x and "contracts/interfaces" not in x]
+
+    whitelistedFiles = [
+        "contracts/0x",
+        "contracts/interfaces",
+        "Migrations.sol",
+        "/Test",
+        "/test"
+    ]
+    files = [x for x in files if not any(white in x for white in whitelistedFiles)]
 
     everythingOkay = True
     for file in files:
-        everythingOkay = everythingOkay and fixImports(dir_path, file, "dry" in sys.argv)
+        everythingOkay &= lintImports(dir_path, file)
+        everythingOkay &= lintCommentHeader(dir_path, file,"0.4.21")
 
     if everythingOkay:
         print "No 'import' issues found."

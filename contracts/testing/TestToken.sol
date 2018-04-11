@@ -30,11 +30,11 @@ contract TestToken {
         return supply;
     }
 
-    function balanceOf(address who ) public view returns (uint256) {
+    function balanceOf(address who) public view returns (uint256) {
         return balances[who];
     }
 
-    function allowance(address owner, address spender ) public view returns (uint256) {
+    function allowance(address owner, address spender) public view returns (uint256) {
         return allowed[owner][spender];
     }
 
@@ -83,7 +83,7 @@ contract TestToken {
         }
     }
 
-    function approve(address spender, uint256 value ) public returns (bool) {
+    function approve(address spender, uint256 value) public returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
             address(this),

@@ -4,6 +4,12 @@ pragma experimental "v0.5.0";
 import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 
 
+/**
+ * @title TokenInteract
+ * @author dYdX
+ *
+ * This library contains functions for interacting wtih ERC20 tokens
+ */
 library TokenInteract {
     function balanceOf(
         address token,

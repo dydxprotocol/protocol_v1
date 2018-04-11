@@ -1,13 +1,20 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Exponent } from "../../lib/Exponent.sol";
 import { Fraction256 } from "../../lib/Fraction256.sol";
 import { FractionMath } from "../../lib/FractionMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
+/**
+ * @title InterestImpl
+ * @author dYdX
+ *
+ * A library that calculates continuously compounded interest for principal, time period, and
+ * interest rate.
+ */
 library InterestImpl {
     using SafeMath for uint256;
     using FractionMath for Fraction256.Fraction;

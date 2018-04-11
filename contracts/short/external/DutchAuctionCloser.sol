@@ -1,14 +1,14 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
@@ -74,9 +74,9 @@ contract DutchAuctionCloser is
         CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
 
-    // ----------------------------------------
-    // ---- Public State Chaning functions ----
-    // ----------------------------------------
+    // -------------------------------------------------
+    // ---- ShortSell-Only State-Changing Functions ----
+    // -------------------------------------------------
 
     /**
      * Function to implement the PayoutRecipient interface.

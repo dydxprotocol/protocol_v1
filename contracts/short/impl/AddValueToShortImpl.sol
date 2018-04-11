@@ -1,6 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
 import { ShortShared } from "./ShortShared.sol";
@@ -9,12 +11,10 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { ShortOwner } from "../interfaces/ShortOwner.sol";
-import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
 /**
- * @title ShortImpl
+ * @title AddValueToShortImpl
  * @author dYdX
  *
  * This library contains the implementation for the addValueToShort function of ShortSell

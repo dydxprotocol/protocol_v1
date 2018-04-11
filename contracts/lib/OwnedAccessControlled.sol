@@ -1,8 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { AccessControlledBase } from "./AccessControlledBase.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import { AccessControlledBase } from "./AccessControlledBase.sol";
 
 
 /**
@@ -14,7 +14,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
  */
 contract OwnedAccessControlled is AccessControlledBase, Ownable {
     // -------------------------------------------
-    // --- Owner Only State Changing Functions ---
+    // --- Owner-Only State-Changing Functions ---
     // -------------------------------------------
 
     function grantAccess(

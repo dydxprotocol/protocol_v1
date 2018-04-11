@@ -4,6 +4,12 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
+/**
+ * @title MathHelpers
+ * @author dYdX
+ *
+ * This library helps with common math functions in Solidity
+ */
 library MathHelpers {
     using SafeMath for uint256;
 

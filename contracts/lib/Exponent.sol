@@ -1,11 +1,17 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Fraction256 } from "./Fraction256.sol";
 import { FractionMath } from "./FractionMath.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
+/**
+ * @title Exponent
+ * @author dYdX
+ *
+ * This library contains an implementation for calculating e^X for arbitrary fraction X
+ */
 library Exponent {
     using SafeMath for uint256;
     using FractionMath for Fraction256.Fraction;

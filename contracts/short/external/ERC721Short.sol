@@ -1,12 +1,12 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortSell } from "../ShortSell.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
+import { ShortSell } from "../ShortSell.sol";
+import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
+import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 
 
 /**

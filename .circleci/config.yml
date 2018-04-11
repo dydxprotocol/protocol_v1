@@ -46,7 +46,7 @@ jobs:
             - ~/protocol
       - run:
           name: Lint
-          command: npm run lint && npm run solint && npm run importlint -- dry
+          command: npm run lint && npm run solint && npm run dydxlint
   test:
     docker:
       - image: circleci/node:8.6.0

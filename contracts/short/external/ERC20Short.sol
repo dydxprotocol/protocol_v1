@@ -1,6 +1,11 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { ShortSell } from "../ShortSell.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
@@ -9,11 +14,6 @@ import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
-import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 
 
 /**
@@ -140,7 +140,7 @@ contract ERC20Short is
      *
      *  param  (unused)
      * @param  shortId  Unique ID of the short
-     * @return          this address on success, throw otherwise
+     * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
         address /* from */,
@@ -181,7 +181,7 @@ contract ERC20Short is
      * @param  from         Address that added the value to the short position
      * @param  shortId      Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
-     * @return              true to indicate that this contract consents to value being added
+     * @return              True to indicate that this contract consents to value being added
      */
     function additionalShortValueAdded(
         address from,
@@ -279,7 +279,7 @@ contract ERC20Short is
      * carry out such an attack.
      *
      * @param  who  Address of the account to withdraw for
-     * @return The number of quote tokens withdrawn
+     * @return      The number of quote tokens withdrawn
      */
     function withdraw(
         address who

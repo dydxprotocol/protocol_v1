@@ -1,12 +1,12 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { Proxy } from "./Proxy.sol";
-import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
-import { TokenInteract } from "../lib/TokenInteract.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Proxy } from "./Proxy.sol";
+import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
 
 
 /**
@@ -53,7 +53,7 @@ contract Vault is
     }
 
     // --------------------------------------------------
-    // ---- Authorized Only State Changing Functions ----
+    // ---- Authorized-Only State-Changing Functions ----
     // --------------------------------------------------
 
     /**

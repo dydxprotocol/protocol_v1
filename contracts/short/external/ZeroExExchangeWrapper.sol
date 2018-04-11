@@ -53,16 +53,16 @@ contract ZeroExExchangeWrapper is
     function ZeroExExchangeWrapper(
         address shortSell,
         address dydxProxy,
-        address zrxExchange,
-        address zrxProxy,
+        address zeroExExchange,
+        address zeroExProxy,
         address zrxToken
     )
         public
     {
         SHORT_SELL = shortSell;
         DYDX_PROXY = dydxProxy;
-        ZERO_EX_EXCHANGE = zrxExchange;
-        ZERO_EX_PROXY = zrxProxy;
+        ZERO_EX_EXCHANGE = zeroExExchange;
+        ZERO_EX_PROXY = zeroExProxy;
         ZRX = zrxToken;
 
         // The ZRX token does not decrement allowance if set to MAX_UINT
