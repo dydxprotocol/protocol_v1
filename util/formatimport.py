@@ -114,7 +114,7 @@ def main():
     if everythingOkay:
         print "No 'import' issues found."
 
-    return everythingOkay
+    sys.exit(0 if everythingOkay else 1)
 
 
 if __name__ == "__main__":
