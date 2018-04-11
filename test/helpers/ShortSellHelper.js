@@ -107,6 +107,7 @@ async function callShort(shortSell, tx, safely = true) {
     values32,
     sigV,
     sigRS,
+    true,
     order,
     { from: tx.seller }
   );
@@ -219,6 +220,7 @@ async function callAddValueToShort(shortSell, tx) {
     values32,
     sigV,
     sigRS,
+    true,
     order,
     { from: tx.seller }
   );

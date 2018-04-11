@@ -32,7 +32,7 @@ contract ExchangeWrapper {
         returns (uint256);
 
     /**
-     * Get amount of makerToken that will be paid our by exchange for a given trade
+     * Get amount of makerToken that will be paid out by exchange for a given trade
      *
      * @param  makerToken           Address of the maker token, the token to recieve
      * @param  takerToken           Address of the taker token, the token to pay
@@ -52,7 +52,7 @@ contract ExchangeWrapper {
         returns (uint256);
 
     /**
-     * Get amount of takerToken required to buy a certain amount of makerToken given some orderData.
+     * Get amount of takerToken required to buy a certain amount of makerToken for a given trade
      *
      * @param  makerToken         Address of the maker token, the token to recieve
      * @param  takerToken         Address of the taker token, the token to pay

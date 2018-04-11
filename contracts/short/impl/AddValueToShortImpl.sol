@@ -242,7 +242,7 @@ library AddValueToShortImpl {
                     orderData
                 );
 
-            require(quoteTokenFromSell < positionMinimumQuoteToken);
+            require(quoteTokenFromSell <= positionMinimumQuoteToken);
             transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenFromSell);
         } else {
             uint256 baseTokenToSell = ExchangeWrapper(transaction.exchangeWrapperAddress)
@@ -253,7 +253,7 @@ library AddValueToShortImpl {
                     orderData
                 );
 
-            require(transaction.lenderAmount < baseTokenToSell);
+            require(transaction.lenderAmount <= baseTokenToSell);
             transaction.depositAmount = baseTokenToSell.sub(transaction.lenderAmount);
         }
 
