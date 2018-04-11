@@ -22,8 +22,7 @@ import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol
 contract Vault is
     StaticAccessControlled,
     HasNoEther,
-    HasNoContracts,
-    ReentrancyGuard {
+    HasNoContracts {
     using SafeMath for uint256;
 
     // ---------------------------
