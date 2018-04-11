@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 
+import sys
 import string
 import os
-import os.path
 import glob
 import copy
 
 # overwrite a single file, fixing the import lines
-def fixImports(filepath):
+def fixImports(dir, filepath, dryRun):
     itHasStarted = False
     preLines = []
     importLines = []
@@ -42,22 +42,43 @@ def fixImports(filepath):
     )
 
     if sortedImportLines != ogImportLines:
-        print("modified " + filepath.replace(dir_path, "protocol"))
+        niceFilePath = filepath.replace(dir, "protocol")
+        if dryRun:
+            print("\nin file '" + niceFilePath +"':\n")
+            print "".join([" ".join(x) for x in ogImportLines])
+            print("\t>>> SHOULD BE >>>\n")
+            print "".join([" ".join(x) for x in sortedImportLines])
+            print ""
+        else:
+            print("modified " + niceFilePath)
+            with open(filepath, 'w') as output:
+                output.writelines(preLines)
+                output.writelines(" ".join(line) for line in sortedImportLines)
+                output.writelines(postLines)
+        return False
+    return True
 
-    with open(filepath, 'w') as output:
-        output.writelines(preLines)
-        output.writelines(" ".join(line) for line in sortedImportLines)
-        output.writelines(postLines)
 
-files = []
-start_dir = os.getcwd()
-pattern   = "*.sol"
+def main():
+    files = []
+    start_dir = os.getcwd()
+    pattern   = "*.sol"
 
-dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
-for dir,_,_ in os.walk(dir_path+"/contracts"):
-    files.extend(glob.glob(os.path.join(dir,pattern)))
-files = [x for x in files if "contracts/0x" not in x and "contracts/interfaces" not in x]
+    for dir,_,_ in os.walk(dir_path+"/contracts"):
+        files.extend(glob.glob(os.path.join(dir,pattern)))
+    files = [x for x in files if "contracts/0x" not in x and "contracts/interfaces" not in x]
 
-for file in files:
-    fixImports(file)
+    everythingOkay = True
+    for file in files:
+        everythingOkay = everythingOkay and fixImports(dir_path, file, "dry" in sys.argv)
+
+    if everythingOkay:
+        print "No 'import' issues found."
+
+    return everythingOkay
+
+
+if __name__ == "__main__":
+    main()

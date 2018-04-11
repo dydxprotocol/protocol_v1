@@ -17,7 +17,7 @@
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "formatimport": "python util/formatimport.py"
+    "importlint": "python util/formatimport.py"
   },
   "repository": {
     "type": "git",
