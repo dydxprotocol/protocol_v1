@@ -3,17 +3,17 @@
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const ERC721Short = artifacts.require("ERC721Short");
+const ERC20MarginTraderCreator = artifacts.require("ERC20MarginTraderCreator");
+const ERC721MarginTrader = artifacts.require("ERC721MarginTrader");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ShortImpl = artifacts.require("ShortImpl");
-const AddValueToShortImpl = artifacts.require("AddValueToShortImpl");
-const CloseShortImpl = artifacts.require("CloseShortImpl");
-const LiquidateImpl = artifacts.require("LiquidateImpl");
-const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
+const OpenPositionImpl = artifacts.require("OpenPositionImpl");
+const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
+const ClosePositionImpl = artifacts.require("ClosePositionImpl");
+const LiquidatePositionImpl = artifacts.require("LiquidatePositionImpl");
+const ForceRecoverDepositImpl = artifacts.require("ForceRecoverDepositImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
@@ -55,40 +55,40 @@ function maybeDeploy0x(deployer, network) {
   return Promise.resolve(true);
 }
 
-async function deployShortSellContracts(deployer) {
+async function deployMarginContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(InterestImpl),
-    deployer.deploy(ForceRecoverLoanImpl),
+    deployer.deploy(ForceRecoverDepositImpl),
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
     deployer.deploy(TransferImpl),
-    deployer.deploy(ShortImpl),
+    deployer.deploy(OpenPositionImpl),
   ]);
 
   await Promise.all([
-    CloseShortImpl.link('InterestImpl', InterestImpl.address),
-    LiquidateImpl.link('InterestImpl', InterestImpl.address),
-    AddValueToShortImpl.link('InterestImpl', InterestImpl.address),
+    ClosePositionImpl.link('InterestImpl', InterestImpl.address),
+    LiquidatePositionImpl.link('InterestImpl', InterestImpl.address),
+    IncreasePositionImpl.link('InterestImpl', InterestImpl.address),
   ]);
 
   await Promise.all([
-    deployer.deploy(CloseShortImpl),
-    deployer.deploy(LiquidateImpl),
-    deployer.deploy(AddValueToShortImpl),
+    deployer.deploy(ClosePositionImpl),
+    deployer.deploy(LiquidatePositionImpl),
+    deployer.deploy(IncreasePositionImpl),
   ]);
 
-  // Link ShortSell function libraries
+  // Link Margin function libraries
   await Promise.all([
-    ShortSell.link('ShortImpl', ShortImpl.address),
-    ShortSell.link('CloseShortImpl', CloseShortImpl.address),
-    ShortSell.link('LiquidateImpl', LiquidateImpl.address),
-    ShortSell.link('InterestImpl', InterestImpl.address),
-    ShortSell.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
-    ShortSell.link('LoanImpl', LoanImpl.address),
-    ShortSell.link('DepositImpl', DepositImpl.address),
-    ShortSell.link('TransferImpl', TransferImpl.address),
-    ShortSell.link('AddValueToShortImpl', AddValueToShortImpl.address)
+    Margin.link('OpenPositionImpl', OpenPositionImpl.address),
+    Margin.link('ClosePositionImpl', ClosePositionImpl.address),
+    Margin.link('LiquidatePositionImpl', LiquidatePositionImpl.address),
+    Margin.link('InterestImpl', InterestImpl.address),
+    Margin.link('ForceRecoverDepositImpl', ForceRecoverDepositImpl.address),
+    Margin.link('LoanImpl', LoanImpl.address),
+    Margin.link('DepositImpl', DepositImpl.address),
+    Margin.link('TransferImpl', TransferImpl.address),
+    Margin.link('IncreasePositionImpl', IncreasePositionImpl.address)
   ]);
 
   await deployer.deploy(
@@ -98,7 +98,7 @@ async function deployShortSellContracts(deployer) {
   );
 
   await deployer.deploy(
-    ShortSell,
+    Margin,
     Vault.address,
     ProxyContract.address
   );
@@ -106,27 +106,27 @@ async function deployShortSellContracts(deployer) {
   await Promise.all([
     deployer.deploy(
       ZeroExExchangeWrapper,
-      ShortSell.address,
+      Margin.address,
       ProxyContract.address,
       ZeroExExchange.address, // TODO update these for prod
       ZeroExProxy.address,
       FeeToken.address
     ),
     deployer.deploy(
-      ERC721Short,
-      ShortSell.address
+      ERC721MarginTrader,
+      Margin.address
     ),
     deployer.deploy(
       DutchAuctionCloser,
-      ShortSell.address,
+      Margin.address,
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
     )
   ]);
 
   await deployer.deploy(
-    ERC20ShortCreator,
-    ShortSell.address,
+    ERC20MarginTraderCreator,
+    Margin.address,
     [DutchAuctionCloser.address]
   );
 }
@@ -135,19 +135,19 @@ async function authorizeOnProxy() {
   const proxy = await ProxyContract.deployed();
   await Promise.all([
     proxy.grantAccess(Vault.address),
-    proxy.grantAccess(ShortSell.address)
+    proxy.grantAccess(Margin.address)
   ]);
 }
 
 async function grantAccessToVault() {
   const vault = await Vault.deployed();
-  return vault.grantAccess(ShortSell.address);
+  return vault.grantAccess(Margin.address);
 }
 
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
-  await deployShortSellContracts(deployer);
+  await deployMarginContracts(deployer);
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault()
