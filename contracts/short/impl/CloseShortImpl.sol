@@ -141,9 +141,8 @@ library CloseShortImpl {
         uint256 quoteTokenPrice;
 
         if (transaction.payoutInQuoteToken) {
-            quoteTokenPrice = ExchangeWrapper(
-                    transaction.exchangeWrapperAddress
-                ).getTakerTokenPrice(
+            quoteTokenPrice = ExchangeWrapper(transaction.exchangeWrapperAddress)
+                .getTakerTokenPrice(
                     transaction.baseToken,
                     transaction.quoteToken,
                     transaction.baseTokenOwed,
