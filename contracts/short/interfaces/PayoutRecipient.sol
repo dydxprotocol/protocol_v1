@@ -33,14 +33,15 @@ contract PayoutRecipient is OnlyShortSell {
      * Function a contract must implement in order to receive payout from being the payoutRecipient
      * in a closeShort transaction. May redistribute any payout as necessary. Throws on error.
      *
-     * @param  shortId           Unique ID of the short
-     * @param  closeAmount       Amount of the short that was closed
-     * @param  shortCloser       Address of the account or contract that closed the short
-     * @param  shortSeller       Address of the owner of the short
-     * @param  quoteToken        Address of the ERC20 quote token
-     * @param  payoutQuoteToken  Number of quote tokens received from the payout
-     * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
-     * @return                   True if approved by the reciever
+     * @param  shortId            Unique ID of the short
+     * @param  closeAmount        Amount of the short that was closed
+     * @param  shortCloser        Address of the account or contract that closed the short
+     * @param  shortSeller        Address of the owner of the short
+     * @param  quoteToken         Address of the ERC20 quote token
+     * @param  payout             Number of tokens received from the payout
+     * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
+     * @param  payoutInQuoteToken True if payout is in quote token, false if in base token
+     * @return                    True if approved by the reciever
      */
     function receiveCloseShortPayout(
         bytes32 shortId,
@@ -48,8 +49,10 @@ contract PayoutRecipient is OnlyShortSell {
         address shortCloser,
         address shortSeller,
         address quoteToken,
-        uint256 payoutQuoteToken,
-        uint256 totalQuoteToken
+        uint256 payout,
+        uint256 totalQuoteToken,
+        bool    payoutInQuoteToken
+
     )
         onlyShortSell
         external

@@ -32,8 +32,9 @@ library CloseShortImpl {
         uint256 closeAmount,
         uint256 remainingAmount,
         uint256 baseTokenPaidToLender,
-        uint256 quoteTokenPayout,
-        uint256 buybackCost
+        uint256 payoutAmount,
+        uint256 buybackCost,
+        bool payoutInQuoteToken
     );
 
     // -------------------------------------------
@@ -46,6 +47,7 @@ library CloseShortImpl {
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapperAddress,
+        bool payoutInQuoteToken,
         bytes memory orderData
     )
         public
@@ -56,32 +58,38 @@ library CloseShortImpl {
             shortId,
             requestedCloseAmount,
             payoutRecipient,
+            exchangeWrapperAddress,
+            payoutInQuoteToken,
             false
         );
 
-        uint256 buybackCost = returnBaseTokensToLender(
+        uint256 buybackCost;
+        uint256 receivedBaseToken;
+
+        (buybackCost, receivedBaseToken) = returnBaseTokensToLender(
             state,
             transaction,
-            exchangeWrapperAddress,
             orderData
         );
 
-        uint256 quoteTokenPayout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
+        uint256 payout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
             state,
             transaction,
-            buybackCost
+            buybackCost,
+            receivedBaseToken
         );
 
         CloseShortShared.closeShortStateUpdate(state, transaction);
 
         logEventOnClose(
             transaction,
-            quoteTokenPayout
+            buybackCost,
+            payout
         );
 
         return (
             transaction.closeAmount,
-            quoteTokenPayout,
+            payout,
             transaction.baseTokenOwed
         );
     }
@@ -91,14 +99,17 @@ library CloseShortImpl {
     function returnBaseTokensToLender(
         ShortSellState.State storage state,
         CloseShortShared.CloseShortTx memory transaction,
-        address exchangeWrapperAddress,
         bytes memory orderData
     )
         internal
-        returns (uint256)
+        returns (uint256, uint256)
     {
         uint256 buybackCost = 0;
-        if (exchangeWrapperAddress == address(0)) {
+        uint256 receivedBaseToken = 0;
+
+        if (transaction.exchangeWrapperAddress == address(0)) {
+            require(transaction.payoutInQuoteToken);
+
             // No buy order; send base tokens directly from the closer to the lender
             Proxy(state.PROXY).transferTokens(
                 transaction.baseToken,
@@ -108,49 +119,55 @@ library CloseShortImpl {
             );
         } else {
             // Buy back base tokens using buy order and send to lender
-            buybackCost = buyBackBaseToken(
+            (buybackCost, receivedBaseToken) = buyBackBaseToken(
                 state,
                 transaction,
-                exchangeWrapperAddress,
                 orderData
             );
         }
-        return buybackCost;
+        return (buybackCost, receivedBaseToken);
     }
 
     function buyBackBaseToken(
         ShortSellState.State storage state,
         CloseShortShared.CloseShortTx transaction,
-        address exchangeWrapperAddress,
         bytes memory orderData
     )
         internal
-        returns (uint256)
+        returns (uint256, uint256)
     {
         // Ask the exchange wrapper what the price in quote token to buy back the close
         // amount of base token is
-        uint256 quoteTokenPrice = ExchangeWrapper(exchangeWrapperAddress).getTakerTokenPrice(
-            transaction.baseToken,
-            transaction.quoteToken,
-            transaction.baseTokenOwed,
-            orderData
-        );
+        uint256 quoteTokenPrice;
 
-        // Require enough quote token in Vault to pay for both 1) buyback and 2) interest fee
-        require(quoteTokenPrice <= transaction.availableQuoteToken);
+        if (transaction.payoutInQuoteToken) {
+            quoteTokenPrice = ExchangeWrapper(
+                    transaction.exchangeWrapperAddress
+                ).getTakerTokenPrice(
+                    transaction.baseToken,
+                    transaction.quoteToken,
+                    transaction.baseTokenOwed,
+                    orderData
+                );
+
+            // Require enough available quote token to pay for the buyback
+            require(quoteTokenPrice <= transaction.availableQuoteToken);
+        } else {
+            quoteTokenPrice = transaction.availableQuoteToken;
+        }
 
         // Send the requisite quote token to do the buyback from vault to exchange wrapper
         if (quoteTokenPrice > 0) {
             Vault(state.VAULT).transferFromVault(
                 transaction.shortId,
                 transaction.quoteToken,
-                exchangeWrapperAddress,
+                transaction.exchangeWrapperAddress,
                 quoteTokenPrice
             );
         }
 
         // Trade the quote token for the base token
-        uint256 receivedBaseToken = ExchangeWrapper(exchangeWrapperAddress).exchange(
+        uint256 receivedBaseToken = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
             transaction.baseToken,
             transaction.quoteToken,
             msg.sender,
@@ -158,22 +175,27 @@ library CloseShortImpl {
             orderData
         );
 
-        assert(receivedBaseToken == transaction.baseTokenOwed);
+        if (transaction.payoutInQuoteToken) {
+            assert(receivedBaseToken == transaction.baseTokenOwed);
+        } else {
+            require(receivedBaseToken >= transaction.baseTokenOwed);
+        }
 
         // Transfer base token from the exchange wrapper to the lender
         Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
-            exchangeWrapperAddress,
+            transaction.exchangeWrapperAddress,
             transaction.shortLender,
             transaction.baseTokenOwed
         );
 
-        return quoteTokenPrice;
+        return (quoteTokenPrice, receivedBaseToken);
     }
 
     function logEventOnClose(
         CloseShortShared.CloseShortTx transaction,
-        uint256 quoteTokenPayout
+        uint256 buybackCost,
+        uint256 payout
     )
         internal
     {
@@ -184,8 +206,9 @@ library CloseShortImpl {
             transaction.closeAmount,
             transaction.currentShortAmount.sub(transaction.closeAmount),
             transaction.baseTokenOwed,
-            quoteTokenPayout,
-            transaction.availableQuoteToken.sub(quoteTokenPayout)
+            payout,
+            buybackCost,
+            transaction.payoutInQuoteToken
         );
     }
 

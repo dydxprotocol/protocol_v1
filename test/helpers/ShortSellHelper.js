@@ -381,6 +381,7 @@ async function callCloseShort(
     closeAmount,
     recipient,
     ZeroExExchangeWrapper.address,
+    true,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
@@ -491,8 +492,9 @@ async function expectCloseLog(shortSell, params) {
     closeAmount: actualCloseAmount,
     remainingAmount: params.startAmount.minus(actualCloseAmount),
     baseTokenPaidToLender: owed,
-    quoteTokenPayout: quoteTokenPayout,
-    buybackCost: buybackCost
+    payoutAmount: quoteTokenPayout,
+    buybackCost: buybackCost,
+    payoutInQuoteToken: true
   });
 }
 

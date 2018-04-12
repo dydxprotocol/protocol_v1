@@ -67,7 +67,7 @@ contract ShortSell is
      * Initiate a short sell. Called by the short seller. Short seller must provide both a
      * signed loan offering as well as a signed buy order for the base token to be shorted.
      *
-     * @param  addresses  Addresses corresponding to:
+     * @param  addresses            Addresses corresponding to:
      *
      *  [0]  = short owner
      *  [1]  = base token
@@ -81,7 +81,7 @@ contract ShortSell is
      *  [9]  = loan taker fee token
      *  [10]  = exchange wrapper address
      *
-     * @param  values256  Values corresponding to:
+     * @param  values256            Values corresponding to:
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
@@ -93,21 +93,21 @@ contract ShortSell is
      *  [7]  = short amount
      *  [8]  = deposit amount
      *
-     * @param  values32  Values corresponding to:
+     * @param  values32             Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      *
-     * @param  sigV       ECDSA v parameter for loan offering
-     * @param  sigRS      ECDSA r and s parameters for loan offering
+     * @param  sigV                 ECDSA v parameter for loan offering
+     * @param  sigRS                ECDSA r and s parameters for loan offering
      * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      Order object to be passed to the exchange wrapper
-     * @return            Unique ID for the new short
+     * @param  order                Order object to be passed to the exchange wrapper
+     * @return                      Unique ID for the new short
      */
     function short(
         address[11] addresses,
@@ -140,7 +140,7 @@ contract ShortSell is
      * The value added to the short will be equal to the effective amount lent, and will incorporate
      * interest already earned by the position so far.
      *
-     * @param  addresses  Addresses corresponding to:
+     * @param  addresses            Addresses corresponding to:
      *
      *  [0]  = loan payer
      *  [1]  = loan signer
@@ -150,7 +150,7 @@ contract ShortSell is
      *  [5]  = loan taker fee token
      *  [6]  = exchange wrapper address
      *
-     * @param  values256  Values corresponding to:
+     * @param  values256            Values corresponding to:
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
@@ -162,19 +162,19 @@ contract ShortSell is
      *  [7]  = amount to add to the position (NOTE: the amount pulled from the lender will be
      *                                              >= this amount)
      *
-     * @param  values32  Values corresponding to:
+     * @param  values32             Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *
-     * @param  sigV       ECDSA v parameter for loan offering
-     * @param  sigRS      ECDSA r and s parameters for loan offering
+     * @param  sigV                 ECDSA v parameter for loan offering
+     * @param  sigRS                ECDSA r and s parameters for loan offering
      * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
      *                              quote token. If false, margin deposit will be pulled in base
      *                              token, and then sold along with the base token borrowed from
      *                              the lender
-     * @param  order      Order object to be passed to the exchange wrapper
-     * @return            Amount of base tokens pulled from the lender
+     * @param  order                Order object to be passed to the exchange wrapper
+     * @return                      Amount of base tokens pulled from the lender
      */
     function addValueToShort(
         bytes32     shortId,
@@ -238,6 +238,8 @@ contract ShortSell is
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @param  exchangeWrapperAddress   Address of the exchange wrapper
+     * @param  payoutInQuoteToken       True to pay out the payoutRecipient in quote token,
+     *                                  False to pay out the payoutRecipient in base token
      * @param  order                    Order object to be passed to the exchange wrapper
      * @return                          Values corresponding to:
      *                                  1) Amount of short closed
@@ -249,6 +251,7 @@ contract ShortSell is
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapperAddress,
+        bool    payoutInQuoteToken,
         bytes   order
     )
         external
@@ -262,6 +265,7 @@ contract ShortSell is
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapperAddress,
+            payoutInQuoteToken,
             order
         );
     }
@@ -294,6 +298,7 @@ contract ShortSell is
             requestedCloseAmount,
             payoutRecipient,
             address(0),
+            true,
             new bytes(0)
         );
     }
