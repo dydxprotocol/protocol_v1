@@ -13,7 +13,7 @@ import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
  * @title ClosePositionImpl
  * @author dYdX
  *
- * This library contains the implementation for the ClosePosition function of Margin
+ * This library contains the implementation for the closePosition function of Margin
  */
 library ClosePositionImpl {
     using SafeMath for uint256;

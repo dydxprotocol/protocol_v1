@@ -124,8 +124,8 @@ library LoanImpl {
         // Ensure the loan has been called
         require(position.callTimestamp > 0);
 
-        state.marginPositions[marginId].callTimestamp = 0;
-        state.marginPositions[marginId].requiredDeposit = 0;
+        state.positions[marginId].callTimestamp = 0;
+        state.positions[marginId].requiredDeposit = 0;
 
         emit MarginCallCanceled(
             marginId,

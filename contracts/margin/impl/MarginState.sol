@@ -37,7 +37,7 @@ library MarginState {
         mapping (bytes32 => bool) approvedLoans;
 
         // Mapping that contains all margin positions. Mapped by: marginId -> Position
-        mapping (bytes32 => MarginCommon.Position) marginPositions;
+        mapping (bytes32 => MarginCommon.Position) positions;
 
         // Mapping that contains all margin positions that have been completely closed
         mapping (bytes32 => bool) closedPositions;

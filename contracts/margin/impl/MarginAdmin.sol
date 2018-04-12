@@ -13,7 +13,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
  * margin positions.
  */
 contract MarginAdmin is Ownable {
-    
+
     // ============ Enums ============
 
     /**
@@ -21,12 +21,12 @@ contract MarginAdmin is Ownable {
      *
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
-     *                                    (marginCall, ClosePosition, cancelLoanOffering
-     *                                    ClosePositionDirectly, forceRecoverDeposit)
-     * CLOSE_ONLY                       - Only closing functions allowed (marginCall, ClosePosition,
-     *                                    ClosePositionDirectly, forceRecoverDeposit)
+     *                                    (marginCall, closePosition, cancelLoanOffering
+     *                                    closePositionDirectly, forceRecoverDeposit)
+     * CLOSE_ONLY                       - Only closing functions allowed (marginCall, closePosition,
+     *                                    closePositionDirectly, forceRecoverDeposit)
      * CLOSE_DIRECTLY_ONLY              - Only closing functions allowed (marginCall,
-     *                                    ClosePositionDirectly, forceRecoverDeposit)
+     *                                    closePositionDirectly, forceRecoverDeposit)
      */
     enum OperationState {
         OPERATIONAL,
@@ -72,7 +72,7 @@ contract MarginAdmin is Ownable {
         _;
     }
 
-    modifier ClosePositionStateControl() {
+    modifier closePositionStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
@@ -81,7 +81,7 @@ contract MarginAdmin is Ownable {
         _;
     }
 
-    modifier ClosePositionDirectlyStateControl() {
+    modifier closePositionDirectlyStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY

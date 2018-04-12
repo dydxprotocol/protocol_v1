@@ -159,25 +159,25 @@ library OpenPositionImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.marginPositions[marginId].baseToken = transaction.baseToken;
-        state.marginPositions[marginId].quoteToken = transaction.quoteToken;
-        state.marginPositions[marginId].amount = transaction.effectiveAmount;
-        state.marginPositions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.marginPositions[marginId].startTimestamp = uint32(block.timestamp);
-        state.marginPositions[marginId].maxDuration = transaction.loanOffering.maxDuration;
-        state.marginPositions[marginId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.marginPositions[marginId].interestPeriod =
+        state.positions[marginId].baseToken = transaction.baseToken;
+        state.positions[marginId].quoteToken = transaction.quoteToken;
+        state.positions[marginId].amount = transaction.effectiveAmount;
+        state.positions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.positions[marginId].startTimestamp = uint32(block.timestamp);
+        state.positions[marginId].maxDuration = transaction.loanOffering.maxDuration;
+        state.positions[marginId].interestRate = transaction.loanOffering.rates.interestRate;
+        state.positions[marginId].interestPeriod =
             transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newTrader = transaction.owner != msg.sender;
 
-        state.marginPositions[marginId].lender = TransferInternal.grantOwnershipAsLender(
+        state.positions[marginId].lender = TransferInternal.grantOwnershipAsLender(
             marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.marginPositions[marginId].trader = TransferInternal.grantOwnershipAsTrader(
+        state.positions[marginId].trader = TransferInternal.grantOwnershipAsTrader(
             marginId,
             newTrader ? msg.sender : address(0),
             transaction.owner);

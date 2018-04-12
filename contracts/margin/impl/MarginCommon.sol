@@ -87,7 +87,7 @@ library MarginCommon {
     )
         internal
     {
-        delete state.marginPositions[marginId];
+        delete state.positions[marginId];
         state.closedPositions[marginId] = true;
     }
 
@@ -233,7 +233,7 @@ library MarginCommon {
         internal
         returns (bool)
     {
-        return state.marginPositions[marginId].startTimestamp != 0;
+        return state.positions[marginId].startTimestamp != 0;
     }
 
     function getPositionObject(
@@ -244,7 +244,7 @@ library MarginCommon {
         view
         returns (Position storage)
     {
-        Position storage position = state.marginPositions[marginId];
+        Position storage position = state.positions[marginId];
 
         // This checks that the position exists
         require(position.startTimestamp != 0);

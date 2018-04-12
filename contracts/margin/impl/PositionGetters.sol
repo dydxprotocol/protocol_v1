@@ -48,7 +48,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (bool)
     {
-        return (state.marginPositions[marginId].callTimestamp > 0);
+        return (state.positions[marginId].callTimestamp > 0);
     }
 
     /**
@@ -84,7 +84,7 @@ contract PositionGetters is MarginStorage {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(marginId, state.marginPositions[marginId].quoteToken);
+        return Vault(state.VAULT).balances(marginId, state.positions[marginId].quoteToken);
     }
 
     /**
@@ -240,7 +240,7 @@ contract PositionGetters is MarginStorage {
             uint32[6]
         )
     {
-        MarginCommon.Position storage position = state.marginPositions[marginId];
+        MarginCommon.Position storage position = state.positions[marginId];
 
         return (
             [
@@ -274,7 +274,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (address)
     {
-        return state.marginPositions[marginId].lender;
+        return state.positions[marginId].lender;
     }
 
     function getPositionTrader(
@@ -284,7 +284,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (address)
     {
-        return state.marginPositions[marginId].trader;
+        return state.positions[marginId].trader;
     }
 
     function getPositionQuoteToken(
@@ -294,7 +294,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (address)
     {
-        return state.marginPositions[marginId].quoteToken;
+        return state.positions[marginId].quoteToken;
     }
 
     function getPositionBaseToken(
@@ -304,7 +304,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (address)
     {
-        return state.marginPositions[marginId].baseToken;
+        return state.positions[marginId].baseToken;
     }
 
     function getPositionAmount(
@@ -314,7 +314,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].amount;
+        return state.positions[marginId].amount;
     }
 
     function getPositionClosedAmount(
@@ -324,7 +324,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].closedAmount;
+        return state.positions[marginId].closedAmount;
     }
 
     function getPositionUnclosedAmount(
@@ -334,8 +334,8 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].amount
-            .sub(state.marginPositions[marginId].closedAmount);
+        return state.positions[marginId].amount
+            .sub(state.positions[marginId].closedAmount);
     }
 
     function getPositionInterestRate(
@@ -345,7 +345,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].interestRate;
+        return state.positions[marginId].interestRate;
     }
 
     function getPositionRequiredDeposit(
@@ -355,7 +355,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].requiredDeposit;
+        return state.positions[marginId].requiredDeposit;
     }
 
     function getPositionStartTimestamp(
@@ -365,7 +365,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint32)
     {
-        return state.marginPositions[marginId].startTimestamp;
+        return state.positions[marginId].startTimestamp;
     }
 
     function getPositionCallTimestamp(
@@ -375,7 +375,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint32)
     {
-        return state.marginPositions[marginId].callTimestamp;
+        return state.positions[marginId].callTimestamp;
     }
 
     function getPositionCallTimeLimit(
@@ -385,7 +385,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint32)
     {
-        return state.marginPositions[marginId].callTimeLimit;
+        return state.positions[marginId].callTimeLimit;
     }
 
     function getPositionMaxDuration(
@@ -395,7 +395,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint32)
     {
-        return state.marginPositions[marginId].maxDuration;
+        return state.positions[marginId].maxDuration;
     }
 
     function getPositioninterestPeriod(
@@ -405,6 +405,6 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint32)
     {
-        return state.marginPositions[marginId].interestPeriod;
+        return state.positions[marginId].interestPeriod;
     }
 }

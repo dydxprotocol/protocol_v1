@@ -24,7 +24,7 @@ library TransferImpl {
         public
     {
         require(MarginCommon.containsOpenPositionImpl(state, marginId));
-        address originalLender = state.marginPositions[marginId].lender;
+        address originalLender = state.positions[marginId].lender;
         require(msg.sender == originalLender);
         require(newLender != originalLender);
 
@@ -38,7 +38,7 @@ library TransferImpl {
         require(finalLender != originalLender);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.marginPositions[marginId].lender = finalLender;
+        state.positions[marginId].lender = finalLender;
     }
 
     function transferAsTraderImpl(
@@ -49,7 +49,7 @@ library TransferImpl {
         public
     {
         require(MarginCommon.containsOpenPositionImpl(state, marginId));
-        address originalTrader = state.marginPositions[marginId].trader;
+        address originalTrader = state.positions[marginId].trader;
         require(msg.sender == originalTrader);
         require(newTrader != originalTrader);
 
@@ -62,6 +62,6 @@ library TransferImpl {
         require(finalTrader != originalTrader);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.marginPositions[marginId].trader = finalTrader;
+        state.positions[marginId].trader = finalTrader;
     }
 }

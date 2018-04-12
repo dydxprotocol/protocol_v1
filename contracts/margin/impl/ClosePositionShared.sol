@@ -52,8 +52,8 @@ library ClosePositionShared {
         if (transaction.closeAmount == transaction.currentPositionAmount) {
             MarginCommon.cleanupPosition(state, transaction.marginId);
         } else {
-            state.marginPositions[transaction.marginId].closedAmount =
-                state.marginPositions[transaction.marginId].closedAmount.add(
+            state.positions[transaction.marginId].closedAmount =
+                state.positions[transaction.marginId].closedAmount.add(
                     transaction.closeAmount
                 );
         }

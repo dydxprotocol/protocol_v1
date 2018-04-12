@@ -132,9 +132,9 @@ contract Margin is
     }
 
     /**
-     * Add value to a margin position. Funds will be borrowed from the loan payer and sold as per
-     * position. The value added to the position will be equal to the effective amount lent, and
-     * will incorporate interest already earned by the position so far.
+     * Increase the size of a margin position. Funds will be borrowed from the loan payer and sold
+     * as per position. The value added to the position will be equal to the effective amount lent,
+     * and will incorporate interest already earned by the position so far.
      *
      * @param  addresses  Addresses corresponding to:
      *
@@ -201,8 +201,8 @@ contract Margin is
     }
 
     /**
-     * Add value to a margin position by directly putting up quote token. The adder will serve a
-     * both the lender and trader.
+     * Increase the size of a margin position by directly putting up quote token. The adder will
+     * serve as both the lender and trader.
      *
      * @param marginId  Unique ID of the margin position
      * @param amount    Amount (in base token) to add to the position
@@ -248,7 +248,7 @@ contract Margin is
         bytes   order
     )
         external
-        ClosePositionStateControl
+        closePositionStateControl
         nonReentrant
         returns (uint256, uint256, uint256)
     {
@@ -280,7 +280,7 @@ contract Margin is
         address payoutRecipient
     )
         external
-        ClosePositionDirectlyStateControl
+        closePositionDirectlyStateControl
         nonReentrant
         returns (uint256, uint256, uint256)
     {
@@ -312,7 +312,7 @@ contract Margin is
         address payoutRecipient
     )
         external
-        ClosePositionStateControl
+        closePositionStateControl
         nonReentrant
         returns (uint256, uint256)
     {
