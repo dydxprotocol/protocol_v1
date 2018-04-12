@@ -18,7 +18,7 @@ contract TestLiquidatePositionDelegator is LiquidatePositionDelegator {
         CLOSER = closer;
     }
 
-    function receiveLoanOwnership(
+    function receiveOwnershipAsLender(
         address,
         bytes32
     )

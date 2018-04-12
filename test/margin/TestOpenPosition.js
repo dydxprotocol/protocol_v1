@@ -13,9 +13,9 @@ const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
-const TestLoanOwner = artifacts.require("TestLoanOwner");
+const TestLenderOwner = artifacts.require("TestLenderOwner");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
-const TestPositionOwner = artifacts.require("TestPositionOwner");
+const TestTraderOwner = artifacts.require("TestTraderOwner");
 const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
@@ -34,22 +34,22 @@ const { signLoanOffering } = require('../helpers/LoanHelper');
 describe('#openPosition', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
-      const OpenPositionTx = await createMarginTradeTx(accounts);
+      const openTx = await createMarginTradeTx(accounts);
       const margin = await Margin.deployed();
 
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
+      await issueTokensAndSetAllowancesFor(openTx);
 
-      const tx = await callOpenPosition(margin, OpenPositionTx);
+      const tx = await callOpenPosition(margin, openTx);
 
       console.log('\tMargin.openPosition (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(margin, OpenPositionTx);
+      await checkSuccess(margin, openTx);
     });
   });
 
   contract('Margin', function(accounts) {
     it('allows smart contracts to be lenders', async () => {
-      const OpenPositionTx = await createMarginTradeTx(accounts);
+      const openTx = await createMarginTradeTx(accounts);
       const [
         margin,
         feeToken,
@@ -62,25 +62,25 @@ describe('#openPosition', () => {
         TestSmartContractLender.new(true)
       ]);
 
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
+      await issueTokensAndSetAllowancesFor(openTx);
 
       const [
         lenderFeeTokenBalance,
         lenderBaseTokenBalance
       ] = await Promise.all([
-        feeToken.balanceOf.call(OpenPositionTx.loanOffering.payer),
-        baseToken.balanceOf.call(OpenPositionTx.loanOffering.payer)
+        feeToken.balanceOf.call(openTx.loanOffering.payer),
+        baseToken.balanceOf.call(openTx.loanOffering.payer)
       ]);
       await Promise.all([
         feeToken.transfer(
           testSmartContractLender.address,
           lenderFeeTokenBalance,
-          { from: OpenPositionTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer }
         ),
         baseToken.transfer(
           testSmartContractLender.address,
           lenderBaseTokenBalance,
-          { from: OpenPositionTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer }
         )
       ]);
       await Promise.all([
@@ -100,49 +100,49 @@ describe('#openPosition', () => {
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      OpenPositionTx.loanOffering.signer = OpenPositionTx.loanOffering.payer;
-      OpenPositionTx.loanOffering.payer = testSmartContractLender.address;
-      OpenPositionTx.loanOffering.owner = testMarginCallDelegator.address;
-      OpenPositionTx.loanOffering.signature = await signLoanOffering(OpenPositionTx.loanOffering);
+      openTx.loanOffering.signer = openTx.loanOffering.payer;
+      openTx.loanOffering.payer = testSmartContractLender.address;
+      openTx.loanOffering.owner = testMarginCallDelegator.address;
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
-      const tx = await callOpenPosition(margin, OpenPositionTx);
+      const tx = await callOpenPosition(margin, openTx);
 
       console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(margin, OpenPositionTx);
+      await checkSuccess(margin, openTx);
     });
   });
 
   contract('Margin', function(accounts) {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const margin = await Margin.deployed();
-      const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
-      const testPositionOwner = await TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testLenderOwner = await TestLenderOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testTraderOwner = await TestTraderOwner.new(Margin.address, ADDRESSES.ZERO, false);
 
-      const OpenPositionTx1 = await createMarginTradeTx(accounts);
-      await issueTokensAndSetAllowancesFor(OpenPositionTx1);
-      OpenPositionTx1.owner = testLoanOwner.address; // can't take position ownership
-      OpenPositionTx1.loanOffering.signature = await signLoanOffering(OpenPositionTx1.loanOffering);
-      await expectThrow( callOpenPosition(margin, OpenPositionTx1));
+      const openTx1 = await createMarginTradeTx(accounts);
+      await issueTokensAndSetAllowancesFor(openTx1);
+      openTx1.owner = testLenderOwner.address; // can't take position ownership
+      openTx1.loanOffering.signature = await signLoanOffering(openTx1.loanOffering);
+      await expectThrow( callOpenPosition(margin, openTx1));
 
-      const OpenPositionTx2 = await createMarginTradeTx(accounts);
-      await issueTokensAndSetAllowancesFor(OpenPositionTx2);
-      OpenPositionTx2.loanOffering.owner = testPositionOwner.address; // cant take lender ownership
-      OpenPositionTx2.loanOffering.signature = await signLoanOffering(OpenPositionTx2.loanOffering);
-      await expectThrow( callOpenPosition(margin, OpenPositionTx2));
+      const openTx2 = await createMarginTradeTx(accounts);
+      await issueTokensAndSetAllowancesFor(openTx2);
+      openTx2.loanOffering.owner = testTraderOwner.address; // cant take lender ownership
+      openTx2.loanOffering.signature = await signLoanOffering(openTx2.loanOffering);
+      await expectThrow( callOpenPosition(margin, openTx2));
     });
   });
 
   contract('Margin', function(accounts) {
     it('properly assigns owner for lender and trader for accounts', async () => {
       const margin = await Margin.deployed();
-      const OpenPositionTx = await createMarginTradeTx(accounts);
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
-      OpenPositionTx.owner = accounts[8];
-      OpenPositionTx.loanOffering.owner = accounts[9];
-      OpenPositionTx.loanOffering.signature = await signLoanOffering(OpenPositionTx.loanOffering);
-      await callOpenPosition(margin, OpenPositionTx);
-      await checkSuccess(margin, OpenPositionTx);
+      const openTx = await createMarginTradeTx(accounts);
+      await issueTokensAndSetAllowancesFor(openTx);
+      openTx.owner = accounts[8];
+      openTx.loanOffering.owner = accounts[9];
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      await callOpenPosition(margin, openTx);
+      await checkSuccess(margin, openTx);
     });
   });
 
@@ -157,13 +157,13 @@ describe('#openPosition', () => {
         Margin.address,
         ADDRESSES.ZERO,
         false);
-      const OpenPositionTx = await createMarginTradeTx(accounts);
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
-      OpenPositionTx.owner = testClosePositionDelegator.address;
-      OpenPositionTx.loanOffering.owner = testMarginCallDelegator.address;
-      OpenPositionTx.loanOffering.signature = await signLoanOffering(OpenPositionTx.loanOffering);
-      await callOpenPosition(margin, OpenPositionTx);
-      await checkSuccess(margin, OpenPositionTx);
+      const openTx = await createMarginTradeTx(accounts);
+      await issueTokensAndSetAllowancesFor(openTx);
+      openTx.owner = testClosePositionDelegator.address;
+      openTx.loanOffering.owner = testMarginCallDelegator.address;
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      await callOpenPosition(margin, openTx);
+      await checkSuccess(margin, openTx);
     });
   });
 
@@ -178,46 +178,46 @@ describe('#openPosition', () => {
         Margin.address,
         ADDRESSES.ZERO,
         false);
-      const testLoanOwner = await TestLoanOwner.new(
+      const testLenderOwner = await TestLenderOwner.new(
         Margin.address,
         testMarginCallDelegator.address,
         false);
-      const testPositionOwner = await TestPositionOwner.new(
+      const testTraderOwner = await TestTraderOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
         false);
-      const OpenPositionTx = await createMarginTradeTx(accounts);
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
-      OpenPositionTx.owner = testPositionOwner.address;
-      OpenPositionTx.loanOffering.owner = testLoanOwner.address;
-      OpenPositionTx.loanOffering.signature = await signLoanOffering(OpenPositionTx.loanOffering);
-      await callOpenPosition(margin, OpenPositionTx);
-      await checkSuccess(margin, OpenPositionTx);
+      const openTx = await createMarginTradeTx(accounts);
+      await issueTokensAndSetAllowancesFor(openTx);
+      openTx.owner = testTraderOwner.address;
+      openTx.loanOffering.owner = testLenderOwner.address;
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      await callOpenPosition(margin, openTx);
+      await checkSuccess(margin, openTx);
     });
   });
 
   contract('Margin', function(accounts) {
     it('succeeds with on-chain approved loan offerings', async () => {
-      const OpenPositionTx = await createMarginTradeTx(accounts);
+      const openTx = await createMarginTradeTx(accounts);
       const margin = await Margin.deployed();
 
-      await issueTokensAndSetAllowancesFor(OpenPositionTx);
-      await callApproveLoanOffering(margin, OpenPositionTx.loanOffering);
+      await issueTokensAndSetAllowancesFor(openTx);
+      await callApproveLoanOffering(margin, openTx.loanOffering);
 
-      OpenPositionTx.loanOffering.signature.v = 0;
-      OpenPositionTx.loanOffering.signature.r = "";
-      OpenPositionTx.loanOffering.signature.s = "";
+      openTx.loanOffering.signature.v = 0;
+      openTx.loanOffering.signature.r = "";
+      openTx.loanOffering.signature.s = "";
 
-      await callOpenPosition(margin, OpenPositionTx);
+      await callOpenPosition(margin, openTx);
 
-      await checkSuccess(margin, OpenPositionTx);
+      await checkSuccess(margin, openTx);
     });
   });
 });
 
-async function checkSuccess(margin, OpenPositionTx) {
+async function checkSuccess(margin, openTx) {
   const marginId = web3Instance.utils.soliditySha3(
-    OpenPositionTx.loanOffering.loanHash,
+    openTx.loanOffering.loanHash,
     0
   );
 
@@ -225,51 +225,51 @@ async function checkSuccess(margin, OpenPositionTx) {
   expect(contains).to.equal(true);
   const position = await getPosition(margin, marginId);
 
-  expect(position.baseToken).to.equal(OpenPositionTx.baseToken);
-  expect(position.quoteToken).to.equal(OpenPositionTx.quoteToken);
-  expect(position.marginAmount).to.be.bignumber.equal(OpenPositionTx.marginAmount);
+  expect(position.baseToken).to.equal(openTx.baseToken);
+  expect(position.quoteToken).to.equal(openTx.quoteToken);
+  expect(position.amount).to.be.bignumber.equal(openTx.amount);
   expect(position.interestRate).to.be.bignumber.equal(
-    OpenPositionTx.loanOffering.rates.interestRate);
-  expect(position.callTimeLimit).to.be.bignumber.equal(OpenPositionTx.loanOffering.callTimeLimit);
+    openTx.loanOffering.rates.interestRate);
+  expect(position.callTimeLimit).to.be.bignumber.equal(openTx.loanOffering.callTimeLimit);
   expect(position.closedAmount).to.be.bignumber.equal(0);
   expect(position.callTimestamp).to.be.bignumber.equal(0);
-  expect(position.maxDuration).to.be.bignumber.equal(OpenPositionTx.loanOffering.maxDuration);
+  expect(position.maxDuration).to.be.bignumber.equal(openTx.loanOffering.maxDuration);
 
   // if atomic owner is specified, then expect it
-  if (OpenPositionTx.owner === ADDRESSES.ZERO) {
-    expect(position.trader).to.equal(OpenPositionTx.trader);
+  if (openTx.owner === ADDRESSES.ZERO) {
+    expect(position.trader).to.equal(openTx.trader);
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestPositionOwner.at(OpenPositionTx.owner).TO_RETURN.call();
+      toReturn = await TestTraderOwner.at(openTx.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
-    expect(position.trader).to.equal(toReturn ? toReturn : OpenPositionTx.owner);
+    expect(position.trader).to.equal(toReturn ? toReturn : openTx.owner);
   }
 
   // if atomic owner is specified, then expect it
-  if (OpenPositionTx.loanOffering.owner === ADDRESSES.ZERO) {
-    expect(position.lender).to.equal(OpenPositionTx.loanOffering.payer);
+  if (openTx.loanOffering.owner === ADDRESSES.ZERO) {
+    expect(position.lender).to.equal(openTx.loanOffering.payer);
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestLoanOwner.at(OpenPositionTx.loanOffering.owner).TO_RETURN.call();
+      toReturn = await TestLenderOwner.at(openTx.loanOffering.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
-    expect(position.lender).to.equal(toReturn ? toReturn : OpenPositionTx.loanOffering.owner);
+    expect(position.lender).to.equal(toReturn ? toReturn : openTx.loanOffering.owner);
   }
 
   const balance = await margin.getPositionBalance.call(marginId);
 
   const quoteTokenFromSell = getPartialAmount(
-    OpenPositionTx.buyOrder.makerTokenAmount,
-    OpenPositionTx.buyOrder.takerTokenAmount,
-    OpenPositionTx.marginAmount
+    openTx.buyOrder.makerTokenAmount,
+    openTx.buyOrder.takerTokenAmount,
+    openTx.amount
   );
 
-  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenPositionTx.depositAmount));
+  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(openTx.depositAmount));
 
   const [
     baseToken,
@@ -293,64 +293,64 @@ async function checkSuccess(margin, OpenPositionTx) {
     exchangeWrapperFeeToken,
     traderFeeToken
   ] = await Promise.all([
-    baseToken.balanceOf.call(OpenPositionTx.loanOffering.payer),
-    baseToken.balanceOf.call(OpenPositionTx.buyOrder.maker),
+    baseToken.balanceOf.call(openTx.loanOffering.payer),
+    baseToken.balanceOf.call(openTx.buyOrder.maker),
     baseToken.balanceOf.call(ExchangeWrapper.address),
-    quoteToken.balanceOf.call(OpenPositionTx.trader),
-    quoteToken.balanceOf.call(OpenPositionTx.buyOrder.maker),
+    quoteToken.balanceOf.call(openTx.trader),
+    quoteToken.balanceOf.call(openTx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
-    feeToken.balanceOf.call(OpenPositionTx.loanOffering.payer),
-    feeToken.balanceOf.call(OpenPositionTx.buyOrder.maker),
+    feeToken.balanceOf.call(openTx.loanOffering.payer),
+    feeToken.balanceOf.call(openTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
-    feeToken.balanceOf.call(OpenPositionTx.trader),
+    feeToken.balanceOf.call(openTx.trader),
   ]);
 
   expect(lenderBaseToken).to.be.bignumber.equal(
-    OpenPositionTx.loanOffering.rates.maxAmount.minus(OpenPositionTx.marginAmount)
+    openTx.loanOffering.rates.maxAmount.minus(openTx.amount)
   );
-  expect(makerBaseToken).to.be.bignumber.equal(OpenPositionTx.marginAmount);
+  expect(makerBaseToken).to.be.bignumber.equal(openTx.amount);
   expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
   expect(traderQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
-    OpenPositionTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
+    openTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
   );
-  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenPositionTx.depositAmount));
+  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(openTx.depositAmount));
   expect(lenderFeeToken).to.be.bignumber.equal(
-    OpenPositionTx.loanOffering.rates.lenderFee
+    openTx.loanOffering.rates.lenderFee
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.loanOffering.rates.maxAmount,
-          OpenPositionTx.loanOffering.rates.lenderFee
+          openTx.amount,
+          openTx.loanOffering.rates.maxAmount,
+          openTx.loanOffering.rates.lenderFee
         )
       )
   );
   expect(exchangeWrapperFeeToken).to.be.bignumber.equal(0);
   expect(makerFeeToken).to.be.bignumber.equal(
-    OpenPositionTx.buyOrder.makerFee
+    openTx.buyOrder.makerFee
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.buyOrder.takerTokenAmount,
-          OpenPositionTx.buyOrder.makerFee
+          openTx.amount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.buyOrder.makerFee
         )
       )
   );
   expect(traderFeeToken).to.be.bignumber.equal(
-    OpenPositionTx.loanOffering.rates.takerFee
-      .plus(OpenPositionTx.buyOrder.takerFee)
+    openTx.loanOffering.rates.takerFee
+      .plus(openTx.buyOrder.takerFee)
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.loanOffering.rates.maxAmount,
-          OpenPositionTx.loanOffering.rates.takerFee
+          openTx.amount,
+          openTx.loanOffering.rates.maxAmount,
+          openTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.buyOrder.takerTokenAmount,
-          OpenPositionTx.buyOrder.takerFee
+          openTx.amount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.buyOrder.takerFee
         )
       )
   );

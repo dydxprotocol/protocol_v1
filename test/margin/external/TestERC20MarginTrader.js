@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const Margin = artifacts.require("Margin");
 const ERC20MarginTrader = artifacts.require("ERC20MarginTrader");
 const BaseToken = artifacts.require("TokenB");
-const { ADDRESSES } = require('../helpers/Constants');
+const { ADDRESSES } = require('../../helpers/Constants');
 const {
   callClosePosition,
   callClosePositionDirectly,
@@ -16,16 +16,16 @@ const {
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee
-} = require('../helpers/MarginHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
-const { transact } = require('../helpers/ContractHelper');
-const { expectThrow } = require('../helpers/ExpectHelper');
+} = require('../../helpers/0xHelper');
+const { transact } = require('../../helpers/ContractHelper');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   getERC20MarginTraderConstants,
   TOKENIZED_POSITION_STATE
-} = require('../helpers/ERC20MarginTraderHelper');
+} = require('../../helpers/ERC20MarginTraderHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
@@ -87,10 +87,10 @@ contract('ERC20MarginTrader', function(accounts) {
       CONTRACTS.MARGIN,
       POSITIONS.PART.TX,
       POSITIONS.PART.SELL_ORDER,
-      POSITIONS.PART.TX.marginAmount.div(2));
+      POSITIONS.PART.TX.amount.div(2));
 
-    POSITIONS.FULL.NUM_TOKENS = POSITIONS.FULL.TX.marginAmount;
-    POSITIONS.PART.NUM_TOKENS = POSITIONS.PART.TX.marginAmount.div(2);
+    POSITIONS.FULL.NUM_TOKENS = POSITIONS.FULL.TX.amount;
+    POSITIONS.PART.NUM_TOKENS = POSITIONS.PART.TX.amount.div(2);
   }
 
   async function setUpTokens() {
@@ -113,11 +113,11 @@ contract('ERC20MarginTrader', function(accounts) {
     ]);
   }
 
-  async function transferPositionsToTokens() {
+  async function transferAsTradersToTokens() {
     await Promise.all([
-      CONTRACTS.MARGIN.transferPosition(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
+      CONTRACTS.MARGIN.transferAsTrader(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
         { from: POSITIONS.FULL.TX.trader }),
-      CONTRACTS.MARGIN.transferPosition(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
+      CONTRACTS.MARGIN.transferAsTrader(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
         { from: POSITIONS.PART.TX.trader }),
     ]);
   }
@@ -188,7 +188,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
   });
 
-  describe('#receivePositionOwnership', () => {
+  describe('#receiveOwnershipAsTrader', () => {
     beforeEach('set up new position and tokens', async () => {
       // Create new position since state is modified by transferring them
       await setUpPositions();
@@ -201,7 +201,7 @@ contract('ERC20MarginTrader', function(accounts) {
 
         const tsc1 = await getERC20MarginTraderConstants(POSITION.TOKEN_CONTRACT);
 
-        await CONTRACTS.MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
+        await CONTRACTS.MARGIN.transferAsTrader(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.trader });
 
         const [tsc2, position] = await Promise.all([
@@ -232,12 +232,12 @@ contract('ERC20MarginTrader', function(accounts) {
     it('fails if not authorized', async () => {
       await setUpPositions();
       await setUpTokens();
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const trader = POSITION.TX.trader;
-        const amount = POSITION.TX.marginAmount;
+        const amount = POSITION.TX.amount;
         await expectThrow(
           POSITION.TOKEN_CONTRACT.closePositionOnBehalfOf(
             trader, trader, POSITION.ID, amount.div(2))
@@ -272,7 +272,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('fails if user does not have the amount of baseToken required', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await Promise.all([
         POSITIONS.FULL.TOKEN_CONTRACT.transfer(accounts[0], POSITIONS.FULL.NUM_TOKENS,
           { from: INITIAL_TOKEN_HOLDER }),
@@ -294,7 +294,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('fails if value is zero', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader();
 
@@ -312,7 +312,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('closes up to the remainingAmount if user tries to close more', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader();
 
@@ -328,7 +328,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('closes at most the number of tokens owned', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader();
 
@@ -352,7 +352,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('fails if user does not own any of the tokenized position', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader(accounts[0]);
 
@@ -370,7 +370,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('fails if closed', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader();
 
@@ -397,7 +397,7 @@ contract('ERC20MarginTrader', function(accounts) {
     });
 
     it('succeeds otherwise', async () => {
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
       await returnTokensToTrader();
       await grantDirectCloseTokensToTrader();
 
@@ -417,7 +417,7 @@ contract('ERC20MarginTrader', function(accounts) {
       async () => {
         await setUpPositions();
         await setUpTokens();
-        await transferPositionsToTokens();
+        await transferAsTradersToTokens();
         await returnTokensToTrader();
         await marginCallPositions();
         await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
@@ -496,7 +496,7 @@ contract('ERC20MarginTrader', function(accounts) {
     it('returns decimal value of baseToken', async () => {
       await setUpPositions();
       await setUpTokens();
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -527,7 +527,7 @@ contract('ERC20MarginTrader', function(accounts) {
     it('successfully returns the marginId of the position', async () => {
       await setUpPositions();
       await setUpTokens();
-      await transferPositionsToTokens();
+      await transferAsTradersToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];

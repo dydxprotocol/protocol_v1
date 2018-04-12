@@ -6,8 +6,6 @@ import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
@@ -19,9 +17,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
 library OpenPositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A margin position was opened
@@ -34,7 +30,7 @@ library OpenPositionImpl {
         address baseToken,
         address quoteToken,
         address loanFeeRecipient,
-        uint256 marginAmount,
+        uint256 amount,
         uint256 quoteTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
@@ -43,9 +39,7 @@ library OpenPositionImpl {
         uint32  interestPeriod
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function openPositionImpl(
         MarginState.State storage state,
@@ -103,7 +97,7 @@ library OpenPositionImpl {
         return marginId;
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function getNextPositionId(
         MarginState.State storage state,
@@ -167,28 +161,29 @@ library OpenPositionImpl {
 
         state.marginPositions[marginId].baseToken = transaction.baseToken;
         state.marginPositions[marginId].quoteToken = transaction.quoteToken;
-        state.marginPositions[marginId].marginAmount = transaction.effectiveAmount;
+        state.marginPositions[marginId].amount = transaction.effectiveAmount;
         state.marginPositions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.marginPositions[marginId].startTimestamp = uint32(block.timestamp);
         state.marginPositions[marginId].maxDuration = transaction.loanOffering.maxDuration;
         state.marginPositions[marginId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.marginPositions[marginId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
+        state.marginPositions[marginId].interestPeriod =
+            transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newTrader = transaction.owner != msg.sender;
 
-        state.marginPositions[marginId].lender = TransferInternal.grantLoanOwnership(
+        state.marginPositions[marginId].lender = TransferInternal.grantOwnershipAsLender(
             marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.marginPositions[marginId].trader = TransferInternal.grantPositionOwnership(
+        state.marginPositions[marginId].trader = TransferInternal.grantOwnershipAsTrader(
             marginId,
             newTrader ? msg.sender : address(0),
             transaction.owner);
     }
 
-    // -------- Parsing Functions -------
+    // ============ Parsing Functions ============
 
     function parseOpenPositionTx(
         address[11] addresses,

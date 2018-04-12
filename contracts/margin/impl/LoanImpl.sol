@@ -22,9 +22,7 @@ import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
 library LoanImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A margin position was margin-called
@@ -66,9 +64,7 @@ library LoanImpl {
         address indexed feeRecipient
     );
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     function marginCall(
         MarginState.State storage state,
@@ -211,7 +207,7 @@ library LoanImpl {
         );
     }
 
-    // ------ Parsing Functions ------
+    // ============ Parsing Functions ============
 
     function parseLoanOffering(
         address[9] addresses,

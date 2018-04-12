@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { PositionOwner } from "./PositionOwner.sol";
+import { TraderOwner } from "./TraderOwner.sol";
 
 
 /**
@@ -11,27 +11,23 @@ import { PositionOwner } from "./PositionOwner.sol";
  * Interface that smart contracts must implement in order to let other addresses close a margin
  * position owned by the smart contract.
  */
-contract ClosePositionDelegator is PositionOwner {
+contract ClosePositionDelegator is TraderOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ClosePositionDelegator(
         address margin
     )
         public
-        PositionOwner(margin)
+        TraderOwner(margin)
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call ClosePosition() for the
-     * margin position. This allows margin traders to use more complex
+     * Function a contract must implement in order to let other addresses call ClosePosition() for
+     * the margin position. This allows margin traders to use more complex
      * logic to control their margin positions. For example, this can be used to tokenize margin
      * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer
      * in the amount called here. This interface also allows for regulatory compliance; it could

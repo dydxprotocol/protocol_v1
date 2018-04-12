@@ -5,19 +5,17 @@ import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
- * @title PositionOwner
+ * @title TraderOwner
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to own margin positions on behalf of users
  * in order to unlock more complex logic.
  */
-contract PositionOwner is OnlyMargin {
+contract TraderOwner is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
-    function PositionOwner(
+    function TraderOwner(
         address margin
     )
         public
@@ -25,20 +23,18 @@ contract PositionOwner is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to receive ownership of a margin position via the
-     * transferPosition function or the atomic-assign to the "owner" field when opening a position.
+     * transferAsTrader function or the atomic-assign to the "owner" field when opening a position.
      *
-     * @param  from     Address of the previous owner
+     * @param  from      Address of the previous owner
      * @param  marginId  Unique ID of the margin position
-     * @return          The address to pass position ownership to. Own address to keep ownership,
-                        0x0 to reject ownership completely.
+     * @return           The address to pass position ownership to. Own address to keep ownership,
+                         0x0 to reject ownership completely.
      */
-    function receivePositionOwnership(
+    function receiveOwnershipAsTrader(
         address from,
         bytes32 marginId
     )

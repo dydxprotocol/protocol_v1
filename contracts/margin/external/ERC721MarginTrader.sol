@@ -25,9 +25,7 @@ contract ERC721MarginTrader is
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // --------------------
-    // ------ Events ------
-    // --------------------
+    // ============ Events ============
 
     event CloserApproval(
         address indexed owner,
@@ -41,9 +39,7 @@ contract ERC721MarginTrader is
         bool isApproved
     );
 
-    // -----------------------------
-    // ------ State Variables ------
-    // -----------------------------
+    // ============ State Variables ============
 
     // Mapping from an address to other addresses that are approved to be position closers
     mapping (address => mapping (address => bool)) public approvedClosers;
@@ -51,9 +47,7 @@ contract ERC721MarginTrader is
     // Mapping from an address to other addresses that are approved to be payoutRecipients
     mapping (address => mapping (address => bool)) public approvedRecipients;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ERC721MarginTrader(
         address margin
@@ -64,9 +58,7 @@ contract ERC721MarginTrader is
     {
     }
 
-    // --------------------------------
-    // ---- Token-Holder functions ----
-    // --------------------------------
+    // ============ Token-Holder functions ============
 
     /**
      * Approve any close with the specified closer as the msg.sender of the close.
@@ -114,12 +106,12 @@ contract ERC721MarginTrader is
     }
 
     /**
-     * Transfer ownership of the margin position externally to this contract, thereby burning the token
+     * Transfer ownership of the margin position to an arbitrary address, thereby burning the token
      *
      * @param  marginId  Unique ID of the margin position
      * @param  to        Address to transfer position ownership to
      */
-    function transferPosition(
+    function transferAsTrader(
         bytes32 marginId,
         address to
     )
@@ -129,7 +121,7 @@ contract ERC721MarginTrader is
         uint256 tokenId = uint256(marginId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferPosition(marginId, to);
+        Margin(MARGIN).transferAsTrader(marginId, to);
     }
 
     /**
@@ -148,20 +140,18 @@ contract ERC721MarginTrader is
         _burn(ownerOf(uint256(marginId)), uint256(marginId));
     }
 
-    // ---------------------------------
-    // ---- OnlyMargin Functions ----
-    // ---------------------------------
+    // ============ Margin-Only Functions ============
 
     /**
      * Called by the Margin contract when anyone transfers ownership of a position to this contract.
      * This function mints a new ERC721 Token and returns this address to
      * indicate to Margin that it is willing to take ownership of the margin position.
      *
-     * @param  from     Address of previous position owner
+     * @param  from      Address of previous position owner
      * @param  marginId  Unique ID of the margin position
-     * @return          This address on success, throw otherwise
+     * @return           This address on success, throw otherwise
      */
-    function receivePositionOwnership(
+    function receiveOwnershipAsTrader(
         address from,
         bytes32 marginId
     )
@@ -188,15 +178,15 @@ contract ERC721MarginTrader is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the margin position
-     * position. Implementation is required per PositionOwner contract in order to be used by
+     * Called by Margin when an owner of this token is attempting to close some of the margin
+     * position. Implementation is required per TraderOwner contract in order to be used by
      * Margin to approve closing parts of a margin position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the margin position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId          Unique ID of the margin position
+     * @param marginId         Unique ID of the margin position
      * @param requestedAmount  Amount of the margin position being closed
      * @return                 The amount the user is allowed to close for the specified position
      */
@@ -212,7 +202,8 @@ contract ERC721MarginTrader is
         returns (uint256)
     {
         // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder
-        // must return the owner of the margin position after it has been closed in the current transaction.
+        // must return the owner of the margin position after it has been closed within the current
+        // transaction.
 
         address owner = ownerOf(uint256(marginId));
         if (
@@ -226,9 +217,7 @@ contract ERC721MarginTrader is
         return 0;
     }
 
-    // ----------------------------------
-    // ---- TraderCustodian Functions ----
-    // ----------------------------------
+    // ============ TraderCustodian Functions ============
 
     function getPositionDeedHolder(
         bytes32 marginId

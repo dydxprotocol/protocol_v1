@@ -14,9 +14,7 @@ import { MarginStorage } from "./MarginStorage.sol";
  */
 contract LoanGetters is MarginStorage {
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // ============ Public Constant Functions ============
 
     function getUnavailableLoanOfferingAmount(
         bytes32 loanHash

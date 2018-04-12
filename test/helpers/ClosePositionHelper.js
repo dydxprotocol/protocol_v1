@@ -26,11 +26,11 @@ module.exports = {
   getPositionLifetime
 };
 
-async function checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmount) {
-  const baseTokenOwedToLender = await getOwedAmount(OpenPositionTx, closeTx, closeAmount);
+async function checkSuccess(margin, openTx, closeTx, sellOrder, closeAmount) {
+  const baseTokenOwedToLender = await getOwedAmount(openTx, closeTx, closeAmount);
   const quoteTokenFromSell = getPartialAmount(
-    OpenPositionTx.buyOrder.makerTokenAmount,
-    OpenPositionTx.buyOrder.takerTokenAmount,
+    openTx.buyOrder.makerTokenAmount,
+    openTx.buyOrder.takerTokenAmount,
     closeAmount
   );
   const quoteTokenBuybackCost = getPartialAmount(
@@ -39,7 +39,7 @@ async function checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmo
     baseTokenOwedToLender
   );
 
-  const balances = await getBalances(margin, OpenPositionTx, sellOrder);
+  const balances = await getBalances(margin, openTx, sellOrder);
   const {
     traderQuoteToken,
     externalTraderQuoteToken,
@@ -49,14 +49,14 @@ async function checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmo
     feeRecipientFeeToken
   } = balances;
 
-  checkSmartContractBalances(balances, OpenPositionTx, closeAmount);
-  checkLenderBalances(balances, baseTokenOwedToLender, OpenPositionTx);
+  checkSmartContractBalances(balances, openTx, closeAmount);
+  checkLenderBalances(balances, baseTokenOwedToLender, openTx);
 
   expect(traderQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      OpenPositionTx.marginAmount,
-      OpenPositionTx.depositAmount
+      openTx.amount,
+      openTx.depositAmount
     ).plus(quoteTokenFromSell)
       .minus(quoteTokenBuybackCost)
   );
@@ -78,21 +78,21 @@ async function checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmo
     )
   );
   expect(traderFeeToken).to.be.bignumber.equal(
-    OpenPositionTx.buyOrder.takerFee
-      .plus(OpenPositionTx.loanOffering.rates.takerFee)
+    openTx.buyOrder.takerFee
+      .plus(openTx.loanOffering.rates.takerFee)
       .plus(sellOrder.takerFee)
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.loanOffering.rates.maxAmount,
-          OpenPositionTx.loanOffering.rates.takerFee
+          openTx.amount,
+          openTx.loanOffering.rates.maxAmount,
+          openTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          OpenPositionTx.marginAmount,
-          OpenPositionTx.buyOrder.takerTokenAmount,
-          OpenPositionTx.buyOrder.takerFee
+          openTx.amount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.buyOrder.takerFee
         )
       )
       .minus(
@@ -115,15 +115,15 @@ async function checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmo
   );
 }
 
-function checkSmartContractBalances(balances, OpenPositionTx, closeAmount) {
+function checkSmartContractBalances(balances, openTx, closeAmount) {
   const startingQuoteTokenAmount = getPartialAmount(
-    OpenPositionTx.buyOrder.makerTokenAmount,
-    OpenPositionTx.buyOrder.takerTokenAmount,
-    OpenPositionTx.marginAmount
-  ).plus(OpenPositionTx.depositAmount);
+    openTx.buyOrder.makerTokenAmount,
+    openTx.buyOrder.takerTokenAmount,
+    openTx.amount
+  ).plus(openTx.depositAmount);
   const expectedBalance = getPartialAmount(
-    OpenPositionTx.marginAmount.minus(closeAmount),
-    OpenPositionTx.marginAmount,
+    openTx.amount.minus(closeAmount),
+    openTx.amount,
     startingQuoteTokenAmount
   );
 
@@ -140,21 +140,21 @@ function checkSmartContractBalances(balances, OpenPositionTx, closeAmount) {
   expect(positionBalance).to.be.bignumber.equal(expectedBalance);
 }
 
-function checkLenderBalances(balances, baseTokenOwedToLender, OpenPositionTx) {
+function checkLenderBalances(balances, baseTokenOwedToLender, openTx) {
   const {
     lenderQuoteToken,
     lenderBaseToken,
   } = balances;
   expect(lenderQuoteToken).to.be.bignumber.equal(0);
   expect(lenderBaseToken).to.be.bignumber.equal(
-    OpenPositionTx.loanOffering.rates.maxAmount
-      .minus(OpenPositionTx.marginAmount)
+    openTx.loanOffering.rates.maxAmount
+      .minus(openTx.amount)
       .plus(baseTokenOwedToLender));
 }
 
-async function getOwedAmount(OpenPositionTx, closeTx, closeAmount, roundUpToPeriod = true) {
-  let positionLifetime = await getPositionLifetime(OpenPositionTx, closeTx);
-  let interestPeriod = OpenPositionTx.loanOffering.rates.interestPeriod;
+async function getOwedAmount(openTx, closeTx, closeAmount, roundUpToPeriod = true) {
+  let positionLifetime = await getPositionLifetime(openTx, closeTx);
+  let interestPeriod = openTx.loanOffering.rates.interestPeriod;
   if (interestPeriod.gt(1)) {
     positionLifetime = getPartialAmount(
       positionLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
@@ -165,13 +165,13 @@ async function getOwedAmount(OpenPositionTx, closeTx, closeAmount, roundUpToPeri
 
   const getOwedAmount = await interestCalc.getCompoundedInterest.call(
     closeAmount,
-    OpenPositionTx.loanOffering.rates.interestRate,
+    openTx.loanOffering.rates.interestRate,
     positionLifetime
   );
   return getOwedAmount;
 }
 
-async function getBalances(margin, OpenPositionTx, sellOrder) {
+async function getBalances(margin, openTx, sellOrder) {
   const [
     baseToken,
     quoteToken,
@@ -216,19 +216,19 @@ async function getBalances(margin, OpenPositionTx, sellOrder) {
 
     positionBalance
   ] = await Promise.all([
-    quoteToken.balanceOf.call(OpenPositionTx.trader),
-    baseToken.balanceOf.call(OpenPositionTx.trader),
+    quoteToken.balanceOf.call(openTx.trader),
+    baseToken.balanceOf.call(openTx.trader),
 
-    quoteToken.balanceOf.call(OpenPositionTx.loanOffering.payer),
-    baseToken.balanceOf.call(OpenPositionTx.loanOffering.payer),
+    quoteToken.balanceOf.call(openTx.loanOffering.payer),
+    baseToken.balanceOf.call(openTx.loanOffering.payer),
 
-    feeToken.balanceOf.call(OpenPositionTx.trader),
+    feeToken.balanceOf.call(openTx.trader),
 
     feeToken.balanceOf.call(Vault.address),
     quoteToken.balanceOf.call(Vault.address),
     baseToken.balanceOf.call(Vault.address),
 
-    margin.getPositionBalance.call(OpenPositionTx.id)
+    margin.getPositionBalance.call(openTx.id)
   ]);
 
   return {
@@ -253,20 +253,20 @@ async function getBalances(margin, OpenPositionTx, sellOrder) {
   };
 }
 
-async function checkSuccessCloseDirectly(margin, OpenPositionTx, closeTx, closeAmount) {
-  const baseTokenOwedToLender = await getOwedAmount(OpenPositionTx, closeTx, closeAmount);
-  const balances = await getBalances(margin, OpenPositionTx);
+async function checkSuccessCloseDirectly(margin, openTx, closeTx, closeAmount) {
+  const baseTokenOwedToLender = await getOwedAmount(openTx, closeTx, closeAmount);
+  const balances = await getBalances(margin, openTx);
   const quoteTokenFromSell = getPartialAmount(
-    OpenPositionTx.buyOrder.makerTokenAmount,
-    OpenPositionTx.buyOrder.takerTokenAmount,
+    openTx.buyOrder.makerTokenAmount,
+    openTx.buyOrder.takerTokenAmount,
     closeAmount
   );
 
-  checkSmartContractBalances(balances, OpenPositionTx, closeAmount);
-  checkLenderBalances(balances, baseTokenOwedToLender, OpenPositionTx);
-  const maxInterest = await getMaxInterestFee(OpenPositionTx);
+  checkSmartContractBalances(balances, openTx, closeAmount);
+  checkLenderBalances(balances, baseTokenOwedToLender, openTx);
+  const maxInterest = await getMaxInterestFee(openTx);
   expect(balances.traderBaseToken).to.be.bignumber.equal(
-    OpenPositionTx.marginAmount
+    openTx.amount
       .plus(maxInterest)
       .minus(baseTokenOwedToLender)
   );
@@ -274,19 +274,19 @@ async function checkSuccessCloseDirectly(margin, OpenPositionTx, closeTx, closeA
   expect(balances.traderQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      OpenPositionTx.marginAmount,
-      OpenPositionTx.depositAmount
+      openTx.amount,
+      openTx.depositAmount
     )
       .plus(quoteTokenFromSell)
   );
 }
 
-async function getPositionLifetime(OpenPositionTx, tx) {
+async function getPositionLifetime(openTx, tx) {
   const [openTimestamp, positionClosedTimestamp] = await Promise.all([
-    getBlockTimestamp(OpenPositionTx.response.receipt.blockNumber),
+    getBlockTimestamp(openTx.response.receipt.blockNumber),
     getBlockTimestamp(tx.receipt.blockNumber)
   ]);
-  const maxDuration = OpenPositionTx.loanOffering.maxDuration;
+  const maxDuration = openTx.loanOffering.maxDuration;
   let duration = positionClosedTimestamp - openTimestamp;
   if (duration > maxDuration) {
     duration = maxDuration;

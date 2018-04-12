@@ -18,12 +18,10 @@ import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 library ClosePositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
-     * A position sell was closed
+     * A position was closed
      */
     event PositionClosed(
         bytes32 indexed marginId,
@@ -36,9 +34,7 @@ library ClosePositionImpl {
         uint256 buybackCost
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function closePositionImpl(
         MarginState.State storage state,
@@ -51,13 +47,14 @@ library ClosePositionImpl {
         public
         returns (uint256, uint256, uint256)
     {
-        ClosePositionShared.ClosePositionTx memory transaction = ClosePositionShared.createClosePositionTx(
-            state,
-            marginId,
-            requestedCloseAmount,
-            payoutRecipient,
-            false
-        );
+        ClosePositionShared.ClosePositionTx memory transaction =
+            ClosePositionShared.createClosePositionTx(
+                state,
+                marginId,
+                requestedCloseAmount,
+                payoutRecipient,
+                false
+            );
 
         uint256 buybackCost = returnBaseTokensToLender(
             state,
@@ -86,7 +83,7 @@ library ClosePositionImpl {
         );
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function returnBaseTokensToLender(
         MarginState.State storage state,

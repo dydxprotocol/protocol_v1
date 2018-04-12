@@ -11,9 +11,8 @@ pragma experimental "v0.5.0";
  *       and copy the event intothe library itself as libraries don't support sharing events
  */
 contract MarginEvents {
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+
+    // ============ Events ============
 
     /**
      * A margin position was opened
@@ -26,7 +25,7 @@ contract MarginEvents {
         address baseToken,
         address quoteToken,
         address loanFeeRecipient,
-        uint256 marginAmount,
+        uint256 amount,
         uint256 quoteTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
@@ -68,8 +67,8 @@ contract MarginEvents {
         bytes32 indexed marginId,
         address indexed trader,
         address indexed lender,
-        address positionOwner,
-        address loanOwner,
+        address traderOwner,
+        address lenderOwner,
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,
@@ -138,7 +137,7 @@ contract MarginEvents {
     /**
      * Ownership of a loan was transferred to a new address
      */
-    event LenderTransferred(
+    event TransferredAsLender(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to
@@ -147,7 +146,7 @@ contract MarginEvents {
     /**
      * Ownership of a position was transferred to a new address
      */
-    event PositionTransferred(
+    event TransferredAsTrader(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to

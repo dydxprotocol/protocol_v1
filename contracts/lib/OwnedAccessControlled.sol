@@ -13,9 +13,7 @@ import { AccessControlledBase } from "./AccessControlledBase.sol";
  * Owner has permission to grant and revoke access
  */
 contract OwnedAccessControlled is AccessControlledBase, Ownable {
-    // -------------------------------------------
-    // --- Owner-Only State-Changing Functions ---
-    // -------------------------------------------
+    // ============ Owner-Only State-Changing Functions ============
 
     function grantAccess(
         address who

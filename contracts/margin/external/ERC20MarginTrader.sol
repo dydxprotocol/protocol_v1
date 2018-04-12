@@ -32,9 +32,7 @@ contract ERC20MarginTrader is
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // -----------------------
-    // -------- Enums --------
-    // -----------------------
+    // ============ Enums ============
 
     enum State {
         UNINITIALIZED,
@@ -42,9 +40,7 @@ contract ERC20MarginTrader is
         CLOSED
     }
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * This ERC20MarginTrader was successfully initialized
@@ -69,7 +65,7 @@ contract ERC20MarginTrader is
     event CompletelyClosed();
 
     /**
-     * A user burned tokens to withdraw quote tokens from this contract after the position was closed
+     * User burned tokens to withdraw quote tokens from this contract after the position was closed
      */
     event TokensRedeemedAfterForceClose(
         address indexed redeemer,
@@ -85,9 +81,8 @@ contract ERC20MarginTrader is
         uint256 closeAmount
     );
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+
+    // ============ State Variables ============
 
     // All tokens will initially be allocated to this address
     address public INITIAL_TOKEN_HOLDER;
@@ -95,21 +90,19 @@ contract ERC20MarginTrader is
     // Unique ID of the margin position this contract is tokenizing
     bytes32 public MARGIN_ID;
 
-    // Addresses of recipients that will fairly verify and redistribute funds from closing the position
+    // Addresses of recipients that will fairly verify and redistribute funds from a position close
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the margin position's quoteToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
     address public quoteToken;
 
     // Symbol to be ERC20 compliant with frontends
     string public symbol = "DYDX-S";
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ERC20MarginTrader(
         bytes32 marginId,
@@ -129,20 +122,18 @@ contract ERC20MarginTrader is
         }
     }
 
-    // -------------------------------------
-    // ----- Margin Only Functions -----
-    // -------------------------------------
+    // ============ Margin-Only Functions ============
 
     /**
      * Called by Margin when anyone transfers ownership of a position to this contract.
-     * This function initializes the tokenization of the margin position given and returns this address to
-     * indicate to Margin that it is willing to take ownership of the margin position.
+     * This function initializes the tokenization of the margin position given and returns this
+     * address to indicate to Margin that it is willing to take ownership of the margin position.
      *
      *  param  (unused)
      * @param  marginId  Unique ID of the margin position
      * @return           This address on success, throw otherwise
      */
-    function receivePositionOwnership(
+    function receiveOwnershipAsTrader(
         address /* from */,
         bytes32 marginId
     )
@@ -156,7 +147,7 @@ contract ERC20MarginTrader is
         require(MARGIN_ID == marginId);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
-        uint256 currentPositionAmount = position.marginAmount.sub(position.closedAmount);
+        uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         assert(currentPositionAmount > 0);
 
         // set relevant constants
@@ -205,8 +196,8 @@ contract ERC20MarginTrader is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the margin position
-     * position. Implementation is required per PositionOwner contract in order to be used by
+     * Called by Margin when an owner of this token is attempting to close some of the margin
+     * position. Implementation is required per TraderOwner contract in order to be used by
      * Margin to approve closing parts of a margin position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the margin position was successfully closed.
@@ -259,13 +250,11 @@ contract ERC20MarginTrader is
         return allowedAmount;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
-     * Withdraw quote tokens from this contract for any of the margin position that was closed via external
-     * means (such as an auction-closing mechanism)
+     * Withdraw quote tokens from this contract for any of the margin position that was closed via
+     * external means (such as an auction-closing mechanism).
      *
      * NOTE: It is possible that this contract could be sent quote token by external sources
      * other than from the Margin contract. In this case the payout for token holders
@@ -322,9 +311,7 @@ contract ERC20MarginTrader is
         return quoteTokenPayout;
     }
 
-    // -----------------------------------
-    // ---- Public Constant Functions ----
-    // -----------------------------------
+    //  Public Constant Functions ============
 
     /**
      * ERC20 decimals function. Returns the same number of decimals as the position's baseToken
@@ -345,12 +332,12 @@ contract ERC20MarginTrader is
     }
 
     /**
-     * ERC20 name function. Returns a name based off positionID. Throws if this contract does not own
-     * the position.
+     * ERC20 name function. Returns a name based off positionID. Throws if this contract does not
+     * own the position.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the margin position token which includes the hexadecimal marginId of the margin position
+     * @return  The name of the margin position token which includes the hexadecimal marginId
      */
     function name()
         external
@@ -370,7 +357,7 @@ contract ERC20MarginTrader is
      * tokens as a result of closing a position on behalf of this contract
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          Address of this contract. Indicates funds should be sent to this contract
+     * @return           Address of this contract. Indicates funds should be sent to this contract
      */
     function getPositionDeedHolder(
         bytes32 marginId

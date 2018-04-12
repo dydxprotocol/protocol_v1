@@ -4,7 +4,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { SharedLoan } from "./SharedLoan.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { LenderOwner } from "../interfaces/LenderOwner.sol";
 
 
 /**
@@ -19,54 +19,46 @@ import { LoanOwner } from "../interfaces/LoanOwner.sol";
 /* solium-disable-next-line */
 contract SharedLoanCreator is
     NoOwner,
-    LoanOwner,
+    LenderOwner,
     ReentrancyGuard
 {
-    // -------------------
-    // ------ Events -----
-    // -------------------
+    // ============ Events ============
 
     event SharedLoanCreated(
         bytes32 marginId,
         address sharedLoanAddress
     );
 
-    // ----------------------------
-    // ------ State Variables -----
-    // ----------------------------
+    // ============ State Variables ============
 
-    // Addresses of recipients that will fairly verify and redistribute funds from closing the margin position
-    address[] public TRUSTED_LOAN_CALLERS;
+    // Addresses that are trusted to margin call the position
+    address[] public TRUSTED_MARGIN_CALLERS;
 
-    // ------------------------
-    // ------ Constructor -----
-    // ------------------------
+    // ============ Constructor ============
 
     function SharedLoanCreator(
         address margin,
         address[] trustedLoanCallers
     )
         public
-        LoanOwner(margin)
+        LenderOwner(margin)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_LOAN_CALLERS.push(trustedLoanCallers[i]);
+            TRUSTED_MARGIN_CALLERS.push(trustedLoanCallers[i]);
         }
     }
 
-    // -----------------------------------
-    // ---- Margin Only Functions -----
-    // -----------------------------------
+    // ============ Margin-Only Functions ============
 
     /**
-     * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan
+     * Implementation of LenderOwner functionality. Creates a new SharedLoan and assigns loan
      * ownership to the SharedLoan. Called by Margin when a loan is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the loan
      * @return       Address of the new SharedLoan contract
      */
-    function receiveLoanOwnership(
+    function receiveOwnershipAsLender(
         address from,
         bytes32 marginId
     )
@@ -79,7 +71,7 @@ contract SharedLoanCreator is
             marginId,
             MARGIN,
             from,
-            TRUSTED_LOAN_CALLERS
+            TRUSTED_MARGIN_CALLERS
         );
 
         emit SharedLoanCreated(marginId, sharedLoanAddress);

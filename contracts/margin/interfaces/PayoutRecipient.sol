@@ -8,14 +8,12 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @title PayoutRecipient
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to be the payoutRecipient in a ClosePosition
- * transaction.
+ * Interface that smart contracts must implement in order to be the payoutRecipient in a
+ * closePosition transaction.
  */
 contract PayoutRecipient is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function PayoutRecipient(
         address margin
@@ -25,9 +23,7 @@ contract PayoutRecipient is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to receive payout from being the payoutRecipient
@@ -36,7 +32,7 @@ contract PayoutRecipient is OnlyMargin {
      * @param  marginId          Unique ID of the margin position
      * @param  closeAmount       Amount of the margin position that was closed
      * @param  positionCloser    Address of the account or contract that closed the position
-     * @param  positionOwner     Address of the owner of the margin position
+     * @param  traderOwner     Address of the owner of the margin position
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
@@ -46,7 +42,7 @@ contract PayoutRecipient is OnlyMargin {
         bytes32 marginId,
         uint256 closeAmount,
         address positionCloser,
-        address positionOwner,
+        address traderOwner,
         address quoteToken,
         uint256 payoutQuoteToken,
         uint256 totalQuoteToken

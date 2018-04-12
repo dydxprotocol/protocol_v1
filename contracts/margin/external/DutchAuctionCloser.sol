@@ -24,34 +24,28 @@ contract DutchAuctionCloser is
     PayoutRecipient {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
-
+    // ============ Events ============
+    
     /**
      * A position was closed by this contract
      */
     event PositionClosedByDutchAuction(
         bytes32 indexed marginId,
-        address indexed positionOwner,
+        address indexed traderOwner,
         address indexed bidder,
         uint256 closeAmount,
         uint256 quoteTokenForBidder,
         uint256 quoteTokenForTrader
     );
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct DutchBidTx {
         uint256 auctionPrice;
         uint256 closeAmount;
     }
 
-    // -----------------------------
-    // ------ State Variables ------
-    // -----------------------------
+    // ============ State Variables ============
 
     // Numerator of the fraction of the callTimeLimit allocated to the auction
     uint256 public CALL_TIMELIMIT_NUMERATOR;
@@ -59,9 +53,7 @@ contract DutchAuctionCloser is
     // Denominator of the fraction of the callTimeLimit allocated to the auction
     uint256 public CALL_TIMELIMIT_DENOMINATOR;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function DutchAuctionCloser(
         address margin,
@@ -78,9 +70,7 @@ contract DutchAuctionCloser is
         CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
 
-    // -------------------------------------------------
-    // ---- Margin-Only State-Changing Functions ----
-    // -------------------------------------------------
+    // ============ Margin-Only State-Changing Functions ============
 
     /**
      * Function to implement the PayoutRecipient interface.
@@ -88,7 +78,7 @@ contract DutchAuctionCloser is
      * @param  marginId          Unique ID of the margin position
      * @param  closeAmount       Amount of the margin position that was closed
      * @param  positionCloser    Address of the account or contract that closed the position
-     * @param  positionOwner     Address of the owner of the margin position
+     * @param  traderOwner     Address of the owner of the margin position
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
@@ -98,7 +88,7 @@ contract DutchAuctionCloser is
         bytes32 marginId,
         uint256 closeAmount,
         address positionCloser,
-        address positionOwner,
+        address traderOwner,
         address quoteToken,
         uint256 payoutQuoteToken,
         uint256 totalQuoteToken
@@ -119,7 +109,7 @@ contract DutchAuctionCloser is
         );
 
         // pay quoteToken back to trader
-        address deedHolder = TraderCustodian(positionOwner).getPositionDeedHolder(marginId);
+        address deedHolder = TraderCustodian(traderOwner).getPositionDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to auction bidder
@@ -128,7 +118,7 @@ contract DutchAuctionCloser is
 
         emit PositionClosedByDutchAuction(
             marginId,
-            positionOwner,
+            traderOwner,
             positionCloser,
             closeAmount,
             bidderReward,
@@ -138,9 +128,7 @@ contract DutchAuctionCloser is
         return true;
     }
 
-    // -----------------------------------
-    // ---- Internal Helper functions ----
-    // -----------------------------------
+    // ============ Internal Helper functions ============
 
     function getAuctionTimeLimits(
         bytes32 marginId

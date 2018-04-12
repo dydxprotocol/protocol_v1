@@ -14,11 +14,9 @@ import { TransferInternal } from "./TransferInternal.sol";
  */
 library TransferImpl {
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
-    function transferLoanImpl(
+    function transferAsLenderImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newLender
@@ -32,7 +30,7 @@ library TransferImpl {
 
         // Doesn't change the state of marginId; figures out the address of the final owner of loan.
         // That is, newLender may pass ownership to a different address.
-        address finalLender = TransferInternal.grantLoanOwnership(
+        address finalLender = TransferInternal.grantOwnershipAsLender(
             marginId,
             originalLender,
             newLender);
@@ -43,7 +41,7 @@ library TransferImpl {
         state.marginPositions[marginId].lender = finalLender;
     }
 
-    function transferOpenPositionImpl(
+    function transferAsTraderImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newTrader
@@ -55,9 +53,9 @@ library TransferImpl {
         require(msg.sender == originalTrader);
         require(newTrader != originalTrader);
 
-        // Doesn't change the state of marginId; figures out the address of the final owner of position.
-        // That is, newTrader may pass ownership to a different address.
-        address finalTrader = TransferInternal.grantPositionOwnership(
+        // Doesn't change the state of marginId; figures out the address of the final owner of
+        // position. That is, newTrader may pass ownership to a different address.
+        address finalTrader = TransferInternal.grantOwnershipAsTrader(
             marginId,
             originalTrader,
             newTrader);

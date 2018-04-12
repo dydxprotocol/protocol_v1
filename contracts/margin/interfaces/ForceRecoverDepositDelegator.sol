@@ -1,33 +1,29 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "./LoanOwner.sol";
+import { LenderOwner } from "./LenderOwner.sol";
 
 
 /**
  * @title ForceRecoverDepositDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses forceRecoverDeposit()
- * a loan owned by the smart contract.
+ * Interface that smart contracts must implement in order to let other addresses
+ * forceRecoverDeposit() a loan owned by the smart contract.
  */
-contract ForceRecoverDepositDelegator is LoanOwner {
+contract ForceRecoverDepositDelegator is LenderOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ForceRecoverDepositDelegator(
         address margin
     )
         public
-        LoanOwner(margin)
+        LenderOwner(margin)
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to let other addresses call forceRecoverDeposit()

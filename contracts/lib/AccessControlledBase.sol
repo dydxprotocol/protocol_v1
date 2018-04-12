@@ -10,15 +10,12 @@ pragma experimental "v0.5.0";
  * provide a way to grant and optionally revoke access
  */
 contract AccessControlledBase {
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+
+    // ============ State Variables ============
 
     mapping (address => bool) public authorized;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     event AccessGranted(
         address who
@@ -28,9 +25,7 @@ contract AccessControlledBase {
         address who
     );
 
-    // ---------------------------
-    // -------- Modifiers --------
-    // ---------------------------
+    // ============ Modifiers ============
 
     modifier requiresAuthorization() {
         require(authorized[msg.sender]);

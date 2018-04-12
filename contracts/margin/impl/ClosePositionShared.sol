@@ -22,9 +22,7 @@ import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 library ClosePositionShared {
     using SafeMath for uint256;
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct ClosePositionTx {
         bytes32 marginId;
@@ -40,9 +38,7 @@ library ClosePositionShared {
         address lender;
     }
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     function ClosePositionStateUpdate(
         MarginState.State storage state,
@@ -50,12 +46,16 @@ library ClosePositionShared {
     )
         internal
     {
+        assert(transaction.closeAmount <= transaction.currentPositionAmount);
+
         // Delete the margin position, or just increase the closedAmount
         if (transaction.closeAmount == transaction.currentPositionAmount) {
             MarginCommon.cleanupPosition(state, transaction.marginId);
         } else {
             state.marginPositions[transaction.marginId].closedAmount =
-                state.marginPositions[transaction.marginId].closedAmount.add(transaction.closeAmount);
+                state.marginPositions[transaction.marginId].closedAmount.add(
+                    transaction.closeAmount
+                );
         }
     }
 
@@ -146,7 +146,7 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
 
         uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, position.quoteToken);
-        uint256 currentPositionAmount = position.marginAmount.sub(position.closedAmount);
+        uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
             currentPositionAmount,
@@ -186,29 +186,31 @@ library ClosePositionShared {
         internal
         returns (uint256)
     {
-        uint256 currentPositionAmount = position.marginAmount.sub(position.closedAmount);
+        uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         uint256 newAmount = Math.min256(requestedAmount, currentPositionAmount);
 
         // If not the margin trader, requires margin trader to approve msg.sender
         if (position.trader != msg.sender) {
-            uint256 allowedCloseAmount = ClosePositionDelegator(position.trader).closePositionOnBehalfOf(
-                msg.sender,
-                payoutRecipient,
-                marginId,
-                newAmount
-            );
+            uint256 allowedCloseAmount =
+                ClosePositionDelegator(position.trader).closePositionOnBehalfOf(
+                    msg.sender,
+                    payoutRecipient,
+                    marginId,
+                    newAmount
+                );
             require(allowedCloseAmount <= newAmount);
             newAmount = allowedCloseAmount;
         }
 
         // If not the lender, requires lender to approve msg.sender
         if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLiquidationAmount = LiquidatePositionDelegator(position.lender).liquidatePositionOnBehalfOf(
-                msg.sender,
-                payoutRecipient,
-                marginId,
-                newAmount
-            );
+            uint256 allowedLiquidationAmount =
+                LiquidatePositionDelegator(position.lender).liquidatePositionOnBehalfOf(
+                    msg.sender,
+                    payoutRecipient,
+                    marginId,
+                    newAmount
+                );
             require(allowedLiquidationAmount <= newAmount);
             newAmount = allowedLiquidationAmount;
         }

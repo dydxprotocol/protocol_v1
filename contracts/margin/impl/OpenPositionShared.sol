@@ -20,9 +20,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 library OpenPositionShared {
     using SafeMath for uint256;
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct OpenPositionTx {
         address owner;
@@ -36,9 +34,7 @@ library OpenPositionShared {
         bool depositInQuoteToken;
     }
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     function internalPreStateUpdate(
         MarginState.State storage state,
@@ -99,7 +95,7 @@ library OpenPositionShared {
         //       (possible other contract calls back into Margin)
         getConsentIfSmartContractLender(transaction, marginId);
 
-        transferLoanFees(
+        transferAsLenderFees(
             state,
             transaction
         );
@@ -242,7 +238,7 @@ library OpenPositionShared {
         }
     }
 
-    function transferLoanFees(
+    function transferAsLenderFees(
         MarginState.State storage state,
         OpenPositionTx transaction
     )

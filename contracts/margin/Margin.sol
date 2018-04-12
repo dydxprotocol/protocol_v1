@@ -6,19 +6,19 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Vault } from "./Vault.sol";
-import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
 import { ForceRecoverDepositImpl } from "./impl/ForceRecoverDepositImpl.sol";
+import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
 import { LiquidatePositionImpl } from "./impl/LiquidatePositionImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
-import { PositionGetters } from "./impl/PositionGetters.sol";
-import { OpenPositionImpl } from "./impl/OpenPositionImpl.sol";
 import { MarginAdmin } from "./impl/MarginAdmin.sol";
 import { MarginEvents } from "./impl/MarginEvents.sol";
 import { MarginState } from "./impl/MarginState.sol";
 import { MarginStorage } from "./impl/MarginStorage.sol";
+import { OpenPositionImpl } from "./impl/OpenPositionImpl.sol";
+import { PositionGetters } from "./impl/PositionGetters.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 
 
@@ -41,9 +41,7 @@ contract Margin is
 
     using SafeMath for uint256;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function Margin(
         address vault,
@@ -59,9 +57,7 @@ contract Margin is
         });
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
      * Initiate the opening of a margin position. Called by the margin trader. Trader must provide
@@ -208,7 +204,7 @@ contract Margin is
      * Add value to a margin position by directly putting up quote token. The adder will serve a
      * both the lender and trader.
      *
-     * @param marginId   Unique ID of the margin position sell
+     * @param marginId  Unique ID of the margin position
      * @param amount    Amount (in base token) to add to the position
      * @return          Amount of quote token pulled from the adder
      */
@@ -233,7 +229,7 @@ contract Margin is
     * trader. May provide an order and exchangeWrapperAddress to facilitate the closing of the
     * margin position. The margin trader is sent quote token stored in the contract.
      *
-     * @param  marginId                  Unique ID of the margin position
+     * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentPositionAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
@@ -269,7 +265,7 @@ contract Margin is
     /**
      * Helper to close a margin position by paying base token directly from the margin trader
      *
-     * @param  marginId                  Unique ID of the margin position
+     * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentPositionAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
@@ -303,7 +299,7 @@ contract Margin is
      * Must be approved by the margin trader (e.g., by requiring the lender to own part of the
      * margin position, and burning in order to liquidate part of the loan).
      *
-     * @param  marginId                     Unique ID of the margin position
+     * @param  marginId                    Unique ID of the margin position
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
      *                                     will be: min(requestedCloseAmount, currentPositionAmount)
      * @return                             Values corresponding to:
@@ -332,10 +328,10 @@ contract Margin is
      * Call in a margin loan.
      * Only callable by the lender for a margin position. After loan is called in, the margin trader
      * will have time equal to the call time limit to close the position and repay the loan. If the
-     * margin trader does not close the position, the lender can use forceRecoverDeposit to recover the
-     * funds.
+     * margin trader does not close the position, the lender can use forceRecoverDeposit to recover
+     * the funds.
      *
-     * @param  marginId          Unique ID of the margin position
+     * @param  marginId         Unique ID of the margin position
      * @param  requiredDeposit  Amount of deposit the margin trader must put up to cancel the call
      */
     function marginCall(
@@ -513,19 +509,19 @@ contract Margin is
     /**
      * Transfer ownership of a loan to a new address. This new address will be entitled
      * to all payouts for this loan. Only callable by the lender for a position. If the "who"
-     * param is a contract, it must implement the LoanOwner interface.
+     * param is a contract, it must implement the LenderOwner interface.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  who       New owner of the loan
      */
-    function transferLoan(
+    function transferAsLender(
         bytes32 marginId,
         address who
     )
         external
         nonReentrant
     {
-        TransferImpl.transferLoanImpl(
+        TransferImpl.transferAsLenderImpl(
             state,
             marginId,
             who);
@@ -534,27 +530,25 @@ contract Margin is
     /**
      * Transfer ownership of a margin position trader to a new address. This new address will be
      * entitled to all payouts for this position. Only callable by the margin trader for a position.
-     * If the "who" param is a contract, it must implement the PositionOwner interface.
+     * If the "who" param is a contract, it must implement the TraderOwner interface.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  who       New owner of the margin position
      */
-    function transferPosition(
+    function transferAsTrader(
         bytes32 marginId,
         address who
     )
         external
         nonReentrant
     {
-        TransferImpl.transferOpenPositionImpl(
+        TransferImpl.transferAsTraderImpl(
             state,
             marginId,
             who);
     }
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // ============ Public Constant Functions ============
 
     function getVaultAddress()
         view

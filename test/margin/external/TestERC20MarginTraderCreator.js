@@ -9,16 +9,16 @@ const ERC20MarginTrader = artifacts.require("ERC20MarginTrader");
 const QuoteToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
-const { TOKENIZED_POSITION_STATE } = require('../helpers/ERC20MarginTraderHelper');
-const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
+const { TOKENIZED_POSITION_STATE } = require('../../helpers/ERC20MarginTraderHelper');
+const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition
-} = require('../helpers/MarginHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../../helpers/0xHelper');
 
 contract('ERC20MarginTraderCreator', function(accounts) {
   let marginContract, ERC20MarginTraderCreatorContract;
@@ -52,8 +52,8 @@ contract('ERC20MarginTraderCreator', function(accounts) {
     });
   });
 
-  describe('#receivePositionOwnership', () => {
-    async function checkSuccess(OpenPositionTx, tokenContract, remainingAmount) {
+  describe('#receiveOwnershipAsTrader', () => {
+    async function checkSuccess(openTx, tokenContract, remainingAmount) {
       const originalTrader = accounts[0];
       const [
         tokenMargin,
@@ -74,7 +74,7 @@ contract('ERC20MarginTraderCreator', function(accounts) {
       ]);
 
       expect(tokenMargin).to.equal(marginContract.address);
-      expect(tokenMarginId).to.equal(OpenPositionTx.id);
+      expect(tokenMarginId).to.equal(openTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
       expect(tokenHolder).to.equal(originalTrader);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);
@@ -85,45 +85,52 @@ contract('ERC20MarginTraderCreator', function(accounts) {
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
       await expectThrow(
-        ERC20MarginTraderCreatorContract.receivePositionOwnership(accounts[0], badId)
+        ERC20MarginTraderCreatorContract.receiveOwnershipAsTrader(accounts[0], badId)
       );
     });
 
     it('succeeds for new margin position', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts, /*salt*/ 1234, /*owner*/ ERC20MarginTraderCreator.address);
+      const openTx = await doOpenPosition(
+        accounts,
+        1234, // salt
+        ERC20MarginTraderCreator.address // owner
+      );
 
       // Get the
-      const tokenAddress = await marginContract.getPositionTrader(OpenPositionTx.id);
+      const tokenAddress = await marginContract.getPositionTrader(openTx.id);
 
       // Get the ERC20MarginTrader on the blockchain and make sure that it was created correctly
       const tokenContract = await ERC20MarginTrader.at(tokenAddress);
 
-      await checkSuccess(OpenPositionTx, tokenContract, OpenPositionTx.marginAmount);
+      await checkSuccess(openTx, tokenContract, openTx.amount);
     });
 
     it('succeeds for half-closed position', async () => {
       const salt = 5678;
-      const OpenPositionTx = await doOpenPosition(accounts, salt);
+      const openTx = await doOpenPosition(accounts, salt);
 
       // close half the position
       const sellOrder = await createSignedSellOrder(accounts, salt);
-      await issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       await callClosePosition(
         marginContract,
-        OpenPositionTx,
+        openTx,
         sellOrder,
-        OpenPositionTx.marginAmount.div(2));
+        openTx.amount.div(2));
 
       // transfer position to ERC20MarginTraderCreator
-      await marginContract.transferPosition(OpenPositionTx.id, ERC20MarginTraderCreatorContract.address);
+      await marginContract.transferAsTrader(
+        openTx.id,
+        ERC20MarginTraderCreatorContract.address
+      );
 
       // Get the owner of the position
-      const tokenAddress = await marginContract.getPositionTrader(OpenPositionTx.id);
+      const tokenAddress = await marginContract.getPositionTrader(openTx.id);
 
       // Get the ERC20MarginTrader on the blockchain and make sure that it was created correctly
       const tokenContract = await ERC20MarginTrader.at(tokenAddress);
 
-      await checkSuccess(OpenPositionTx, tokenContract, OpenPositionTx.marginAmount.div(2));
+      await checkSuccess(openTx, tokenContract, openTx.amount.div(2));
     });
   });
 });

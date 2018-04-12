@@ -16,9 +16,7 @@ library Exponent {
     using SafeMath for uint256;
     using FractionMath for Fraction256.Fraction;
 
-    // -------------------------
-    // ------ Constants --------
-    // -------------------------
+    // ============ Constants ============
 
     // 2**128 - 1
     uint256 constant public MAX_NUMERATOR = 340282366920938463463374607431768211455;
@@ -32,9 +30,7 @@ library Exponent {
     // Number of precomputed integers, X, for E^X
     uint256 constant public NUM_PRECOMPUTED_INTEGERS = 32;
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     /**
      * Returns e^X for any fraction X
@@ -158,9 +154,7 @@ library Exponent {
         return result;
     }
 
-    // ------------------------------
-    // ------ Helper Functions ------
-    // ------------------------------
+    // ============ Helper Functions ============
 
     function ONE()
         internal

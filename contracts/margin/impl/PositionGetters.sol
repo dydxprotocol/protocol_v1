@@ -17,15 +17,13 @@ import { Vault } from "../Vault.sol";
 contract PositionGetters is MarginStorage {
     using SafeMath for uint256;
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // ============ Public Constant Functions ============
 
     /**
      * Gets if a position is currently open
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          True if the position is exists and is open
+     * @return           True if the position is exists and is open
      */
     function containsPosition(
         bytes32 marginId
@@ -41,7 +39,7 @@ contract PositionGetters is MarginStorage {
      * Gets if a position is currently margin-called
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          True if the position is margin-called
+     * @return           True if the position is margin-called
      */
     function isPositionMarginCalled(
         bytes32 marginId
@@ -57,7 +55,7 @@ contract PositionGetters is MarginStorage {
      * Gets if a position was previously closed
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          True if the position is now closed
+     * @return           True if the position is now closed
      */
     function isPositionClosed(
         bytes32 marginId
@@ -73,7 +71,7 @@ contract PositionGetters is MarginStorage {
      * Gets the number of quote tokens currently locked up in Vault for a particular position
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          The number of quote tokens
+     * @return           The number of quote tokens
      */
     function getPositionBalance(
         bytes32 marginId
@@ -95,7 +93,7 @@ contract PositionGetters is MarginStorage {
      * Returns 0 if the interest fee will never increase again.
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          The number of seconds until the interest fee will increase
+     * @return           The number of seconds until the interest fee will increase
      */
     function getTimeUntilInterestIncrease(
         bytes32 marginId
@@ -104,7 +102,8 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject =
+            MarginCommon.getPositionObject(state, marginId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
             positionObject,
@@ -125,7 +124,7 @@ contract PositionGetters is MarginStorage {
      * interest fees.
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          The number of base tokens
+     * @return           The number of base tokens
      */
     function getPositionOwedAmount(
         bytes32 marginId
@@ -134,18 +133,19 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject =
+            MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
-            positionObject.marginAmount.sub(positionObject.closedAmount),
+            positionObject.amount.sub(positionObject.closedAmount),
             block.timestamp
         );
     }
 
     /**
-     * Gets the amount of base tokens needed to close a given amount of the margin position at a given time,
-     * including interest fees.
+     * Gets the amount of base tokens needed to close a given amount of the margin position at a
+     * given time, including interest fees.
      *
      * @param  marginId     Unique ID of the margin position
      * @param  amount       Amount of position being closed
@@ -161,7 +161,8 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject =
+            MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
@@ -189,7 +190,8 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject =
+            MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
             positionObject,
@@ -198,36 +200,34 @@ contract PositionGetters is MarginStorage {
         );
     }
 
-    // --------------------------
-    // ----- All Properties -----
-    // --------------------------
+    // ============ All Properties ============
 
     /**
      * Get a margin position by id. This does not validate the position exists. If the position does
      * not exist, all 0's will be returned.
      *
      * @param  marginId  Unique ID of the margin position
-     * @return          Addresses corresponding to:
+     * @return           Addresses corresponding to:
      *
-     *                  [0] = baseToken
-     *                  [1] = quoteToken
-     *                  [2] = lender
-     *                  [3] = trader
+     *                   [0] = baseToken
+     *                   [1] = quoteToken
+     *                   [2] = lender
+     *                   [3] = trader
      *
-     *                  Values corresponding to:
+     *                   Values corresponding to:
      *
-     *                  [0] = marginAmount
-     *                  [1] = closedAmount
-     *                  [2] = requiredDeposit
+     *                   [0] = amount
+     *                   [1] = closedAmount
+     *                   [2] = requiredDeposit
      *
-     *                  Values corresponding to:
+     *                   Values corresponding to:
      *
-     *                  [0] = callTimeLimit
-     *                  [1] = startTimestamp
-     *                  [2] = callTimestamp
-     *                  [3] = maxDuration
-     *                  [4] = interestRate
-     *                  [5] = interestPeriod
+     *                   [0] = callTimeLimit
+     *                   [1] = startTimestamp
+     *                   [2] = callTimestamp
+     *                   [3] = maxDuration
+     *                   [4] = interestRate
+     *                   [5] = interestPeriod
      */
     function getPosition(
         bytes32 marginId
@@ -250,7 +250,7 @@ contract PositionGetters is MarginStorage {
                 position.trader
             ],
             [
-                position.marginAmount,
+                position.amount,
                 position.closedAmount,
                 position.requiredDeposit
             ],
@@ -265,9 +265,7 @@ contract PositionGetters is MarginStorage {
         );
     }
 
-    // ---------------------------------
-    // ----- Individual Properties -----
-    // ---------------------------------
+    // ============ Individual Properties ============
 
     function getPositionLender(
         bytes32 marginId
@@ -316,7 +314,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].marginAmount;
+        return state.marginPositions[marginId].amount;
     }
 
     function getPositionClosedAmount(
@@ -336,7 +334,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.marginPositions[marginId].marginAmount
+        return state.marginPositions[marginId].amount
             .sub(state.marginPositions[marginId].closedAmount);
     }
 

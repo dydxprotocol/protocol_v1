@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "./LoanOwner.sol";
+import { LenderOwner } from "./LenderOwner.sol";
 
 
 /**
@@ -11,23 +11,19 @@ import { LoanOwner } from "./LoanOwner.sol";
  * Interface that smart contracts must implement in order to let other addresses liquidate a loan
  * owned by the smart contract.
  */
-contract LiquidatePositionDelegator is LoanOwner {
+contract LiquidatePositionDelegator is LenderOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function LiquidatePositionDelegator(
         address margin
     )
         public
-        LoanOwner(margin)
+        LenderOwner(margin)
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to let other addresses call liquidate() for the
@@ -40,7 +36,7 @@ contract LiquidatePositionDelegator is LoanOwner {
      *
      * @param liquidator       Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of quote tokens paid out
-     * @param marginId          Unique ID of the margin position
+     * @param marginId         Unique ID of the margin position
      * @param requestedAmount  Amount of the loan being closed
      * @return                 The amount the user is allowed to close for the specified loan
      */

@@ -37,7 +37,7 @@ async function createMarginTradeTx(accounts, _salt = DEFAULT_SALT) {
     owner: accounts[0],
     baseToken: BaseToken.address,
     quoteToken: QuoteToken.address,
-    marginAmount: BIGNUMBERS.BASE_AMOUNT,
+    amount: BIGNUMBERS.BASE_AMOUNT,
     depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
@@ -81,7 +81,7 @@ async function callOpenPosition(margin, tx, safely = true) {
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
-    tx.marginAmount,
+    tx.amount,
     tx.depositAmount
   ];
 
@@ -132,9 +132,9 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
     baseToken: tx.loanOffering.baseToken,
     quoteToken: tx.loanOffering.quoteToken,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
-    marginAmount: tx.marginAmount,
+    amount: tx.amount,
     quoteTokenFromSell:
-      tx.marginAmount.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
+      tx.amount.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
     depositAmount: tx.depositAmount,
     interestRate: tx.loanOffering.rates.interestRate,
     callTimeLimit: tx.loanOffering.callTimeLimit,
@@ -146,13 +146,13 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
   const newLender = await margin.getPositionLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
-    expectLog(response.logs[++logIndex], 'LenderTransferred', {
+    expectLog(response.logs[++logIndex], 'TransferredAsLender', {
       marginId: marginId,
       from: tx.loanOffering.payer,
       to: tx.loanOffering.owner
     });
     if (newLender !== tx.loanOffering.owner) {
-      expectLog(response.logs[++logIndex], 'LenderTransferred', {
+      expectLog(response.logs[++logIndex], 'TransferredAsLender', {
         marginId: marginId,
         from: tx.loanOffering.owner,
         to: newLender
@@ -160,13 +160,13 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
     }
   }
   if (tx.owner !== tx.trader) {
-    expectLog(response.logs[++logIndex], 'PositionTransferred', {
+    expectLog(response.logs[++logIndex], 'TransferredAsTrader', {
       marginId: marginId,
       from: tx.trader,
       to: tx.owner
     });
     if (newTrader !== tx.owner) {
-      expectLog(response.logs[++logIndex], 'PositionTransferred', {
+      expectLog(response.logs[++logIndex], 'TransferredAsTrader', {
         marginId: marginId,
         from: tx.owner,
         to: newTrader
@@ -196,7 +196,7 @@ async function callIncreasePosition(margin, tx) {
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
-    tx.marginAmount
+    tx.amount
   ];
 
   const values32 = [
@@ -237,7 +237,7 @@ async function callIncreasePosition(margin, tx) {
 
 async function expectIncreasePositionLog(margin, tx, response) {
   const marginId = tx.id;
-  const [time1, time2, marginAmount, quoteTokenAmount] = await Promise.all([
+  const [time1, time2, amount, quoteTokenAmount] = await Promise.all([
     margin.getPositionStartTimestamp.call(marginId),
     getBlockTimestamp(response.receipt.blockNumber),
     margin.getPositionUnclosedAmount.call(marginId),
@@ -247,23 +247,23 @@ async function expectIncreasePositionLog(margin, tx, response) {
     new BigNumber(time2).minus(time1),
     tx.loanOffering.rates.interestPeriod,
     tx.loanOffering.rates.interestRate,
-    tx.marginAmount,
+    tx.amount,
     false
   );
   const quoteTokenFromSell =
     owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
-  const minTotalDeposit = quoteTokenAmount.div(marginAmount).times(tx.marginAmount);
+  const minTotalDeposit = quoteTokenAmount.div(amount).times(tx.amount);
 
   expectLog(response.logs[0], 'PositionIncreased', {
     marginId: marginId,
     trader: tx.trader,
     lender: tx.loanOffering.payer,
-    positionOwner: tx.owner,
-    loanOwner: tx.loanOffering.owner,
+    traderOwner: tx.owner,
+    lenderOwner: tx.loanOffering.owner,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
-    effectiveAmountAdded: tx.marginAmount,
+    effectiveAmountAdded: tx.amount,
     quoteTokenFromSell: quoteTokenFromSell,
     depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
   });
@@ -343,41 +343,41 @@ async function issueTokensAndSetAllowancesFor(tx) {
 }
 
 async function doOpenPosition(accounts, _salt = DEFAULT_SALT, trader = null) {
-  const [OpenPositionTx, margin] = await Promise.all([
+  const [openTx, margin] = await Promise.all([
     createMarginTradeTx(accounts, _salt),
     Margin.deployed()
   ]);
 
-  await issueTokensAndSetAllowancesFor(OpenPositionTx);
+  await issueTokensAndSetAllowancesFor(openTx);
 
   if (trader) {
-    OpenPositionTx.owner = trader;
+    openTx.owner = trader;
   }
 
-  const response = await callOpenPosition(margin, OpenPositionTx);
+  const response = await callOpenPosition(margin, openTx);
 
-  OpenPositionTx.id = response.id;
-  OpenPositionTx.response = response;
-  return OpenPositionTx;
+  openTx.id = response.id;
+  openTx.response = response;
+  return openTx;
 }
 
 async function callClosePosition(
   margin,
-  OpenPositionTx,
+  openTx,
   sellOrder,
   closeAmount,
   from = null,
   recipient = null
 ) {
-  const closer = from || OpenPositionTx.trader;
+  const closer = from || openTx.trader;
   recipient = recipient || closer;
 
   const { startAmount, startQuote, startTimestamp } =
-    await getPreCloseVariables(margin, OpenPositionTx.id);
+    await getPreCloseVariables(margin, openTx.id);
 
   const tx = await transact(
     margin.closePosition,
-    OpenPositionTx.id,
+    openTx.id,
     closeAmount,
     recipient,
     ZeroExExchangeWrapper.address,
@@ -388,7 +388,7 @@ async function callClosePosition(
   await expectCloseLog(
     margin,
     {
-      OpenPositionTx,
+      openTx,
       sellOrder,
       closer,
       recipient,
@@ -404,20 +404,20 @@ async function callClosePosition(
 
 async function callClosePositionDirectly(
   margin,
-  OpenPositionTx,
+  openTx,
   closeAmount,
   from = null,
   recipient = null
 ) {
-  const closer = from || OpenPositionTx.trader;
+  const closer = from || openTx.trader;
   recipient = recipient || closer;
 
   const { startAmount, startQuote, startTimestamp } =
-    await getPreCloseVariables(margin, OpenPositionTx.id);
+    await getPreCloseVariables(margin, openTx.id);
 
   const tx = await transact(
     margin.closePositionDirectly,
-    OpenPositionTx.id,
+    openTx.id,
     closeAmount,
     recipient,
     { from: closer }
@@ -426,7 +426,7 @@ async function callClosePositionDirectly(
   await expectCloseLog(
     margin,
     {
-      OpenPositionTx,
+      openTx,
       closer,
       recipient,
       startAmount,
@@ -462,16 +462,16 @@ async function expectCloseLog(margin, params) {
     endQuote,
     endTimestamp
   ] = await Promise.all([
-    margin.getPositionUnclosedAmount.call(params.OpenPositionTx.id),
-    margin.getPositionBalance.call(params.OpenPositionTx.id),
+    margin.getPositionUnclosedAmount.call(params.openTx.id),
+    margin.getPositionBalance.call(params.openTx.id),
     getBlockTimestamp(params.tx.receipt.blockNumber)
   ]);
   const actualCloseAmount = params.startAmount.minus(endAmount);
 
   const owed = await getOwedAmountForTime(
     new BigNumber(endTimestamp).minus(params.startTimestamp),
-    params.OpenPositionTx.loanOffering.rates.interestPeriod,
-    params.OpenPositionTx.loanOffering.rates.interestRate,
+    params.openTx.loanOffering.rates.interestPeriod,
+    params.openTx.loanOffering.rates.interestRate,
     actualCloseAmount,
     true
   );
@@ -485,7 +485,7 @@ async function expectCloseLog(margin, params) {
     params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
 
   expectLog(params.tx.logs[0], 'PositionClosed', {
-    marginId: params.OpenPositionTx.id,
+    marginId: params.openTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
@@ -498,18 +498,18 @@ async function expectCloseLog(margin, params) {
 
 async function callLiquidate(
   margin,
-  OpenPositionTx,
+  openTx,
   liquidateAmount,
   from,
   payoutRecipient = null
 ) {
-  const startAmount = await margin.getPositionUnclosedAmount.call(OpenPositionTx.id);
-  const startQuote = await margin.getPositionBalance.call(OpenPositionTx.id);
+  const startAmount = await margin.getPositionUnclosedAmount.call(openTx.id);
+  const startQuote = await margin.getPositionBalance.call(openTx.id);
 
   payoutRecipient = payoutRecipient || from
   const tx = await transact(
     margin.liquidatePosition,
-    OpenPositionTx.id,
+    openTx.id,
     liquidateAmount,
     payoutRecipient,
     { from: from }
@@ -518,7 +518,7 @@ async function callLiquidate(
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
   expectLog(tx.logs[0], 'PositionLiquidated', {
-    marginId: OpenPositionTx.id,
+    marginId: openTx.id,
     liquidator: from,
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,
@@ -626,7 +626,7 @@ function formatLoanOffering(loanOffering) {
   return { addresses, values256, values32 };
 }
 
-async function issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder) {
+async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
   const [baseToken, feeToken] = await Promise.all([
     BaseToken.deployed(),
     FeeToken.deployed(),
@@ -638,7 +638,7 @@ async function issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder) {
       sellOrder.makerTokenAmount
     ),
     feeToken.issueTo(
-      OpenPositionTx.trader,
+      openTx.trader,
       sellOrder.takerFee
     ),
     feeToken.issueTo(
@@ -661,7 +661,7 @@ async function issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder) {
     feeToken.approve(
       ZeroExExchangeWrapper.address,
       sellOrder.takerFee,
-      { from: OpenPositionTx.trader }
+      { from: openTx.trader }
     )
   ]);
 }
@@ -675,7 +675,7 @@ async function getPosition(margin, id) {
       trader
     ],
     [
-      marginAmount,
+      amount,
       closedAmount,
       requiredDeposit
     ],
@@ -692,7 +692,7 @@ async function getPosition(margin, id) {
   return {
     baseToken,
     quoteToken,
-    marginAmount,
+    amount,
     closedAmount,
     interestRate,
     requiredDeposit,
@@ -717,46 +717,46 @@ async function doOpenPositionAndCall(
     BaseToken.deployed()
   ]);
 
-  const OpenPositionTx = await doOpenPosition(accounts, _salt);
+  const openTx = await doOpenPosition(accounts, _salt);
 
   const callTx = await margin.marginCall(
-    OpenPositionTx.id,
+    openTx.id,
     _requiredDeposit,
-    { from: OpenPositionTx.loanOffering.payer }
+    { from: openTx.loanOffering.payer }
   );
 
-  return { margin, vault, baseToken, OpenPositionTx, callTx };
+  return { margin, vault, baseToken, openTx, callTx };
 }
 
-async function issueForDirectClose(OpenPositionTx) {
+async function issueForDirectClose(openTx) {
   const baseToken = await BaseToken.deployed();
 
   // Issue to the margin trader the maximum amount of base token they could have to pay
 
-  const maxInterestFee = await getMaxInterestFee(OpenPositionTx);
-  const maxBaseTokenOwed = OpenPositionTx.marginAmount.plus(maxInterestFee);
+  const maxInterestFee = await getMaxInterestFee(openTx);
+  const maxBaseTokenOwed = openTx.amount.plus(maxInterestFee);
 
   await Promise.all([
     baseToken.issueTo(
-      OpenPositionTx.trader,
+      openTx.trader,
       maxBaseTokenOwed
     ),
     baseToken.approve(
       ProxyContract.address,
       maxBaseTokenOwed,
-      { from: OpenPositionTx.trader }
+      { from: openTx.trader }
     )
   ]);
 }
 
-async function getMaxInterestFee(OpenPositionTx) {
+async function getMaxInterestFee(openTx) {
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
   const interestCalc = await TestInterestImpl.new();
 
   const interest = await interestCalc.getCompoundedInterest.call(
-    OpenPositionTx.marginAmount,
-    OpenPositionTx.loanOffering.rates.interestRate,
-    OpenPositionTx.loanOffering.maxDuration
+    openTx.amount,
+    openTx.loanOffering.rates.interestRate,
+    openTx.loanOffering.maxDuration
   );
   return interest;
 }

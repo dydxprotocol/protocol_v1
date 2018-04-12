@@ -19,17 +19,13 @@ library InterestImpl {
     using SafeMath for uint256;
     using FractionMath for Fraction256.Fraction;
 
-    // -----------------------
-    // ------ Constants ------
-    // -----------------------
+    // ============ Constants ============
 
     uint256 constant DEFAULT_PRECOMPUTE_PRECISION = 11;
 
     uint256 constant DEFAULT_MACLAURIN_PRECISION = 5;
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     /**
      * Returns total tokens owed after accruing interest. Continuously compounding and accurate to
@@ -67,9 +63,7 @@ library InterestImpl {
         return safeMultiplyUint256ByFraction(tokenAmount, percent);
     }
 
-    // ------------------------------
-    // ------ Helper Functions ------
-    // ------------------------------
+    // ============ Helper Functions ============
 
     /**
      * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator

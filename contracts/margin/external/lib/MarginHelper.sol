@@ -35,7 +35,7 @@ library MarginHelper {
             quoteToken: addresses[1],
             lender: addresses[2],
             trader: addresses[3],
-            marginAmount: values256[0],
+            amount: values256[0],
             closedAmount: values256[1],
             requiredDeposit: values256[2],
             callTimeLimit: values32[0],

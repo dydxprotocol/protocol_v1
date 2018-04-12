@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "./LoanOwner.sol";
+import { LenderOwner } from "./LenderOwner.sol";
 
 
 /**
@@ -11,23 +11,19 @@ import { LoanOwner } from "./LoanOwner.sol";
  * Interface that smart contracts must implement in order to let other addresses call-in a loan
  * owned by the smart contract.
  */
-contract MarginCallDelegator is LoanOwner {
+contract MarginCallDelegator is LenderOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function MarginCallDelegator(
         address margin
     )
         public
-        LoanOwner(margin)
+        LenderOwner(margin)
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to let other addresses call marginCall() for
@@ -51,8 +47,8 @@ contract MarginCallDelegator is LoanOwner {
         returns (bool);
 
     /**
-     * Function a contract must implement in order to let other addresses call cancelMarginCall() for
-     * the loan-side of a margin position.
+     * Function a contract must implement in order to let other addresses call cancelMarginCall()
+     * for the loan-side of a margin position.
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled

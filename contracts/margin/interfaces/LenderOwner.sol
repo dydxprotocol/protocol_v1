@@ -5,19 +5,17 @@ import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
- * @title LoanOwner
+ * @title LenderOwner
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to own loan positions on behalf of users
  * in order to unlock more complex logic.
  */
-contract LoanOwner is OnlyMargin {
+contract LenderOwner is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
-    function LoanOwner(
+    function LenderOwner(
         address margin
     )
         public
@@ -25,20 +23,18 @@ contract LoanOwner is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to receive ownership of a loan sell via the
-     * transferLoan function or the atomic-assign to the "owner" field in a loan offering.
+     * Function a contract must implement in order to receive ownership of a loan via the
+     * transferAsLender function or the atomic-assign to the "owner" field in a loan offering.
      *
-     * @param  from     Address of the previous owner
+     * @param  from      Address of the previous owner
      * @param  marginId  Unique ID of the margin position
-     * @return          The address to pass loan ownership to. Own address to keep loan ownership,
-                        0x0 to reject loan ownership completely.
+     * @return           The address to pass loan ownership to. Own address to keep loan ownership,
+                         0x0 to reject loan ownership completely.
      */
-    function receiveLoanOwnership(
+    function receiveOwnershipAsLender(
         address from,
         bytes32 marginId
     )
@@ -53,7 +49,7 @@ contract LoanOwner is OnlyMargin {
      * the additional value was added.
      *
      * @param  from         Lender adding additional funds to the position
-     * @param  marginId      Unique ID of the margin position
+     * @param  marginId     Unique ID of the margin position
      * @param  amountAdded  Amount to be added to the position
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise

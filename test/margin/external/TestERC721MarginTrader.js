@@ -12,18 +12,18 @@ const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const BaseToken = artifacts.require("TokenB");
 
-const { BYTES32 } = require('../helpers/Constants');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { BYTES32 } = require('../../helpers/Constants');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition,
   getMaxInterestFee,
   callClosePositionDirectly
-} = require('../helpers/MarginHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../../helpers/0xHelper');
 
 function uint256(marginId) {
   return new BigNumber(web3Instance.utils.toBN(marginId));
@@ -53,33 +53,33 @@ contract('ERC721MarginTrader', function(accounts) {
     });
   });
 
-  describe('#receivePositionOwnership', () => {
+  describe('#receiveOwnershipAsTrader', () => {
     it('fails for arbitrary caller', async () => {
       await expectThrow(
-        ERC721MarginTraderContract.receivePositionOwnership(accounts[0], BYTES32.BAD_ID));
+        ERC721MarginTraderContract.receiveOwnershipAsTrader(accounts[0], BYTES32.BAD_ID));
     });
 
     it('succeeds for new position', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
-      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(OpenPositionTx.id));
+      const openTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
+      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(openTx.id));
       expect(owner).to.equal(accounts[0]);
     });
 
     it('succeeds for half-closed position', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts, salt++);
+      const openTx = await doOpenPosition(accounts, salt++);
 
       // close half the position
       const sellOrder = await createSignedSellOrder(accounts, salt++);
-      await issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       await callClosePosition(
         marginContract,
-        OpenPositionTx,
+        openTx,
         sellOrder,
-        OpenPositionTx.marginAmount.div(2));
+        openTx.amount.div(2));
 
       // transfer position to ERC20MarginTraderCreator
-      await marginContract.transferPosition(OpenPositionTx.id, ERC721MarginTraderContract.address);
-      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(OpenPositionTx.id));
+      await marginContract.transferAsTrader(openTx.id, ERC721MarginTraderContract.address);
+      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(openTx.id));
       expect(owner).to.equal(accounts[0]);
     });
   });
@@ -91,8 +91,8 @@ contract('ERC721MarginTrader', function(accounts) {
     });
 
     it('succeeds for owned position', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
-      const deedHolder = await ERC721MarginTraderContract.getPositionDeedHolder.call(OpenPositionTx.id);
+      const openTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
+      const deedHolder = await ERC721MarginTraderContract.getPositionDeedHolder.call(openTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
   });
@@ -168,61 +168,69 @@ contract('ERC721MarginTrader', function(accounts) {
     });
   });
 
-  describe('#transferPosition', () => {
+  describe('#transferAsTrader', () => {
     const receiver = accounts[9];
     const trader = accounts[0];
-    let OpenPositionTx;
+    let openTx;
 
     beforeEach('sets up position', async () => {
-      OpenPositionTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
-      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(OpenPositionTx.id));
+      openTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
+      const owner = await ERC721MarginTraderContract.ownerOf.call(uint256(openTx.id));
       expect(owner).to.equal(trader);
     });
 
     it('succeeds when called by ownerOf', async () => {
-      await ERC721MarginTraderContract.transferPosition(OpenPositionTx.id, receiver, { from: trader });
-      await expectThrow( ERC721MarginTraderContract.ownerOf.call(uint256(OpenPositionTx.id)));
-      const newOwner = await marginContract.getPositionTrader.call(OpenPositionTx.id);
+      await ERC721MarginTraderContract.transferAsTrader(openTx.id, receiver, { from: trader });
+      await expectThrow( ERC721MarginTraderContract.ownerOf.call(uint256(openTx.id)));
+      const newOwner = await marginContract.getPositionTrader.call(openTx.id);
       expect(newOwner).to.equal(receiver);
     });
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        ERC721MarginTraderContract.transferPosition(OpenPositionTx.id, receiver, { from: accounts[2] }));
+        ERC721MarginTraderContract.transferAsTrader(openTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existent position', async () => {
       await expectThrow(
-        ERC721MarginTraderContract.transferPosition(BYTES32.BAD_ID, receiver, { from: trader }));
+        ERC721MarginTraderContract.transferAsTrader(BYTES32.BAD_ID, receiver, { from: trader }));
     });
   });
 
   describe('#closePositionOnBehalfOf', () => {
-    let OpenPositionTx;
+    let openTx;
     const approvedCloser = accounts[6];
     const approvedRecipient = accounts[7];
     const unapprovedAcct = accounts[9];
 
     async function initBase(account) {
-      const maxInterest = await getMaxInterestFee(OpenPositionTx);
-      const amount = OpenPositionTx.marginAmount.plus(maxInterest);
+      const maxInterest = await getMaxInterestFee(openTx);
+      const amount = openTx.amount.plus(maxInterest);
       await baseToken.issueTo(account, amount);
       await baseToken.approve(ProxyContract.address, amount, { from: account });
     }
 
     beforeEach('sets up position', async () => {
-      OpenPositionTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
-      await ERC721MarginTraderContract.approveCloser(approvedCloser, true, { from: OpenPositionTx.trader });
-      await ERC721MarginTraderContract.approveRecipient(approvedRecipient, true, { from: OpenPositionTx.trader });
+      openTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
+      await ERC721MarginTraderContract.approveCloser(
+        approvedCloser,
+        true,
+        { from: openTx.trader }
+      );
+      await ERC721MarginTraderContract.approveRecipient(
+        approvedRecipient,
+        true,
+        { from: openTx.trader }
+      );
     });
 
     it('succeeds for owner', async () => {
-      await initBase(OpenPositionTx.trader);
+      await initBase(openTx.trader);
       await callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount,
-        OpenPositionTx.trader,
+        openTx,
+        openTx.amount,
+        openTx.trader,
         unapprovedAcct
       );
     });
@@ -231,8 +239,8 @@ contract('ERC721MarginTrader', function(accounts) {
       await initBase(unapprovedAcct);
       await callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount,
+        openTx,
+        openTx.amount,
         unapprovedAcct,
         approvedRecipient
       );
@@ -242,8 +250,8 @@ contract('ERC721MarginTrader', function(accounts) {
       await initBase(approvedCloser);
       await callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount,
+        openTx,
+        openTx.amount,
         approvedCloser,
         unapprovedAcct
       );
@@ -253,8 +261,8 @@ contract('ERC721MarginTrader', function(accounts) {
       await initBase(unapprovedAcct);
       await expectThrow( callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount,
+        openTx,
+        openTx.amount,
         unapprovedAcct,
         unapprovedAcct
       ));

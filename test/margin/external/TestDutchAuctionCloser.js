@@ -13,12 +13,12 @@ const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
-const { getOwedAmount } = require('../helpers/ClosePositionHelper');
-const { getMaxInterestFee, callClosePositionDirectly } = require('../helpers/MarginHelper');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
+const { getMaxInterestFee, callClosePositionDirectly } = require('../../helpers/MarginHelper');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doOpenPosition
-} = require('../helpers/MarginHelper');
+} = require('../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 const ONE = new BigNumber(1);
@@ -27,7 +27,7 @@ const TWO = new BigNumber(2);
 contract('DutchAuctionCloser', function(accounts) {
   let marginContract, VaultContract, ERC721MarginTraderContract;
   let BaseTokenContract, QuoteTokenContract;
-  let OpenPositionTx;
+  let openTx;
   const dutchBidder = accounts[9];
 
   before('retrieve deployed contracts', async () => {
@@ -65,19 +65,19 @@ contract('DutchAuctionCloser', function(accounts) {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
-      OpenPositionTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
+      openTx = await doOpenPosition(accounts, salt++, ERC721MarginTrader.address);
       await ERC721MarginTraderContract.approveRecipient(DutchAuctionCloser.address, true);
       await marginContract.marginCall(
-        OpenPositionTx.id,
+        openTx.id,
         0, /*requiredDeposit*/
-        { from: OpenPositionTx.loanOffering.payer }
+        { from: openTx.loanOffering.payer }
       );
-      callTimeLimit = OpenPositionTx.loanOffering.callTimeLimit;
+      callTimeLimit = openTx.loanOffering.callTimeLimit;
 
       // grant tokens and set permissions for bidder
       const numTokens = await BaseTokenContract.balanceOf(dutchBidder);
-      const maxInterest = await getMaxInterestFee(OpenPositionTx);
-      const targetTokens = OpenPositionTx.marginAmount.plus(maxInterest);
+      const maxInterest = await getMaxInterestFee(openTx);
+      const targetTokens = openTx.amount.plus(maxInterest);
 
       if (numTokens < targetTokens) {
         await BaseTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
@@ -96,8 +96,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount.div(2),
+        openTx,
+        openTx.amount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -108,8 +108,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount.div(2),
+        openTx,
+        openTx.amount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -120,8 +120,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
-        OpenPositionTx.marginAmount.div(2),
+        openTx,
+        openTx.amount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -131,33 +131,33 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
-      const quoteVault = await VaultContract.balances.call(OpenPositionTx.id, QuoteToken.address);
-      const closeAmount = OpenPositionTx.marginAmount.div(2);
+      const quoteVault = await VaultContract.balances.call(openTx.id, QuoteToken.address);
+      const closeAmount = openTx.amount.div(2);
 
       // closing half is fine
       const closeTx1 = await callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
+        openTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
       );
-      const owedAmount1 = await getOwedAmount(OpenPositionTx, closeTx1, closeAmount);
+      const owedAmount1 = await getOwedAmount(openTx, closeTx1, closeAmount);
 
       // closing the other half is fine
       const closeTx2 = await callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
+        openTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
       );
-      const owedAmount2 = await getOwedAmount(OpenPositionTx, closeTx2, closeAmount);
+      const owedAmount2 = await getOwedAmount(openTx, closeTx2, closeAmount);
 
       // cannot close half a third time
       await expectThrow( callClosePositionDirectly(
         marginContract,
-        OpenPositionTx,
+        openTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
@@ -169,7 +169,7 @@ contract('DutchAuctionCloser', function(accounts) {
         quoteBidder
       ] = await Promise.all([
         BaseTokenContract.balanceOf.call(dutchBidder),
-        QuoteTokenContract.balanceOf.call(OpenPositionTx.trader),
+        QuoteTokenContract.balanceOf.call(openTx.trader),
         QuoteTokenContract.balanceOf.call(dutchBidder),
       ]);
 

@@ -17,7 +17,7 @@ contract TraderCustodian {
      * tokens as a result of closing a margin position on behalf of another contract.
      *
      * @param  marginId      Unique ID of the margin position
-     * @return              Address of the true owner of the margin position
+     * @return               Address of the true owner of the margin position
      */
     function getPositionDeedHolder(
         bytes32 marginId

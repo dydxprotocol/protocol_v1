@@ -17,9 +17,7 @@ import { ForceRecoverDepositDelegator } from "../interfaces/ForceRecoverDepositD
 library ForceRecoverDepositImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * The collateral for a margin position was forcibly recovered by the lender
@@ -29,9 +27,7 @@ library ForceRecoverDepositImpl {
         uint256 amount
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function forceRecoverDepositImpl(
         MarginState.State storage state,
@@ -75,7 +71,7 @@ library ForceRecoverDepositImpl {
         );
 
         // Delete the position
-        // NOTE: Since position is a storage pointer, this will also set all of position's fields to 0
+        // NOTE: Since position is a storage pointer, this will set all of position's fields to 0
         MarginCommon.cleanupPosition(
             state,
             marginId

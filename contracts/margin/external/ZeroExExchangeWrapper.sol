@@ -71,9 +71,7 @@ contract ZeroExExchangeWrapper is
         TokenInteract.approve(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
     }
 
-    // ---------------------------------
-    // --- Margin Only Functions ---
-    // ---------------------------------
+    // ============ Margin-Only Functions ============
 
     function exchange(
         address makerToken,
@@ -129,9 +127,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    // ---------------------------------
-    // --- Public Constant Functions ---
-    // ---------------------------------
+    // ============ Public Constant Functions ====================
 
     function getTradeMakerTokenAmount(
         address /* makerToken */,
@@ -171,9 +167,7 @@ contract ZeroExExchangeWrapper is
         );
     }
 
-    // ------------------------------
-    // ----- Internal Functions -----
-    // ------------------------------
+    // ============ Internal Functions ============
 
     function transferTakerFee(
         Order order,
@@ -239,7 +233,7 @@ contract ZeroExExchangeWrapper is
         return filledTakerTokenAmount;
     }
 
-    // ------ Parsing Functions ------
+    // ============ Parsing Functions ============
 
     /**
      * Accepts a byte array with each variable padded to 32 bytes

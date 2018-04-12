@@ -9,8 +9,8 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/PositionOwner.sol";
+import { LenderOwner } from "../interfaces/LenderOwner.sol";
+import { TraderOwner } from "../interfaces/TraderOwner.sol";
 
 
 /**
@@ -22,9 +22,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
 library IncreasePositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /*
      * Value was added to a margin position
@@ -33,8 +31,8 @@ library IncreasePositionImpl {
         bytes32 indexed marginId,
         address indexed trader,
         address indexed lender,
-        address positionOwner,
-        address loanOwner,
+        address traderOwner,
+        address lenderOwner,
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,
@@ -43,9 +41,7 @@ library IncreasePositionImpl {
         uint256 depositAmount
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function increasePositionImpl(
         MarginState.State storage state,
@@ -157,7 +153,7 @@ library IncreasePositionImpl {
         return quoteTokenAmount;
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function preStateUpdate(
         MarginState.State storage state,
@@ -274,7 +270,7 @@ library IncreasePositionImpl {
 
         return MathHelpers.getPartialAmountRoundedUp(
             effectiveAmount,
-            position.marginAmount,
+            position.amount,
             quoteTokenBalance
         );
     }
@@ -287,7 +283,7 @@ library IncreasePositionImpl {
     )
         internal
     {
-        position.marginAmount = position.marginAmount.add(effectiveAmount);
+        position.amount = position.amount.add(effectiveAmount);
 
         address trader = position.trader;
         address lender = position.lender;
@@ -296,7 +292,7 @@ library IncreasePositionImpl {
         // to the margin trader to ensure they consent to value being added
         if (msg.sender != trader || AddressUtils.isContract(trader)) {
             require(
-                PositionOwner(trader).marginPositionIncreased(
+                TraderOwner(trader).marginPositionIncreased(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -309,7 +305,7 @@ library IncreasePositionImpl {
         // to value being added
         if (loanPayer != lender || AddressUtils.isContract(lender)) {
             require(
-                LoanOwner(lender).loanIncreased(
+                LenderOwner(lender).loanIncreased(
                     loanPayer,
                     marginId,
                     effectiveAmount
@@ -341,7 +337,7 @@ library IncreasePositionImpl {
         );
     }
 
-    // -------- Parsing Functions -------
+    // ============ Parsing Functions ============
 
     function parseIncreasePositionTx(
         MarginCommon.Position storage position,

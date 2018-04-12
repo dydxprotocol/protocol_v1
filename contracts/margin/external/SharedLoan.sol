@@ -7,8 +7,8 @@ import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
-import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
 import { ForceRecoverDepositDelegator } from "../interfaces/ForceRecoverDepositDelegator.sol";
+import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -28,9 +28,7 @@ contract SharedLoan is
 {
     using SafeMath for uint256;
 
-    // -----------------------
-    // -------- Enums --------
-    // -----------------------
+    // ============ Enums ============
 
     enum State {
         UNINITIALIZED,
@@ -38,9 +36,7 @@ contract SharedLoan is
         CLOSED
     }
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * This SharedLoan was successfully initialized
@@ -68,9 +64,7 @@ contract SharedLoan is
         bool completelyRepaid
     );
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+    // ============ State Variables ============
 
     // Initial lender of the position
     address public INITIAL_LENDER;
@@ -79,22 +73,22 @@ contract SharedLoan is
     bytes32 public MARGIN_ID;
 
     // Addresses that can call in the loan
-    mapping (address => bool) public TRUSTED_LOAN_CALLERS;
+    mapping (address => bool) public TRUSTED_MARGIN_CALLERS;
 
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the margin position's baseToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's baseToken. Cached for convenience and lower-cost withdrawals
     address public baseToken;
 
-    // Address of the margin position's quoteToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
     address public quoteToken;
 
     // Total amount lent
-    uint256 public marginAmount;
+    uint256 public amount;
 
     // Amount that has been fully repaid and withdrawn
-    uint256 public marginAmountFullyWithdrawn;
+    uint256 public amountFullyWithdrawn;
 
     // Total amount of base token that has been withdrawn
     uint256 public totalBaseTokenWithdrawn;
@@ -105,9 +99,7 @@ contract SharedLoan is
     // Amount of base token each lender has withdrawn before the loan was fully repaid
     mapping (address => uint256) public baseTokenWithdrawnEarly;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function SharedLoan(
         bytes32 marginId,
@@ -124,13 +116,11 @@ contract SharedLoan is
         INITIAL_LENDER = initialLender;
 
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_LOAN_CALLERS[trustedLoanCallers[i]] = true;
+            TRUSTED_MARGIN_CALLERS[trustedLoanCallers[i]] = true;
         }
     }
 
-    // -------------------------------------
-    // ----- Margin Only Functions -----
-    // -------------------------------------
+    // ============ Margin-Only Functions ============
 
     /**
      * Called by the Margin contract when anyone transfers ownership of a loan to this contract.
@@ -139,9 +129,9 @@ contract SharedLoan is
      *
      *  param  (unused)
      * @param  marginId  Unique ID of the margin position
-     * @return          This address on success, throw otherwise
+     * @return           This address on success, throw otherwise
      */
-    function receiveLoanOwnership(
+    function receiveOwnershipAsLender(
         address /* from */,
         bytes32 marginId
     )
@@ -155,12 +145,12 @@ contract SharedLoan is
         require(MARGIN_ID == marginId);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
-        uint256 currentPositionAmount = position.marginAmount.sub(position.closedAmount);
+        uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         assert(currentPositionAmount > 0);
 
         // set relevant constants
         state = State.OPEN;
-        marginAmount = currentPositionAmount;
+        amount = currentPositionAmount;
         balances[INITIAL_LENDER] = currentPositionAmount;
         baseToken = position.baseToken;
         quoteToken = position.quoteToken;
@@ -197,7 +187,7 @@ contract SharedLoan is
         require(marginId == MARGIN_ID);
 
         balances[from] = balances[from].add(amountAdded);
-        marginAmount = marginAmount.add(amountAdded);
+        amount = amount.add(amountAdded);
 
         emit BalanceAdded(
             from,
@@ -210,7 +200,7 @@ contract SharedLoan is
     /**
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
-     * @param  who      Address attempting to initiate the loan call
+     * @param  who       Address attempting to initiate the loan call
      * @param  marginId  Unique ID of the margin position
      *  param  (unused)
      * @return          True to consent to the loan being called if the initiator is a trusted
@@ -229,17 +219,17 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(MARGIN_ID == marginId);
 
-        return TRUSTED_LOAN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[who];
     }
 
     /**
      * Called by Margin when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
-     * @param  who      Address attempting to initiate the loan call cancel
+     * @param  who       Address attempting to initiate the loan call cancel
      * @param  marginId  Unique ID of the margin position
-     * @return          True to consent to the loan call being canceled if the initiator is a
-     *                  trusted loan caller, false otherwise
+     * @return           True to consent to the loan call being canceled if the initiator is a
+     *                   trusted loan caller, false otherwise
      */
     function cancelMarginCallOnBehalfOf(
         address who,
@@ -253,7 +243,7 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(MARGIN_ID == marginId);
 
-        return TRUSTED_LOAN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[who];
     }
 
     /**
@@ -263,7 +253,7 @@ contract SharedLoan is
      *
      *  param  (unused)
      * @param  marginId  Unique ID of the margin position
-     * @return          True to consent to the loan being force recovered
+     * @return           True to consent to the loan being force recovered
      */
     function forceRecoverDepositOnBehalfOf(
         address /* who */,
@@ -282,9 +272,7 @@ contract SharedLoan is
         return true;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
      * Helper to allow withdrawal for multiple lenders in one call
@@ -331,7 +319,7 @@ contract SharedLoan is
         bool completelyRepaid = false;
 
         if (state == State.CLOSED) {
-            marginAmountFullyWithdrawn = marginAmountFullyWithdrawn.add(balances[who]);
+            amountFullyWithdrawn = amountFullyWithdrawn.add(balances[who]);
             balances[who] = 0;
             completelyRepaid = true;
         }
@@ -349,9 +337,7 @@ contract SharedLoan is
         );
     }
 
-    // --------------------------------
-    // ------ Internal Functions ------
-    // --------------------------------
+    // ============ Internal Functions ============
 
     function updateStateOnClosed()
         internal
@@ -378,7 +364,7 @@ contract SharedLoan is
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            marginAmount,
+            amount,
             totalBaseTokenEverHeld
         ).sub(baseTokenWithdrawnEarly[who]);
 
@@ -414,7 +400,7 @@ contract SharedLoan is
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            marginAmount.sub(marginAmountFullyWithdrawn),
+            amount.sub(amountFullyWithdrawn),
             currentQuoteTokenBalance
         );
 

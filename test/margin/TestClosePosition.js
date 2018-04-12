@@ -27,27 +27,27 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 describe('#closePosition', () => {
   contract('Margin', function(accounts) {
     it('Successfully closes a position in increments', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
-      await issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
       // Close half the position at a time
-      const closeAmount = OpenPositionTx.marginAmount.div(2);
+      const closeAmount = openTx.amount.div(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callClosePosition(margin, OpenPositionTx, sellOrder, closeAmount);
+      let closeTx = await callClosePosition(margin, openTx, sellOrder, closeAmount);
 
-      let exists = await margin.containsPosition.call(OpenPositionTx.id);
+      let exists = await margin.containsPosition.call(openTx.id);
       expect(exists).to.be.true;
 
-      await checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, closeAmount);
+      await checkSuccess(margin, openTx, closeTx, sellOrder, closeAmount);
 
-      const { closedAmount } = await getPosition(margin, OpenPositionTx.id);
+      const { closedAmount } = await getPosition(margin, openTx.id);
 
       expect(closedAmount).to.be.bignumber.equal(closeAmount);
 
@@ -55,26 +55,26 @@ describe('#closePosition', () => {
       await wait(10000);
 
       // Close the rest of the position
-      await callClosePosition(margin, OpenPositionTx, sellOrder, closeAmount);
-      exists = await margin.containsPosition.call(OpenPositionTx.id);
+      await callClosePosition(margin, openTx, sellOrder, closeAmount);
+      exists = await margin.containsPosition.call(openTx.id);
       expect(exists).to.be.false;
     });
   });
 
   contract('Margin', function(accounts) {
     it('only allows the margin trader to close', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
-      await issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder);
-      const closeAmount = OpenPositionTx.marginAmount.div(2);
+      await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+      const closeAmount = openTx.amount.div(2);
 
       await expectThrow(
         callClosePosition(
           margin,
-          OpenPositionTx,
+          openTx,
           sellOrder,
           closeAmount,
           accounts[6]
@@ -85,48 +85,48 @@ describe('#closePosition', () => {
 
   contract('Margin', function(accounts) {
     it('Only closes up to the current margin amount', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
-      await issueTokensAndSetAllowancesForClose(OpenPositionTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
       // Try to close twice the margin amount
-      const closeAmount = OpenPositionTx.marginAmount.times(2);
+      const closeAmount = openTx.amount.times(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callClosePosition(margin, OpenPositionTx, sellOrder, closeAmount);
+      let closeTx = await callClosePosition(margin, openTx, sellOrder, closeAmount);
 
-      let exists = await margin.containsPosition.call(OpenPositionTx.id);
+      let exists = await margin.containsPosition.call(openTx.id);
       expect(exists).to.be.false;
 
-      await checkSuccess(margin, OpenPositionTx, closeTx, sellOrder, OpenPositionTx.marginAmount);
+      await checkSuccess(margin, openTx, closeTx, sellOrder, openTx.amount);
     });
   });
 
   contract('Margin', function(accounts) {
     it('Successfully closes a position directly in increments', async () => {
-      const OpenPositionTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
 
       // Give the margin trader enough base token to close
-      await issueForDirectClose(OpenPositionTx);
+      await issueForDirectClose(openTx);
 
       const margin = await Margin.deployed();
-      const closeAmount = OpenPositionTx.marginAmount.div(2);
+      const closeAmount = openTx.amount.div(2);
 
       const closeTx = await callClosePositionDirectly(
         margin,
-        OpenPositionTx,
+        openTx,
         closeAmount
       );
 
-      const exists = await margin.containsPosition.call(OpenPositionTx.id);
+      const exists = await margin.containsPosition.call(openTx.id);
       expect(exists).to.be.true;
 
-      await checkSuccessCloseDirectly(margin, OpenPositionTx, closeTx, closeAmount);
+      await checkSuccessCloseDirectly(margin, openTx, closeTx, closeAmount);
     });
   });
 });

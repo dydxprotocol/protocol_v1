@@ -15,9 +15,7 @@ import { MarginState } from "./MarginState.sol";
 library LiquidatePositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A position was liquidated
@@ -31,9 +29,7 @@ library LiquidatePositionImpl {
         uint256 quoteTokenPayout
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function liquidatePositionImpl(
         MarginState.State storage state,
@@ -44,13 +40,14 @@ library LiquidatePositionImpl {
         public
         returns (uint256, uint256)
     {
-        ClosePositionShared.ClosePositionTx memory transaction = ClosePositionShared.createClosePositionTx(
-            state,
-            marginId,
-            requestedLiquidationAmount,
-            payoutRecipient,
-            true
-        );
+        ClosePositionShared.ClosePositionTx memory transaction =
+            ClosePositionShared.createClosePositionTx(
+                state,
+                marginId,
+                requestedLiquidationAmount,
+                payoutRecipient,
+                true
+            );
 
         uint256 quoteTokenPayout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
             state,
@@ -68,7 +65,7 @@ library LiquidatePositionImpl {
         );
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function logEventOnLiquidate(
         ClosePositionShared.ClosePositionTx transaction

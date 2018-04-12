@@ -25,9 +25,7 @@ contract Vault is
     HasNoContracts {
     using SafeMath for uint256;
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+    // ============ State Variables ============
 
     address public PROXY;
 
@@ -37,9 +35,7 @@ contract Vault is
     // Map from token address to total amount of that token attributed to some account.
     mapping (address => uint256) public totalBalances;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function Vault(
         address proxy,
@@ -51,9 +47,7 @@ contract Vault is
         PROXY = proxy;
     }
 
-    // --------------------------------------------------
-    // ---- Authorized-Only State-Changing Functions ----
-    // --------------------------------------------------
+    // ============ Authorized-Only State-Changing Functions ============
 
     /**
      * Transfers tokens from an address (that has approved the proxy) to the vault.

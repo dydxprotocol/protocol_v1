@@ -16,9 +16,7 @@ import { Vault } from "../Vault.sol";
 library DepositImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * Additional deposit for a margin position was posted by the margin trader
@@ -39,9 +37,7 @@ library DepositImpl {
         uint256 depositAmount
     );
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     function depositImpl(
         MarginState.State storage state,

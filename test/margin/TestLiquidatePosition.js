@@ -10,25 +10,25 @@ const expect = require('chai').expect;
 
 describe('#liquidatePosition', () => {
   const LIQUIDATE_PERCENT = .20; // 20%
-  let margin, OpenPositionTx, erc20MarginTrader, lender, marginAmount;
+  let margin, openTx, erc20MarginTrader, lender, amount;
 
   async function configurePosition(initialHolder, accounts) {
     margin = await Margin.deployed();
-    OpenPositionTx = await doOpenPosition(accounts);
+    openTx = await doOpenPosition(accounts);
     // Deploy an ERC20MarginTrader token
-    erc20MarginTrader = await ERC20MarginTrader.new(OpenPositionTx.id, margin.address, initialHolder, [
+    erc20MarginTrader = await ERC20MarginTrader.new(openTx.id, margin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);
     // Transfer the margin position from the margin trader to the ERC20MarginTrader token
-    await margin.transferPosition(OpenPositionTx.id, erc20MarginTrader.address, { from: OpenPositionTx.trader });
+    await margin.transferAsTrader(openTx.id, erc20MarginTrader.address, { from: openTx.trader });
 
-    lender = OpenPositionTx.loanOffering.payer;
+    lender = openTx.loanOffering.payer;
 
     const totalSupply = await erc20MarginTrader.totalSupply();
     // Transfer 20% of the margin position to the lender
-    marginAmount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20MarginTrader.transfer(OpenPositionTx.loanOffering.payer, marginAmount, { from: initialHolder });
+    amount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
+    await erc20MarginTrader.transfer(openTx.loanOffering.payer, amount, { from: initialHolder });
   }
 
   contract('Margin', function(accounts) {
@@ -36,14 +36,14 @@ describe('#liquidatePosition', () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginTrader.js
       await configurePosition(initialHolder, accounts);
 
-      const quoteToken = await ERC20.at(OpenPositionTx.quoteToken);
+      const quoteToken = await ERC20.at(openTx.quoteToken);
       const lenderQuoteBefore = await quoteToken.balanceOf(lender);
       expect(lenderQuoteBefore.toNumber()).to.equal(0);
 
-      const quoteBalance = await margin.getPositionBalance(OpenPositionTx.id);
+      const quoteBalance = await margin.getPositionBalance(openTx.id);
 
       // Liquidate quote tokens by burning margin trader tokens
-      await callLiquidate(margin, OpenPositionTx, marginAmount, lender);
+      await callLiquidate(margin, openTx, amount, lender);
 
       // It should burn the tokens
       const lenderMarginAfter = await erc20MarginTrader.balanceOf(lender);
@@ -63,16 +63,16 @@ describe('#liquidatePosition', () => {
       // Create a new loan owner smart contract that implements liquidate delegator
       const liquidateDelegator = await TestLiquidatePositionDelegator.new(margin.address, lender);
       // Transfer the loan to the liquidate delegator
-      await margin.transferLoan(OpenPositionTx.id, liquidateDelegator.address, { from: lender });
+      await margin.transferAsLender(openTx.id, liquidateDelegator.address, { from: lender });
 
-      const quoteToken = await ERC20.at(OpenPositionTx.quoteToken);
+      const quoteToken = await ERC20.at(openTx.quoteToken);
       const lenderQuoteBefore = await quoteToken.balanceOf(lender);
       expect(lenderQuoteBefore.toNumber()).to.equal(0);
 
-      const quoteBalance = await margin.getPositionBalance(OpenPositionTx.id);
+      const quoteBalance = await margin.getPositionBalance(openTx.id);
 
       // Liquidate quote tokens by burning margin trader tokens
-      await callLiquidate(margin, OpenPositionTx, marginAmount, lender);
+      await callLiquidate(margin, openTx, amount, lender);
 
       const lenderMarginAfter = await erc20MarginTrader.balanceOf(lender);
       expect(lenderMarginAfter.toNumber()).to.equal(0);
