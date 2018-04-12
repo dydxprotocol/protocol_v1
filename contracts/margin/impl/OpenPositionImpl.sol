@@ -54,7 +54,7 @@ library OpenPositionImpl {
         public
         returns (bytes32)
     {
-        OpenPositionShared.OpenPositionTx memory transaction = parseOpenPositionTx(
+        OpenPositionShared.OpenTx memory transaction = parseOpenPositionTx(
             addresses,
             values256,
             values32,
@@ -121,7 +121,7 @@ library OpenPositionImpl {
     function recordPositionOpened(
         bytes32 marginId,
         address trader,
-        OpenPositionShared.OpenPositionTx transaction,
+        OpenPositionShared.OpenTx memory transaction,
         uint256 quoteTokenReceived
     )
         internal
@@ -147,7 +147,7 @@ library OpenPositionImpl {
     function updateState(
         MarginState.State storage state,
         bytes32 marginId,
-        OpenPositionShared.OpenPositionTx transaction
+        OpenPositionShared.OpenTx memory transaction
     )
         internal
     {
@@ -195,9 +195,9 @@ library OpenPositionImpl {
     )
         internal
         view
-        returns (OpenPositionShared.OpenPositionTx memory)
+        returns (OpenPositionShared.OpenTx memory)
     {
-        OpenPositionShared.OpenPositionTx memory transaction = OpenPositionShared.OpenPositionTx({
+        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: addresses[0],
             baseToken: addresses[1],
             quoteToken: addresses[2],

@@ -59,7 +59,7 @@ library IncreasePositionImpl {
     {
         MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
-        OpenPositionShared.OpenPositionTx memory transaction = parseIncreasePositionTx(
+        OpenPositionShared.OpenTx memory transaction = parseIncreasePositionTx(
             position,
             addresses,
             values256,
@@ -157,7 +157,7 @@ library IncreasePositionImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        OpenPositionShared.OpenPositionTx transaction,
+        OpenPositionShared.OpenTx memory transaction,
         MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
@@ -192,7 +192,7 @@ library IncreasePositionImpl {
     }
 
     function validate(
-        OpenPositionShared.OpenPositionTx transaction,
+        OpenPositionShared.OpenTx memory transaction,
         MarginCommon.Position storage position
     )
         internal
@@ -211,7 +211,7 @@ library IncreasePositionImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        OpenPositionShared.OpenPositionTx transaction,
+        OpenPositionShared.OpenTx memory transaction,
         MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
@@ -315,7 +315,7 @@ library IncreasePositionImpl {
     }
 
     function recordPositionIncreased(
-        OpenPositionShared.OpenPositionTx transaction,
+        OpenPositionShared.OpenTx memory transaction,
         bytes32 marginId,
         MarginCommon.Position storage position,
         uint256 quoteTokenFromSell
@@ -350,9 +350,9 @@ library IncreasePositionImpl {
     )
         internal
         view
-        returns (OpenPositionShared.OpenPositionTx memory)
+        returns (OpenPositionShared.OpenTx memory)
     {
-        OpenPositionShared.OpenPositionTx memory transaction = OpenPositionShared.OpenPositionTx({
+        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: position.trader,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,

@@ -47,14 +47,13 @@ library ClosePositionImpl {
         public
         returns (uint256, uint256, uint256)
     {
-        ClosePositionShared.ClosePositionTx memory transaction =
-            ClosePositionShared.createClosePositionTx(
-                state,
-                marginId,
-                requestedCloseAmount,
-                payoutRecipient,
-                false
-            );
+        ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
+            state,
+            marginId,
+            requestedCloseAmount,
+            payoutRecipient,
+            false
+        );
 
         uint256 buybackCost = returnBaseTokensToLender(
             state,
@@ -87,7 +86,7 @@ library ClosePositionImpl {
 
     function returnBaseTokensToLender(
         MarginState.State storage state,
-        ClosePositionShared.ClosePositionTx memory transaction,
+        ClosePositionShared.CloseTx memory transaction,
         address exchangeWrapperAddress,
         bytes memory orderData
     )
@@ -117,7 +116,7 @@ library ClosePositionImpl {
 
     function buyBackBaseToken(
         MarginState.State storage state,
-        ClosePositionShared.ClosePositionTx transaction,
+        ClosePositionShared.CloseTx memory transaction,
         address exchangeWrapperAddress,
         bytes memory orderData
     )
@@ -169,7 +168,7 @@ library ClosePositionImpl {
     }
 
     function logEventOnClose(
-        ClosePositionShared.ClosePositionTx transaction,
+        ClosePositionShared.CloseTx memory transaction,
         uint256 quoteTokenPayout
     )
         internal

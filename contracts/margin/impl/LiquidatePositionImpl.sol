@@ -40,14 +40,13 @@ library LiquidatePositionImpl {
         public
         returns (uint256, uint256)
     {
-        ClosePositionShared.ClosePositionTx memory transaction =
-            ClosePositionShared.createClosePositionTx(
-                state,
-                marginId,
-                requestedLiquidationAmount,
-                payoutRecipient,
-                true
-            );
+        ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
+            state,
+            marginId,
+            requestedLiquidationAmount,
+            payoutRecipient,
+            true
+        );
 
         uint256 quoteTokenPayout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
             state,
@@ -68,7 +67,7 @@ library LiquidatePositionImpl {
     // ============ Helper Functions ============
 
     function logEventOnLiquidate(
-        ClosePositionShared.ClosePositionTx transaction
+        ClosePositionShared.CloseTx memory transaction
     )
         internal
     {

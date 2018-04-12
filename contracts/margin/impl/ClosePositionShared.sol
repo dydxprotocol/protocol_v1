@@ -24,7 +24,7 @@ library ClosePositionShared {
 
     // ============ Structs ============
 
-    struct ClosePositionTx {
+    struct CloseTx {
         bytes32 marginId;
         uint256 currentPositionAmount;
         uint256 closeAmount;
@@ -42,7 +42,7 @@ library ClosePositionShared {
 
     function ClosePositionStateUpdate(
         MarginState.State storage state,
-        ClosePositionTx memory transaction
+        CloseTx memory transaction
     )
         internal
     {
@@ -61,7 +61,7 @@ library ClosePositionShared {
 
     function sendQuoteTokensToPayoutRecipient(
         MarginState.State storage state,
-        ClosePositionShared.ClosePositionTx memory transaction,
+        ClosePositionShared.CloseTx memory transaction,
         uint256 buybackCost
     )
         internal
@@ -101,7 +101,7 @@ library ClosePositionShared {
         return quoteTokenPayout;
     }
 
-    function createClosePositionTx(
+    function createCloseTx(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 requestedAmount,
@@ -109,7 +109,7 @@ library ClosePositionShared {
         bool isLiquidation
     )
         internal
-        returns (ClosePositionTx memory)
+        returns (CloseTx memory)
     {
         MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
@@ -121,7 +121,7 @@ library ClosePositionShared {
             isLiquidation
         );
 
-        return parseClosePositionTx(
+        return parseCloseTx(
             state,
             position,
             marginId,
@@ -131,7 +131,7 @@ library ClosePositionShared {
         );
     }
 
-    function parseClosePositionTx(
+    function parseCloseTx(
         MarginState.State storage state,
         MarginCommon.Position storage position,
         bytes32 marginId,
@@ -141,7 +141,7 @@ library ClosePositionShared {
     )
         internal
         view
-        returns (ClosePositionTx memory)
+        returns (CloseTx memory)
     {
         require(payoutRecipient != address(0));
 
@@ -161,7 +161,7 @@ library ClosePositionShared {
             );
         }
 
-        return ClosePositionTx({
+        return CloseTx({
             marginId: marginId,
             currentPositionAmount: currentPositionAmount,
             closeAmount: closeAmount,

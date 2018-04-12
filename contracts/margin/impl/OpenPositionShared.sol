@@ -22,7 +22,7 @@ library OpenPositionShared {
 
     // ============ Structs ============
 
-    struct OpenPositionTx {
+    struct OpenTx {
         address owner;
         address baseToken;
         address quoteToken;
@@ -38,7 +38,7 @@ library OpenPositionShared {
 
     function internalPreStateUpdate(
         MarginState.State storage state,
-        OpenPositionTx memory transaction,
+        OpenTx memory transaction,
         bytes32 marginId,
         bytes orderData
     )
@@ -46,7 +46,7 @@ library OpenPositionShared {
         returns (uint256, uint256)
     {
         // Validate
-        validateOpenPositionTx(
+        validateOpenTx(
             state,
             transaction
         );
@@ -84,7 +84,7 @@ library OpenPositionShared {
 
     function internalPostStateUpdate(
         MarginState.State storage state,
-        OpenPositionTx memory transaction,
+        OpenTx memory transaction,
         bytes32 marginId
     )
         internal
@@ -101,9 +101,9 @@ library OpenPositionShared {
         );
     }
 
-    function validateOpenPositionTx(
+    function validateOpenTx(
         MarginState.State storage state,
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
         view
@@ -176,7 +176,7 @@ library OpenPositionShared {
     }
 
     function getConsentIfSmartContractLender(
-        OpenPositionTx transaction,
+        OpenTx memory transaction,
         bytes32 marginId
     )
         internal
@@ -196,7 +196,7 @@ library OpenPositionShared {
 
     function transferFromLender(
         MarginState.State storage state,
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
     {
@@ -211,7 +211,7 @@ library OpenPositionShared {
 
     function transferDeposit(
         MarginState.State storage state,
-        OpenPositionTx transaction,
+        OpenTx memory transaction,
         bytes32 marginId
     )
         internal
@@ -240,7 +240,7 @@ library OpenPositionShared {
 
     function transferAsLenderFees(
         MarginState.State storage state,
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
     {
@@ -283,7 +283,7 @@ library OpenPositionShared {
 
     function executeSell(
         MarginState.State storage state,
-        OpenPositionTx transaction,
+        OpenTx memory transaction,
         bytes orderData,
         bytes32 marginId,
         uint256 sellAmount
@@ -310,7 +310,7 @@ library OpenPositionShared {
     }
 
     function validateMinimumQuoteToken(
-        OpenPositionTx transaction,
+        OpenTx memory transaction,
         uint256 totalQuoteTokenReceived
     )
         internal
@@ -326,7 +326,7 @@ library OpenPositionShared {
     }
 
     function getLoanOfferingAddresses(
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
         pure
@@ -346,7 +346,7 @@ library OpenPositionShared {
     }
 
     function getLoanOfferingValues256(
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
         pure
@@ -365,7 +365,7 @@ library OpenPositionShared {
     }
 
     function getLoanOfferingValues32(
-        OpenPositionTx transaction
+        OpenTx memory transaction
     )
         internal
         pure
