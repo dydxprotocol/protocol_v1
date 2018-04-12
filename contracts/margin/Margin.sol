@@ -8,7 +8,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Vault } from "./Vault.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
-import { ForceRecoverDepositImpl } from "./impl/ForceRecoverDepositImpl.sol";
+import { ForceRecoverCollateralImpl } from "./impl/ForceRecoverCollateralImpl.sol";
 import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
 import { LiquidatePositionImpl } from "./impl/LiquidatePositionImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
@@ -328,7 +328,7 @@ contract Margin is
      * Call in a margin loan.
      * Only callable by the lender for a margin position. After loan is called in, the margin trader
      * will have time equal to the call time limit to close the position and repay the loan. If the
-     * margin trader does not close the position, the lender can use forceRecoverDeposit to recover
+     * margin trader does not close the position, the lender can use forceRecoverCollateral to recover
      * the funds.
      *
      * @param  marginId         Unique ID of the margin position
@@ -369,14 +369,14 @@ contract Margin is
      *
      * @param  marginId  Unique ID of the margin position
      */
-    function forceRecoverDeposit(
+    function forceRecoverCollateral(
         bytes32 marginId
     )
         external
         nonReentrant
         returns (uint256)
     {
-        return ForceRecoverDepositImpl.forceRecoverDepositImpl(state, marginId);
+        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, marginId);
     }
 
     /**

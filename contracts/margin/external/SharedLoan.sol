@@ -7,7 +7,7 @@ import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
-import { ForceRecoverDepositDelegator } from "../interfaces/ForceRecoverDepositDelegator.sol";
+import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
 import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
@@ -23,7 +23,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 /* solium-disable-next-line */
 contract SharedLoan is
     MarginCallDelegator,
-    ForceRecoverDepositDelegator,
+    ForceRecoverCollateralDelegator,
     ReentrancyGuard
 {
     using SafeMath for uint256;
@@ -108,7 +108,7 @@ contract SharedLoan is
         address[] trustedLoanCallers
     )
         public
-        ForceRecoverDepositDelegator(margin)
+        ForceRecoverCollateralDelegator(margin)
         MarginCallDelegator(margin)
     {
         MARGIN_ID = marginId;
@@ -255,7 +255,7 @@ contract SharedLoan is
      * @param  marginId  Unique ID of the margin position
      * @return           True to consent to the loan being force recovered
      */
-    function forceRecoverDepositOnBehalfOf(
+    function forceRecoverCollateralOnBehalfOf(
         address /* who */,
         bytes32 marginId
     )

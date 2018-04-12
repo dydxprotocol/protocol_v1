@@ -80,7 +80,7 @@ contract MarginEvents {
     /**
      * The collateral for a margin position was forcibly recovered by the lender
      */
-    event PositionCollateralRecovered(
+    event CollateralForceRecovered(
         bytes32 indexed marginId,
         uint256 amount
     );

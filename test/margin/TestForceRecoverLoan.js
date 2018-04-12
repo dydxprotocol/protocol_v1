@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 const QuoteToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
-const TestForceRecoverDepositDelegator = artifacts.require("TestForceRecoverDepositDelegator");
+const TestForceRecoverCollateralDelegator = artifacts.require("TestForceRecoverCollateralDelegator");
 const {
   doOpenPosition,
   doOpenPositionAndCall
@@ -15,7 +15,7 @@ const {
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 
-describe('#forceRecoverDeposit', () => {
+describe('#forceRecoverCollateral', () => {
   contract('Margin', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
       const { margin, vault, baseToken, openTx } = await doOpenPositionAndCall(accounts);
@@ -23,12 +23,12 @@ describe('#forceRecoverDeposit', () => {
 
       const quoteTokenBalance = await margin.getPositionBalance.call(openTx.id);
 
-      const tx = await margin.forceRecoverDeposit(
+      const tx = await margin.forceRecoverCollateral(
         openTx.id,
         { from: openTx.loanOffering.payer }
       );
 
-      console.log('\tMargin.forceRecoverDeposit gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.forceRecoverCollateral gas used: ' + tx.receipt.gasUsed);
 
       const quoteToken = await QuoteToken.deployed();
 
@@ -58,7 +58,7 @@ describe('#forceRecoverDeposit', () => {
       expect(isPositionClosed).to.be.true;
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
-      expectLog(tx.logs[0], 'PositionCollateralRecovered', {
+      expectLog(tx.logs[0], 'CollateralForceRecovered', {
         marginId: openTx.id,
         amount: quoteTokenBalance
       });
@@ -70,7 +70,7 @@ describe('#forceRecoverDeposit', () => {
       const { margin, openTx } = await doOpenPositionAndCall(accounts);
       await wait(openTx.loanOffering.callTimeLimit);
 
-      await expectThrow( margin.forceRecoverDeposit(
+      await expectThrow( margin.forceRecoverCollateral(
         openTx.id,
         { from: accounts[7] }
       ));
@@ -78,28 +78,28 @@ describe('#forceRecoverDeposit', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('ForceRecoverDepositDelegator loan owner only allows certain accounts', async () => {
+    it('ForceRecoverCollateralDelegator loan owner only allows certain accounts', async () => {
       const { margin, vault, baseToken, openTx } = await doOpenPositionAndCall(accounts);
       await wait(openTx.loanOffering.callTimeLimit);
 
       const quoteTokenBalance = await margin.getPositionBalance.call(openTx.id);
 
       const recoverer = accounts[9];
-      const testForceRecoverDepositDelegator = await TestForceRecoverDepositDelegator.new(
+      const testForceRecoverCollateralDelegator = await TestForceRecoverCollateralDelegator.new(
         Margin.address,
         recoverer
       );
       await margin.transferAsLender(
         openTx.id,
-        testForceRecoverDepositDelegator.address,
+        testForceRecoverCollateralDelegator.address,
         { from: openTx.loanOffering.payer });
 
-      await expectThrow( margin.forceRecoverDeposit(
+      await expectThrow( margin.forceRecoverCollateral(
         openTx.id,
         { from: accounts[6] }
       ));
 
-      await margin.forceRecoverDeposit(
+      await margin.forceRecoverCollateral(
         openTx.id,
         { from: recoverer }
       );
@@ -121,7 +121,7 @@ describe('#forceRecoverDeposit', () => {
         quoteToken.balanceOf.call(vault.address),
         margin.containsPosition.call(openTx.id),
         margin.isPositionClosed.call(openTx.id),
-        quoteToken.balanceOf.call(testForceRecoverDepositDelegator.address)
+        quoteToken.balanceOf.call(testForceRecoverCollateralDelegator.address)
       ]);
 
       expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
@@ -137,7 +137,7 @@ describe('#forceRecoverDeposit', () => {
   contract('Margin', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
       const { margin, openTx } = await doOpenPositionAndCall(accounts);
-      await expectThrow( margin.forceRecoverDeposit(
+      await expectThrow( margin.forceRecoverCollateral(
         openTx.id,
         { from: openTx.loanOffering.payer }
       ));
@@ -155,14 +155,14 @@ describe('#forceRecoverDeposit', () => {
 
       // loan was not called and it is too early
       await wait(almostMaxDuration);
-      await expectThrow( margin.forceRecoverDeposit(
+      await expectThrow( margin.forceRecoverCollateral(
         openTx.id,
         { from: openTx.loanOffering.payer }
       ));
 
       // now it's okay because current time is past maxDuration+callTimeLimit
       await wait(callTimeLimit + 100);
-      await margin.forceRecoverDeposit(
+      await margin.forceRecoverCollateral(
         openTx.id,
         { from: openTx.loanOffering.payer }
       );

@@ -5,17 +5,17 @@ import { LenderOwner } from "./LenderOwner.sol";
 
 
 /**
- * @title ForceRecoverDepositDelegator
+ * @title ForceRecoverCollateralDelegator
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to let other addresses
- * forceRecoverDeposit() a loan owned by the smart contract.
+ * forceRecoverCollateral() a loan owned by the smart contract.
  */
-contract ForceRecoverDepositDelegator is LenderOwner {
+contract ForceRecoverCollateralDelegator is LenderOwner {
 
     // ============ Constructor ============
 
-    function ForceRecoverDepositDelegator(
+    function ForceRecoverCollateralDelegator(
         address margin
     )
         public
@@ -26,7 +26,7 @@ contract ForceRecoverDepositDelegator is LenderOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call forceRecoverDeposit()
+     * Function a contract must implement in order to let other addresses call forceRecoverCollateral()
      * for the loan-side of a margin position.
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
@@ -36,7 +36,7 @@ contract ForceRecoverDepositDelegator is LenderOwner {
      * @param marginId       Unique ID of the margin position
      * @return               True if the user is allowed to cancel the margin call, false otherwise
      */
-    function forceRecoverDepositOnBehalfOf(
+    function forceRecoverCollateralOnBehalfOf(
         address who,
         bytes32 marginId
     )

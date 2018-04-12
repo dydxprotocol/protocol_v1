@@ -22,11 +22,11 @@ contract MarginAdmin is Ownable {
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
      *                                    (marginCall, closePosition, cancelLoanOffering
-     *                                    closePositionDirectly, forceRecoverDeposit)
+     *                                    closePositionDirectly, forceRecoverCollateral)
      * CLOSE_ONLY                       - Only closing functions allowed (marginCall, closePosition,
-     *                                    closePositionDirectly, forceRecoverDeposit)
+     *                                    closePositionDirectly, forceRecoverCollateral)
      * CLOSE_DIRECTLY_ONLY              - Only closing functions allowed (marginCall,
-     *                                    closePositionDirectly, forceRecoverDeposit)
+     *                                    closePositionDirectly, forceRecoverCollateral)
      */
     enum OperationState {
         OPERATIONAL,

@@ -436,7 +436,7 @@ contract('ERC20MarginTrader', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
         );
-        await CONTRACTS.MARGIN.forceRecoverDeposit(POSITION.ID, { from: lender });
+        await CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -455,7 +455,7 @@ contract('ERC20MarginTrader', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS
         );
-        await expectThrow( CONTRACTS.MARGIN.forceRecoverDeposit(POSITION.ID, { from: lender }));
+        await expectThrow( CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -477,14 +477,14 @@ contract('ERC20MarginTrader', function(accounts) {
       }
     });
 
-    it('withdraws no tokens after forceRecoverDeposit', async () => {
-      // close nothing, letting the lender forceRecoverDeposit
+    it('withdraws no tokens after forceRecoverCollateral', async () => {
+      // close nothing, letting the lender forceRecoverCollateral
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
 
-        await CONTRACTS.MARGIN.forceRecoverDeposit(POSITION.ID, { from: lender });
+        await CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
 
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
         expect(tx.result).to.be.bignumber.equal(0);
