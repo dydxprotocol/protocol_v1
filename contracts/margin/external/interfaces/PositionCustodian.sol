@@ -3,14 +3,14 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title TraderCustodian
+ * @title PositionCustodian
  * @author dYdX
  *
  * Interface to interact with other second-layer contracts. For contracts that own margin
  * positions as a proxy for other addresses.
  */
  /* solium-disable-next-line */
-contract TraderCustodian {
+contract PositionCustodian {
 
     /**
      * Function that is intended to be called by external contracts to see where to pay any fees or

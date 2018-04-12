@@ -12,7 +12,7 @@ import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
 import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
-import { TraderCustodian } from "./interfaces/TraderCustodian.sol";
+import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -28,7 +28,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 contract ERC20MarginPosition is
     StandardToken,
     ClosePositionDelegator,
-    TraderCustodian,
+    PositionCustodian,
     ReentrancyGuard {
     using SafeMath for uint256;
 
@@ -90,7 +90,7 @@ contract ERC20MarginPosition is
     // Unique ID of the margin position this contract is tokenizing
     bytes32 public MARGIN_ID;
 
-    // Addresses of recipients that will fairly verify and redistribute funds from a position close
+    // Payout recipients that will fairly verify and redistribute funds from closing a position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
     // Current State of this contract. See State enum
@@ -353,7 +353,7 @@ contract ERC20MarginPosition is
     }
 
     /**
-     * Implements TraderCustodian functionality. Called by external contracts to see where to pay
+     * Implements PositionCustodian functionality. Called by external contracts to see where to pay
      * tokens as a result of closing a position on behalf of this contract
      *
      * @param  marginId  Unique ID of the margin position

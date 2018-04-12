@@ -10,25 +10,25 @@ const expect = require('chai').expect;
 
 describe('#liquidatePosition', () => {
   const LIQUIDATE_PERCENT = .20; // 20%
-  let margin, openTx, erc20MarginTrader, lender, amount;
+  let margin, openTx, erc20MarginPosition, lender, amount;
 
   async function configurePosition(initialHolder, accounts) {
     margin = await Margin.deployed();
     openTx = await doOpenPosition(accounts);
     // Deploy an ERC20MarginPosition token
-    erc20MarginTrader = await ERC20MarginPosition.new(openTx.id, margin.address, initialHolder, [
+    erc20MarginPosition = await ERC20MarginPosition.new(openTx.id, margin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);
     // Transfer the margin position from the trader to the ERC20MarginPosition token
-    await margin.transferPosition(openTx.id, erc20MarginTrader.address, { from: openTx.trader });
+    await margin.transferPosition(openTx.id, erc20MarginPosition.address, { from: openTx.trader });
 
     lender = openTx.loanOffering.payer;
 
-    const totalSupply = await erc20MarginTrader.totalSupply();
+    const totalSupply = await erc20MarginPosition.totalSupply();
     // Transfer 20% of the margin position to the lender
     amount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20MarginTrader.transfer(openTx.loanOffering.payer, amount, { from: initialHolder });
+    await erc20MarginPosition.transfer(openTx.loanOffering.payer, amount, { from: initialHolder });
   }
 
   contract('Margin', function(accounts) {
@@ -46,7 +46,7 @@ describe('#liquidatePosition', () => {
       await callLiquidate(margin, openTx, amount, lender);
 
       // It should burn the tokens
-      const lenderMarginAfter = await erc20MarginTrader.balanceOf(lender);
+      const lenderMarginAfter = await erc20MarginPosition.balanceOf(lender);
       expect(lenderMarginAfter.toNumber()).to.equal(0);
 
       // It should liquidate the correct amount of the quote balance
@@ -74,7 +74,7 @@ describe('#liquidatePosition', () => {
       // Liquidate quote tokens by burning trader tokens
       await callLiquidate(margin, openTx, amount, lender);
 
-      const lenderMarginAfter = await erc20MarginTrader.balanceOf(lender);
+      const lenderMarginAfter = await erc20MarginPosition.balanceOf(lender);
       expect(lenderMarginAfter.toNumber()).to.equal(0);
 
       const lenderQuoteAfter = await quoteToken.balanceOf(lender);

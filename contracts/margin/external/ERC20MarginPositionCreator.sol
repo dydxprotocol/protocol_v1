@@ -15,7 +15,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * automatically deployed whenever margin position ownership is transferred to this contract. That
  * position is then transferred to the new ERC20MarginPosition, with the tokens initially being
  * allocated to the address that transferred the position originally to the
- * ERC20ERC20MarginPositionCreator.
+ * ERC20MarginPositionCreator.
  */
  /* solium-disable-next-line */
 contract ERC20MarginPositionCreator is
@@ -32,7 +32,7 @@ contract ERC20MarginPositionCreator is
 
     // ============ State Variables ============
 
-    // Addresses of recipients that will fairly verify and redistribute funds from a position close
+    // Payout recipients that will fairly verify and redistribute funds from closing a position
     address[] public TRUSTED_RECIPIENTS;
 
     // ============ Constructor ============

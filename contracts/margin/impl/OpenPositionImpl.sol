@@ -172,12 +172,12 @@ library OpenPositionImpl {
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newTrader = transaction.owner != msg.sender;
 
-        state.positions[marginId].lender = TransferInternal.grantOwnershipAsLender(
+        state.positions[marginId].lender = TransferInternal.grantLoanOwnership(
             marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.positions[marginId].trader = TransferInternal.grantOwnershipAsTrader(
+        state.positions[marginId].trader = TransferInternal.grantPositionOwnership(
             marginId,
             newTrader ? msg.sender : address(0),
             transaction.owner);

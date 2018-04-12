@@ -30,7 +30,7 @@ library TransferImpl {
 
         // Doesn't change the state of marginId; figures out the address of the final owner of loan.
         // That is, newLender may pass ownership to a different address.
-        address finalLender = TransferInternal.grantOwnershipAsLender(
+        address finalLender = TransferInternal.grantLoanOwnership(
             marginId,
             originalLender,
             newLender);
@@ -55,7 +55,7 @@ library TransferImpl {
 
         // Doesn't change the state of marginId; figures out the address of the final owner of
         // position. That is, newTrader may pass ownership to a different address.
-        address finalTrader = TransferInternal.grantOwnershipAsTrader(
+        address finalTrader = TransferInternal.grantPositionOwnership(
             marginId,
             originalTrader,
             newTrader);

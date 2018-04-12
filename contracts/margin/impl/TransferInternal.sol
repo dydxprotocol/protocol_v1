@@ -10,7 +10,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * @title TransferInternal
  * @author dYdX
  *
- * This library contains the implementation for transferring ownership of loans and margin positions
+ * This library contains the implementation for transferring ownership pf margin positions and loans
  */
 library TransferInternal {
 
@@ -26,7 +26,7 @@ library TransferInternal {
     );
 
     /**
-     * Ownership of a margin position was transferred to a new address
+     * Ownership of a position was transferred to a new address
      */
     event PositionTransferred(
         bytes32 indexed marginId,
@@ -37,8 +37,8 @@ library TransferInternal {
     // ============ Internal Implementation Functions ============
 
     /**
-     * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the loan. This function does not actually set the state of the margin position.
+     * Returns either the address of the new position lender, or the address to which they wish to
+     * pass ownership. This function does not set state in Margin.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  oldOwner  The previous owner of the loan
@@ -46,7 +46,7 @@ library TransferInternal {
      * @return           The address that the intended owner wishes to assign the loan to (may be
      *                   the same as the intended owner). Zero if ownership is rejected.
      */
-    function grantOwnershipAsLender(
+    function grantLoanOwnership(
         bytes32 marginId,
         address oldOwner,
         address newOwner
@@ -62,7 +62,7 @@ library TransferInternal {
         if (AddressUtils.isContract(newOwner)) {
             address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
-                return grantOwnershipAsLender(marginId, newOwner, nextOwner);
+                return grantLoanOwnership(marginId, newOwner, nextOwner);
             }
         }
 
@@ -71,9 +71,8 @@ library TransferInternal {
     }
 
     /**
-     * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the margin position. This function does not actually set the state of the margin
-     * position
+     * Returns either the address of the new position trader, or the address to which they wish to
+     * pass ownership. This function does not set state in Margin.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  oldOwner  The previous owner of the margin position
@@ -81,7 +80,7 @@ library TransferInternal {
      * @return           The address that the intended owner wishes to assign the position to (may
      *                   be the same as the intended owner). Zero if ownership is rejected.
      */
-    function grantOwnershipAsTrader(
+    function grantPositionOwnership(
         bytes32 marginId,
         address oldOwner,
         address newOwner
@@ -97,7 +96,7 @@ library TransferInternal {
         if (AddressUtils.isContract(newOwner)) {
             address nextOwner = PositionOwner(newOwner).receivePositionOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
-                return grantOwnershipAsTrader(marginId, newOwner, nextOwner);
+                return grantPositionOwnership(marginId, newOwner, nextOwner);
             }
         }
 

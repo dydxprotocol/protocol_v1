@@ -6,7 +6,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { Margin } from "../Margin.sol";
 import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
-import { TraderCustodian } from "./interfaces/TraderCustodian.sol";
+import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 
 
 /**
@@ -14,14 +14,14 @@ import { TraderCustodian } from "./interfaces/TraderCustodian.sol";
  * @author dYdX
  *
  * Contract used to tokenize margin positions as ERC721-compliant non-fungible tokens. Holding the
- * token allows the holder to close the margin position. Functionality is added to let users approve
- * other addresses to close their positions for them.
+ * token allows the holder to close the position. Functionality is added to let users approve other
+ * addresses to close their positions for them.
  */
  /* solium-disable-next-line */
 contract ERC721MarginPosition is
     ERC721Token,
     ClosePositionDelegator,
-    TraderCustodian,
+    PositionCustodian,
     ReentrancyGuard {
     using SafeMath for uint256;
 
@@ -218,7 +218,7 @@ contract ERC721MarginPosition is
         return 0;
     }
 
-    // ============ TraderCustodian Functions ============
+    // ============ PositionCustodian Functions ============
 
     function getPositionDeedHolder(
         bytes32 marginId

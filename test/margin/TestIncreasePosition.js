@@ -79,7 +79,7 @@ describe('#increasePosition', () => {
         traderStartingQuoteToken
       } = await setup(
         accounts,
-        { traderOwner: testPositionOwner.address, lenderOwner: testLoanOwner.address }
+        { positionOwner: testPositionOwner.address, loanOwner: testLoanOwner.address }
       );
 
       const tx = await callIncreasePosition(margin, addValueTx);
@@ -230,7 +230,7 @@ describe('#increasePosition', () => {
     }
   }
 
-  async function setup(accounts, { lenderOwner, traderOwner } = {}) {
+  async function setup(accounts, { loanOwner, positionOwner } = {}) {
     const [margin, baseToken, quoteToken, feeToken] = await Promise.all([
       Margin.deployed(),
       BaseToken.deployed(),
@@ -245,15 +245,15 @@ describe('#increasePosition', () => {
       createMarginTradeTx(accounts, salt++)
     ]);
 
-    if (lenderOwner) {
-      openTx.loanOffering.owner = lenderOwner;
+    if (loanOwner) {
+      openTx.loanOffering.owner = loanOwner;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
-      addValueTx.loanOffering.owner = lenderOwner;
+      addValueTx.loanOffering.owner = loanOwner;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
     }
-    if (traderOwner) {
-      openTx.owner = traderOwner;
-      addValueTx.owner = traderOwner;
+    if (positionOwner) {
+      openTx.owner = positionOwner;
+      addValueTx.owner = positionOwner;
     }
 
     await issueTokensAndSetAllowancesFor(openTx);
