@@ -170,7 +170,7 @@ contract ZeroExExchangeWrapper is
     // ============ Internal Functions ============
 
     function transferTakerFee(
-        Order order,
+        Order memory order,
         address tradeOriginator,
         uint256 requestedFillAmount
     )
@@ -197,7 +197,7 @@ contract ZeroExExchangeWrapper is
     }
 
     function doTrade(
-        Order order,
+        Order memory order,
         address makerToken,
         address takerToken,
         uint256 requestedFillAmount

@@ -152,7 +152,7 @@ library OpenPositionShared {
     }
 
     function isValidSignature(
-        MarginCommon.LoanOffering loanOffering
+        MarginCommon.LoanOffering memory loanOffering
     )
         internal
         pure

@@ -180,7 +180,7 @@ library MarginCommon {
     }
 
     function getLoanOfferingHash(
-        LoanOffering loanOffering,
+        LoanOffering memory loanOffering,
         address quoteToken,
         address baseToken
     )
@@ -204,7 +204,7 @@ library MarginCommon {
     }
 
     function getValuesHash(
-        LoanOffering loanOffering
+        LoanOffering memory loanOffering
     )
         internal
         pure
