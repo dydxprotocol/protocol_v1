@@ -63,7 +63,7 @@ library OpenPositionImpl {
             depositInQuoteToken
         );
 
-        bytes32 marginId = getNextPositionId(state, transaction.loanOffering.loanHash);
+        bytes32 marginId = getNextMarginId(state, transaction.loanOffering.loanHash);
 
         uint256 quoteTokenFromSell;
 
@@ -99,7 +99,7 @@ library OpenPositionImpl {
 
     // ============ Helper Functions ============
 
-    function getNextPositionId(
+    function getNextMarginId(
         MarginState.State storage state,
         bytes32 loanHash
     )

@@ -332,7 +332,7 @@ contract ERC20MarginTrader is
     }
 
     /**
-     * ERC20 name function. Returns a name based off positionID. Throws if this contract does not
+     * ERC20 name function. Returns a name based off marginId. Throws if this contract does not
      * own the position.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
