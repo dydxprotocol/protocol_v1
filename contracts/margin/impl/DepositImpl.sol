@@ -21,7 +21,7 @@ library DepositImpl {
     /**
      * Additional deposit for a margin position was posted by the margin trader
      */
-    event CollateralDeposited(
+    event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
         uint256 amount,
         address depositor
@@ -70,7 +70,7 @@ library DepositImpl {
             }
         }
 
-        emit CollateralDeposited(
+        emit AdditionalCollateralDeposited(
             marginId,
             depositAmount,
             msg.sender

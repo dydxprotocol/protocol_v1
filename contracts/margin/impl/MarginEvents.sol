@@ -128,7 +128,7 @@ contract MarginEvents {
     /**
      * Additional deposit for a margin position was posted by the margin trader
      */
-    event CollateralDeposited(
+    event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
         uint256 amount,
         address depositor
