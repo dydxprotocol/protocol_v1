@@ -85,7 +85,7 @@ contract SharedLoan is
     address public quoteToken;
 
     // Total amount lent
-    uint256 public amount;
+    uint256 public totalAmount;
 
     // Amount that has been fully repaid and withdrawn
     uint256 public totalAmountFullyWithdrawn;
@@ -150,7 +150,7 @@ contract SharedLoan is
 
         // set relevant constants
         state = State.OPEN;
-        amount = currentPositionAmount;
+        totalAmount = currentPositionAmount;
         balances[INITIAL_LENDER] = currentPositionAmount;
         baseToken = position.baseToken;
         quoteToken = position.quoteToken;
@@ -187,7 +187,7 @@ contract SharedLoan is
         require(marginId == MARGIN_ID);
 
         balances[from] = balances[from].add(amountAdded);
-        amount = amount.add(amountAdded);
+        totalAmount = totalAmount.add(amountAdded);
 
         emit BalanceAdded(
             from,
@@ -364,7 +364,7 @@ contract SharedLoan is
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            amount,
+            totalAmount,
             totalBaseTokenEverHeld
         ).sub(baseTokenWithdrawnEarly[who]);
 
@@ -400,7 +400,7 @@ contract SharedLoan is
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            amount.sub(totalAmountFullyWithdrawn),
+            totalAmount.sub(totalAmountFullyWithdrawn),
             currentQuoteTokenBalance
         );
 
