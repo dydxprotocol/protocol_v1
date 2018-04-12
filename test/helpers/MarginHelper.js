@@ -146,13 +146,13 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
   const newLender = await margin.getPositionLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
-    expectLog(response.logs[++logIndex], 'TransferredAsLender', {
+    expectLog(response.logs[++logIndex], 'LoanTransferred', {
       marginId: marginId,
       from: tx.loanOffering.payer,
       to: tx.loanOffering.owner
     });
     if (newLender !== tx.loanOffering.owner) {
-      expectLog(response.logs[++logIndex], 'TransferredAsLender', {
+      expectLog(response.logs[++logIndex], 'LoanTransferred', {
         marginId: marginId,
         from: tx.loanOffering.owner,
         to: newLender
@@ -160,13 +160,13 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
     }
   }
   if (tx.owner !== tx.trader) {
-    expectLog(response.logs[++logIndex], 'TransferredAsTrader', {
+    expectLog(response.logs[++logIndex], 'PositionTransferred', {
       marginId: marginId,
       from: tx.trader,
       to: tx.owner
     });
     if (newTrader !== tx.owner) {
-      expectLog(response.logs[++logIndex], 'TransferredAsTrader', {
+      expectLog(response.logs[++logIndex], 'PositionTransferred', {
         marginId: marginId,
         from: tx.owner,
         to: newTrader
@@ -731,7 +731,7 @@ async function doOpenPositionAndCall(
 async function issueForDirectClose(openTx) {
   const baseToken = await BaseToken.deployed();
 
-  // Issue to the margin trader the maximum amount of base token they could have to pay
+  // Issue to the trader the maximum amount of base token they could have to pay
 
   const maxInterestFee = await getMaxInterestFee(openTx);
   const maxBaseTokenOwed = openTx.amount.plus(maxInterestFee);

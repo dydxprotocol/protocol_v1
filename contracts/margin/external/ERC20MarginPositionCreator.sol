@@ -3,29 +3,29 @@ pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { ERC20MarginTrader } from "./ERC20MarginTrader.sol";
-import { TraderOwner } from "../interfaces/TraderOwner.sol";
+import { ERC20MarginPosition } from "./ERC20MarginPosition.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
- * @title ERC20MarginTraderCreator
+ * @title ERC20MarginPositionCreator
  * @author dYdX
  *
- * This contract is used to deploy new ERC20MarginTrader contracts. A new ERC20MarginTrader is
+ * This contract is used to deploy new ERC20MarginPosition contracts. A new ERC20MarginPosition is
  * automatically deployed whenever margin position ownership is transferred to this contract. That
- * position is then transferred to the new ERC20MarginTrader, with the tokens initially being
+ * position is then transferred to the new ERC20MarginPosition, with the tokens initially being
  * allocated to the address that transferred the position originally to the
- * ERC20ERC20MarginTraderCreator.
+ * ERC20ERC20MarginPositionCreator.
  */
  /* solium-disable-next-line */
-contract ERC20MarginTraderCreator is
+contract ERC20MarginPositionCreator is
     NoOwner,
-    TraderOwner,
+    PositionOwner,
     ReentrancyGuard
 {
     // ============ Events ============
 
-    event ERC20MarginTraderCreated(
+    event ERC20MarginPositionCreated(
         bytes32 indexed marginId,
         address tokenAddress
     );
@@ -37,12 +37,12 @@ contract ERC20MarginTraderCreator is
 
     // ============ Constructor ============
 
-    function ERC20MarginTraderCreator(
+    function ERC20MarginPositionCreator(
         address margin,
         address[] trustedRecipients
     )
         public
-        TraderOwner(margin)
+        PositionOwner(margin)
     {
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
@@ -52,14 +52,14 @@ contract ERC20MarginTraderCreator is
     // ============ Margin-Only Functions ============
 
     /**
-     * Implementation of TraderOwner functionality. Creates a new ERC20MarginTrader and assigns
-     * ownership to the ERC20MarginTrader. Called by Margin when a position is transferred to this
+     * Implementation of PositionOwner functionality. Creates a new ERC20MarginPosition and assigns
+     * ownership to the ERC20MarginPosition. Called by Margin when a position is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the margin position
-     * @return       Address of the new ERC20MarginTrader contract
+     * @return       Address of the new ERC20MarginPosition contract
      */
-    function receiveOwnershipAsTrader(
+    function receivePositionOwnership(
         address from,
         bytes32 marginId
     )
@@ -68,14 +68,14 @@ contract ERC20MarginTraderCreator is
         external
         returns (address)
     {
-        address tokenAddress = new ERC20MarginTrader(
+        address tokenAddress = new ERC20MarginPosition(
             marginId,
             MARGIN,
             from,
             TRUSTED_RECIPIENTS
         );
 
-        emit ERC20MarginTraderCreated(marginId, tokenAddress);
+        emit ERC20MarginPositionCreated(marginId, tokenAddress);
 
         return tokenAddress;
     }

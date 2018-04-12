@@ -56,7 +56,7 @@ library OpenPositionShared {
         // NOTE: Doing this before updating state relies on #openPosition
         transferFromLender(state, transaction);
 
-        // Transfer deposit from the margin trader
+        // Transfer deposit from the trader
         uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, marginId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
@@ -95,7 +95,7 @@ library OpenPositionShared {
         //       (possible other contract calls back into Margin)
         getConsentIfSmartContractLender(transaction, marginId);
 
-        transferAsLenderFees(
+        transferLoanFees(
             state,
             transaction
         );
@@ -238,7 +238,7 @@ library OpenPositionShared {
         }
     }
 
-    function transferAsLenderFees(
+    function transferLoanFees(
         MarginState.State storage state,
         OpenTx memory transaction
     )

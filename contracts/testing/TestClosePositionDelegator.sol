@@ -21,7 +21,7 @@ contract TestClosePositionDelegator is ClosePositionDelegator {
         IS_DEGENERATE = isDegenerate;
     }
 
-    function receiveOwnershipAsTrader(
+    function receivePositionOwnership(
         address,
         bytes32
     )

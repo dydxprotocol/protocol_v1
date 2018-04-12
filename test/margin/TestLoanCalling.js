@@ -96,7 +96,7 @@ describe('#marginCall', () => {
         Margin.address,
         caller,
         ADDRESSES.ZERO);
-      await margin.transferAsLender(
+      await margin.transferLoan(
         openTx.id,
         loanCaller.address,
         { from: openTx.loanOffering.payer }
@@ -219,7 +219,7 @@ describe('#cancelMarginCall', () => {
         Margin.address,
         ADDRESSES.ZERO,
         canceller);
-      await margin.transferAsLender(
+      await margin.transferLoan(
         openTx.id,
         loanCaller.address,
         { from: openTx.loanOffering.payer }

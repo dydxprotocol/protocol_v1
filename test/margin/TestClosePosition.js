@@ -62,7 +62,7 @@ describe('#closePosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('only allows the margin trader to close', async () => {
+    it('only allows the trader to close', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
@@ -84,7 +84,7 @@ describe('#closePosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('Only closes up to the current margin amount', async () => {
+    it('Only closes up to the current position amount', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
@@ -92,7 +92,7 @@ describe('#closePosition', () => {
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
-      // Try to close twice the margin amount
+      // Try to close twice the position amount
       const closeAmount = openTx.amount.times(2);
 
       // Simulate time between open and close so interest fee needs to be paid
@@ -111,7 +111,7 @@ describe('#closePosition', () => {
     it('Successfully closes a position directly in increments', async () => {
       const openTx = await doOpenPosition(accounts);
 
-      // Give the margin trader enough base token to close
+      // Give the trader enough base token to close
       await issueForDirectClose(openTx);
 
       const margin = await Margin.deployed();

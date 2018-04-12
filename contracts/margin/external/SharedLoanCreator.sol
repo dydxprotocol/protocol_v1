@@ -4,7 +4,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { SharedLoan } from "./SharedLoan.sol";
-import { LenderOwner } from "../interfaces/LenderOwner.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
 
 
 /**
@@ -19,7 +19,7 @@ import { LenderOwner } from "../interfaces/LenderOwner.sol";
 /* solium-disable-next-line */
 contract SharedLoanCreator is
     NoOwner,
-    LenderOwner,
+    LoanOwner,
     ReentrancyGuard
 {
     // ============ Events ============
@@ -41,7 +41,7 @@ contract SharedLoanCreator is
         address[] trustedLoanCallers
     )
         public
-        LenderOwner(margin)
+        LoanOwner(margin)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
             TRUSTED_MARGIN_CALLERS.push(trustedLoanCallers[i]);
@@ -51,14 +51,14 @@ contract SharedLoanCreator is
     // ============ Margin-Only Functions ============
 
     /**
-     * Implementation of LenderOwner functionality. Creates a new SharedLoan and assigns loan
+     * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan
      * ownership to the SharedLoan. Called by Margin when a loan is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the loan
      * @return       Address of the new SharedLoan contract
      */
-    function receiveOwnershipAsLender(
+    function receiveLoanOwnership(
         address from,
         bytes32 marginId
     )

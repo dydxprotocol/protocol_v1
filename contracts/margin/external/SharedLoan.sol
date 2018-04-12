@@ -88,7 +88,7 @@ contract SharedLoan is
     uint256 public amount;
 
     // Amount that has been fully repaid and withdrawn
-    uint256 public amountFullyWithdrawn;
+    uint256 public totalAmountFullyWithdrawn;
 
     // Total amount of base token that has been withdrawn
     uint256 public totalBaseTokenWithdrawn;
@@ -131,7 +131,7 @@ contract SharedLoan is
      * @param  marginId  Unique ID of the margin position
      * @return           This address on success, throw otherwise
      */
-    function receiveOwnershipAsLender(
+    function receiveLoanOwnership(
         address /* from */,
         bytes32 marginId
     )
@@ -319,7 +319,7 @@ contract SharedLoan is
         bool completelyRepaid = false;
 
         if (state == State.CLOSED) {
-            amountFullyWithdrawn = amountFullyWithdrawn.add(balances[who]);
+            totalAmountFullyWithdrawn = totalAmountFullyWithdrawn.add(balances[who]);
             balances[who] = 0;
             completelyRepaid = true;
         }
@@ -400,7 +400,7 @@ contract SharedLoan is
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            amount.sub(amountFullyWithdrawn),
+            amount.sub(totalAmountFullyWithdrawn),
             currentQuoteTokenBalance
         );
 

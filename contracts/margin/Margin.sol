@@ -60,12 +60,12 @@ contract Margin is
     // ============ Public State Changing Functions ============
 
     /**
-     * Initiate the opening of a margin position. Called by the margin trader. Trader must provide
-     * both a signed loan offering as well as a signed order for the base token to be bought.
+     * Initiate the opening of a margin position. Called by the trader. Trader must provide
+     * both a signed loan offering as well as an order used to sell the borrowed base token.
      *
      * @param  addresses  Addresses corresponding to:
      *
-     *  [0]  = trader owner
+     *  [0]  = position owner
      *  [1]  = base token
      *  [2]  = quote token
      *  [3]  = loan payer
@@ -86,7 +86,7 @@ contract Margin is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = margin amount
+     *  [7]  = position amount
      *  [8]  = deposit amount
      *
      * @param  values32  Values corresponding to:
@@ -98,12 +98,11 @@ contract Margin is
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  true if the margin trader wishes to pay the margin deposit in
-     *                              quote token. If false, margin deposit will be pulled in base
-     *                              token, and then sold along with the base token borrowed from
-     *                              the lender
+     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
+     *                              token. If false, margin deposit will be pulled in base token,
+     *                              and then sold along with the base token borrowed from the lender
      * @param  order      Order object to be passed to the exchange wrapper
-     * @return            Unique ID for the new margin position
+     * @return            Unique ID for the new position
      */
     function openPosition(
         address[11] addresses,
@@ -133,8 +132,8 @@ contract Margin is
 
     /**
      * Increase the size of a margin position. Funds will be borrowed from the loan payer and sold
-     * as per position. The value added to the position will be equal to the effective amount lent,
-     * and will incorporate interest already earned by the position so far.
+     * as per openPosition. The value added to the position will be equal to the effective amount
+     * lent, and will incorporate interest already earned by the position so far.
      *
      * @param  addresses  Addresses corresponding to:
      *
@@ -165,10 +164,9 @@ contract Margin is
      *
      * @param  sigV       ECDSA v parameter for loan offering
      * @param  sigRS      ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  true if the margin trader wishes to pay the margin deposit in
-     *                              quote token. If false, margin deposit will be pulled in base
-     *                              token, and then sold along with the base token borrowed from
-     *                              the lender
+     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
+     *                              token. If false, margin deposit will be pulled in base token,
+     *                              and then sold along with the base token borrowed from the lender
      * @param  order      Order object to be passed to the exchange wrapper
      * @return            Amount of base tokens pulled from the lender
      */
@@ -225,9 +223,9 @@ contract Margin is
     }
 
     /**
-    * Close a margin position. May be called by the margin trader or with the approval of the
+    * Close a margin position. May be called by the trader or with the approval of the
     * trader. May provide an order and exchangeWrapperAddress to facilitate the closing of the
-    * margin position. The margin trader is sent quote token stored in the contract.
+    * margin position. The trader is sent quote token stored in the contract.
      *
      * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
@@ -263,7 +261,7 @@ contract Margin is
     }
 
     /**
-     * Helper to close a margin position by paying base token directly from the margin trader
+     * Helper to close a margin position by paying base token directly from the trader
      *
      * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
@@ -296,7 +294,7 @@ contract Margin is
 
     /**
      * Liquidate loan position and withdraw quote tokens from the vault.
-     * Must be approved by the margin trader (e.g., by requiring the lender to own part of the
+     * Must be approved by the trader (e.g., by requiring the lender to own part of the
      * margin position, and burning in order to liquidate part of the loan).
      *
      * @param  marginId                    Unique ID of the margin position
@@ -325,14 +323,14 @@ contract Margin is
     }
 
     /**
-     * Call in a margin loan.
-     * Only callable by the lender for a margin position. After loan is called in, the margin trader
+     * Margin call a position.
+     * Only callable by the lender for a margin position. After loan is called in, the trader
      * will have time equal to the call time limit to close the position and repay the loan. If the
-     * margin trader does not close the position, the lender can use forceRecoverCollateral to recover
+     * trader does not close the position, the lender can use forceRecoverCollateral to recover
      * the funds.
      *
      * @param  marginId         Unique ID of the margin position
-     * @param  requiredDeposit  Amount of deposit the margin trader must put up to cancel the call
+     * @param  requiredDeposit  Amount of deposit the trader must put up to cancel the call
      */
     function marginCall(
         bytes32 marginId,
@@ -509,19 +507,19 @@ contract Margin is
     /**
      * Transfer ownership of a loan to a new address. This new address will be entitled
      * to all payouts for this loan. Only callable by the lender for a position. If the "who"
-     * param is a contract, it must implement the LenderOwner interface.
+     * param is a contract, it must implement the LoanOwner interface.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  who       New owner of the loan
      */
-    function transferAsLender(
+    function transferLoan(
         bytes32 marginId,
         address who
     )
         external
         nonReentrant
     {
-        TransferImpl.transferAsLenderImpl(
+        TransferImpl.transferLoanImpl(
             state,
             marginId,
             who);
@@ -529,20 +527,20 @@ contract Margin is
 
     /**
      * Transfer ownership of a margin position trader to a new address. This new address will be
-     * entitled to all payouts for this position. Only callable by the margin trader for a position.
-     * If the "who" param is a contract, it must implement the TraderOwner interface.
+     * entitled to all payouts for this position. Only callable by the trader for a position.
+     * If the "who" param is a contract, it must implement the PositionOwner interface.
      *
      * @param  marginId  Unique ID of the margin position
      * @param  who       New owner of the margin position
      */
-    function transferAsTrader(
+    function transferPosition(
         bytes32 marginId,
         address who
     )
         external
         nonReentrant
     {
-        TransferImpl.transferAsTraderImpl(
+        TransferImpl.transferPositionImpl(
             state,
             marginId,
             who);

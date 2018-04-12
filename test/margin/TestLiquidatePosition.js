@@ -2,7 +2,7 @@
 
 const Margin = artifacts.require('Margin');
 const TestLiquidatePositionDelegator = artifacts.require('TestLiquidatePositionDelegator');
-const ERC20MarginTrader = artifacts.require('ERC20MarginTrader');
+const ERC20MarginPosition = artifacts.require('ERC20MarginPosition');
 const ERC20 = artifacts.require('ERC20');
 const { doOpenPosition, callLiquidate } = require('../helpers/MarginHelper');
 const { ADDRESSES } = require('../helpers/Constants');
@@ -15,13 +15,13 @@ describe('#liquidatePosition', () => {
   async function configurePosition(initialHolder, accounts) {
     margin = await Margin.deployed();
     openTx = await doOpenPosition(accounts);
-    // Deploy an ERC20MarginTrader token
-    erc20MarginTrader = await ERC20MarginTrader.new(openTx.id, margin.address, initialHolder, [
+    // Deploy an ERC20MarginPosition token
+    erc20MarginTrader = await ERC20MarginPosition.new(openTx.id, margin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);
-    // Transfer the margin position from the margin trader to the ERC20MarginTrader token
-    await margin.transferAsTrader(openTx.id, erc20MarginTrader.address, { from: openTx.trader });
+    // Transfer the margin position from the trader to the ERC20MarginPosition token
+    await margin.transferPosition(openTx.id, erc20MarginTrader.address, { from: openTx.trader });
 
     lender = openTx.loanOffering.payer;
 
@@ -33,7 +33,7 @@ describe('#liquidatePosition', () => {
 
   contract('Margin', function(accounts) {
     it('allows a lender to liquidate quote tokens', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginTrader.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
       await configurePosition(initialHolder, accounts);
 
       const quoteToken = await ERC20.at(openTx.quoteToken);
@@ -42,7 +42,7 @@ describe('#liquidatePosition', () => {
 
       const quoteBalance = await margin.getPositionBalance(openTx.id);
 
-      // Liquidate quote tokens by burning margin trader tokens
+      // Liquidate quote tokens by burning trader tokens
       await callLiquidate(margin, openTx, amount, lender);
 
       // It should burn the tokens
@@ -57,13 +57,13 @@ describe('#liquidatePosition', () => {
 
   contract('Margin', function(accounts) {
     it('allows liquidating quote tokens if the lender is a smart contract', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginTrader.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
       await configurePosition(initialHolder, accounts);
 
       // Create a new loan owner smart contract that implements liquidate delegator
       const liquidateDelegator = await TestLiquidatePositionDelegator.new(margin.address, lender);
       // Transfer the loan to the liquidate delegator
-      await margin.transferAsLender(openTx.id, liquidateDelegator.address, { from: lender });
+      await margin.transferLoan(openTx.id, liquidateDelegator.address, { from: lender });
 
       const quoteToken = await ERC20.at(openTx.quoteToken);
       const lenderQuoteBefore = await quoteToken.balanceOf(lender);
@@ -71,7 +71,7 @@ describe('#liquidatePosition', () => {
 
       const quoteBalance = await margin.getPositionBalance(openTx.id);
 
-      // Liquidate quote tokens by burning margin trader tokens
+      // Liquidate quote tokens by burning trader tokens
       await callLiquidate(margin, openTx, amount, lender);
 
       const lenderMarginAfter = await erc20MarginTrader.balanceOf(lender);

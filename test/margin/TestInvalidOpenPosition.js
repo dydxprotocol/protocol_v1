@@ -54,7 +54,7 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails if margin amount is 0', async () => {
+      it('fails if position amount is 0', async () => {
         const openTx = await createMarginTradeTx(accounts);
 
         await issueTokensAndSetAllowancesFor(openTx);
@@ -106,7 +106,7 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails on too low margin amount', async () => {
+      it('fails on too low position amount', async () => {
         const openTx = await createMarginTradeTx(accounts);
 
         await issueTokensAndSetAllowancesFor(openTx);
@@ -273,7 +273,7 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails on insufficient margin trader fee balance', async () => {
+      it('fails on insufficient trader fee balance', async () => {
         const openTx = await createMarginTradeTx(accounts);
 
         const storedAmount = openTx.loanOffering.rates.takerFee;
@@ -454,7 +454,7 @@ describe('#closePosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('Fails on insufficient margin trader fee token balance/allowance', async() => {
+      it('Fails on insufficient trader fee token balance/allowance', async() => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, margin] = await Promise.all([
           createSignedSellOrder(accounts),

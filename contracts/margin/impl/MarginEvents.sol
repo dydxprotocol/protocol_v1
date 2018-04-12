@@ -126,7 +126,7 @@ contract MarginEvents {
     );
 
     /**
-     * Additional deposit for a margin position was posted by the margin trader
+     * Additional deposit for a margin position was posted by the trader
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
@@ -137,7 +137,7 @@ contract MarginEvents {
     /**
      * Ownership of a loan was transferred to a new address
      */
-    event TransferredAsLender(
+    event LoanTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to
@@ -146,7 +146,7 @@ contract MarginEvents {
     /**
      * Ownership of a position was transferred to a new address
      */
-    event TransferredAsTrader(
+    event PositionTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to

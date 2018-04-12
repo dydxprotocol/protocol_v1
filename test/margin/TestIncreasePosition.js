@@ -10,8 +10,8 @@ const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ProxyContract = artifacts.require("Proxy");
-const TestTraderOwner = artifacts.require("TestTraderOwner");
-const TestLenderOwner = artifacts.require("TestLenderOwner");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
+const TestLoanOwner = artifacts.require("TestLoanOwner");
 const { DEFAULT_SALT } = require('../helpers/Constants');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -63,11 +63,11 @@ describe('#increasePosition', () => {
   contract('Margin', function(accounts) {
     it('succeeds when positions are owned by contracts', async () => {
       const [
-        testTraderOwner,
-        testLenderOwner
+        testPositionOwner,
+        testLoanOwner
       ] = await Promise.all([
-        TestTraderOwner.new(Margin.address, "1", true),
-        TestLenderOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, "1", true),
+        TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
       const {
@@ -79,7 +79,7 @@ describe('#increasePosition', () => {
         traderStartingQuoteToken
       } = await setup(
         accounts,
-        { traderOwner: testTraderOwner.address, lenderOwner: testLenderOwner.address }
+        { traderOwner: testPositionOwner.address, lenderOwner: testLoanOwner.address }
       );
 
       const tx = await callIncreasePosition(margin, addValueTx);
@@ -88,8 +88,8 @@ describe('#increasePosition', () => {
         positionIncreased,
         loanIncreased
       ] = await Promise.all([
-        testTraderOwner.valueAdded.call(openTx.id, addValueTx.trader),
-        testLenderOwner.valueAdded.call(openTx.id, addValueTx.loanOffering.payer),
+        testPositionOwner.valueAdded.call(openTx.id, addValueTx.trader),
+        testLoanOwner.valueAdded.call(openTx.id, addValueTx.loanOffering.payer),
       ]);
 
       expect(positionIncreased).to.be.bignumber.eq(addValueTx.amount);
@@ -385,18 +385,18 @@ describe('#increasePositionDirectly', () => {
         openTx,
         margin,
         quoteToken,
-        testTraderOwner,
-        testLenderOwner
+        testPositionOwner,
+        testLoanOwner
       ] = await Promise.all([
         createMarginTradeTx(accounts),
         Margin.deployed(),
         QuoteToken.deployed(),
-        TestTraderOwner.new(Margin.address, "1", true),
-        TestLenderOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, "1", true),
+        TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
-      openTx.owner = testTraderOwner.address;
-      openTx.loanOffering.owner = testLenderOwner.address;
+      openTx.owner = testPositionOwner.address;
+      openTx.loanOffering.owner = testLoanOwner.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
       await issueTokensAndSetAllowancesFor(openTx);
@@ -404,8 +404,8 @@ describe('#increasePositionDirectly', () => {
       openTx.id = response.id;
 
       const [ownsPosition, ownsLoan, startingPositionBalance] = await Promise.all([
-        testTraderOwner.hasReceived.call(openTx.id, openTx.trader),
-        testLenderOwner.hasReceived.call(openTx.id, openTx.loanOffering.payer),
+        testPositionOwner.hasReceived.call(openTx.id, openTx.trader),
+        testLoanOwner.hasReceived.call(openTx.id, openTx.loanOffering.payer),
         margin.getPositionBalance.call(openTx.id),
       ]);
 
@@ -458,8 +458,8 @@ describe('#increasePositionDirectly', () => {
         adderLoanIncreased
       ] = await Promise.all([
         quoteToken.balanceOf.call(adder),
-        testTraderOwner.valueAdded.call(openTx.id, adder),
-        testLenderOwner.valueAdded.call(openTx.id, adder),
+        testPositionOwner.valueAdded.call(openTx.id, adder),
+        testLoanOwner.valueAdded.call(openTx.id, adder),
       ]);
 
       expect(adderQuoteToken).to.be.bignumber.eq(0);

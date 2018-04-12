@@ -18,7 +18,7 @@ contract TestForceRecoverCollateralDelegator is ForceRecoverCollateralDelegator 
         RECOVERER = recoverer;
     }
 
-    function receiveOwnershipAsLender(
+    function receiveLoanOwnership(
         address,
         bytes32
     )

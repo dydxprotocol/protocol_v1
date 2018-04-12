@@ -189,7 +189,7 @@ library ClosePositionShared {
         uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         uint256 newAmount = Math.min256(requestedAmount, currentPositionAmount);
 
-        // If not the margin trader, requires margin trader to approve msg.sender
+        // If not the trader, require trader to approve msg.sender
         if (position.trader != msg.sender) {
             uint256 allowedCloseAmount =
                 ClosePositionDelegator(position.trader).closePositionOnBehalfOf(

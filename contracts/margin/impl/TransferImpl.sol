@@ -16,7 +16,7 @@ library TransferImpl {
 
     // ============ Public Implementation Functions ============
 
-    function transferAsLenderImpl(
+    function transferLoanImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newLender
@@ -41,7 +41,7 @@ library TransferImpl {
         state.positions[marginId].lender = finalLender;
     }
 
-    function transferAsTraderImpl(
+    function transferPositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newTrader

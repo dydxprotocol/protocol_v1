@@ -19,7 +19,7 @@ library DepositImpl {
     // ============ Events ============
 
     /**
-     * Additional deposit for a margin position was posted by the margin trader
+     * Additional deposit for a margin position was posted by the trader
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,

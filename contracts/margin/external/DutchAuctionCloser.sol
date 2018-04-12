@@ -16,7 +16,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * @author dYdX
  *
  * Contract for allowing anyone to close a margin-called position by using a Dutch auction mechanism
- * to give a fair price to the margin trader. Price paid to the margin trader decreases linearly
+ * to give a fair price to the trader. Price paid to the trader decreases linearly
  * over time.
  */
  /* solium-disable-next-line */
@@ -25,7 +25,7 @@ contract DutchAuctionCloser is
     using SafeMath for uint256;
 
     // ============ Events ============
-    
+
     /**
      * A position was closed by this contract
      */
@@ -78,7 +78,7 @@ contract DutchAuctionCloser is
      * @param  marginId          Unique ID of the margin position
      * @param  closeAmount       Amount of the margin position that was closed
      * @param  positionCloser    Address of the account or contract that closed the position
-     * @param  traderOwner     Address of the owner of the margin position
+     * @param  traderOwner       Address of the owner of the margin position
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close

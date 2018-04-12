@@ -13,9 +13,9 @@ const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
-const TestLenderOwner = artifacts.require("TestLenderOwner");
+const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
-const TestTraderOwner = artifacts.require("TestTraderOwner");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
 const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
@@ -116,18 +116,18 @@ describe('#openPosition', () => {
   contract('Margin', function(accounts) {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const margin = await Margin.deployed();
-      const testLenderOwner = await TestLenderOwner.new(Margin.address, ADDRESSES.ZERO, false);
-      const testTraderOwner = await TestTraderOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testPositionOwner = await TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, false);
 
       const openTx1 = await createMarginTradeTx(accounts);
       await issueTokensAndSetAllowancesFor(openTx1);
-      openTx1.owner = testLenderOwner.address; // can't take position ownership
+      openTx1.owner = testLoanOwner.address; // can't take position ownership
       openTx1.loanOffering.signature = await signLoanOffering(openTx1.loanOffering);
       await expectThrow( callOpenPosition(margin, openTx1));
 
       const openTx2 = await createMarginTradeTx(accounts);
       await issueTokensAndSetAllowancesFor(openTx2);
-      openTx2.loanOffering.owner = testTraderOwner.address; // cant take lender ownership
+      openTx2.loanOffering.owner = testPositionOwner.address; // cant take lender ownership
       openTx2.loanOffering.signature = await signLoanOffering(openTx2.loanOffering);
       await expectThrow( callOpenPosition(margin, openTx2));
     });
@@ -178,18 +178,18 @@ describe('#openPosition', () => {
         Margin.address,
         ADDRESSES.ZERO,
         false);
-      const testLenderOwner = await TestLenderOwner.new(
+      const testLoanOwner = await TestLoanOwner.new(
         Margin.address,
         testMarginCallDelegator.address,
         false);
-      const testTraderOwner = await TestTraderOwner.new(
+      const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
         false);
       const openTx = await createMarginTradeTx(accounts);
       await issueTokensAndSetAllowancesFor(openTx);
-      openTx.owner = testTraderOwner.address;
-      openTx.loanOffering.owner = testLenderOwner.address;
+      openTx.owner = testPositionOwner.address;
+      openTx.loanOffering.owner = testLoanOwner.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await callOpenPosition(margin, openTx);
       await checkSuccess(margin, openTx);
@@ -241,7 +241,7 @@ async function checkSuccess(margin, openTx) {
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestTraderOwner.at(openTx.owner).TO_RETURN.call();
+      toReturn = await TestPositionOwner.at(openTx.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
@@ -254,7 +254,7 @@ async function checkSuccess(margin, openTx) {
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestLenderOwner.at(openTx.loanOffering.owner).TO_RETURN.call();
+      toReturn = await TestLoanOwner.at(openTx.loanOffering.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }

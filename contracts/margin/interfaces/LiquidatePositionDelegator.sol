@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LenderOwner } from "./LenderOwner.sol";
+import { LoanOwner } from "./LoanOwner.sol";
 
 
 /**
@@ -11,7 +11,7 @@ import { LenderOwner } from "./LenderOwner.sol";
  * Interface that smart contracts must implement in order to let other addresses liquidate a loan
  * owned by the smart contract.
  */
-contract LiquidatePositionDelegator is LenderOwner {
+contract LiquidatePositionDelegator is LoanOwner {
 
     // ============ Constructor ============
 
@@ -19,7 +19,7 @@ contract LiquidatePositionDelegator is LenderOwner {
         address margin
     )
         public
-        LenderOwner(margin)
+        LoanOwner(margin)
     {
     }
 

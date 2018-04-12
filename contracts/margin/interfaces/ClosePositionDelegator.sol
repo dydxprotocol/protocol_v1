@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { TraderOwner } from "./TraderOwner.sol";
+import { PositionOwner } from "./PositionOwner.sol";
 
 
 /**
@@ -11,7 +11,7 @@ import { TraderOwner } from "./TraderOwner.sol";
  * Interface that smart contracts must implement in order to let other addresses close a margin
  * position owned by the smart contract.
  */
-contract ClosePositionDelegator is TraderOwner {
+contract ClosePositionDelegator is PositionOwner {
 
     // ============ Constructor ============
 
@@ -19,7 +19,7 @@ contract ClosePositionDelegator is TraderOwner {
         address margin
     )
         public
-        TraderOwner(margin)
+        PositionOwner(margin)
     {
     }
 
@@ -27,12 +27,11 @@ contract ClosePositionDelegator is TraderOwner {
 
     /**
      * Function a contract must implement in order to let other addresses call ClosePosition() for
-     * the margin position. This allows margin traders to use more complex
-     * logic to control their margin positions. For example, this can be used to tokenize margin
-     * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer
-     * in the amount called here. This interface also allows for regulatory compliance; it could
-     * require the block.timestamp to be at least some time, or the amount to be at least some
-     * minimum denomination.
+     * the margin position. This allows traders to use more complex logic to control their margin
+     * positions. For example, this can be used to tokenize margin positions and distribute shares
+     * as ERC20 tokens. Such a token would be burned for the closer in the amount called here. This
+     * interface also allows for regulatory compliance; it could require the block.timestamp to be
+     * at least some time, or the amount to be at least some minimum denomination.
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the margin position was successfully

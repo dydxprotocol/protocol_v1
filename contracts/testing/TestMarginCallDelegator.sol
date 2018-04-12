@@ -21,7 +21,7 @@ contract TestMarginCallDelegator is MarginCallDelegator {
         CANCELLER = canceller;
     }
 
-    function receiveOwnershipAsLender(
+    function receiveLoanOwnership(
         address,
         bytes32
     )

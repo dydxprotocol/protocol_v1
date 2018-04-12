@@ -17,7 +17,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
- * @title ERC20MarginTrader
+ * @title ERC20MarginPosition
  * @author dYdX
  *
  * Contract used to tokenize margin positions and allow them to be used as ERC20-compliant
@@ -25,7 +25,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * entitled to some amount of quote tokens after settlement.
  */
  /* solium-disable-next-line */
-contract ERC20MarginTrader is
+contract ERC20MarginPosition is
     StandardToken,
     ClosePositionDelegator,
     TraderCustodian,
@@ -43,7 +43,7 @@ contract ERC20MarginTrader is
     // ============ Events ============
 
     /**
-     * This ERC20MarginTrader was successfully initialized
+     * This ERC20MarginPosition was successfully initialized
      */
     event Initialized(
         bytes32 marginId,
@@ -104,7 +104,7 @@ contract ERC20MarginTrader is
 
     // ============ Constructor ============
 
-    function ERC20MarginTrader(
+    function ERC20MarginPosition(
         bytes32 marginId,
         address margin,
         address initialTokenHolder,
@@ -133,7 +133,7 @@ contract ERC20MarginTrader is
      * @param  marginId  Unique ID of the margin position
      * @return           This address on success, throw otherwise
      */
-    function receiveOwnershipAsTrader(
+    function receivePositionOwnership(
         address /* from */,
         bytes32 marginId
     )
@@ -197,7 +197,7 @@ contract ERC20MarginTrader is
 
     /**
      * Called by Margin when an owner of this token is attempting to close some of the margin
-     * position. Implementation is required per TraderOwner contract in order to be used by
+     * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a margin position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the margin position was successfully closed.
@@ -311,7 +311,7 @@ contract ERC20MarginTrader is
         return quoteTokenPayout;
     }
 
-    //  Public Constant Functions ============
+    // ============ Public Constant Functions ============
 
     /**
      * ERC20 decimals function. Returns the same number of decimals as the position's baseToken

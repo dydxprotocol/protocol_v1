@@ -6,8 +6,8 @@ const ProxyContract = artifacts.require("Proxy");
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
-const ERC20MarginTraderCreator = artifacts.require("ERC20MarginTraderCreator");
-const ERC721MarginTrader = artifacts.require("ERC721MarginTrader");
+const ERC20MarginPositionCreator = artifacts.require("ERC20MarginPositionCreator");
+const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const OpenPositionImpl = artifacts.require("OpenPositionImpl");
 const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
@@ -113,7 +113,7 @@ async function deployMarginContracts(deployer) {
       FeeToken.address
     ),
     deployer.deploy(
-      ERC721MarginTrader,
+      ERC721MarginPosition,
       Margin.address
     ),
     deployer.deploy(
@@ -125,7 +125,7 @@ async function deployMarginContracts(deployer) {
   ]);
 
   await deployer.deploy(
-    ERC20MarginTraderCreator,
+    ERC20MarginPositionCreator,
     Margin.address,
     [DutchAuctionCloser.address]
   );

@@ -40,7 +40,7 @@ describe('#deposit', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('doesnt allow anyone but margin trader to deposit', async () => {
+    it('doesnt allow anyone but trader to deposit', async () => {
       const openTx = await doOpenPosition(accounts);
       await expectThrow(
         doDeposit({

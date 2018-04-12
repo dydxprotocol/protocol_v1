@@ -90,7 +90,7 @@ describe('#forceRecoverCollateral', () => {
         Margin.address,
         recoverer
       );
-      await margin.transferAsLender(
+      await margin.transferLoan(
         openTx.id,
         testForceRecoverCollateralDelegator.address,
         { from: openTx.loanOffering.payer });

@@ -9,8 +9,8 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { LenderOwner } from "../interfaces/LenderOwner.sol";
-import { TraderOwner } from "../interfaces/TraderOwner.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
@@ -288,11 +288,11 @@ library IncreasePositionImpl {
         address trader = position.trader;
         address lender = position.lender;
 
-        // Unless msg.sender is the position margin trader and is not a smart contract, call out
-        // to the margin trader to ensure they consent to value being added
+        // Unless msg.sender is the position trader and is not a smart contract, call out to the
+        // trader to ensure they consent to value being added
         if (msg.sender != trader || AddressUtils.isContract(trader)) {
             require(
-                TraderOwner(trader).marginPositionIncreased(
+                PositionOwner(trader).marginPositionIncreased(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -305,7 +305,7 @@ library IncreasePositionImpl {
         // to value being added
         if (loanPayer != lender || AddressUtils.isContract(lender)) {
             require(
-                LenderOwner(lender).loanIncreased(
+                LoanOwner(lender).loanIncreased(
                     loanPayer,
                     marginId,
                     effectiveAmount

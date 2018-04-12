@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { LenderOwner } from "../interfaces/LenderOwner.sol";
-import { TraderOwner } from "../interfaces/TraderOwner.sol";
+import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
@@ -19,7 +19,7 @@ library TransferInternal {
     /**
      * Ownership of a loan was transferred to a new address
      */
-    event TransferredAsLender(
+    event LoanTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to
@@ -28,7 +28,7 @@ library TransferInternal {
     /**
      * Ownership of a margin position was transferred to a new address
      */
-    event TransferredAsTrader(
+    event PositionTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to
@@ -56,11 +56,11 @@ library TransferInternal {
     {
         // log event except upon position creation
         if (oldOwner != address(0)) {
-            emit TransferredAsLender(marginId, oldOwner, newOwner);
+            emit LoanTransferred(marginId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = LenderOwner(newOwner).receiveOwnershipAsLender(oldOwner, marginId);
+            address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
                 return grantOwnershipAsLender(marginId, newOwner, nextOwner);
             }
@@ -91,11 +91,11 @@ library TransferInternal {
     {
         // log event except upon position creation
         if (oldOwner != address(0)) {
-            emit TransferredAsTrader(marginId, oldOwner, newOwner);
+            emit PositionTransferred(marginId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = TraderOwner(newOwner).receiveOwnershipAsTrader(oldOwner, marginId);
+            address nextOwner = PositionOwner(newOwner).receivePositionOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
                 return grantOwnershipAsTrader(marginId, newOwner, nextOwner);
             }

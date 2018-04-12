@@ -10,7 +10,7 @@ import { TraderCustodian } from "./interfaces/TraderCustodian.sol";
 
 
 /**
- * @title ERC721MarginTrader
+ * @title ERC721MarginPosition
  * @author dYdX
  *
  * Contract used to tokenize margin positions as ERC721-compliant non-fungible tokens. Holding the
@@ -18,7 +18,7 @@ import { TraderCustodian } from "./interfaces/TraderCustodian.sol";
  * other addresses to close their positions for them.
  */
  /* solium-disable-next-line */
-contract ERC721MarginTrader is
+contract ERC721MarginPosition is
     ERC721Token,
     ClosePositionDelegator,
     TraderCustodian,
@@ -49,7 +49,7 @@ contract ERC721MarginTrader is
 
     // ============ Constructor ============
 
-    function ERC721MarginTrader(
+    function ERC721MarginPosition(
         address margin
     )
         ERC721Token("dYdX Margin Positions", "dYdX")
@@ -106,12 +106,13 @@ contract ERC721MarginTrader is
     }
 
     /**
-     * Transfer ownership of the margin position to an arbitrary address, thereby burning the token
+     * Transfer direct ownership of the margin position to another address, thereby burning the
+     * token
      *
      * @param  marginId  Unique ID of the margin position
      * @param  to        Address to transfer position ownership to
      */
-    function transferAsTrader(
+    function transferPosition(
         bytes32 marginId,
         address to
     )
@@ -121,7 +122,7 @@ contract ERC721MarginTrader is
         uint256 tokenId = uint256(marginId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferAsTrader(marginId, to);
+        Margin(MARGIN).transferPosition(marginId, to);
     }
 
     /**
@@ -151,7 +152,7 @@ contract ERC721MarginTrader is
      * @param  marginId  Unique ID of the margin position
      * @return           This address on success, throw otherwise
      */
-    function receiveOwnershipAsTrader(
+    function receivePositionOwnership(
         address from,
         bytes32 marginId
     )
@@ -179,7 +180,7 @@ contract ERC721MarginTrader is
 
     /**
      * Called by Margin when an owner of this token is attempting to close some of the margin
-     * position. Implementation is required per TraderOwner contract in order to be used by
+     * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a margin position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the margin position was successfully closed.
