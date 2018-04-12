@@ -7,7 +7,8 @@ chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 const QuoteToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
-const TestForceRecoverCollateralDelegator = artifacts.require("TestForceRecoverCollateralDelegator");
+const TestForceRecoverCollateralDelegator =
+  artifacts.require("TestForceRecoverCollateralDelegator");
 const {
   doOpenPosition,
   doOpenPositionAndCall
