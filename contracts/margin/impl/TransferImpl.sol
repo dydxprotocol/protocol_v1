@@ -25,8 +25,8 @@ library TransferImpl {
     )
         public
     {
-        require(MarginCommon.containsShortImpl(state, marginId));
-        address originalLender = state.shorts[marginId].lender;
+        require(MarginCommon.containsPositionImpl(state, marginId));
+        address originalLender = state.positions[marginId].lender;
         require(msg.sender == originalLender);
         require(newLender != originalLender);
 
@@ -40,7 +40,7 @@ library TransferImpl {
         require(finalLender != originalLender);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.shorts[marginId].lender = finalLender;
+        state.positions[marginId].lender = finalLender;
     }
 
     function transferShortImpl(
@@ -50,12 +50,12 @@ library TransferImpl {
     )
         public
     {
-        require(MarginCommon.containsShortImpl(state, marginId));
-        address originalSeller = state.shorts[marginId].seller;
+        require(MarginCommon.containsPositionImpl(state, marginId));
+        address originalSeller = state.positions[marginId].seller;
         require(msg.sender == originalSeller);
         require(newSeller != originalSeller);
 
-        // Doesn't change the state of marginId; figures out the address of the final owner of short.
+        // Doesn't change the state of marginId; figures out the address of the final owner of position.
         // That is, newSeller may pass ownership to a different address.
         address finalSeller = TransferInternal.grantShortOwnership(
             marginId,
@@ -64,6 +64,6 @@ library TransferImpl {
         require(finalSeller != originalSeller);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.shorts[marginId].seller = finalSeller;
+        state.positions[marginId].seller = finalSeller;
     }
 }

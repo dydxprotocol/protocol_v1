@@ -21,9 +21,9 @@ const { signLoanOffering } = require('../helpers/LoanHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 const {
-  getShort,
+  getPosition,
   callAddValueToShort,
-  createShortTx,
+  createOpenTx,
   issueTokensAndSetAllowancesForShort,
   callShort
 } = require('../helpers/MarginHelper');
@@ -34,7 +34,7 @@ describe('#addValueToShort', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const {
-        shortTx,
+        OpenTx,
         addValueTx,
         dydxMargin,
         startingShortBalance,
@@ -50,7 +50,7 @@ describe('#addValueToShort', () => {
 
       await validate({
         dydxMargin,
-        shortTx,
+        OpenTx,
         addValueTx,
         tx,
         startingShortBalance,
@@ -71,7 +71,7 @@ describe('#addValueToShort', () => {
       ]);
 
       const {
-        shortTx,
+        OpenTx,
         addValueTx,
         dydxMargin,
         startingShortBalance,
@@ -88,8 +88,8 @@ describe('#addValueToShort', () => {
         shortValueAdded,
         loanValueAdded
       ] = await Promise.all([
-        testShortOwner.valueAdded.call(shortTx.id, addValueTx.seller),
-        testLoanOwner.valueAdded.call(shortTx.id, addValueTx.loanOffering.payer),
+        testShortOwner.valueAdded.call(OpenTx.id, addValueTx.seller),
+        testLoanOwner.valueAdded.call(OpenTx.id, addValueTx.loanOffering.payer),
       ]);
 
       expect(shortValueAdded).to.be.bignumber.eq(addValueTx.shortAmount);
@@ -97,7 +97,7 @@ describe('#addValueToShort', () => {
 
       await validate({
         dydxMargin,
-        shortTx,
+        OpenTx,
         addValueTx,
         tx,
         startingShortBalance,
@@ -110,7 +110,7 @@ describe('#addValueToShort', () => {
   contract('Margin', function(accounts) {
     it('allows a loan offering with longer maxDuration to be used', async () => {
       const {
-        shortTx,
+        OpenTx,
         addValueTx,
         dydxMargin,
         startingShortBalance,
@@ -125,7 +125,7 @@ describe('#addValueToShort', () => {
 
       await validate({
         dydxMargin,
-        shortTx,
+        OpenTx,
         addValueTx,
         tx,
         startingShortBalance,
@@ -152,7 +152,7 @@ describe('#addValueToShort', () => {
   contract('Margin', function(accounts) {
     it('allows a loan offering with longer callTimeLimit to be used', async () => {
       const {
-        shortTx,
+        OpenTx,
         addValueTx,
         dydxMargin,
         startingShortBalance,
@@ -167,7 +167,7 @@ describe('#addValueToShort', () => {
 
       await validate({
         dydxMargin,
-        shortTx,
+        OpenTx,
         addValueTx,
         tx,
         startingShortBalance,
@@ -238,54 +238,54 @@ describe('#addValueToShort', () => {
       FeeToken.deployed()
     ]);
     const [
-      shortTx,
+      OpenTx,
       addValueTx
     ] = await Promise.all([
-      createShortTx(accounts),
-      createShortTx(accounts, salt++)
+      createOpenTx(accounts),
+      createOpenTx(accounts, salt++)
     ]);
 
     if (loanOwner) {
-      shortTx.loanOffering.owner = loanOwner;
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      OpenTx.loanOffering.owner = loanOwner;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
       addValueTx.loanOffering.owner = loanOwner;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
     }
     if (shortOwner) {
-      shortTx.owner = shortOwner;
+      OpenTx.owner = shortOwner;
       addValueTx.owner = shortOwner;
     }
 
-    await issueTokensAndSetAllowancesForShort(shortTx);
+    await issueTokensAndSetAllowancesForShort(OpenTx);
 
-    const response = await callShort(dydxMargin, shortTx);
-    shortTx.id = response.id;
-    shortTx.response = response;
+    const response = await callShort(dydxMargin, OpenTx);
+    OpenTx.id = response.id;
+    OpenTx.response = response;
 
     const [
       startingShortBalance,
       startingBalances,
     ] = await Promise.all([
-      dydxMargin.getShortBalance.call(shortTx.id),
-      getBalances(shortTx, baseToken, quoteToken, feeToken),
+      dydxMargin.getPositionBalance.call(OpenTx.id),
+      getBalances(OpenTx, baseToken, quoteToken, feeToken),
     ]);
 
     addValueTx.shortAmount = addValueTx.shortAmount.div(4);
-    addValueTx.id = shortTx.id;
+    addValueTx.id = OpenTx.id;
 
-    const sellerStartingQuoteToken = shortTx.depositAmount.times(2);
-    await quoteToken.issueTo(shortTx.seller, sellerStartingQuoteToken);
+    const sellerStartingQuoteToken = OpenTx.depositAmount.times(2);
+    await quoteToken.issueTo(OpenTx.seller, sellerStartingQuoteToken);
     await quoteToken.approve(
       ProxyContract.address,
       sellerStartingQuoteToken,
-      { from: shortTx.seller }
+      { from: OpenTx.seller }
     );
 
     // Wait until the next interest period
-    await wait(shortTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
+    await wait(OpenTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
 
     return {
-      shortTx,
+      OpenTx,
       addValueTx,
       dydxMargin,
       baseToken,
@@ -299,7 +299,7 @@ describe('#addValueToShort', () => {
 
   async function validate({
     dydxMargin,
-    shortTx,
+    OpenTx,
     addValueTx,
     tx,
     startingShortBalance,
@@ -307,44 +307,44 @@ describe('#addValueToShort', () => {
     sellerStartingQuoteToken
   }) {
     const [
-      short,
+      position,
       baseToken,
       quoteToken,
       feeToken
     ]= await Promise.all([
-      getShort(dydxMargin, shortTx.id),
+      getPosition(dydxMargin, OpenTx.id),
       BaseToken.deployed(),
       QuoteToken.deployed(),
       FeeToken.deployed(),
     ]);
 
-    expect(short.shortAmount).to.be.bignumber.eq(
-      shortTx.shortAmount.plus(addValueTx.shortAmount)
+    expect(position.shortAmount).to.be.bignumber.eq(
+      OpenTx.shortAmount.plus(addValueTx.shortAmount)
     );
 
-    expect(short.seller).to.eq(shortTx.owner);
-    expect(short.lender).to.eq(shortTx.loanOffering.owner);
-    expect(short.baseToken).to.eq(shortTx.baseToken);
-    expect(short.quoteToken).to.eq(shortTx.quoteToken);
-    expect(short.closedAmount).to.be.bignumber.eq(0);
-    expect(short.interestRate).to.be.bignumber.eq(shortTx.loanOffering.rates.interestRate);
-    expect(short.callTimeLimit).to.be.bignumber.eq(shortTx.loanOffering.callTimeLimit);
-    expect(short.interestPeriod).to.be.bignumber.eq(shortTx.loanOffering.rates.interestPeriod);
-    expect(short.maxDuration).to.be.bignumber.eq(shortTx.loanOffering.maxDuration);
+    expect(position.seller).to.eq(OpenTx.owner);
+    expect(position.lender).to.eq(OpenTx.loanOffering.owner);
+    expect(position.baseToken).to.eq(OpenTx.baseToken);
+    expect(position.quoteToken).to.eq(OpenTx.quoteToken);
+    expect(position.closedAmount).to.be.bignumber.eq(0);
+    expect(position.interestRate).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestRate);
+    expect(position.callTimeLimit).to.be.bignumber.eq(OpenTx.loanOffering.callTimeLimit);
+    expect(position.interestPeriod).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestPeriod);
+    expect(position.maxDuration).to.be.bignumber.eq(OpenTx.loanOffering.maxDuration);
 
     const [
       finalShortBalance,
       lentAmount,
       finalBalances
     ] = await Promise.all([
-      dydxMargin.getShortBalance.call(shortTx.id),
-      getOwedAmount(shortTx, tx, addValueTx.shortAmount, false),
+      dydxMargin.getPositionBalance.call(OpenTx.id),
+      getOwedAmount(OpenTx, tx, addValueTx.shortAmount, false),
       getBalances(addValueTx, baseToken, quoteToken, feeToken)
     ]);
 
-    const startingQuoteTokenPerUnit = startingShortBalance.div(shortTx.shortAmount);
+    const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.shortAmount);
     const finalQuoteTokenPerUnit = finalShortBalance
-      .div(shortTx.shortAmount.plus(addValueTx.shortAmount));
+      .div(OpenTx.shortAmount.plus(addValueTx.shortAmount));
 
     const quoteTokenFromSell = getPartialAmount(
       addValueTx.buyOrder.makerTokenAmount,
@@ -353,7 +353,7 @@ describe('#addValueToShort', () => {
     );
     const expectedDepositAmount = getPartialAmount(
       addValueTx.shortAmount,
-      shortTx.shortAmount,
+      OpenTx.shortAmount,
       startingShortBalance,
       true // round up
     ).minus(quoteTokenFromSell);
@@ -380,41 +380,41 @@ describe('#addValueToShortDirectly', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const [
-        shortTx,
+        OpenTx,
         dydxMargin,
         quoteToken,
         testShortOwner,
         testLoanOwner
       ] = await Promise.all([
-        createShortTx(accounts),
+        createOpenTx(accounts),
         Margin.deployed(),
         QuoteToken.deployed(),
         TestShortOwner.new(Margin.address, "1", true),
         TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
-      shortTx.owner = testShortOwner.address;
-      shortTx.loanOffering.owner = testLoanOwner.address;
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      OpenTx.owner = testShortOwner.address;
+      OpenTx.loanOffering.owner = testLoanOwner.address;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      const response = await callShort(dydxMargin, shortTx);
-      shortTx.id = response.id;
+      await issueTokensAndSetAllowancesForShort(OpenTx);
+      const response = await callShort(dydxMargin, OpenTx);
+      OpenTx.id = response.id;
 
       const [ownsShort, ownsLoan, startingShortBalance] = await Promise.all([
-        testShortOwner.hasReceived.call(shortTx.id, shortTx.seller),
-        testLoanOwner.hasReceived.call(shortTx.id, shortTx.loanOffering.payer),
-        dydxMargin.getShortBalance.call(shortTx.id),
+        testShortOwner.hasReceived.call(OpenTx.id, OpenTx.seller),
+        testLoanOwner.hasReceived.call(OpenTx.id, OpenTx.loanOffering.payer),
+        dydxMargin.getPositionBalance.call(OpenTx.id),
       ]);
 
       expect(ownsShort).to.be.true;
       expect(ownsLoan).to.be.true;
 
-      const addAmount = shortTx.shortAmount.div(2);
+      const addAmount = OpenTx.shortAmount.div(2);
       const adder = accounts[8];
       const quoteTokenAmount = getPartialAmount(
         addAmount,
-        shortTx.shortAmount,
+        OpenTx.shortAmount,
         startingShortBalance,
         true
       );
@@ -430,22 +430,22 @@ describe('#addValueToShortDirectly', () => {
       );
 
       const tx = await dydxMargin.addValueToShortDirectly(
-        shortTx.id,
+        OpenTx.id,
         addAmount,
         { from: adder }
       );
 
       console.log('\tMargin.addValueToShortDirectly gas used: ' + tx.receipt.gasUsed);
 
-      const short = await getShort(dydxMargin, shortTx.id);
+      const position = await getPosition(dydxMargin, OpenTx.id);
 
-      expect(short.shortAmount).to.be.bignumber.eq(
-        shortTx.shortAmount.plus(addAmount)
+      expect(position.shortAmount).to.be.bignumber.eq(
+        OpenTx.shortAmount.plus(addAmount)
       );
 
-      const finalShortBalance = await dydxMargin.getShortBalance.call(shortTx.id);
-      const startingQuoteTokenPerUnit = startingShortBalance.div(shortTx.shortAmount);
-      const finalQuoteTokenPerUnit = finalShortBalance.div(shortTx.shortAmount.plus(addAmount));
+      const finalShortBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+      const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.shortAmount);
+      const finalQuoteTokenPerUnit = finalShortBalance.div(OpenTx.shortAmount.plus(addAmount));
 
       expect(finalQuoteTokenPerUnit).to.be.bignumber.eq(startingQuoteTokenPerUnit);
 
@@ -455,8 +455,8 @@ describe('#addValueToShortDirectly', () => {
         adderLoanValueAdded
       ] = await Promise.all([
         quoteToken.balanceOf.call(adder),
-        testShortOwner.valueAdded.call(shortTx.id, adder),
-        testLoanOwner.valueAdded.call(shortTx.id, adder),
+        testShortOwner.valueAdded.call(OpenTx.id, adder),
+        testLoanOwner.valueAdded.call(OpenTx.id, adder),
       ]);
 
       expect(adderQuoteToken).to.be.bignumber.eq(0);

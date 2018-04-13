@@ -85,7 +85,7 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  marginId           Unique ID of the short
+     * @param  marginId           Unique ID of the position
      * @param  closeAmount        Amount of the short that was closed
      * @param  shortCloser        Address of the account or contract that closed the short
      * @param  shortSeller        Address of the owner of the short
@@ -170,11 +170,11 @@ contract DutchAuctionCloser is
             uint256 auctionEndTimestamp
         )
     {
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, marginId);
+        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, marginId);
 
-        uint256 maxTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
-        uint256 callTimestamp = uint256(short.callTimestamp);
-        uint256 callTimeLimit = uint256(short.callTimeLimit);
+        uint256 maxTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
+        uint256 callTimestamp = uint256(position.callTimestamp);
+        uint256 callTimeLimit = uint256(position.callTimeLimit);
 
         uint256 auctionLength = MathHelpers.getPartialAmount(
             CALL_TIMELIMIT_NUMERATOR,
@@ -184,7 +184,7 @@ contract DutchAuctionCloser is
         if (callTimestamp == 0 || callTimestamp > maxTimestamp.sub(callTimeLimit)) {
             // auction time determined by maxTimestamp
             auctionStartTimestamp = Math.max256(
-                uint256(short.startTimestamp),
+                uint256(position.startTimestamp),
                 maxTimestamp.sub(auctionLength));
             auctionEndTimestamp = maxTimestamp;
         } else {

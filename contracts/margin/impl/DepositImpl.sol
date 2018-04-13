@@ -50,27 +50,27 @@ library DepositImpl {
     )
         public
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
         require(depositAmount > 0);
-        require(msg.sender == short.seller);
+        require(msg.sender == position.seller);
 
         Vault(state.VAULT).transferToVault(
             marginId,
-            short.quoteToken,
+            position.quoteToken,
             msg.sender,
             depositAmount
         );
 
         // cancel loan call if applicable
         bool loanCanceled = false;
-        uint256 requiredDeposit = short.requiredDeposit;
-        if (short.callTimestamp > 0 && requiredDeposit > 0) {
+        uint256 requiredDeposit = position.requiredDeposit;
+        if (position.callTimestamp > 0 && requiredDeposit > 0) {
             if (depositAmount >= requiredDeposit) {
-                short.requiredDeposit = 0;
-                short.callTimestamp = 0;
+                position.requiredDeposit = 0;
+                position.callTimestamp = 0;
                 loanCanceled = true;
             } else {
-                short.requiredDeposit = short.requiredDeposit.sub(depositAmount);
+                position.requiredDeposit = position.requiredDeposit.sub(depositAmount);
             }
         }
 
@@ -83,7 +83,7 @@ library DepositImpl {
         if (loanCanceled) {
             emit LoanCallCanceled(
                 marginId,
-                short.lender,
+                position.lender,
                 msg.sender,
                 depositAmount
             );

@@ -9,7 +9,7 @@ const ERC20Short = artifacts.require("ERC20Short");
 const QuoteToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
-const { TOKENIZED_SHORT_STATE } = require('../../helpers/ERC20ShortHelper');
+const { TOKENIZED_POSITION_STATE } = require('../../helpers/ERC20ShortHelper');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort,
@@ -53,7 +53,7 @@ contract('ERC20ShortCreator', function(accounts) {
   });
 
   describe('#receiveShortOwnership', () => {
-    async function checkSuccess(shortTx, shortTokenContract, remainingShortAmount) {
+    async function checkSuccess(OpenTx, shortTokenContract, remainingShortAmount) {
       const originalSeller = accounts[0];
       const [
         tokenMargin,
@@ -74,8 +74,8 @@ contract('ERC20ShortCreator', function(accounts) {
       ]);
 
       expect(tokenMargin).to.equal(dydxMargin.address);
-      expect(tokenmarginId).to.equal(shortTx.id);
-      expect(tokenState).to.be.bignumber.equal(TOKENIZED_SHORT_STATE.OPEN);
+      expect(tokenmarginId).to.equal(OpenTx.id);
+      expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
       expect(tokenHolder).to.equal(originalSeller);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);
       expect(totalSupply).to.be.bignumber.equal(remainingShortAmount);
@@ -90,40 +90,40 @@ contract('ERC20ShortCreator', function(accounts) {
     });
 
     it('succeeds for new short', async () => {
-      const shortTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
+      const OpenTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
 
       // Get the return value of the tokenizeShort function
-      const tokenAddress = await dydxMargin.getshortSeller(shortTx.id);
+      const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);
 
-      await checkSuccess(shortTx, shortTokenContract, shortTx.shortAmount);
+      await checkSuccess(OpenTx, shortTokenContract, OpenTx.shortAmount);
     });
 
     it('succeeds for half-closed short', async () => {
       const salt = 5678;
-      const shortTx = await doShort(accounts, salt);
+      const OpenTx = await doShort(accounts, salt);
 
       // close half the short
       const sellOrder = await createSignedSellOrder(accounts, salt);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
       await callCloseShort(
         dydxMargin,
-        shortTx,
+        OpenTx,
         sellOrder,
-        shortTx.shortAmount.div(2));
+        OpenTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await dydxMargin.transferShort(shortTx.id, ERC20ShortCreatorContract.address);
+      await dydxMargin.transferShort(OpenTx.id, ERC20ShortCreatorContract.address);
 
       // Get the return value of the tokenizeShort function
-      const tokenAddress = await dydxMargin.getshortSeller(shortTx.id);
+      const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);
 
-      await checkSuccess(shortTx, shortTokenContract, shortTx.shortAmount.div(2));
+      await checkSuccess(OpenTx, shortTokenContract, OpenTx.shortAmount.div(2));
     });
   });
 });

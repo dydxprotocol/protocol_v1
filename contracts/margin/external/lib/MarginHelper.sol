@@ -12,13 +12,13 @@ import { MarginCommon } from "../../impl/MarginCommon.sol";
  * This library contains helper functions for interacting with Margin
  */
 library MarginHelper {
-    function getShort(
+    function getPosition(
         address MARGIN,
         bytes32 marginId
     )
         internal
         view
-        returns (MarginCommon.Short memory)
+        returns (MarginCommon.Position memory)
     {
         address[4] memory addresses;
         uint256[3] memory values256;
@@ -28,9 +28,9 @@ library MarginHelper {
             addresses,
             values256,
             values32
-        ) = Margin(MARGIN).getShort(marginId);
+        ) = Margin(MARGIN).getPosition(marginId);
 
-        return MarginCommon.Short({
+        return MarginCommon.Position({
             baseToken: addresses[0],
             quoteToken: addresses[1],
             lender: addresses[2],

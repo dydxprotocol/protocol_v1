@@ -23,14 +23,14 @@ module.exports = {
   getOwedAmount,
   getBalances,
   checkSuccessCloseDirectly,
-  getShortLifetime
+  getPositionLifetime
 };
 
-async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount) {
-  const baseTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
+async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount) {
+  const baseTokenOwedToLender = await getOwedAmount(OpenTx, closeTx, closeAmount);
   const quoteTokenFromSell = getPartialAmount(
-    shortTx.buyOrder.makerTokenAmount,
-    shortTx.buyOrder.takerTokenAmount,
+    OpenTx.buyOrder.makerTokenAmount,
+    OpenTx.buyOrder.takerTokenAmount,
     closeAmount
   );
   const quoteTokenBuybackCost = getPartialAmount(
@@ -39,7 +39,7 @@ async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount
     baseTokenOwedToLender
   );
 
-  const balances = await getBalances(dydxMargin, shortTx, sellOrder);
+  const balances = await getBalances(dydxMargin, OpenTx, sellOrder);
   const {
     sellerQuoteToken,
     externalSellerQuoteToken,
@@ -49,14 +49,14 @@ async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount
     feeRecipientFeeToken
   } = balances;
 
-  checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, baseTokenOwedToLender, shortTx);
+  checkSmartContractBalances(balances, OpenTx, closeAmount);
+  checkLenderBalances(balances, baseTokenOwedToLender, OpenTx);
 
   expect(sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      shortTx.shortAmount,
-      shortTx.depositAmount
+      OpenTx.shortAmount,
+      OpenTx.depositAmount
     ).plus(quoteTokenFromSell)
       .minus(quoteTokenBuybackCost)
   );
@@ -78,21 +78,21 @@ async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount
     )
   );
   expect(sellerFeeToken).to.be.bignumber.equal(
-    shortTx.buyOrder.takerFee
-      .plus(shortTx.loanOffering.rates.takerFee)
+    OpenTx.buyOrder.takerFee
+      .plus(OpenTx.loanOffering.rates.takerFee)
       .plus(sellOrder.takerFee)
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.loanOffering.rates.maxAmount,
-          shortTx.loanOffering.rates.takerFee
+          OpenTx.shortAmount,
+          OpenTx.loanOffering.rates.maxAmount,
+          OpenTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.buyOrder.takerFee
+          OpenTx.shortAmount,
+          OpenTx.buyOrder.takerTokenAmount,
+          OpenTx.buyOrder.takerFee
         )
       )
       .minus(
@@ -115,15 +115,15 @@ async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount
   );
 }
 
-function checkSmartContractBalances(balances, shortTx, closeAmount) {
+function checkSmartContractBalances(balances, OpenTx, closeAmount) {
   const startingShortQuoteTokenAmount = getPartialAmount(
-    shortTx.buyOrder.makerTokenAmount,
-    shortTx.buyOrder.takerTokenAmount,
-    shortTx.shortAmount
-  ).plus(shortTx.depositAmount);
+    OpenTx.buyOrder.makerTokenAmount,
+    OpenTx.buyOrder.takerTokenAmount,
+    OpenTx.shortAmount
+  ).plus(OpenTx.depositAmount);
   const expectedShortBalance = getPartialAmount(
-    shortTx.shortAmount.minus(closeAmount),
-    shortTx.shortAmount,
+    OpenTx.shortAmount.minus(closeAmount),
+    OpenTx.shortAmount,
     startingShortQuoteTokenAmount
   );
 
@@ -140,21 +140,21 @@ function checkSmartContractBalances(balances, shortTx, closeAmount) {
   expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
 }
 
-function checkLenderBalances(balances, baseTokenOwedToLender, shortTx) {
+function checkLenderBalances(balances, baseTokenOwedToLender, OpenTx) {
   const {
     lenderQuoteToken,
     lenderBaseToken,
   } = balances;
   expect(lenderQuoteToken).to.be.bignumber.equal(0);
   expect(lenderBaseToken).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.maxAmount
-      .minus(shortTx.shortAmount)
+    OpenTx.loanOffering.rates.maxAmount
+      .minus(OpenTx.shortAmount)
       .plus(baseTokenOwedToLender));
 }
 
-async function getOwedAmount(shortTx, closeTx, closeAmount, roundUpToPeriod = true) {
-  let shortLifetime = await getShortLifetime(shortTx, closeTx);
-  let interestPeriod = shortTx.loanOffering.rates.interestPeriod;
+async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = true) {
+  let shortLifetime = await getPositionLifetime(OpenTx, closeTx);
+  let interestPeriod = OpenTx.loanOffering.rates.interestPeriod;
   if (interestPeriod.gt(1)) {
     shortLifetime = getPartialAmount(
       shortLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
@@ -165,13 +165,13 @@ async function getOwedAmount(shortTx, closeTx, closeAmount, roundUpToPeriod = tr
 
   const getOwedAmount = await interestCalc.getCompoundedInterest.call(
     closeAmount,
-    shortTx.loanOffering.rates.interestRate,
+    OpenTx.loanOffering.rates.interestRate,
     shortLifetime
   );
   return getOwedAmount;
 }
 
-async function getBalances(dydxMargin, shortTx, sellOrder) {
+async function getBalances(dydxMargin, OpenTx, sellOrder) {
   const [
     baseToken,
     quoteToken,
@@ -216,19 +216,19 @@ async function getBalances(dydxMargin, shortTx, sellOrder) {
 
     shortBalance
   ] = await Promise.all([
-    quoteToken.balanceOf.call(shortTx.seller),
-    baseToken.balanceOf.call(shortTx.seller),
+    quoteToken.balanceOf.call(OpenTx.seller),
+    baseToken.balanceOf.call(OpenTx.seller),
 
-    quoteToken.balanceOf.call(shortTx.loanOffering.payer),
-    baseToken.balanceOf.call(shortTx.loanOffering.payer),
+    quoteToken.balanceOf.call(OpenTx.loanOffering.payer),
+    baseToken.balanceOf.call(OpenTx.loanOffering.payer),
 
-    feeToken.balanceOf.call(shortTx.seller),
+    feeToken.balanceOf.call(OpenTx.seller),
 
     feeToken.balanceOf.call(Vault.address),
     quoteToken.balanceOf.call(Vault.address),
     baseToken.balanceOf.call(Vault.address),
 
-    dydxMargin.getShortBalance.call(shortTx.id)
+    dydxMargin.getPositionBalance.call(OpenTx.id)
   ]);
 
   return {
@@ -253,20 +253,20 @@ async function getBalances(dydxMargin, shortTx, sellOrder) {
   };
 }
 
-async function checkSuccessCloseDirectly(dydxMargin, shortTx, closeTx, closeAmount) {
-  const baseTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
-  const balances = await getBalances(dydxMargin, shortTx);
+async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmount) {
+  const baseTokenOwedToLender = await getOwedAmount(OpenTx, closeTx, closeAmount);
+  const balances = await getBalances(dydxMargin, OpenTx);
   const quoteTokenFromSell = getPartialAmount(
-    shortTx.buyOrder.makerTokenAmount,
-    shortTx.buyOrder.takerTokenAmount,
+    OpenTx.buyOrder.makerTokenAmount,
+    OpenTx.buyOrder.takerTokenAmount,
     closeAmount
   );
 
-  checkSmartContractBalances(balances, shortTx, closeAmount);
-  checkLenderBalances(balances, baseTokenOwedToLender, shortTx);
-  const maxInterest = await getMaxInterestFee(shortTx);
+  checkSmartContractBalances(balances, OpenTx, closeAmount);
+  checkLenderBalances(balances, baseTokenOwedToLender, OpenTx);
+  const maxInterest = await getMaxInterestFee(OpenTx);
   expect(balances.sellerBaseToken).to.be.bignumber.equal(
-    shortTx.shortAmount
+    OpenTx.shortAmount
       .plus(maxInterest)
       .minus(baseTokenOwedToLender)
   );
@@ -274,19 +274,19 @@ async function checkSuccessCloseDirectly(dydxMargin, shortTx, closeTx, closeAmou
   expect(balances.sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      shortTx.shortAmount,
-      shortTx.depositAmount
+      OpenTx.shortAmount,
+      OpenTx.depositAmount
     )
       .plus(quoteTokenFromSell)
   );
 }
 
-async function getShortLifetime(shortTx, tx) {
+async function getPositionLifetime(OpenTx, tx) {
   const [shortTimestamp, shortClosedTimestamp] = await Promise.all([
-    getBlockTimestamp(shortTx.response.receipt.blockNumber),
+    getBlockTimestamp(OpenTx.response.receipt.blockNumber),
     getBlockTimestamp(tx.receipt.blockNumber)
   ]);
-  const maxDuration = shortTx.loanOffering.maxDuration;
+  const maxDuration = OpenTx.loanOffering.maxDuration;
   let duration = shortClosedTimestamp - shortTimestamp;
   if (duration > maxDuration) {
     duration = maxDuration;

@@ -35,12 +35,12 @@ contract LiquidateDelegator is LoanOwner {
      * positions.
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
-     * entire transaction or that the specified amount of the short position was successfully
+     * entire transaction or that the specified amount of the position was successfully
      * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
      * @param liquidator       Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of quote tokens paid out
-     * @param marginId         Unique ID of the short
+     * @param marginId         Unique ID of the position
      * @param requestedAmount  Amount of the loan being closed
      * @return                 The amount the user is allowed to close for the specified loan
      */

@@ -53,7 +53,7 @@ library CloseShortImpl {
         public
         returns (uint256, uint256, uint256)
     {
-        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.createCloseShortTx(
+        CloseShortShared.CloseTx memory transaction = CloseShortShared.createCloseTx(
             state,
             marginId,
             requestedCloseAmount,
@@ -98,7 +98,7 @@ library CloseShortImpl {
 
     function returnBaseTokensToLender(
         MarginState.State storage state,
-        CloseShortShared.CloseShortTx memory transaction,
+        CloseShortShared.CloseTx memory transaction,
         bytes memory orderData
     )
         internal
@@ -130,7 +130,7 @@ library CloseShortImpl {
 
     function buyBackBaseToken(
         MarginState.State storage state,
-        CloseShortShared.CloseShortTx transaction,
+        CloseShortShared.CloseTx transaction,
         bytes memory orderData
     )
         internal
@@ -192,7 +192,7 @@ library CloseShortImpl {
     }
 
     function logEventOnClose(
-        CloseShortShared.CloseShortTx transaction,
+        CloseShortShared.CloseTx transaction,
         uint256 buybackCost,
         uint256 payout
     )

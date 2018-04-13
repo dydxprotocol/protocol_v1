@@ -13,8 +13,8 @@ import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
  * @title ERC721Short
  * @author dYdX
  *
- * Contract used to tokenize short positions as ERC721-compliant non-fungible tokens. Holding the
- * token allows the holder to close the short position. Functionality is added to let users approve
+ * Contract used to tokenize positions as ERC721-compliant non-fungible tokens. Holding the
+ * token allows the holder to close the position. Functionality is added to let users approve
  * other addresses to close their shorts for them.
  */
  /* solium-disable-next-line */
@@ -81,7 +81,7 @@ contract ERC721Short is
         nonReentrant
         external
     {
-        // cannot approve self since any address can already close its own short positions
+        // cannot approve self since any address can already close its own positions
         require(closer != msg.sender);
 
         if (approvedClosers[msg.sender][closer] != isApproved) {
@@ -95,7 +95,7 @@ contract ERC721Short is
      *
      * NOTE: An account approving itself as a recipient is often a very bad idea. A smart contract
      * that approves itself should implement the PayoutRecipient interface for dYdX to verify that
-     * it is given a fair payout for an external account closing the short.
+     * it is given a fair payout for an external account closing the position.
      *
      * @param  recipient   Address of the recipient
      * @param  isApproved  True if approving the recipient, false if revoking approval
@@ -116,7 +116,7 @@ contract ERC721Short is
     /**
      * Transfer ownership of the short externally to this contract, thereby burning the token
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @param  to       Address to transfer short ownership to
      */
     function transferShort(
@@ -136,7 +136,7 @@ contract ERC721Short is
      * Burn an invalid token. Callable by anyone. Used to burn unecessary tokens for clarity and to
      * free up storage. Throws if the short is not yet closed.
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      */
     function burnTokenSafe(
         bytes32 marginId
@@ -144,7 +144,7 @@ contract ERC721Short is
         nonReentrant
         external
     {
-        require(!Margin(MARGIN).containsShort(marginId));
+        require(!Margin(MARGIN).containsPosition(marginId));
         _burn(ownerOf(uint256(marginId)), uint256(marginId));
     }
 
@@ -155,10 +155,10 @@ contract ERC721Short is
     /**
      * Called by the Margin contract when anyone transfers ownership of a short to this contract.
      * This function mints a new ERC721 Token and returns this address to
-     * indicate to Margin that it is willing to take ownership of the short.
+     * indicate to Margin that it is willing to take ownership of the position.
      *
      * @param  from     Address of previous short owner
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
@@ -190,13 +190,13 @@ contract ERC721Short is
     /**
      * Called by Margin when an owner of this token is attempting to close some of the short
      * position. Implementation is required per ShortOwner contract in order to be used by
-     * Margin to approve closing parts of a short position. If true is returned, this contract
+     * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
-     * amount of the short position was successfully closed.
+     * amount of the position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId         Unique ID of the short
+     * @param marginId         Unique ID of the position
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */

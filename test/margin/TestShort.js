@@ -22,10 +22,10 @@ const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const web3Instance = new Web3(web3.currentProvider);
 
 const {
-  createShortTx,
+  createOpenTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
-  getShort,
+  getPosition,
   callApproveLoanOffering
 } = require('../helpers/MarginHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
@@ -34,22 +34,22 @@ const { signLoanOffering } = require('../helpers/LoanHelper');
 describe('#short', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
-      const shortTx = await createShortTx(accounts);
+      const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
 
-      await issueTokensAndSetAllowancesForShort(shortTx);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
 
-      const tx = await callShort(dydxMargin, shortTx);
+      const tx = await callShort(dydxMargin, OpenTx);
 
       console.log('\tMargin.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(dydxMargin, shortTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 
   contract('Margin', function(accounts) {
     it('allows smart contracts to be lenders', async () => {
-      const shortTx = await createShortTx(accounts);
+      const OpenTx = await createOpenTx(accounts);
       const [
         dydxMargin,
         feeToken,
@@ -62,25 +62,25 @@ describe('#short', () => {
         TestSmartContractLender.new(true)
       ]);
 
-      await issueTokensAndSetAllowancesForShort(shortTx);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
 
       const [
         lenderFeeTokenBalance,
         lenderBaseTokenBalance
       ] = await Promise.all([
-        feeToken.balanceOf.call(shortTx.loanOffering.payer),
-        baseToken.balanceOf.call(shortTx.loanOffering.payer)
+        feeToken.balanceOf.call(OpenTx.loanOffering.payer),
+        baseToken.balanceOf.call(OpenTx.loanOffering.payer)
       ]);
       await Promise.all([
         feeToken.transfer(
           testSmartContractLender.address,
           lenderFeeTokenBalance,
-          { from: shortTx.loanOffering.payer }
+          { from: OpenTx.loanOffering.payer }
         ),
         baseToken.transfer(
           testSmartContractLender.address,
           lenderBaseTokenBalance,
-          { from: shortTx.loanOffering.payer }
+          { from: OpenTx.loanOffering.payer }
         )
       ]);
       await Promise.all([
@@ -100,16 +100,16 @@ describe('#short', () => {
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      shortTx.loanOffering.signer = shortTx.loanOffering.payer;
-      shortTx.loanOffering.payer = testSmartContractLender.address;
-      shortTx.loanOffering.owner = testCallLoanDelegator.address;
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
+      OpenTx.loanOffering.signer = OpenTx.loanOffering.payer;
+      OpenTx.loanOffering.payer = testSmartContractLender.address;
+      OpenTx.loanOffering.owner = testCallLoanDelegator.address;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
-      const tx = await callShort(dydxMargin, shortTx);
+      const tx = await callShort(dydxMargin, OpenTx);
 
       console.log('\tMargin.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(dydxMargin, shortTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 
@@ -119,30 +119,30 @@ describe('#short', () => {
       const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
       const testShortOwner = await TestShortOwner.new(Margin.address, ADDRESSES.ZERO, false);
 
-      const shortTx1 = await createShortTx(accounts);
-      await issueTokensAndSetAllowancesForShort(shortTx1);
-      shortTx1.owner = testLoanOwner.address; // loan owner can't take short
-      shortTx1.loanOffering.signature = await signLoanOffering(shortTx1.loanOffering);
-      await expectThrow( callShort(dydxMargin, shortTx1));
+      const OpenTx1 = await createOpenTx(accounts);
+      await issueTokensAndSetAllowancesForShort(OpenTx1);
+      OpenTx1.owner = testLoanOwner.address; // loan owner can't take short
+      OpenTx1.loanOffering.signature = await signLoanOffering(OpenTx1.loanOffering);
+      await expectThrow( callShort(dydxMargin, OpenTx1));
 
-      const shortTx2 = await createShortTx(accounts);
-      await issueTokensAndSetAllowancesForShort(shortTx2);
-      shortTx2.loanOffering.owner = testShortOwner.address; // short owner can't take loan
-      shortTx2.loanOffering.signature = await signLoanOffering(shortTx2.loanOffering);
-      await expectThrow( callShort(dydxMargin, shortTx2));
+      const OpenTx2 = await createOpenTx(accounts);
+      await issueTokensAndSetAllowancesForShort(OpenTx2);
+      OpenTx2.loanOffering.owner = testShortOwner.address; // short owner can't take loan
+      OpenTx2.loanOffering.signature = await signLoanOffering(OpenTx2.loanOffering);
+      await expectThrow( callShort(dydxMargin, OpenTx2));
     });
   });
 
   contract('Margin', function(accounts) {
     it('properly assigns owner for lender and seller for accounts', async () => {
       const dydxMargin = await Margin.deployed();
-      const shortTx = await createShortTx(accounts);
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      shortTx.owner = accounts[8];
-      shortTx.loanOffering.owner = accounts[9];
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
-      await callShort(dydxMargin, shortTx);
-      await checkSuccess(dydxMargin, shortTx);
+      const OpenTx = await createOpenTx(accounts);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
+      OpenTx.owner = accounts[8];
+      OpenTx.loanOffering.owner = accounts[9];
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+      await callShort(dydxMargin, OpenTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 
@@ -157,13 +157,13 @@ describe('#short', () => {
         Margin.address,
         ADDRESSES.ZERO,
         false);
-      const shortTx = await createShortTx(accounts);
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      shortTx.owner = testCloseShortDelegator.address;
-      shortTx.loanOffering.owner = testCallLoanDelegator.address;
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
-      await callShort(dydxMargin, shortTx);
-      await checkSuccess(dydxMargin, shortTx);
+      const OpenTx = await createOpenTx(accounts);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
+      OpenTx.owner = testCloseShortDelegator.address;
+      OpenTx.loanOffering.owner = testCallLoanDelegator.address;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+      await callShort(dydxMargin, OpenTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 
@@ -186,90 +186,90 @@ describe('#short', () => {
         Margin.address,
         testCloseShortDelegator.address,
         false);
-      const shortTx = await createShortTx(accounts);
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      shortTx.owner = testShortOwner.address;
-      shortTx.loanOffering.owner = testLoanOwner.address;
-      shortTx.loanOffering.signature = await signLoanOffering(shortTx.loanOffering);
-      await callShort(dydxMargin, shortTx);
-      await checkSuccess(dydxMargin, shortTx);
+      const OpenTx = await createOpenTx(accounts);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
+      OpenTx.owner = testShortOwner.address;
+      OpenTx.loanOffering.owner = testLoanOwner.address;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+      await callShort(dydxMargin, OpenTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 
   contract('Margin', function(accounts) {
     it('succeeds with on-chain approved loan offerings', async () => {
-      const shortTx = await createShortTx(accounts);
+      const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
 
-      await issueTokensAndSetAllowancesForShort(shortTx);
-      await callApproveLoanOffering(dydxMargin, shortTx.loanOffering);
+      await issueTokensAndSetAllowancesForShort(OpenTx);
+      await callApproveLoanOffering(dydxMargin, OpenTx.loanOffering);
 
-      shortTx.loanOffering.signature.v = 0;
-      shortTx.loanOffering.signature.r = "";
-      shortTx.loanOffering.signature.s = "";
+      OpenTx.loanOffering.signature.v = 0;
+      OpenTx.loanOffering.signature.r = "";
+      OpenTx.loanOffering.signature.s = "";
 
-      await callShort(dydxMargin, shortTx);
+      await callShort(dydxMargin, OpenTx);
 
-      await checkSuccess(dydxMargin, shortTx);
+      await checkSuccess(dydxMargin, OpenTx);
     });
   });
 });
 
-async function checkSuccess(dydxMargin, shortTx) {
+async function checkSuccess(dydxMargin, OpenTx) {
   const marginId = web3Instance.utils.soliditySha3(
-    shortTx.loanOffering.loanHash,
+    OpenTx.loanOffering.loanHash,
     0
   );
 
-  const contains = await dydxMargin.containsShort.call(marginId);
+  const contains = await dydxMargin.containsPosition.call(marginId);
   expect(contains).to.equal(true);
-  const short = await getShort(dydxMargin, marginId);
+  const position = await getPosition(dydxMargin, marginId);
 
-  expect(short.baseToken).to.equal(shortTx.baseToken);
-  expect(short.quoteToken).to.equal(shortTx.quoteToken);
-  expect(short.shortAmount).to.be.bignumber.equal(shortTx.shortAmount);
-  expect(short.interestRate).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.interestRate);
-  expect(short.callTimeLimit).to.be.bignumber.equal(shortTx.loanOffering.callTimeLimit);
-  expect(short.closedAmount).to.be.bignumber.equal(0);
-  expect(short.callTimestamp).to.be.bignumber.equal(0);
-  expect(short.maxDuration).to.be.bignumber.equal(shortTx.loanOffering.maxDuration);
+  expect(position.baseToken).to.equal(OpenTx.baseToken);
+  expect(position.quoteToken).to.equal(OpenTx.quoteToken);
+  expect(position.shortAmount).to.be.bignumber.equal(OpenTx.shortAmount);
+  expect(position.interestRate).to.be.bignumber.equal(
+    OpenTx.loanOffering.rates.interestRate);
+  expect(position.callTimeLimit).to.be.bignumber.equal(OpenTx.loanOffering.callTimeLimit);
+  expect(position.closedAmount).to.be.bignumber.equal(0);
+  expect(position.callTimestamp).to.be.bignumber.equal(0);
+  expect(position.maxDuration).to.be.bignumber.equal(OpenTx.loanOffering.maxDuration);
 
   // if atomic owner is specified, then expect it
-  if (shortTx.owner === ADDRESSES.ZERO) {
-    expect(short.seller).to.equal(shortTx.seller);
+  if (OpenTx.owner === ADDRESSES.ZERO) {
+    expect(position.seller).to.equal(OpenTx.seller);
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestShortOwner.at(shortTx.owner).TO_RETURN.call();
+      toReturn = await TestShortOwner.at(OpenTx.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
-    expect(short.seller).to.equal(toReturn ? toReturn : shortTx.owner);
+    expect(position.seller).to.equal(toReturn ? toReturn : OpenTx.owner);
   }
 
   // if atomic owner is specified, then expect it
-  if (shortTx.loanOffering.owner === ADDRESSES.ZERO) {
-    expect(short.lender).to.equal(shortTx.loanOffering.payer);
+  if (OpenTx.loanOffering.owner === ADDRESSES.ZERO) {
+    expect(position.lender).to.equal(OpenTx.loanOffering.payer);
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestLoanOwner.at(shortTx.loanOffering.owner).TO_RETURN.call();
+      toReturn = await TestLoanOwner.at(OpenTx.loanOffering.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }
-    expect(short.lender).to.equal(toReturn ? toReturn : shortTx.loanOffering.owner);
+    expect(position.lender).to.equal(toReturn ? toReturn : OpenTx.loanOffering.owner);
   }
 
-  const balance = await dydxMargin.getShortBalance.call(marginId);
+  const balance = await dydxMargin.getPositionBalance.call(marginId);
 
   const quoteTokenFromSell = getPartialAmount(
-    shortTx.buyOrder.makerTokenAmount,
-    shortTx.buyOrder.takerTokenAmount,
-    shortTx.shortAmount
+    OpenTx.buyOrder.makerTokenAmount,
+    OpenTx.buyOrder.takerTokenAmount,
+    OpenTx.shortAmount
   );
 
-  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(shortTx.depositAmount));
+  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenTx.depositAmount));
 
   const [
     baseToken,
@@ -293,64 +293,64 @@ async function checkSuccess(dydxMargin, shortTx) {
     exchangeWrapperFeeToken,
     sellerFeeToken
   ] = await Promise.all([
-    baseToken.balanceOf.call(shortTx.loanOffering.payer),
-    baseToken.balanceOf.call(shortTx.buyOrder.maker),
+    baseToken.balanceOf.call(OpenTx.loanOffering.payer),
+    baseToken.balanceOf.call(OpenTx.buyOrder.maker),
     baseToken.balanceOf.call(ExchangeWrapper.address),
-    quoteToken.balanceOf.call(shortTx.seller),
-    quoteToken.balanceOf.call(shortTx.buyOrder.maker),
+    quoteToken.balanceOf.call(OpenTx.seller),
+    quoteToken.balanceOf.call(OpenTx.buyOrder.maker),
     quoteToken.balanceOf.call(Vault.address),
-    feeToken.balanceOf.call(shortTx.loanOffering.payer),
-    feeToken.balanceOf.call(shortTx.buyOrder.maker),
+    feeToken.balanceOf.call(OpenTx.loanOffering.payer),
+    feeToken.balanceOf.call(OpenTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
-    feeToken.balanceOf.call(shortTx.seller),
+    feeToken.balanceOf.call(OpenTx.seller),
   ]);
 
   expect(lenderBaseToken).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.maxAmount.minus(shortTx.shortAmount)
+    OpenTx.loanOffering.rates.maxAmount.minus(OpenTx.shortAmount)
   );
-  expect(makerBaseToken).to.be.bignumber.equal(shortTx.shortAmount);
+  expect(makerBaseToken).to.be.bignumber.equal(OpenTx.shortAmount);
   expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
   expect(sellerQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
-    shortTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
+    OpenTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
   );
-  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(shortTx.depositAmount));
+  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenTx.depositAmount));
   expect(lenderFeeToken).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.lenderFee
+    OpenTx.loanOffering.rates.lenderFee
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.loanOffering.rates.maxAmount,
-          shortTx.loanOffering.rates.lenderFee
+          OpenTx.shortAmount,
+          OpenTx.loanOffering.rates.maxAmount,
+          OpenTx.loanOffering.rates.lenderFee
         )
       )
   );
   expect(exchangeWrapperFeeToken).to.be.bignumber.equal(0);
   expect(makerFeeToken).to.be.bignumber.equal(
-    shortTx.buyOrder.makerFee
+    OpenTx.buyOrder.makerFee
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.buyOrder.makerFee
+          OpenTx.shortAmount,
+          OpenTx.buyOrder.takerTokenAmount,
+          OpenTx.buyOrder.makerFee
         )
       )
   );
   expect(sellerFeeToken).to.be.bignumber.equal(
-    shortTx.loanOffering.rates.takerFee
-      .plus(shortTx.buyOrder.takerFee)
+    OpenTx.loanOffering.rates.takerFee
+      .plus(OpenTx.buyOrder.takerFee)
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.loanOffering.rates.maxAmount,
-          shortTx.loanOffering.rates.takerFee
+          OpenTx.shortAmount,
+          OpenTx.loanOffering.rates.maxAmount,
+          OpenTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          shortTx.shortAmount,
-          shortTx.buyOrder.takerTokenAmount,
-          shortTx.buyOrder.takerFee
+          OpenTx.shortAmount,
+          OpenTx.buyOrder.takerTokenAmount,
+          OpenTx.buyOrder.takerFee
         )
       )
   );

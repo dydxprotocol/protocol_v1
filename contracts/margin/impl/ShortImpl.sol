@@ -60,7 +60,7 @@ library ShortImpl {
         public
         returns (bytes32)
     {
-        ShortShared.ShortTx memory transaction = parseShortTx(
+        ShortShared.OpenTx memory transaction = parseOpenTx(
             addresses,
             values256,
             values32,
@@ -119,7 +119,7 @@ library ShortImpl {
         );
 
         // Make this marginId doesn't already exist
-        assert(!MarginCommon.containsShortImpl(state, marginId));
+        assert(!MarginCommon.containsPositionImpl(state, marginId));
 
         return marginId;
     }
@@ -127,7 +127,7 @@ library ShortImpl {
     function recordShortInitiated(
         bytes32 marginId,
         address shortSeller,
-        ShortShared.ShortTx transaction,
+        ShortShared.OpenTx transaction,
         uint256 quoteTokenReceived
     )
         internal
@@ -153,11 +153,11 @@ library ShortImpl {
     function updateState(
         MarginState.State storage state,
         bytes32 marginId,
-        ShortShared.ShortTx transaction
+        ShortShared.OpenTx transaction
     )
         internal
     {
-        assert(!MarginCommon.containsShortImpl(state, marginId));
+        assert(!MarginCommon.containsPositionImpl(state, marginId));
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
@@ -165,24 +165,24 @@ library ShortImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.shorts[marginId].baseToken = transaction.baseToken;
-        state.shorts[marginId].quoteToken = transaction.quoteToken;
-        state.shorts[marginId].shortAmount = transaction.effectiveAmount;
-        state.shorts[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.shorts[marginId].startTimestamp = uint32(block.timestamp);
-        state.shorts[marginId].maxDuration = transaction.loanOffering.maxDuration;
-        state.shorts[marginId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.shorts[marginId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
+        state.positions[marginId].baseToken = transaction.baseToken;
+        state.positions[marginId].quoteToken = transaction.quoteToken;
+        state.positions[marginId].shortAmount = transaction.effectiveAmount;
+        state.positions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.positions[marginId].startTimestamp = uint32(block.timestamp);
+        state.positions[marginId].maxDuration = transaction.loanOffering.maxDuration;
+        state.positions[marginId].interestRate = transaction.loanOffering.rates.interestRate;
+        state.positions[marginId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newSeller = transaction.owner != msg.sender;
 
-        state.shorts[marginId].lender = TransferInternal.grantLoanOwnership(
+        state.positions[marginId].lender = TransferInternal.grantLoanOwnership(
             marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.shorts[marginId].seller = TransferInternal.grantShortOwnership(
+        state.positions[marginId].seller = TransferInternal.grantShortOwnership(
             marginId,
             newSeller ? msg.sender : address(0),
             transaction.owner);
@@ -190,7 +190,7 @@ library ShortImpl {
 
     // -------- Parsing Functions -------
 
-    function parseShortTx(
+    function parseOpenTx(
         address[11] addresses,
         uint256[9] values256,
         uint32[4] values32,
@@ -200,9 +200,9 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortShared.ShortTx memory)
+        returns (ShortShared.OpenTx memory)
     {
-        ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
+        ShortShared.OpenTx memory transaction = ShortShared.OpenTx({
             owner: addresses[0],
             baseToken: addresses[1],
             quoteToken: addresses[2],

@@ -44,7 +44,7 @@ library LiquidateImpl {
         public
         returns (uint256, uint256)
     {
-        CloseShortShared.CloseShortTx memory transaction = CloseShortShared.createCloseShortTx(
+        CloseShortShared.CloseTx memory transaction = CloseShortShared.createCloseTx(
             state,
             marginId,
             requestedLiquidationAmount,
@@ -74,7 +74,7 @@ library LiquidateImpl {
     // --------- Helper Functions ---------
 
     function logEventOnLiquidate(
-        CloseShortShared.CloseShortTx transaction
+        CloseShortShared.CloseTx transaction
     )
         internal
     {

@@ -20,8 +20,8 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * @title ERC20Short
  * @author dYdX
  *
- * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
- * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
+ * Contract used to tokenize positions and allow them to be used as ERC20-compliant
+ * tokens. Holding the tokens allows the holder to close a piece of the position, or be
  * entitled to some amount of quote tokens after settlement.
  */
  /* solium-disable-next-line */
@@ -92,7 +92,7 @@ contract ERC20Short is
     // All tokens will initially be allocated to this address
     address public INITIAL_TOKEN_HOLDER;
 
-    // Unique ID of the short this contract is tokenizing
+    // Unique ID of the position this contract is tokenizing
     bytes32 public MARGIN_ID;
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
@@ -136,10 +136,10 @@ contract ERC20Short is
     /**
      * Called by Margin when anyone transfers ownership of a short to this contract.
      * This function initializes the tokenization of the short given and returns this address to
-     * indicate to Margin that it is willing to take ownership of the short.
+     * indicate to Margin that it is willing to take ownership of the position.
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
@@ -155,15 +155,15 @@ contract ERC20Short is
         require(state == State.UNINITIALIZED);
         require(MARGIN_ID == marginId);
 
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, MARGIN_ID);
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
+        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
         assert(currentShortAmount > 0);
 
         // set relevant constants
         state = State.OPEN;
         totalSupply_ = currentShortAmount;
         balances[INITIAL_TOKEN_HOLDER] = currentShortAmount;
-        quoteToken = short.quoteToken;
+        quoteToken = position.quoteToken;
 
         // Record event
         emit Initialized(MARGIN_ID, currentShortAmount);
@@ -175,11 +175,11 @@ contract ERC20Short is
     }
 
     /**
-     * Called by Margin when additional value is added onto the short position this contract
+     * Called by Margin when additional value is added onto the position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
-     * @param  from         Address that added the value to the short position
-     * @param  marginId     Unique ID of the short
+     * @param  from         Address that added the value to the position
+     * @param  marginId     Unique ID of the position
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
@@ -207,13 +207,13 @@ contract ERC20Short is
     /**
      * Called by Margin when an owner of this token is attempting to close some of the short
      * position. Implementation is required per ShortOwner contract in order to be used by
-     * Margin to approve closing parts of a short position. If true is returned, this contract
+     * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
-     * amount of the short position was successfully closed.
+     * amount of the position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId         Unique ID of the short
+     * @param marginId         Unique ID of the position
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */
@@ -289,7 +289,7 @@ contract ERC20Short is
         returns (uint256)
     {
         // If in OPEN state, but the short is closed, set to CLOSED state
-        if (state == State.OPEN && Margin(MARGIN).isShortClosed(MARGIN_ID)) {
+        if (state == State.OPEN && Margin(MARGIN).isPositionClosed(MARGIN_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
@@ -340,17 +340,17 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                Margin(MARGIN).getShortBaseToken(MARGIN_ID)
+                Margin(MARGIN).getPositionBaseToken(MARGIN_ID)
             ).decimals();
     }
 
     /**
      * ERC20 name function. Returns a name based off marginId. Throws if this contract does not own
-     * the short.
+     * the position.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the short token which includes the hexadecimal marginId of the short
+     * @return  The name of the short token which includes the hexadecimal marginId of the position
      */
     function name()
         external
@@ -369,7 +369,7 @@ contract ERC20Short is
      * Implements ShortCustodian functionality. Called by external contracts to see where to pay
      * tokens as a result of closing a short on behalf of this contract
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          Address of this contract. Indicates funds should be sent to this contract
      */
     function getMarginDeedHolder(

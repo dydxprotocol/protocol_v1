@@ -27,7 +27,7 @@ library CloseShortShared {
     // ------- Structs -------
     // -----------------------
 
-    struct CloseShortTx {
+    struct CloseTx {
         bytes32 marginId;
         uint256 currentShortAmount;
         uint256 closeAmount;
@@ -49,22 +49,22 @@ library CloseShortShared {
 
     function closeShortStateUpdate(
         MarginState.State storage state,
-        CloseShortTx memory transaction
+        CloseTx memory transaction
     )
         internal
     {
-        // Delete the short, or just increase the closedAmount
+        // Delete the position, or just increase the closedAmount
         if (transaction.closeAmount == transaction.currentShortAmount) {
-            MarginCommon.cleanupShort(state, transaction.marginId);
+            MarginCommon.cleanupPosition(state, transaction.marginId);
         } else {
-            state.shorts[transaction.marginId].closedAmount =
-                state.shorts[transaction.marginId].closedAmount.add(transaction.closeAmount);
+            state.positions[transaction.marginId].closedAmount =
+                state.positions[transaction.marginId].closedAmount.add(transaction.closeAmount);
         }
     }
 
     function sendQuoteTokensToPayoutRecipient(
         MarginState.State storage state,
-        CloseShortShared.CloseShortTx memory transaction,
+        CloseShortShared.CloseTx memory transaction,
         uint256 buybackCost,
         uint256 receivedBaseToken
     )
@@ -125,7 +125,7 @@ library CloseShortShared {
         return payout;
     }
 
-    function createCloseShortTx(
+    function createCloseTx(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 requestedAmount,
@@ -135,25 +135,25 @@ library CloseShortShared {
         bool isLiquidation
     )
         internal
-        returns (CloseShortTx memory)
+        returns (CloseTx memory)
     {
         // Validate
         require(payoutRecipient != address(0));
         require(requestedAmount > 0);
 
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
         uint256 closeAmount = getApprovedAmount(
-            short,
+            position,
             marginId,
             requestedAmount,
             payoutRecipient,
             isLiquidation
         );
 
-        return parseCloseShortTx(
+        return parseCloseTx(
             state,
-            short,
+            position,
             marginId,
             closeAmount,
             payoutRecipient,
@@ -163,9 +163,9 @@ library CloseShortShared {
         );
     }
 
-    function parseCloseShortTx(
+    function parseCloseTx(
         MarginState.State storage state,
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         bytes32 marginId,
         uint256 closeAmount,
         address payoutRecipient,
@@ -175,12 +175,12 @@ library CloseShortShared {
     )
         internal
         view
-        returns (CloseShortTx memory)
+        returns (CloseTx memory)
     {
         require(payoutRecipient != address(0));
 
-        uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, short.quoteToken);
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, position.quoteToken);
+        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
             currentShortAmount,
@@ -189,13 +189,13 @@ library CloseShortShared {
         uint256 baseTokenOwed = 0;
         if (!isLiquidation) {
             baseTokenOwed = MarginCommon.calculateOwedAmount(
-                short,
+                position,
                 closeAmount,
                 block.timestamp
             );
         }
 
-        return CloseShortTx({
+        return CloseTx({
             marginId: marginId,
             currentShortAmount: currentShortAmount,
             closeAmount: closeAmount,
@@ -203,17 +203,17 @@ library CloseShortShared {
             startingQuoteToken: startingQuoteToken,
             availableQuoteToken: availableQuoteToken,
             payoutRecipient: payoutRecipient,
-            baseToken: short.baseToken,
-            quoteToken: short.quoteToken,
-            shortSeller: short.seller,
-            shortLender: short.lender,
+            baseToken: position.baseToken,
+            quoteToken: position.quoteToken,
+            shortSeller: position.seller,
+            shortLender: position.lender,
             exchangeWrapper: exchangeWrapper,
             payoutInQuoteToken: payoutInQuoteToken
         });
     }
 
     function getApprovedAmount(
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         bytes32 marginId,
         uint256 requestedAmount,
         address payoutRecipient,
@@ -222,12 +222,12 @@ library CloseShortShared {
         internal
         returns (uint256)
     {
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
         uint256 newAmount = Math.min256(requestedAmount, currentShortAmount);
 
         // If not the short seller, requires short seller to approve msg.sender
-        if (short.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortDelegator(short.seller).closeOnBehalfOf(
+        if (position.seller != msg.sender) {
+            uint256 allowedCloseAmount = CloseShortDelegator(position.seller).closeOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
                 marginId,
@@ -238,8 +238,8 @@ library CloseShortShared {
         }
 
         // If not the lender, requires lender to approve msg.sender
-        if (requireLenderApproval && short.lender != msg.sender) {
-            uint256 allowedLiquidationAmount = LiquidateDelegator(short.lender).liquidateOnBehalfOf(
+        if (requireLenderApproval && position.lender != msg.sender) {
+            uint256 allowedLiquidationAmount = LiquidateDelegator(position.lender).liquidateOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
                 marginId,

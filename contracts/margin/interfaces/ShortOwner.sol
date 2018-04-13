@@ -31,10 +31,10 @@ contract ShortOwner is OnlyMargin {
 
     /**
      * Function a contract must implement in order to receive ownership of a short sell via the
-     * transferShort function or the atomic-assign to the "owner" field when opening a short.
+     * transferShort function or the atomic-assign to the "owner" field when opening a position.
      *
      * @param  from     Address of the previous owner
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          The address to pass short ownership to. Own address to keep short ownership,
                         0x0 to reject loan ownership completely.
      */
@@ -48,12 +48,12 @@ contract ShortOwner is OnlyMargin {
 
     /**
      * Function a contract must implement in order to allow additional value to be added onto
-     * an owned short. Margin will call this on the owner of a short
+     * an owned position. Margin will call this on the owner of a short
      * during Margin#addValueToShort. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
      * @param  from         Address initiating the addition of funds to the position
-     * @param  marginId     Unique ID of the short
+     * @param  marginId     Unique ID of the position
      * @param  amountAdded  Amount to be added to the position
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise

@@ -36,8 +36,8 @@ library MarginState {
         // on-chain loan offerings
         mapping (bytes32 => bool) approvedLoans;
 
-        // Mapping that contains all short sells. Mapped by: marginId -> Short
-        mapping (bytes32 => MarginCommon.Short) shorts;
+        // Mapping that contains all short sells. Mapped by: marginId -> Position
+        mapping (bytes32 => MarginCommon.Position) positions;
 
         mapping (bytes32 => bool) closedShorts;
     }

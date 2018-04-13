@@ -27,7 +27,7 @@ const TWO = new BigNumber(2);
 contract('DutchAuctionCloser', function(accounts) {
   let dydxMargin, VaultContract, ERC721ShortContract;
   let BaseTokenContract, QuoteTokenContract;
-  let shortTx;
+  let OpenTx;
   const dutchBidder = accounts[9];
 
   before('retrieve deployed contracts', async () => {
@@ -65,19 +65,19 @@ contract('DutchAuctionCloser', function(accounts) {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
-      shortTx = await doShort(accounts, salt++, ERC721Short.address);
+      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
       await ERC721ShortContract.approveRecipient(DutchAuctionCloser.address, true);
       await dydxMargin.callInLoan(
-        shortTx.id,
+        OpenTx.id,
         0, /*requiredDeposit*/
-        { from: shortTx.loanOffering.payer }
+        { from: OpenTx.loanOffering.payer }
       );
-      callTimeLimit = shortTx.loanOffering.callTimeLimit;
+      callTimeLimit = OpenTx.loanOffering.callTimeLimit;
 
       // grant tokens and set permissions for bidder
       const numTokens = await BaseTokenContract.balanceOf(dutchBidder);
-      const maxInterest = await getMaxInterestFee(shortTx);
-      const targetTokens = shortTx.shortAmount.plus(maxInterest);
+      const maxInterest = await getMaxInterestFee(OpenTx);
+      const targetTokens = OpenTx.shortAmount.plus(maxInterest);
 
       if (numTokens < targetTokens) {
         await BaseTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
@@ -96,8 +96,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount.div(2),
+        OpenTx,
+        OpenTx.shortAmount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -108,8 +108,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount.div(2),
+        OpenTx,
+        OpenTx.shortAmount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -120,8 +120,8 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await expectThrow( callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount.div(2),
+        OpenTx,
+        OpenTx.shortAmount.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -131,33 +131,33 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
-      const quoteVault = await VaultContract.balances.call(shortTx.id, QuoteToken.address);
-      const closeAmount = shortTx.shortAmount.div(2);
+      const quoteVault = await VaultContract.balances.call(OpenTx.id, QuoteToken.address);
+      const closeAmount = OpenTx.shortAmount.div(2);
 
       // closing half is fine
       const closeTx1 = await callCloseShortDirectly(
         dydxMargin,
-        shortTx,
+        OpenTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
       );
-      const owedAmount1 = await getOwedAmount(shortTx, closeTx1, closeAmount);
+      const owedAmount1 = await getOwedAmount(OpenTx, closeTx1, closeAmount);
 
       // closing the other half is fine
       const closeTx2 = await callCloseShortDirectly(
         dydxMargin,
-        shortTx,
+        OpenTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
       );
-      const owedAmount2 = await getOwedAmount(shortTx, closeTx2, closeAmount);
+      const owedAmount2 = await getOwedAmount(OpenTx, closeTx2, closeAmount);
 
       // cannot close half a third time
       await expectThrow( callCloseShortDirectly(
         dydxMargin,
-        shortTx,
+        OpenTx,
         closeAmount,
         dutchBidder,
         DutchAuctionCloser.address
@@ -169,7 +169,7 @@ contract('DutchAuctionCloser', function(accounts) {
         quoteBidder
       ] = await Promise.all([
         BaseTokenContract.balanceOf.call(dutchBidder),
-        QuoteTokenContract.balanceOf.call(shortTx.seller),
+        QuoteTokenContract.balanceOf.call(OpenTx.seller),
         QuoteTokenContract.balanceOf.call(dutchBidder),
       ]);
 

@@ -61,10 +61,10 @@ library AddValueToShortImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
-        ShortShared.ShortTx memory transaction = parseAddValueToShortTx(
-            short,
+        ShortShared.OpenTx memory transaction = parseAddValueToOpenTx(
+            position,
             addresses,
             values256,
             values32,
@@ -76,13 +76,13 @@ library AddValueToShortImpl {
         uint256 quoteTokenFromSell = preStateUpdate(
             state,
             transaction,
-            short,
+            position,
             marginId,
             orderData
         );
 
         updateState(
-            short,
+            position,
             marginId,
             transaction.effectiveAmount,
             transaction.loanOffering.payer
@@ -102,7 +102,7 @@ library AddValueToShortImpl {
         recordValueAddedToShort(
             transaction,
             marginId,
-            short,
+            position,
             quoteTokenFromSell
         );
 
@@ -117,24 +117,24 @@ library AddValueToShortImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
         uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
             marginId,
             state,
             amount,
-            short
+            position
         );
 
         Vault(state.VAULT).transferToVault(
             marginId,
-            short.quoteToken,
+            position.quoteToken,
             msg.sender,
             quoteTokenAmount
         );
 
         updateState(
-            short,
+            position,
             marginId,
             amount,
             msg.sender
@@ -144,8 +144,8 @@ library AddValueToShortImpl {
             marginId,
             msg.sender,
             msg.sender,
-            short.seller,
-            short.lender,
+            position.seller,
+            position.lender,
             "",
             address(0),
             0,
@@ -161,19 +161,19 @@ library AddValueToShortImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        ShortShared.ShortTx transaction,
-        MarginCommon.Short storage short,
+        ShortShared.OpenTx transaction,
+        MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
     )
         internal
         returns (uint256 /* quoteTokenFromSell */)
     {
-        validate(transaction, short);
+        validate(transaction, position);
         uint256 positionMinimumQuoteToken = setDepositAmount(
             state,
             transaction,
-            short,
+            position,
             marginId,
             orderData
         );
@@ -196,16 +196,16 @@ library AddValueToShortImpl {
     }
 
     function validate(
-        ShortShared.ShortTx transaction,
-        MarginCommon.Short storage short
+        ShortShared.OpenTx transaction,
+        MarginCommon.Position storage position
     )
         internal
         view
     {
-        require(short.callTimeLimit <= transaction.loanOffering.callTimeLimit);
+        require(position.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
-        // require the short to end no later than the loanOffering's maximum acceptable end time
-        uint256 shortEndTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
+        // require the position to end no later than the loanOffering's maximum acceptable end time
+        uint256 shortEndTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
         require(shortEndTimestamp <= offeringEndTimestamp);
 
@@ -215,8 +215,8 @@ library AddValueToShortImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        ShortShared.ShortTx transaction,
-        MarginCommon.Short storage short,
+        ShortShared.OpenTx transaction,
+        MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
     )
@@ -230,7 +230,7 @@ library AddValueToShortImpl {
             marginId,
             state,
             transaction.effectiveAmount,
-            short
+            position
         );
 
         if (transaction.depositInQuoteToken) {
@@ -264,33 +264,33 @@ library AddValueToShortImpl {
         bytes32 marginId,
         MarginState.State storage state,
         uint256 effectiveAmount,
-        MarginCommon.Short storage short
+        MarginCommon.Position storage position
     )
         internal
         view
         returns (uint256)
     {
-        uint256 quoteTokenBalance = Vault(state.VAULT).balances(marginId, short.quoteToken);
+        uint256 quoteTokenBalance = Vault(state.VAULT).balances(marginId, position.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             effectiveAmount,
-            short.shortAmount,
+            position.shortAmount,
             quoteTokenBalance
         );
     }
 
     function updateState(
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         bytes32 marginId,
         uint256 effectiveAmount,
         address loanPayer
     )
         internal
     {
-        short.shortAmount = short.shortAmount.add(effectiveAmount);
+        position.shortAmount = position.shortAmount.add(effectiveAmount);
 
-        address seller = short.seller;
-        address lender = short.lender;
+        address seller = position.seller;
+        address lender = position.lender;
 
         // Unless msg.sender is the position short seller and is not a smart contract, call out
         // to the short seller to ensure they consent to value being added
@@ -319,9 +319,9 @@ library AddValueToShortImpl {
     }
 
     function recordValueAddedToShort(
-        ShortShared.ShortTx transaction,
+        ShortShared.OpenTx transaction,
         bytes32 marginId,
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         uint256 quoteTokenFromSell
     )
         internal
@@ -330,8 +330,8 @@ library AddValueToShortImpl {
             marginId,
             msg.sender,
             transaction.loanOffering.payer,
-            short.seller,
-            short.lender,
+            position.seller,
+            position.lender,
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
@@ -343,8 +343,8 @@ library AddValueToShortImpl {
 
     // -------- Parsing Functions -------
 
-    function parseAddValueToShortTx(
-        MarginCommon.Short storage short,
+    function parseAddValueToOpenTx(
+        MarginCommon.Position storage position,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -354,21 +354,21 @@ library AddValueToShortImpl {
     )
         internal
         view
-        returns (ShortShared.ShortTx memory)
+        returns (ShortShared.OpenTx memory)
     {
-        ShortShared.ShortTx memory transaction = ShortShared.ShortTx({
-            owner: short.seller,
-            baseToken: short.baseToken,
-            quoteToken: short.quoteToken,
+        ShortShared.OpenTx memory transaction = ShortShared.OpenTx({
+            owner: position.seller,
+            baseToken: position.baseToken,
+            quoteToken: position.quoteToken,
             effectiveAmount: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForAddValue(
-                short,
+                position,
                 values256[7],
                 block.timestamp
             ),
             depositAmount: 0,
             loanOffering: parseLoanOfferingFromAddValueTx(
-                short,
+                position,
                 addresses,
                 values256,
                 values32,
@@ -383,7 +383,7 @@ library AddValueToShortImpl {
     }
 
     function parseLoanOfferingFromAddValueTx(
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -397,12 +397,12 @@ library AddValueToShortImpl {
         MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
             payer: addresses[0],
             signer: addresses[1],
-            owner: short.lender,
+            owner: position.lender,
             taker: addresses[2],
             feeRecipient: addresses[3],
             lenderFeeToken: addresses[4],
             takerFeeToken: addresses[5],
-            rates: parseLoanOfferingRatesFromAddValueTx(short, values256),
+            rates: parseLoanOfferingRatesFromAddValueTx(position, values256),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
@@ -413,15 +413,15 @@ library AddValueToShortImpl {
 
         loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
             loanOffering,
-            short.quoteToken,
-            short.baseToken
+            position.quoteToken,
+            position.baseToken
         );
 
         return loanOffering;
     }
 
     function parseLoanOfferingRatesFromAddValueTx(
-        MarginCommon.Short storage short,
+        MarginCommon.Position storage position,
         uint256[8] values256
     )
         internal
@@ -432,10 +432,10 @@ library AddValueToShortImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minQuoteToken: values256[2],
-            interestRate: short.interestRate,
+            interestRate: position.interestRate,
             lenderFee: values256[3],
             takerFee: values256[4],
-            interestPeriod: short.interestPeriod
+            interestPeriod: position.interestPeriod
         });
 
         return rates;

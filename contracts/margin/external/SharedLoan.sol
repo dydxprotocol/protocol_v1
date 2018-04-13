@@ -75,7 +75,7 @@ contract SharedLoan is
     // Initial lender of the position
     address public INITIAL_LENDER;
 
-    // Unique ID of the short this contract is lending for
+    // Unique ID of the position this contract is lending for
     bytes32 public MARGIN_ID;
 
     // Addresses that can call in the loan
@@ -138,7 +138,7 @@ contract SharedLoan is
      * that it is willing to take ownership of the loan.
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
     function receiveLoanOwnership(
@@ -154,16 +154,16 @@ contract SharedLoan is
         require(state == State.UNINITIALIZED);
         require(MARGIN_ID == marginId);
 
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, MARGIN_ID);
-        uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
+        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
+        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
         assert(currentShortAmount > 0);
 
         // set relevant constants
         state = State.OPEN;
         totalAmount = currentShortAmount;
         balances[INITIAL_LENDER] = currentShortAmount;
-        baseToken = short.baseToken;
-        quoteToken = short.quoteToken;
+        baseToken = position.baseToken;
+        quoteToken = position.quoteToken;
 
         emit Initialized(MARGIN_ID, currentShortAmount);
 
@@ -176,11 +176,11 @@ contract SharedLoan is
     }
 
     /**
-     * Called by Margin when additional value is added onto the short position this contract
+     * Called by Margin when additional value is added onto the position this contract
      * is lending for. Balance is added to the address that lent the additional tokens.
      *
      * @param  from         Address that lent the additional tokens
-     * @param  marginId     Unique ID of the short
+     * @param  marginId     Unique ID of the position
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
@@ -211,7 +211,7 @@ contract SharedLoan is
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
      * @param  who      Address attempting to initiate the loan call
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      *  param  (unused)
      * @return          True to consent to the loan being called if the initiator is a trusted
      *                  loan caller, false otherwise
@@ -237,7 +237,7 @@ contract SharedLoan is
      * this contract owns
      *
      * @param  who      Address attempting to initiate the loan call cancel
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          True to consent to the loan call being canceled if the initiator is a
      *                  trusted loan caller, false otherwise
      */
@@ -262,7 +262,7 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          True to consent to the loan being force recovered
      */
     function forceRecoverLoanOnBehalfOf(
@@ -357,7 +357,7 @@ contract SharedLoan is
         internal
     {
         if (state != State.CLOSED) {
-            if (Margin(MARGIN).isShortClosed(MARGIN_ID)) {
+            if (Margin(MARGIN).isPositionClosed(MARGIN_ID)) {
                 state = State.CLOSED;
             }
         }

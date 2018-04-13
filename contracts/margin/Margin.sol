@@ -136,7 +136,7 @@ contract Margin is
     }
 
     /**
-     * Add value to a short sell. Funds will be borrowed from the loan payer and sold as per short.
+     * Add value to a short sell. Funds will be borrowed from the loan payer and sold as per position.
      * The value added to the short will be equal to the effective amount lent, and will incorporate
      * interest already earned by the position so far.
      *
@@ -208,7 +208,7 @@ contract Margin is
      * Add value to a short sell by directly putting up quote token. The adder will serve as both
      * the lender and seller.
      *
-     * @param marginId  Unique ID of the short sell
+     * @param marginId  Unique ID of the position sell
      * @param amount    Amount (in base token) to add to the short
      * @return          Amount of quote token pulled from the adder
      */
@@ -231,10 +231,10 @@ contract Margin is
     /**
     * Close a short sell. May be called by the short seller or with the approval of the short
     * seller. May provide an order and exchangeWrapper to facilitate the closing of the
-    * short position. The short seller is sent quote token stored in the contract.
+    * position. The short seller is sent quote token stored in the contract.
      *
      * @param  marginId                 Unique ID for the short sell
-     * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
+     * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @param  exchangeWrapper   Address of the exchange wrapper
@@ -274,7 +274,7 @@ contract Margin is
      * Helper to close a short sell by paying base token directly from the short seller
      *
      * @param  marginId                 Unique ID for the short sell
-     * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
+     * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @return                          Values corresponding to:
@@ -306,7 +306,7 @@ contract Margin is
     /**
      * Liquidate loan position and withdraw quote tokens from the vault.
      * Must be approved by the short seller (e.g., by requiring the lender to own part of the
-     * short position, and burning in order to liquidate part of the loan).
+     * position, and burning in order to liquidate part of the loan).
      *
      * @param  marginId                    Unique ID for the short sell
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
@@ -337,7 +337,7 @@ contract Margin is
      * Call in a short sell loan.
      * Only callable by the lender for a short sell. After loan is called in, the short seller
      * will have time equal to the call time limit specified on the original short sell to
-     * close the short and repay the loan. If the short seller does not close the short, the
+     * close the short and repay the loan. If the short seller does not close the position, the
      * lender can use forceRecoverLoan to recover his funds.
      *
      * @param  marginId         Unique ID for the short sell
@@ -390,7 +390,7 @@ contract Margin is
 
     /**
      * Deposit additional quote token as colateral for a short sell loan. Cancels loan call if:
-     * 0 < short.requiredDeposit < depositAmount
+     * 0 < position.requiredDeposit < depositAmount
      *
      * @param  marginId         Unique ID for the short sell
      * @param  depositAmount    Additional amount in quote token to deposit
@@ -517,7 +517,7 @@ contract Margin is
 
     /**
      * Transfer ownership of a loan to a new address. This new address will be entitled
-     * to all payouts for this loan. Only callable by the lender for a short. If the "who"
+     * to all payouts for this loan. Only callable by the lender for a position. If the "who"
      * param is a contract, it must implement the LoanOwner interface.
      *
      * @param  marginId Unique ID for the short sell
@@ -538,7 +538,7 @@ contract Margin is
 
     /**
      * Transfer ownership of a short to a new address. This new address will be entitled
-     * to all payouts for this short. Only callable by the short seller for a short. If the "who"
+     * to all payouts for this position. Only callable by the short seller for a position. If the "who"
      * param is a contract, it must implement the ShortOwner interface.
      *
      * @param  marginId Unique ID for the short sell

@@ -21,7 +21,7 @@ library MarginCommon {
     // ------- Structs -------
     // -----------------------
 
-    struct Short {
+    struct Position {
         address baseToken;       // Immutable
         address quoteToken;      // Immutable
         address lender;
@@ -85,18 +85,18 @@ library MarginCommon {
         return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
     }
 
-    function cleanupShort(
+    function cleanupPosition(
         MarginState.State storage state,
         bytes32 marginId
     )
         internal
     {
-        delete state.shorts[marginId];
+        delete state.positions[marginId];
         state.closedShorts[marginId] = true;
     }
 
     function calculateOwedAmount(
-        Short short,
+        Position memory position,
         uint256 closeAmount,
         uint256 endTimestamp
     )
@@ -104,11 +104,11 @@ library MarginCommon {
         pure
         returns (uint256)
     {
-        uint256 timeElapsed = calculateEffectiveTimeElapsed(short, endTimestamp);
+        uint256 timeElapsed = calculateEffectiveTimeElapsed(position, endTimestamp);
 
         return InterestImpl.getCompoundedInterest(
             closeAmount,
-            short.interestRate,
+            position.interestRate,
             timeElapsed
         );
     }
@@ -117,17 +117,17 @@ library MarginCommon {
      * Calculates time elapsed rounded up to the nearest interestPeriod
      */
     function calculateEffectiveTimeElapsed(
-        Short short,
+        Position memory position,
         uint256 timestamp
     )
         internal
         pure
         returns (uint256)
     {
-        uint256 elapsed = timestamp.sub(short.startTimestamp);
+        uint256 elapsed = timestamp.sub(position.startTimestamp);
 
         // round up to interestPeriod
-        uint256 period = short.interestPeriod;
+        uint256 period = position.interestPeriod;
         if (period > 1) {
             elapsed = MathHelpers.divisionRoundedUp(elapsed, period).mul(period);
         }
@@ -135,12 +135,12 @@ library MarginCommon {
         // bound by maxDuration
         return Math.min256(
             elapsed,
-            short.maxDuration
+            position.maxDuration
         );
     }
 
     function calculateLenderAmountForAddValue(
-        Short short,
+        Position memory position,
         uint256 addAmount,
         uint256 endTimestamp
     )
@@ -148,11 +148,11 @@ library MarginCommon {
         pure
         returns (uint256)
     {
-        uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(short, endTimestamp);
+        uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(position, endTimestamp);
 
         return InterestImpl.getCompoundedInterest(
             addAmount,
-            short.interestRate,
+            position.interestRate,
             timeElapsed
         );
     }
@@ -161,17 +161,17 @@ library MarginCommon {
      * Calculates time elapsed rounded down to the nearest interestPeriod
      */
     function calculateEffectiveTimeElapsedForNewLender(
-        Short short,
+        Position memory position,
         uint256 timestamp
     )
         internal
         pure
         returns (uint256)
     {
-        uint256 elapsed = timestamp.sub(short.startTimestamp);
+        uint256 elapsed = timestamp.sub(position.startTimestamp);
 
         // round down to interestPeriod
-        uint256 period = short.interestPeriod;
+        uint256 period = position.interestPeriod;
         if (period > 1) {
             elapsed = elapsed.div(period).mul(period);
         }
@@ -179,7 +179,7 @@ library MarginCommon {
         // bound by maxDuration
         return Math.min256(
             elapsed,
-            short.maxDuration
+            position.maxDuration
         );
     }
 
@@ -229,7 +229,7 @@ library MarginCommon {
         );
     }
 
-    function containsShortImpl(
+    function containsPositionImpl(
         MarginState.State storage state,
         bytes32 marginId
     )
@@ -237,22 +237,22 @@ library MarginCommon {
         internal
         returns (bool)
     {
-        return state.shorts[marginId].startTimestamp != 0;
+        return state.positions[marginId].startTimestamp != 0;
     }
 
-    function getShortObject(
+    function getPositionObject(
         MarginState.State storage state,
         bytes32 marginId
     )
         internal
         view
-        returns (Short storage)
+        returns (Position storage)
     {
-        Short storage short = state.shorts[marginId];
+        Position storage position = state.positions[marginId];
 
-        // This checks that the short exists
-        require(short.startTimestamp != 0);
+        // This checks that the position exists
+        require(position.startTimestamp != 0);
 
-        return short;
+        return position;
     }
 }

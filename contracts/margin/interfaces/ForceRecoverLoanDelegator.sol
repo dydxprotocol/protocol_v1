@@ -31,13 +31,13 @@ contract ForceRecoverLoanDelegator is LoanOwner {
 
     /**
      * Function a contract must implement in order to let other addresses call forceRecoverLoan()
-     * for the loan-side of a short position.
+     * for the loan-side of a position.
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
-     * @param marginId       Unique ID of the short
+     * @param marginId       Unique ID of the position
      * @return               True if the user is allowed to cancel the short call, false otherwise
      */
     function forceRecoverLoanOnBehalfOf(

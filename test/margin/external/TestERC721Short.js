@@ -60,26 +60,26 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds for new short', async () => {
-      const shortTx = await doShort(accounts, salt++, ERC721Short.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(shortTx.id));
+      const OpenTx = await doShort(accounts, salt++, ERC721Short.address);
+      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
 
     it('succeeds for half-closed short', async () => {
-      const shortTx = await doShort(accounts, salt++);
+      const OpenTx = await doShort(accounts, salt++);
 
       // close half the short
       const sellOrder = await createSignedSellOrder(accounts, salt++);
-      await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
+      await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
       await callCloseShort(
         dydxMargin,
-        shortTx,
+        OpenTx,
         sellOrder,
-        shortTx.shortAmount.div(2));
+        OpenTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await dydxMargin.transferShort(shortTx.id, ERC721ShortContract.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(shortTx.id));
+      await dydxMargin.transferShort(OpenTx.id, ERC721ShortContract.address);
+      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
   });
@@ -91,8 +91,8 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds for owned short', async () => {
-      const shortTx = await doShort(accounts, salt++, ERC721Short.address);
-      const deedHolder = await ERC721ShortContract.getMarginDeedHolder.call(shortTx.id);
+      const OpenTx = await doShort(accounts, salt++, ERC721Short.address);
+      const deedHolder = await ERC721ShortContract.getMarginDeedHolder.call(OpenTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
   });
@@ -171,24 +171,24 @@ contract('ERC721Short', function(accounts) {
   describe('#transferShort', () => {
     const receiver = accounts[9];
     const shortSeller = accounts[0];
-    let shortTx;
+    let OpenTx;
 
     beforeEach('sets up short', async () => {
-      shortTx = await doShort(accounts, salt++, ERC721Short.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(shortTx.id));
+      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
+      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(shortSeller);
     });
 
     it('succeeds when called by ownerOf', async () => {
-      await ERC721ShortContract.transferShort(shortTx.id, receiver, { from: shortSeller });
-      await expectThrow( ERC721ShortContract.ownerOf.call(uint256(shortTx.id)));
-      const newOwner = await dydxMargin.getshortSeller.call(shortTx.id);
+      await ERC721ShortContract.transferShort(OpenTx.id, receiver, { from: shortSeller });
+      await expectThrow( ERC721ShortContract.ownerOf.call(uint256(OpenTx.id)));
+      const newOwner = await dydxMargin.getPositionSeller.call(OpenTx.id);
       expect(newOwner).to.equal(receiver);
     });
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        ERC721ShortContract.transferShort(shortTx.id, receiver, { from: accounts[2] }));
+        ERC721ShortContract.transferShort(OpenTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existant short', async () => {
@@ -198,31 +198,31 @@ contract('ERC721Short', function(accounts) {
   });
 
   describe('#closeOnBehalfOf', () => {
-    let shortTx;
+    let OpenTx;
     const approvedCloser = accounts[6];
     const approvedRecipient = accounts[7];
     const unapprovedAcct = accounts[9];
 
     async function initBase(account) {
-      const maxInterest = await getMaxInterestFee(shortTx);
-      const amount = shortTx.shortAmount.plus(maxInterest);
+      const maxInterest = await getMaxInterestFee(OpenTx);
+      const amount = OpenTx.shortAmount.plus(maxInterest);
       await baseToken.issueTo(account, amount);
       await baseToken.approve(ProxyContract.address, amount, { from: account });
     }
 
     beforeEach('sets up short', async () => {
-      shortTx = await doShort(accounts, salt++, ERC721Short.address);
-      await ERC721ShortContract.approveCloser(approvedCloser, true, { from: shortTx.seller });
-      await ERC721ShortContract.approveRecipient(approvedRecipient, true, { from: shortTx.seller });
+      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
+      await ERC721ShortContract.approveCloser(approvedCloser, true, { from: OpenTx.seller });
+      await ERC721ShortContract.approveRecipient(approvedRecipient, true, { from: OpenTx.seller });
     });
 
     it('succeeds for owner', async () => {
-      await initBase(shortTx.seller);
+      await initBase(OpenTx.seller);
       await callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount,
-        shortTx.seller,
+        OpenTx,
+        OpenTx.shortAmount,
+        OpenTx.seller,
         unapprovedAcct
       );
     });
@@ -231,8 +231,8 @@ contract('ERC721Short', function(accounts) {
       await initBase(unapprovedAcct);
       await callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount,
+        OpenTx,
+        OpenTx.shortAmount,
         unapprovedAcct,
         approvedRecipient
       );
@@ -242,8 +242,8 @@ contract('ERC721Short', function(accounts) {
       await initBase(approvedCloser);
       await callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount,
+        OpenTx,
+        OpenTx.shortAmount,
         approvedCloser,
         unapprovedAcct
       );
@@ -253,8 +253,8 @@ contract('ERC721Short', function(accounts) {
       await initBase(unapprovedAcct);
       await expectThrow( callCloseShortDirectly(
         dydxMargin,
-        shortTx,
-        shortTx.shortAmount,
+        OpenTx,
+        OpenTx.shortAmount,
         unapprovedAcct,
         unapprovedAcct
       ));

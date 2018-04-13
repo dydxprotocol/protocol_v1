@@ -24,42 +24,42 @@ contract ShortGetters is MarginStorage {
     /**
      * Gets if a short is currently open
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          True if the short is exists and is open
      */
-    function containsShort(
+    function containsPosition(
         bytes32 marginId
     )
         view
         external
         returns (bool)
     {
-        return MarginCommon.containsShortImpl(state, marginId);
+        return MarginCommon.containsPositionImpl(state, marginId);
     }
 
     /**
      * Gets if a short is currently margin-called
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          True if the short is margin-called
      */
-    function isShortCalled(
+    function isPositionCalled(
         bytes32 marginId
     )
         view
         external
         returns (bool)
     {
-        return (state.shorts[marginId].callTimestamp > 0);
+        return (state.positions[marginId].callTimestamp > 0);
     }
 
     /**
      * Gets if a short was previously closed
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          True if the short is now closed
      */
-    function isShortClosed(
+    function isPositionClosed(
         bytes32 marginId
     )
         view
@@ -72,21 +72,21 @@ contract ShortGetters is MarginStorage {
     /**
      * Gets the number of quote tokens currently locked up in Vault for a particular short
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          The number of quote tokens
      */
-    function getShortBalance(
+    function getPositionBalance(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        if (!MarginCommon.containsShortImpl(state, marginId)) {
+        if (!MarginCommon.containsPositionImpl(state, marginId)) {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(marginId, state.shorts[marginId].quoteToken);
+        return Vault(state.VAULT).balances(marginId, state.positions[marginId].quoteToken);
     }
 
     /**
@@ -94,7 +94,7 @@ contract ShortGetters is MarginStorage {
      * Returns 1 if the interest fee increases every second.
      * Returns 0 if the interest fee will never increase again.
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          The number of seconds until the interest fee will increase
      */
     function getTimeUntilInterestIncrease(
@@ -104,10 +104,10 @@ contract ShortGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
-            shortObject,
+            positionObject,
             block.timestamp
         );
 
@@ -124,21 +124,21 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens currently needed to close the short completely, including
      * interest fees.
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          The number of base tokens
      */
-    function getShortOwedAmount(
+    function getPositionOwedAmount(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
-            shortObject,
-            shortObject.shortAmount.sub(shortObject.closedAmount),
+            positionObject,
+            positionObject.shortAmount.sub(positionObject.closedAmount),
             block.timestamp
         );
     }
@@ -147,12 +147,12 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens needed to close a given amount of the short at a given time,
      * including interest fees.
      *
-     * @param  marginId     Unique ID of the short
+     * @param  marginId     Unique ID of the position
      * @param  marginId     Amount of short being closed
      * @param  timestamp    Block timestamp in seconds of close
      * @return              The number of base tokens owed at the given time and amount
      */
-    function getShortOwedAmountAtTime(
+    function getPositionOwedAmountAtTime(
         bytes32 marginId,
         uint256 amount,
         uint32  timestamp
@@ -161,10 +161,10 @@ contract ShortGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
-            shortObject,
+            positionObject,
             amount,
             timestamp
         );
@@ -174,7 +174,7 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
      * onto the short at a given time.
      *
-     * @param  marginId     Unique ID of the short
+     * @param  marginId     Unique ID of the position
      * @param  marginId     Amount being added to short
      * @param  timestamp    Block timestamp in seconds of addition
      * @return              The number of base tokens that can be borrowed at the given
@@ -189,10 +189,10 @@ contract ShortGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
-            shortObject,
+            positionObject,
             amount,
             timestamp
         );
@@ -203,10 +203,10 @@ contract ShortGetters is MarginStorage {
     // --------------------------
 
     /**
-     * Get a Short by id. This does not validate the short exists. If the short does not exist
-     * all 0's will be returned.
+     * Get a Position by id. This does not validate the position exists. If the position does not
+     * exist, all 0's will be returned.
      *
-     * @param  marginId Unique ID of the short
+     * @param  marginId Unique ID of the position
      * @return          Addresses corresponding to:
      *
      *                  [0] = baseToken
@@ -229,7 +229,7 @@ contract ShortGetters is MarginStorage {
      *                  [4] = interestRate
      *                  [5] = interestPeriod
      */
-    function getShort(
+    function getPosition(
         bytes32 marginId
     )
         view
@@ -240,27 +240,27 @@ contract ShortGetters is MarginStorage {
             uint32[6]
         )
     {
-        MarginCommon.Short storage short = state.shorts[marginId];
+        MarginCommon.Position storage position = state.positions[marginId];
 
         return (
             [
-                short.baseToken,
-                short.quoteToken,
-                short.lender,
-                short.seller
+                position.baseToken,
+                position.quoteToken,
+                position.lender,
+                position.seller
             ],
             [
-                short.shortAmount,
-                short.closedAmount,
-                short.requiredDeposit
+                position.shortAmount,
+                position.closedAmount,
+                position.requiredDeposit
             ],
             [
-                short.callTimeLimit,
-                short.startTimestamp,
-                short.callTimestamp,
-                short.maxDuration,
-                short.interestRate,
-                short.interestPeriod
+                position.callTimeLimit,
+                position.startTimestamp,
+                position.callTimestamp,
+                position.maxDuration,
+                position.interestRate,
+                position.interestPeriod
             ]
         );
     }
@@ -269,143 +269,143 @@ contract ShortGetters is MarginStorage {
     // ----- Individual Properties -----
     // ---------------------------------
 
-    function getShortLender(
+    function getPositionLender(
         bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[marginId].lender;
+        return state.positions[marginId].lender;
     }
 
-    function getshortSeller(
+    function getPositionSeller(
         bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[marginId].seller;
+        return state.positions[marginId].seller;
     }
 
-    function getShortQuoteToken(
+    function getPositionQuoteToken(
         bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[marginId].quoteToken;
+        return state.positions[marginId].quoteToken;
     }
 
-    function getShortBaseToken(
+    function getPositionBaseToken(
         bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[marginId].baseToken;
+        return state.positions[marginId].baseToken;
     }
 
-    function getShortAmount(
+    function getPositionAmount(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[marginId].shortAmount;
+        return state.positions[marginId].shortAmount;
     }
 
-    function getShortClosedAmount(
+    function getPositionClosedAmount(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[marginId].closedAmount;
+        return state.positions[marginId].closedAmount;
     }
 
-    function getShortUnclosedAmount(
+    function getPositionUnclosedAmount(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[marginId].shortAmount.sub(state.shorts[marginId].closedAmount);
+        return state.positions[marginId].shortAmount.sub(state.positions[marginId].closedAmount);
     }
 
-    function getShortInterestRate(
+    function getPositionInterestRate(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[marginId].interestRate;
+        return state.positions[marginId].interestRate;
     }
 
-    function getShortRequiredDeposit(
+    function getPositionRequiredDeposit(
         bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[marginId].requiredDeposit;
+        return state.positions[marginId].requiredDeposit;
     }
 
-    function getShortStartTimestamp(
+    function getPositionStartTimestamp(
         bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[marginId].startTimestamp;
+        return state.positions[marginId].startTimestamp;
     }
 
-    function getShortCallTimestamp(
+    function getPositionCallTimestamp(
         bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[marginId].callTimestamp;
+        return state.positions[marginId].callTimestamp;
     }
 
-    function getShortCallTimeLimit(
+    function getPositionCallTimeLimit(
         bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[marginId].callTimeLimit;
+        return state.positions[marginId].callTimeLimit;
     }
 
-    function getShortMaxDuration(
+    function getPositionMaxDuration(
         bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[marginId].maxDuration;
+        return state.positions[marginId].maxDuration;
     }
 
-    function getShortinterestPeriod(
+    function getPositioninterestPeriod(
         bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[marginId].interestPeriod;
+        return state.positions[marginId].interestPeriod;
     }
 }

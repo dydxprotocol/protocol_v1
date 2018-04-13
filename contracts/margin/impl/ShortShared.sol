@@ -24,7 +24,7 @@ library ShortShared {
     // ------- Structs -------
     // -----------------------
 
-    struct ShortTx {
+    struct OpenTx {
         address owner;
         address baseToken;
         address quoteToken;
@@ -42,7 +42,7 @@ library ShortShared {
 
     function shortInternalPreStateUpdate(
         MarginState.State storage state,
-        ShortTx memory transaction,
+        OpenTx memory transaction,
         bytes32 marginId,
         bytes orderData
     )
@@ -88,7 +88,7 @@ library ShortShared {
 
     function shortInternalPostStateUpdate(
         MarginState.State storage state,
-        ShortTx memory transaction,
+        OpenTx memory transaction,
         bytes32 marginId
     )
         internal
@@ -107,7 +107,7 @@ library ShortShared {
 
     function validateShort(
         MarginState.State storage state,
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
         view
@@ -180,7 +180,7 @@ library ShortShared {
     }
 
     function getConsentIfSmartContractLender(
-        ShortTx transaction,
+        OpenTx transaction,
         bytes32 marginId
     )
         internal
@@ -200,7 +200,7 @@ library ShortShared {
 
     function transferFromLender(
         MarginState.State storage state,
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
     {
@@ -215,7 +215,7 @@ library ShortShared {
 
     function transferDeposit(
         MarginState.State storage state,
-        ShortTx transaction,
+        OpenTx transaction,
         bytes32 marginId
     )
         internal
@@ -244,7 +244,7 @@ library ShortShared {
 
     function transferLoanFees(
         MarginState.State storage state,
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
     {
@@ -287,7 +287,7 @@ library ShortShared {
 
     function executeSell(
         MarginState.State storage state,
-        ShortTx transaction,
+        OpenTx transaction,
         bytes orderData,
         bytes32 marginId,
         uint256 sellAmount
@@ -314,7 +314,7 @@ library ShortShared {
     }
 
     function validateMinimumQuoteToken(
-        ShortTx transaction,
+        OpenTx transaction,
         uint256 totalQuoteTokenReceived
     )
         internal
@@ -330,7 +330,7 @@ library ShortShared {
     }
 
     function getLoanOfferingAddresses(
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
         pure
@@ -350,7 +350,7 @@ library ShortShared {
     }
 
     function getLoanOfferingValues256(
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
         pure
@@ -369,7 +369,7 @@ library ShortShared {
     }
 
     function getLoanOfferingValues32(
-        ShortTx transaction
+        OpenTx transaction
     )
         internal
         pure

@@ -40,24 +40,24 @@ library ForceRecoverLoanImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
         // 2) The maxDuration of the short has elapsed
         require( /* solium-disable-next-line */
             (
-                short.callTimestamp > 0
-                && block.timestamp >= uint256(short.callTimestamp).add(short.callTimeLimit)
+                position.callTimestamp > 0
+                && block.timestamp >= uint256(position.callTimestamp).add(position.callTimeLimit)
             ) || (
-                block.timestamp >= uint256(short.startTimestamp).add(short.maxDuration)
+                block.timestamp >= uint256(position.startTimestamp).add(position.maxDuration)
             )
         );
 
         // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != short.lender) {
+        if (msg.sender != position.lender) {
             require(
-                ForceRecoverLoanDelegator(short.lender).forceRecoverLoanOnBehalfOf(
+                ForceRecoverLoanDelegator(position.lender).forceRecoverLoanOnBehalfOf(
                     msg.sender,
                     marginId
                 )
@@ -66,17 +66,17 @@ library ForceRecoverLoanImpl {
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderQuoteTokenAmount = vault.balances(marginId, short.quoteToken);
+        uint256 lenderQuoteTokenAmount = vault.balances(marginId, position.quoteToken);
         vault.transferFromVault(
             marginId,
-            short.quoteToken,
-            short.lender,
+            position.quoteToken,
+            position.lender,
             lenderQuoteTokenAmount
         );
 
-        // Delete the short
-        // NOTE: Since short is a storage pointer, this will also set all of short's fields to 0
-        MarginCommon.cleanupShort(
+        // Delete the position
+        // NOTE: Since position is a storage pointer, this will also set all fields to 0
+        MarginCommon.cleanupPosition(
             state,
             marginId
         );
