@@ -29,7 +29,7 @@ library LoanImpl {
     /**
      * The loan for a short sell was called in
      */
-    event LoanCalled(
+    event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
@@ -39,7 +39,7 @@ library LoanImpl {
     /**
      * A loan call was canceled
      */
-    event LoanCallCanceled(
+    event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
@@ -99,7 +99,7 @@ library LoanImpl {
         position.callTimestamp = uint32(block.timestamp);
         position.requiredDeposit = requiredDeposit;
 
-        emit LoanCalled(
+        emit MarginCallInitiated(
             marginId,
             position.lender,
             position.seller,
@@ -131,7 +131,7 @@ library LoanImpl {
         state.positions[marginId].callTimestamp = 0;
         state.positions[marginId].requiredDeposit = 0;
 
-        emit LoanCallCanceled(
+        emit MarginCallCanceled(
             marginId,
             position.lender,
             position.seller,

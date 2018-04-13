@@ -25,7 +25,7 @@ library ClosePositionImpl {
     /**
      * A short sell was closed
      */
-    event ShortClosed(
+    event PositionClosed(
         bytes32 indexed marginId,
         address indexed closer,
         address indexed payoutRecipient,
@@ -198,7 +198,7 @@ library ClosePositionImpl {
     )
         internal
     {
-        emit ShortClosed(
+        emit PositionClosed(
             transaction.marginId,
             msg.sender,
             transaction.payoutRecipient,

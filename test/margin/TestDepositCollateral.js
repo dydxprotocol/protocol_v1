@@ -31,7 +31,7 @@ describe('#deposit', () => {
         amount: amount
       });
 
-      expectLog(tx.logs[0], 'AdditionalDeposit', {
+      expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
         marginId: OpenTx.id,
         amount: amount,
         depositor: OpenTx.seller
@@ -105,7 +105,7 @@ describe('#deposit', () => {
         amount: amount2
       });
 
-      expectLog(tx2.logs[1], 'LoanCallCanceled', {
+      expectLog(tx2.logs[1], 'MarginCallCanceled', {
         marginId: OpenTx.id,
         lender: OpenTx.loanOffering.owner,
         shortSeller: OpenTx.seller,
@@ -150,7 +150,7 @@ async function doDepositCollateral({
 
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 
-  expectLog(tx.logs[0], 'AdditionalDeposit', {
+  expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
     marginId: OpenTx.id,
     amount: amount,
     depositor: from

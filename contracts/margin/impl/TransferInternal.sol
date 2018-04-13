@@ -30,7 +30,7 @@ library TransferInternal {
     /**
      * Ownership of a short was transferred to a new address
      */
-    event ShortTransferred(
+    event PositionTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to
@@ -94,7 +94,7 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            emit ShortTransferred(marginId, oldOwner, newOwner);
+            emit PositionTransferred(marginId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {

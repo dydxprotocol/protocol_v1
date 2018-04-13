@@ -59,7 +59,7 @@ describe('#forceRecoverCollateral', () => {
       expect(isPositionClosed).to.be.true;
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
-      expectLog(tx.logs[0], 'LoanForceRecovered', {
+      expectLog(tx.logs[0], 'CollateralForceRecovered', {
         marginId: OpenTx.id,
         amount: quoteTokenBalance
       });

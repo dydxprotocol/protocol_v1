@@ -23,7 +23,7 @@ library DepositCollateralImpl {
     /**
      * Additional deposit for a short sell was posted by the short seller
      */
-    event AdditionalDeposit(
+    event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
         uint256 amount,
         address depositor
@@ -32,7 +32,7 @@ library DepositCollateralImpl {
     /**
      * A loan call was canceled
      */
-    event LoanCallCanceled(
+    event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
@@ -74,14 +74,14 @@ library DepositCollateralImpl {
             }
         }
 
-        emit AdditionalDeposit(
+        emit AdditionalCollateralDeposited(
             marginId,
             depositAmount,
             msg.sender
         );
 
         if (loanCanceled) {
-            emit LoanCallCanceled(
+            emit MarginCallCanceled(
                 marginId,
                 position.lender,
                 msg.sender,

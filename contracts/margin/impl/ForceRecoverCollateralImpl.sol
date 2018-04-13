@@ -24,7 +24,7 @@ library ForceRecoverCollateralImpl {
     /**
      * A short sell loan was forcibly recovered by the lender
      */
-    event LoanForceRecovered(
+    event CollateralForceRecovered(
         bytes32 indexed marginId,
         uint256 amount
     );
@@ -82,7 +82,7 @@ library ForceRecoverCollateralImpl {
         );
 
         // Log an event
-        emit LoanForceRecovered(
+        emit CollateralForceRecovered(
             marginId,
             lenderQuoteTokenAmount
         );

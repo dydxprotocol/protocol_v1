@@ -22,7 +22,7 @@ library LiquidatePositionImpl {
     /**
      * A loan was liquidated
      */
-    event LoanLiquidated(
+    event PositionLiquidated(
         bytes32 indexed marginId,
         address indexed liquidator,
         address indexed payoutRecipient,
@@ -78,7 +78,7 @@ library LiquidatePositionImpl {
     )
         internal
     {
-        emit LoanLiquidated(
+        emit PositionLiquidated(
             transaction.marginId,
             msg.sender,
             transaction.payoutRecipient,

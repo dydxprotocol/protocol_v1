@@ -31,7 +31,7 @@ contract DutchAuctionCloser is
     /**
      * A short was closed by this contract
      */
-    event ShortClosedByDutchAuction(
+    event PositionClosedByDutchAuction(
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed bidder,
@@ -124,7 +124,7 @@ contract DutchAuctionCloser is
         uint256 bidderReward = payout.sub(auctionPrice);
         TokenInteract.transfer(quoteToken, shortCloser, bidderReward);
 
-        emit ShortClosedByDutchAuction(
+        emit PositionClosedByDutchAuction(
             marginId,
             shortSeller,
             shortCloser,

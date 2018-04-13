@@ -18,7 +18,7 @@ contract MarginEvents {
     /**
      * A short sell occurred
      */
-    event ShortInitiated(
+    event PositionOpened(
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
@@ -38,7 +38,7 @@ contract MarginEvents {
     /**
      * A short sell was closed
      */
-    event ShortClosed(
+    event PositionClosed(
         bytes32 indexed marginId,
         address indexed closer,
         address indexed payoutRecipient,
@@ -53,7 +53,7 @@ contract MarginEvents {
     /**
      * A loan was liquidated
      */
-    event LoanLiquidated(
+    event PositionLiquidated(
         bytes32 indexed marginId,
         address indexed liquidator,
         address indexed payoutRecipient,
@@ -65,7 +65,7 @@ contract MarginEvents {
     /**
      * A short sell loan was forcibly recovered by the lender
      */
-    event LoanForceRecovered(
+    event CollateralForceRecovered(
         bytes32 indexed marginId,
         uint256 amount
     );
@@ -73,7 +73,7 @@ contract MarginEvents {
     /**
      * The loan for a short sell was called in
      */
-    event LoanCalled(
+    event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
@@ -83,7 +83,7 @@ contract MarginEvents {
     /**
      * A loan call was canceled
      */
-    event LoanCallCanceled(
+    event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
@@ -113,7 +113,7 @@ contract MarginEvents {
     /**
      * Additional deposit for a short sell was posted by the short seller
      */
-    event AdditionalDeposit(
+    event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
         uint256 amount,
         address depositor
@@ -131,7 +131,7 @@ contract MarginEvents {
     /**
      * Ownership of a short was transferred to a new address
      */
-    event ShortTransferred(
+    event PositionTransferred(
         bytes32 indexed marginId,
         address indexed from,
         address indexed to

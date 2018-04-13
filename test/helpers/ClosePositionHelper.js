@@ -282,12 +282,12 @@ async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmoun
 }
 
 async function getPositionLifetime(OpenTx, tx) {
-  const [shortTimestamp, shortClosedTimestamp] = await Promise.all([
+  const [shortTimestamp, PositionClosedTimestamp] = await Promise.all([
     getBlockTimestamp(OpenTx.response.receipt.blockNumber),
     getBlockTimestamp(tx.receipt.blockNumber)
   ]);
   const maxDuration = OpenTx.loanOffering.maxDuration;
-  let duration = shortClosedTimestamp - shortTimestamp;
+  let duration = PositionClosedTimestamp - shortTimestamp;
   if (duration > maxDuration) {
     duration = maxDuration;
   }

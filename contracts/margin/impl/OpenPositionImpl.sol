@@ -26,7 +26,7 @@ library OpenPositionImpl {
     /**
      * A short sell occurred
      */
-    event ShortInitiated(
+    event PositionOpened(
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
@@ -80,8 +80,8 @@ library OpenPositionImpl {
             orderData
         );
 
-        // Comes before updateState() so that ShortInitiated event is before Transferred events
-        recordShortInitiated(
+        // Comes before updateState() so that PositionOpened event is before Transferred events
+        recordPositionOpened(
             marginId,
             msg.sender,
             transaction,
@@ -124,7 +124,7 @@ library OpenPositionImpl {
         return marginId;
     }
 
-    function recordShortInitiated(
+    function recordPositionOpened(
         bytes32 marginId,
         address shortSeller,
         OpenPositionShared.OpenTx transaction,
@@ -132,7 +132,7 @@ library OpenPositionImpl {
     )
         internal
     {
-        emit ShortInitiated(
+        emit PositionOpened(
             marginId,
             shortSeller,
             transaction.loanOffering.payer,

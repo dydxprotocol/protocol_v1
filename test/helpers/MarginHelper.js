@@ -124,7 +124,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
 }
 
 async function expectLogShort(dydxMargin, marginId, tx, response) {
-  expectLog(response.logs[0], 'ShortInitiated', {
+  expectLog(response.logs[0], 'PositionOpened', {
     marginId: marginId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
@@ -160,13 +160,13 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
     }
   }
   if (tx.owner !== tx.seller) {
-    expectLog(response.logs[++logIndex], 'ShortTransferred', {
+    expectLog(response.logs[++logIndex], 'PositionTransferred', {
       marginId: marginId,
       from: tx.seller,
       to: tx.owner
     });
     if (newSeller !== tx.owner) {
-      expectLog(response.logs[++logIndex], 'ShortTransferred', {
+      expectLog(response.logs[++logIndex], 'PositionTransferred', {
         marginId: marginId,
         from: tx.owner,
         to: newSeller
@@ -485,7 +485,7 @@ async function expectCloseLog(dydxMargin, params) {
   expect(endQuote).to.be.bignumber.equal(
     params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
 
-  expectLog(params.tx.logs[0], 'ShortClosed', {
+  expectLog(params.tx.logs[0], 'PositionClosed', {
     marginId: params.OpenTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
@@ -519,7 +519,7 @@ async function callLiquidatePosition(
 
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
-  expectLog(tx.logs[0], 'LoanLiquidated', {
+  expectLog(tx.logs[0], 'PositionLiquidated', {
     marginId: OpenTx.id,
     liquidator: from,
     payoutRecipient: payoutRecipient,

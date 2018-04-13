@@ -34,18 +34,18 @@ describe('#transferPosition', () => {
     const tx = await dydxMargin.transferPosition(OpenTx.id, to, { from: from});
 
     if (expectedSeller === to) {
-      expectLog(tx.logs[0], 'ShortTransferred', {
+      expectLog(tx.logs[0], 'PositionTransferred', {
         marginId: OpenTx.id,
         from: from,
         to: to
       });
     } else {
-      expectLog(tx.logs[0], 'ShortTransferred', {
+      expectLog(tx.logs[0], 'PositionTransferred', {
         marginId: OpenTx.id,
         from: from,
         to: to
       });
-      expectLog(tx.logs[1], 'ShortTransferred', {
+      expectLog(tx.logs[1], 'PositionTransferred', {
         marginId: OpenTx.id,
         from: to,
         to: expectedSeller
