@@ -234,7 +234,7 @@ library AddValueToShortImpl {
         );
 
         if (transaction.depositInQuoteToken) {
-            uint256 quoteTokenFromSell = ExchangeWrapper(transaction.exchangeWrapperAddress)
+            uint256 quoteTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTradeMakerTokenAmount(
                     transaction.quoteToken,
                     transaction.baseToken,
@@ -245,7 +245,7 @@ library AddValueToShortImpl {
             require(quoteTokenFromSell <= positionMinimumQuoteToken);
             transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenFromSell);
         } else {
-            uint256 baseTokenToSell = ExchangeWrapper(transaction.exchangeWrapperAddress)
+            uint256 baseTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
                     transaction.quoteToken,
                     transaction.baseToken,
@@ -375,7 +375,7 @@ library AddValueToShortImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapperAddress: addresses[6],
+            exchangeWrapper: addresses[6],
             depositInQuoteToken: depositInQuoteToken
         });
 

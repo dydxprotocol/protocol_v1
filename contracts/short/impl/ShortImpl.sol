@@ -216,7 +216,7 @@ library ShortImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapperAddress: addresses[10],
+            exchangeWrapper: addresses[10],
             depositInQuoteToken: depositInQuoteToken
         });
 

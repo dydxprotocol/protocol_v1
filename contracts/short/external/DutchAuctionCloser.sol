@@ -85,14 +85,15 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  shortId           Unique ID of the short
-     * @param  closeAmount       Amount of the short that was closed
-     * @param  shortCloser       Address of the account or contract that closed the short
-     * @param  shortSeller       Address of the owner of the short
-     * @param  quoteToken        Address of the ERC20 quote token
-     * @param  payoutQuoteToken  Number of quote tokens received from the payout
-     * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
-     * @return                   True if approved by the reciever
+     * @param  shortId            Unique ID of the short
+     * @param  closeAmount        Amount of the short that was closed
+     * @param  shortCloser        Address of the account or contract that closed the short
+     * @param  shortSeller        Address of the owner of the short
+     * @param  quoteToken         Address of the ERC20 quote token
+     * @param  payout             Number of quote tokens received from the payout
+     * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
+     * @param  payoutInQuoteToken True if payout is in quote token, false if in base token
+     * @return                    True if approved by the reciever
      */
     function receiveCloseShortPayout(
         bytes32 shortId,
@@ -100,21 +101,18 @@ contract DutchAuctionCloser is
         address shortCloser,
         address shortSeller,
         address quoteToken,
-        uint256 payoutQuoteToken,
-        uint256 totalQuoteToken
+        uint256 payout,
+        uint256 totalQuoteToken,
+        bool    payoutInQuoteToken
     )
         onlyShortSell
         external
         returns (bool)
     {
-        uint256 auctionStartTimestamp;
-        uint256 auctionEndTimestamp;
-        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(shortId);
+        require(payoutInQuoteToken);
 
-        // linearly decreases from maximum amount to zero over the course of the auction
-        uint256 auctionPrice = MathHelpers.getPartialAmount(
-            auctionEndTimestamp.sub(block.timestamp),
-            auctionEndTimestamp.sub(auctionStartTimestamp),
+        uint256 auctionPrice = getAuctionPrice(
+            shortId,
             totalQuoteToken
         );
 
@@ -123,7 +121,7 @@ contract DutchAuctionCloser is
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to short closer
-        uint256 bidderReward = payoutQuoteToken.sub(auctionPrice);
+        uint256 bidderReward = payout.sub(auctionPrice);
         TokenInteract.transfer(quoteToken, shortCloser, bidderReward);
 
         emit ShortClosedByDutchAuction(
@@ -141,6 +139,26 @@ contract DutchAuctionCloser is
     // -----------------------------------
     // ---- Internal Helper functions ----
     // -----------------------------------
+
+    function getAuctionPrice(
+        bytes32 shortId,
+        uint256 totalQuoteToken
+    )
+        view
+        internal
+        returns (uint256)
+    {
+        uint256 auctionStartTimestamp;
+        uint256 auctionEndTimestamp;
+        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(shortId);
+
+        // linearly decreases from maximum amount to zero over the course of the auction
+        return MathHelpers.getPartialAmount(
+            auctionEndTimestamp.sub(block.timestamp),
+            auctionEndTimestamp.sub(auctionStartTimestamp),
+            totalQuoteToken
+        );
+    }
 
     function getAuctionTimeLimits(
         bytes32 shortId

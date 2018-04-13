@@ -42,7 +42,7 @@ async function createShortSellTx(accounts, _salt = DEFAULT_SALT) {
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     seller: accounts[0],
-    exchangeWrapperAddress: ZeroExExchangeWrapper.address
+    exchangeWrapper: ZeroExExchangeWrapper.address
   };
 
   return tx;
@@ -70,7 +70,7 @@ async function callShort(shortSell, tx, safely = true) {
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
-    tx.exchangeWrapperAddress
+    tx.exchangeWrapper
   ];
 
   const values256 = [
@@ -185,7 +185,7 @@ async function callAddValueToShort(shortSell, tx) {
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
-    tx.exchangeWrapperAddress
+    tx.exchangeWrapper
   ];
 
   const values256 = [
@@ -381,6 +381,7 @@ async function callCloseShort(
     closeAmount,
     recipient,
     ZeroExExchangeWrapper.address,
+    true,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
@@ -491,8 +492,9 @@ async function expectCloseLog(shortSell, params) {
     closeAmount: actualCloseAmount,
     remainingAmount: params.startAmount.minus(actualCloseAmount),
     baseTokenPaidToLender: owed,
-    quoteTokenPayout: quoteTokenPayout,
-    buybackCost: buybackCost
+    payoutAmount: quoteTokenPayout,
+    buybackCost: buybackCost,
+    payoutInQuoteToken: true
   });
 }
 

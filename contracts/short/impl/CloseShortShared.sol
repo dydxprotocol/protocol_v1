@@ -6,6 +6,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ShortSellCommon } from "./ShortSellCommon.sol";
 import { ShortSellState } from "./ShortSellState.sol";
+import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
@@ -38,6 +39,8 @@ library CloseShortShared {
         address quoteToken;
         address shortSeller;
         address shortLender;
+        address exchangeWrapper;
+        bool    payoutInQuoteToken;
     }
 
     // -------------------------------------------
@@ -62,20 +65,40 @@ library CloseShortShared {
     function sendQuoteTokensToPayoutRecipient(
         ShortSellState.State storage state,
         CloseShortShared.CloseShortTx memory transaction,
-        uint256 buybackCost
+        uint256 buybackCost,
+        uint256 receivedBaseToken
     )
         internal
         returns (uint256)
     {
-        // Send remaining quote token to payoutRecipient
-        uint256 quoteTokenPayout = transaction.availableQuoteToken.sub(buybackCost);
+        uint256 payout;
 
-        Vault(state.VAULT).transferFromVault(
-            transaction.shortId,
-            transaction.quoteToken,
-            transaction.payoutRecipient,
-            quoteTokenPayout
-        );
+        if (transaction.payoutInQuoteToken) {
+            // Send remaining quote token to payoutRecipient
+            payout = transaction.availableQuoteToken.sub(buybackCost);
+
+            if (payout > 0) {
+                Vault(state.VAULT).transferFromVault(
+                    transaction.shortId,
+                    transaction.quoteToken,
+                    transaction.payoutRecipient,
+                    payout
+                );
+            }
+        } else {
+            assert(transaction.exchangeWrapper != address(0));
+
+            payout = receivedBaseToken.sub(transaction.baseTokenOwed);
+
+            if (payout > 0) {
+                Proxy(state.PROXY).transferTokens(
+                    transaction.baseToken,
+                    transaction.exchangeWrapper,
+                    transaction.payoutRecipient,
+                    payout
+                );
+            }
+        }
 
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
             require(
@@ -85,8 +108,9 @@ library CloseShortShared {
                     msg.sender,
                     transaction.shortSeller,
                     transaction.quoteToken,
-                    quoteTokenPayout,
-                    transaction.availableQuoteToken
+                    payout,
+                    transaction.availableQuoteToken,
+                    transaction.payoutInQuoteToken
                 )
             );
         }
@@ -98,7 +122,7 @@ library CloseShortShared {
             == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
         );
 
-        return quoteTokenPayout;
+        return payout;
     }
 
     function createCloseShortTx(
@@ -106,11 +130,17 @@ library CloseShortShared {
         bytes32 shortId,
         uint256 requestedAmount,
         address payoutRecipient,
+        address exchangeWrapper,
+        bool payoutInQuoteToken,
         bool isLiquidation
     )
         internal
         returns (CloseShortTx memory)
     {
+        // Validate
+        require(payoutRecipient != address(0));
+        require(requestedAmount > 0);
+
         ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
 
         uint256 closeAmount = getApprovedAmount(
@@ -127,6 +157,8 @@ library CloseShortShared {
             shortId,
             closeAmount,
             payoutRecipient,
+            exchangeWrapper,
+            payoutInQuoteToken,
             isLiquidation
         );
     }
@@ -137,6 +169,8 @@ library CloseShortShared {
         bytes32 shortId,
         uint256 closeAmount,
         address payoutRecipient,
+        address exchangeWrapper,
+        bool payoutInQuoteToken,
         bool isLiquidation
     )
         internal
@@ -172,7 +206,9 @@ library CloseShortShared {
             baseToken: short.baseToken,
             quoteToken: short.quoteToken,
             shortSeller: short.seller,
-            shortLender: short.lender
+            shortLender: short.lender,
+            exchangeWrapper: exchangeWrapper,
+            payoutInQuoteToken: payoutInQuoteToken
         });
     }
 

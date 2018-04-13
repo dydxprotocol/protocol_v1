@@ -49,13 +49,16 @@ library LiquidateImpl {
             shortId,
             requestedLiquidationAmount,
             payoutRecipient,
+            address(0),
+            true,
             true
         );
 
         uint256 quoteTokenPayout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
             state,
             transaction,
-            0 // No buyback cost
+            0, // No buyback cost
+            0  // Did not receive any base token
         );
 
         CloseShortShared.closeShortStateUpdate(state, transaction);
