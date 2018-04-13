@@ -145,7 +145,7 @@ describe('#increasePosition', () => {
       addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration / 10;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow( callIncreasePosition(dydxMargin, addValueTx));
+      await expectThrow(callIncreasePosition(dydxMargin, addValueTx));
     });
   });
 
@@ -187,7 +187,7 @@ describe('#increasePosition', () => {
       addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit - 1;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow( callIncreasePosition(dydxMargin, addValueTx));
+      await expectThrow(callIncreasePosition(dydxMargin, addValueTx));
     });
   });
 

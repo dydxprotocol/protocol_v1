@@ -75,7 +75,7 @@ describe('#marginCall', () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
 
-      await expectThrow( dydxMargin.marginCall(
+      await expectThrow(dydxMargin.marginCall(
         OpenTx.id,
         REQUIRED_DEPOSIT,
         { from: accounts[6] }
@@ -104,7 +104,7 @@ describe('#marginCall', () => {
       let position = await getPosition(dydxMargin, OpenTx.id);
       expect(position.callTimestamp).to.be.bignumber.equal(0);
 
-      await expectThrow( dydxMargin.marginCall(
+      await expectThrow(dydxMargin.marginCall(
         OpenTx.id,
         REQUIRED_DEPOSIT,
         { from: accounts[6] }
@@ -127,7 +127,7 @@ describe('#marginCall', () => {
 
       await marginCall(OpenTx);
 
-      await expectThrow( dydxMargin.marginCall(
+      await expectThrow(dydxMargin.marginCall(
         OpenTx.id,
         REQUIRED_DEPOSIT.plus(REQUIRED_DEPOSIT),
         { from: OpenTx.loanOffering.payer }
@@ -187,7 +187,7 @@ describe('#cancelMarginCall', () => {
 
       const positionCalledTimestamp = await getCallTimestamp(callTx);
 
-      await expectThrow( dydxMargin.cancelMarginCall(
+      await expectThrow(dydxMargin.cancelMarginCall(
         OpenTx.id,
         { from: accounts[6] }
       ));
@@ -203,7 +203,7 @@ describe('#cancelMarginCall', () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
 
-      await expectThrow( dydxMargin.cancelMarginCall(
+      await expectThrow(dydxMargin.cancelMarginCall(
         OpenTx.id,
         { from: OpenTx.loanOffering.payer }
       ));
@@ -227,7 +227,7 @@ describe('#cancelMarginCall', () => {
       let position = await getPosition(dydxMargin, OpenTx.id);
       expect(position.callTimestamp).to.be.bignumber.not.equal(0);
 
-      await expectThrow( dydxMargin.cancelMarginCall(
+      await expectThrow(dydxMargin.cancelMarginCall(
         OpenTx.id,
         { from: accounts[6] }
       ));

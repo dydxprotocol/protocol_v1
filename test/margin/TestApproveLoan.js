@@ -72,7 +72,7 @@ describe('#approveLoanOffering', () => {
       let loanOfferingBad = Object.assign({}, loanOffering);
       loanOfferingBad.expirationTimestamp = new BigNumber(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
-      await expectThrow( callApproveLoanOffering(
+      await expectThrow(callApproveLoanOffering(
         dydxMargin,
         loanOfferingBad
       ));

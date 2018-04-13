@@ -37,7 +37,7 @@ describe('#openPosition', () => {
         OpenTx.buyOrder.ecSignature.v = '0x01';
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -49,7 +49,7 @@ describe('#openPosition', () => {
         OpenTx.loanOffering.signature.v = '0x01';
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -61,7 +61,7 @@ describe('#openPosition', () => {
         OpenTx.principal = new BigNumber(0);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -74,7 +74,7 @@ describe('#openPosition', () => {
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -87,7 +87,7 @@ describe('#openPosition', () => {
         OpenTx.principal = OpenTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -101,7 +101,7 @@ describe('#openPosition', () => {
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -114,7 +114,7 @@ describe('#openPosition', () => {
         OpenTx.principal = OpenTx.loanOffering.rates.minAmount.minus(1);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -127,7 +127,7 @@ describe('#openPosition', () => {
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -149,7 +149,7 @@ describe('#openPosition', () => {
         // First should succeed
         await callOpenPosition(dydxMargin, OpenTx, /*safely=*/ false);
 
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx, /*safely=*/ false));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx, /*safely=*/ false));
       });
     });
 
@@ -166,7 +166,7 @@ describe('#openPosition', () => {
           OpenTx.loanOffering.rates.maxAmount
         );
 
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -184,7 +184,7 @@ describe('#openPosition', () => {
         );
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
   });
@@ -214,7 +214,7 @@ describe('#openPosition', () => {
         OpenTx.depositAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -232,7 +232,7 @@ describe('#openPosition', () => {
         OpenTx.buyOrder.makerTokenAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -250,7 +250,7 @@ describe('#openPosition', () => {
         OpenTx.buyOrder.makerFee = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -268,7 +268,7 @@ describe('#openPosition', () => {
         OpenTx.loanOffering.rates.lenderFee = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
@@ -293,7 +293,7 @@ describe('#openPosition', () => {
         OpenTx.buyOrder.takerFee = storedAmount2;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
   });
@@ -311,7 +311,7 @@ describe('#closePosition', () => {
 
         OpenTx.trader = OpenTx.loanOffering.payer;
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -325,7 +325,7 @@ describe('#closePosition', () => {
 
         OpenTx.trader = accounts[7];
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });
@@ -341,7 +341,7 @@ describe('#closePosition', () => {
 
         OpenTx.id = "0x123";
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -358,7 +358,7 @@ describe('#closePosition', () => {
         await callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -384,7 +384,7 @@ describe('#closePosition', () => {
         await wait(OpenTx.loanOffering.maxDuration);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -399,7 +399,7 @@ describe('#closePosition', () => {
         sellOrder.ecSignature.r = "0x123";
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -415,7 +415,7 @@ describe('#closePosition', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });
@@ -433,7 +433,7 @@ describe('#closePosition', () => {
         sellOrder.makerTokenAmount = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -449,7 +449,7 @@ describe('#closePosition', () => {
         sellOrder.makerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -465,7 +465,7 @@ describe('#closePosition', () => {
         sellOrder.takerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });
