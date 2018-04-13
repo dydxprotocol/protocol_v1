@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const Margin = artifacts.require("Margin");
-const ERC20Short = artifacts.require("ERC20Short");
+const ERC20MarginPosition = artifacts.require("ERC20MarginPosition");
 const BaseToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../../helpers/Constants');
 const {
@@ -23,13 +23,13 @@ const {
 const { transact } = require('../../helpers/ContractHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
-  getERC20ShortConstants,
+  getERC20MarginPositionConstants,
   TOKENIZED_POSITION_STATE
-} = require('../../helpers/ERC20ShortHelper');
+} = require('../../helpers/ERC20MarginPositionHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
-contract('ERC20Short', function(accounts) {
+contract('ERC20MarginPosition', function(accounts) {
   let baseToken;
 
   let POSITIONS = {
@@ -100,12 +100,12 @@ contract('ERC20Short', function(accounts) {
       POSITIONS.FULL.TOKEN_CONTRACT,
       POSITIONS.PART.TOKEN_CONTRACT
     ] = await Promise.all([
-      ERC20Short.new(
+      ERC20MarginPosition.new(
         POSITIONS.FULL.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.TRUSTED_RECIPIENTS),
-      ERC20Short.new(
+      ERC20MarginPosition.new(
         POSITIONS.PART.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,
@@ -169,7 +169,7 @@ contract('ERC20Short', function(accounts) {
     it('sets constants correctly', async () => {
       for (let type in POSITIONS) {
         const position = POSITIONS[type];
-        const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
+        const tsc = await getERC20MarginPositionConstants(position.TOKEN_CONTRACT);
         expect(tsc.MARGIN).to.equal(CONTRACTS.MARGIN.address);
         expect(tsc.MARGIN_ID).to.equal(position.ID);
         expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
@@ -199,13 +199,13 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
 
-        const tsc1 = await getERC20ShortConstants(POSITION.TOKEN_CONTRACT);
+        const tsc1 = await getERC20MarginPositionConstants(POSITION.TOKEN_CONTRACT);
 
         await CONTRACTS.MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.seller });
 
         const [tsc2, position] = await Promise.all([
-          getERC20ShortConstants(POSITION.TOKEN_CONTRACT),
+          getERC20MarginPositionConstants(POSITION.TOKEN_CONTRACT),
           getPosition(CONTRACTS.MARGIN, POSITION.ID)
         ]);
 
@@ -510,7 +510,7 @@ contract('ERC20Short', function(accounts) {
 
     it('returns decimal value of baseToken, even if not initialized', async () => {
       await setUpShorts();
-      const tokenContract = await ERC20Short.new(
+      const tokenContract = await ERC20MarginPosition.new(
         POSITIONS.FULL.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,

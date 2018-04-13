@@ -4,12 +4,12 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const ERC20Short = artifacts.require("ERC20Short");
+const ERC20MarginPositionCreator = artifacts.require("ERC20MarginPositionCreator");
+const ERC20MarginPosition = artifacts.require("ERC20MarginPosition");
 const QuoteToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
-const { TOKENIZED_POSITION_STATE } = require('../../helpers/ERC20ShortHelper');
+const { TOKENIZED_POSITION_STATE } = require('../../helpers/ERC20MarginPositionHelper');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort,
@@ -20,16 +20,16 @@ const {
   createSignedSellOrder
 } = require('../../helpers/0xHelper');
 
-contract('ERC20ShortCreator', function(accounts) {
-  let dydxMargin, ERC20ShortCreatorContract;
+contract('ERC20MarginPositionCreator', function(accounts) {
+  let dydxMargin, ERC20MarginPositionCreatorContract;
 
   before('retrieve deployed contracts', async () => {
     [
       dydxMargin,
-      ERC20ShortCreatorContract
+      ERC20MarginPositionCreatorContract
     ] = await Promise.all([
       Margin.deployed(),
-      ERC20ShortCreator.deployed()
+      ERC20MarginPositionCreator.deployed()
     ]);
   });
 
@@ -37,7 +37,7 @@ contract('ERC20ShortCreator', function(accounts) {
     let contract;
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
-      contract = await ERC20ShortCreator.new(Margin.address, trustedRecipientsExpected);
+      contract = await ERC20MarginPositionCreator.new(Margin.address, trustedRecipientsExpected);
       const dydxMarginAddress = await contract.MARGIN.call();
       expect(dydxMarginAddress).to.equal(Margin.address);
 
@@ -85,18 +85,18 @@ contract('ERC20ShortCreator', function(accounts) {
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
       await expectThrow(
-        ERC20ShortCreatorContract.receivePositionOwnership(accounts[0], badId)
+        ERC20MarginPositionCreatorContract.receivePositionOwnership(accounts[0], badId)
       );
     });
 
     it('succeeds for new short', async () => {
-      const OpenTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
+      const OpenTx = await doShort(accounts, 1234, ERC20MarginPositionCreator.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
 
-      // Get the ERC20Short on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await ERC20Short.at(tokenAddress);
+      // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
+      const shortTokenContract = await ERC20MarginPosition.at(tokenAddress);
 
       await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal);
     });
@@ -114,14 +114,14 @@ contract('ERC20ShortCreator', function(accounts) {
         sellOrder,
         OpenTx.principal.div(2));
 
-      // transfer short to ERC20ShortCreator
-      await dydxMargin.transferPosition(OpenTx.id, ERC20ShortCreatorContract.address);
+      // transfer short to ERC20MarginPositionCreator
+      await dydxMargin.transferPosition(OpenTx.id, ERC20MarginPositionCreatorContract.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
 
-      // Get the ERC20Short on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await ERC20Short.at(tokenAddress);
+      // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
+      const shortTokenContract = await ERC20MarginPosition.at(tokenAddress);
 
       await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal.div(2));
     });

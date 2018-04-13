@@ -8,7 +8,7 @@ const TOKENIZED_POSITION_STATE = {
   CLOSED: new BigNumber(2)
 };
 
-async function getERC20ShortConstants(ERC20Short) {
+async function getERC20MarginPositionConstants(ERC20MarginPosition) {
   const [
     MARGIN,
     MARGIN_ID,
@@ -19,14 +19,14 @@ async function getERC20ShortConstants(ERC20Short) {
     quoteToken,
     totalSupply
   ] = await Promise.all([
-    ERC20Short.MARGIN.call(),
-    ERC20Short.MARGIN_ID.call(),
-    ERC20Short.state.call(),
-    ERC20Short.name.call(),
-    ERC20Short.symbol.call(),
-    ERC20Short.INITIAL_TOKEN_HOLDER.call(),
-    ERC20Short.quoteToken.call(),
-    ERC20Short.totalSupply.call(),
+    ERC20MarginPosition.MARGIN.call(),
+    ERC20MarginPosition.MARGIN_ID.call(),
+    ERC20MarginPosition.state.call(),
+    ERC20MarginPosition.name.call(),
+    ERC20MarginPosition.symbol.call(),
+    ERC20MarginPosition.INITIAL_TOKEN_HOLDER.call(),
+    ERC20MarginPosition.quoteToken.call(),
+    ERC20MarginPosition.totalSupply.call(),
   ]);
   return {
     MARGIN,
@@ -42,5 +42,5 @@ async function getERC20ShortConstants(ERC20Short) {
 
 module.exports = {
   TOKENIZED_POSITION_STATE,
-  getERC20ShortConstants
+  getERC20MarginPositionConstants
 };

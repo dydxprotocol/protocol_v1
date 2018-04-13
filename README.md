@@ -15,10 +15,10 @@ Source code for Ethereum Smart Contracts used by the dYdX Protocol
 
 Contains implementations for:
 
-- Short Sell
-- ERC20 Short
-- ERC721 Short
-- Dutch Auction Short Closer
+- Margin
+- ERC20 Margin Position
+- ERC721 Margin Position
+- Dutch Auction Closer
 - 0x Exchange Wrapper
 
 ### Development

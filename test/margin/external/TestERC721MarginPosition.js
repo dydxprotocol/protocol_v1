@@ -7,7 +7,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const ERC721Short = artifacts.require("ERC721Short");
+const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const BaseToken = artifacts.require("TokenB");
@@ -29,25 +29,25 @@ function uint256(marginId) {
   return new BigNumber(web3Instance.utils.toBN(marginId));
 }
 
-contract('ERC721Short', function(accounts) {
-  let dydxMargin, ERC721ShortContract, baseToken;
+contract('ERC721MarginPosition', function(accounts) {
+  let dydxMargin, erc721Contract, baseToken;
   let salt = 1111;
 
   before('retrieve deployed contracts', async () => {
     [
       dydxMargin,
-      ERC721ShortContract,
+      erc721Contract,
       baseToken
     ] = await Promise.all([
       Margin.deployed(),
-      ERC721Short.deployed(),
+      ERC721MarginPosition.deployed(),
       BaseToken.deployed()
     ]);
   });
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const contract = await ERC721Short.new(Margin.address);
+      const contract = await ERC721MarginPosition.new(Margin.address);
       const dydxMarginAddress = await contract.MARGIN.call();
       expect(dydxMarginAddress).to.equal(Margin.address);
     });
@@ -56,12 +56,12 @@ contract('ERC721Short', function(accounts) {
   describe('#receivePositionOwnership', () => {
     it('fails for arbitrary caller', async () => {
       await expectThrow(
-        ERC721ShortContract.receivePositionOwnership(accounts[0], BYTES32.BAD_ID));
+        erc721Contract.receivePositionOwnership(accounts[0], BYTES32.BAD_ID));
     });
 
     it('succeeds for new short', async () => {
-      const OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
+      const OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
 
@@ -77,9 +77,9 @@ contract('ERC721Short', function(accounts) {
         sellOrder,
         OpenTx.principal.div(2));
 
-      // transfer short to ERC20ShortCreator
-      await dydxMargin.transferPosition(OpenTx.id, ERC721ShortContract.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
+      // transfer short to ERC20MarginPositionCreator
+      await dydxMargin.transferPosition(OpenTx.id, erc721Contract.address);
+      const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
   });
@@ -87,12 +87,12 @@ contract('ERC721Short', function(accounts) {
   describe('#getPositionDeedHolder', () => {
     it('fails for bad marginId', async () => {
       await expectThrow(
-        ERC721ShortContract.getPositionDeedHolder(BYTES32.BAD_ID));
+        erc721Contract.getPositionDeedHolder(BYTES32.BAD_ID));
     });
 
     it('succeeds for owned short', async () => {
-      const OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      const deedHolder = await ERC721ShortContract.getPositionDeedHolder.call(OpenTx.id);
+      const OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      const deedHolder = await erc721Contract.getPositionDeedHolder.call(OpenTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
   });
@@ -102,36 +102,36 @@ contract('ERC721Short', function(accounts) {
     const helper = accounts[7];
 
     it('succeeds in approving', async () => {
-      await ERC721ShortContract.approveCloser(helper, true, { from: sender });
-      const approved = await ERC721ShortContract.approvedClosers.call(sender, helper);
+      await erc721Contract.approveCloser(helper, true, { from: sender });
+      const approved = await erc721Contract.approvedClosers.call(sender, helper);
       expect(approved).to.be.true;
     });
 
     it('succeeds in revoking approval', async () => {
-      await ERC721ShortContract.approveCloser(helper, true, { from: sender });
-      await ERC721ShortContract.approveCloser(helper, false, { from: sender });
-      const approved = await ERC721ShortContract.approvedClosers.call(sender, helper);
+      await erc721Contract.approveCloser(helper, true, { from: sender });
+      await erc721Contract.approveCloser(helper, false, { from: sender });
+      const approved = await erc721Contract.approvedClosers.call(sender, helper);
       expect(approved).to.be.false;
     });
 
     it('succeeds when true => true', async () => {
-      await ERC721ShortContract.approveCloser(helper, true, { from: sender });
-      await ERC721ShortContract.approveCloser(helper, true, { from: sender });
-      const approved = await ERC721ShortContract.approvedClosers.call(sender, helper);
+      await erc721Contract.approveCloser(helper, true, { from: sender });
+      await erc721Contract.approveCloser(helper, true, { from: sender });
+      const approved = await erc721Contract.approvedClosers.call(sender, helper);
       expect(approved).to.be.true;
     });
 
     it('succeeds when false => false', async () => {
-      await ERC721ShortContract.approveCloser(helper, true, { from: sender });
-      await ERC721ShortContract.approveCloser(helper, false, { from: sender });
-      await ERC721ShortContract.approveCloser(helper, false, { from: sender });
-      const approved = await ERC721ShortContract.approvedClosers.call(sender, helper);
+      await erc721Contract.approveCloser(helper, true, { from: sender });
+      await erc721Contract.approveCloser(helper, false, { from: sender });
+      await erc721Contract.approveCloser(helper, false, { from: sender });
+      const approved = await erc721Contract.approvedClosers.call(sender, helper);
       expect(approved).to.be.false;
     });
 
     it('throws when address approves itself', async () => {
       await expectThrow(
-        ERC721ShortContract.approveCloser(helper, true, { from: helper }));
+        erc721Contract.approveCloser(helper, true, { from: helper }));
     });
   });
 
@@ -140,30 +140,30 @@ contract('ERC721Short', function(accounts) {
     const recipient = accounts[7];
 
     it('succeeds in approving', async () => {
-      await ERC721ShortContract.approveRecipient(recipient, true, { from: sender });
-      const approved = await ERC721ShortContract.approvedRecipients.call(sender, recipient);
+      await erc721Contract.approveRecipient(recipient, true, { from: sender });
+      const approved = await erc721Contract.approvedRecipients.call(sender, recipient);
       expect(approved).to.be.true;
     });
 
     it('succeeds in revoking approval', async () => {
-      await ERC721ShortContract.approveRecipient(recipient, true, { from: sender });
-      await ERC721ShortContract.approveRecipient(recipient, false, { from: sender });
-      const approved = await ERC721ShortContract.approvedRecipients.call(sender, recipient);
+      await erc721Contract.approveRecipient(recipient, true, { from: sender });
+      await erc721Contract.approveRecipient(recipient, false, { from: sender });
+      const approved = await erc721Contract.approvedRecipients.call(sender, recipient);
       expect(approved).to.be.false;
     });
 
     it('succeeds when true => true', async () => {
-      await ERC721ShortContract.approveRecipient(recipient, true, { from: sender });
-      await ERC721ShortContract.approveRecipient(recipient, true, { from: sender });
-      const approved = await ERC721ShortContract.approvedRecipients.call(sender, recipient);
+      await erc721Contract.approveRecipient(recipient, true, { from: sender });
+      await erc721Contract.approveRecipient(recipient, true, { from: sender });
+      const approved = await erc721Contract.approvedRecipients.call(sender, recipient);
       expect(approved).to.be.true;
     });
 
     it('succeeds when false => false', async () => {
-      await ERC721ShortContract.approveRecipient(recipient, true, { from: sender });
-      await ERC721ShortContract.approveRecipient(recipient, false, { from: sender });
-      await ERC721ShortContract.approveRecipient(recipient, false, { from: sender });
-      const approved = await ERC721ShortContract.approvedRecipients.call(sender, recipient);
+      await erc721Contract.approveRecipient(recipient, true, { from: sender });
+      await erc721Contract.approveRecipient(recipient, false, { from: sender });
+      await erc721Contract.approveRecipient(recipient, false, { from: sender });
+      const approved = await erc721Contract.approvedRecipients.call(sender, recipient);
       expect(approved).to.be.false;
     });
   });
@@ -174,26 +174,26 @@ contract('ERC721Short', function(accounts) {
     let OpenTx;
 
     beforeEach('sets up short', async () => {
-      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
+      OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(shortSeller);
     });
 
     it('succeeds when called by ownerOf', async () => {
-      await ERC721ShortContract.transferPosition(OpenTx.id, receiver, { from: shortSeller });
-      await expectThrow( ERC721ShortContract.ownerOf.call(uint256(OpenTx.id)));
+      await erc721Contract.transferPosition(OpenTx.id, receiver, { from: shortSeller });
+      await expectThrow( erc721Contract.ownerOf.call(uint256(OpenTx.id)));
       const newOwner = await dydxMargin.getPositionSeller.call(OpenTx.id);
       expect(newOwner).to.equal(receiver);
     });
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        ERC721ShortContract.transferPosition(OpenTx.id, receiver, { from: accounts[2] }));
+        erc721Contract.transferPosition(OpenTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existant short', async () => {
       await expectThrow(
-        ERC721ShortContract.transferPosition(BYTES32.BAD_ID, receiver, { from: shortSeller }));
+        erc721Contract.transferPosition(BYTES32.BAD_ID, receiver, { from: shortSeller }));
     });
   });
 
@@ -211,9 +211,9 @@ contract('ERC721Short', function(accounts) {
     }
 
     beforeEach('sets up short', async () => {
-      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      await ERC721ShortContract.approveCloser(approvedCloser, true, { from: OpenTx.seller });
-      await ERC721ShortContract.approveRecipient(approvedRecipient, true, { from: OpenTx.seller });
+      OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      await erc721Contract.approveCloser(approvedCloser, true, { from: OpenTx.seller });
+      await erc721Contract.approveRecipient(approvedRecipient, true, { from: OpenTx.seller });
     });
 
     it('succeeds for owner', async () => {

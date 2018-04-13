@@ -2,7 +2,7 @@
 
 const Margin= artifacts.require('Margin');
 const TestLiquidatePositionDelegator = artifacts.require('TestLiquidatePositionDelegator');
-const ERC20Short = artifacts.require('ERC20Short');
+const ERC20MarginPosition = artifacts.require('ERC20MarginPosition');
 const ERC20 = artifacts.require('ERC20');
 const { doShort, callLiquidatePosition } = require('../helpers/MarginHelper');
 const { ADDRESSES } = require('../helpers/Constants');
@@ -10,30 +10,30 @@ const expect = require('chai').expect;
 
 describe('#liquidate', () => {
   const LIQUIDATE_PERCENT = .20; // 20%
-  let dydxMargin, OpenTx, erc20Short, lender, principal;
+  let dydxMargin, OpenTx, erc20Contract, lender, principal;
 
   async function configureShort(initialHolder, accounts) {
     dydxMargin = await Margin.deployed();
     OpenTx = await doShort(accounts);
-    // Deploy an ERC20 short token
-    erc20Short = await ERC20Short.new(OpenTx.id, dydxMargin.address, initialHolder, [
+    // Deploy an ERC20MarginPosition token
+    erc20Contract = await ERC20MarginPosition.new(OpenTx.id, dydxMargin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);
-    // Transfer the short position from the short seller to the ERC20 short token
-    await dydxMargin.transferPosition(OpenTx.id, erc20Short.address, { from: OpenTx.seller });
+    // Transfer the short position from the short seller to the ERC20 token
+    await dydxMargin.transferPosition(OpenTx.id, erc20Contract.address, { from: OpenTx.seller });
 
     lender = OpenTx.loanOffering.payer;
 
-    const totalSupply = await erc20Short.totalSupply();
+    const totalSupply = await erc20Contract.totalSupply();
     // Transfer 20% of the short position to the lender
     principal = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20Short.transfer(OpenTx.loanOffering.payer, principal, { from: initialHolder });
+    await erc20Contract.transfer(OpenTx.loanOffering.payer, principal, { from: initialHolder });
   }
 
   contract('Margin', function(accounts) {
     it('allows a lender to liquidate quote tokens', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
       await configureShort(initialHolder, accounts);
 
       const quoteToken = await ERC20.at(OpenTx.quoteToken);
@@ -46,7 +46,7 @@ describe('#liquidate', () => {
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
       // It should burn the short tokens
-      const lenderShortAfter = await erc20Short.balanceOf(lender);
+      const lenderShortAfter = await erc20Contract.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);
 
       // It should liquidate the correct amount of the quote balance
@@ -57,7 +57,7 @@ describe('#liquidate', () => {
 
   contract('Margin', function(accounts) {
     it('allows liquidating quote tokens if the lender is a smart contract', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
       await configureShort(initialHolder, accounts);
 
       // Create a new loan owner smart contract that implements liquidate delegator
@@ -75,7 +75,7 @@ describe('#liquidate', () => {
       // Liquidate quote tokens by burning short tokens
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
-      const lenderShortAfter = await erc20Short.balanceOf(lender);
+      const lenderShortAfter = await erc20Contract.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);
 
       const lenderQuoteAfter = await quoteToken.balanceOf(lender);

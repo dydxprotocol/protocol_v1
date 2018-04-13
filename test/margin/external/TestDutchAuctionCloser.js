@@ -6,7 +6,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ERC721Short = artifacts.require("ERC721Short");
+const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const Margin = artifacts.require("Margin");
@@ -25,7 +25,7 @@ const ONE = new BigNumber(1);
 const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
-  let dydxMargin, VaultContract, ERC721ShortContract;
+  let dydxMargin, VaultContract, ERC721MarginPositionContract;
   let BaseTokenContract, QuoteTokenContract;
   let OpenTx;
   const dutchBidder = accounts[9];
@@ -34,13 +34,13 @@ contract('DutchAuctionCloser', function(accounts) {
     [
       dydxMargin,
       VaultContract,
-      ERC721ShortContract,
+      ERC721MarginPositionContract,
       BaseTokenContract,
       QuoteTokenContract,
     ] = await Promise.all([
       Margin.deployed(),
       Vault.deployed(),
-      ERC721Short.deployed(),
+      ERC721MarginPosition.deployed(),
       BaseToken.deployed(),
       QuoteToken.deployed(),
     ]);
@@ -65,8 +65,8 @@ contract('DutchAuctionCloser', function(accounts) {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
-      OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      await ERC721ShortContract.approveRecipient(DutchAuctionCloser.address, true);
+      OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, true);
       await dydxMargin.marginCall(
         OpenTx.id,
         0, /*requiredDeposit*/
@@ -90,7 +90,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
     it('fails for unapproved short', async () => {
       // dont approve dutch auction closer
-      await ERC721ShortContract.approveRecipient(DutchAuctionCloser.address, false);
+      await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, false);
 
       await wait(callTimeLimit * 3 / 4);
 

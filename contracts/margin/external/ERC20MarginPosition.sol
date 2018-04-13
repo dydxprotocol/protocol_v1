@@ -17,7 +17,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
- * @title ERC20Short
+ * @title ERC20MarginPosition
  * @author dYdX
  *
  * Contract used to tokenize positions and allow them to be used as ERC20-compliant
@@ -25,7 +25,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * entitled to some amount of quote tokens after settlement.
  */
  /* solium-disable-next-line */
-contract ERC20Short is
+contract ERC20MarginPosition is
     StandardToken,
     ClosePositionDelegator,
     PositionCustodian,
@@ -47,7 +47,7 @@ contract ERC20Short is
     // ------------------------
 
     /**
-     * This ERC20Short was successfully initialized
+     * This ERC20MarginPosition was successfully initialized
      */
     event Initialized(
         bytes32 marginId,
@@ -111,7 +111,7 @@ contract ERC20Short is
     // ------ Constructor ------
     // -------------------------
 
-    function ERC20Short(
+    function ERC20MarginPosition(
         bytes32 marginId,
         address margin,
         address initialTokenHolder,

@@ -10,7 +10,7 @@ import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 
 
 /**
- * @title ERC721Short
+ * @title ERC721MarginPosition
  * @author dYdX
  *
  * Contract used to tokenize positions as ERC721-compliant non-fungible tokens. Holding the
@@ -18,7 +18,7 @@ import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
  * other addresses to close their shorts for them.
  */
  /* solium-disable-next-line */
-contract ERC721Short is
+contract ERC721MarginPosition is
     ERC721Token,
     ClosePositionDelegator,
     PositionCustodian,
@@ -55,7 +55,7 @@ contract ERC721Short is
     // ------ Constructor ------
     // -------------------------
 
-    function ERC721Short(
+    function ERC721MarginPosition(
         address margin
     )
         ERC721Token("dYdX Short Sells", "dYdX")
