@@ -21,7 +21,7 @@ describe('#liquidate', () => {
       ADDRESSES.TEST[2]
     ]);
     // Transfer the short position from the short seller to the ERC20 short token
-    await dydxMargin.transferShort(OpenTx.id, erc20Short.address, { from: OpenTx.seller });
+    await dydxMargin.transferPosition(OpenTx.id, erc20Short.address, { from: OpenTx.seller });
 
     lender = OpenTx.loanOffering.payer;
 

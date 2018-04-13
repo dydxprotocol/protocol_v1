@@ -31,7 +31,7 @@ contract PositionOwner is OnlyMargin {
 
     /**
      * Function a contract must implement in order to receive ownership of a short sell via the
-     * transferShort function or the atomic-assign to the "owner" field when opening a position.
+     * transferPosition function or the atomic-assign to the "owner" field when opening a position.
      *
      * @param  from     Address of the previous owner
      * @param  marginId Unique ID of the position

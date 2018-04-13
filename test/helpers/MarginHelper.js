@@ -721,7 +721,7 @@ async function doShortAndCall(
 
   const OpenTx = await doShort(accounts, _salt);
 
-  const callTx = await dydxMargin.callInLoan(
+  const callTx = await dydxMargin.marginCall(
     OpenTx.id,
     _requiredDeposit,
     { from: OpenTx.loanOffering.payer }

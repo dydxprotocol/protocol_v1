@@ -5,16 +5,16 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
-import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
+import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
 
 
 /**
- * @title ForceRecoverLoanImpl
+ * @title ForceRecoverCollateralImpl
  * @author dYdX
  *
- * This library contains the implementation for the forceRecoverLoan function of Margin
+ * This library contains the implementation for the forceRecoverCollateral function of Margin
  */
-library ForceRecoverLoanImpl {
+library ForceRecoverCollateralImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -33,7 +33,7 @@ library ForceRecoverLoanImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function forceRecoverLoanImpl(
+    function forceRecoverCollateralImpl(
         MarginState.State storage state,
         bytes32 marginId
     )
@@ -57,7 +57,7 @@ library ForceRecoverLoanImpl {
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
-                ForceRecoverLoanDelegator(position.lender).forceRecoverLoanOnBehalfOf(
+                ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
                     msg.sender,
                     marginId
                 )

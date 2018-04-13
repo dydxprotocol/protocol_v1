@@ -8,7 +8,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
-import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
+import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -23,7 +23,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 /* solium-disable-next-line */
 contract SharedLoan is
     CallLoanDelegator,
-    ForceRecoverLoanDelegator,
+    ForceRecoverCollateralDelegator,
     ReentrancyGuard
 {
     using SafeMath for uint256;
@@ -116,7 +116,7 @@ contract SharedLoan is
         address[] trustedLoanCallers
     )
         public
-        ForceRecoverLoanDelegator(margin)
+        ForceRecoverCollateralDelegator(margin)
         CallLoanDelegator(margin)
     {
         MARGIN_ID = marginId;
@@ -216,7 +216,7 @@ contract SharedLoan is
      * @return          True to consent to the loan being called if the initiator is a trusted
      *                  loan caller, false otherwise
      */
-    function callInLoanOnBehalfOf(
+    function marginCallOnBehalfOf(
         address who,
         bytes32 marginId,
         uint256 /* depositAmount */
@@ -241,7 +241,7 @@ contract SharedLoan is
      * @return          True to consent to the loan call being canceled if the initiator is a
      *                  trusted loan caller, false otherwise
      */
-    function cancelLoanCallOnBehalfOf(
+    function cancelMarginCallOnBehalfOf(
         address who,
         bytes32 marginId
     )
@@ -265,7 +265,7 @@ contract SharedLoan is
      * @param  marginId Unique ID of the position
      * @return          True to consent to the loan being force recovered
      */
-    function forceRecoverLoanOnBehalfOf(
+    function forceRecoverCollateralOnBehalfOf(
         address /* who */,
         bytes32 marginId
     )

@@ -14,8 +14,8 @@ import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
  *
  * This library contains the implementation for the following functions of Margin:
  *
- *      - callInLoan
- *      - cancelLoanCallImpl
+ *      - marginCall
+ *      - cancelMarginCallImpl
  *      - cancelLoanOffering
  *      - approveLoanOffering
  */
@@ -70,7 +70,7 @@ library LoanImpl {
     // ---- Public Implementation Functions ----
     // -----------------------------------------
 
-    function callInLoanImpl(
+    function marginCallImpl(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 requiredDeposit
@@ -82,7 +82,7 @@ library LoanImpl {
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
-                CallLoanDelegator(position.lender).callInLoanOnBehalfOf(
+                CallLoanDelegator(position.lender).marginCallOnBehalfOf(
                     msg.sender,
                     marginId,
                     requiredDeposit
@@ -107,7 +107,7 @@ library LoanImpl {
         );
     }
 
-    function cancelLoanCallImpl(
+    function cancelMarginCallImpl(
         MarginState.State storage state,
         bytes32 marginId
     )
@@ -118,7 +118,7 @@ library LoanImpl {
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
-                CallLoanDelegator(position.lender).cancelLoanCallOnBehalfOf(
+                CallLoanDelegator(position.lender).cancelMarginCallOnBehalfOf(
                     msg.sender,
                     marginId
                 )

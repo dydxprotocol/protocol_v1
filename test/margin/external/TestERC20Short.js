@@ -113,11 +113,11 @@ contract('ERC20Short', function(accounts) {
     ]);
   }
 
-  async function transferShortsToTokens() {
+  async function transferPositionsToTokens() {
     await Promise.all([
-      CONTRACTS.MARGIN.transferShort(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
+      CONTRACTS.MARGIN.transferPosition(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
         { from: POSITIONS.FULL.TX.seller }),
-      CONTRACTS.MARGIN.transferShort(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
+      CONTRACTS.MARGIN.transferPosition(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
         { from: POSITIONS.PART.TX.seller }),
     ]);
   }
@@ -147,12 +147,12 @@ contract('ERC20Short', function(accounts) {
   async function callInShorts() {
     const requiredDeposit = new BigNumber(10);
     await Promise.all([
-      CONTRACTS.MARGIN.callInLoan(
+      CONTRACTS.MARGIN.marginCall(
         POSITIONS.FULL.ID,
         requiredDeposit,
         { from : POSITIONS.FULL.TX.loanOffering.payer }
       ),
-      CONTRACTS.MARGIN.callInLoan(
+      CONTRACTS.MARGIN.marginCall(
         POSITIONS.PART.ID,
         requiredDeposit,
         { from : POSITIONS.PART.TX.loanOffering.payer }
@@ -201,7 +201,7 @@ contract('ERC20Short', function(accounts) {
 
         const tsc1 = await getERC20ShortConstants(POSITION.TOKEN_CONTRACT);
 
-        await CONTRACTS.MARGIN.transferShort(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
+        await CONTRACTS.MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.seller });
 
         const [tsc2, position] = await Promise.all([
@@ -232,7 +232,7 @@ contract('ERC20Short', function(accounts) {
     it('fails if not authorized', async () => {
       await setUpShorts();
       await setUpShortTokens();
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -272,7 +272,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if user does not have the amount of baseToken required', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await Promise.all([
         POSITIONS.FULL.TOKEN_CONTRACT.transfer(accounts[0], POSITIONS.FULL.NUM_TOKENS,
           { from: INITIAL_TOKEN_HOLDER }),
@@ -294,7 +294,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if value is zero', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
 
@@ -312,7 +312,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('closes up to the remainingAmount if user tries to close more', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
 
@@ -328,7 +328,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('closes at most the number of tokens owned', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
 
@@ -352,7 +352,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if user does not own any of the tokenized Short', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller(accounts[0]);
 
@@ -370,7 +370,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if closed', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
 
@@ -397,7 +397,7 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('succeeds otherwise', async () => {
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
       await returnTokensToSeller();
       await grantDirectCloseTokensToSeller();
 
@@ -417,7 +417,7 @@ contract('ERC20Short', function(accounts) {
       async () => {
         await setUpShorts();
         await setUpShortTokens();
-        await transferShortsToTokens();
+        await transferPositionsToTokens();
         await returnTokensToSeller();
         await callInShorts();
         await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
@@ -436,7 +436,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
         );
-        await CONTRACTS.MARGIN.forceRecoverLoan(POSITION.ID, { from: lender });
+        await CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -455,7 +455,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS
         );
-        await expectThrow( CONTRACTS.MARGIN.forceRecoverLoan(POSITION.ID, { from: lender }));
+        await expectThrow( CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, seller, { from: seller });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -477,14 +477,14 @@ contract('ERC20Short', function(accounts) {
       }
     });
 
-    it('withdraws no tokens after forceRecoverLoan', async () => {
-      // close nothing, letting the lender forceRecoverLoan
+    it('withdraws no tokens after forceRecoverCollateral', async () => {
+      // close nothing, letting the lender forceRecoverCollateral
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const seller = POSITION.TX.seller;
         const lender = POSITION.TX.loanOffering.payer;
 
-        await CONTRACTS.MARGIN.forceRecoverLoan(POSITION.ID, { from: lender });
+        await CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
 
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, seller, { from: seller });
         expect(tx.result).to.be.bignumber.equal(0);
@@ -496,7 +496,7 @@ contract('ERC20Short', function(accounts) {
     it('returns decimal value of baseToken', async () => {
       await setUpShorts();
       await setUpShortTokens();
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -527,7 +527,7 @@ contract('ERC20Short', function(accounts) {
     it('successfully returns the marginId of the short', async () => {
       await setUpShorts();
       await setUpShortTokens();
-      await transferShortsToTokens();
+      await transferPositionsToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];

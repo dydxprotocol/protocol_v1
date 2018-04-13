@@ -115,7 +115,7 @@ contract('ERC20ShortCreator', function(accounts) {
         OpenTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await dydxMargin.transferShort(OpenTx.id, ERC20ShortCreatorContract.address);
+      await dydxMargin.transferPosition(OpenTx.id, ERC20ShortCreatorContract.address);
 
       // Get the return value of the tokenizeShort function
       const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);

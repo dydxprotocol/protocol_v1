@@ -13,8 +13,8 @@ const OpenPositionImpl = artifacts.require("OpenPositionImpl");
 const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
 const ClosePositionImpl = artifacts.require("ClosePositionImpl");
 const LiquidatePositionImpl = artifacts.require("LiquidatePositionImpl");
-const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
-const DepositImpl = artifacts.require("DepositImpl");
+const ForceRecoverCollateralImpl = artifacts.require("ForceRecoverCollateralImpl");
+const DepositCollateralImpl = artifacts.require("DepositCollateralImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
 const InterestImpl = artifacts.require("InterestImpl");
@@ -59,9 +59,9 @@ async function deployMarginContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(InterestImpl),
-    deployer.deploy(ForceRecoverLoanImpl),
+    deployer.deploy(ForceRecoverCollateralImpl),
     deployer.deploy(LoanImpl),
-    deployer.deploy(DepositImpl),
+    deployer.deploy(DepositCollateralImpl),
     deployer.deploy(TransferImpl),
     deployer.deploy(OpenPositionImpl),
   ]);
@@ -84,9 +84,9 @@ async function deployMarginContracts(deployer) {
     Margin.link('ClosePositionImpl', ClosePositionImpl.address),
     Margin.link('LiquidatePositionImpl', LiquidatePositionImpl.address),
     Margin.link('InterestImpl', InterestImpl.address),
-    Margin.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
+    Margin.link('ForceRecoverCollateralImpl', ForceRecoverCollateralImpl.address),
     Margin.link('LoanImpl', LoanImpl.address),
-    Margin.link('DepositImpl', DepositImpl.address),
+    Margin.link('DepositCollateralImpl', DepositCollateralImpl.address),
     Margin.link('TransferImpl', TransferImpl.address),
     Margin.link('IncreasePositionImpl', IncreasePositionImpl.address)
   ]);

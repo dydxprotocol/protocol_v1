@@ -16,22 +16,22 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 
-describe('#transferShort', () => {
+describe('#transferPosition', () => {
   let dydxMargin, OpenTx;
 
-  async function transferShort_THROW(OpenTx, to, from) {
+  async function transferPosition_THROW(OpenTx, to, from) {
     const originalSeller = await dydxMargin.getPositionSeller(OpenTx.id);
     await expectThrow(
-      dydxMargin.transferShort(OpenTx.id, to, { from: from })
+      dydxMargin.transferPosition(OpenTx.id, to, { from: from })
     );
     const seller = await dydxMargin.getPositionSeller(OpenTx.id);
     expect(seller).to.eq(originalSeller);
     return;
   }
 
-  async function transferShort(OpenTx, to, from, expectedSeller = null) {
+  async function transferPosition(OpenTx, to, from, expectedSeller = null) {
     expectedSeller = expectedSeller || to;
-    const tx = await dydxMargin.transferShort(OpenTx.id, to, { from: from});
+    const tx = await dydxMargin.transferPosition(OpenTx.id, to, { from: from});
 
     if (expectedSeller === to) {
       expectLog(tx.logs[0], 'ShortTransferred', {
@@ -68,24 +68,24 @@ describe('#transferShort', () => {
     });
 
     it('only allows short seller to transfer', async () => {
-      await transferShort_THROW(OpenTx, toAddress, toAddress);
+      await transferPosition_THROW(OpenTx, toAddress, toAddress);
     });
 
     it('fails if transferring to self', async () => {
-      await transferShort_THROW(OpenTx, OpenTx.seller, OpenTx.seller);
+      await transferPosition_THROW(OpenTx, OpenTx.seller, OpenTx.seller);
     });
 
     it('transfers ownership of a short', async () => {
-      const tx = await transferShort(OpenTx, toAddress, OpenTx.seller);
-      console.log('\tMargin.transferShort gas used: ' + tx.receipt.gasUsed);
+      const tx = await transferPosition(OpenTx, toAddress, OpenTx.seller);
+      console.log('\tMargin.transferPosition gas used: ' + tx.receipt.gasUsed);
     });
 
     it('fails if already transferred', async () => {
-      await transferShort_THROW(OpenTx, toAddress, OpenTx.seller);
+      await transferPosition_THROW(OpenTx, toAddress, OpenTx.seller);
     });
 
     it('fails for invalid id', async () => {
-      await transferShort_THROW({id: BYTES32.BAD_ID}, toAddress, OpenTx.seller);
+      await transferPosition_THROW({id: BYTES32.BAD_ID}, toAddress, OpenTx.seller);
     });
   });
 
@@ -98,11 +98,11 @@ describe('#transferShort', () => {
         ADDRESSES.ZERO,
         false);
 
-      const tx = await transferShort(
+      const tx = await transferPosition(
         OpenTx,
         testClosePositionDelegator.address,
         OpenTx.seller);
-      console.log('\tMargin.transferShort gas used (to contract): ' + tx.receipt.gasUsed);
+      console.log('\tMargin.transferPosition gas used (to contract): ' + tx.receipt.gasUsed);
     });
   });
 
@@ -119,12 +119,12 @@ describe('#transferShort', () => {
         testClosePositionDelegator.address,
         false);
 
-      const tx = await transferShort(
+      const tx = await transferPosition(
         OpenTx,
         testPositionOwner.address,
         OpenTx.seller,
         testClosePositionDelegator.address);
-      console.log('\tMargin.transferShort gas used (chains thru): ' + tx.receipt.gasUsed);
+      console.log('\tMargin.transferPosition gas used (chains thru): ' + tx.receipt.gasUsed);
     });
   });
 
@@ -137,7 +137,7 @@ describe('#transferShort', () => {
         ADDRESSES.ZERO,
         false);
 
-      await transferShort_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
+      await transferPosition_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
     });
   });
 
@@ -150,7 +150,7 @@ describe('#transferShort', () => {
         OpenTx.seller,
         false);
 
-      await transferShort_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
+      await transferPosition_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
     });
   });
 
@@ -158,7 +158,7 @@ describe('#transferShort', () => {
     it('fails to transfer to an arbitrary contract', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doShort(accounts);
-      await transferShort_THROW(OpenTx, TokenA.address, OpenTx.seller);
+      await transferPosition_THROW(OpenTx, TokenA.address, OpenTx.seller);
     });
   });
 });

@@ -106,24 +106,24 @@ describe('MarginAdmin', () => {
     });
 
     contract('Margin', accounts => {
-      it('Only allows #cancelLoanCall while OPERATIONAL', async () => {
+      it('Only allows #cancelMarginCall while OPERATIONAL', async () => {
         const dydxMargin = await Margin.deployed();
         const OpenTx = await doShort(accounts);
 
-        await dydxMargin.callInLoan(
+        await dydxMargin.marginCall(
           OpenTx.id,
           new BigNumber(10),
           { from: OpenTx.loanOffering.payer }
         );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( dydxMargin.cancelLoanCall(
+        await expectThrow( dydxMargin.cancelMarginCall(
           OpenTx.id,
           { from: OpenTx.loanOffering.payer }
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
-        await dydxMargin.cancelLoanCall(
+        await dydxMargin.cancelMarginCall(
           OpenTx.id,
           { from: OpenTx.loanOffering.payer }
         );
@@ -142,14 +142,14 @@ describe('MarginAdmin', () => {
         await quoteToken.approve(ProxyContract.address, amount, { from: OpenTx.seller });
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( dydxMargin.deposit(
+        await expectThrow( dydxMargin.depositCollateral(
           OpenTx.id,
           amount,
           { from: OpenTx.seller }
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
-        await dydxMargin.deposit(
+        await dydxMargin.depositCollateral(
           OpenTx.id,
           amount,
           { from: OpenTx.seller }

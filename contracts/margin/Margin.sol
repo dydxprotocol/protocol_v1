@@ -7,8 +7,8 @@ import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Vault } from "./Vault.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
-import { DepositImpl } from "./impl/DepositImpl.sol";
-import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
+import { DepositCollateralImpl } from "./impl/DepositCollateralImpl.sol";
+import { ForceRecoverCollateralImpl } from "./impl/ForceRecoverCollateralImpl.sol";
 import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
 import { LiquidatePositionImpl } from "./impl/LiquidatePositionImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
@@ -332,23 +332,22 @@ contract Margin is
     }
 
     /**
-     * Call in a position.
-     * Only callable by the lender of a position. After the call, the owner
-     * will have time equal to the call time limit specified on the original loan offering to
-     * close the position and repay the loan. If the owner does not close the position, the
-     * lender can use forceRecoverLoan to recover the funds.
+     * Margin call a position.
+     * Only callable by the lender of a position. After the call, the owner will have time equal to
+     * the call time limit of the position to close the position. If the owner does not close the
+     * position, the lender can recover the collateral in the position.
      *
      * @param  marginId         Unique ID for the position
      * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
      */
-    function callInLoan(
+    function marginCall(
         bytes32 marginId,
         uint256 requiredDeposit
     )
         external
         nonReentrant
     {
-        LoanImpl.callInLoanImpl(
+        LoanImpl.marginCallImpl(
             state,
             marginId,
             requiredDeposit
@@ -356,18 +355,18 @@ contract Margin is
     }
 
     /**
-     * Cancel a loan call. Only callable by the position owner
+     * Cancel a margin call. Only callable by the position lender.
      *
      * @param  marginId  Unique ID for the position
      */
-    function cancelLoanCall(
+    function cancelMarginCall(
         bytes32 marginId
     )
         external
         onlyWhileOperational
         nonReentrant
     {
-        LoanImpl.cancelLoanCallImpl(state, marginId);
+        LoanImpl.cancelMarginCallImpl(state, marginId);
     }
 
     /**
@@ -376,14 +375,14 @@ contract Margin is
      *
      * @param  marginId  Unique ID for the position
      */
-    function forceRecoverLoan(
+    function forceRecoverCollateral(
         bytes32 marginId
     )
         external
         nonReentrant
         returns (uint256)
     {
-        return ForceRecoverLoanImpl.forceRecoverLoanImpl(state, marginId);
+        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, marginId);
     }
 
     /**
@@ -393,7 +392,7 @@ contract Margin is
      * @param  marginId         Unique ID for the position
      * @param  depositAmount    Additional amount in quote token to deposit
      */
-    function deposit(
+    function depositCollateral(
         bytes32 marginId,
         uint256 depositAmount
     )
@@ -401,7 +400,7 @@ contract Margin is
         onlyWhileOperational
         nonReentrant
     {
-        DepositImpl.depositImpl(
+        DepositCollateralImpl.depositCollateralImpl(
             state,
             marginId,
             depositAmount
@@ -542,14 +541,14 @@ contract Margin is
      * @param  marginId  Unique ID for the position
      * @param  who       New owner of the position
      */
-    function transferShort(
+    function transferPosition(
         bytes32 marginId,
         address who
     )
         external
         nonReentrant
     {
-        TransferImpl.transferOpenPositionImpl(
+        TransferImpl.transferPositionImpl(
             state,
             marginId,
             who);

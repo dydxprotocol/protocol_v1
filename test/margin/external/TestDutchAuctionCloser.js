@@ -67,7 +67,7 @@ contract('DutchAuctionCloser', function(accounts) {
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
       OpenTx = await doShort(accounts, salt++, ERC721Short.address);
       await ERC721ShortContract.approveRecipient(DutchAuctionCloser.address, true);
-      await dydxMargin.callInLoan(
+      await dydxMargin.marginCall(
         OpenTx.id,
         0, /*requiredDeposit*/
         { from: OpenTx.loanOffering.payer }

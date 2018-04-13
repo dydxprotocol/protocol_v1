@@ -1,19 +1,19 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ForceRecoverLoanDelegator } from "../margin/interfaces/ForceRecoverLoanDelegator.sol";
+import { ForceRecoverCollateralDelegator } from "../margin/interfaces/ForceRecoverCollateralDelegator.sol";
 
 
-contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
+contract TestForceRecoverCollateralDelegator is ForceRecoverCollateralDelegator {
 
     address public RECOVERER;
 
-    function TestForceRecoverLoanDelegator(
+    function TestForceRecoverCollateralDelegator(
         address margin,
         address recoverer
     )
         public
-        ForceRecoverLoanDelegator(margin)
+        ForceRecoverCollateralDelegator(margin)
     {
         RECOVERER = recoverer;
     }
@@ -29,7 +29,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
         return address(this);
     }
 
-    function forceRecoverLoanOnBehalfOf(
+    function forceRecoverCollateralOnBehalfOf(
         address who,
         bytes32
     )

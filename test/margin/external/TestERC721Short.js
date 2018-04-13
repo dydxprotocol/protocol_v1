@@ -78,7 +78,7 @@ contract('ERC721Short', function(accounts) {
         OpenTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await dydxMargin.transferShort(OpenTx.id, ERC721ShortContract.address);
+      await dydxMargin.transferPosition(OpenTx.id, ERC721ShortContract.address);
       const owner = await ERC721ShortContract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
@@ -168,7 +168,7 @@ contract('ERC721Short', function(accounts) {
     });
   });
 
-  describe('#transferShort', () => {
+  describe('#transferPosition', () => {
     const receiver = accounts[9];
     const shortSeller = accounts[0];
     let OpenTx;
@@ -180,7 +180,7 @@ contract('ERC721Short', function(accounts) {
     });
 
     it('succeeds when called by ownerOf', async () => {
-      await ERC721ShortContract.transferShort(OpenTx.id, receiver, { from: shortSeller });
+      await ERC721ShortContract.transferPosition(OpenTx.id, receiver, { from: shortSeller });
       await expectThrow( ERC721ShortContract.ownerOf.call(uint256(OpenTx.id)));
       const newOwner = await dydxMargin.getPositionSeller.call(OpenTx.id);
       expect(newOwner).to.equal(receiver);
@@ -188,12 +188,12 @@ contract('ERC721Short', function(accounts) {
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        ERC721ShortContract.transferShort(OpenTx.id, receiver, { from: accounts[2] }));
+        ERC721ShortContract.transferPosition(OpenTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existant short', async () => {
       await expectThrow(
-        ERC721ShortContract.transferShort(BYTES32.BAD_ID, receiver, { from: shortSeller }));
+        ERC721ShortContract.transferPosition(BYTES32.BAD_ID, receiver, { from: shortSeller }));
     });
   });
 

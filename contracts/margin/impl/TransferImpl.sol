@@ -43,7 +43,7 @@ library TransferImpl {
         state.positions[marginId].lender = finalLender;
     }
 
-    function transferOpenPositionImpl(
+    function transferPositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newSeller

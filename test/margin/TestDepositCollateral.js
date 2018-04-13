@@ -24,7 +24,7 @@ describe('#deposit', () => {
       const OpenTx = await doShort(accounts);
       const amount = new BigNumber(1000);
 
-      const tx = await doDeposit({
+      const tx = await doDepositCollateral({
         from: OpenTx.seller,
         OpenTx,
         printGas: true,
@@ -43,7 +43,7 @@ describe('#deposit', () => {
     it('doesnt allow anyone but short seller to deposit', async () => {
       const OpenTx = await doShort(accounts);
       await expectThrow(
-        doDeposit({
+        doDepositCollateral({
           from: accounts[9],
           OpenTx,
         })
@@ -56,7 +56,7 @@ describe('#deposit', () => {
       const OpenTx = await doShort(accounts);
 
       await expectThrow(
-        doDeposit({
+        doDepositCollateral({
           from: OpenTx.seller,
           OpenTx: { id: BYTES32.BAD_ID },
           amount: 0
@@ -70,7 +70,7 @@ describe('#deposit', () => {
       const OpenTx = await doShort(accounts);
 
       await expectThrow(
-        doDeposit({
+        doDepositCollateral({
           from: OpenTx.seller,
           OpenTx,
           amount: 0
@@ -86,7 +86,7 @@ describe('#deposit', () => {
 
       let { requiredDeposit } = await getPosition(dydxMargin, OpenTx.id);
 
-      await doDeposit({
+      await doDepositCollateral({
         from: OpenTx.seller,
         OpenTx,
         amount: requiredDeposit.minus(5)
@@ -99,7 +99,7 @@ describe('#deposit', () => {
       expect(callTimestamp).to.be.bignumber.gt(new BigNumber(0));
 
       const amount2 = 5;
-      const tx2 = await doDeposit({
+      const tx2 = await doDepositCollateral({
         from: OpenTx.seller,
         OpenTx,
         amount: amount2
@@ -121,7 +121,7 @@ describe('#deposit', () => {
   });
 });
 
-async function doDeposit({
+async function doDepositCollateral({
   from,
   OpenTx,
   printGas = false,
@@ -136,14 +136,14 @@ async function doDeposit({
   await quoteToken.issue(amount, { from });
   await quoteToken.approve(ProxyContract.address, amount, { from });
 
-  const tx = await dydxMargin.deposit(
+  const tx = await dydxMargin.depositCollateral(
     OpenTx.id,
     amount,
     { from }
   );
 
   if (printGas) {
-    console.log('\tMargin.deposit gas used: ' + tx.receipt.gasUsed);
+    console.log('\tMargin.depositCollateral gas used: ' + tx.receipt.gasUsed);
   }
 
   const newBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);

@@ -8,12 +8,12 @@ import { Vault } from "../Vault.sol";
 
 
 /**
- * @title DepositImpl
+ * @title DepositCollateralImpl
  * @author dYdX
  *
  * This library contains the implementation for the deposit function of Margin
  */
-library DepositImpl {
+library DepositCollateralImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -43,7 +43,7 @@ library DepositImpl {
     // ---- Public Implementation Functions ----
     // -----------------------------------------
 
-    function depositImpl(
+    function depositCollateralImpl(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 depositAmount

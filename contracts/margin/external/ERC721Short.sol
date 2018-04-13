@@ -119,7 +119,7 @@ contract ERC721Short is
      * @param  marginId Unique ID of the position
      * @param  to       Address to transfer short ownership to
      */
-    function transferShort(
+    function transferPosition(
         bytes32 marginId,
         address to
     )
@@ -129,7 +129,7 @@ contract ERC721Short is
         uint256 tokenId = uint256(marginId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferShort(marginId, to);
+        Margin(MARGIN).transferPosition(marginId, to);
     }
 
     /**

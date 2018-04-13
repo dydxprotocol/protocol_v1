@@ -32,7 +32,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         return address(this);
     }
 
-    function callInLoanOnBehalfOf(
+    function marginCallOnBehalfOf(
         address who,
         bytes32,
         uint256
@@ -44,7 +44,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         return who == CALLER;
     }
 
-    function cancelLoanCallOnBehalfOf(
+    function cancelMarginCallOnBehalfOf(
         address who,
         bytes32
     )
