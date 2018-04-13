@@ -19,7 +19,7 @@ library DepositImpl {
     // ============ Events ============
 
     /**
-     * Additional deposit for a margin position was posted by the trader
+     * Additional deposit for a margin position was posted by the owner
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
@@ -33,7 +33,7 @@ library DepositImpl {
     event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed trader,
+        address indexed owner,
         uint256 depositAmount
     );
 
@@ -48,7 +48,7 @@ library DepositImpl {
     {
         MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
         require(depositAmount > 0);
-        require(msg.sender == position.trader);
+        require(msg.sender == position.owner);
 
         Vault(state.VAULT).transferToVault(
             marginId,

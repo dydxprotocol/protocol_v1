@@ -32,7 +32,7 @@ contract PayoutRecipient is OnlyMargin {
      * @param  marginId          Unique ID of the margin position
      * @param  closeAmount       Amount of the position that was closed
      * @param  positionCloser    Address of the account or contract that closed the position
-     * @param  trader            Address of the owner of the position
+     * @param  positionOwner     Address of the owner of the position
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
@@ -42,7 +42,7 @@ contract PayoutRecipient is OnlyMargin {
         bytes32 marginId,
         uint256 closeAmount,
         address positionCloser,
-        address trader,
+        address positionOwner,
         address quoteToken,
         uint256 payoutQuoteToken,
         uint256 totalQuoteToken

@@ -99,7 +99,7 @@ library ClosePositionImpl {
             Proxy(state.PROXY).transferTokens(
                 transaction.baseToken,
                 msg.sender,
-                transaction.lender,
+                transaction.positionLender,
                 transaction.baseTokenOwed
             );
         } else {
@@ -160,7 +160,7 @@ library ClosePositionImpl {
         Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
             exchangeWrapperAddress,
-            transaction.lender,
+            transaction.positionLender,
             transaction.baseTokenOwed
         );
 

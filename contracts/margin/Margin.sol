@@ -223,9 +223,9 @@ contract Margin is
     }
 
     /**
-    * Close a margin position. May be called by the trader or with the approval of the
-    * trader. May provide an order and exchangeWrapperAddress to facilitate the closing of the
-    * margin position. The trader is sent quote token stored in the contract.
+    * Close a margin position. May be called by the owner or with the approval of the
+    * owner. May provide an order and exchangeWrapperAddress to facilitate the closing of the
+    * margin position. The payoutRecipient is sent quote token stored in the contract.
      *
      * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
@@ -261,7 +261,7 @@ contract Margin is
     }
 
     /**
-     * Helper to close a margin position by paying base token directly from the trader
+     * Helper to close a margin position by paying base token directly
      *
      * @param  marginId                 Unique ID of the margin position
      * @param  requestedCloseAmount     Amount of the margin position to close. The amount closed
@@ -294,7 +294,7 @@ contract Margin is
 
     /**
      * Liquidate loan position and withdraw quote tokens from the vault.
-     * Must be approved by the trader (e.g., by requiring the lender to own part of the
+     * Must be approved by the owner (e.g., by requiring the lender to own part of the
      * margin position, and burning in order to liquidate part of the loan).
      *
      * @param  marginId                    Unique ID of the margin position
@@ -324,13 +324,13 @@ contract Margin is
 
     /**
      * Margin call a position.
-     * Only callable by the lender for a margin position. After loan is called in, the trader
+     * Only callable by the lender for a margin position. After loan is called in, the owner
      * will have time equal to the call time limit to close the position and repay the loan. If the
-     * trader does not close the position, the lender can use forceRecoverCollateral to recover
+     * owner does not close the position, the lender can use forceRecoverCollateral to recover
      * the funds.
      *
      * @param  marginId         Unique ID of the margin position
-     * @param  requiredDeposit  Amount of deposit the trader must put up to cancel the call
+     * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
      */
     function marginCall(
         bytes32 marginId,
@@ -526,8 +526,8 @@ contract Margin is
     }
 
     /**
-     * Transfer ownership of a margin position trader to a new address. This new address will be
-     * entitled to all payouts for this position. Only callable by the trader for a position.
+     * Transfer ownership of a margin position to a new address. This new address will be
+     * entitled to all payouts for this position. Only callable by the owner of a position.
      * If the "who" param is a contract, it must implement the PositionOwner interface.
      *
      * @param  marginId  Unique ID of the margin position

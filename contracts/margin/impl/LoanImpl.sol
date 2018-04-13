@@ -30,7 +30,7 @@ library LoanImpl {
     event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed trader,
+        address indexed owner,
         uint256 requiredDeposit
     );
 
@@ -40,7 +40,7 @@ library LoanImpl {
     event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed trader,
+        address indexed owner,
         uint256 depositAmount
     );
 
@@ -98,7 +98,7 @@ library LoanImpl {
         emit MarginCallInitiated(
             marginId,
             position.lender,
-            position.trader,
+            position.owner,
             requiredDeposit
         );
     }
@@ -130,7 +130,7 @@ library LoanImpl {
         emit MarginCallCanceled(
             marginId,
             position.lender,
-            position.trader,
+            position.owner,
             0
         );
     }

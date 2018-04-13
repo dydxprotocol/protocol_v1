@@ -16,7 +16,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * @author dYdX
  *
  * Contract for allowing anyone to close a margin-called position by using a Dutch auction mechanism
- * to give a fair price to the trader. Price paid to the trader decreases linearly
+ * to give a fair price to the position owner. Price paid to the owner decreases linearly
  * over time.
  */
  /* solium-disable-next-line */
@@ -31,11 +31,11 @@ contract DutchAuctionCloser is
      */
     event PositionClosedByDutchAuction(
         bytes32 indexed marginId,
-        address indexed trader,
+        address indexed owner,
         address indexed bidder,
         uint256 closeAmount,
         uint256 quoteTokenForBidder,
-        uint256 quoteTokenForTrader
+        uint256 quoteTokenForOwner
     );
 
     // ============ Structs ============
@@ -78,7 +78,7 @@ contract DutchAuctionCloser is
      * @param  marginId          Unique ID of the margin position
      * @param  closeAmount       Amount of the position that was closed
      * @param  positionCloser    Address of the account or contract that closed the position
-     * @param  trader            Address of the owner of the position
+     * @param  owner             Address of the owner of the position
      * @param  quoteToken        Address of the ERC20 quote token
      * @param  payoutQuoteToken  Number of quote tokens received from the payout
      * @param  totalQuoteToken   Total number of quote tokens removed from vault during close
@@ -88,7 +88,7 @@ contract DutchAuctionCloser is
         bytes32 marginId,
         uint256 closeAmount,
         address positionCloser,
-        address trader,
+        address owner,
         address quoteToken,
         uint256 payoutQuoteToken,
         uint256 totalQuoteToken
@@ -108,8 +108,8 @@ contract DutchAuctionCloser is
             totalQuoteToken
         );
 
-        // pay quoteToken back to trader
-        address deedHolder = PositionCustodian(trader).getPositionDeedHolder(marginId);
+        // pay quoteToken back to owner
+        address deedHolder = PositionCustodian(owner).getPositionDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to auction bidder
@@ -118,7 +118,7 @@ contract DutchAuctionCloser is
 
         emit PositionClosedByDutchAuction(
             marginId,
-            trader,
+            owner,
             positionCloser,
             closeAmount,
             bidderReward,

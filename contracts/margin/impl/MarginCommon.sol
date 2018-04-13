@@ -23,7 +23,7 @@ library MarginCommon {
         address baseToken;       // Immutable
         address quoteToken;      // Immutable
         address lender;
-        address trader;
+        address owner;
         uint256 amount;
         uint256 closedAmount;
         uint256 requiredDeposit;

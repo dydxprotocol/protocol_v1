@@ -34,8 +34,8 @@ library ClosePositionShared {
         address payoutRecipient;
         address baseToken;
         address quoteToken;
-        address trader;
-        address lender;
+        address positionOwner;
+        address positionLender;
     }
 
     // ============ Internal Implementation Functions ============
@@ -83,7 +83,7 @@ library ClosePositionShared {
                     transaction.marginId,
                     transaction.closeAmount,
                     msg.sender,
-                    transaction.trader,
+                    transaction.positionOwner,
                     transaction.quoteToken,
                     quoteTokenPayout,
                     transaction.availableQuoteToken
@@ -171,8 +171,8 @@ library ClosePositionShared {
             payoutRecipient: payoutRecipient,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
-            trader: position.trader,
-            lender: position.lender
+            positionOwner: position.owner,
+            positionLender: position.lender
         });
     }
 
@@ -189,10 +189,10 @@ library ClosePositionShared {
         uint256 currentPositionAmount = position.amount.sub(position.closedAmount);
         uint256 newAmount = Math.min256(requestedAmount, currentPositionAmount);
 
-        // If not the trader, require trader to approve msg.sender
-        if (position.trader != msg.sender) {
+        // If not the owner, require owner to approve msg.sender
+        if (position.owner != msg.sender) {
             uint256 allowedCloseAmount =
-                ClosePositionDelegator(position.trader).closePositionOnBehalfOf(
+                ClosePositionDelegator(position.owner).closePositionOnBehalfOf(
                     msg.sender,
                     payoutRecipient,
                     marginId,

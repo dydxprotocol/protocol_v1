@@ -40,7 +40,7 @@ describe('#deposit', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('doesnt allow anyone but trader to deposit', async () => {
+    it('doesnt allow anyone but owner to deposit', async () => {
       const openTx = await doOpenPosition(accounts);
       await expectThrow(
         doDeposit({
@@ -108,7 +108,7 @@ describe('#deposit', () => {
       expectLog(tx2.logs[1], 'MarginCallCanceled', {
         marginId: openTx.id,
         lender: openTx.loanOffering.owner,
-        trader: openTx.trader,
+        owner: openTx.trader,
         depositAmount: amount2
       });
 

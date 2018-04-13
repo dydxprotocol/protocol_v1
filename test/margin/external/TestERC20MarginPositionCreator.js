@@ -54,7 +54,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
 
   describe('#receivePositionOwnership', () => {
     async function checkSuccess(openTx, tokenContract, remainingAmount) {
-      const originalTrader = accounts[0];
+      const originalOwner = accounts[0];
       const [
         tokenMargin,
         tokenMarginId,
@@ -70,13 +70,13 @@ contract('ERC20MarginPositionCreator', function(accounts) {
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
         tokenContract.quoteToken.call(),
         tokenContract.totalSupply.call(),
-        tokenContract.balanceOf.call(originalTrader),
+        tokenContract.balanceOf.call(originalOwner),
       ]);
 
       expect(tokenMargin).to.equal(marginContract.address);
       expect(tokenMarginId).to.equal(openTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
-      expect(tokenHolder).to.equal(originalTrader);
+      expect(tokenHolder).to.equal(originalOwner);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);
       expect(totalSupply).to.be.bignumber.equal(remainingAmount);
       expect(ownerSupply).to.be.bignumber.equal(remainingAmount);
@@ -97,7 +97,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
       );
 
       // Get the
-      const tokenAddress = await marginContract.getPositionTrader(openTx.id);
+      const tokenAddress = await marginContract.getpositionOwner(openTx.id);
 
       // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
       const tokenContract = await ERC20MarginPosition.at(tokenAddress);
@@ -125,7 +125,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
       );
 
       // Get the owner of the position
-      const tokenAddress = await marginContract.getPositionTrader(openTx.id);
+      const tokenAddress = await marginContract.getpositionOwner(openTx.id);
 
       // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
       const tokenContract = await ERC20MarginPosition.at(tokenAddress);

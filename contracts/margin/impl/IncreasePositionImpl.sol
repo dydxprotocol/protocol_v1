@@ -31,7 +31,7 @@ library IncreasePositionImpl {
         bytes32 indexed marginId,
         address indexed trader,
         address indexed lender,
-        address positionTrader,
+        address positionOwner,
         address positionLender,
         bytes32 loanHash,
         address loanFeeRecipient,
@@ -140,7 +140,7 @@ library IncreasePositionImpl {
             marginId,
             msg.sender,
             msg.sender,
-            position.trader,
+            position.owner,
             position.lender,
             "",
             address(0),
@@ -200,7 +200,7 @@ library IncreasePositionImpl {
     {
         require(position.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
-        // require the loan to end no later than the loanOffering's maximum acceptable end time
+        // require the position to end no later than the loanOffering's maximum acceptable end time
         uint256 positionEndTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
         require(positionEndTimestamp <= offeringEndTimestamp);
@@ -285,14 +285,14 @@ library IncreasePositionImpl {
     {
         position.amount = position.amount.add(effectiveAmount);
 
-        address trader = position.trader;
+        address owner = position.owner;
         address lender = position.lender;
 
-        // Unless msg.sender is the position trader and is not a smart contract, call out to the
-        // trader to ensure they consent to value being added
-        if (msg.sender != trader || AddressUtils.isContract(trader)) {
+        // Unless msg.sender is the position owner and is not a smart contract, call out to the
+        // owner to ensure they consent to value being added
+        if (msg.sender != owner || AddressUtils.isContract(owner)) {
             require(
-                PositionOwner(trader).marginPositionIncreased(
+                PositionOwner(owner).marginPositionIncreased(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -326,7 +326,7 @@ library IncreasePositionImpl {
             marginId,
             msg.sender,
             transaction.loanOffering.payer,
-            position.trader,
+            position.owner,
             position.lender,
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
@@ -353,7 +353,7 @@ library IncreasePositionImpl {
         returns (OpenPositionShared.OpenTx memory)
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
-            owner: position.trader,
+            positionOwner: position.owner,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
             effectiveAmount: values256[7],

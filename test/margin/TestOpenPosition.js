@@ -134,7 +134,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and trader for accounts', async () => {
+    it('properly assigns owner for lender and owner for accounts', async () => {
       const margin = await Margin.deployed();
       const openTx = await createMarginTradeTx(accounts);
       await issueTokensAndSetAllowancesFor(openTx);
@@ -147,7 +147,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and trader for contracts', async () => {
+    it('properly assigns owner for lender and owner for contracts', async () => {
       const margin = await Margin.deployed();
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
@@ -168,7 +168,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and trader for chaining', async () => {
+    it('properly assigns owner and lender for chaining', async () => {
       const margin = await Margin.deployed();
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
@@ -237,7 +237,7 @@ async function checkSuccess(margin, openTx) {
 
   // if atomic owner is specified, then expect it
   if (openTx.owner === ADDRESSES.ZERO) {
-    expect(position.trader).to.equal(openTx.trader);
+    expect(position.owner).to.equal(openTx.trader);
   } else {
     let toReturn = null;
     try {
@@ -245,7 +245,7 @@ async function checkSuccess(margin, openTx) {
     } catch(e) {
       toReturn = null;
     }
-    expect(position.trader).to.equal(toReturn ? toReturn : openTx.owner);
+    expect(position.owner).to.equal(toReturn ? toReturn : openTx.owner);
   }
 
   // if atomic owner is specified, then expect it

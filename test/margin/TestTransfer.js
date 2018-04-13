@@ -20,20 +20,20 @@ describe('#transferPosition', () => {
   let margin, openTx;
 
   async function transferPosition_THROW(openTx, to, from) {
-    const originalTrader = await margin.getPositionTrader(openTx.id);
+    const originalOwner = await margin.getpositionOwner(openTx.id);
     await expectThrow(
       margin.transferPosition(openTx.id, to, { from: from })
     );
-    const trader = await margin.getPositionTrader(openTx.id);
-    expect(trader).to.eq(originalTrader);
+    const owner = await margin.getpositionOwner(openTx.id);
+    expect(owner).to.eq(originalOwner);
     return;
   }
 
-  async function transferPosition(openTx, to, from, expectedTrader = null) {
-    expectedTrader = expectedTrader || to;
+  async function transferPosition(openTx, to, from, expectedOwner = null) {
+    expectedOwner = expectedOwner || to;
     const tx = await margin.transferPosition(openTx.id, to, { from: from});
 
-    if (expectedTrader === to) {
+    if (expectedOwner === to) {
       expectLog(tx.logs[0], 'PositionTransferred', {
         marginId: openTx.id,
         from: from,
@@ -48,12 +48,12 @@ describe('#transferPosition', () => {
       expectLog(tx.logs[1], 'PositionTransferred', {
         marginId: openTx.id,
         from: to,
-        to: expectedTrader
+        to: expectedOwner
       });
     }
 
-    const trader = await margin.getPositionTrader(openTx.id);
-    expect(trader.toLowerCase()).to.eq((expectedTrader).toLowerCase());
+    const owner = await margin.getpositionOwner(openTx.id);
+    expect(owner.toLowerCase()).to.eq((expectedOwner).toLowerCase());
 
     return tx;
   }
@@ -67,7 +67,7 @@ describe('#transferPosition', () => {
       expect(openTx.trader).to.not.equal(toAddress);
     });
 
-    it('only allows trader to transfer', async () => {
+    it('only allows owner to transfer', async () => {
       await transferPosition_THROW(openTx, toAddress, toAddress);
     });
 

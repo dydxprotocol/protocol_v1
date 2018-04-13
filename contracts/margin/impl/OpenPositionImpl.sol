@@ -170,17 +170,17 @@ library OpenPositionImpl {
             transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
-        bool newTrader = transaction.owner != msg.sender;
+        bool newOwner = transaction.positionOwner != msg.sender;
 
         state.positions[marginId].lender = TransferInternal.grantLoanOwnership(
             marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.positions[marginId].trader = TransferInternal.grantPositionOwnership(
+        state.positions[marginId].owner = TransferInternal.grantPositionOwnership(
             marginId,
-            newTrader ? msg.sender : address(0),
-            transaction.owner);
+            newOwner ? msg.sender : address(0),
+            transaction.positionOwner);
     }
 
     // ============ Parsing Functions ============
@@ -198,7 +198,7 @@ library OpenPositionImpl {
         returns (OpenPositionShared.OpenTx memory)
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
-            owner: addresses[0],
+            positionOwner: addresses[0],
             baseToken: addresses[1],
             quoteToken: addresses[2],
             effectiveAmount: values256[7],

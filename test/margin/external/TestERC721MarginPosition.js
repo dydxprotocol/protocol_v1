@@ -186,7 +186,7 @@ contract('ERC721MarginPosition', function(accounts) {
     it('succeeds when called by ownerOf', async () => {
       await ERC721MarginPositionContract.transferPosition(openTx.id, receiver, { from: trader });
       await expectThrow( ERC721MarginPositionContract.ownerOf.call(uint256(openTx.id)));
-      const newOwner = await marginContract.getPositionTrader.call(openTx.id);
+      const newOwner = await marginContract.getpositionOwner.call(openTx.id);
       expect(newOwner).to.equal(receiver);
     });
 

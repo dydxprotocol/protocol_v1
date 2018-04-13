@@ -71,7 +71,7 @@ library TransferInternal {
     }
 
     /**
-     * Returns either the address of the new position trader, or the address to which they wish to
+     * Returns either the address of the new position owner, or the address to which they wish to
      * pass ownership. This function does not set state in Margin.
      *
      * @param  marginId  Unique ID of the margin position

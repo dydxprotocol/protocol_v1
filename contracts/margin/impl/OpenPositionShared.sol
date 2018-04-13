@@ -23,7 +23,7 @@ library OpenPositionShared {
     // ============ Structs ============
 
     struct OpenTx {
-        address owner;
+        address positionOwner;
         address baseToken;
         address quoteToken;
         uint256 effectiveAmount;
@@ -56,7 +56,7 @@ library OpenPositionShared {
         // NOTE: Doing this before updating state relies on #openPosition
         transferFromLender(state, transaction);
 
-        // Transfer deposit from the trader
+        // Transfer deposit from the owner
         uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, marginId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
@@ -140,7 +140,7 @@ library OpenPositionShared {
         );
 
         // Disallow zero address owners
-        require(transaction.owner != address(0));
+        require(transaction.positionOwner != address(0));
         require(transaction.loanOffering.owner != address(0));
 
         // The interest rounding period cannot be longer than max duration

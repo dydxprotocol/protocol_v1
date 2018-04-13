@@ -322,7 +322,7 @@ describe('#increasePosition', () => {
       openTx.amount.plus(addValueTx.amount)
     );
 
-    expect(position.trader).to.eq(openTx.owner);
+    expect(position.owner).to.eq(openTx.owner);
     expect(position.lender).to.eq(openTx.loanOffering.owner);
     expect(position.baseToken).to.eq(openTx.baseToken);
     expect(position.quoteToken).to.eq(openTx.quoteToken);

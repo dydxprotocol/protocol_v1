@@ -62,7 +62,7 @@ describe('#closePosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('only allows the trader to close', async () => {
+    it('only allows the owner to close', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, margin] = await Promise.all([
         createSignedSellOrder(accounts),
@@ -111,7 +111,7 @@ describe('#closePosition', () => {
     it('Successfully closes a position directly in increments', async () => {
       const openTx = await doOpenPosition(accounts);
 
-      // Give the trader enough base token to close
+      // Give the owner enough base token to close
       await issueForDirectClose(openTx);
 
       const margin = await Margin.deployed();

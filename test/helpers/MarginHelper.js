@@ -142,7 +142,7 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
 
-  const newTrader = await margin.getPositionTrader.call(marginId);
+  const newOwner = await margin.getpositionOwner.call(marginId);
   const newLender = await margin.getPositionLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
@@ -165,11 +165,11 @@ async function expectLogOpenPosition(margin, marginId, tx, response) {
       from: tx.trader,
       to: tx.owner
     });
-    if (newTrader !== tx.owner) {
+    if (newOwner !== tx.owner) {
       expectLog(response.logs[++logIndex], 'PositionTransferred', {
         marginId: marginId,
         from: tx.owner,
-        to: newTrader
+        to: newOwner
       });
     }
   }
@@ -258,7 +258,7 @@ async function expectIncreasePositionLog(margin, tx, response) {
     marginId: marginId,
     trader: tx.trader,
     lender: tx.loanOffering.payer,
-    positionTrader: tx.owner,
+    positionOwner: tx.owner,
     positionLender: tx.loanOffering.owner,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
@@ -672,7 +672,7 @@ async function getPosition(margin, id) {
       baseToken,
       quoteToken,
       lender,
-      trader
+      owner
     ],
     [
       amount,
@@ -702,7 +702,7 @@ async function getPosition(margin, id) {
     maxDuration,
     interestPeriod,
     lender,
-    trader
+    owner
   };
 }
 

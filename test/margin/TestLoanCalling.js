@@ -30,9 +30,9 @@ describe('#marginCall', () => {
     deposit = REQUIRED_DEPOSIT,
     from = openTx.loanOffering.owner
   ) {
-    const [lender, trader] = await Promise.all([
+    const [lender, owner] = await Promise.all([
       margin.getPositionLender.call(openTx.id),
-      margin.getPositionTrader.call(openTx.id)
+      margin.getpositionOwner.call(openTx.id)
     ]);
     const tx = await margin.marginCall(
       openTx.id,
@@ -42,7 +42,7 @@ describe('#marginCall', () => {
     expectLog(tx.logs[0], 'MarginCallInitiated', {
       marginId: openTx.id,
       lender: lender,
-      trader: trader,
+      owner: owner,
       requiredDeposit: deposit
     });
 
@@ -143,9 +143,9 @@ describe('#cancelMarginCall', () => {
     openTx,
     from = openTx.loanOffering.owner
   ) {
-    const [lender, trader] = await Promise.all([
+    const [lender, owner] = await Promise.all([
       margin.getPositionLender.call(openTx.id),
-      margin.getPositionTrader.call(openTx.id)
+      margin.getpositionOwner.call(openTx.id)
     ]);
     const tx = await margin.cancelMarginCall(
       openTx.id,
@@ -154,7 +154,7 @@ describe('#cancelMarginCall', () => {
     expectLog(tx.logs[0], 'MarginCallCanceled', {
       marginId: openTx.id,
       lender: lender,
-      trader: trader,
+      owner: owner,
       depositAmount: 0
     });
 

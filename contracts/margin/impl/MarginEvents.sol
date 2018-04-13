@@ -67,7 +67,7 @@ contract MarginEvents {
         bytes32 indexed marginId,
         address indexed trader,
         address indexed lender,
-        address positionTrader,
+        address positionOwner,
         address positionLender,
         bytes32 loanHash,
         address loanFeeRecipient,
@@ -91,7 +91,7 @@ contract MarginEvents {
     event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed trader,
+        address indexed owner,
         uint256 requiredDeposit
     );
 
@@ -101,7 +101,7 @@ contract MarginEvents {
     event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed trader,
+        address indexed owner,
         uint256 depositAmount
     );
 
@@ -126,7 +126,7 @@ contract MarginEvents {
     );
 
     /**
-     * Additional deposit for a margin position was posted by the trader
+     * Additional deposit for a margin position was posted by the owner
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
