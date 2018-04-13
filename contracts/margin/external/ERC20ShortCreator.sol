@@ -43,11 +43,11 @@ contract ERC20ShortCreator is
     // ------------------------
 
     function ERC20ShortCreator(
-        address shortSell,
+        address margin,
         address[] trustedRecipients
     )
         public
-        ShortOwner(shortSell)
+        ShortOwner(margin)
     {
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
@@ -55,12 +55,12 @@ contract ERC20ShortCreator is
     }
 
     // -----------------------------------
-    // ---- ShortSell Only Functions -----
+    // ---- Margin Only Functions -----
     // -----------------------------------
 
     /**
      * Implementation of ShortOwner functionality. Creates a new ERC20Short and assigns short
-     * ownership to the ERC20Short. Called by ShortSell when a short is transferred to this
+     * ownership to the ERC20Short. Called by Margin when a short is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the short
@@ -70,14 +70,14 @@ contract ERC20ShortCreator is
         address from,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (address)
     {
         address tokenAddress = new ERC20Short(
             shortId,
-            SHORT_SELL,
+            MARGIN,
             from,
             TRUSTED_RECIPIENTS
         );
@@ -92,7 +92,7 @@ contract ERC20ShortCreator is
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

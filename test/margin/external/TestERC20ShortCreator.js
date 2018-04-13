@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC20Short = artifacts.require("ERC20Short");
 const QuoteToken = artifacts.require("TokenA");
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 
 const { TOKENIZED_SHORT_STATE } = require('../../helpers/ERC20ShortHelper');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
@@ -28,7 +28,7 @@ contract('ERC20ShortCreator', function(accounts) {
       shortSellContract,
       ERC20ShortCreatorContract
     ] = await Promise.all([
-      ShortSell.deployed(),
+      Margin.deployed(),
       ERC20ShortCreator.deployed()
     ]);
   });
@@ -37,9 +37,9 @@ contract('ERC20ShortCreator', function(accounts) {
     let contract;
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
-      contract = await ERC20ShortCreator.new(ShortSell.address, trustedRecipientsExpected);
-      const shortSellContractAddress = await contract.SHORT_SELL.call();
-      expect(shortSellContractAddress).to.equal(ShortSell.address);
+      contract = await ERC20ShortCreator.new(Margin.address, trustedRecipientsExpected);
+      const shortSellContractAddress = await contract.MARGIN.call();
+      expect(shortSellContractAddress).to.equal(Margin.address);
 
       const numRecipients = trustedRecipientsExpected.length;
       for(let i = 0; i < numRecipients; i++) {
@@ -56,7 +56,7 @@ contract('ERC20ShortCreator', function(accounts) {
     async function checkSuccess(shortTx, shortTokenContract, remainingShortAmount) {
       const originalSeller = accounts[0];
       const [
-        tokenShortSell,
+        tokenMargin,
         tokenShortId,
         tokenState,
         tokenHolder,
@@ -64,7 +64,7 @@ contract('ERC20ShortCreator', function(accounts) {
         totalSupply,
         ownerSupply,
       ] = await Promise.all([
-        shortTokenContract.SHORT_SELL.call(),
+        shortTokenContract.MARGIN.call(),
         shortTokenContract.SHORT_ID.call(),
         shortTokenContract.state.call(),
         shortTokenContract.INITIAL_TOKEN_HOLDER.call(),
@@ -73,7 +73,7 @@ contract('ERC20ShortCreator', function(accounts) {
         shortTokenContract.balanceOf.call(originalSeller),
       ]);
 
-      expect(tokenShortSell).to.equal(shortSellContract.address);
+      expect(tokenMargin).to.equal(shortSellContract.address);
       expect(tokenShortId).to.equal(shortTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_SHORT_STATE.OPEN);
       expect(tokenHolder).to.equal(originalSeller);

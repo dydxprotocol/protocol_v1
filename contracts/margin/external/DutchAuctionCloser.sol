@@ -64,12 +64,12 @@ contract DutchAuctionCloser is
     // -------------------------
 
     function DutchAuctionCloser(
-        address shortSell,
+        address margin,
         uint256 callTimeLimitNumerator,
         uint256 callTimeLimitDenominator
     )
         public
-        PayoutRecipient(shortSell)
+        PayoutRecipient(margin)
     {
         // these two requirements also require (_denominator > 0)
         require(callTimeLimitNumerator <= callTimeLimitDenominator);
@@ -79,7 +79,7 @@ contract DutchAuctionCloser is
     }
 
     // -------------------------------------------------
-    // ---- ShortSell-Only State-Changing Functions ----
+    // ---- Margin-Only State-Changing Functions ----
     // -------------------------------------------------
 
     /**
@@ -105,7 +105,7 @@ contract DutchAuctionCloser is
         uint256 totalQuoteToken,
         bool    payoutInQuoteToken
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {
@@ -170,7 +170,7 @@ contract DutchAuctionCloser is
             uint256 auctionEndTimestamp
         )
     {
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, shortId);
+        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, shortId);
 
         uint256 maxTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
         uint256 callTimestamp = uint256(short.callTimestamp);

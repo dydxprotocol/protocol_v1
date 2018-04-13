@@ -18,10 +18,10 @@ contract CloseShortDelegator is ShortOwner {
     // -------------------------
 
     function CloseShortDelegator(
-        address shortSell
+        address margin
     )
         public
-        ShortOwner(shortSell)
+        ShortOwner(margin)
     {
     }
 
@@ -38,9 +38,9 @@ contract CloseShortDelegator is ShortOwner {
      * require the block.timestamp to be at least some time, or the amount to be at least some
      * minimum denomination.
      *
-     * NOTE: If returning non-zero, this contract must assume that ShortSell will either revert the
+     * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the short position was successfully
-     * closed. Returning 0 will indicate an error and cause ShortSell to throw.
+     * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
@@ -54,7 +54,7 @@ contract CloseShortDelegator is ShortOwner {
         bytes32 shortId,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (uint256);
 }

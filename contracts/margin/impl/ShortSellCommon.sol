@@ -12,7 +12,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  * @title ShortSellCommon
  * @author dYdX
  *
- * This library contains common functions for implementations of public facing ShortSell functions
+ * This library contains common functions for implementations of public facing Margin functions
  */
 library ShortSellCommon {
     using SafeMath for uint256;

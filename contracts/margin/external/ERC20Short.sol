@@ -6,7 +6,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import { ShortSell } from "../ShortSell.sol";
+import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
@@ -113,12 +113,12 @@ contract ERC20Short is
 
     function ERC20Short(
         bytes32 shortId,
-        address shortSell,
+        address margin,
         address initialTokenHolder,
         address[] trustedRecipients
     )
         public
-        CloseShortDelegator(shortSell)
+        CloseShortDelegator(margin)
     {
         SHORT_ID = shortId;
         state = State.UNINITIALIZED;
@@ -134,9 +134,9 @@ contract ERC20Short is
     // -------------------------------------
 
     /**
-     * Called by ShortSell when anyone transfers ownership of a short to this contract.
+     * Called by Margin when anyone transfers ownership of a short to this contract.
      * This function initializes the tokenization of the short given and returns this address to
-     * indicate to ShortSell that it is willing to take ownership of the short.
+     * indicate to Margin that it is willing to take ownership of the short.
      *
      *  param  (unused)
      * @param  shortId  Unique ID of the short
@@ -146,7 +146,7 @@ contract ERC20Short is
         address /* from */,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (address)
@@ -155,7 +155,7 @@ contract ERC20Short is
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
+        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 
@@ -175,7 +175,7 @@ contract ERC20Short is
     }
 
     /**
-     * Called by ShortSell when additional value is added onto the short position this contract
+     * Called by Margin when additional value is added onto the short position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
      * @param  from         Address that added the value to the short position
@@ -188,7 +188,7 @@ contract ERC20Short is
         bytes32 shortId,
         uint256 amountAdded
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)
@@ -205,10 +205,10 @@ contract ERC20Short is
     }
 
     /**
-     * Called by ShortSell when an owner of this token is attempting to close some of the short
+     * Called by Margin when an owner of this token is attempting to close some of the short
      * position. Implementation is required per ShortOwner contract in order to be used by
-     * ShortSell to approve closing parts of a short position. If true is returned, this contract
-     * must assume that ShortSell will either revert the entire transaction or that the specified
+     * Margin to approve closing parts of a short position. If true is returned, this contract
+     * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
@@ -223,7 +223,7 @@ contract ERC20Short is
         bytes32 shortId,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (uint256)
@@ -268,7 +268,7 @@ contract ERC20Short is
      * means (such as an auction-closing mechanism)
      *
      * NOTE: It is possible that this contract could be sent quote token by external sources
-     * other than from the ShortSell contract. In this case the payout for token holders
+     * other than from the Margin contract. In this case the payout for token holders
      * would be greater than just that from the short sell payout. This is fine because
      * nobody has incentive to send this contract extra funds, and if they do then it's
      * also fine just to let the token holders have it.
@@ -289,7 +289,7 @@ contract ERC20Short is
         returns (uint256)
     {
         // If in OPEN state, but the short is closed, set to CLOSED state
-        if (state == State.OPEN && ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
+        if (state == State.OPEN && Margin(MARGIN).isShortClosed(SHORT_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
@@ -340,7 +340,7 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                ShortSell(SHORT_SELL).getShortBaseToken(SHORT_ID)
+                Margin(MARGIN).getShortBaseToken(SHORT_ID)
             ).decimals();
     }
 

@@ -12,11 +12,11 @@ pragma experimental "v0.5.0";
 contract LoanOfferingVerifier {
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
-     * will be generated off-chain and signed by a signer. The ShortSell contract will verify that
+     * will be generated off-chain and signed by a signer. The Margin contract will verify that
      * the signature for the loan offering was made by signer. If "owner" is a non-zero address,
      * then it will be the lender, otherwise the implementing contract will be the lender.
      *
-     * If true is returned, and no errors are thrown by the ShortSell contract, the loan will have
+     * If true is returned, and no errors are thrown by the Margin contract, the loan will have
      * occurred. This means that verifyLoanOffering can also be used to update internal contract
      * state on a loan.
      *

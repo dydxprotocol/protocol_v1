@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { OnlyShortSell } from "./OnlyShortSell.sol";
+import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
@@ -11,17 +11,17 @@ import { OnlyShortSell } from "./OnlyShortSell.sol";
  * Interface that smart contracts must implement in order to own shorts on behalf of users in order
  * to unlock more complex logic.
  */
-contract ShortOwner is OnlyShortSell {
+contract ShortOwner is OnlyMargin {
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function ShortOwner(
-        address shortSell
+        address margin
     )
         public
-        OnlyShortSell(shortSell)
+        OnlyMargin(margin)
     {
     }
 
@@ -42,14 +42,14 @@ contract ShortOwner is OnlyShortSell {
         address from,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address);
 
     /**
      * Function a contract must implement in order to allow additional value to be added onto
-     * an owned short. ShortSell will call this on the owner of a short
-     * during ShortSell#addValueToShort. If true is returned, the implementing contract can assume
+     * an owned short. Margin will call this on the owner of a short
+     * during Margin#addValueToShort. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
      * @param  from         Address initiating the addition of funds to the position
@@ -63,7 +63,7 @@ contract ShortOwner is OnlyShortSell {
         bytes32 shortId,
         uint256 amountAdded
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool);
 }

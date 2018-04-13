@@ -15,12 +15,12 @@ contract TestLoanOwner is LoanOwner {
     mapping(bytes32 => mapping(address => uint256)) public valueAdded;
 
     function TestLoanOwner(
-        address shortSell,
+        address margin,
         address toReturn,
         bool toReturnOnAdd
     )
         public
-        LoanOwner(shortSell)
+        LoanOwner(margin)
     {
         if (toReturn == address(1)) {
             TO_RETURN = address(this);
@@ -35,7 +35,7 @@ contract TestLoanOwner is LoanOwner {
         address from,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address)
     {
@@ -48,7 +48,7 @@ contract TestLoanOwner is LoanOwner {
         bytes32 shortId,
         uint256 amount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

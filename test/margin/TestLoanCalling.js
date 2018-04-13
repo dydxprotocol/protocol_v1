@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const {
   doShort,
@@ -59,20 +59,20 @@ describe('#callInLoan', () => {
     return tx;
   }
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('sets callTimestamp and requiredDeposit on the short', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       const tx = await callInLoan(shortTx, REQUIRED_DEPOSIT);
 
-      console.log('\tShortSell.callInLoan gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.callInLoan gas used: ' + tx.receipt.gasUsed);
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('prevents unauthorized accounts from calling', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       await expectThrow( shortSell.callInLoan(
@@ -87,13 +87,13 @@ describe('#callInLoan', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('CallLoanDelegator loan owner only allows certain accounts', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
       const caller = accounts[8];
       const loanCaller = await TestCallLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         caller,
         ADDRESSES.ZERO);
       await shortSell.transferLoan(
@@ -120,9 +120,9 @@ describe('#callInLoan', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('fails if the loan has already been called', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       await callInLoan(shortTx);
@@ -169,20 +169,20 @@ describe('#cancelLoanCall', () => {
     return tx;
   }
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('unsets callTimestamp and requiredDeposit on the short', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const { shortTx } = await doShortAndCall(accounts);
 
       const tx = await cancelLoanCall(shortTx);
 
-      console.log('\tShortSell.cancelLoanCall gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.cancelLoanCall gas used: ' + tx.receipt.gasUsed);
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('prevents unauthorized accounts from cancelling', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const { shortTx, callTx } = await doShortAndCall(accounts);
 
       const shortCalledTimestamp = await getCallTimestamp(callTx);
@@ -198,9 +198,9 @@ describe('#cancelLoanCall', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('fails if the loan has not been called', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       await expectThrow( shortSell.cancelLoanCall(
@@ -210,13 +210,13 @@ describe('#cancelLoanCall', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('CallLoanDelegator loan owner only allows certain accounts', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
       const { shortTx } = await doShortAndCall(accounts);
       const canceller = accounts[9];
       const loanCaller = await TestCallLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         canceller);
       await shortSell.transferLoan(

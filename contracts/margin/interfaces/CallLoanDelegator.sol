@@ -18,10 +18,10 @@ contract CallLoanDelegator is LoanOwner {
     // -------------------------
 
     function CallLoanDelegator(
-        address shortSell
+        address margin
     )
         public
-        LoanOwner(shortSell)
+        LoanOwner(margin)
     {
     }
 
@@ -33,7 +33,7 @@ contract CallLoanDelegator is LoanOwner {
      * Function a contract must implement in order to let other addresses call callInLoan() for
      * the loan-side of a short position.
      *
-     * NOTE: If returning true, this contract must assume that ShortSell will either revert the
+     * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan was successfully called-in
      *
      * @param who            Address of the caller of the callInLoan function
@@ -46,7 +46,7 @@ contract CallLoanDelegator is LoanOwner {
         bytes32 shortId,
         uint256 depositAmount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool);
 
@@ -54,7 +54,7 @@ contract CallLoanDelegator is LoanOwner {
      * Function a contract must implement in order to let other addresses call cancelLoanCall() for
      * the loan-side of a short position.
      *
-     * NOTE: If returning true, this contract must assume that ShortSell will either revert the
+     * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
@@ -65,7 +65,7 @@ contract CallLoanDelegator is LoanOwner {
         address who,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool);
 }

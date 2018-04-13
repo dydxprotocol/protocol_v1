@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { OnlyShortSell } from "./OnlyShortSell.sol";
+import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
@@ -11,17 +11,17 @@ import { OnlyShortSell } from "./OnlyShortSell.sol";
  * Interface that smart contracts must implement in order to be the payoutRecipient in a closeShort
  * transaction.
  */
-contract PayoutRecipient is OnlyShortSell {
+contract PayoutRecipient is OnlyMargin {
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
     function PayoutRecipient(
-        address shortSell
+        address margin
     )
         public
-        OnlyShortSell(shortSell)
+        OnlyMargin(margin)
     {
     }
 
@@ -54,7 +54,7 @@ contract PayoutRecipient is OnlyShortSell {
         bool    payoutInQuoteToken
 
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool);
 }

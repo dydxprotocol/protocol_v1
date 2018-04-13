@@ -8,7 +8,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const ERC721Short = artifacts.require("ERC721Short");
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const BaseToken = artifacts.require("TokenB");
 
@@ -39,7 +39,7 @@ contract('ERC721Short', function(accounts) {
       ERC721ShortContract,
       baseToken
     ] = await Promise.all([
-      ShortSell.deployed(),
+      Margin.deployed(),
       ERC721Short.deployed(),
       BaseToken.deployed()
     ]);
@@ -47,9 +47,9 @@ contract('ERC721Short', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const contract = await ERC721Short.new(ShortSell.address);
-      const shortSellContractAddress = await contract.SHORT_SELL.call();
-      expect(shortSellContractAddress).to.equal(ShortSell.address);
+      const contract = await ERC721Short.new(Margin.address);
+      const shortSellContractAddress = await contract.MARGIN.call();
+      expect(shortSellContractAddress).to.equal(Margin.address);
     });
   });
 

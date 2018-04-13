@@ -18,10 +18,10 @@ contract ForceRecoverLoanDelegator is LoanOwner {
     // -------------------------
 
     function ForceRecoverLoanDelegator(
-        address shortSell
+        address margin
     )
         public
-        LoanOwner(shortSell)
+        LoanOwner(margin)
     {
     }
 
@@ -33,7 +33,7 @@ contract ForceRecoverLoanDelegator is LoanOwner {
      * Function a contract must implement in order to let other addresses call forceRecoverLoan()
      * for the loan-side of a short position.
      *
-     * NOTE: If returning true, this contract must assume that ShortSell will either revert the
+     * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled
      *
      * @param who            Address of the caller of the cancelLoanCall function
@@ -44,7 +44,7 @@ contract ForceRecoverLoanDelegator is LoanOwner {
         address who,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool);
 }

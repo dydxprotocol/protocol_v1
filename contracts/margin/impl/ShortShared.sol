@@ -96,7 +96,7 @@ library ShortShared {
         // If the lender is a smart contract, call out to it to get its consent for this loan
         // This is done after other validations/state updates as it is an external call
         // NOTE: The short will exist in the Repo for this call
-        //       (possible other contract calls back into ShortSell)
+        //       (possible other contract calls back into Margin)
         getConsentIfSmartContractLender(transaction, shortId);
 
         transferLoanFees(

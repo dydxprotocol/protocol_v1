@@ -4,7 +4,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
-import { ShortSell } from "../ShortSell.sol";
+import { Margin } from "../Margin.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
 
@@ -56,11 +56,11 @@ contract ERC721Short is
     // -------------------------
 
     function ERC721Short(
-        address shortSell
+        address margin
     )
         ERC721Token("dYdX Short Sells", "dYdX")
         public
-        CloseShortDelegator(shortSell)
+        CloseShortDelegator(margin)
     {
     }
 
@@ -129,7 +129,7 @@ contract ERC721Short is
         uint256 tokenId = uint256(shortId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        ShortSell(SHORT_SELL).transferShort(shortId, to);
+        Margin(MARGIN).transferShort(shortId, to);
     }
 
     /**
@@ -144,18 +144,18 @@ contract ERC721Short is
         nonReentrant
         external
     {
-        require(!ShortSell(SHORT_SELL).containsShort(shortId));
+        require(!Margin(MARGIN).containsShort(shortId));
         _burn(ownerOf(uint256(shortId)), uint256(shortId));
     }
 
     // ---------------------------------
-    // ---- OnlyShortSell Functions ----
+    // ---- OnlyMargin Functions ----
     // ---------------------------------
 
     /**
-     * Called by the ShortSell contract when anyone transfers ownership of a short to this contract.
+     * Called by the Margin contract when anyone transfers ownership of a short to this contract.
      * This function mints a new ERC721 Token and returns this address to
-     * indicate to ShortSell that it is willing to take ownership of the short.
+     * indicate to Margin that it is willing to take ownership of the short.
      *
      * @param  from     Address of previous short owner
      * @param  shortId  Unique ID of the short
@@ -165,7 +165,7 @@ contract ERC721Short is
         address from,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (address)
@@ -179,7 +179,7 @@ contract ERC721Short is
         bytes32 shortId,
         uint256 /* amountAdded */
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {
@@ -188,10 +188,10 @@ contract ERC721Short is
     }
 
     /**
-     * Called by ShortSell when an owner of this token is attempting to close some of the short
+     * Called by Margin when an owner of this token is attempting to close some of the short
      * position. Implementation is required per ShortOwner contract in order to be used by
-     * ShortSell to approve closing parts of a short position. If true is returned, this contract
-     * must assume that ShortSell will either revert the entire transaction or that the specified
+     * Margin to approve closing parts of a short position. If true is returned, this contract
+     * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the short position was successfully closed.
      *
      * @param closer           Address of the caller of the close function
@@ -206,7 +206,7 @@ contract ERC721Short is
         bytes32 shortId,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (uint256)

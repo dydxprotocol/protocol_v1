@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 
 const { wait } = require('@digix/tempo')(web3);
 const QuoteToken = artifacts.require("TokenA");
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const TestForceRecoverLoanDelegator = artifacts.require("TestForceRecoverLoanDelegator");
 const {
   doShort,
@@ -16,7 +16,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 
 describe('#forceRecoverLoan', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
       const { shortSell, vault, baseToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
@@ -28,7 +28,7 @@ describe('#forceRecoverLoan', () => {
         { from: shortTx.loanOffering.payer }
       );
 
-      console.log('\tShortSell.forceRecoverLoan gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.forceRecoverLoan gas used: ' + tx.receipt.gasUsed);
 
       const quoteToken = await QuoteToken.deployed();
 
@@ -65,7 +65,7 @@ describe('#forceRecoverLoan', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('only allows lender to call', async () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
@@ -77,7 +77,7 @@ describe('#forceRecoverLoan', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('ForceRecoverLoanDelegator loan owner only allows certain accounts', async () => {
       const { shortSell, vault, baseToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
@@ -86,7 +86,7 @@ describe('#forceRecoverLoan', () => {
 
       const recoverer = accounts[9];
       const testForceRecoverLoanDelegator = await TestForceRecoverLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         recoverer
       );
       await shortSell.transferLoan(
@@ -134,7 +134,7 @@ describe('#forceRecoverLoan', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
       const { shortSell, shortTx } = await doShortAndCall(accounts);
       await expectThrow( shortSell.forceRecoverLoan(
@@ -143,9 +143,9 @@ describe('#forceRecoverLoan', () => {
       ));
     });
   });
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       const maxDuration = shortTx.loanOffering.maxDuration;

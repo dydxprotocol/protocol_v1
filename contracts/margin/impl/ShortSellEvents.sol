@@ -6,8 +6,8 @@ pragma experimental "v0.5.0";
  * @title ShortSellEvents
  * @author dYdX
  *
- * Contains events for the ShortSell contract.
- * NOTE: Any ShortSell function libraries that use events will need to both define the event here
+ * Contains events for the Margin contract.
+ * NOTE: Any Margin function libraries that use events will need to both define the event here
  *       and copy the event intothe library itself as libraries don't support sharing events
  */
 contract ShortSellEvents {

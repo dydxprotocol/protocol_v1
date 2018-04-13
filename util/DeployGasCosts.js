@@ -4,7 +4,7 @@ const chai = require('chai');
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const ERC20Short = artifacts.require("ERC20Short");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
@@ -14,15 +14,15 @@ const { getGasCost } = require('../test/helpers/NodeHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../test/helpers/Constants');
 
 contract('Deploy Costs', () => {
-  describe('ShortSell', () => {
+  describe('Margin', () => {
     it('', async () => {
-      const contract = await ShortSell.new(
+      const contract = await Margin.new(
         ADDRESSES.TEST[0],
         ADDRESSES.TEST[1],
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
-      console.log('\tShortSell deploy gas cost: ' + deployGasCost);
+      console.log('\tMargin deploy gas cost: ' + deployGasCost);
     });
   });
 

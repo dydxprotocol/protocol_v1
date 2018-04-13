@@ -4,7 +4,7 @@ const expect = require('chai').expect;
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -345,7 +345,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
 async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
   const [shortTx, shortSell] = await Promise.all([
     createShortSellTx(accounts, _salt),
-    ShortSell.deployed()
+    Margin.deployed()
   ]);
 
   await issueTokensAndSetAllowancesForShort(shortTx);
@@ -714,7 +714,7 @@ async function doShortAndCall(
   _requiredDeposit = new BigNumber(10)
 ) {
   const [shortSell, vault, baseToken] = await Promise.all([
-    ShortSell.deployed(),
+    Margin.deployed(),
     Vault.deployed(),
     BaseToken.deployed()
   ]);

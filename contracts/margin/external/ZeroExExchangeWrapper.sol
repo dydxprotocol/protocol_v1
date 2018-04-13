@@ -44,14 +44,14 @@ contract ZeroExExchangeWrapper is
         uint256 takerFeeTokenBalance;
     }
 
-    address public SHORT_SELL;
+    address public MARGIN;
     address public DYDX_PROXY;
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_PROXY;
     address public ZRX;
 
     function ZeroExExchangeWrapper(
-        address shortSell,
+        address margin,
         address dydxProxy,
         address zeroExExchange,
         address zeroExProxy,
@@ -59,7 +59,7 @@ contract ZeroExExchangeWrapper is
     )
         public
     {
-        SHORT_SELL = shortSell;
+        MARGIN = margin;
         DYDX_PROXY = dydxProxy;
         ZERO_EX_EXCHANGE = zeroExExchange;
         ZERO_EX_PROXY = zeroExProxy;
@@ -85,7 +85,7 @@ contract ZeroExExchangeWrapper is
         external
         returns (uint256)
     {
-        require(msg.sender == SHORT_SELL);
+        require(msg.sender == MARGIN);
 
         Order memory order = parseOrder(orderData);
 

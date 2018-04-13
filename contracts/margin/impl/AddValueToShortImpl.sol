@@ -17,7 +17,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
  * @title AddValueToShortImpl
  * @author dYdX
  *
- * This library contains the implementation for the addValueToShort function of ShortSell
+ * This library contains the implementation for the addValueToShort function of Margin
  */
 library AddValueToShortImpl {
     using SafeMath for uint256;

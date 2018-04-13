@@ -9,7 +9,7 @@ const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ERC721Short = artifacts.require("ERC721Short");
 const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
@@ -38,7 +38,7 @@ contract('DutchAuctionCloser', function(accounts) {
       BaseTokenContract,
       QuoteTokenContract,
     ] = await Promise.all([
-      ShortSell.deployed(),
+      Margin.deployed(),
       Vault.deployed(),
       ERC721Short.deployed(),
       BaseToken.deployed(),
@@ -48,13 +48,13 @@ contract('DutchAuctionCloser', function(accounts) {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const contract = await DutchAuctionCloser.new(ShortSell.address, ONE, TWO);
+      const contract = await DutchAuctionCloser.new(Margin.address, ONE, TWO);
       const [ssAddress, num, den] = await Promise.all([
-        contract.SHORT_SELL.call(),
+        contract.MARGIN.call(),
         contract.CALL_TIMELIMIT_NUMERATOR.call(),
         contract.CALL_TIMELIMIT_DENOMINATOR.call(),
       ]);
-      expect(ssAddress).to.equal(ShortSell.address);
+      expect(ssAddress).to.equal(Margin.address);
       expect(num).to.be.bignumber.equal(ONE);
       expect(den).to.be.bignumber.equal(TWO);
     });

@@ -63,7 +63,7 @@ npm run solint
 
 Used to transfer user funds. Users set token allowance for the proxy authorizing it to transfer their funds. Only allows authorized contracts to transfer funds.
 
-##### ShortSell.sol
+##### Margin.sol
 
 Contains business logic for short selling. All external functions for shorting are in this contract.
 

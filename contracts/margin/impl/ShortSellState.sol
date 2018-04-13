@@ -8,8 +8,8 @@ import { ShortSellCommon } from "./ShortSellCommon.sol";
  * @title ShortSellState
  * @author dYdX
  *
- * Contains state for the ShortSell contract. Also used by libraries that implement
- * ShortSell functions
+ * Contains state for the Margin contract. Also used by libraries that implement
+ * Margin functions
  */
 library ShortSellState {
     struct State {

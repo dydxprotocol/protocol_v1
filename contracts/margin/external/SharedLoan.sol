@@ -3,7 +3,7 @@ pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSell } from "../ShortSell.sol";
+import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
@@ -111,13 +111,13 @@ contract SharedLoan is
 
     function SharedLoan(
         bytes32 shortId,
-        address shortSell,
+        address margin,
         address initialLender,
         address[] trustedLoanCallers
     )
         public
-        ForceRecoverLoanDelegator(shortSell)
-        CallLoanDelegator(shortSell)
+        ForceRecoverLoanDelegator(margin)
+        CallLoanDelegator(margin)
     {
         SHORT_ID = shortId;
         state = State.UNINITIALIZED;
@@ -133,8 +133,8 @@ contract SharedLoan is
     // -------------------------------------
 
     /**
-     * Called by the ShortSell contract when anyone transfers ownership of a loan to this contract.
-     * This function initializes this contract and returns this address to indicate to ShortSell
+     * Called by the Margin contract when anyone transfers ownership of a loan to this contract.
+     * This function initializes this contract and returns this address to indicate to Margin
      * that it is willing to take ownership of the loan.
      *
      *  param  (unused)
@@ -145,7 +145,7 @@ contract SharedLoan is
         address /* from */,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (address)
@@ -154,7 +154,7 @@ contract SharedLoan is
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(SHORT_SELL, SHORT_ID);
+        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 
@@ -176,7 +176,7 @@ contract SharedLoan is
     }
 
     /**
-     * Called by ShortSell when additional value is added onto the short position this contract
+     * Called by Margin when additional value is added onto the short position this contract
      * is lending for. Balance is added to the address that lent the additional tokens.
      *
      * @param  from         Address that lent the additional tokens
@@ -189,7 +189,7 @@ contract SharedLoan is
         bytes32 shortId,
         uint256 amountAdded
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)
@@ -208,7 +208,7 @@ contract SharedLoan is
     }
 
     /**
-     * Called by ShortSell when another address attempts to margin call the loan this contract owns
+     * Called by Margin when another address attempts to margin call the loan this contract owns
      *
      * @param  who      Address attempting to initiate the loan call
      * @param  shortId  Unique ID of the short
@@ -221,7 +221,7 @@ contract SharedLoan is
         bytes32 shortId,
         uint256 /* depositAmount */
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)
@@ -233,7 +233,7 @@ contract SharedLoan is
     }
 
     /**
-     * Called by ShortSell when another address attempts to cancel a margin call for the loan
+     * Called by Margin when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
      * @param  who      Address attempting to initiate the loan call cancel
@@ -245,7 +245,7 @@ contract SharedLoan is
         address who,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)
@@ -257,7 +257,7 @@ contract SharedLoan is
     }
 
     /**
-     * Called by ShortSell when another address attempts to force recover the loan
+     * Called by Margin when another address attempts to force recover the loan
      * this contract owns. This contract will receive funds on a force recover. This contract
      * always consents to anyone initiating a force recover
      *
@@ -269,7 +269,7 @@ contract SharedLoan is
         address /* who */,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)
@@ -357,7 +357,7 @@ contract SharedLoan is
         internal
     {
         if (state != State.CLOSED) {
-            if (ShortSell(SHORT_SELL).isShortClosed(SHORT_ID)) {
+            if (Margin(MARGIN).isShortClosed(SHORT_ID)) {
                 state = State.CLOSED;
             }
         }

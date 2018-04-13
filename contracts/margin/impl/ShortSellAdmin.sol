@@ -8,8 +8,8 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
  * @title ShortSellAdmin
  * @author dYdX
  *
- * Contains admin functions for the ShortSell contract
- * The owner can put ShortSell into vatious close-only modes, which will disallow all new
+ * Contains admin functions for the Margin contract
+ * The owner can put Margin into vatious close-only modes, which will disallow all new
  * short creation
  */
 contract ShortSellAdmin is Ownable {
@@ -18,7 +18,7 @@ contract ShortSellAdmin is Ownable {
     // -----------------------
 
     /**
-     * Enum containing the possible operation states of ShortSell:
+     * Enum containing the possible operation states of Margin:
      *
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed

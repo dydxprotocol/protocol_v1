@@ -9,11 +9,11 @@ contract TestLiquidateDelegator is LiquidateDelegator {
     address public CLOSER;
 
     function TestLiquidateDelegator(
-        address shortSell,
+        address margin,
         address closer
     )
         public
-        LiquidateDelegator(shortSell)
+        LiquidateDelegator(margin)
     {
         CLOSER = closer;
     }
@@ -22,7 +22,7 @@ contract TestLiquidateDelegator is LiquidateDelegator {
         address,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address)
     {
@@ -35,7 +35,7 @@ contract TestLiquidateDelegator is LiquidateDelegator {
         bytes32,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (uint256)
     {
@@ -47,7 +47,7 @@ contract TestLiquidateDelegator is LiquidateDelegator {
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

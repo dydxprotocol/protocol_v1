@@ -4,7 +4,7 @@ const chai = require('chai');
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { createLoanOffering, signLoanOffering} = require('../helpers/LoanHelper');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
@@ -21,9 +21,9 @@ describe('#cancelLoanOffering', () => {
     return loanOffering;
   }
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     before('get shortSell', async () => {
-      shortSell = await ShortSell.deployed();
+      shortSell = await Margin.deployed();
     });
 
     it('cancels an amount of a loan offering', async () => {
@@ -32,7 +32,7 @@ describe('#cancelLoanOffering', () => {
 
       const tx = await callCancelLoanOffer(shortSell, loanOffering, cancelAmount);
 
-      console.log('\tShortSell.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
     });
 
     it('increments canceled amount if already partially canceled', async () => {

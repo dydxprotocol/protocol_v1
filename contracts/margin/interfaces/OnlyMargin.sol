@@ -3,40 +3,40 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title OnlyShortSell
+ * @title OnlyMargin
  * @author dYdX
  *
- * Contract to store the address of the main ShortSell contract and trust only that address to call
+ * Contract to store the address of the main Margin contract and trust only that address to call
  * certain functions.
  */
-contract OnlyShortSell {
+contract OnlyMargin {
 
     // -----------------------
     // ------ Constants ------
     // -----------------------
 
-    // address of the known and trusted ShortSell contract on the blockchain
-    address public SHORT_SELL;
+    // address of the known and trusted Margin contract on the blockchain
+    address public MARGIN;
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
-    function OnlyShortSell(
-        address shortSell
+    function OnlyMargin(
+        address margin
     )
         public
     {
-        SHORT_SELL = shortSell;
+        MARGIN = margin;
     }
 
     // ---------------------------
     // -------- Modifiers --------
     // ---------------------------
 
-    modifier onlyShortSell()
+    modifier onlyMargin()
     {
-        require(msg.sender == SHORT_SELL);
+        require(msg.sender == MARGIN);
         _;
     }
 }

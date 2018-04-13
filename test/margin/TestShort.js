@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -32,22 +32,22 @@ const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
 
 describe('#short', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const shortTx = await createShortSellTx(accounts);
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
 
       await issueTokensAndSetAllowancesForShort(shortTx);
 
       const tx = await callShort(shortSell, shortTx);
 
-      console.log('\tShortSell.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
       await checkSuccess(shortSell, shortTx);
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows smart contracts to be lenders', async () => {
       const shortTx = await createShortSellTx(accounts);
       const [
@@ -56,7 +56,7 @@ describe('#short', () => {
         baseToken,
         testSmartContractLender
       ] = await Promise.all([
-        ShortSell.deployed(),
+        Margin.deployed(),
         FeeToken.deployed(),
         BaseToken.deployed(),
         TestSmartContractLender.new(true)
@@ -96,7 +96,7 @@ describe('#short', () => {
         )
       ]);
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
@@ -107,17 +107,17 @@ describe('#short', () => {
 
       const tx = await callShort(shortSell, shortTx);
 
-      console.log('\tShortSell.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
       await checkSuccess(shortSell, shortTx);
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
-      const shortSell = await ShortSell.deployed();
-      const testLoanOwner = await TestLoanOwner.new(ShortSell.address, ADDRESSES.ZERO, false);
-      const testShortOwner = await TestShortOwner.new(ShortSell.address, ADDRESSES.ZERO, false);
+      const shortSell = await Margin.deployed();
+      const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testShortOwner = await TestShortOwner.new(Margin.address, ADDRESSES.ZERO, false);
 
       const shortTx1 = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx1);
@@ -133,9 +133,9 @@ describe('#short', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('properly assigns owner for lender and seller for accounts', async () => {
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const shortTx = await createShortSellTx(accounts);
       await issueTokensAndSetAllowancesForShort(shortTx);
       shortTx.owner = accounts[8];
@@ -146,15 +146,15 @@ describe('#short', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('properly assigns owner for lender and seller for contracts', async () => {
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         false);
       const shortTx = await createShortSellTx(accounts);
@@ -167,23 +167,23 @@ describe('#short', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('properly assigns owner for lender and seller for chaining', async () => {
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
-        ShortSell.address,
+        Margin.address,
         ADDRESSES.ZERO,
         false);
       const testLoanOwner = await TestLoanOwner.new(
-        ShortSell.address,
+        Margin.address,
         testCallLoanDelegator.address,
         false);
       const testShortOwner = await TestShortOwner.new(
-        ShortSell.address,
+        Margin.address,
         testCloseShortDelegator.address,
         false);
       const shortTx = await createShortSellTx(accounts);
@@ -196,10 +196,10 @@ describe('#short', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('succeeds with on-chain approved loan offerings', async () => {
       const shortTx = await createShortSellTx(accounts);
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
 
       await issueTokensAndSetAllowancesForShort(shortTx);
       await callApproveLoanOffering(shortSell, shortTx.loanOffering);

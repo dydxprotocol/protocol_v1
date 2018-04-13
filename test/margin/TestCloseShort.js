@@ -4,7 +4,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const { wait } = require('@digix/tempo')(web3);
 const {
   issueTokensAndSetAllowancesForClose,
@@ -25,12 +25,12 @@ const {
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 describe('#closeShort', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('Successfully closes a short in increments', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
         createSignedSellOrder(accounts),
-        ShortSell.deployed()
+        Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
@@ -61,12 +61,12 @@ describe('#closeShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('only allows the short seller to close', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
         createSignedSellOrder(accounts),
-        ShortSell.deployed()
+        Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
       const closeAmount = shortTx.shortAmount.div(2);
@@ -83,12 +83,12 @@ describe('#closeShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('Only closes up to the current short amount', async () => {
       const shortTx = await doShort(accounts);
       const [sellOrder, shortSell] = await Promise.all([
         createSignedSellOrder(accounts),
-        ShortSell.deployed()
+        Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
@@ -107,14 +107,14 @@ describe('#closeShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('Successfully closes a short directly in increments', async () => {
       const shortTx = await doShort(accounts);
 
       // Give the short seller enough base token to close
       await issueForDirectClose(shortTx);
 
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const closeAmount = shortTx.shortAmount.div(2);
 
       const closeTx = await callCloseShortDirectly(

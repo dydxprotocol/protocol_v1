@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -31,7 +31,7 @@ const {
 let salt = DEFAULT_SALT + 1;
 
 describe('#addValueToShort', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const {
         shortTx,
@@ -45,7 +45,7 @@ describe('#addValueToShort', () => {
       const tx = await callAddValueToShort(shortSell, addValueTx);
 
       console.log(
-        '\tShortSell.addValueToShort (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
+        '\tMargin.addValueToShort (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
       );
 
       await validate({
@@ -60,14 +60,14 @@ describe('#addValueToShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('succeeds when positions are owned by contracts', async () => {
       const [
         testShortOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestShortOwner.new(ShortSell.address, "1", true),
-        TestLoanOwner.new(ShortSell.address, "1", true),
+        TestShortOwner.new(Margin.address, "1", true),
+        TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
       const {
@@ -107,7 +107,7 @@ describe('#addValueToShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows a loan offering with longer maxDuration to be used', async () => {
       const {
         shortTx,
@@ -135,7 +135,7 @@ describe('#addValueToShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('does not allow a loan offering with shorter maxDuration to be used', async () => {
       const {
         addValueTx,
@@ -149,7 +149,7 @@ describe('#addValueToShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows a loan offering with longer callTimeLimit to be used', async () => {
       const {
         shortTx,
@@ -177,7 +177,7 @@ describe('#addValueToShort', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('does not allow a loan offering with shorter callTimeLimit to be used', async () => {
       const {
         addValueTx,
@@ -232,7 +232,7 @@ describe('#addValueToShort', () => {
 
   async function setup(accounts, { loanOwner, shortOwner } = {}) {
     const [shortSell, baseToken, quoteToken, feeToken] = await Promise.all([
-      ShortSell.deployed(),
+      Margin.deployed(),
       BaseToken.deployed(),
       QuoteToken.deployed(),
       FeeToken.deployed()
@@ -377,7 +377,7 @@ describe('#addValueToShort', () => {
 });
 
 describe('#addValueToShortDirectly', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const [
         shortTx,
@@ -387,10 +387,10 @@ describe('#addValueToShortDirectly', () => {
         testLoanOwner
       ] = await Promise.all([
         createShortSellTx(accounts),
-        ShortSell.deployed(),
+        Margin.deployed(),
         QuoteToken.deployed(),
-        TestShortOwner.new(ShortSell.address, "1", true),
-        TestLoanOwner.new(ShortSell.address, "1", true),
+        TestShortOwner.new(Margin.address, "1", true),
+        TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
       shortTx.owner = testShortOwner.address;
@@ -435,7 +435,7 @@ describe('#addValueToShortDirectly', () => {
         { from: adder }
       );
 
-      console.log('\tShortSell.addValueToShortDirectly gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.addValueToShortDirectly gas used: ' + tx.receipt.gasUsed);
 
       const short = await getShort(shortSell, shortTx.id);
 

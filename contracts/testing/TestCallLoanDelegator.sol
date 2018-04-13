@@ -10,12 +10,12 @@ contract TestCallLoanDelegator is CallLoanDelegator {
     address public CANCELLER;
 
     function TestCallLoanDelegator(
-        address shortSell,
+        address margin,
         address caller,
         address canceller
     )
         public
-        CallLoanDelegator(shortSell)
+        CallLoanDelegator(margin)
     {
         CALLER = caller;
         CANCELLER = canceller;
@@ -25,7 +25,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         address,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address)
     {
@@ -37,7 +37,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {
@@ -48,7 +48,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         address who,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {
@@ -60,7 +60,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

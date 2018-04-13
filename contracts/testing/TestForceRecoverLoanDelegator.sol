@@ -9,11 +9,11 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
     address public RECOVERER;
 
     function TestForceRecoverLoanDelegator(
-        address shortSell,
+        address margin,
         address recoverer
     )
         public
-        ForceRecoverLoanDelegator(shortSell)
+        ForceRecoverLoanDelegator(margin)
     {
         RECOVERER = recoverer;
     }
@@ -22,7 +22,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
         address,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address)
     {
@@ -33,7 +33,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
         address who,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {
@@ -45,7 +45,7 @@ contract TestForceRecoverLoanDelegator is ForceRecoverLoanDelegator {
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

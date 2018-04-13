@@ -18,10 +18,10 @@ contract LiquidateDelegator is LoanOwner {
     // -------------------------
 
     function LiquidateDelegator(
-        address shortSell
+        address margin
     )
         public
-        LoanOwner(shortSell)
+        LoanOwner(margin)
     {
     }
 
@@ -34,9 +34,9 @@ contract LiquidateDelegator is LoanOwner {
      * lender position. This allows lenders to use more complex logic to control their lending
      * positions.
      *
-     * NOTE: If returning non-zero, this contract must assume that ShortSell will either revert the
+     * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the short position was successfully
-     * closed. Returning 0 will indicate an error and cause ShortSell to throw.
+     * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
      * @param liquidator       Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of quote tokens paid out
@@ -50,7 +50,7 @@ contract LiquidateDelegator is LoanOwner {
         bytes32 shortId,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (uint256);
 }

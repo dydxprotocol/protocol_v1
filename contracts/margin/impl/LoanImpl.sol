@@ -12,7 +12,7 @@ import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
  * @title LoanImpl
  * @author dYdX
  *
- * This library contains the implementation for the following functions of ShortSell:
+ * This library contains the implementation for the following functions of Margin:
  *
  *      - callInLoan
  *      - cancelLoanCallImpl

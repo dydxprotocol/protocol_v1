@@ -1,6 +1,6 @@
 /*global artifacts, contract, describe, it*/
 
-const ShortSell = artifacts.require('ShortSell');
+const Margin= artifacts.require('Margin');
 const TestLiquidateDelegator = artifacts.require('TestLiquidateDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
@@ -13,7 +13,7 @@ describe('#liquidate', () => {
   let shortSell, shortTx, erc20Short, lender, shortAmount;
 
   async function configureShort(initialHolder, accounts) {
-    shortSell = await ShortSell.deployed();
+    shortSell = await Margin.deployed();
     shortTx = await doShort(accounts);
     // Deploy an ERC20 short token
     erc20Short = await ERC20Short.new(shortTx.id, shortSell.address, initialHolder, [
@@ -31,7 +31,7 @@ describe('#liquidate', () => {
     await erc20Short.transfer(shortTx.loanOffering.payer, shortAmount, { from: initialHolder });
   }
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows a lender to liquidate quote tokens', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configureShort(initialHolder, accounts);
@@ -55,7 +55,7 @@ describe('#liquidate', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows liquidating quote tokens if the lender is a smart contract', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configureShort(initialHolder, accounts);

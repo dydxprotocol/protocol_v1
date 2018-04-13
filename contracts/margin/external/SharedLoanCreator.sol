@@ -43,11 +43,11 @@ contract SharedLoanCreator is
     // ------------------------
 
     function SharedLoanCreator(
-        address shortSell,
+        address margin,
         address[] trustedLoanCallers
     )
         public
-        LoanOwner(shortSell)
+        LoanOwner(margin)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
             TRUSTED_LOAN_CALLERS.push(trustedLoanCallers[i]);
@@ -55,12 +55,12 @@ contract SharedLoanCreator is
     }
 
     // -----------------------------------
-    // ---- ShortSell Only Functions -----
+    // ---- Margin Only Functions -----
     // -----------------------------------
 
     /**
      * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan
-     * ownership to the SharedLoan. Called by ShortSell when a loan is transferred to this
+     * ownership to the SharedLoan. Called by Margin when a loan is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the loan
@@ -70,14 +70,14 @@ contract SharedLoanCreator is
         address from,
         bytes32 shortId
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (address)
     {
         address sharedLoanAddress = new SharedLoan(
             shortId,
-            SHORT_SELL,
+            MARGIN,
             from,
             TRUSTED_LOAN_CALLERS
         );
@@ -92,7 +92,7 @@ contract SharedLoanCreator is
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         nonReentrant
         external
         returns (bool)

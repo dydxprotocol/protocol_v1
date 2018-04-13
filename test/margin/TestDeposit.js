@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const { BYTES32 } = require('../helpers/Constants');
@@ -18,7 +18,7 @@ const {
 } = require('../helpers/ShortSellHelper');
 
 describe('#deposit', () => {
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('deposits additional funds into the short position', async () => {
 
       const shortTx = await doShort(accounts);
@@ -39,7 +39,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('doesnt allow anyone but short seller to deposit', async () => {
       const shortTx = await doShort(accounts);
       await expectThrow(
@@ -51,7 +51,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('fails for invalid shortId', async () => {
       const shortTx = await doShort(accounts);
 
@@ -65,7 +65,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('fails on zero-amount deposit', async () => {
       const shortTx = await doShort(accounts);
 
@@ -79,9 +79,9 @@ describe('#deposit', () => {
     });
   });
 
-  contract('ShortSell', function(accounts) {
+  contract('Margin', function(accounts) {
     it('allows deposit in increments', async () => {
-      const shortSell = await ShortSell.deployed();
+      const shortSell = await Margin.deployed();
       const { shortTx } = await doShortAndCall(accounts);
 
       let { requiredDeposit } = await getShort(shortSell, shortTx.id);
@@ -128,7 +128,7 @@ async function doDeposit({
   amount = new BigNumber(1000)
 }) {
   const [shortSell, quoteToken] = await Promise.all([
-    ShortSell.deployed(),
+    Margin.deployed(),
     QuoteToken.deployed()
   ]);
 
@@ -143,7 +143,7 @@ async function doDeposit({
   );
 
   if (printGas) {
-    console.log('\tShortSell.deposit gas used: ' + tx.receipt.gasUsed);
+    console.log('\tMargin.deposit gas used: ' + tx.receipt.gasUsed);
   }
 
   const newBalance = await shortSell.getShortBalance.call(shortTx.id);

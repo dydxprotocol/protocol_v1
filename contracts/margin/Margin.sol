@@ -23,13 +23,13 @@ import { TransferImpl } from "./impl/TransferImpl.sol";
 
 
 /**
- * @title ShortSell
+ * @title Margin
  * @author dYdX
  *
  * This contract is used to facilitate short selling as per the dYdX short sell protocol
  */
  /* solium-disable-next-line */
-contract ShortSell is
+contract Margin is
     Ownable,
     NoOwner,
     ReentrancyGuard,
@@ -45,7 +45,7 @@ contract ShortSell is
     // ------ Constructor ------
     // -------------------------
 
-    function ShortSell(
+    function Margin(
         address vault,
         address proxy
     )

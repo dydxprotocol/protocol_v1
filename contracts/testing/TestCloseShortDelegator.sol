@@ -10,12 +10,12 @@ contract TestCloseShortDelegator is CloseShortDelegator {
     bool public IS_DEGENERATE; // if true, returns more than requestedAmount;
 
     function TestCloseShortDelegator(
-        address shortSell,
+        address margin,
         address closer,
         bool isDegenerate
     )
         public
-        CloseShortDelegator(shortSell)
+        CloseShortDelegator(margin)
     {
         CLOSER = closer;
         IS_DEGENERATE = isDegenerate;
@@ -25,7 +25,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
         address,
         bytes32
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (address)
     {
@@ -38,7 +38,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
         bytes32,
         uint256 requestedAmount
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (uint256)
     {
@@ -51,7 +51,7 @@ contract TestCloseShortDelegator is CloseShortDelegator {
         bytes32,
         uint256
     )
-        onlyShortSell
+        onlyMargin
         external
         returns (bool)
     {

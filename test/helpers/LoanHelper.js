@@ -7,7 +7,7 @@ const FeeToken = artifacts.require("TokenC");
 const ZeroEx = require('0x.js').ZeroEx;
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const Web3 = require('web3');
-const ShortSell = artifacts.require("ShortSell");
+const Margin = artifacts.require("Margin");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
 
@@ -59,7 +59,7 @@ async function signLoanOffering(loanOffering) {
     { type: 'uint32', value: loanOffering.rates.interestPeriod }
   );
   const hash = web3Instance.utils.soliditySha3(
-    ShortSell.address,
+    Margin.address,
     loanOffering.baseToken,
     loanOffering.quoteToken,
     loanOffering.payer,
