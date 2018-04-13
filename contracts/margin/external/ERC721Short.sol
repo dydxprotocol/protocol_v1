@@ -116,36 +116,36 @@ contract ERC721Short is
     /**
      * Transfer ownership of the short externally to this contract, thereby burning the token
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @param  to       Address to transfer short ownership to
      */
     function transferShort(
-        bytes32 shortId,
+        bytes32 marginId,
         address to
     )
         nonReentrant
         external
     {
-        uint256 tokenId = uint256(shortId);
+        uint256 tokenId = uint256(marginId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferShort(shortId, to);
+        Margin(MARGIN).transferShort(marginId, to);
     }
 
     /**
      * Burn an invalid token. Callable by anyone. Used to burn unecessary tokens for clarity and to
      * free up storage. Throws if the short is not yet closed.
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      */
     function burnTokenSafe(
-        bytes32 shortId
+        bytes32 marginId
     )
         nonReentrant
         external
     {
-        require(!Margin(MARGIN).containsShort(shortId));
-        _burn(ownerOf(uint256(shortId)), uint256(shortId));
+        require(!Margin(MARGIN).containsShort(marginId));
+        _burn(ownerOf(uint256(marginId)), uint256(marginId));
     }
 
     // ---------------------------------
@@ -158,32 +158,32 @@ contract ERC721Short is
      * indicate to Margin that it is willing to take ownership of the short.
      *
      * @param  from     Address of previous short owner
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
         address from,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
         external
         returns (address)
     {
-        _mint(from, uint256(shortId));
+        _mint(from, uint256(marginId));
         return address(this); // returning own address retains ownership of short
     }
 
     function additionalShortValueAdded(
         address from,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 /* amountAdded */
     )
         onlyMargin
         external
         returns (bool)
     {
-        require(ownerOf(uint256(shortId)) != from);
+        require(ownerOf(uint256(marginId)) != from);
         return true;
     }
 
@@ -196,14 +196,14 @@ contract ERC721Short is
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Unique ID of the short
+     * @param marginId         Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address closer,
         address payoutRecipient,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedAmount
     )
         onlyMargin
@@ -214,7 +214,7 @@ contract ERC721Short is
         // Cannot burn the token since the short hasn't been closed yet and getMarginDeedHolder
         // must return the owner of the short after it has been closed in the current transaction.
 
-        address owner = ownerOf(uint256(shortId));
+        address owner = ownerOf(uint256(marginId));
         if (
             (closer == owner)
             || approvedClosers[owner][closer]
@@ -231,12 +231,12 @@ contract ERC721Short is
     // ----------------------------------
 
     function getMarginDeedHolder(
-        bytes32 shortId
+        bytes32 marginId
     )
         external
         view
         returns (address)
     {
-        return ownerOf(uint256(shortId));
+        return ownerOf(uint256(marginId));
     }
 }

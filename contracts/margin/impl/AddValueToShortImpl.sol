@@ -30,7 +30,7 @@ library AddValueToShortImpl {
      * Value was added to a short sell
      */
     event ValueAddedToShort(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
         address shortOwner,
@@ -49,7 +49,7 @@ library AddValueToShortImpl {
 
     function addValueToShortImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -61,7 +61,7 @@ library AddValueToShortImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         ShortShared.ShortTx memory transaction = parseAddValueToShortTx(
             short,
@@ -77,13 +77,13 @@ library AddValueToShortImpl {
             state,
             transaction,
             short,
-            shortId,
+            marginId,
             orderData
         );
 
         updateState(
             short,
-            shortId,
+            marginId,
             transaction.effectiveAmount,
             transaction.loanOffering.payer
         );
@@ -95,13 +95,13 @@ library AddValueToShortImpl {
         ShortShared.shortInternalPostStateUpdate(
             state,
             transaction,
-            shortId
+            marginId
         );
 
         // LOG EVENT
         recordValueAddedToShort(
             transaction,
-            shortId,
+            marginId,
             short,
             quoteTokenFromSell
         );
@@ -111,23 +111,23 @@ library AddValueToShortImpl {
 
     function addValueToShortDirectlyImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amount
     )
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
-            shortId,
+            marginId,
             state,
             amount,
             short
         );
 
         Vault(state.VAULT).transferToVault(
-            shortId,
+            marginId,
             short.quoteToken,
             msg.sender,
             quoteTokenAmount
@@ -135,13 +135,13 @@ library AddValueToShortImpl {
 
         updateState(
             short,
-            shortId,
+            marginId,
             amount,
             msg.sender
         );
 
         emit ValueAddedToShort(
-            shortId,
+            marginId,
             msg.sender,
             msg.sender,
             short.seller,
@@ -163,7 +163,7 @@ library AddValueToShortImpl {
         MarginState.State storage state,
         ShortShared.ShortTx transaction,
         MarginCommon.Short storage short,
-        bytes32 shortId,
+        bytes32 marginId,
         bytes orderData
     )
         internal
@@ -174,7 +174,7 @@ library AddValueToShortImpl {
             state,
             transaction,
             short,
-            shortId,
+            marginId,
             orderData
         );
 
@@ -184,7 +184,7 @@ library AddValueToShortImpl {
         (quoteTokenFromSell, totalQuoteTokenReceived) = ShortShared.shortInternalPreStateUpdate(
             state,
             transaction,
-            shortId,
+            marginId,
             orderData
         );
 
@@ -217,7 +217,7 @@ library AddValueToShortImpl {
         MarginState.State storage state,
         ShortShared.ShortTx transaction,
         MarginCommon.Short storage short,
-        bytes32 shortId,
+        bytes32 marginId,
         bytes orderData
     )
         internal
@@ -227,7 +227,7 @@ library AddValueToShortImpl {
         // Amount of quote token we need to add to the position to maintain the position's ratio
         // of quote token to base token
         uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
-            shortId,
+            marginId,
             state,
             transaction.effectiveAmount,
             short
@@ -261,7 +261,7 @@ library AddValueToShortImpl {
     }
 
     function getPositionMinimumQuoteToken(
-        bytes32 shortId,
+        bytes32 marginId,
         MarginState.State storage state,
         uint256 effectiveAmount,
         MarginCommon.Short storage short
@@ -270,7 +270,7 @@ library AddValueToShortImpl {
         view
         returns (uint256)
     {
-        uint256 quoteTokenBalance = Vault(state.VAULT).balances(shortId, short.quoteToken);
+        uint256 quoteTokenBalance = Vault(state.VAULT).balances(marginId, short.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             effectiveAmount,
@@ -281,7 +281,7 @@ library AddValueToShortImpl {
 
     function updateState(
         MarginCommon.Short storage short,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 effectiveAmount,
         address loanPayer
     )
@@ -298,7 +298,7 @@ library AddValueToShortImpl {
             require(
                 ShortOwner(seller).additionalShortValueAdded(
                     msg.sender,
-                    shortId,
+                    marginId,
                     effectiveAmount
                 )
             );
@@ -311,7 +311,7 @@ library AddValueToShortImpl {
             require(
                 LoanOwner(lender).additionalLoanValueAdded(
                     loanPayer,
-                    shortId,
+                    marginId,
                     effectiveAmount
                 )
             );
@@ -320,14 +320,14 @@ library AddValueToShortImpl {
 
     function recordValueAddedToShort(
         ShortShared.ShortTx transaction,
-        bytes32 shortId,
+        bytes32 marginId,
         MarginCommon.Short storage short,
         uint256 quoteTokenFromSell
     )
         internal
     {
         emit ValueAddedToShort(
-            shortId,
+            marginId,
             msg.sender,
             transaction.loanOffering.payer,
             short.seller,

@@ -43,7 +43,7 @@ library ShortShared {
     function shortInternalPreStateUpdate(
         MarginState.State storage state,
         ShortTx memory transaction,
-        bytes32 shortId,
+        bytes32 marginId,
         bytes orderData
     )
         internal
@@ -61,7 +61,7 @@ library ShortShared {
         transferFromLender(state, transaction);
 
         // Transfer deposit from the short seller
-        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, shortId);
+        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, marginId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
             : transaction.lenderAmount.add(transaction.depositAmount);
@@ -70,7 +70,7 @@ library ShortShared {
             state,
             transaction,
             orderData,
-            shortId,
+            marginId,
             sellAmount
         );
 
@@ -89,7 +89,7 @@ library ShortShared {
     function shortInternalPostStateUpdate(
         MarginState.State storage state,
         ShortTx memory transaction,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
     {
@@ -97,7 +97,7 @@ library ShortShared {
         // This is done after other validations/state updates as it is an external call
         // NOTE: The short will exist in the Repo for this call
         //       (possible other contract calls back into Margin)
-        getConsentIfSmartContractLender(transaction, shortId);
+        getConsentIfSmartContractLender(transaction, marginId);
 
         transferLoanFees(
             state,
@@ -181,7 +181,7 @@ library ShortShared {
 
     function getConsentIfSmartContractLender(
         ShortTx transaction,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
     {
@@ -192,7 +192,7 @@ library ShortShared {
                     getLoanOfferingAddresses(transaction),
                     getLoanOfferingValues256(transaction),
                     getLoanOfferingValues32(transaction),
-                    shortId
+                    marginId
                 )
             );
         }
@@ -216,7 +216,7 @@ library ShortShared {
     function transferDeposit(
         MarginState.State storage state,
         ShortTx transaction,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
         returns (uint256 /* quoteTokenFromDeposit */)
@@ -224,7 +224,7 @@ library ShortShared {
         if (transaction.depositAmount > 0) {
             if (transaction.depositInQuoteToken) {
                 Vault(state.VAULT).transferToVault(
-                    shortId,
+                    marginId,
                     transaction.quoteToken,
                     msg.sender,
                     transaction.depositAmount
@@ -289,7 +289,7 @@ library ShortShared {
         MarginState.State storage state,
         ShortTx transaction,
         bytes orderData,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 sellAmount
     )
         internal
@@ -304,7 +304,7 @@ library ShortShared {
         );
 
         Vault(state.VAULT).transferToVault(
-            shortId,
+            marginId,
             transaction.quoteToken,
             transaction.exchangeWrapper,
             quoteTokenReceived

@@ -87,12 +87,12 @@ library MarginCommon {
 
     function cleanupShort(
         MarginState.State storage state,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
     {
-        delete state.shorts[shortId];
-        state.closedShorts[shortId] = true;
+        delete state.shorts[marginId];
+        state.closedShorts[marginId] = true;
     }
 
     function calculateOwedAmount(
@@ -231,24 +231,24 @@ library MarginCommon {
 
     function containsShortImpl(
         MarginState.State storage state,
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         internal
         returns (bool)
     {
-        return state.shorts[shortId].startTimestamp != 0;
+        return state.shorts[marginId].startTimestamp != 0;
     }
 
     function getShortObject(
         MarginState.State storage state,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
         view
         returns (Short storage)
     {
-        Short storage short = state.shorts[shortId];
+        Short storage short = state.shorts[marginId];
 
         // This checks that the short exists
         require(short.startTimestamp != 0);

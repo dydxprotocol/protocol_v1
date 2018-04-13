@@ -30,7 +30,7 @@ library LoanImpl {
      * The loan for a short sell was called in
      */
     event LoanCalled(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
         uint256 requiredDeposit
@@ -40,7 +40,7 @@ library LoanImpl {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount
@@ -72,19 +72,19 @@ library LoanImpl {
 
     function callInLoanImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requiredDeposit
     )
         public
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
             require(
                 CallLoanDelegator(short.lender).callInLoanOnBehalfOf(
                     msg.sender,
-                    shortId,
+                    marginId,
                     requiredDeposit
                 )
             );
@@ -100,7 +100,7 @@ library LoanImpl {
         short.requiredDeposit = requiredDeposit;
 
         emit LoanCalled(
-            shortId,
+            marginId,
             short.lender,
             short.seller,
             requiredDeposit
@@ -109,18 +109,18 @@ library LoanImpl {
 
     function cancelLoanCallImpl(
         MarginState.State storage state,
-        bytes32 shortId
+        bytes32 marginId
     )
         public
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
             require(
                 CallLoanDelegator(short.lender).cancelLoanCallOnBehalfOf(
                     msg.sender,
-                    shortId
+                    marginId
                 )
             );
         }
@@ -128,11 +128,11 @@ library LoanImpl {
         // Ensure the loan has been called
         require(short.callTimestamp > 0);
 
-        state.shorts[shortId].callTimestamp = 0;
-        state.shorts[shortId].requiredDeposit = 0;
+        state.shorts[marginId].callTimestamp = 0;
+        state.shorts[marginId].requiredDeposit = 0;
 
         emit LoanCallCanceled(
-            shortId,
+            marginId,
             short.lender,
             short.seller,
             0

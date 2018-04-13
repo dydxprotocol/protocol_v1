@@ -26,7 +26,7 @@ library CloseShortImpl {
      * A short sell was closed
      */
     event ShortClosed(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed closer,
         address indexed payoutRecipient,
         uint256 closeAmount,
@@ -43,7 +43,7 @@ library CloseShortImpl {
 
     function closeShortImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -55,7 +55,7 @@ library CloseShortImpl {
     {
         CloseShortShared.CloseShortTx memory transaction = CloseShortShared.createCloseShortTx(
             state,
-            shortId,
+            marginId,
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapper,
@@ -158,7 +158,7 @@ library CloseShortImpl {
         // Send the requisite quote token to do the buyback from vault to exchange wrapper
         if (quoteTokenPrice > 0) {
             Vault(state.VAULT).transferFromVault(
-                transaction.shortId,
+                transaction.marginId,
                 transaction.quoteToken,
                 transaction.exchangeWrapper,
                 quoteTokenPrice
@@ -199,7 +199,7 @@ library CloseShortImpl {
         internal
     {
         emit ShortClosed(
-            transaction.shortId,
+            transaction.marginId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,

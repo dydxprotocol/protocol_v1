@@ -33,7 +33,7 @@ contract PayoutRecipient is OnlyMargin {
      * Function a contract must implement in order to receive payout from being the payoutRecipient
      * in a closeShort transaction. May redistribute any payout as necessary. Throws on error.
      *
-     * @param  shortId            Unique ID of the short
+     * @param  marginId           Unique ID of the short
      * @param  closeAmount        Amount of the short that was closed
      * @param  shortCloser        Address of the account or contract that closed the short
      * @param  shortSeller        Address of the owner of the short
@@ -44,7 +44,7 @@ contract PayoutRecipient is OnlyMargin {
      * @return                    True if approved by the reciever
      */
     function receiveCloseShortPayout(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,
         address shortSeller,

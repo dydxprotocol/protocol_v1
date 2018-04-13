@@ -20,50 +20,50 @@ library TransferImpl {
 
     function transferLoanImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         address newLender
     )
         public
     {
-        require(MarginCommon.containsShortImpl(state, shortId));
-        address originalLender = state.shorts[shortId].lender;
+        require(MarginCommon.containsShortImpl(state, marginId));
+        address originalLender = state.shorts[marginId].lender;
         require(msg.sender == originalLender);
         require(newLender != originalLender);
 
-        // Doesn't change the state of shortId; figures out the address of the final owner of loan.
+        // Doesn't change the state of marginId; figures out the address of the final owner of loan.
         // That is, newLender may pass ownership to a different address.
         address finalLender = TransferInternal.grantLoanOwnership(
-            shortId,
+            marginId,
             originalLender,
             newLender);
 
         require(finalLender != originalLender);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.shorts[shortId].lender = finalLender;
+        state.shorts[marginId].lender = finalLender;
     }
 
     function transferShortImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         address newSeller
     )
         public
     {
-        require(MarginCommon.containsShortImpl(state, shortId));
-        address originalSeller = state.shorts[shortId].seller;
+        require(MarginCommon.containsShortImpl(state, marginId));
+        address originalSeller = state.shorts[marginId].seller;
         require(msg.sender == originalSeller);
         require(newSeller != originalSeller);
 
-        // Doesn't change the state of shortId; figures out the address of the final owner of short.
+        // Doesn't change the state of marginId; figures out the address of the final owner of short.
         // That is, newSeller may pass ownership to a different address.
         address finalSeller = TransferInternal.grantShortOwnership(
-            shortId,
+            marginId,
             originalSeller,
             newSeller);
         require(finalSeller != originalSeller);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.shorts[shortId].seller = finalSeller;
+        state.shorts[marginId].seller = finalSeller;
     }
 }

@@ -32,7 +32,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx.logs[0], 'AdditionalDeposit', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         amount: amount,
         depositor: shortTx.seller
       });
@@ -52,7 +52,7 @@ describe('#deposit', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('fails for invalid shortId', async () => {
+    it('fails for invalid marginId', async () => {
       const shortTx = await doShort(accounts);
 
       await expectThrow(
@@ -106,7 +106,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx2.logs[1], 'LoanCallCanceled', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         lender: shortTx.loanOffering.owner,
         shortSeller: shortTx.seller,
         depositAmount: amount2
@@ -151,7 +151,7 @@ async function doDeposit({
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 
   expectLog(tx.logs[0], 'AdditionalDeposit', {
-    shortId: shortTx.id,
+    marginId: shortTx.id,
     amount: amount,
     depositor: from
   });

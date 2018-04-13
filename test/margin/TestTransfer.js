@@ -35,18 +35,18 @@ describe('#transferShort', () => {
 
     if (expectedSeller === to) {
       expectLog(tx.logs[0], 'ShortTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: from,
         to: to
       });
     } else {
       expectLog(tx.logs[0], 'ShortTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: from,
         to: to
       });
       expectLog(tx.logs[1], 'ShortTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: to,
         to: expectedSeller
       });
@@ -182,18 +182,18 @@ describe('#transferLoan', () => {
 
     if (expectedLender === to) {
       expectLog(tx.logs[0], 'LoanTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: from,
         to: to
       });
     } else {
       expectLog(tx.logs[0], 'LoanTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: from,
         to: to
       });
       expectLog(tx.logs[1], 'LoanTransferred', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         from: to,
         to: expectedLender
       });

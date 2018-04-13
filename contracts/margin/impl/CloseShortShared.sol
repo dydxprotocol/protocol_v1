@@ -28,7 +28,7 @@ library CloseShortShared {
     // -----------------------
 
     struct CloseShortTx {
-        bytes32 shortId;
+        bytes32 marginId;
         uint256 currentShortAmount;
         uint256 closeAmount;
         uint256 baseTokenOwed;
@@ -55,10 +55,10 @@ library CloseShortShared {
     {
         // Delete the short, or just increase the closedAmount
         if (transaction.closeAmount == transaction.currentShortAmount) {
-            MarginCommon.cleanupShort(state, transaction.shortId);
+            MarginCommon.cleanupShort(state, transaction.marginId);
         } else {
-            state.shorts[transaction.shortId].closedAmount =
-                state.shorts[transaction.shortId].closedAmount.add(transaction.closeAmount);
+            state.shorts[transaction.marginId].closedAmount =
+                state.shorts[transaction.marginId].closedAmount.add(transaction.closeAmount);
         }
     }
 
@@ -79,7 +79,7 @@ library CloseShortShared {
 
             if (payout > 0) {
                 Vault(state.VAULT).transferFromVault(
-                    transaction.shortId,
+                    transaction.marginId,
                     transaction.quoteToken,
                     transaction.payoutRecipient,
                     payout
@@ -103,7 +103,7 @@ library CloseShortShared {
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
             require(
                 PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
-                    transaction.shortId,
+                    transaction.marginId,
                     transaction.closeAmount,
                     msg.sender,
                     transaction.shortSeller,
@@ -118,7 +118,7 @@ library CloseShortShared {
         // The ending quote token balance of the vault should be the starting quote token balance
         // minus the available quote token amount
         assert(
-            Vault(state.VAULT).balances(transaction.shortId, transaction.quoteToken)
+            Vault(state.VAULT).balances(transaction.marginId, transaction.quoteToken)
             == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
         );
 
@@ -127,7 +127,7 @@ library CloseShortShared {
 
     function createCloseShortTx(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -141,11 +141,11 @@ library CloseShortShared {
         require(payoutRecipient != address(0));
         require(requestedAmount > 0);
 
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         uint256 closeAmount = getApprovedAmount(
             short,
-            shortId,
+            marginId,
             requestedAmount,
             payoutRecipient,
             isLiquidation
@@ -154,7 +154,7 @@ library CloseShortShared {
         return parseCloseShortTx(
             state,
             short,
-            shortId,
+            marginId,
             closeAmount,
             payoutRecipient,
             exchangeWrapper,
@@ -166,7 +166,7 @@ library CloseShortShared {
     function parseCloseShortTx(
         MarginState.State storage state,
         MarginCommon.Short storage short,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 closeAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -179,7 +179,7 @@ library CloseShortShared {
     {
         require(payoutRecipient != address(0));
 
-        uint256 startingQuoteToken = Vault(state.VAULT).balances(shortId, short.quoteToken);
+        uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, short.quoteToken);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
@@ -196,7 +196,7 @@ library CloseShortShared {
         }
 
         return CloseShortTx({
-            shortId: shortId,
+            marginId: marginId,
             currentShortAmount: currentShortAmount,
             closeAmount: closeAmount,
             baseTokenOwed: baseTokenOwed,
@@ -214,7 +214,7 @@ library CloseShortShared {
 
     function getApprovedAmount(
         MarginCommon.Short storage short,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedAmount,
         address payoutRecipient,
         bool requireLenderApproval
@@ -230,7 +230,7 @@ library CloseShortShared {
             uint256 allowedCloseAmount = CloseShortDelegator(short.seller).closeOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
-                shortId,
+                marginId,
                 newAmount
             );
             require(allowedCloseAmount <= newAmount);
@@ -242,7 +242,7 @@ library CloseShortShared {
             uint256 allowedLiquidationAmount = LiquidateDelegator(short.lender).liquidateOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
-                shortId,
+                marginId,
                 newAmount
             );
             require(allowedLiquidationAmount <= newAmount);

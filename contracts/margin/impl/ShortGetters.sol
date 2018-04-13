@@ -24,69 +24,69 @@ contract ShortGetters is MarginStorage {
     /**
      * Gets if a short is currently open
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          True if the short is exists and is open
      */
     function containsShort(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (bool)
     {
-        return MarginCommon.containsShortImpl(state, shortId);
+        return MarginCommon.containsShortImpl(state, marginId);
     }
 
     /**
      * Gets if a short is currently margin-called
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          True if the short is margin-called
      */
     function isShortCalled(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (bool)
     {
-        return (state.shorts[shortId].callTimestamp > 0);
+        return (state.shorts[marginId].callTimestamp > 0);
     }
 
     /**
      * Gets if a short was previously closed
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          True if the short is now closed
      */
     function isShortClosed(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (bool)
     {
-        return state.closedShorts[shortId];
+        return state.closedShorts[marginId];
     }
 
     /**
      * Gets the number of quote tokens currently locked up in Vault for a particular short
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          The number of quote tokens
      */
     function getShortBalance(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        if (!MarginCommon.containsShortImpl(state, shortId)) {
+        if (!MarginCommon.containsShortImpl(state, marginId)) {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(shortId, state.shorts[shortId].quoteToken);
+        return Vault(state.VAULT).balances(marginId, state.shorts[marginId].quoteToken);
     }
 
     /**
@@ -94,17 +94,17 @@ contract ShortGetters is MarginStorage {
      * Returns 1 if the interest fee increases every second.
      * Returns 0 if the interest fee will never increase again.
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          The number of seconds until the interest fee will increase
      */
     function getTimeUntilInterestIncrease(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
             shortObject,
@@ -124,17 +124,17 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens currently needed to close the short completely, including
      * interest fees.
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          The number of base tokens
      */
     function getShortOwedAmount(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
             shortObject,
@@ -147,13 +147,13 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens needed to close a given amount of the short at a given time,
      * including interest fees.
      *
-     * @param  shortId      Unique ID of the short
-     * @param  shortId      Amount of short being closed
+     * @param  marginId     Unique ID of the short
+     * @param  marginId     Amount of short being closed
      * @param  timestamp    Block timestamp in seconds of close
      * @return              The number of base tokens owed at the given time and amount
      */
     function getShortOwedAmountAtTime(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amount,
         uint32  timestamp
     )
@@ -161,7 +161,7 @@ contract ShortGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
 
         return MarginCommon.calculateOwedAmount(
             shortObject,
@@ -174,14 +174,14 @@ contract ShortGetters is MarginStorage {
      * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
      * onto the short at a given time.
      *
-     * @param  shortId      Unique ID of the short
-     * @param  shortId      Amount being added to short
+     * @param  marginId     Unique ID of the short
+     * @param  marginId     Amount being added to short
      * @param  timestamp    Block timestamp in seconds of addition
      * @return              The number of base tokens that can be borrowed at the given
      *                      time and amount
      */
     function getLenderAmountForAddValueAtTime(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amount,
         uint32  timestamp
     )
@@ -189,7 +189,7 @@ contract ShortGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, marginId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
             shortObject,
@@ -206,7 +206,7 @@ contract ShortGetters is MarginStorage {
      * Get a Short by id. This does not validate the short exists. If the short does not exist
      * all 0's will be returned.
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          Addresses corresponding to:
      *
      *                  [0] = baseToken
@@ -230,7 +230,7 @@ contract ShortGetters is MarginStorage {
      *                  [5] = interestPeriod
      */
     function getShort(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
@@ -240,7 +240,7 @@ contract ShortGetters is MarginStorage {
             uint32[6]
         )
     {
-        MarginCommon.Short storage short = state.shorts[shortId];
+        MarginCommon.Short storage short = state.shorts[marginId];
 
         return (
             [
@@ -270,142 +270,142 @@ contract ShortGetters is MarginStorage {
     // ---------------------------------
 
     function getShortLender(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[shortId].lender;
+        return state.shorts[marginId].lender;
     }
 
     function getshortSeller(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[shortId].seller;
+        return state.shorts[marginId].seller;
     }
 
     function getShortQuoteToken(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[shortId].quoteToken;
+        return state.shorts[marginId].quoteToken;
     }
 
     function getShortBaseToken(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (address)
     {
-        return state.shorts[shortId].baseToken;
+        return state.shorts[marginId].baseToken;
     }
 
     function getShortAmount(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[shortId].shortAmount;
+        return state.shorts[marginId].shortAmount;
     }
 
     function getShortClosedAmount(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[shortId].closedAmount;
+        return state.shorts[marginId].closedAmount;
     }
 
     function getShortUnclosedAmount(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[shortId].shortAmount.sub(state.shorts[shortId].closedAmount);
+        return state.shorts[marginId].shortAmount.sub(state.shorts[marginId].closedAmount);
     }
 
     function getShortInterestRate(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[shortId].interestRate;
+        return state.shorts[marginId].interestRate;
     }
 
     function getShortRequiredDeposit(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint256)
     {
-        return state.shorts[shortId].requiredDeposit;
+        return state.shorts[marginId].requiredDeposit;
     }
 
     function getShortStartTimestamp(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[shortId].startTimestamp;
+        return state.shorts[marginId].startTimestamp;
     }
 
     function getShortCallTimestamp(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[shortId].callTimestamp;
+        return state.shorts[marginId].callTimestamp;
     }
 
     function getShortCallTimeLimit(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[shortId].callTimeLimit;
+        return state.shorts[marginId].callTimeLimit;
     }
 
     function getShortMaxDuration(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[shortId].maxDuration;
+        return state.shorts[marginId].maxDuration;
     }
 
     function getShortinterestPeriod(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         external
         returns (uint32)
     {
-        return state.shorts[shortId].interestPeriod;
+        return state.shorts[marginId].interestPeriod;
     }
 }

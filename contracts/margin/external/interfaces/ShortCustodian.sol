@@ -16,11 +16,11 @@ contract ShortCustodian {
      * Function that is intended to be called by external contracts to see where to pay any fees or
      * tokens as a result of closing a short on behalf of another contract.
      *
-     * @param  shortId      Unique ID of the short
+     * @param  marginId     Unique ID of the short
      * @return              Address of the true owner of the short position
      */
     function getMarginDeedHolder(
-        bytes32 shortId
+        bytes32 marginId
     )
         external
         view

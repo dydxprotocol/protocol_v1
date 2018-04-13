@@ -27,7 +27,7 @@ library ShortImpl {
      * A short sell occurred
      */
     event ShortInitiated(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
         bytes32 loanHash,
@@ -69,20 +69,20 @@ library ShortImpl {
             depositInQuoteToken
         );
 
-        bytes32 shortId = getNextShortId(state, transaction.loanOffering.loanHash);
+        bytes32 marginId = getNextmarginId(state, transaction.loanOffering.loanHash);
 
         uint256 quoteTokenFromSell;
 
         (quoteTokenFromSell,) = ShortShared.shortInternalPreStateUpdate(
             state,
             transaction,
-            shortId,
+            marginId,
             orderData
         );
 
         // Comes before updateState() so that ShortInitiated event is before Transferred events
         recordShortInitiated(
-            shortId,
+            marginId,
             msg.sender,
             transaction,
             quoteTokenFromSell
@@ -90,22 +90,22 @@ library ShortImpl {
 
         updateState(
             state,
-            shortId,
+            marginId,
             transaction
         );
 
         ShortShared.shortInternalPostStateUpdate(
             state,
             transaction,
-            shortId
+            marginId
         );
 
-        return shortId;
+        return marginId;
     }
 
     // --------- Helper Functions ---------
 
-    function getNextShortId(
+    function getNextmarginId(
         MarginState.State storage state,
         bytes32 loanHash
     )
@@ -113,19 +113,19 @@ library ShortImpl {
         view
         returns (bytes32)
     {
-        bytes32 shortId = keccak256(
+        bytes32 marginId = keccak256(
             loanHash,
             state.loanNumbers[loanHash]
         );
 
-        // Make this shortId doesn't already exist
-        assert(!MarginCommon.containsShortImpl(state, shortId));
+        // Make this marginId doesn't already exist
+        assert(!MarginCommon.containsShortImpl(state, marginId));
 
-        return shortId;
+        return marginId;
     }
 
     function recordShortInitiated(
-        bytes32 shortId,
+        bytes32 marginId,
         address shortSeller,
         ShortShared.ShortTx transaction,
         uint256 quoteTokenReceived
@@ -133,7 +133,7 @@ library ShortImpl {
         internal
     {
         emit ShortInitiated(
-            shortId,
+            marginId,
             shortSeller,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
@@ -152,12 +152,12 @@ library ShortImpl {
 
     function updateState(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         ShortShared.ShortTx transaction
     )
         internal
     {
-        assert(!MarginCommon.containsShortImpl(state, shortId));
+        assert(!MarginCommon.containsShortImpl(state, marginId));
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
@@ -165,25 +165,25 @@ library ShortImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.shorts[shortId].baseToken = transaction.baseToken;
-        state.shorts[shortId].quoteToken = transaction.quoteToken;
-        state.shorts[shortId].shortAmount = transaction.effectiveAmount;
-        state.shorts[shortId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.shorts[shortId].startTimestamp = uint32(block.timestamp);
-        state.shorts[shortId].maxDuration = transaction.loanOffering.maxDuration;
-        state.shorts[shortId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.shorts[shortId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
+        state.shorts[marginId].baseToken = transaction.baseToken;
+        state.shorts[marginId].quoteToken = transaction.quoteToken;
+        state.shorts[marginId].shortAmount = transaction.effectiveAmount;
+        state.shorts[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.shorts[marginId].startTimestamp = uint32(block.timestamp);
+        state.shorts[marginId].maxDuration = transaction.loanOffering.maxDuration;
+        state.shorts[marginId].interestRate = transaction.loanOffering.rates.interestRate;
+        state.shorts[marginId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newSeller = transaction.owner != msg.sender;
 
-        state.shorts[shortId].lender = TransferInternal.grantLoanOwnership(
-            shortId,
+        state.shorts[marginId].lender = TransferInternal.grantLoanOwnership(
+            marginId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.shorts[shortId].seller = TransferInternal.grantShortOwnership(
-            shortId,
+        state.shorts[marginId].seller = TransferInternal.grantShortOwnership(
+            marginId,
             newSeller ? msg.sender : address(0),
             transaction.owner);
     }

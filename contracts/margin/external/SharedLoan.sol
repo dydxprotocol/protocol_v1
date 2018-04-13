@@ -46,7 +46,7 @@ contract SharedLoan is
      * This SharedLoan was successfully initialized
      */
     event Initialized(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 initialAmount
     );
 
@@ -76,7 +76,7 @@ contract SharedLoan is
     address public INITIAL_LENDER;
 
     // Unique ID of the short this contract is lending for
-    bytes32 public SHORT_ID;
+    bytes32 public MARGIN_ID;
 
     // Addresses that can call in the loan
     mapping (address => bool) public TRUSTED_LOAN_CALLERS;
@@ -110,7 +110,7 @@ contract SharedLoan is
     // -------------------------
 
     function SharedLoan(
-        bytes32 shortId,
+        bytes32 marginId,
         address margin,
         address initialLender,
         address[] trustedLoanCallers
@@ -119,7 +119,7 @@ contract SharedLoan is
         ForceRecoverLoanDelegator(margin)
         CallLoanDelegator(margin)
     {
-        SHORT_ID = shortId;
+        MARGIN_ID = marginId;
         state = State.UNINITIALIZED;
         INITIAL_LENDER = initialLender;
 
@@ -138,12 +138,12 @@ contract SharedLoan is
      * that it is willing to take ownership of the loan.
      *
      *  param  (unused)
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          This address on success, throw otherwise
      */
     function receiveLoanOwnership(
         address /* from */,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
@@ -152,9 +152,9 @@ contract SharedLoan is
     {
         // require uninitialized so that this cannot receive short ownership from more than 1 loan
         require(state == State.UNINITIALIZED);
-        require(SHORT_ID == shortId);
+        require(MARGIN_ID == marginId);
 
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, SHORT_ID);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, MARGIN_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 
@@ -165,7 +165,7 @@ contract SharedLoan is
         baseToken = short.baseToken;
         quoteToken = short.quoteToken;
 
-        emit Initialized(SHORT_ID, currentShortAmount);
+        emit Initialized(MARGIN_ID, currentShortAmount);
 
         emit BalanceAdded(
             INITIAL_LENDER,
@@ -180,13 +180,13 @@ contract SharedLoan is
      * is lending for. Balance is added to the address that lent the additional tokens.
      *
      * @param  from         Address that lent the additional tokens
-     * @param  shortId      Unique ID of the short
+     * @param  marginId     Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
     function additionalLoanValueAdded(
         address from,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amountAdded
     )
         onlyMargin
@@ -194,7 +194,7 @@ contract SharedLoan is
         external
         returns (bool)
     {
-        require(shortId == SHORT_ID);
+        require(marginId == MARGIN_ID);
 
         balances[from] = balances[from].add(amountAdded);
         totalAmount = totalAmount.add(amountAdded);
@@ -211,14 +211,14 @@ contract SharedLoan is
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
      * @param  who      Address attempting to initiate the loan call
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      *  param  (unused)
      * @return          True to consent to the loan being called if the initiator is a trusted
      *                  loan caller, false otherwise
      */
     function callInLoanOnBehalfOf(
         address who,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 /* depositAmount */
     )
         onlyMargin
@@ -227,7 +227,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(SHORT_ID == shortId);
+        assert(MARGIN_ID == marginId);
 
         return TRUSTED_LOAN_CALLERS[who];
     }
@@ -237,13 +237,13 @@ contract SharedLoan is
      * this contract owns
      *
      * @param  who      Address attempting to initiate the loan call cancel
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          True to consent to the loan call being canceled if the initiator is a
      *                  trusted loan caller, false otherwise
      */
     function cancelLoanCallOnBehalfOf(
         address who,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
@@ -251,7 +251,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(SHORT_ID == shortId);
+        assert(MARGIN_ID == marginId);
 
         return TRUSTED_LOAN_CALLERS[who];
     }
@@ -262,12 +262,12 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          True to consent to the loan being force recovered
      */
     function forceRecoverLoanOnBehalfOf(
         address /* who */,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
@@ -275,7 +275,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(SHORT_ID == shortId);
+        assert(MARGIN_ID == marginId);
 
         state = State.CLOSED;
 
@@ -357,7 +357,7 @@ contract SharedLoan is
         internal
     {
         if (state != State.CLOSED) {
-            if (Margin(MARGIN).isShortClosed(SHORT_ID)) {
+            if (Margin(MARGIN).isShortClosed(MARGIN_ID)) {
                 state = State.CLOSED;
             }
         }

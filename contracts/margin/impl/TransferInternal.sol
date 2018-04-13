@@ -22,7 +22,7 @@ library TransferInternal {
      * Ownership of a loan was transferred to a new address
      */
     event LoanTransferred(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed from,
         address indexed to
     );
@@ -31,7 +31,7 @@ library TransferInternal {
      * Ownership of a short was transferred to a new address
      */
     event ShortTransferred(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed from,
         address indexed to
     );
@@ -44,14 +44,14 @@ library TransferInternal {
      * Returns either the address of the new owner, or the address to which they wish to pass
      * ownership of the loan. This function does not actually set the state of short
      *
-     * @param  shortId   The unique ID of the short
+     * @param  marginId  The unique ID of the short
      * @param  oldOwner  The previous owner of the loan
      * @param  newOwner  The intended owner of the loan
      * @return           The address that the intended owner wishes to assign the loan to (may be
      *                   the same as the intended owner). Zero if ownership is rejected.
      */
     function grantLoanOwnership(
-        bytes32 shortId,
+        bytes32 marginId,
         address oldOwner,
         address newOwner
     )
@@ -60,13 +60,13 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            emit LoanTransferred(shortId, oldOwner, newOwner);
+            emit LoanTransferred(marginId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, shortId);
+            address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
-                return grantLoanOwnership(shortId, newOwner, nextOwner);
+                return grantLoanOwnership(marginId, newOwner, nextOwner);
             }
         }
 
@@ -78,14 +78,14 @@ library TransferInternal {
      * Returns either the address of the new owner, or the address to which they wish to pass
      * ownership of the short. This function does not actually set the state of short
      *
-     * @param  shortId   The unique ID of the short
+     * @param  marginId  The unique ID of the short
      * @param  oldOwner  The previous owner of the short
      * @param  newOwner  The intended owner of the short
      * @return           The address that the intended owner wishes to assign the short to (may be
      *                   the same as the intended owner). Zero if ownership is rejected.
      */
     function grantShortOwnership(
-        bytes32 shortId,
+        bytes32 marginId,
         address oldOwner,
         address newOwner
     )
@@ -94,13 +94,13 @@ library TransferInternal {
     {
         // log event except upon short creation
         if (oldOwner != address(0)) {
-            emit ShortTransferred(shortId, oldOwner, newOwner);
+            emit ShortTransferred(marginId, oldOwner, newOwner);
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = ShortOwner(newOwner).receiveShortOwnership(oldOwner, shortId);
+            address nextOwner = ShortOwner(newOwner).receiveShortOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
-                return grantShortOwnership(shortId, newOwner, nextOwner);
+                return grantShortOwnership(marginId, newOwner, nextOwner);
             }
         }
 

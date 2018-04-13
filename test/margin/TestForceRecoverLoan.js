@@ -59,7 +59,7 @@ describe('#forceRecoverLoan', () => {
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
       expectLog(tx.logs[0], 'LoanForceRecovered', {
-        shortId: shortTx.id,
+        marginId: shortTx.id,
         amount: quoteTokenBalance
       });
     });

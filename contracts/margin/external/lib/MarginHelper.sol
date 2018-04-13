@@ -14,7 +14,7 @@ import { MarginCommon } from "../../impl/MarginCommon.sol";
 library MarginHelper {
     function getShort(
         address MARGIN,
-        bytes32 shortId
+        bytes32 marginId
     )
         internal
         view
@@ -28,7 +28,7 @@ library MarginHelper {
             addresses,
             values256,
             values32
-        ) = Margin(MARGIN).getShort(shortId);
+        ) = Margin(MARGIN).getShort(marginId);
 
         return MarginCommon.Short({
             baseToken: addresses[0],

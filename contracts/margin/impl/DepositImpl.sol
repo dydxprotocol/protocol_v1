@@ -24,7 +24,7 @@ library DepositImpl {
      * Additional deposit for a short sell was posted by the short seller
      */
     event AdditionalDeposit(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         uint256 amount,
         address depositor
     );
@@ -33,7 +33,7 @@ library DepositImpl {
      * A loan call was canceled
      */
     event LoanCallCanceled(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed lender,
         address indexed shortSeller,
         uint256 depositAmount
@@ -45,17 +45,17 @@ library DepositImpl {
 
     function depositImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 depositAmount
     )
         public
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
         require(depositAmount > 0);
         require(msg.sender == short.seller);
 
         Vault(state.VAULT).transferToVault(
-            shortId,
+            marginId,
             short.quoteToken,
             msg.sender,
             depositAmount
@@ -75,14 +75,14 @@ library DepositImpl {
         }
 
         emit AdditionalDeposit(
-            shortId,
+            marginId,
             depositAmount,
             msg.sender
         );
 
         if (loanCanceled) {
             emit LoanCallCanceled(
-                shortId,
+                marginId,
                 short.lender,
                 msg.sender,
                 depositAmount

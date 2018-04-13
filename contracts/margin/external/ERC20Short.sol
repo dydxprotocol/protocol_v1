@@ -50,7 +50,7 @@ contract ERC20Short is
      * This ERC20Short was successfully initialized
      */
     event Initialized(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 initialSupply
     );
 
@@ -93,7 +93,7 @@ contract ERC20Short is
     address public INITIAL_TOKEN_HOLDER;
 
     // Unique ID of the short this contract is tokenizing
-    bytes32 public SHORT_ID;
+    bytes32 public MARGIN_ID;
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
     mapping (address => bool) public TRUSTED_RECIPIENTS;
@@ -112,7 +112,7 @@ contract ERC20Short is
     // -------------------------
 
     function ERC20Short(
-        bytes32 shortId,
+        bytes32 marginId,
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients
@@ -120,7 +120,7 @@ contract ERC20Short is
         public
         CloseShortDelegator(margin)
     {
-        SHORT_ID = shortId;
+        MARGIN_ID = marginId;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
 
@@ -139,12 +139,12 @@ contract ERC20Short is
      * indicate to Margin that it is willing to take ownership of the short.
      *
      *  param  (unused)
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          This address on success, throw otherwise
      */
     function receiveShortOwnership(
         address /* from */,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
@@ -153,9 +153,9 @@ contract ERC20Short is
     {
         // require uninitialized so that this cannot receive short ownership from more than 1 short
         require(state == State.UNINITIALIZED);
-        require(SHORT_ID == shortId);
+        require(MARGIN_ID == marginId);
 
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, SHORT_ID);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, MARGIN_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 
@@ -166,7 +166,7 @@ contract ERC20Short is
         quoteToken = short.quoteToken;
 
         // Record event
-        emit Initialized(SHORT_ID, currentShortAmount);
+        emit Initialized(MARGIN_ID, currentShortAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentShortAmount);
@@ -179,13 +179,13 @@ contract ERC20Short is
      * owns. Tokens are minted and assigned to the address that added the value.
      *
      * @param  from         Address that added the value to the short position
-     * @param  shortId      Unique ID of the short
+     * @param  marginId     Unique ID of the short
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
     function additionalShortValueAdded(
         address from,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amountAdded
     )
         onlyMargin
@@ -193,7 +193,7 @@ contract ERC20Short is
         external
         returns (bool)
     {
-        assert(shortId == SHORT_ID);
+        assert(marginId == MARGIN_ID);
 
         balances[from] = balances[from].add(amountAdded);
         totalSupply_ = totalSupply_.add(amountAdded);
@@ -213,14 +213,14 @@ contract ERC20Short is
      *
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param shortId          Unique ID of the short
+     * @param marginId         Unique ID of the short
      * @param requestedAmount  Amount of the short being closed
      * @return                 The amount the user is allowed to close for the specified short
      */
     function closeOnBehalfOf(
         address closer,
         address payoutRecipient,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedAmount
     )
         onlyMargin
@@ -229,7 +229,7 @@ contract ERC20Short is
         returns (uint256)
     {
         assert(state == State.OPEN);
-        assert(SHORT_ID == shortId);
+        assert(MARGIN_ID == marginId);
 
         uint256 allowedAmount;
 
@@ -289,7 +289,7 @@ contract ERC20Short is
         returns (uint256)
     {
         // If in OPEN state, but the short is closed, set to CLOSED state
-        if (state == State.OPEN && Margin(MARGIN).isShortClosed(SHORT_ID)) {
+        if (state == State.OPEN && Margin(MARGIN).isShortClosed(MARGIN_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
@@ -340,17 +340,17 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                Margin(MARGIN).getShortBaseToken(SHORT_ID)
+                Margin(MARGIN).getShortBaseToken(MARGIN_ID)
             ).decimals();
     }
 
     /**
-     * ERC20 name function. Returns a name based off shortID. Throws if this contract does not own
+     * ERC20 name function. Returns a name based off marginId. Throws if this contract does not own
      * the short.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the short token which includes the hexadecimal shortId of the short
+     * @return  The name of the short token which includes the hexadecimal marginId of the short
      */
     function name()
         external
@@ -362,24 +362,24 @@ contract ERC20Short is
         }
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
-        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(SHORT_ID)));
+        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(MARGIN_ID)));
     }
 
     /**
      * Implements ShortCustodian functionality. Called by external contracts to see where to pay
      * tokens as a result of closing a short on behalf of this contract
      *
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          Address of this contract. Indicates funds should be sent to this contract
      */
     function getMarginDeedHolder(
-        bytes32 shortId
+        bytes32 marginId
     )
         external
         view
         returns (address)
     {
-        require(shortId == SHORT_ID);
+        require(marginId == MARGIN_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }

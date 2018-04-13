@@ -27,7 +27,7 @@ contract SharedLoanCreator is
     // -------------------
 
     event SharedLoanCreated(
-        bytes32 shortId,
+        bytes32 marginId,
         address sharedLoanAddress
     );
 
@@ -68,7 +68,7 @@ contract SharedLoanCreator is
      */
     function receiveLoanOwnership(
         address from,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         nonReentrant
@@ -76,13 +76,13 @@ contract SharedLoanCreator is
         returns (address)
     {
         address sharedLoanAddress = new SharedLoan(
-            shortId,
+            marginId,
             MARGIN,
             from,
             TRUSTED_LOAN_CALLERS
         );
 
-        emit SharedLoanCreated(shortId, sharedLoanAddress);
+        emit SharedLoanCreated(marginId, sharedLoanAddress);
 
         return sharedLoanAddress;
     }

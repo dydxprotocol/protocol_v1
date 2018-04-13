@@ -34,13 +34,13 @@ contract ShortOwner is OnlyMargin {
      * transferShort function or the atomic-assign to the "owner" field when opening a short.
      *
      * @param  from     Address of the previous owner
-     * @param  shortId  Unique ID of the short
+     * @param  marginId Unique ID of the short
      * @return          The address to pass short ownership to. Own address to keep short ownership,
                         0x0 to reject loan ownership completely.
      */
     function receiveShortOwnership(
         address from,
-        bytes32 shortId
+        bytes32 marginId
     )
         onlyMargin
         external
@@ -53,14 +53,14 @@ contract ShortOwner is OnlyMargin {
      * the additional value was added.
      *
      * @param  from         Address initiating the addition of funds to the position
-     * @param  shortId      Unique ID of the short
+     * @param  marginId     Unique ID of the short
      * @param  amountAdded  Amount to be added to the position
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise
      */
     function additionalShortValueAdded(
         address from,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 amountAdded
     )
         onlyMargin

@@ -40,14 +40,14 @@ contract LiquidateDelegator is LoanOwner {
      *
      * @param liquidator       Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of quote tokens paid out
-     * @param shortId          Unique ID of the short
+     * @param marginId         Unique ID of the short
      * @param requestedAmount  Amount of the loan being closed
      * @return                 The amount the user is allowed to close for the specified loan
      */
     function liquidateOnBehalfOf(
         address liquidator,
         address payoutRecipient,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedAmount
     )
         onlyMargin

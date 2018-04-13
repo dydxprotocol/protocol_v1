@@ -49,12 +49,12 @@ async function createShortTx(accounts, _salt = DEFAULT_SALT) {
 }
 
 async function callShort(dydxMargin, tx, safely = true) {
-  const shortId = web3Instance.utils.soliditySha3(
+  const marginId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     0
   );
 
-  let contains = await dydxMargin.containsShort.call(shortId);
+  let contains = await dydxMargin.containsShort.call(marginId);
   if (safely) {
     expect(contains).to.be.false;
   }
@@ -113,19 +113,19 @@ async function callShort(dydxMargin, tx, safely = true) {
   );
 
   if (safely) {
-    contains = await dydxMargin.containsShort.call(shortId);
+    contains = await dydxMargin.containsShort.call(marginId);
     expect(contains).to.be.true;
   }
 
-  await expectLogShort(dydxMargin, shortId, tx, response);
+  await expectLogShort(dydxMargin, marginId, tx, response);
 
-  response.id = shortId;
+  response.id = marginId;
   return response;
 }
 
-async function expectLogShort(dydxMargin, shortId, tx, response) {
+async function expectLogShort(dydxMargin, marginId, tx, response) {
   expectLog(response.logs[0], 'ShortInitiated', {
-    shortId: shortId,
+    marginId: marginId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
@@ -142,18 +142,18 @@ async function expectLogShort(dydxMargin, shortId, tx, response) {
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
 
-  const newSeller = await dydxMargin.getshortSeller.call(shortId);
-  const newLender = await dydxMargin.getShortLender.call(shortId);
+  const newSeller = await dydxMargin.getshortSeller.call(marginId);
+  const newLender = await dydxMargin.getShortLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
     expectLog(response.logs[++logIndex], 'LoanTransferred', {
-      shortId: shortId,
+      marginId: marginId,
       from: tx.loanOffering.payer,
       to: tx.loanOffering.owner
     });
     if (newLender !== tx.loanOffering.owner) {
       expectLog(response.logs[++logIndex], 'LoanTransferred', {
-        shortId: shortId,
+        marginId: marginId,
         from: tx.loanOffering.owner,
         to: newLender
       });
@@ -161,13 +161,13 @@ async function expectLogShort(dydxMargin, shortId, tx, response) {
   }
   if (tx.owner !== tx.seller) {
     expectLog(response.logs[++logIndex], 'ShortTransferred', {
-      shortId: shortId,
+      marginId: marginId,
       from: tx.seller,
       to: tx.owner
     });
     if (newSeller !== tx.owner) {
       expectLog(response.logs[++logIndex], 'ShortTransferred', {
-        shortId: shortId,
+        marginId: marginId,
         from: tx.owner,
         to: newSeller
       });
@@ -176,7 +176,7 @@ async function expectLogShort(dydxMargin, shortId, tx, response) {
 }
 
 async function callAddValueToShort(dydxMargin, tx) {
-  const shortId = tx.id;
+  const marginId = tx.id;
 
   const addresses = [
     tx.loanOffering.payer,
@@ -214,7 +214,7 @@ async function callAddValueToShort(dydxMargin, tx) {
   const order = zeroExOrderToBytes(tx.buyOrder);
 
   let response = await dydxMargin.addValueToShort(
-    shortId,
+    marginId,
     addresses,
     values256,
     values32,
@@ -231,17 +231,17 @@ async function callAddValueToShort(dydxMargin, tx) {
     response
   );
 
-  response.id = shortId;
+  response.id = marginId;
   return response;
 }
 
 async function expectAddValueToShortLog(dydxMargin, tx, response) {
-  const shortId = tx.id;
+  const marginId = tx.id;
   const [time1, time2, shortAmount, quoteTokenAmount] = await Promise.all([
-    dydxMargin.getShortStartTimestamp.call(shortId),
+    dydxMargin.getShortStartTimestamp.call(marginId),
     getBlockTimestamp(response.receipt.blockNumber),
-    dydxMargin.getShortUnclosedAmount.call(shortId),
-    dydxMargin.getShortBalance.call(shortId)
+    dydxMargin.getShortUnclosedAmount.call(marginId),
+    dydxMargin.getShortBalance.call(marginId)
   ]);
   const owed = await getOwedAmountForTime(
     new BigNumber(time2).minus(time1),
@@ -255,7 +255,7 @@ async function expectAddValueToShortLog(dydxMargin, tx, response) {
   const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
 
   expectLog(response.logs[0], 'ValueAddedToShort', {
-    shortId: shortId,
+    marginId: marginId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
     shortOwner: tx.owner,
@@ -440,15 +440,15 @@ async function callCloseShortDirectly(
   return tx;
 }
 
-async function getPreCloseVariables(dydxMargin, shortId) {
+async function getPreCloseVariables(dydxMargin, marginId) {
   const [
     startAmount,
     startQuote,
     startTimestamp
   ] = await Promise.all([
-    dydxMargin.getShortUnclosedAmount.call(shortId),
-    dydxMargin.getShortBalance.call(shortId),
-    dydxMargin.getShortStartTimestamp.call(shortId)
+    dydxMargin.getShortUnclosedAmount.call(marginId),
+    dydxMargin.getShortBalance.call(marginId),
+    dydxMargin.getShortStartTimestamp.call(marginId)
   ]);
   return {
     startAmount,
@@ -486,7 +486,7 @@ async function expectCloseLog(dydxMargin, params) {
     params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
 
   expectLog(params.tx.logs[0], 'ShortClosed', {
-    shortId: params.shortTx.id,
+    marginId: params.shortTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
@@ -520,7 +520,7 @@ async function callLiquidate(
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
   expectLog(tx.logs[0], 'LoanLiquidated', {
-    shortId: shortTx.id,
+    marginId: shortTx.id,
     liquidator: from,
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,

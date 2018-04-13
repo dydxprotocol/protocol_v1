@@ -23,7 +23,7 @@ library LiquidateImpl {
      * A loan was liquidated
      */
     event LoanLiquidated(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
@@ -37,7 +37,7 @@ library LiquidateImpl {
 
     function liquidateImpl(
         MarginState.State storage state,
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 requestedLiquidationAmount,
         address payoutRecipient
     )
@@ -46,7 +46,7 @@ library LiquidateImpl {
     {
         CloseShortShared.CloseShortTx memory transaction = CloseShortShared.createCloseShortTx(
             state,
-            shortId,
+            marginId,
             requestedLiquidationAmount,
             payoutRecipient,
             address(0),
@@ -79,7 +79,7 @@ library LiquidateImpl {
         internal
     {
         emit LoanLiquidated(
-            transaction.shortId,
+            transaction.marginId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,

@@ -25,7 +25,7 @@ library ForceRecoverLoanImpl {
      * A short sell loan was forcibly recovered by the lender
      */
     event LoanForceRecovered(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         uint256 amount
     );
 
@@ -35,12 +35,12 @@ library ForceRecoverLoanImpl {
 
     function forceRecoverLoanImpl(
         MarginState.State storage state,
-        bytes32 shortId
+        bytes32 marginId
     )
         public
         returns (uint256)
     {
-        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, marginId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
@@ -59,16 +59,16 @@ library ForceRecoverLoanImpl {
             require(
                 ForceRecoverLoanDelegator(short.lender).forceRecoverLoanOnBehalfOf(
                     msg.sender,
-                    shortId
+                    marginId
                 )
             );
         }
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderQuoteTokenAmount = vault.balances(shortId, short.quoteToken);
+        uint256 lenderQuoteTokenAmount = vault.balances(marginId, short.quoteToken);
         vault.transferFromVault(
-            shortId,
+            marginId,
             short.quoteToken,
             short.lender,
             lenderQuoteTokenAmount
@@ -78,12 +78,12 @@ library ForceRecoverLoanImpl {
         // NOTE: Since short is a storage pointer, this will also set all of short's fields to 0
         MarginCommon.cleanupShort(
             state,
-            shortId
+            marginId
         );
 
         // Log an event
         emit LoanForceRecovered(
-            shortId,
+            marginId,
             lenderQuoteTokenAmount
         );
 

@@ -216,14 +216,14 @@ describe('#short', () => {
 });
 
 async function checkSuccess(dydxMargin, shortTx) {
-  const shortId = web3Instance.utils.soliditySha3(
+  const marginId = web3Instance.utils.soliditySha3(
     shortTx.loanOffering.loanHash,
     0
   );
 
-  const contains = await dydxMargin.containsShort.call(shortId);
+  const contains = await dydxMargin.containsShort.call(marginId);
   expect(contains).to.equal(true);
-  const short = await getShort(dydxMargin, shortId);
+  const short = await getShort(dydxMargin, marginId);
 
   expect(short.baseToken).to.equal(shortTx.baseToken);
   expect(short.quoteToken).to.equal(shortTx.quoteToken);
@@ -261,7 +261,7 @@ async function checkSuccess(dydxMargin, shortTx) {
     expect(short.lender).to.equal(toReturn ? toReturn : shortTx.loanOffering.owner);
   }
 
-  const balance = await dydxMargin.getShortBalance.call(shortId);
+  const balance = await dydxMargin.getShortBalance.call(marginId);
 
   const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,

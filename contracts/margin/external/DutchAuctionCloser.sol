@@ -32,7 +32,7 @@ contract DutchAuctionCloser is
      * A short was closed by this contract
      */
     event ShortClosedByDutchAuction(
-        bytes32 indexed shortId,
+        bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed bidder,
         uint256 closeAmount,
@@ -85,7 +85,7 @@ contract DutchAuctionCloser is
     /**
      * Function to implement the PayoutRecipient interface.
      *
-     * @param  shortId            Unique ID of the short
+     * @param  marginId           Unique ID of the short
      * @param  closeAmount        Amount of the short that was closed
      * @param  shortCloser        Address of the account or contract that closed the short
      * @param  shortSeller        Address of the owner of the short
@@ -96,7 +96,7 @@ contract DutchAuctionCloser is
      * @return                    True if approved by the reciever
      */
     function receiveCloseShortPayout(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,
         address shortSeller,
@@ -112,12 +112,12 @@ contract DutchAuctionCloser is
         require(payoutInQuoteToken);
 
         uint256 auctionPrice = getAuctionPrice(
-            shortId,
+            marginId,
             totalQuoteToken
         );
 
         // pay quoteToken back to short owner
-        address deedHolder = ShortCustodian(shortSeller).getMarginDeedHolder(shortId);
+        address deedHolder = ShortCustodian(shortSeller).getMarginDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to short closer
@@ -125,7 +125,7 @@ contract DutchAuctionCloser is
         TokenInteract.transfer(quoteToken, shortCloser, bidderReward);
 
         emit ShortClosedByDutchAuction(
-            shortId,
+            marginId,
             shortSeller,
             shortCloser,
             closeAmount,
@@ -141,7 +141,7 @@ contract DutchAuctionCloser is
     // -----------------------------------
 
     function getAuctionPrice(
-        bytes32 shortId,
+        bytes32 marginId,
         uint256 totalQuoteToken
     )
         view
@@ -150,7 +150,7 @@ contract DutchAuctionCloser is
     {
         uint256 auctionStartTimestamp;
         uint256 auctionEndTimestamp;
-        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(shortId);
+        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(marginId);
 
         // linearly decreases from maximum amount to zero over the course of the auction
         return MathHelpers.getPartialAmount(
@@ -161,7 +161,7 @@ contract DutchAuctionCloser is
     }
 
     function getAuctionTimeLimits(
-        bytes32 shortId
+        bytes32 marginId
     )
         view
         internal
@@ -170,7 +170,7 @@ contract DutchAuctionCloser is
             uint256 auctionEndTimestamp
         )
     {
-        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, shortId);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, marginId);
 
         uint256 maxTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
         uint256 callTimestamp = uint256(short.callTimestamp);
