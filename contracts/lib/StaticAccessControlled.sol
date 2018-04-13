@@ -11,21 +11,17 @@ import { AccessControlledBase } from "./AccessControlledBase.sol";
  * @author dYdX
  *
  * Allows for functions to be access controled
- * Permissions cannot be changed after a short grace period
+ * Permissions cannot be changed after a grace period
  */
 contract StaticAccessControlled is AccessControlledBase, Ownable {
     using SafeMath for uint256;
 
-    // -----------------------------
-    // ------ State Variables ------
-    // -----------------------------
+    // ============ State Variables ============
 
     // Timestamp after which no additional access can be granted
     uint256 public GRACE_PERIOD_EXPIRATION;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function StaticAccessControlled(
         uint256 gracePeriod
@@ -36,9 +32,7 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
         GRACE_PERIOD_EXPIRATION = block.timestamp.add(gracePeriod);
     }
 
-    // -------------------------------------------
-    // --- Owner-Only State-Changing Functions ---
-    // -------------------------------------------
+    // ============ Owner-Only State-Changing Functions ============
 
     function grantAccess(
         address who
