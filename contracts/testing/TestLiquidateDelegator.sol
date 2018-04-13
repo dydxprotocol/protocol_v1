@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LiquidateDelegator } from "../short/interfaces/LiquidateDelegator.sol";
+import { LiquidateDelegator } from "../margin/interfaces/LiquidateDelegator.sol";
 
 
 contract TestLiquidateDelegator is LiquidateDelegator {

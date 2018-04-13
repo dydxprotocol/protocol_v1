@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "../short/interfaces/LoanOwner.sol";
+import { LoanOwner } from "../margin/interfaces/LoanOwner.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 

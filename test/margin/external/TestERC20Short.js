@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const ShortSell = artifacts.require("ShortSell");
 const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenB");
-const { ADDRESSES } = require('../helpers/Constants');
+const { ADDRESSES } = require('../../helpers/Constants');
 const {
   callCloseShort,
   callCloseShortDirectly,
@@ -16,16 +16,16 @@ const {
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee
-} = require('../helpers/ShortSellHelper');
+} = require('../../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
-const { transact } = require('../helpers/ContractHelper');
-const { expectThrow } = require('../helpers/ExpectHelper');
+} = require('../../helpers/0xHelper');
+const { transact } = require('../../helpers/ContractHelper');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   getERC20ShortConstants,
   TOKENIZED_SHORT_STATE
-} = require('../helpers/ERC20ShortHelper');
+} = require('../../helpers/ERC20ShortHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 

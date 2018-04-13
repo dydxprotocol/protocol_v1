@@ -12,18 +12,18 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 const BaseToken = artifacts.require("TokenB");
 
-const { BYTES32 } = require('../helpers/Constants');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { BYTES32 } = require('../../helpers/Constants');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort,
   getMaxInterestFee,
   callCloseShortDirectly
-} = require('../helpers/ShortSellHelper');
+} = require('../../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../../helpers/0xHelper');
 
 function uint256(shortId) {
   return new BigNumber(web3Instance.utils.toBN(shortId));

@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { CloseShortDelegator } from "../short/interfaces/CloseShortDelegator.sol";
+import { CloseShortDelegator } from "../margin/interfaces/CloseShortDelegator.sol";
 
 
 contract TestCloseShortDelegator is CloseShortDelegator {

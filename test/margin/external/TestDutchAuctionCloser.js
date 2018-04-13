@@ -13,12 +13,12 @@ const ShortSell = artifacts.require("ShortSell");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
-const { getOwedAmount } = require('../helpers/CloseShortHelper');
-const { getMaxInterestFee, callCloseShortDirectly } = require('../helpers/ShortSellHelper');
-const { expectThrow } = require('../helpers/ExpectHelper');
+const { getOwedAmount } = require('../../helpers/CloseShortHelper');
+const { getMaxInterestFee, callCloseShortDirectly } = require('../../helpers/ShortSellHelper');
+const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort
-} = require('../helpers/ShortSellHelper');
+} = require('../../helpers/ShortSellHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 const ONE = new BigNumber(1);

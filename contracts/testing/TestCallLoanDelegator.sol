@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { CallLoanDelegator } from "../short/interfaces/CallLoanDelegator.sol";
+import { CallLoanDelegator } from "../margin/interfaces/CallLoanDelegator.sol";
 
 
 contract TestCallLoanDelegator is CallLoanDelegator {

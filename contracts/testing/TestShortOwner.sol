@@ -1,7 +1,7 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortOwner } from "../short/interfaces/ShortOwner.sol";
+import { ShortOwner } from "../margin/interfaces/ShortOwner.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 

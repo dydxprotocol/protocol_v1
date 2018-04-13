@@ -9,16 +9,16 @@ const ERC20Short = artifacts.require("ERC20Short");
 const QuoteToken = artifacts.require("TokenA");
 const ShortSell = artifacts.require("ShortSell");
 
-const { TOKENIZED_SHORT_STATE } = require('../helpers/ERC20ShortHelper');
-const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
+const { TOKENIZED_SHORT_STATE } = require('../../helpers/ERC20ShortHelper');
+const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort
-} = require('../helpers/ShortSellHelper');
+} = require('../../helpers/ShortSellHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../../helpers/0xHelper');
 
 contract('ERC20ShortCreator', function(accounts) {
   let shortSellContract, ERC20ShortCreatorContract;
