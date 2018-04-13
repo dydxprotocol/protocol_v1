@@ -28,9 +28,7 @@ contract SharedLoan is
 {
     using SafeMath for uint256;
 
-    // -----------------------
-    // -------- Enums --------
-    // -----------------------
+    // ============ Enums ============
 
     enum State {
         UNINITIALIZED,
@@ -38,9 +36,7 @@ contract SharedLoan is
         CLOSED
     }
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * This SharedLoan was successfully initialized
@@ -68,9 +64,7 @@ contract SharedLoan is
         bool completelyRepaid
     );
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+    // ============ State Variables ============
 
     // Initial lender of the position
     address public INITIAL_LENDER;
@@ -105,9 +99,7 @@ contract SharedLoan is
     // Amount of base token each lender has withdrawn before the loan was fully repaid
     mapping (address => uint256) public baseTokenWithdrawnEarly;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function SharedLoan(
         bytes32 marginId,
@@ -128,9 +120,7 @@ contract SharedLoan is
         }
     }
 
-    // -------------------------------------
-    // ----- Short Sell Only Functions -----
-    // -------------------------------------
+    // ============ Short Sell Only Functions ============
 
     /**
      * Called by the Margin contract when anyone transfers ownership of a loan to this contract.
@@ -282,9 +272,7 @@ contract SharedLoan is
         return true;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
      * Helper to allow withdrawal for multiple lenders in one call
@@ -349,9 +337,7 @@ contract SharedLoan is
         );
     }
 
-    // --------------------------------
-    // ------ Internal Functions ------
-    // --------------------------------
+    // ============ Internal Functions ============
 
     function updateStateOnClosed()
         internal

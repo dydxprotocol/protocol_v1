@@ -14,9 +14,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  */
 library TransferInternal {
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * Ownership of a loan was transferred to a new address
@@ -36,9 +34,7 @@ library TransferInternal {
         address indexed to
     );
 
-    // ---------------------------------------------
-    // ----- Internal Implementation Functions -----
-    // ---------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     /**
      * Returns either the address of the new owner, or the address to which they wish to pass

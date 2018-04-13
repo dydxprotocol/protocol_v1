@@ -13,9 +13,7 @@ import { LoanOwner } from "./LoanOwner.sol";
  */
 contract CallLoanDelegator is LoanOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function CallLoanDelegator(
         address margin
@@ -25,9 +23,7 @@ contract CallLoanDelegator is LoanOwner {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to let other addresses call marginCall() for

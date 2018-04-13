@@ -11,16 +11,12 @@ pragma experimental "v0.5.0";
  */
 contract OnlyMargin {
 
-    // -----------------------
-    // ------ Constants ------
-    // -----------------------
+    // ============ Constants ============
 
     // address of the known and trusted Margin contract on the blockchain
     address public MARGIN;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function OnlyMargin(
         address margin
@@ -30,9 +26,7 @@ contract OnlyMargin {
         MARGIN = margin;
     }
 
-    // ---------------------------
-    // -------- Modifiers --------
-    // ---------------------------
+    // ============ Modifiers ============
 
     modifier onlyMargin()
     {

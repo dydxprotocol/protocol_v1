@@ -11,9 +11,7 @@ pragma experimental "v0.5.0";
  *       and copy the event intothe library itself as libraries don't support sharing events
  */
 contract MarginEvents {
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A short sell occurred

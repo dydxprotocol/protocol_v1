@@ -13,9 +13,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
  * short creation
  */
 contract MarginAdmin is Ownable {
-    // -----------------------
-    // -------- Enums --------
-    // -----------------------
+    // ============ Enums ============
 
     /**
      * Enum containing the possible operation states of Margin:
@@ -36,9 +34,7 @@ contract MarginAdmin is Ownable {
         CLOSE_DIRECTLY_ONLY
     }
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * Event indicating the operation state has changed
@@ -48,15 +44,11 @@ contract MarginAdmin is Ownable {
         OperationState to
     );
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+    // ============ State Variables ============
 
     OperationState public operationState;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function MarginAdmin()
         public
@@ -64,9 +56,7 @@ contract MarginAdmin is Ownable {
         operationState = OperationState.OPERATIONAL;
     }
 
-    // ---------------------------
-    // -------- Modifiers --------
-    // ---------------------------
+    // ============ Modifiers ============
 
     modifier onlyWhileOperational() {
         require(operationState == OperationState.OPERATIONAL);
@@ -100,9 +90,7 @@ contract MarginAdmin is Ownable {
         _;
     }
 
-    // -----------------------------------------
-    // -- Owner-Only State-Changing Functions --
-    // -----------------------------------------
+    // ============ Owner-Only State-Changing Functions ============
 
     function setOperationState(
         OperationState state

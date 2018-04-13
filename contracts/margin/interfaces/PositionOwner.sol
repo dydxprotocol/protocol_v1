@@ -13,9 +13,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  */
 contract PositionOwner is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function PositionOwner(
         address margin
@@ -25,9 +23,7 @@ contract PositionOwner is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to receive ownership of a short sell via the

@@ -22,9 +22,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
 library IncreasePositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /*
      * Value was added to a short sell
@@ -43,9 +41,7 @@ library IncreasePositionImpl {
         uint256 depositAmount
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function increasePositionImpl(
         MarginState.State storage state,
@@ -157,7 +153,7 @@ library IncreasePositionImpl {
         return quoteTokenAmount;
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function preStateUpdate(
         MarginState.State storage state,
@@ -341,7 +337,7 @@ library IncreasePositionImpl {
         );
     }
 
-    // -------- Parsing Functions -------
+    // ============ Parsing Functions ============
 
     function parseAddValueToOpenTx(
         MarginCommon.Position storage position,

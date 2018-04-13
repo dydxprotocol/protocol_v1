@@ -20,9 +20,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 library OpenPositionShared {
     using SafeMath for uint256;
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct OpenTx {
         address owner;
@@ -36,9 +34,7 @@ library OpenPositionShared {
         bool depositInQuoteToken;
     }
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     function shortInternalPreStateUpdate(
         MarginState.State storage state,

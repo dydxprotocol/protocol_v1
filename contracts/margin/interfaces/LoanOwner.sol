@@ -13,9 +13,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  */
 contract LoanOwner is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function LoanOwner(
         address margin
@@ -25,9 +23,7 @@ contract LoanOwner is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to receive ownership of a loan sell via the

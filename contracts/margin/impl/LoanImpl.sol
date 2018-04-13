@@ -22,9 +22,7 @@ import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 library LoanImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * The loan for a short sell was called in
@@ -66,9 +64,7 @@ library LoanImpl {
         address indexed feeRecipient
     );
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     function marginCallImpl(
         MarginState.State storage state,
@@ -211,7 +207,7 @@ library LoanImpl {
         );
     }
 
-    // ------ Parsing Functions ------
+    // ============ Parsing Functions ============
 
     function parseLoanOffering(
         address[9] addresses,

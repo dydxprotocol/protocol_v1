@@ -16,9 +16,7 @@ import { Vault } from "../Vault.sol";
 library DepositCollateralImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * Additional deposit for a short sell was posted by the short seller
@@ -39,9 +37,7 @@ library DepositCollateralImpl {
         uint256 depositAmount
     );
 
-    // -----------------------------------------
-    // ---- Public Implementation Functions ----
-    // -----------------------------------------
+    // ============ Public Implementation Functions ============
 
     function depositCollateralImpl(
         MarginState.State storage state,

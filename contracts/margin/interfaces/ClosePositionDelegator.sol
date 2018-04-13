@@ -13,9 +13,7 @@ import { PositionOwner } from "./PositionOwner.sol";
  */
 contract ClosePositionDelegator is PositionOwner {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ClosePositionDelegator(
         address margin
@@ -25,9 +23,7 @@ contract ClosePositionDelegator is PositionOwner {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to let other addresses call closePosition() for the

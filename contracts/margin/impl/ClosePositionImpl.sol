@@ -18,9 +18,7 @@ import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 library ClosePositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A short sell was closed
@@ -37,9 +35,7 @@ library ClosePositionImpl {
         bool payoutInQuoteToken
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function closePositionImpl(
         MarginState.State storage state,
@@ -94,7 +90,7 @@ library ClosePositionImpl {
         );
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function returnBaseTokensToLender(
         MarginState.State storage state,

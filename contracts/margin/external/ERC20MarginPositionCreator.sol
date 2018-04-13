@@ -22,25 +22,19 @@ contract ERC20MarginPositionCreator is
     PositionOwner,
     ReentrancyGuard
 {
-    // -------------------
-    // ------ Events -----
-    // -------------------
+    // ============ Events ============
 
     event ERC20MarginPositionCreated(
         bytes32 indexed marginId,
         address tokenAddress
     );
 
-    // ----------------------------
-    // ------ State Variables -----
-    // ----------------------------
+    // ============ State Variables ============
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
     address[] public TRUSTED_RECIPIENTS;
 
-    // ------------------------
-    // ------ Constructor -----
-    // ------------------------
+    // ============ Constructor ============
 
     function ERC20MarginPositionCreator(
         address margin,
@@ -54,9 +48,7 @@ contract ERC20MarginPositionCreator is
         }
     }
 
-    // -----------------------------------
-    // ---- Margin Only Functions -----
-    // -----------------------------------
+    // ============ Margin Only Functions ============
 
     /**
      * Implementation of PositionOwner functionality. Creates a new ERC20MarginPosition and assigns short

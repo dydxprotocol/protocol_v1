@@ -41,9 +41,7 @@ contract Margin is
 
     using SafeMath for uint256;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function Margin(
         address vault,
@@ -59,9 +57,7 @@ contract Margin is
         });
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
      * Open a margin position. Called by the margin trader who must provide both a
@@ -554,9 +550,7 @@ contract Margin is
             who);
     }
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // ============ Public Constant Functions ============
 
     function getVaultAddress()
         view

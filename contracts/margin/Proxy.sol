@@ -17,9 +17,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
 contract Proxy is StaticAccessControlled, NoOwner {
     using SafeMath for uint256;
 
-    // ---------------------
-    // ---- Constructor ----
-    // ---------------------
+    // ============ Constructor ============
 
     function Proxy(
         uint256 gracePeriod
@@ -29,9 +27,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
     {
     }
 
-    // -----------------------------------------------------------
-    // ---- Authorized-Only State Changing Functions ----
-    // -----------------------------------------------------------
+    // ============ Authorized-Only State Changing Functions ============
 
     /**
      * Transfers tokens from an address (that has set allowance on the proxy) to another address.
@@ -58,9 +54,7 @@ contract Proxy is StaticAccessControlled, NoOwner {
         );
     }
 
-    // -----------------------------------------
-    // ------- Public Constant Functions -------
-    // -----------------------------------------
+    // ============ Public Constant Functions ============
 
     /**
      * Getter function to get the amount of token that the proxy is able to move for a particular

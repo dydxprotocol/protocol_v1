@@ -17,9 +17,7 @@ import { Vault } from "../Vault.sol";
 contract PositionGetters is MarginStorage {
     using SafeMath for uint256;
 
-    // -------------------------------------
-    // ----- Public Constant Functions -----
-    // -------------------------------------
+    // ============ Public Constant Functions ============
 
     /**
      * Gets if a short is currently open
@@ -198,9 +196,7 @@ contract PositionGetters is MarginStorage {
         );
     }
 
-    // --------------------------
-    // ----- All Properties -----
-    // --------------------------
+    // ============ All Properties ============
 
     /**
      * Get a Position by id. This does not validate the position exists. If the position does not
@@ -265,9 +261,7 @@ contract PositionGetters is MarginStorage {
         );
     }
 
-    // ---------------------------------
-    // ----- Individual Properties -----
-    // ---------------------------------
+    // ============ Individual Properties ============
 
     function getPositionLender(
         bytes32 marginId

@@ -14,9 +14,7 @@ import { TransferInternal } from "./TransferInternal.sol";
  */
 library TransferImpl {
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function transferLoanImpl(
         MarginState.State storage state,

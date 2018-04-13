@@ -24,9 +24,7 @@ contract DutchAuctionCloser is
     PayoutRecipient {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A short was closed by this contract
@@ -40,18 +38,14 @@ contract DutchAuctionCloser is
         uint256 quoteTokenForSeller
     );
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct DutchBidTx {
         uint256 auctionPrice;
         uint256 closeAmount;
     }
 
-    // -----------------------------
-    // ------ State Variables ------
-    // -----------------------------
+    // ============ State Variables ============
 
     // Numerator of the fraction of the callTimeLimit allocated to the auction
     uint256 public CALL_TIMELIMIT_NUMERATOR;
@@ -59,9 +53,7 @@ contract DutchAuctionCloser is
     // Denominator of the fraction of the callTimeLimit allocated to the auction
     uint256 public CALL_TIMELIMIT_DENOMINATOR;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function DutchAuctionCloser(
         address margin,
@@ -78,9 +70,7 @@ contract DutchAuctionCloser is
         CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
 
-    // -------------------------------------------------
-    // ---- Margin-Only State-Changing Functions ----
-    // -------------------------------------------------
+    // ============ Margin-Only State-Changing Functions ============
 
     /**
      * Function to implement the PayoutRecipient interface.
@@ -136,9 +126,7 @@ contract DutchAuctionCloser is
         return true;
     }
 
-    // -----------------------------------
-    // ---- Internal Helper functions ----
-    // -----------------------------------
+    // ============ Internal Helper functions ============
 
     function getAuctionPrice(
         bytes32 marginId,

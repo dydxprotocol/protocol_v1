@@ -23,9 +23,7 @@ import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 library ClosePositionShared {
     using SafeMath for uint256;
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct CloseTx {
         bytes32 marginId;
@@ -43,9 +41,7 @@ library ClosePositionShared {
         bool    payoutInQuoteToken;
     }
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     function closePositionStateUpdate(
         MarginState.State storage state,

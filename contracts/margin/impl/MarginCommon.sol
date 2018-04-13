@@ -17,9 +17,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 library MarginCommon {
     using SafeMath for uint256;
 
-    // -----------------------
-    // ------- Structs -------
-    // -----------------------
+    // ============ Structs ============
 
     struct Position {
         address baseToken;       // Immutable
@@ -70,9 +68,7 @@ library MarginCommon {
         bytes32 s;
     }
 
-    // -------------------------------------------
-    // ---- Internal Implementation Functions ----
-    // -------------------------------------------
+    // ============ Internal Implementation Functions ============
 
     function getUnavailableLoanOfferingAmountImpl(
         MarginState.State storage state,

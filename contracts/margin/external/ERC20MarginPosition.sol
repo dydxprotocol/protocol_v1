@@ -32,9 +32,7 @@ contract ERC20MarginPosition is
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // -----------------------
-    // -------- Enums --------
-    // -----------------------
+    // ============ Enums ============
 
     enum State {
         UNINITIALIZED,
@@ -42,9 +40,7 @@ contract ERC20MarginPosition is
         CLOSED
     }
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * This ERC20MarginPosition was successfully initialized
@@ -85,9 +81,7 @@ contract ERC20MarginPosition is
         uint256 closeAmount
     );
 
-    // ---------------------------
-    // ----- State Variables -----
-    // ---------------------------
+    // ============ State Variables ============
 
     // All tokens will initially be allocated to this address
     address public INITIAL_TOKEN_HOLDER;
@@ -107,9 +101,7 @@ contract ERC20MarginPosition is
     // Symbol to be ERC20 compliant with frontends
     string public symbol = "DYDX-S";
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ERC20MarginPosition(
         bytes32 marginId,
@@ -129,9 +121,7 @@ contract ERC20MarginPosition is
         }
     }
 
-    // -------------------------------------
-    // ----- Short Sell Only Functions -----
-    // -------------------------------------
+    // ============ Short Sell Only Functions ============
 
     /**
      * Called by Margin when anyone transfers ownership of a short to this contract.
@@ -259,9 +249,7 @@ contract ERC20MarginPosition is
         return allowedAmount;
     }
 
-    // -----------------------------------------
-    // ---- Public State Changing Functions ----
-    // -----------------------------------------
+    // ============ Public State Changing Functions ============
 
     /**
      * Withdraw quote tokens from this contract for any of the short that was closed via external
@@ -322,9 +310,7 @@ contract ERC20MarginPosition is
         return quoteTokenPayout;
     }
 
-    // -----------------------------------
-    // ---- Public Constant Functions ----
-    // -----------------------------------
+    // ============ Public Constant Functions ============
 
     /**
      * ERC20 decimals function. Returns the same number of decimals as the short's baseToken

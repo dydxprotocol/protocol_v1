@@ -25,9 +25,7 @@ contract ERC721MarginPosition is
     ReentrancyGuard {
     using SafeMath for uint256;
 
-    // --------------------
-    // ------ Events ------
-    // --------------------
+    // ============ Events ============
 
     event CloserApproval(
         address indexed owner,
@@ -41,9 +39,7 @@ contract ERC721MarginPosition is
         bool isApproved
     );
 
-    // -----------------------------
-    // ------ State Variables ------
-    // -----------------------------
+    // ============ State Variables ============
 
     // Mapping from an address to other addresses that are approved to be short closers
     mapping (address => mapping (address => bool)) public approvedClosers;
@@ -51,9 +47,7 @@ contract ERC721MarginPosition is
     // Mapping from an address to other addresses that are approved to be payoutRecipients
     mapping (address => mapping (address => bool)) public approvedRecipients;
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function ERC721MarginPosition(
         address margin
@@ -64,9 +58,7 @@ contract ERC721MarginPosition is
     {
     }
 
-    // --------------------------------
-    // ---- Token-Holder functions ----
-    // --------------------------------
+    // ============ Token-Holder functions ============
 
     /**
      * Approve any close with the specified closer as the msg.sender of the close.
@@ -148,9 +140,7 @@ contract ERC721MarginPosition is
         _burn(ownerOf(uint256(marginId)), uint256(marginId));
     }
 
-    // ---------------------------------
-    // ---- OnlyMargin Functions ----
-    // ---------------------------------
+    // ============ OnlyMargin Functions ============
 
     /**
      * Called by the Margin contract when anyone transfers ownership of a short to this contract.
@@ -226,9 +216,7 @@ contract ERC721MarginPosition is
         return 0;
     }
 
-    // ----------------------------------
-    // ---- PositionCustodian Functions ----
-    // ----------------------------------
+    // ============ PositionCustodian Functions ============
 
     function getPositionDeedHolder(
         bytes32 marginId

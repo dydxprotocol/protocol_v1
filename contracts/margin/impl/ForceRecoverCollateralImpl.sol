@@ -17,9 +17,7 @@ import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverColla
 library ForceRecoverCollateralImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A short sell loan was forcibly recovered by the lender
@@ -29,9 +27,7 @@ library ForceRecoverCollateralImpl {
         uint256 amount
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function forceRecoverCollateralImpl(
         MarginState.State storage state,

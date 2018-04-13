@@ -22,25 +22,19 @@ contract SharedLoanCreator is
     LoanOwner,
     ReentrancyGuard
 {
-    // -------------------
-    // ------ Events -----
-    // -------------------
+    // ============ Events ============
 
     event SharedLoanCreated(
         bytes32 marginId,
         address sharedLoanAddress
     );
 
-    // ----------------------------
-    // ------ State Variables -----
-    // ----------------------------
+    // ============ State Variables ============
 
     // Addresses of recipients that will fairly verify and redistribute funds from closing the short
     address[] public TRUSTED_LOAN_CALLERS;
 
-    // ------------------------
-    // ------ Constructor -----
-    // ------------------------
+    // ============ Constructor ============
 
     function SharedLoanCreator(
         address margin,
@@ -54,9 +48,7 @@ contract SharedLoanCreator is
         }
     }
 
-    // -----------------------------------
-    // ---- Margin Only Functions -----
-    // -----------------------------------
+    // ============ Margin Only Functions ============
 
     /**
      * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan

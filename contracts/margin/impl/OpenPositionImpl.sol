@@ -19,9 +19,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
 library OpenPositionImpl {
     using SafeMath for uint256;
 
-    // ------------------------
-    // -------- Events --------
-    // ------------------------
+    // ============ Events ============
 
     /**
      * A short sell occurred
@@ -43,9 +41,7 @@ library OpenPositionImpl {
         uint32  interestPeriod
     );
 
-    // -------------------------------------------
-    // ----- Public Implementation Functions -----
-    // -------------------------------------------
+    // ============ Public Implementation Functions ============
 
     function openPositionImpl(
         MarginState.State storage state,
@@ -103,7 +99,7 @@ library OpenPositionImpl {
         return marginId;
     }
 
-    // --------- Helper Functions ---------
+    // ============ Helper Functions ============
 
     function getNextmarginId(
         MarginState.State storage state,
@@ -188,7 +184,7 @@ library OpenPositionImpl {
             transaction.owner);
     }
 
-    // -------- Parsing Functions -------
+    // ============ Parsing Functions ============
 
     function parseOpenTx(
         address[11] addresses,

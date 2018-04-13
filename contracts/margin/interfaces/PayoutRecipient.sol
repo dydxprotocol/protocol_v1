@@ -13,9 +13,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  */
 contract PayoutRecipient is OnlyMargin {
 
-    // -------------------------
-    // ------ Constructor ------
-    // -------------------------
+    // ============ Constructor ============
 
     function PayoutRecipient(
         address margin
@@ -25,9 +23,7 @@ contract PayoutRecipient is OnlyMargin {
     {
     }
 
-    // ----------------------------------------
-    // ------ Public Interface functions ------
-    // ----------------------------------------
+    // ============ Public Interface functions ============
 
     /**
      * Function a contract must implement in order to receive payout from being the payoutRecipient
