@@ -8,7 +8,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @title PayoutRecipient
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to be the payoutRecipient in a closeShort
+ * Interface that smart contracts must implement in order to be the payoutRecipient in a closePosition
  * transaction.
  */
 contract PayoutRecipient is OnlyMargin {
@@ -31,7 +31,7 @@ contract PayoutRecipient is OnlyMargin {
 
     /**
      * Function a contract must implement in order to receive payout from being the payoutRecipient
-     * in a closeShort transaction. May redistribute any payout as necessary. Throws on error.
+     * in a closePosition transaction. May redistribute any payout as necessary. Throws on error.
      *
      * @param  marginId           Unique ID of the position
      * @param  closeAmount        Amount of the short that was closed
@@ -43,7 +43,7 @@ contract PayoutRecipient is OnlyMargin {
      * @param  payoutInQuoteToken True if payout is in quote token, false if in base token
      * @return                    True if approved by the reciever
      */
-    function receiveCloseShortPayout(
+    function receiveClosePositionPayout(
         bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,

@@ -43,7 +43,7 @@ library TransferImpl {
         state.positions[marginId].lender = finalLender;
     }
 
-    function transferShortImpl(
+    function transferOpenPositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address newSeller
@@ -57,7 +57,7 @@ library TransferImpl {
 
         // Doesn't change the state of marginId; figures out the address of the final owner of position.
         // That is, newSeller may pass ownership to a different address.
-        address finalSeller = TransferInternal.grantShortOwnership(
+        address finalSeller = TransferInternal.grantPositionOwnership(
             marginId,
             originalSeller,
             newSeller);

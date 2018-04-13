@@ -4,19 +4,19 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { ShortShared } from "./ShortShared.sol";
+import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
- * @title ShortImpl
+ * @title OpenPositionImpl
  * @author dYdX
  *
  * This library contains the implementation for the short function of Margin
  */
-library ShortImpl {
+library OpenPositionImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -47,7 +47,7 @@ library ShortImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function shortImpl(
+    function openPositionImpl(
         MarginState.State storage state,
         address[11] addresses,
         uint256[9] values256,
@@ -60,7 +60,7 @@ library ShortImpl {
         public
         returns (bytes32)
     {
-        ShortShared.OpenTx memory transaction = parseOpenTx(
+        OpenPositionShared.OpenTx memory transaction = parseOpenTx(
             addresses,
             values256,
             values32,
@@ -73,7 +73,7 @@ library ShortImpl {
 
         uint256 quoteTokenFromSell;
 
-        (quoteTokenFromSell,) = ShortShared.shortInternalPreStateUpdate(
+        (quoteTokenFromSell,) = OpenPositionShared.shortInternalPreStateUpdate(
             state,
             transaction,
             marginId,
@@ -94,7 +94,7 @@ library ShortImpl {
             transaction
         );
 
-        ShortShared.shortInternalPostStateUpdate(
+        OpenPositionShared.shortInternalPostStateUpdate(
             state,
             transaction,
             marginId
@@ -127,7 +127,7 @@ library ShortImpl {
     function recordShortInitiated(
         bytes32 marginId,
         address shortSeller,
-        ShortShared.OpenTx transaction,
+        OpenPositionShared.OpenTx transaction,
         uint256 quoteTokenReceived
     )
         internal
@@ -153,7 +153,7 @@ library ShortImpl {
     function updateState(
         MarginState.State storage state,
         bytes32 marginId,
-        ShortShared.OpenTx transaction
+        OpenPositionShared.OpenTx transaction
     )
         internal
     {
@@ -182,7 +182,7 @@ library ShortImpl {
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.positions[marginId].seller = TransferInternal.grantShortOwnership(
+        state.positions[marginId].seller = TransferInternal.grantPositionOwnership(
             marginId,
             newSeller ? msg.sender : address(0),
             transaction.owner);
@@ -200,9 +200,9 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortShared.OpenTx memory)
+        returns (OpenPositionShared.OpenTx memory)
     {
-        ShortShared.OpenTx memory transaction = ShortShared.OpenTx({
+        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: addresses[0],
             baseToken: addresses[1],
             quoteToken: addresses[2],

@@ -17,9 +17,9 @@ const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort,
+  callClosePosition,
   getMaxInterestFee,
-  callCloseShortDirectly
+  callClosePositionDirectly
 } = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
@@ -53,10 +53,10 @@ contract('ERC721Short', function(accounts) {
     });
   });
 
-  describe('#receiveShortOwnership', () => {
+  describe('#receivePositionOwnership', () => {
     it('fails for arbitrary caller', async () => {
       await expectThrow(
-        ERC721ShortContract.receiveShortOwnership(accounts[0], BYTES32.BAD_ID));
+        ERC721ShortContract.receivePositionOwnership(accounts[0], BYTES32.BAD_ID));
     });
 
     it('succeeds for new short', async () => {
@@ -71,7 +71,7 @@ contract('ERC721Short', function(accounts) {
       // close half the short
       const sellOrder = await createSignedSellOrder(accounts, salt++);
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-      await callCloseShort(
+      await callClosePosition(
         dydxMargin,
         OpenTx,
         sellOrder,
@@ -84,15 +84,15 @@ contract('ERC721Short', function(accounts) {
     });
   });
 
-  describe('#getMarginDeedHolder', () => {
+  describe('#getPositionDeedHolder', () => {
     it('fails for bad marginId', async () => {
       await expectThrow(
-        ERC721ShortContract.getMarginDeedHolder(BYTES32.BAD_ID));
+        ERC721ShortContract.getPositionDeedHolder(BYTES32.BAD_ID));
     });
 
     it('succeeds for owned short', async () => {
       const OpenTx = await doShort(accounts, salt++, ERC721Short.address);
-      const deedHolder = await ERC721ShortContract.getMarginDeedHolder.call(OpenTx.id);
+      const deedHolder = await ERC721ShortContract.getPositionDeedHolder.call(OpenTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
   });
@@ -218,7 +218,7 @@ contract('ERC721Short', function(accounts) {
 
     it('succeeds for owner', async () => {
       await initBase(OpenTx.seller);
-      await callCloseShortDirectly(
+      await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount,
@@ -229,7 +229,7 @@ contract('ERC721Short', function(accounts) {
 
     it('succeeds for approved recipients', async () => {
       await initBase(unapprovedAcct);
-      await callCloseShortDirectly(
+      await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount,
@@ -240,7 +240,7 @@ contract('ERC721Short', function(accounts) {
 
     it('succeeds for approved closers', async () => {
       await initBase(approvedCloser);
-      await callCloseShortDirectly(
+      await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount,
@@ -251,7 +251,7 @@ contract('ERC721Short', function(accounts) {
 
     it('fails for non-approved recipients/closers', async () => {
       await initBase(unapprovedAcct);
-      await expectThrow( callCloseShortDirectly(
+      await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount,

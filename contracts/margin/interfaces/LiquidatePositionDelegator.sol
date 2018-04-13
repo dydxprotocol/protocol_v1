@@ -5,19 +5,19 @@ import { LoanOwner } from "./LoanOwner.sol";
 
 
 /**
- * @title LiquidateDelegator
+ * @title LiquidatePositionDelegator
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to let other addresses liquidate a loan
  * owned by the smart contract.
  */
-contract LiquidateDelegator is LoanOwner {
+contract LiquidatePositionDelegator is LoanOwner {
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
-    function LiquidateDelegator(
+    function LiquidatePositionDelegator(
         address margin
     )
         public

@@ -2,7 +2,7 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { CloseShortShared } from "./CloseShortShared.sol";
+import { ClosePositionShared } from "./ClosePositionShared.sol";
 import { MarginState } from "./MarginState.sol";
 import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
@@ -10,12 +10,12 @@ import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title CloseShortImpl
+ * @title ClosePositionImpl
  * @author dYdX
  *
- * This library contains the implementation for the closeShort function of Margin
+ * This library contains the implementation for the closePosition function of Margin
  */
-library CloseShortImpl {
+library ClosePositionImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -41,7 +41,7 @@ library CloseShortImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function closeShortImpl(
+    function closePositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 requestedCloseAmount,
@@ -53,7 +53,7 @@ library CloseShortImpl {
         public
         returns (uint256, uint256, uint256)
     {
-        CloseShortShared.CloseTx memory transaction = CloseShortShared.createCloseTx(
+        ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
             state,
             marginId,
             requestedCloseAmount,
@@ -72,14 +72,14 @@ library CloseShortImpl {
             orderData
         );
 
-        uint256 payout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
+        uint256 payout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
             state,
             transaction,
             buybackCost,
             receivedBaseToken
         );
 
-        CloseShortShared.closeShortStateUpdate(state, transaction);
+        ClosePositionShared.closePositionStateUpdate(state, transaction);
 
         logEventOnClose(
             transaction,
@@ -98,7 +98,7 @@ library CloseShortImpl {
 
     function returnBaseTokensToLender(
         MarginState.State storage state,
-        CloseShortShared.CloseTx memory transaction,
+        ClosePositionShared.CloseTx memory transaction,
         bytes memory orderData
     )
         internal
@@ -130,7 +130,7 @@ library CloseShortImpl {
 
     function buyBackBaseToken(
         MarginState.State storage state,
-        CloseShortShared.CloseTx transaction,
+        ClosePositionShared.CloseTx transaction,
         bytes memory orderData
     )
         internal
@@ -192,7 +192,7 @@ library CloseShortImpl {
     }
 
     function logEventOnClose(
-        CloseShortShared.CloseTx transaction,
+        ClosePositionShared.CloseTx transaction,
         uint256 buybackCost,
         uint256 payout
     )

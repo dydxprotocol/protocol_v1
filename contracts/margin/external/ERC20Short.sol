@@ -11,8 +11,8 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
+import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
+import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -27,8 +27,8 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  /* solium-disable-next-line */
 contract ERC20Short is
     StandardToken,
-    CloseShortDelegator,
-    ShortCustodian,
+    ClosePositionDelegator,
+    PositionCustodian,
     ReentrancyGuard {
     using SafeMath for uint256;
 
@@ -118,7 +118,7 @@ contract ERC20Short is
         address[] trustedRecipients
     )
         public
-        CloseShortDelegator(margin)
+        ClosePositionDelegator(margin)
     {
         MARGIN_ID = marginId;
         state = State.UNINITIALIZED;
@@ -142,7 +142,7 @@ contract ERC20Short is
      * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
-    function receiveShortOwnership(
+    function receivePositionOwnership(
         address /* from */,
         bytes32 marginId
     )
@@ -206,7 +206,7 @@ contract ERC20Short is
 
     /**
      * Called by Margin when an owner of this token is attempting to close some of the short
-     * position. Implementation is required per ShortOwner contract in order to be used by
+     * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the position was successfully closed.
@@ -366,13 +366,13 @@ contract ERC20Short is
     }
 
     /**
-     * Implements ShortCustodian functionality. Called by external contracts to see where to pay
-     * tokens as a result of closing a short on behalf of this contract
+     * Implements PositionCustodian functionality. Called by external contracts to see where to pay
+     * tokens as a result of closing a position on behalf of this contract
      *
      * @param  marginId Unique ID of the position
      * @return          Address of this contract. Indicates funds should be sent to this contract
      */
-    function getMarginDeedHolder(
+    function getPositionDeedHolder(
         bytes32 marginId
     )
         external

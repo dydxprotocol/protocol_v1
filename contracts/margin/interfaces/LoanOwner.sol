@@ -49,7 +49,7 @@ contract LoanOwner is OnlyMargin {
     /**
      * Function a contract must implement in order to allow additional value to be added onto
      * an owned loan. Margin will call this on the owner of a loan during
-     * Margin#addValueToShort. If true is returned, the implementing contract can assume
+     * Margin#increasePosition. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
      * @param  from         Lender adding additional funds to the position

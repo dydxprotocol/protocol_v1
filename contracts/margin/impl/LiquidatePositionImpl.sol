@@ -2,17 +2,17 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { CloseShortShared } from "./CloseShortShared.sol";
+import { ClosePositionShared } from "./ClosePositionShared.sol";
 import { MarginState } from "./MarginState.sol";
 
 
 /**
- * @title LiquidateImpl
+ * @title LiquidatePositionImpl
  * @author dYdX
  *
  * This library contains the implementation for the liquidate function of Margin
  */
-library LiquidateImpl {
+library LiquidatePositionImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -35,7 +35,7 @@ library LiquidateImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function liquidateImpl(
+    function liquidatePositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 requestedLiquidationAmount,
@@ -44,7 +44,7 @@ library LiquidateImpl {
         public
         returns (uint256, uint256)
     {
-        CloseShortShared.CloseTx memory transaction = CloseShortShared.createCloseTx(
+        ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
             state,
             marginId,
             requestedLiquidationAmount,
@@ -54,14 +54,14 @@ library LiquidateImpl {
             true
         );
 
-        uint256 quoteTokenPayout = CloseShortShared.sendQuoteTokensToPayoutRecipient(
+        uint256 quoteTokenPayout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
             state,
             transaction,
             0, // No buyback cost
             0  // Did not receive any base token
         );
 
-        CloseShortShared.closeShortStateUpdate(state, transaction);
+        ClosePositionShared.closePositionStateUpdate(state, transaction);
 
         logEventOnLiquidate(transaction);
 
@@ -74,7 +74,7 @@ library LiquidateImpl {
     // --------- Helper Functions ---------
 
     function logEventOnLiquidate(
-        CloseShortShared.CloseTx transaction
+        ClosePositionShared.CloseTx transaction
     )
         internal
     {

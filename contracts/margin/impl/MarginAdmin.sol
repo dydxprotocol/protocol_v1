@@ -22,12 +22,12 @@ contract MarginAdmin is Ownable {
      *
      * OPERATIONAL                      - All functionality enabled
      * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
-     *                                    (callInLoan, closeShort, cancelLoanOffering
-     *                                    closeShortDirectly, forceRecoverLoan)
-     * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closeShort,
-     *                                    closeShortDirectly, forceRecoverLoan)
+     *                                    (callInLoan, closePosition, cancelLoanOffering
+     *                                    closePositionDirectly, forceRecoverLoan)
+     * CLOSE_ONLY                       - Only closing functions allowed (callInLoan, closePosition,
+     *                                    closePositionDirectly, forceRecoverLoan)
      * CLOSE_DIRECTLY_ONLY              - Only closing functions allowed (callInLoan,
-     *                                    closeShortDirectly, forceRecoverLoan)
+     *                                    closePositionDirectly, forceRecoverLoan)
      */
     enum OperationState {
         OPERATIONAL,
@@ -81,7 +81,7 @@ contract MarginAdmin is Ownable {
         _;
     }
 
-    modifier closeShortStateControl() {
+    modifier closePositionStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
@@ -90,7 +90,7 @@ contract MarginAdmin is Ownable {
         _;
     }
 
-    modifier closeShortDirectlyStateControl() {
+    modifier closePositionDirectlyStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY

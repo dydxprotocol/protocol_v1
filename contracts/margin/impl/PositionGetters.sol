@@ -8,13 +8,13 @@ import { Vault } from "../Vault.sol";
 
 
 /**
- * @title ShortGetters
+ * @title PositionGetters
  * @author dYdX
  *
  * A collection of public constant getter functions that allow users and applications to read the
  * state of any short stored in the dYdX protocol.
  */
-contract ShortGetters is MarginStorage {
+contract PositionGetters is MarginStorage {
     using SafeMath for uint256;
 
     // -------------------------------------

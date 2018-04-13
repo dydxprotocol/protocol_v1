@@ -48,7 +48,7 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
   return tx;
 }
 
-async function callShort(dydxMargin, tx, safely = true) {
+async function callOpenPosition(dydxMargin, tx, safely = true) {
   const marginId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     0
@@ -101,7 +101,7 @@ async function callShort(dydxMargin, tx, safely = true) {
 
   const order = zeroExOrderToBytes(tx.buyOrder);
 
-  let response = await dydxMargin.short(
+  let response = await dydxMargin.openPosition(
     addresses,
     values256,
     values32,
@@ -175,7 +175,7 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
   }
 }
 
-async function callAddValueToShort(dydxMargin, tx) {
+async function callIncreasePosition(dydxMargin, tx) {
   const marginId = tx.id;
 
   const addresses = [
@@ -213,7 +213,7 @@ async function callAddValueToShort(dydxMargin, tx) {
 
   const order = zeroExOrderToBytes(tx.buyOrder);
 
-  let response = await dydxMargin.addValueToShort(
+  let response = await dydxMargin.increasePosition(
     marginId,
     addresses,
     values256,
@@ -225,7 +225,7 @@ async function callAddValueToShort(dydxMargin, tx) {
     { from: tx.seller }
   );
 
-  await expectAddValueToShortLog(
+  await expectIncreasePositionLog(
     dydxMargin,
     tx,
     response
@@ -235,7 +235,7 @@ async function callAddValueToShort(dydxMargin, tx) {
   return response;
 }
 
-async function expectAddValueToShortLog(dydxMargin, tx, response) {
+async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const marginId = tx.id;
   const [time1, time2, shortAmount, quoteTokenAmount] = await Promise.all([
     dydxMargin.getPositionStartTimestamp.call(marginId),
@@ -258,7 +258,7 @@ async function expectAddValueToShortLog(dydxMargin, tx, response) {
     marginId: marginId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,
-    shortOwner: tx.owner,
+    positionOwner: tx.owner,
     loanOwner: tx.loanOffering.owner,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
@@ -342,7 +342,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
   ]);
 }
 
-async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
+async function doShort(accounts, _salt = DEFAULT_SALT, positionOwner) {
   const [OpenTx, dydxMargin] = await Promise.all([
     createOpenTx(accounts, _salt),
     Margin.deployed()
@@ -350,18 +350,18 @@ async function doShort(accounts, _salt = DEFAULT_SALT, shortOwner) {
 
   await issueTokensAndSetAllowancesForShort(OpenTx);
 
-  if (shortOwner) {
-    OpenTx.owner = shortOwner;
+  if (positionOwner) {
+    OpenTx.owner = positionOwner;
   }
 
-  const response = await callShort(dydxMargin, OpenTx);
+  const response = await callOpenPosition(dydxMargin, OpenTx);
 
   OpenTx.id = response.id;
   OpenTx.response = response;
   return OpenTx;
 }
 
-async function callCloseShort(
+async function callClosePosition(
   dydxMargin,
   OpenTx,
   sellOrder,
@@ -376,7 +376,7 @@ async function callCloseShort(
     await getPreCloseVariables(dydxMargin, OpenTx.id);
 
   const tx = await transact(
-    dydxMargin.closeShort,
+    dydxMargin.closePosition,
     OpenTx.id,
     closeAmount,
     recipient,
@@ -403,7 +403,7 @@ async function callCloseShort(
   return tx;
 }
 
-async function callCloseShortDirectly(
+async function callClosePositionDirectly(
   dydxMargin,
   OpenTx,
   closeAmount,
@@ -417,7 +417,7 @@ async function callCloseShortDirectly(
     await getPreCloseVariables(dydxMargin, OpenTx.id);
 
   const tx = await transact(
-    dydxMargin.closeShortDirectly,
+    dydxMargin.closePositionDirectly,
     OpenTx.id,
     closeAmount,
     recipient,
@@ -498,7 +498,7 @@ async function expectCloseLog(dydxMargin, params) {
   });
 }
 
-async function callLiquidate(
+async function callLiquidatePosition(
   dydxMargin,
   OpenTx,
   liquidateAmount,
@@ -510,7 +510,7 @@ async function callLiquidate(
 
   payoutRecipient = payoutRecipient || from
   const tx = await transact(
-    dydxMargin.liquidate,
+    dydxMargin.liquidatePosition,
     OpenTx.id,
     liquidateAmount,
     payoutRecipient,
@@ -795,18 +795,18 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
 module.exports = {
   createOpenTx,
   issueTokensAndSetAllowancesForShort,
-  callShort,
+  callOpenPosition,
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCancelLoanOffer,
-  callCloseShort,
-  callCloseShortDirectly,
-  callLiquidate,
+  callClosePosition,
+  callClosePositionDirectly,
+  callLiquidatePosition,
   getPosition,
   doShortAndCall,
   issueForDirectClose,
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee,
-  callAddValueToShort
+  callIncreasePosition
 };

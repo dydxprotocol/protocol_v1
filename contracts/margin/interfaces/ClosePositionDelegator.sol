@@ -1,27 +1,27 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortOwner } from "./ShortOwner.sol";
+import { PositionOwner } from "./PositionOwner.sol";
 
 
 /**
- * @title CloseShortDelegator
+ * @title ClosePositionDelegator
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to let other addresses close a short
  * owned by the smart contract.
  */
-contract CloseShortDelegator is ShortOwner {
+contract ClosePositionDelegator is PositionOwner {
 
     // -------------------------
     // ------ Constructor ------
     // -------------------------
 
-    function CloseShortDelegator(
+    function ClosePositionDelegator(
         address margin
     )
         public
-        ShortOwner(margin)
+        PositionOwner(margin)
     {
     }
 
@@ -30,7 +30,7 @@ contract CloseShortDelegator is ShortOwner {
     // ----------------------------------------
 
     /**
-     * Function a contract must implement in order to let other addresses call closeShort() for the
+     * Function a contract must implement in order to let other addresses call closePosition() for the
      * position. This allows short sellers to use more complex
      * logic to control their positions. For example, this can be used to tokenize short
      * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer

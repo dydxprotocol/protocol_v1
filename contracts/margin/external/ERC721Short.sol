@@ -5,8 +5,8 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { Margin } from "../Margin.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
+import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
+import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 
 
 /**
@@ -20,8 +20,8 @@ import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
  /* solium-disable-next-line */
 contract ERC721Short is
     ERC721Token,
-    CloseShortDelegator,
-    ShortCustodian,
+    ClosePositionDelegator,
+    PositionCustodian,
     ReentrancyGuard {
     using SafeMath for uint256;
 
@@ -60,7 +60,7 @@ contract ERC721Short is
     )
         ERC721Token("dYdX Short Sells", "dYdX")
         public
-        CloseShortDelegator(margin)
+        ClosePositionDelegator(margin)
     {
     }
 
@@ -161,7 +161,7 @@ contract ERC721Short is
      * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
-    function receiveShortOwnership(
+    function receivePositionOwnership(
         address from,
         bytes32 marginId
     )
@@ -189,7 +189,7 @@ contract ERC721Short is
 
     /**
      * Called by Margin when an owner of this token is attempting to close some of the short
-     * position. Implementation is required per ShortOwner contract in order to be used by
+     * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the position was successfully closed.
@@ -211,8 +211,8 @@ contract ERC721Short is
         external
         returns (uint256)
     {
-        // Cannot burn the token since the short hasn't been closed yet and getMarginDeedHolder
-        // must return the owner of the short after it has been closed in the current transaction.
+        // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder
+        // must return the owner of the position after it has been closed in the current transaction
 
         address owner = ownerOf(uint256(marginId));
         if (
@@ -227,10 +227,10 @@ contract ERC721Short is
     }
 
     // ----------------------------------
-    // ---- ShortCustodian Functions ----
+    // ---- PositionCustodian Functions ----
     // ----------------------------------
 
-    function getMarginDeedHolder(
+    function getPositionDeedHolder(
         bytes32 marginId
     )
         external

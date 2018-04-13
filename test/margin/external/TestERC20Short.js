@@ -9,8 +9,8 @@ const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../../helpers/Constants');
 const {
-  callCloseShort,
-  callCloseShortDirectly,
+  callClosePosition,
+  callClosePositionDirectly,
   doShort,
   getPosition,
   issueTokensAndSetAllowancesForClose,
@@ -83,7 +83,7 @@ contract('ERC20Short', function(accounts) {
 
     POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(accounts, POSITIONS.PART.SALT);
     await issueTokensAndSetAllowancesForClose(POSITIONS.PART.TX, POSITIONS.PART.SELL_ORDER);
-    await callCloseShort(
+    await callClosePosition(
       CONTRACTS.MARGIN,
       POSITIONS.PART.TX,
       POSITIONS.PART.SELL_ORDER,
@@ -188,7 +188,7 @@ contract('ERC20Short', function(accounts) {
     });
   });
 
-  describe('#receiveShortOwnership', () => {
+  describe('#receivePositionOwnership', () => {
     beforeEach('set up new shorts and tokens', async () => {
       // Create new shorts since state is modified by transferring them
       await setUpShorts();
@@ -262,7 +262,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await expectThrow(
-          callCloseShortDirectly(
+          callClosePositionDirectly(
             CONTRACTS.MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
@@ -283,7 +283,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await expectThrow(
-          callCloseShortDirectly(
+          callClosePositionDirectly(
             CONTRACTS.MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
@@ -301,7 +301,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await expectThrow(
-          callCloseShortDirectly(
+          callClosePositionDirectly(
             CONTRACTS.MARGIN,
             POSITION.TX,
             0,
@@ -318,7 +318,7 @@ contract('ERC20Short', function(accounts) {
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS + 1,
@@ -342,7 +342,7 @@ contract('ERC20Short', function(accounts) {
           { from: POSITION.TX.seller });
 
         // try to close with too-large amount, but it will get bounded by the number of tokens owned
-        const tx = await callCloseShortDirectly(
+        const tx = await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS.times(10)
@@ -359,7 +359,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await expectThrow(
-          callCloseShortDirectly(
+          callClosePositionDirectly(
             CONTRACTS.MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
@@ -377,7 +377,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         // do it once to close it
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS,
@@ -386,7 +386,7 @@ contract('ERC20Short', function(accounts) {
 
         // try again
         await expectThrow(
-          callCloseShortDirectly(
+          callClosePositionDirectly(
             CONTRACTS.MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
@@ -403,7 +403,7 @@ contract('ERC20Short', function(accounts) {
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS
@@ -431,7 +431,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const lender = POSITION.TX.loanOffering.payer;
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
@@ -450,7 +450,7 @@ contract('ERC20Short', function(accounts) {
         const POSITION = POSITIONS[type];
         const seller = POSITION.TX.seller;
         const lender = POSITION.TX.loanOffering.payer;
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS
@@ -468,7 +468,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const seller = POSITION.TX.seller;
-        await callCloseShortDirectly(
+        await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)

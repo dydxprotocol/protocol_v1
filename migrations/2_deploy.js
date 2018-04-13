@@ -9,10 +9,10 @@ const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC721Short = artifacts.require("ERC721Short");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ShortImpl = artifacts.require("ShortImpl");
-const AddValueToShortImpl = artifacts.require("AddValueToShortImpl");
-const CloseShortImpl = artifacts.require("CloseShortImpl");
-const LiquidateImpl = artifacts.require("LiquidateImpl");
+const OpenPositionImpl = artifacts.require("OpenPositionImpl");
+const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
+const ClosePositionImpl = artifacts.require("ClosePositionImpl");
+const LiquidatePositionImpl = artifacts.require("LiquidatePositionImpl");
 const ForceRecoverLoanImpl = artifacts.require("ForceRecoverLoanImpl");
 const DepositImpl = artifacts.require("DepositImpl");
 const LoanImpl = artifacts.require("LoanImpl");
@@ -63,32 +63,32 @@ async function deployMarginContracts(deployer) {
     deployer.deploy(LoanImpl),
     deployer.deploy(DepositImpl),
     deployer.deploy(TransferImpl),
-    deployer.deploy(ShortImpl),
+    deployer.deploy(OpenPositionImpl),
   ]);
 
   await Promise.all([
-    CloseShortImpl.link('InterestImpl', InterestImpl.address),
-    LiquidateImpl.link('InterestImpl', InterestImpl.address),
-    AddValueToShortImpl.link('InterestImpl', InterestImpl.address),
+    ClosePositionImpl.link('InterestImpl', InterestImpl.address),
+    LiquidatePositionImpl.link('InterestImpl', InterestImpl.address),
+    IncreasePositionImpl.link('InterestImpl', InterestImpl.address),
   ]);
 
   await Promise.all([
-    deployer.deploy(CloseShortImpl),
-    deployer.deploy(LiquidateImpl),
-    deployer.deploy(AddValueToShortImpl),
+    deployer.deploy(ClosePositionImpl),
+    deployer.deploy(LiquidatePositionImpl),
+    deployer.deploy(IncreasePositionImpl),
   ]);
 
   // Link Margin function libraries
   await Promise.all([
-    Margin.link('ShortImpl', ShortImpl.address),
-    Margin.link('CloseShortImpl', CloseShortImpl.address),
-    Margin.link('LiquidateImpl', LiquidateImpl.address),
+    Margin.link('OpenPositionImpl', OpenPositionImpl.address),
+    Margin.link('ClosePositionImpl', ClosePositionImpl.address),
+    Margin.link('LiquidatePositionImpl', LiquidatePositionImpl.address),
     Margin.link('InterestImpl', InterestImpl.address),
     Margin.link('ForceRecoverLoanImpl', ForceRecoverLoanImpl.address),
     Margin.link('LoanImpl', LoanImpl.address),
     Margin.link('DepositImpl', DepositImpl.address),
     Margin.link('TransferImpl', TransferImpl.address),
-    Margin.link('AddValueToShortImpl', AddValueToShortImpl.address)
+    Margin.link('IncreasePositionImpl', IncreasePositionImpl.address)
   ]);
 
   await deployer.deploy(

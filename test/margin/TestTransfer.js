@@ -4,8 +4,8 @@ const expect = require('chai').expect;
 
 const TokenA = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
-const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
-const TestShortOwner = artifacts.require("TestShortOwner");
+const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const {
@@ -93,14 +93,14 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract with the correct interface', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doShort(accounts);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+      const testClosePositionDelegator = await TestClosePositionDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
         false);
 
       const tx = await transferShort(
         OpenTx,
-        testCloseShortDelegator.address,
+        testClosePositionDelegator.address,
         OpenTx.seller);
       console.log('\tMargin.transferShort gas used (to contract): ' + tx.receipt.gasUsed);
     });
@@ -110,20 +110,20 @@ describe('#transferShort', () => {
     it('successfully transfers to a contract that chains to another contract', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doShort(accounts);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+      const testClosePositionDelegator = await TestClosePositionDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
         false);
-      const testShortOwner = await TestShortOwner.new(
+      const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
-        testCloseShortDelegator.address,
+        testClosePositionDelegator.address,
         false);
 
       const tx = await transferShort(
         OpenTx,
-        testShortOwner.address,
+        testPositionOwner.address,
         OpenTx.seller,
-        testCloseShortDelegator.address);
+        testClosePositionDelegator.address);
       console.log('\tMargin.transferShort gas used (chains thru): ' + tx.receipt.gasUsed);
     });
   });
@@ -132,12 +132,12 @@ describe('#transferShort', () => {
     it('fails to transfer to a contract that transfers to 0x0', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doShort(accounts);
-      const testShortOwner = await TestShortOwner.new(
+      const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         ADDRESSES.ZERO,
         false);
 
-      await transferShort_THROW(OpenTx, testShortOwner.address, OpenTx.seller);
+      await transferShort_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
     });
   });
 
@@ -145,12 +145,12 @@ describe('#transferShort', () => {
     it('fails to transfer to a contract that transfers back to original owner', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doShort(accounts);
-      const testShortOwner = await TestShortOwner.new(
+      const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         OpenTx.seller,
         false);
 
-      await transferShort_THROW(OpenTx, testShortOwner.address, OpenTx.seller);
+      await transferShort_THROW(OpenTx, testPositionOwner.address, OpenTx.seller);
     });
   });
 

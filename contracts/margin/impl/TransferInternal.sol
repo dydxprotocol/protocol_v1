@@ -3,7 +3,7 @@ pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
@@ -84,7 +84,7 @@ library TransferInternal {
      * @return           The address that the intended owner wishes to assign the short to (may be
      *                   the same as the intended owner). Zero if ownership is rejected.
      */
-    function grantShortOwnership(
+    function grantPositionOwnership(
         bytes32 marginId,
         address oldOwner,
         address newOwner
@@ -98,9 +98,9 @@ library TransferInternal {
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = ShortOwner(newOwner).receiveShortOwnership(oldOwner, marginId);
+            address nextOwner = PositionOwner(newOwner).receivePositionOwnership(oldOwner, marginId);
             if (nextOwner != newOwner) {
-                return grantShortOwnership(marginId, newOwner, nextOwner);
+                return grantPositionOwnership(marginId, newOwner, nextOwner);
             }
         }
 

@@ -6,19 +6,19 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Vault } from "./Vault.sol";
-import { AddValueToShortImpl } from "./impl/AddValueToShortImpl.sol";
-import { CloseShortImpl } from "./impl/CloseShortImpl.sol";
+import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { DepositImpl } from "./impl/DepositImpl.sol";
 import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
-import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
+import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
+import { LiquidatePositionImpl } from "./impl/LiquidatePositionImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { MarginAdmin } from "./impl/MarginAdmin.sol";
 import { MarginEvents } from "./impl/MarginEvents.sol";
 import { MarginState } from "./impl/MarginState.sol";
 import { MarginStorage } from "./impl/MarginStorage.sol";
-import { ShortGetters } from "./impl/ShortGetters.sol";
-import { ShortImpl } from "./impl/ShortImpl.sol";
+import { OpenPositionImpl } from "./impl/OpenPositionImpl.sol";
+import { PositionGetters } from "./impl/PositionGetters.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 
 
@@ -26,7 +26,7 @@ import { TransferImpl } from "./impl/TransferImpl.sol";
  * @title Margin
  * @author dYdX
  *
- * This contract is used to facilitate short selling as per the dYdX short sell protocol
+ * This contract is used to facilitate margin trading as per the dYdX protocol
  */
  /* solium-disable-next-line */
 contract Margin is
@@ -37,7 +37,7 @@ contract Margin is
     MarginEvents,
     MarginAdmin,
     LoanGetters,
-    ShortGetters {
+    PositionGetters {
 
     using SafeMath for uint256;
 
@@ -64,12 +64,12 @@ contract Margin is
     // -----------------------------------------
 
     /**
-     * Initiate a short sell. Called by the short seller. Short seller must provide both a
-     * signed loan offering as well as a signed buy order for the base token to be shorted.
+     * Open a margin position. Called by the margin trader who must provide both a
+     * signed loan offering as well as a buy order with which to sell the base token.
      *
      * @param  addresses            Addresses corresponding to:
      *
-     *  [0]  = short owner
+     *  [0]  = position owner
      *  [1]  = base token
      *  [2]  = quote token
      *  [3]  = loan payer
@@ -90,7 +90,7 @@ contract Margin is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = short amount
+     *  [7]  = position amount
      *  [8]  = deposit amount
      *
      * @param  values32             Values corresponding to:
@@ -102,14 +102,13 @@ contract Margin is
      *
      * @param  sigV                 ECDSA v parameter for loan offering
      * @param  sigRS                ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
-     *                              quote token. If false, margin deposit will be pulled in base
-     *                              token, and then sold along with the base token borrowed from
-     *                              the lender
+     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
+     *                              token. If false, margin deposit will be pulled in base token,
+     *                              and then sold along with the base token borrowed from the lender
      * @param  order                Order object to be passed to the exchange wrapper
-     * @return                      Unique ID for the new short
+     * @return                      Unique ID for the new position
      */
-    function short(
+    function openPosition(
         address[11] addresses,
         uint256[9]  values256,
         uint32[4]   values32,
@@ -123,7 +122,7 @@ contract Margin is
         nonReentrant
         returns (bytes32)
     {
-        return ShortImpl.shortImpl(
+        return OpenPositionImpl.openPositionImpl(
             state,
             addresses,
             values256,
@@ -136,9 +135,9 @@ contract Margin is
     }
 
     /**
-     * Add value to a short sell. Funds will be borrowed from the loan payer and sold as per position.
-     * The value added to the short will be equal to the effective amount lent, and will incorporate
-     * interest already earned by the position so far.
+     * Increase the size of a position. Funds will be borrowed from the loan payer and sold as per
+     * the position. The value added to the position will be equal to the effective amount lent, and
+     * will incorporate interest already earned by the position so far.
      *
      * @param  addresses            Addresses corresponding to:
      *
@@ -169,14 +168,13 @@ contract Margin is
      *
      * @param  sigV                 ECDSA v parameter for loan offering
      * @param  sigRS                ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  true if the short seller wishes to pay the margin deposit in
-     *                              quote token. If false, margin deposit will be pulled in base
-     *                              token, and then sold along with the base token borrowed from
-     *                              the lender
+     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
+     *                              token. If false, margin deposit will be pulled in base token,
+     *                              and then sold along with the base token borrowed from the lender
      * @param  order                Order object to be passed to the exchange wrapper
      * @return                      Amount of base tokens pulled from the lender
      */
-    function addValueToShort(
+    function increasePosition(
         bytes32     marginId,
         address[7]  addresses,
         uint256[8]  values256,
@@ -191,7 +189,7 @@ contract Margin is
         nonReentrant
         returns (uint256)
     {
-        return AddValueToShortImpl.addValueToShortImpl(
+        return IncreasePositionImpl.increasePositionImpl(
             state,
             marginId,
             addresses,
@@ -205,14 +203,14 @@ contract Margin is
     }
 
     /**
-     * Add value to a short sell by directly putting up quote token. The adder will serve as both
-     * the lender and seller.
+     * Increase a position directly by putting up quote token. The caller will serve as both the
+     * lender and the position owner
      *
      * @param marginId  Unique ID of the position sell
-     * @param amount    Amount (in base token) to add to the short
-     * @return          Amount of quote token pulled from the adder
+     * @param amount    Amount (in base token) to add to the position
+     * @return          Amount of quote token pulled from the msg.sender
      */
-    function addValueToShortDirectly(
+    function increasePositionDirectly(
         bytes32 marginId,
         uint256 amount
     )
@@ -221,7 +219,7 @@ contract Margin is
         nonReentrant
         returns (uint256)
     {
-        return AddValueToShortImpl.addValueToShortDirectlyImpl(
+        return IncreasePositionImpl.increasePositionDirectlyImpl(
             state,
             marginId,
             amount
@@ -229,24 +227,24 @@ contract Margin is
     }
 
     /**
-    * Close a short sell. May be called by the short seller or with the approval of the short
-    * seller. May provide an order and exchangeWrapper to facilitate the closing of the
-    * position. The short seller is sent quote token stored in the contract.
+     * Close a position. May be called by the owner or with the approval of the owner. May provide
+     * an order and exchangeWrapper to facilitate the closing of the position. The payoutRecipient
+     * an sent the resulting payout.
      *
-     * @param  marginId                 Unique ID for the short sell
+     * @param  marginId                 Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
-     * @param  exchangeWrapper   Address of the exchange wrapper
+     * @param  exchangeWrapper          Address of the exchange wrapper
      * @param  payoutInQuoteToken       True to pay out the payoutRecipient in quote token,
      *                                  False to pay out the payoutRecipient in base token
      * @param  order                    Order object to be passed to the exchange wrapper
      * @return                          Values corresponding to:
-     *                                  1) Amount of short closed
+     *                                  1) Amount of position closed
      *                                  2) Amount of quote token recieved by the payoutRecipient
      *                                  3) Amount of base token paid as interest fee to the lender
      */
-    function closeShort(
+    function closePosition(
         bytes32 marginId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
@@ -255,11 +253,11 @@ contract Margin is
         bytes   order
     )
         external
-        closeShortStateControl
+        closePositionStateControl
         nonReentrant
         returns (uint256, uint256, uint256)
     {
-        return CloseShortImpl.closeShortImpl(
+        return ClosePositionImpl.closePositionImpl(
             state,
             marginId,
             requestedCloseAmount,
@@ -271,28 +269,28 @@ contract Margin is
     }
 
     /**
-     * Helper to close a short sell by paying base token directly from the short seller
+     * Helper to close a position by paying base token directly
      *
-     * @param  marginId                 Unique ID for the short sell
+     * @param  marginId                 Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @return                          Values corresponding to:
-     *                                  1) Amount of short closed
+     *                                  1) Amount of position closed
      *                                  2) Amount of quote token received by the payoutRecipient
      *                                  3) Amount of base token paid as interest fee to the lender
      */
-    function closeShortDirectly(
+    function closePositionDirectly(
         bytes32 marginId,
         uint256 requestedCloseAmount,
         address payoutRecipient
     )
         external
-        closeShortDirectlyStateControl
+        closePositionDirectlyStateControl
         nonReentrant
         returns (uint256, uint256, uint256)
     {
-        return CloseShortImpl.closeShortImpl(
+        return ClosePositionImpl.closePositionImpl(
             state,
             marginId,
             requestedCloseAmount,
@@ -304,28 +302,28 @@ contract Margin is
     }
 
     /**
-     * Liquidate loan position and withdraw quote tokens from the vault.
-     * Must be approved by the short seller (e.g., by requiring the lender to own part of the
-     * position, and burning in order to liquidate part of the loan).
+     * Liquidate position and withdraw quote tokens from the vault.
+     * Must be approved by the position owner (e.g., by requiring the lender to own part of the
+     * position, and burning it).
      *
-     * @param  marginId                    Unique ID for the short sell
+     * @param  marginId                    Unique ID for the position
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
      *                                     will be: min(requestedCloseAmount, currentShortAmount)
      * @return                             Values corresponding to:
-     *                                     1) Amount of short closed
+     *                                     1) Amount of position closed
      *                                     2) Amount of quote token recieved by the msg.sender
      */
-    function liquidate(
+    function liquidatePosition(
         bytes32 marginId,
         uint256 requestedLiquidationAmount,
         address payoutRecipient
     )
         external
-        closeShortStateControl
+        closePositionStateControl
         nonReentrant
         returns (uint256, uint256)
     {
-        return LiquidateImpl.liquidateImpl(
+        return LiquidatePositionImpl.liquidatePositionImpl(
             state,
             marginId,
             requestedLiquidationAmount,
@@ -334,14 +332,14 @@ contract Margin is
     }
 
     /**
-     * Call in a short sell loan.
-     * Only callable by the lender for a short sell. After loan is called in, the short seller
-     * will have time equal to the call time limit specified on the original short sell to
-     * close the short and repay the loan. If the short seller does not close the position, the
-     * lender can use forceRecoverLoan to recover his funds.
+     * Call in a position.
+     * Only callable by the lender of a position. After the call, the owner
+     * will have time equal to the call time limit specified on the original loan offering to
+     * close the position and repay the loan. If the owner does not close the position, the
+     * lender can use forceRecoverLoan to recover the funds.
      *
-     * @param  marginId         Unique ID for the short sell
-     * @param  requiredDeposit  Amount of deposit the short seller must put up to cancel the call
+     * @param  marginId         Unique ID for the position
+     * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
      */
     function callInLoan(
         bytes32 marginId,
@@ -358,9 +356,9 @@ contract Margin is
     }
 
     /**
-     * Cancel a loan call. Only callable by the short sell's lender
+     * Cancel a loan call. Only callable by the position owner
      *
-     * @param  marginId Unique ID for the short sell
+     * @param  marginId  Unique ID for the position
      */
     function cancelLoanCall(
         bytes32 marginId
@@ -376,7 +374,7 @@ contract Margin is
      * Function callable by the lender after the loan has been called-in for the call time limit but
      * remains unclosed. Used to recover the quote tokens held as collateral.
      *
-     * @param  marginId Unique ID for the short sell
+     * @param  marginId  Unique ID for the position
      */
     function forceRecoverLoan(
         bytes32 marginId
@@ -389,10 +387,10 @@ contract Margin is
     }
 
     /**
-     * Deposit additional quote token as colateral for a short sell loan. Cancels loan call if:
+     * Deposit additional quote token as collateral for a position. Cancels loan call if:
      * 0 < position.requiredDeposit < depositAmount
      *
-     * @param  marginId         Unique ID for the short sell
+     * @param  marginId         Unique ID for the position
      * @param  depositAmount    Additional amount in quote token to deposit
      */
     function deposit(
@@ -520,7 +518,7 @@ contract Margin is
      * to all payouts for this loan. Only callable by the lender for a position. If the "who"
      * param is a contract, it must implement the LoanOwner interface.
      *
-     * @param  marginId Unique ID for the short sell
+     * @param  marginId  Unique ID for the position
      * @param  who      New owner of the loan
      */
     function transferLoan(
@@ -537,12 +535,12 @@ contract Margin is
     }
 
     /**
-     * Transfer ownership of a short to a new address. This new address will be entitled
-     * to all payouts for this position. Only callable by the short seller for a position. If the "who"
-     * param is a contract, it must implement the ShortOwner interface.
+     * Transfer ownership of a position to a new address. This new address will be entitled to all
+     * payouts. Only callable by the owner of a position. If the "who" param is a contract, it must
+     * implement the PositionOwner interface.
      *
-     * @param  marginId Unique ID for the short sell
-     * @param  who      New owner of the short
+     * @param  marginId  Unique ID for the position
+     * @param  who       New owner of the position
      */
     function transferShort(
         bytes32 marginId,
@@ -551,7 +549,7 @@ contract Margin is
         external
         nonReentrant
     {
-        TransferImpl.transferShortImpl(
+        TransferImpl.transferOpenPositionImpl(
             state,
             marginId,
             who);

@@ -1,19 +1,19 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { LiquidateDelegator } from "../margin/interfaces/LiquidateDelegator.sol";
+import { LiquidatePositionDelegator } from "../margin/interfaces/LiquidatePositionDelegator.sol";
 
 
-contract TestLiquidateDelegator is LiquidateDelegator {
+contract TestLiquidatePositionDelegator is LiquidatePositionDelegator {
 
     address public CLOSER;
 
-    function TestLiquidateDelegator(
+    function TestLiquidatePositionDelegator(
         address margin,
         address closer
     )
         public
-        LiquidateDelegator(margin)
+        LiquidatePositionDelegator(margin)
     {
         CLOSER = closer;
     }

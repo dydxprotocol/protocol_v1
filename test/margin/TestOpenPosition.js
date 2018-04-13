@@ -14,8 +14,8 @@ const ProxyContract = artifacts.require("Proxy");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
-const TestCloseShortDelegator = artifacts.require("TestCloseShortDelegator");
-const TestShortOwner = artifacts.require("TestShortOwner");
+const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
 const { ADDRESSES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
@@ -24,7 +24,7 @@ const web3Instance = new Web3(web3.currentProvider);
 const {
   createOpenTx,
   issueTokensAndSetAllowancesForShort,
-  callShort,
+  callOpenPosition,
   getPosition,
   callApproveLoanOffering
 } = require('../helpers/MarginHelper');
@@ -39,7 +39,7 @@ describe('#short', () => {
 
       await issueTokensAndSetAllowancesForShort(OpenTx);
 
-      const tx = await callShort(dydxMargin, OpenTx);
+      const tx = await callOpenPosition(dydxMargin, OpenTx);
 
       console.log('\tMargin.short (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
@@ -105,7 +105,7 @@ describe('#short', () => {
       OpenTx.loanOffering.owner = testCallLoanDelegator.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
-      const tx = await callShort(dydxMargin, OpenTx);
+      const tx = await callOpenPosition(dydxMargin, OpenTx);
 
       console.log('\tMargin.short (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
@@ -117,19 +117,19 @@ describe('#short', () => {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const dydxMargin = await Margin.deployed();
       const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
-      const testShortOwner = await TestShortOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testPositionOwner = await TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, false);
 
       const OpenTx1 = await createOpenTx(accounts);
       await issueTokensAndSetAllowancesForShort(OpenTx1);
       OpenTx1.owner = testLoanOwner.address; // loan owner can't take short
       OpenTx1.loanOffering.signature = await signLoanOffering(OpenTx1.loanOffering);
-      await expectThrow( callShort(dydxMargin, OpenTx1));
+      await expectThrow( callOpenPosition(dydxMargin, OpenTx1));
 
       const OpenTx2 = await createOpenTx(accounts);
       await issueTokensAndSetAllowancesForShort(OpenTx2);
-      OpenTx2.loanOffering.owner = testShortOwner.address; // short owner can't take loan
+      OpenTx2.loanOffering.owner = testPositionOwner.address; // short owner can't take loan
       OpenTx2.loanOffering.signature = await signLoanOffering(OpenTx2.loanOffering);
-      await expectThrow( callShort(dydxMargin, OpenTx2));
+      await expectThrow( callOpenPosition(dydxMargin, OpenTx2));
     });
   });
 
@@ -141,7 +141,7 @@ describe('#short', () => {
       OpenTx.owner = accounts[8];
       OpenTx.loanOffering.owner = accounts[9];
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
-      await callShort(dydxMargin, OpenTx);
+      await callOpenPosition(dydxMargin, OpenTx);
       await checkSuccess(dydxMargin, OpenTx);
     });
   });
@@ -153,16 +153,16 @@ describe('#short', () => {
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+      const testClosePositionDelegator = await TestClosePositionDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         false);
       const OpenTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowancesForShort(OpenTx);
-      OpenTx.owner = testCloseShortDelegator.address;
+      OpenTx.owner = testClosePositionDelegator.address;
       OpenTx.loanOffering.owner = testCallLoanDelegator.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
-      await callShort(dydxMargin, OpenTx);
+      await callOpenPosition(dydxMargin, OpenTx);
       await checkSuccess(dydxMargin, OpenTx);
     });
   });
@@ -174,7 +174,7 @@ describe('#short', () => {
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
-      const testCloseShortDelegator = await TestCloseShortDelegator.new(
+      const testClosePositionDelegator = await TestClosePositionDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         false);
@@ -182,16 +182,16 @@ describe('#short', () => {
         Margin.address,
         testCallLoanDelegator.address,
         false);
-      const testShortOwner = await TestShortOwner.new(
+      const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
-        testCloseShortDelegator.address,
+        testClosePositionDelegator.address,
         false);
       const OpenTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowancesForShort(OpenTx);
-      OpenTx.owner = testShortOwner.address;
+      OpenTx.owner = testPositionOwner.address;
       OpenTx.loanOffering.owner = testLoanOwner.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
-      await callShort(dydxMargin, OpenTx);
+      await callOpenPosition(dydxMargin, OpenTx);
       await checkSuccess(dydxMargin, OpenTx);
     });
   });
@@ -208,7 +208,7 @@ describe('#short', () => {
       OpenTx.loanOffering.signature.r = "";
       OpenTx.loanOffering.signature.s = "";
 
-      await callShort(dydxMargin, OpenTx);
+      await callOpenPosition(dydxMargin, OpenTx);
 
       await checkSuccess(dydxMargin, OpenTx);
     });
@@ -241,7 +241,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
   } else {
     let toReturn = null;
     try {
-      toReturn = await TestShortOwner.at(OpenTx.owner).TO_RETURN.call();
+      toReturn = await TestPositionOwner.at(OpenTx.owner).TO_RETURN.call();
     } catch(e) {
       toReturn = null;
     }

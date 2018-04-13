@@ -5,21 +5,21 @@ import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { ShortShared } from "./ShortShared.sol";
+import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
- * @title AddValueToShortImpl
+ * @title IncreasePositionImpl
  * @author dYdX
  *
- * This library contains the implementation for the addValueToShort function of Margin
+ * This library contains the implementation for the increasePosition function of Margin
  */
-library AddValueToShortImpl {
+library IncreasePositionImpl {
     using SafeMath for uint256;
 
     // ------------------------
@@ -33,7 +33,7 @@ library AddValueToShortImpl {
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
-        address shortOwner,
+        address positionOwner,
         address loanOwner,
         bytes32 loanHash,
         address loanFeeRecipient,
@@ -47,7 +47,7 @@ library AddValueToShortImpl {
     // ----- Public Implementation Functions -----
     // -------------------------------------------
 
-    function addValueToShortImpl(
+    function increasePositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
         address[7] addresses,
@@ -63,7 +63,7 @@ library AddValueToShortImpl {
     {
         MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
 
-        ShortShared.OpenTx memory transaction = parseAddValueToOpenTx(
+        OpenPositionShared.OpenTx memory transaction = parseAddValueToOpenTx(
             position,
             addresses,
             values256,
@@ -92,7 +92,7 @@ library AddValueToShortImpl {
         state.loanFills[transaction.loanOffering.loanHash] =
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
 
-        ShortShared.shortInternalPostStateUpdate(
+        OpenPositionShared.shortInternalPostStateUpdate(
             state,
             transaction,
             marginId
@@ -109,7 +109,7 @@ library AddValueToShortImpl {
         return transaction.lenderAmount;
     }
 
-    function addValueToShortDirectlyImpl(
+    function increasePositionDirectlyImpl(
         MarginState.State storage state,
         bytes32 marginId,
         uint256 amount
@@ -161,7 +161,7 @@ library AddValueToShortImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        ShortShared.OpenTx transaction,
+        OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
@@ -181,7 +181,7 @@ library AddValueToShortImpl {
         uint256 quoteTokenFromSell;
         uint256 totalQuoteTokenReceived;
 
-        (quoteTokenFromSell, totalQuoteTokenReceived) = ShortShared.shortInternalPreStateUpdate(
+        (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.shortInternalPreStateUpdate(
             state,
             transaction,
             marginId,
@@ -196,7 +196,7 @@ library AddValueToShortImpl {
     }
 
     function validate(
-        ShortShared.OpenTx transaction,
+        OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position
     )
         internal
@@ -215,7 +215,7 @@ library AddValueToShortImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        ShortShared.OpenTx transaction,
+        OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
         bytes32 marginId,
         bytes orderData
@@ -296,7 +296,7 @@ library AddValueToShortImpl {
         // to the short seller to ensure they consent to value being added
         if (msg.sender != seller || AddressUtils.isContract(seller)) {
             require(
-                ShortOwner(seller).additionalShortValueAdded(
+                PositionOwner(seller).additionalShortValueAdded(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -319,7 +319,7 @@ library AddValueToShortImpl {
     }
 
     function recordValueAddedToShort(
-        ShortShared.OpenTx transaction,
+        OpenPositionShared.OpenTx transaction,
         bytes32 marginId,
         MarginCommon.Position storage position,
         uint256 quoteTokenFromSell
@@ -354,9 +354,9 @@ library AddValueToShortImpl {
     )
         internal
         view
-        returns (ShortShared.OpenTx memory)
+        returns (OpenPositionShared.OpenTx memory)
     {
-        ShortShared.OpenTx memory transaction = ShortShared.OpenTx({
+        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: position.seller,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,

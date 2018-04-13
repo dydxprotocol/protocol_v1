@@ -1,10 +1,10 @@
 /*global artifacts, contract, describe, it*/
 
 const Margin= artifacts.require('Margin');
-const TestLiquidateDelegator = artifacts.require('TestLiquidateDelegator');
+const TestLiquidatePositionDelegator = artifacts.require('TestLiquidatePositionDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
-const { doShort, callLiquidate } = require('../helpers/MarginHelper');
+const { doShort, callLiquidatePosition } = require('../helpers/MarginHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 const expect = require('chai').expect;
 
@@ -43,7 +43,7 @@ describe('#liquidate', () => {
       const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await callLiquidate(dydxMargin, OpenTx, shortAmount, lender);
+      await callLiquidatePosition(dydxMargin, OpenTx, shortAmount, lender);
 
       // It should burn the short tokens
       const lenderShortAfter = await erc20Short.balanceOf(lender);
@@ -61,7 +61,8 @@ describe('#liquidate', () => {
       await configureShort(initialHolder, accounts);
 
       // Create a new loan owner smart contract that implements liquidate delegator
-      const liquidateDelegator = await TestLiquidateDelegator.new(dydxMargin.address, lender);
+      const liquidateDelegator =
+        await TestLiquidatePositionDelegator.new(dydxMargin.address, lender);
       // Transfer the loan to the liquidate delegator
       await dydxMargin.transferLoan(OpenTx.id, liquidateDelegator.address, { from: lender });
 
@@ -72,7 +73,7 @@ describe('#liquidate', () => {
       const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await callLiquidate(dydxMargin, OpenTx, shortAmount, lender);
+      await callLiquidatePosition(dydxMargin, OpenTx, shortAmount, lender);
 
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);

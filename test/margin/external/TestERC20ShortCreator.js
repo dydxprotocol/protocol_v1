@@ -14,7 +14,7 @@ const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper
 const {
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort
+  callClosePosition
 } = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
@@ -52,7 +52,7 @@ contract('ERC20ShortCreator', function(accounts) {
     });
   });
 
-  describe('#receiveShortOwnership', () => {
+  describe('#receivePositionOwnership', () => {
     async function checkSuccess(OpenTx, shortTokenContract, remainingShortAmount) {
       const originalSeller = accounts[0];
       const [
@@ -85,7 +85,7 @@ contract('ERC20ShortCreator', function(accounts) {
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
       await expectThrow(
-        ERC20ShortCreatorContract.receiveShortOwnership(accounts[0], badId)
+        ERC20ShortCreatorContract.receivePositionOwnership(accounts[0], badId)
       );
     });
 
@@ -108,7 +108,7 @@ contract('ERC20ShortCreator', function(accounts) {
       // close half the short
       const sellOrder = await createSignedSellOrder(accounts, salt);
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-      await callCloseShort(
+      await callClosePosition(
         dydxMargin,
         OpenTx,
         sellOrder,

@@ -4,7 +4,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { ERC20Short } from "./ERC20Short.sol";
-import { ShortOwner } from "../interfaces/ShortOwner.sol";
+import { PositionOwner } from "../interfaces/PositionOwner.sol";
 
 
 /**
@@ -19,7 +19,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
  /* solium-disable-next-line */
 contract ERC20ShortCreator is
     NoOwner,
-    ShortOwner,
+    PositionOwner,
     ReentrancyGuard
 {
     // -------------------
@@ -47,7 +47,7 @@ contract ERC20ShortCreator is
         address[] trustedRecipients
     )
         public
-        ShortOwner(margin)
+        PositionOwner(margin)
     {
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
@@ -59,14 +59,14 @@ contract ERC20ShortCreator is
     // -----------------------------------
 
     /**
-     * Implementation of ShortOwner functionality. Creates a new ERC20Short and assigns short
+     * Implementation of PositionOwner functionality. Creates a new ERC20Short and assigns short
      * ownership to the ERC20Short. Called by Margin when a short is transferred to this
      * contract.
      *
      * @param  from  Address of the previous owner of the short
      * @return       Address of the new ERC20Short contract
      */
-    function receiveShortOwnership(
+    function receivePositionOwnership(
         address from,
         bytes32 marginId
     )

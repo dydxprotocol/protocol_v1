@@ -13,8 +13,8 @@ const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
-const { getOwedAmount } = require('../../helpers/CloseShortHelper');
-const { getMaxInterestFee, callCloseShortDirectly } = require('../../helpers/MarginHelper');
+const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
+const { getMaxInterestFee, callClosePositionDirectly } = require('../../helpers/MarginHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort
@@ -60,7 +60,7 @@ contract('DutchAuctionCloser', function(accounts) {
     });
   });
 
-  describe('#closeShortDirectly', () => {
+  describe('#closePositionDirectly', () => {
     let salt = 1111;
     let callTimeLimit;
 
@@ -94,7 +94,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await wait(callTimeLimit * 3 / 4);
 
-      await expectThrow( callCloseShortDirectly(
+      await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount.div(2),
@@ -106,7 +106,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('fails if bid too early', async () => {
       await wait(callTimeLimit / 4);
 
-      await expectThrow( callCloseShortDirectly(
+      await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount.div(2),
@@ -118,7 +118,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('fails if bid too late', async () => {
       await wait(callTimeLimit + 1);
 
-      await expectThrow( callCloseShortDirectly(
+      await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.shortAmount.div(2),
@@ -135,7 +135,7 @@ contract('DutchAuctionCloser', function(accounts) {
       const closeAmount = OpenTx.shortAmount.div(2);
 
       // closing half is fine
-      const closeTx1 = await callCloseShortDirectly(
+      const closeTx1 = await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         closeAmount,
@@ -145,7 +145,7 @@ contract('DutchAuctionCloser', function(accounts) {
       const owedAmount1 = await getOwedAmount(OpenTx, closeTx1, closeAmount);
 
       // closing the other half is fine
-      const closeTx2 = await callCloseShortDirectly(
+      const closeTx2 = await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         closeAmount,
@@ -155,7 +155,7 @@ contract('DutchAuctionCloser', function(accounts) {
       const owedAmount2 = await getOwedAmount(OpenTx, closeTx2, closeAmount);
 
       // cannot close half a third time
-      await expectThrow( callCloseShortDirectly(
+      await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         closeAmount,

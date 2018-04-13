@@ -9,14 +9,14 @@ const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
   createOpenTx,
   issueTokensAndSetAllowancesForShort,
-  callShort,
+  callOpenPosition,
   callCancelLoanOffer,
   doShort,
   issueTokensAndSetAllowancesForClose,
-  callCloseShort,
+  callClosePosition,
   callApproveLoanOffering,
   issueForDirectClose,
-  callCloseShortDirectly
+  callClosePositionDirectly
 } = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
@@ -98,10 +98,10 @@ describe('MarginAdmin', () => {
         await issueTokensAndSetAllowancesForShort(OpenTx);
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( callShort(dydxMargin, OpenTx));
+        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
-        await callShort(dydxMargin, OpenTx);
+        await callOpenPosition(dydxMargin, OpenTx);
       });
     });
 
@@ -230,7 +230,7 @@ describe('MarginAdmin', () => {
     });
   });
 
-  describe('#closeShortStateControl', () => {
+  describe('#closePositionStateControl', () => {
     const closeAmount = new BigNumber(100);
 
     async function test(accounts, state, shouldFail = false) {
@@ -243,39 +243,39 @@ describe('MarginAdmin', () => {
 
       await dydxMargin.setOperationState(state);
       if (shouldFail) {
-        await expectThrow( callCloseShort(dydxMargin, OpenTx, sellOrder, closeAmount) );
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount) );
       } else {
-        await callCloseShort(dydxMargin, OpenTx, sellOrder, closeAmount);
+        await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
       }
     }
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while OPERATIONAL', async () => {
+      it('Allows #closePosition while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      it('Allows #closePosition while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while CLOSE_ONLY', async () => {
+      it('Allows #closePosition while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Disallows #closeShort while CLOSE_DIRECTLY_ONLY', async () => {
+      it('Disallows #closePosition while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY, true);
       });
     });
   });
 
 
-  describe('#closeShortDirectlyStateControl', () => {
+  describe('#closePositionDirectlyStateControl', () => {
     const closeAmount = new BigNumber(100);
     async function test(accounts, state) {
       const OpenTx = await doShort(accounts);
@@ -283,29 +283,29 @@ describe('MarginAdmin', () => {
       await issueForDirectClose(OpenTx);
 
       await dydxMargin.setOperationState(state);
-      await callCloseShortDirectly(dydxMargin, OpenTx, closeAmount);
+      await callClosePositionDirectly(dydxMargin, OpenTx, closeAmount);
     }
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while OPERATIONAL', async () => {
+      it('Allows #closePosition while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      it('Allows #closePosition while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while CLOSE_ONLY', async () => {
+      it('Allows #closePosition while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closeShort while CLOSE_DIRECTLY_ONLY', async () => {
+      it('Allows #closePosition while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY);
       });
     });

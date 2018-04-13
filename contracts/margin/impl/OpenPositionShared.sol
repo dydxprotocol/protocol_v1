@@ -12,12 +12,12 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**
- * @title ShortShared
+ * @title OpenPositionShared
  * @author dYdX
  *
- * This library contains shared functionality between ShortImpl and AddValueToShortImpl
+ * This library contains shared functionality between OpenPositionImpl and IncreasePositionImpl
  */
-library ShortShared {
+library OpenPositionShared {
     using SafeMath for uint256;
 
     // -----------------------

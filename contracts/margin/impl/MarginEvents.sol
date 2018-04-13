@@ -144,7 +144,7 @@ contract MarginEvents {
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
-        address shortOwner,
+        address positionOwner,
         address loanOwner,
         bytes32 loanHash,
         address loanFeeRecipient,

@@ -10,27 +10,27 @@ const QuoteToken = artifacts.require("TokenA");
 const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ProxyContract = artifacts.require("Proxy");
-const TestShortOwner = artifacts.require("TestShortOwner");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const { DEFAULT_SALT } = require('../helpers/Constants');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
-const { getOwedAmount } = require('../helpers/CloseShortHelper');
+const { getOwedAmount } = require('../helpers/ClosePositionHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 const {
   getPosition,
-  callAddValueToShort,
+  callIncreasePosition,
   createOpenTx,
   issueTokensAndSetAllowancesForShort,
-  callShort
+  callOpenPosition
 } = require('../helpers/MarginHelper');
 
 let salt = DEFAULT_SALT + 1;
 
-describe('#addValueToShort', () => {
+describe('#increasePosition', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const {
@@ -42,10 +42,10 @@ describe('#addValueToShort', () => {
         sellerStartingQuoteToken
       } = await setup(accounts);
 
-      const tx = await callAddValueToShort(dydxMargin, addValueTx);
+      const tx = await callIncreasePosition(dydxMargin, addValueTx);
 
       console.log(
-        '\tMargin.addValueToShort (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
+        '\tMargin.increasePosition (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed
       );
 
       await validate({
@@ -63,10 +63,10 @@ describe('#addValueToShort', () => {
   contract('Margin', function(accounts) {
     it('succeeds when positions are owned by contracts', async () => {
       const [
-        testShortOwner,
+        testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestShortOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, "1", true),
         TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
@@ -79,16 +79,16 @@ describe('#addValueToShort', () => {
         sellerStartingQuoteToken
       } = await setup(
         accounts,
-        { shortOwner: testShortOwner.address, loanOwner: testLoanOwner.address }
+        { positionOwner: testPositionOwner.address, loanOwner: testLoanOwner.address }
       );
 
-      const tx = await callAddValueToShort(dydxMargin, addValueTx);
+      const tx = await callIncreasePosition(dydxMargin, addValueTx);
 
       const [
         shortValueAdded,
         loanValueAdded
       ] = await Promise.all([
-        testShortOwner.valueAdded.call(OpenTx.id, addValueTx.seller),
+        testPositionOwner.valueAdded.call(OpenTx.id, addValueTx.seller),
         testLoanOwner.valueAdded.call(OpenTx.id, addValueTx.loanOffering.payer),
       ]);
 
@@ -121,7 +121,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration * 2;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      const tx = await callAddValueToShort(dydxMargin, addValueTx);
+      const tx = await callIncreasePosition(dydxMargin, addValueTx);
 
       await validate({
         dydxMargin,
@@ -145,7 +145,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration / 10;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow( callAddValueToShort(dydxMargin, addValueTx));
+      await expectThrow( callIncreasePosition(dydxMargin, addValueTx));
     });
   });
 
@@ -163,7 +163,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit * 2;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      const tx = await callAddValueToShort(dydxMargin, addValueTx);
+      const tx = await callIncreasePosition(dydxMargin, addValueTx);
 
       await validate({
         dydxMargin,
@@ -187,7 +187,7 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit - 1;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
 
-      await expectThrow( callAddValueToShort(dydxMargin, addValueTx));
+      await expectThrow( callIncreasePosition(dydxMargin, addValueTx));
     });
   });
 
@@ -230,7 +230,7 @@ describe('#addValueToShort', () => {
     }
   }
 
-  async function setup(accounts, { loanOwner, shortOwner } = {}) {
+  async function setup(accounts, { loanOwner, positionOwner } = {}) {
     const [dydxMargin, baseToken, quoteToken, feeToken] = await Promise.all([
       Margin.deployed(),
       BaseToken.deployed(),
@@ -251,14 +251,14 @@ describe('#addValueToShort', () => {
       addValueTx.loanOffering.owner = loanOwner;
       addValueTx.loanOffering.signature = await signLoanOffering(addValueTx.loanOffering);
     }
-    if (shortOwner) {
-      OpenTx.owner = shortOwner;
-      addValueTx.owner = shortOwner;
+    if (positionOwner) {
+      OpenTx.owner = positionOwner;
+      addValueTx.owner = positionOwner;
     }
 
     await issueTokensAndSetAllowancesForShort(OpenTx);
 
-    const response = await callShort(dydxMargin, OpenTx);
+    const response = await callOpenPosition(dydxMargin, OpenTx);
     OpenTx.id = response.id;
     OpenTx.response = response;
 
@@ -376,33 +376,33 @@ describe('#addValueToShort', () => {
   }
 });
 
-describe('#addValueToShortDirectly', () => {
+describe('#increasePositionDirectly', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const [
         OpenTx,
         dydxMargin,
         quoteToken,
-        testShortOwner,
+        testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
         createOpenTx(accounts),
         Margin.deployed(),
         QuoteToken.deployed(),
-        TestShortOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, "1", true),
         TestLoanOwner.new(Margin.address, "1", true),
       ]);
 
-      OpenTx.owner = testShortOwner.address;
+      OpenTx.owner = testPositionOwner.address;
       OpenTx.loanOffering.owner = testLoanOwner.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
       await issueTokensAndSetAllowancesForShort(OpenTx);
-      const response = await callShort(dydxMargin, OpenTx);
+      const response = await callOpenPosition(dydxMargin, OpenTx);
       OpenTx.id = response.id;
 
       const [ownsShort, ownsLoan, startingShortBalance] = await Promise.all([
-        testShortOwner.hasReceived.call(OpenTx.id, OpenTx.seller),
+        testPositionOwner.hasReceived.call(OpenTx.id, OpenTx.seller),
         testLoanOwner.hasReceived.call(OpenTx.id, OpenTx.loanOffering.payer),
         dydxMargin.getPositionBalance.call(OpenTx.id),
       ]);
@@ -429,13 +429,13 @@ describe('#addValueToShortDirectly', () => {
         { from: adder }
       );
 
-      const tx = await dydxMargin.addValueToShortDirectly(
+      const tx = await dydxMargin.increasePositionDirectly(
         OpenTx.id,
         addAmount,
         { from: adder }
       );
 
-      console.log('\tMargin.addValueToShortDirectly gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.increasePositionDirectly gas used: ' + tx.receipt.gasUsed);
 
       const position = await getPosition(dydxMargin, OpenTx.id);
 
@@ -455,7 +455,7 @@ describe('#addValueToShortDirectly', () => {
         adderLoanValueAdded
       ] = await Promise.all([
         quoteToken.balanceOf.call(adder),
-        testShortOwner.valueAdded.call(OpenTx.id, adder),
+        testPositionOwner.valueAdded.call(OpenTx.id, adder),
         testLoanOwner.valueAdded.call(OpenTx.id, adder),
       ]);
 

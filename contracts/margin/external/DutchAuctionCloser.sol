@@ -7,7 +7,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
-import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
+import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -95,7 +95,7 @@ contract DutchAuctionCloser is
      * @param  payoutInQuoteToken True if payout is in quote token, false if in base token
      * @return                    True if approved by the reciever
      */
-    function receiveCloseShortPayout(
+    function receiveClosePositionPayout(
         bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,
@@ -117,7 +117,7 @@ contract DutchAuctionCloser is
         );
 
         // pay quoteToken back to short owner
-        address deedHolder = ShortCustodian(shortSeller).getMarginDeedHolder(marginId);
+        address deedHolder = PositionCustodian(shortSeller).getPositionDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to short closer

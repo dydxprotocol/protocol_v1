@@ -9,18 +9,18 @@ import { MarginState } from "./MarginState.sol";
 import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
-import { LiquidateDelegator } from "../interfaces/LiquidateDelegator.sol";
+import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
+import { LiquidatePositionDelegator } from "../interfaces/LiquidatePositionDelegator.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 
 
 /**
- * @title CloseShortShared
+ * @title ClosePositionShared
  * @author dYdX
  *
- * This library contains shared functionality between CloseShortImpl and LiquidateImpl
+ * This library contains shared functionality between ClosePositionImpl and LiquidatePositionImpl
  */
-library CloseShortShared {
+library ClosePositionShared {
     using SafeMath for uint256;
 
     // -----------------------
@@ -47,7 +47,7 @@ library CloseShortShared {
     // ---- Internal Implementation Functions ----
     // -------------------------------------------
 
-    function closeShortStateUpdate(
+    function closePositionStateUpdate(
         MarginState.State storage state,
         CloseTx memory transaction
     )
@@ -64,7 +64,7 @@ library CloseShortShared {
 
     function sendQuoteTokensToPayoutRecipient(
         MarginState.State storage state,
-        CloseShortShared.CloseTx memory transaction,
+        ClosePositionShared.CloseTx memory transaction,
         uint256 buybackCost,
         uint256 receivedBaseToken
     )
@@ -102,7 +102,7 @@ library CloseShortShared {
 
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
             require(
-                PayoutRecipient(transaction.payoutRecipient).receiveCloseShortPayout(
+                PayoutRecipient(transaction.payoutRecipient).receiveClosePositionPayout(
                     transaction.marginId,
                     transaction.closeAmount,
                     msg.sender,
@@ -227,7 +227,7 @@ library CloseShortShared {
 
         // If not the short seller, requires short seller to approve msg.sender
         if (position.seller != msg.sender) {
-            uint256 allowedCloseAmount = CloseShortDelegator(position.seller).closeOnBehalfOf(
+            uint256 allowedCloseAmount = ClosePositionDelegator(position.seller).closeOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
                 marginId,
@@ -239,7 +239,7 @@ library CloseShortShared {
 
         // If not the lender, requires lender to approve msg.sender
         if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLiquidationAmount = LiquidateDelegator(position.lender).liquidateOnBehalfOf(
+            uint256 allowedLiquidationAmount = LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
                 marginId,

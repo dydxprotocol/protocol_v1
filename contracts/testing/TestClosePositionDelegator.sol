@@ -1,27 +1,27 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { CloseShortDelegator } from "../margin/interfaces/CloseShortDelegator.sol";
+import { ClosePositionDelegator } from "../margin/interfaces/ClosePositionDelegator.sol";
 
 
-contract TestCloseShortDelegator is CloseShortDelegator {
+contract TestClosePositionDelegator is ClosePositionDelegator {
 
     address public CLOSER;
     bool public IS_DEGENERATE; // if true, returns more than requestedAmount;
 
-    function TestCloseShortDelegator(
+    function TestClosePositionDelegator(
         address margin,
         address closer,
         bool isDegenerate
     )
         public
-        CloseShortDelegator(margin)
+        ClosePositionDelegator(margin)
     {
         CLOSER = closer;
         IS_DEGENERATE = isDegenerate;
     }
 
-    function receiveShortOwnership(
+    function receivePositionOwnership(
         address,
         bytes32
     )

@@ -9,10 +9,10 @@ const { wait } = require('@digix/tempo')(web3);
 const {
   issueTokensAndSetAllowancesForClose,
   doShort,
-  callCloseShort,
+  callClosePosition,
   getPosition,
   issueForDirectClose,
-  callCloseShortDirectly
+  callClosePositionDirectly
 } = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
@@ -20,11 +20,11 @@ const {
 const {
   checkSuccess,
   checkSuccessCloseDirectly
-} = require('../helpers/CloseShortHelper');
+} = require('../helpers/ClosePositionHelper');
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 
-describe('#closeShort', () => {
+describe('#closePosition', () => {
   contract('Margin', function(accounts) {
     it('Successfully closes a short in increments', async () => {
       const OpenTx = await doShort(accounts);
@@ -40,7 +40,7 @@ describe('#closeShort', () => {
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callCloseShort(dydxMargin, OpenTx, sellOrder, closeAmount);
+      let closeTx = await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
 
       let exists = await dydxMargin.containsPosition.call(OpenTx.id);
       expect(exists).to.be.true;
@@ -55,7 +55,7 @@ describe('#closeShort', () => {
       await wait(10000);
 
       // Close the rest of the short
-      await callCloseShort(dydxMargin, OpenTx, sellOrder, closeAmount);
+      await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
       exists = await dydxMargin.containsPosition.call(OpenTx.id);
       expect(exists).to.be.false;
     });
@@ -72,7 +72,7 @@ describe('#closeShort', () => {
       const closeAmount = OpenTx.shortAmount.div(2);
 
       await expectThrow(
-        callCloseShort(
+        callClosePosition(
           dydxMargin,
           OpenTx,
           sellOrder,
@@ -98,7 +98,7 @@ describe('#closeShort', () => {
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callCloseShort(dydxMargin, OpenTx, sellOrder, closeAmount);
+      let closeTx = await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
 
       let exists = await dydxMargin.containsPosition.call(OpenTx.id);
       expect(exists).to.be.false;
@@ -117,7 +117,7 @@ describe('#closeShort', () => {
       const dydxMargin = await Margin.deployed();
       const closeAmount = OpenTx.shortAmount.div(2);
 
-      const closeTx = await callCloseShortDirectly(
+      const closeTx = await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         closeAmount

@@ -1,11 +1,11 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortOwner } from "../margin/interfaces/ShortOwner.sol";
+import { PositionOwner } from "../margin/interfaces/PositionOwner.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-contract TestShortOwner is ShortOwner {
+contract TestPositionOwner is PositionOwner {
     using SafeMath for uint256;
 
     address public TO_RETURN;
@@ -14,13 +14,13 @@ contract TestShortOwner is ShortOwner {
     mapping(bytes32 => mapping(address => bool)) public hasReceived;
     mapping(bytes32 => mapping(address => uint256)) public valueAdded;
 
-    function TestShortOwner(
+    function TestPositionOwner(
         address margin,
         address toReturn,
         bool toReturnOnAdd
     )
         public
-        ShortOwner(margin)
+        PositionOwner(margin)
     {
         if (toReturn == address(1)) {
             TO_RETURN = address(this);
@@ -31,7 +31,7 @@ contract TestShortOwner is ShortOwner {
         TO_RETURN_ON_ADD = toReturnOnAdd;
     }
 
-    function receiveShortOwnership(
+    function receivePositionOwnership(
         address from,
         bytes32 marginId
     )
