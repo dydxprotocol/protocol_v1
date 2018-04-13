@@ -7,7 +7,7 @@ const QuoteToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
-  createShortSellTx,
+  createShortTx,
   issueTokensAndSetAllowancesForShort,
   callShort,
   callCancelLoanOffer,
@@ -17,7 +17,7 @@ const {
   callApproveLoanOffering,
   issueForDirectClose,
   callCloseShortDirectly
-} = require('../helpers/ShortSellHelper');
+} = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
 } = require('../helpers/0xHelper');
@@ -29,18 +29,18 @@ const OperationState = {
   CLOSE_DIRECTLY_ONLY: 3,
 };
 
-describe('ShortSellAdmin', () => {
+describe('MarginAdmin', () => {
   describe('Constructor', () => {
     contract('Margin', accounts => {
       it('Sets OperationState to OPERATIONAL', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
 
         const [
           operationState,
           owner
         ] = await Promise.all([
-          shortSell.operationState.call(),
-          shortSell.owner.call()
+          dydxMargin.operationState.call(),
+          dydxMargin.owner.call()
         ]);
 
         expect(operationState.toNumber()).to.eq(OperationState.OPERATIONAL);
@@ -52,39 +52,39 @@ describe('ShortSellAdmin', () => {
   describe('#setOperationState', () => {
     contract('Margin', () => {
       it('Sets OperationState correctly', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
 
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectOperationState(shortSell, OperationState.CLOSE_ONLY);
+        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
+        await expectOperationState(dydxMargin, OperationState.CLOSE_ONLY);
       });
     });
 
     contract('Margin', () => {
       it('Does not allow invalid OperationStates', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
 
-        await expectAssertFailure(shortSell.setOperationState(7));
-        await expectOperationState(shortSell, OperationState.OPERATIONAL);
+        await expectAssertFailure(dydxMargin.setOperationState(7));
+        await expectOperationState(dydxMargin, OperationState.OPERATIONAL);
       });
     });
 
     contract('Margin', accounts => {
       it('Only allows owner to set', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
 
         await expectThrow(
-          shortSell.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] })
+          dydxMargin.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] })
         );
-        await expectOperationState(shortSell, OperationState.OPERATIONAL);
+        await expectOperationState(dydxMargin, OperationState.OPERATIONAL);
       });
     });
 
     contract('Margin', () => {
       it('Does nothing on set to same state', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
 
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
-        await expectOperationState(shortSell, OperationState.OPERATIONAL);
+        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
+        await expectOperationState(dydxMargin, OperationState.OPERATIONAL);
       });
     });
   });
@@ -92,38 +92,38 @@ describe('ShortSellAdmin', () => {
   describe('#onlyWhileOperational', () => {
     contract('Margin', accounts => {
       it('Only allows #short while OPERATIONAL', async () => {
-        const shortTx = await createShortSellTx(accounts);
-        const shortSell = await Margin.deployed();
+        const shortTx = await createShortTx(accounts);
+        const dydxMargin = await Margin.deployed();
 
         await issueTokensAndSetAllowancesForShort(shortTx);
 
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( callShort(shortSell, shortTx));
+        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
+        await expectThrow( callShort(dydxMargin, shortTx));
 
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
-        await callShort(shortSell, shortTx);
+        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
+        await callShort(dydxMargin, shortTx);
       });
     });
 
     contract('Margin', accounts => {
       it('Only allows #cancelLoanCall while OPERATIONAL', async () => {
-        const shortSell = await Margin.deployed();
+        const dydxMargin = await Margin.deployed();
         const shortTx = await doShort(accounts);
 
-        await shortSell.callInLoan(
+        await dydxMargin.callInLoan(
           shortTx.id,
           new BigNumber(10),
           { from: shortTx.loanOffering.payer }
         );
 
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( shortSell.cancelLoanCall(
+        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
+        await expectThrow( dydxMargin.cancelLoanCall(
           shortTx.id,
           { from: shortTx.loanOffering.payer }
         ));
 
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
-        await shortSell.cancelLoanCall(
+        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
+        await dydxMargin.cancelLoanCall(
           shortTx.id,
           { from: shortTx.loanOffering.payer }
         );
@@ -132,7 +132,7 @@ describe('ShortSellAdmin', () => {
 
     contract('Margin', accounts => {
       it('Allows #deposit while OPERATIONAL', async () => {
-        const [shortSell, quoteToken] = await Promise.all([
+        const [dydxMargin, quoteToken] = await Promise.all([
           Margin.deployed(),
           QuoteToken.deployed()
         ]);
@@ -141,15 +141,15 @@ describe('ShortSellAdmin', () => {
         await quoteToken.issue(amount, { from: shortTx.seller });
         await quoteToken.approve(ProxyContract.address, amount, { from: shortTx.seller });
 
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( shortSell.deposit(
+        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
+        await expectThrow( dydxMargin.deposit(
           shortTx.id,
           amount,
           { from: shortTx.seller }
         ));
 
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
-        await shortSell.deposit(
+        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
+        await dydxMargin.deposit(
           shortTx.id,
           amount,
           { from: shortTx.seller }
@@ -159,20 +159,20 @@ describe('ShortSellAdmin', () => {
 
     contract('Margin', accounts => {
       it('Only allows #approveLoanOffering while OPERATIONAL', async () => {
-        const shortTx = await createShortSellTx(accounts);
-        const shortSell = await Margin.deployed();
+        const shortTx = await createShortTx(accounts);
+        const dydxMargin = await Margin.deployed();
 
         await issueTokensAndSetAllowancesForShort(shortTx);
 
-        await shortSell.setOperationState(OperationState.CLOSE_ONLY);
+        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow( callApproveLoanOffering(
-          shortSell,
+          dydxMargin,
           shortTx.loanOffering
         ));
 
-        await shortSell.setOperationState(OperationState.OPERATIONAL);
+        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await callApproveLoanOffering(
-          shortSell,
+          dydxMargin,
           shortTx.loanOffering
         );
       });
@@ -184,21 +184,21 @@ describe('ShortSellAdmin', () => {
 
     async function test(accounts, state, shouldFail = false) {
       const shortTx = await doShort(accounts);
-      const shortSell = await Margin.deployed();
+      const dydxMargin = await Margin.deployed();
       await issueForDirectClose(shortTx);
 
-      await shortSell.setOperationState(state);
+      await dydxMargin.setOperationState(state);
       if (shouldFail) {
         await expectThrow(
           callCancelLoanOffer(
-            shortSell,
+            dydxMargin,
             shortTx.loanOffering,
             cancelAmount
           )
         );
       } else {
         await callCancelLoanOffer(
-          shortSell,
+          dydxMargin,
           shortTx.loanOffering,
           cancelAmount
         );
@@ -235,17 +235,17 @@ describe('ShortSellAdmin', () => {
 
     async function test(accounts, state, shouldFail = false) {
       const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
+      const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
 
-      await shortSell.setOperationState(state);
+      await dydxMargin.setOperationState(state);
       if (shouldFail) {
-        await expectThrow( callCloseShort(shortSell, shortTx, sellOrder, closeAmount) );
+        await expectThrow( callCloseShort(dydxMargin, shortTx, sellOrder, closeAmount) );
       } else {
-        await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+        await callCloseShort(dydxMargin, shortTx, sellOrder, closeAmount);
       }
     }
 
@@ -279,11 +279,11 @@ describe('ShortSellAdmin', () => {
     const closeAmount = new BigNumber(100);
     async function test(accounts, state) {
       const shortTx = await doShort(accounts);
-      const shortSell = await Margin.deployed();
+      const dydxMargin = await Margin.deployed();
       await issueForDirectClose(shortTx);
 
-      await shortSell.setOperationState(state);
-      await callCloseShortDirectly(shortSell, shortTx, closeAmount);
+      await dydxMargin.setOperationState(state);
+      await callCloseShortDirectly(dydxMargin, shortTx, closeAmount);
     }
 
     contract('Margin', accounts => {
@@ -312,7 +312,7 @@ describe('ShortSellAdmin', () => {
   });
 });
 
-async function expectOperationState(shortSell, state) {
-  const operationState = await shortSell.operationState.call();
+async function expectOperationState(dydxMargin, state) {
+  const operationState = await dydxMargin.operationState.call();
   expect(operationState.toNumber()).to.eq(state);
 }

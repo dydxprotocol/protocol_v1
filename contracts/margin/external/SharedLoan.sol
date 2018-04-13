@@ -6,10 +6,10 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { MarginCommon } from "../impl/MarginCommon.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
-import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
+import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
@@ -154,7 +154,7 @@ contract SharedLoan is
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, SHORT_ID);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 

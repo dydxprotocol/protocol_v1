@@ -3,8 +3,8 @@ pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { ShortShared } from "./ShortShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -48,7 +48,7 @@ library AddValueToShortImpl {
     // -------------------------------------------
 
     function addValueToShortImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         address[7] addresses,
         uint256[8] values256,
@@ -61,7 +61,7 @@ library AddValueToShortImpl {
         public
         returns (uint256)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
 
         ShortShared.ShortTx memory transaction = parseAddValueToShortTx(
             short,
@@ -110,14 +110,14 @@ library AddValueToShortImpl {
     }
 
     function addValueToShortDirectlyImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         uint256 amount
     )
         public
         returns (uint256)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
 
         uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
             shortId,
@@ -160,9 +160,9 @@ library AddValueToShortImpl {
     // --------- Helper Functions ---------
 
     function preStateUpdate(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortShared.ShortTx transaction,
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         bytes32 shortId,
         bytes orderData
     )
@@ -197,7 +197,7 @@ library AddValueToShortImpl {
 
     function validate(
         ShortShared.ShortTx transaction,
-        ShortSellCommon.Short storage short
+        MarginCommon.Short storage short
     )
         internal
         view
@@ -214,9 +214,9 @@ library AddValueToShortImpl {
     }
 
     function setDepositAmount(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortShared.ShortTx transaction,
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         bytes32 shortId,
         bytes orderData
     )
@@ -262,9 +262,9 @@ library AddValueToShortImpl {
 
     function getPositionMinimumQuoteToken(
         bytes32 shortId,
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         uint256 effectiveAmount,
-        ShortSellCommon.Short storage short
+        MarginCommon.Short storage short
     )
         internal
         view
@@ -280,7 +280,7 @@ library AddValueToShortImpl {
     }
 
     function updateState(
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         bytes32 shortId,
         uint256 effectiveAmount,
         address loanPayer
@@ -321,7 +321,7 @@ library AddValueToShortImpl {
     function recordValueAddedToShort(
         ShortShared.ShortTx transaction,
         bytes32 shortId,
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         uint256 quoteTokenFromSell
     )
         internal
@@ -344,7 +344,7 @@ library AddValueToShortImpl {
     // -------- Parsing Functions -------
 
     function parseAddValueToShortTx(
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -361,7 +361,7 @@ library AddValueToShortImpl {
             baseToken: short.baseToken,
             quoteToken: short.quoteToken,
             effectiveAmount: values256[7],
-            lenderAmount: ShortSellCommon.calculateLenderAmountForAddValue(
+            lenderAmount: MarginCommon.calculateLenderAmountForAddValue(
                 short,
                 values256[7],
                 block.timestamp
@@ -383,7 +383,7 @@ library AddValueToShortImpl {
     }
 
     function parseLoanOfferingFromAddValueTx(
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -392,9 +392,9 @@ library AddValueToShortImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering memory)
+        returns (MarginCommon.LoanOffering memory)
     {
-        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
+        MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
             payer: addresses[0],
             signer: addresses[1],
             owner: short.lender,
@@ -411,7 +411,7 @@ library AddValueToShortImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
             loanOffering,
             short.quoteToken,
             short.baseToken
@@ -421,14 +421,14 @@ library AddValueToShortImpl {
     }
 
     function parseLoanOfferingRatesFromAddValueTx(
-        ShortSellCommon.Short storage short,
+        MarginCommon.Short storage short,
         uint256[8] values256
     )
         internal
         view
-        returns (ShortSellCommon.LoanRates memory)
+        returns (MarginCommon.LoanRates memory)
     {
-        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
+        MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
             minQuoteToken: values256[2],
@@ -447,9 +447,9 @@ library AddValueToShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.Signature memory)
+        returns (MarginCommon.Signature memory)
     {
-        ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
+        MarginCommon.Signature memory signature = MarginCommon.Signature({
             v: sigV,
             r: sigRS[0],
             s: sigRS[1]

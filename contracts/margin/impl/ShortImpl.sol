@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { ShortShared } from "./ShortShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
@@ -14,7 +14,7 @@ import { ShortOwner } from "../interfaces/ShortOwner.sol";
  * @title ShortImpl
  * @author dYdX
  *
- * This library contains the implementation for the short function of ShortSell
+ * This library contains the implementation for the short function of Margin
  */
 library ShortImpl {
     using SafeMath for uint256;
@@ -48,7 +48,7 @@ library ShortImpl {
     // -------------------------------------------
 
     function shortImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         address[11] addresses,
         uint256[9] values256,
         uint32[4] values32,
@@ -106,7 +106,7 @@ library ShortImpl {
     // --------- Helper Functions ---------
 
     function getNextShortId(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 loanHash
     )
         internal
@@ -119,7 +119,7 @@ library ShortImpl {
         );
 
         // Make this shortId doesn't already exist
-        assert(!ShortSellCommon.containsShortImpl(state, shortId));
+        assert(!MarginCommon.containsShortImpl(state, shortId));
 
         return shortId;
     }
@@ -151,13 +151,13 @@ library ShortImpl {
     }
 
     function updateState(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         ShortShared.ShortTx transaction
     )
         internal
     {
-        assert(!ShortSellCommon.containsShortImpl(state, shortId));
+        assert(!MarginCommon.containsShortImpl(state, shortId));
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
@@ -232,9 +232,9 @@ library ShortImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering memory)
+        returns (MarginCommon.LoanOffering memory)
     {
-        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
+        MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
             payer: addresses[3],
             signer: addresses[4],
             owner: addresses[5],
@@ -251,7 +251,7 @@ library ShortImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
             loanOffering,
             addresses[2],
             addresses[1]
@@ -266,9 +266,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.LoanRates memory)
+        returns (MarginCommon.LoanRates memory)
     {
-        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
+        MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
             minQuoteToken: values256[2],
@@ -287,9 +287,9 @@ library ShortImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.Signature memory)
+        returns (MarginCommon.Signature memory)
     {
-        ShortSellCommon.Signature memory signature = ShortSellCommon.Signature({
+        MarginCommon.Signature memory signature = MarginCommon.Signature({
             v: sigV,
             r: sigRS[0],
             s: sigRS[1]

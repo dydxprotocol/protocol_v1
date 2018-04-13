@@ -211,7 +211,7 @@ contract ERC721Short is
         external
         returns (uint256)
     {
-        // Cannot burn the token since the short hasn't been closed yet and getShortSellDeedHolder
+        // Cannot burn the token since the short hasn't been closed yet and getMarginDeedHolder
         // must return the owner of the short after it has been closed in the current transaction.
 
         address owner = ownerOf(uint256(shortId));
@@ -230,7 +230,7 @@ contract ERC721Short is
     // ---- ShortCustodian Functions ----
     // ----------------------------------
 
-    function getShortSellDeedHolder(
+    function getMarginDeedHolder(
         bytes32 shortId
     )
         external

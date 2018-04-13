@@ -20,7 +20,7 @@ const {
   callCloseShort,
   getMaxInterestFee,
   callCloseShortDirectly
-} = require('../../helpers/ShortSellHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
 } = require('../../helpers/0xHelper');
@@ -30,12 +30,12 @@ function uint256(shortId) {
 }
 
 contract('ERC721Short', function(accounts) {
-  let shortSellContract, ERC721ShortContract, baseToken;
+  let dydxMargin, ERC721ShortContract, baseToken;
   let salt = 1111;
 
   before('retrieve deployed contracts', async () => {
     [
-      shortSellContract,
+      dydxMargin,
       ERC721ShortContract,
       baseToken
     ] = await Promise.all([
@@ -48,8 +48,8 @@ contract('ERC721Short', function(accounts) {
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
       const contract = await ERC721Short.new(Margin.address);
-      const shortSellContractAddress = await contract.MARGIN.call();
-      expect(shortSellContractAddress).to.equal(Margin.address);
+      const dydxMarginAddress = await contract.MARGIN.call();
+      expect(dydxMarginAddress).to.equal(Margin.address);
     });
   });
 
@@ -72,27 +72,27 @@ contract('ERC721Short', function(accounts) {
       const sellOrder = await createSignedSellOrder(accounts, salt++);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
       await callCloseShort(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         sellOrder,
         shortTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await shortSellContract.transferShort(shortTx.id, ERC721ShortContract.address);
+      await dydxMargin.transferShort(shortTx.id, ERC721ShortContract.address);
       const owner = await ERC721ShortContract.ownerOf.call(uint256(shortTx.id));
       expect(owner).to.equal(accounts[0]);
     });
   });
 
-  describe('#getShortSellDeedHolder', () => {
+  describe('#getMarginDeedHolder', () => {
     it('fails for bad shortId', async () => {
       await expectThrow(
-        ERC721ShortContract.getShortSellDeedHolder(BYTES32.BAD_ID));
+        ERC721ShortContract.getMarginDeedHolder(BYTES32.BAD_ID));
     });
 
     it('succeeds for owned short', async () => {
       const shortTx = await doShort(accounts, salt++, ERC721Short.address);
-      const deedHolder = await ERC721ShortContract.getShortSellDeedHolder.call(shortTx.id);
+      const deedHolder = await ERC721ShortContract.getMarginDeedHolder.call(shortTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
   });
@@ -182,7 +182,7 @@ contract('ERC721Short', function(accounts) {
     it('succeeds when called by ownerOf', async () => {
       await ERC721ShortContract.transferShort(shortTx.id, receiver, { from: shortSeller });
       await expectThrow( ERC721ShortContract.ownerOf.call(uint256(shortTx.id)));
-      const newOwner = await shortSellContract.getShortSeller.call(shortTx.id);
+      const newOwner = await dydxMargin.getshortSeller.call(shortTx.id);
       expect(newOwner).to.equal(receiver);
     });
 
@@ -219,7 +219,7 @@ contract('ERC721Short', function(accounts) {
     it('succeeds for owner', async () => {
       await initBase(shortTx.seller);
       await callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount,
         shortTx.seller,
@@ -230,7 +230,7 @@ contract('ERC721Short', function(accounts) {
     it('succeeds for approved recipients', async () => {
       await initBase(unapprovedAcct);
       await callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount,
         unapprovedAcct,
@@ -241,7 +241,7 @@ contract('ERC721Short', function(accounts) {
     it('succeeds for approved closers', async () => {
       await initBase(approvedCloser);
       await callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount,
         approvedCloser,
@@ -252,7 +252,7 @@ contract('ERC721Short', function(accounts) {
     it('fails for non-approved recipients/closers', async () => {
       await initBase(unapprovedAcct);
       await expectThrow( callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount,
         unapprovedAcct,

@@ -14,25 +14,25 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 
 const { getOwedAmount } = require('../../helpers/CloseShortHelper');
-const { getMaxInterestFee, callCloseShortDirectly } = require('../../helpers/ShortSellHelper');
+const { getMaxInterestFee, callCloseShortDirectly } = require('../../helpers/MarginHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doShort
-} = require('../../helpers/ShortSellHelper');
+} = require('../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 const ONE = new BigNumber(1);
 const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
-  let shortSellContract, VaultContract, ERC721ShortContract;
+  let dydxMargin, VaultContract, ERC721ShortContract;
   let BaseTokenContract, QuoteTokenContract;
   let shortTx;
   const dutchBidder = accounts[9];
 
   before('retrieve deployed contracts', async () => {
     [
-      shortSellContract,
+      dydxMargin,
       VaultContract,
       ERC721ShortContract,
       BaseTokenContract,
@@ -67,7 +67,7 @@ contract('DutchAuctionCloser', function(accounts) {
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
       shortTx = await doShort(accounts, salt++, ERC721Short.address);
       await ERC721ShortContract.approveRecipient(DutchAuctionCloser.address, true);
-      await shortSellContract.callInLoan(
+      await dydxMargin.callInLoan(
         shortTx.id,
         0, /*requiredDeposit*/
         { from: shortTx.loanOffering.payer }
@@ -95,7 +95,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit * 3 / 4);
 
       await expectThrow( callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount.div(2),
         dutchBidder,
@@ -107,7 +107,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit / 4);
 
       await expectThrow( callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount.div(2),
         dutchBidder,
@@ -119,7 +119,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await wait(callTimeLimit + 1);
 
       await expectThrow( callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         shortTx.shortAmount.div(2),
         dutchBidder,
@@ -136,7 +136,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       // closing half is fine
       const closeTx1 = await callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         closeAmount,
         dutchBidder,
@@ -146,7 +146,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       // closing the other half is fine
       const closeTx2 = await callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         closeAmount,
         dutchBidder,
@@ -156,7 +156,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       // cannot close half a third time
       await expectThrow( callCloseShortDirectly(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         closeAmount,
         dutchBidder,

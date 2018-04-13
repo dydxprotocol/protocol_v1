@@ -5,10 +5,10 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { MarginCommon } from "../impl/MarginCommon.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
+import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
@@ -117,7 +117,7 @@ contract DutchAuctionCloser is
         );
 
         // pay quoteToken back to short owner
-        address deedHolder = ShortCustodian(shortSeller).getShortSellDeedHolder(shortId);
+        address deedHolder = ShortCustodian(shortSeller).getMarginDeedHolder(shortId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to short closer
@@ -170,7 +170,7 @@ contract DutchAuctionCloser is
             uint256 auctionEndTimestamp
         )
     {
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, shortId);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, shortId);
 
         uint256 maxTimestamp = uint256(short.startTimestamp).add(short.maxDuration);
         uint256 callTimestamp = uint256(short.callTimestamp);

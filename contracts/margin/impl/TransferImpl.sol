@@ -1,8 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 
 
@@ -19,13 +19,13 @@ library TransferImpl {
     // -------------------------------------------
 
     function transferLoanImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         address newLender
     )
         public
     {
-        require(ShortSellCommon.containsShortImpl(state, shortId));
+        require(MarginCommon.containsShortImpl(state, shortId));
         address originalLender = state.shorts[shortId].lender;
         require(msg.sender == originalLender);
         require(newLender != originalLender);
@@ -44,13 +44,13 @@ library TransferImpl {
     }
 
     function transferShortImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         address newSeller
     )
         public
     {
-        require(ShortSellCommon.containsShortImpl(state, shortId));
+        require(MarginCommon.containsShortImpl(state, shortId));
         address originalSeller = state.shorts[shortId].seller;
         require(msg.sender == originalSeller);
         require(newSeller != originalSeller);

@@ -14,7 +14,7 @@ const BaseToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
-const { getMaxInterestFee } = require('./ShortSellHelper');
+const { getMaxInterestFee } = require('./MarginHelper');
 
 module.exports = {
   checkSuccess,
@@ -26,7 +26,7 @@ module.exports = {
   getShortLifetime
 };
 
-async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount) {
+async function checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount) {
   const baseTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
   const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
@@ -39,7 +39,7 @@ async function checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount)
     baseTokenOwedToLender
   );
 
-  const balances = await getBalances(shortSell, shortTx, sellOrder);
+  const balances = await getBalances(dydxMargin, shortTx, sellOrder);
   const {
     sellerQuoteToken,
     externalSellerQuoteToken,
@@ -171,7 +171,7 @@ async function getOwedAmount(shortTx, closeTx, closeAmount, roundUpToPeriod = tr
   return getOwedAmount;
 }
 
-async function getBalances(shortSell, shortTx, sellOrder) {
+async function getBalances(dydxMargin, shortTx, sellOrder) {
   const [
     baseToken,
     quoteToken,
@@ -228,7 +228,7 @@ async function getBalances(shortSell, shortTx, sellOrder) {
     quoteToken.balanceOf.call(Vault.address),
     baseToken.balanceOf.call(Vault.address),
 
-    shortSell.getShortBalance.call(shortTx.id)
+    dydxMargin.getShortBalance.call(shortTx.id)
   ]);
 
   return {
@@ -253,9 +253,9 @@ async function getBalances(shortSell, shortTx, sellOrder) {
   };
 }
 
-async function checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount) {
+async function checkSuccessCloseDirectly(dydxMargin, shortTx, closeTx, closeAmount) {
   const baseTokenOwedToLender = await getOwedAmount(shortTx, closeTx, closeAmount);
-  const balances = await getBalances(shortSell, shortTx);
+  const balances = await getBalances(dydxMargin, shortTx);
   const quoteTokenFromSell = getPartialAmount(
     shortTx.buyOrder.makerTokenAmount,
     shortTx.buyOrder.takerTokenAmount,

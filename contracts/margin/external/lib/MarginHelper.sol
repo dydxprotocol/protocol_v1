@@ -2,23 +2,23 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { Margin } from "../../Margin.sol";
-import { ShortSellCommon } from "../../impl/ShortSellCommon.sol";
+import { MarginCommon } from "../../impl/MarginCommon.sol";
 
 
 /**
- * @title ShortSellHelper
+ * @title MarginHelper
  * @author dYdX
  *
  * This library contains helper functions for interacting with Margin
  */
-library ShortSellHelper {
+library MarginHelper {
     function getShort(
         address MARGIN,
         bytes32 shortId
     )
         internal
         view
-        returns (ShortSellCommon.Short memory)
+        returns (MarginCommon.Short memory)
     {
         address[4] memory addresses;
         uint256[3] memory values256;
@@ -30,7 +30,7 @@ library ShortSellHelper {
             values32
         ) = Margin(MARGIN).getShort(shortId);
 
-        return ShortSellCommon.Short({
+        return MarginCommon.Short({
             baseToken: addresses[0],
             quoteToken: addresses[1],
             lender: addresses[2],

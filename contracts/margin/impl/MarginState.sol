@@ -1,17 +1,17 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortSellCommon } from "./ShortSellCommon.sol";
+import { MarginCommon } from "./MarginCommon.sol";
 
 
 /**
- * @title ShortSellState
+ * @title MarginState
  * @author dYdX
  *
  * Contains state for the Margin contract. Also used by libraries that implement
  * Margin functions
  */
-library ShortSellState {
+library MarginState {
     struct State {
         // Address of the Vault contract
         address VAULT;
@@ -37,7 +37,7 @@ library ShortSellState {
         mapping (bytes32 => bool) approvedLoans;
 
         // Mapping that contains all short sells. Mapped by: shortId -> Short
-        mapping (bytes32 => ShortSellCommon.Short) shorts;
+        mapping (bytes32 => MarginCommon.Short) shorts;
 
         mapping (bytes32 => bool) closedShorts;
     }

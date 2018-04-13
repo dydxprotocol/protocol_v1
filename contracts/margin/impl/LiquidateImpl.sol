@@ -3,14 +3,14 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { CloseShortShared } from "./CloseShortShared.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginState } from "./MarginState.sol";
 
 
 /**
  * @title LiquidateImpl
  * @author dYdX
  *
- * This library contains the implementation for the liquidate function of ShortSell
+ * This library contains the implementation for the liquidate function of Margin
  */
 library LiquidateImpl {
     using SafeMath for uint256;
@@ -36,7 +36,7 @@ library LiquidateImpl {
     // -------------------------------------------
 
     function liquidateImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         uint256 requestedLiquidationAmount,
         address payoutRecipient

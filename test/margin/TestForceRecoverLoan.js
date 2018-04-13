@@ -11,19 +11,19 @@ const TestForceRecoverLoanDelegator = artifacts.require("TestForceRecoverLoanDel
 const {
   doShort,
   doShortAndCall
-} = require('../helpers/ShortSellHelper');
+} = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 
 describe('#forceRecoverLoan', () => {
   contract('Margin', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
-      const { shortSell, vault, baseToken, shortTx } = await doShortAndCall(accounts);
+      const { dydxMargin, vault, baseToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
-      const quoteTokenBalance = await shortSell.getShortBalance.call(shortTx.id);
+      const quoteTokenBalance = await dydxMargin.getShortBalance.call(shortTx.id);
 
-      const tx = await shortSell.forceRecoverLoan(
+      const tx = await dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       );
@@ -45,8 +45,8 @@ describe('#forceRecoverLoan', () => {
         baseToken.balanceOf.call(vault.address),
         vault.totalBalances.call(quoteToken.address),
         quoteToken.balanceOf.call(vault.address),
-        shortSell.containsShort.call(shortTx.id),
-        shortSell.isShortClosed.call(shortTx.id),
+        dydxMargin.containsShort.call(shortTx.id),
+        dydxMargin.isShortClosed.call(shortTx.id),
         quoteToken.balanceOf.call(shortTx.loanOffering.payer)
       ]);
 
@@ -67,10 +67,10 @@ describe('#forceRecoverLoan', () => {
 
   contract('Margin', function(accounts) {
     it('only allows lender to call', async () => {
-      const { shortSell, shortTx } = await doShortAndCall(accounts);
+      const { dydxMargin, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
-      await expectThrow( shortSell.forceRecoverLoan(
+      await expectThrow( dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: accounts[7] }
       ));
@@ -79,27 +79,27 @@ describe('#forceRecoverLoan', () => {
 
   contract('Margin', function(accounts) {
     it('ForceRecoverLoanDelegator loan owner only allows certain accounts', async () => {
-      const { shortSell, vault, baseToken, shortTx } = await doShortAndCall(accounts);
+      const { dydxMargin, vault, baseToken, shortTx } = await doShortAndCall(accounts);
       await wait(shortTx.loanOffering.callTimeLimit);
 
-      const quoteTokenBalance = await shortSell.getShortBalance.call(shortTx.id);
+      const quoteTokenBalance = await dydxMargin.getShortBalance.call(shortTx.id);
 
       const recoverer = accounts[9];
       const testForceRecoverLoanDelegator = await TestForceRecoverLoanDelegator.new(
         Margin.address,
         recoverer
       );
-      await shortSell.transferLoan(
+      await dydxMargin.transferLoan(
         shortTx.id,
         testForceRecoverLoanDelegator.address,
         { from: shortTx.loanOffering.payer });
 
-      await expectThrow( shortSell.forceRecoverLoan(
+      await expectThrow( dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: accounts[6] }
       ));
 
-      await shortSell.forceRecoverLoan(
+      await dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: recoverer }
       );
@@ -119,8 +119,8 @@ describe('#forceRecoverLoan', () => {
         baseToken.balanceOf.call(vault.address),
         vault.totalBalances.call(quoteToken.address),
         quoteToken.balanceOf.call(vault.address),
-        shortSell.containsShort.call(shortTx.id),
-        shortSell.isShortClosed.call(shortTx.id),
+        dydxMargin.containsShort.call(shortTx.id),
+        dydxMargin.isShortClosed.call(shortTx.id),
         quoteToken.balanceOf.call(testForceRecoverLoanDelegator.address)
       ]);
 
@@ -136,8 +136,8 @@ describe('#forceRecoverLoan', () => {
 
   contract('Margin', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
-      const { shortSell, shortTx } = await doShortAndCall(accounts);
-      await expectThrow( shortSell.forceRecoverLoan(
+      const { dydxMargin, shortTx } = await doShortAndCall(accounts);
+      await expectThrow( dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));
@@ -145,7 +145,7 @@ describe('#forceRecoverLoan', () => {
   });
   contract('Margin', function(accounts) {
     it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
-      const shortSell = await Margin.deployed();
+      const dydxMargin = await Margin.deployed();
       const shortTx = await doShort(accounts);
 
       const maxDuration = shortTx.loanOffering.maxDuration;
@@ -155,14 +155,14 @@ describe('#forceRecoverLoan', () => {
 
       // loan was not called and it is too early
       await wait(almostMaxDuration);
-      await expectThrow( shortSell.forceRecoverLoan(
+      await expectThrow( dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       ));
 
       // now it's okay because current time is past maxDuration+callTimeLimit
       await wait(callTimeLimit + 100);
-      await shortSell.forceRecoverLoan(
+      await dydxMargin.forceRecoverLoan(
         shortTx.id,
         { from: shortTx.loanOffering.payer }
       );

@@ -13,12 +13,12 @@ import { ForceRecoverLoanImpl } from "./impl/ForceRecoverLoanImpl.sol";
 import { LiquidateImpl } from "./impl/LiquidateImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
+import { MarginAdmin } from "./impl/MarginAdmin.sol";
+import { MarginEvents } from "./impl/MarginEvents.sol";
+import { MarginState } from "./impl/MarginState.sol";
+import { MarginStorage } from "./impl/MarginStorage.sol";
 import { ShortGetters } from "./impl/ShortGetters.sol";
 import { ShortImpl } from "./impl/ShortImpl.sol";
-import { ShortSellAdmin } from "./impl/ShortSellAdmin.sol";
-import { ShortSellEvents } from "./impl/ShortSellEvents.sol";
-import { ShortSellState } from "./impl/ShortSellState.sol";
-import { ShortSellStorage } from "./impl/ShortSellStorage.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 
 
@@ -33,9 +33,9 @@ contract Margin is
     Ownable,
     NoOwner,
     ReentrancyGuard,
-    ShortSellStorage,
-    ShortSellEvents,
-    ShortSellAdmin,
+    MarginStorage,
+    MarginEvents,
+    MarginAdmin,
     LoanGetters,
     ShortGetters {
 
@@ -50,10 +50,10 @@ contract Margin is
         address proxy
     )
         Ownable()
-        ShortSellAdmin()
+        MarginAdmin()
         public
     {
-        state = ShortSellState.State({
+        state = MarginState.State({
             VAULT: vault,
             PROXY: proxy
         });

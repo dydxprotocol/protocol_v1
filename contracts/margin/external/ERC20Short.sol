@@ -10,10 +10,10 @@ import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ShortSellCommon } from "../impl/ShortSellCommon.sol";
+import { MarginCommon } from "../impl/MarginCommon.sol";
 import { CloseShortDelegator } from "../interfaces/CloseShortDelegator.sol";
 import { ShortCustodian } from "./interfaces/ShortCustodian.sol";
-import { ShortSellHelper } from "./lib/ShortSellHelper.sol";
+import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
@@ -155,7 +155,7 @@ contract ERC20Short is
         require(state == State.UNINITIALIZED);
         require(SHORT_ID == shortId);
 
-        ShortSellCommon.Short memory short = ShortSellHelper.getShort(MARGIN, SHORT_ID);
+        MarginCommon.Short memory short = MarginHelper.getShort(MARGIN, SHORT_ID);
         uint256 currentShortAmount = short.shortAmount.sub(short.closedAmount);
         assert(currentShortAmount > 0);
 
@@ -372,7 +372,7 @@ contract ERC20Short is
      * @param  shortId  Unique ID of the short
      * @return          Address of this contract. Indicates funds should be sent to this contract
      */
-    function getShortSellDeedHolder(
+    function getMarginDeedHolder(
         bytes32 shortId
     )
         external

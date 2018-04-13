@@ -15,17 +15,17 @@ const {
   doShort,
   issueTokensAndSetAllowancesForClose,
   callCloseShort
-} = require('../../helpers/ShortSellHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
 } = require('../../helpers/0xHelper');
 
 contract('ERC20ShortCreator', function(accounts) {
-  let shortSellContract, ERC20ShortCreatorContract;
+  let dydxMargin, ERC20ShortCreatorContract;
 
   before('retrieve deployed contracts', async () => {
     [
-      shortSellContract,
+      dydxMargin,
       ERC20ShortCreatorContract
     ] = await Promise.all([
       Margin.deployed(),
@@ -38,8 +38,8 @@ contract('ERC20ShortCreator', function(accounts) {
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
       contract = await ERC20ShortCreator.new(Margin.address, trustedRecipientsExpected);
-      const shortSellContractAddress = await contract.MARGIN.call();
-      expect(shortSellContractAddress).to.equal(Margin.address);
+      const dydxMarginAddress = await contract.MARGIN.call();
+      expect(dydxMarginAddress).to.equal(Margin.address);
 
       const numRecipients = trustedRecipientsExpected.length;
       for(let i = 0; i < numRecipients; i++) {
@@ -73,7 +73,7 @@ contract('ERC20ShortCreator', function(accounts) {
         shortTokenContract.balanceOf.call(originalSeller),
       ]);
 
-      expect(tokenMargin).to.equal(shortSellContract.address);
+      expect(tokenMargin).to.equal(dydxMargin.address);
       expect(tokenShortId).to.equal(shortTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_SHORT_STATE.OPEN);
       expect(tokenHolder).to.equal(originalSeller);
@@ -93,7 +93,7 @@ contract('ERC20ShortCreator', function(accounts) {
       const shortTx = await doShort(accounts, /*salt*/ 1234, /*owner*/ ERC20ShortCreator.address);
 
       // Get the return value of the tokenizeShort function
-      const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);
+      const tokenAddress = await dydxMargin.getshortSeller(shortTx.id);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);
@@ -109,16 +109,16 @@ contract('ERC20ShortCreator', function(accounts) {
       const sellOrder = await createSignedSellOrder(accounts, salt);
       await issueTokensAndSetAllowancesForClose(shortTx, sellOrder);
       await callCloseShort(
-        shortSellContract,
+        dydxMargin,
         shortTx,
         sellOrder,
         shortTx.shortAmount.div(2));
 
       // transfer short to ERC20ShortCreator
-      await shortSellContract.transferShort(shortTx.id, ERC20ShortCreatorContract.address);
+      await dydxMargin.transferShort(shortTx.id, ERC20ShortCreatorContract.address);
 
       // Get the return value of the tokenizeShort function
-      const tokenAddress = await shortSellContract.getShortSeller(shortTx.id);
+      const tokenAddress = await dydxMargin.getshortSeller(shortTx.id);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);

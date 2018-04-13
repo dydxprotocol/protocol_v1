@@ -4,17 +4,17 @@ pragma experimental "v0.5.0";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { InterestImpl } from "./InterestImpl.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginState } from "./MarginState.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
- * @title ShortSellCommon
+ * @title MarginCommon
  * @author dYdX
  *
  * This library contains common functions for implementations of public facing Margin functions
  */
-library ShortSellCommon {
+library MarginCommon {
     using SafeMath for uint256;
 
     // -----------------------
@@ -75,7 +75,7 @@ library ShortSellCommon {
     // -------------------------------------------
 
     function getUnavailableLoanOfferingAmountImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 loanHash
     )
         view
@@ -86,7 +86,7 @@ library ShortSellCommon {
     }
 
     function cleanupShort(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId
     )
         internal
@@ -230,7 +230,7 @@ library ShortSellCommon {
     }
 
     function containsShortImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId
     )
         view
@@ -241,7 +241,7 @@ library ShortSellCommon {
     }
 
     function getShortObject(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId
     )
         internal

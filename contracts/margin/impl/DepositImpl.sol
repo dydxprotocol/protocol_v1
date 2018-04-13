@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
 
 
@@ -11,7 +11,7 @@ import { Vault } from "../Vault.sol";
  * @title DepositImpl
  * @author dYdX
  *
- * This library contains the implementation for the deposit function of ShortSell
+ * This library contains the implementation for the deposit function of Margin
  */
 library DepositImpl {
     using SafeMath for uint256;
@@ -44,13 +44,13 @@ library DepositImpl {
     // -----------------------------------------
 
     function depositImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         uint256 depositAmount
     )
         public
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
         require(depositAmount > 0);
         require(msg.sender == short.seller);
 

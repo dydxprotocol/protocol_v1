@@ -3,8 +3,8 @@ pragma experimental "v0.5.0";
 
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 
 
@@ -71,13 +71,13 @@ library LoanImpl {
     // -----------------------------------------
 
     function callInLoanImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId,
         uint256 requiredDeposit
     )
         public
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
@@ -108,12 +108,12 @@ library LoanImpl {
     }
 
     function cancelLoanCallImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId
     )
         public
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != short.lender) {
@@ -140,7 +140,7 @@ library LoanImpl {
     }
 
     function cancelLoanOfferingImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         address[9] addresses,
         uint256[7] values256,
         uint32[4]  values32,
@@ -149,7 +149,7 @@ library LoanImpl {
         public
         returns (uint256)
     {
-        ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
+        MarginCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
             values256,
             values32
@@ -159,7 +159,7 @@ library LoanImpl {
         require(loanOffering.expirationTimestamp > block.timestamp);
 
         uint256 remainingAmount = loanOffering.rates.maxAmount.sub(
-            ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
+            MarginCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
         );
         uint256 amountToCancel = Math.min256(remainingAmount, cancelAmount);
 
@@ -182,14 +182,14 @@ library LoanImpl {
     }
 
     function approveLoanOfferingImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         address[9] addresses,
         uint256[7] values256,
         uint32[4]  values32
     )
         public
     {
-        ShortSellCommon.LoanOffering memory loanOffering = parseLoanOffering(
+        MarginCommon.LoanOffering memory loanOffering = parseLoanOffering(
             addresses,
             values256,
             values32
@@ -220,9 +220,9 @@ library LoanImpl {
     )
         internal
         view
-        returns (ShortSellCommon.LoanOffering memory)
+        returns (MarginCommon.LoanOffering memory)
     {
-        ShortSellCommon.LoanOffering memory loanOffering = ShortSellCommon.LoanOffering({
+        MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
             payer: addresses[2],
             signer: addresses[3],
             owner: addresses[4],
@@ -236,14 +236,14 @@ library LoanImpl {
             maxDuration: values32[1],
             salt: values256[6],
             loanHash: 0,
-            signature: ShortSellCommon.Signature({
+            signature: MarginCommon.Signature({
                 v: 0,
                 r: "",
                 s: ""
             })
         });
 
-        loanOffering.loanHash = ShortSellCommon.getLoanOfferingHash(
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
             loanOffering,
             addresses[1],
             addresses[0]
@@ -258,9 +258,9 @@ library LoanImpl {
     )
         internal
         pure
-        returns (ShortSellCommon.LoanRates memory)
+        returns (MarginCommon.LoanRates memory)
     {
-        ShortSellCommon.LoanRates memory rates = ShortSellCommon.LoanRates({
+        MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
             minQuoteToken: values256[2],

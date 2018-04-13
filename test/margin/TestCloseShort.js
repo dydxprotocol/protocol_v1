@@ -13,7 +13,7 @@ const {
   getShort,
   issueForDirectClose,
   callCloseShortDirectly
-} = require('../helpers/ShortSellHelper');
+} = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
 } = require('../helpers/0xHelper');
@@ -28,7 +28,7 @@ describe('#closeShort', () => {
   contract('Margin', function(accounts) {
     it('Successfully closes a short in increments', async () => {
       const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
+      const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
@@ -40,14 +40,14 @@ describe('#closeShort', () => {
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      let closeTx = await callCloseShort(dydxMargin, shortTx, sellOrder, closeAmount);
 
-      let exists = await shortSell.containsShort.call(shortTx.id);
+      let exists = await dydxMargin.containsShort.call(shortTx.id);
       expect(exists).to.be.true;
 
-      await checkSuccess(shortSell, shortTx, closeTx, sellOrder, closeAmount);
+      await checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, closeAmount);
 
-      const { closedAmount } = await getShort(shortSell, shortTx.id);
+      const { closedAmount } = await getShort(dydxMargin, shortTx.id);
 
       expect(closedAmount).to.be.bignumber.equal(closeAmount);
 
@@ -55,8 +55,8 @@ describe('#closeShort', () => {
       await wait(10000);
 
       // Close the rest of the short
-      await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
-      exists = await shortSell.containsShort.call(shortTx.id);
+      await callCloseShort(dydxMargin, shortTx, sellOrder, closeAmount);
+      exists = await dydxMargin.containsShort.call(shortTx.id);
       expect(exists).to.be.false;
     });
   });
@@ -64,7 +64,7 @@ describe('#closeShort', () => {
   contract('Margin', function(accounts) {
     it('only allows the short seller to close', async () => {
       const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
+      const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
@@ -73,7 +73,7 @@ describe('#closeShort', () => {
 
       await expectThrow(
         callCloseShort(
-          shortSell,
+          dydxMargin,
           shortTx,
           sellOrder,
           closeAmount,
@@ -86,7 +86,7 @@ describe('#closeShort', () => {
   contract('Margin', function(accounts) {
     it('Only closes up to the current short amount', async () => {
       const shortTx = await doShort(accounts);
-      const [sellOrder, shortSell] = await Promise.all([
+      const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
@@ -98,12 +98,12 @@ describe('#closeShort', () => {
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
 
-      let closeTx = await callCloseShort(shortSell, shortTx, sellOrder, closeAmount);
+      let closeTx = await callCloseShort(dydxMargin, shortTx, sellOrder, closeAmount);
 
-      let exists = await shortSell.containsShort.call(shortTx.id);
+      let exists = await dydxMargin.containsShort.call(shortTx.id);
       expect(exists).to.be.false;
 
-      await checkSuccess(shortSell, shortTx, closeTx, sellOrder, shortTx.shortAmount);
+      await checkSuccess(dydxMargin, shortTx, closeTx, sellOrder, shortTx.shortAmount);
     });
   });
 
@@ -114,19 +114,19 @@ describe('#closeShort', () => {
       // Give the short seller enough base token to close
       await issueForDirectClose(shortTx);
 
-      const shortSell = await Margin.deployed();
+      const dydxMargin = await Margin.deployed();
       const closeAmount = shortTx.shortAmount.div(2);
 
       const closeTx = await callCloseShortDirectly(
-        shortSell,
+        dydxMargin,
         shortTx,
         closeAmount
       );
 
-      const exists = await shortSell.containsShort.call(shortTx.id);
+      const exists = await dydxMargin.containsShort.call(shortTx.id);
       expect(exists).to.be.true;
 
-      await checkSuccessCloseDirectly(shortSell, shortTx, closeTx, closeAmount);
+      await checkSuccessCloseDirectly(dydxMargin, shortTx, closeTx, closeAmount);
     });
   });
 });

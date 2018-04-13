@@ -11,27 +11,27 @@ const TestLoanOwner = artifacts.require("TestLoanOwner");
 const {
   doShort,
   getShort
-} = require('../helpers/ShortSellHelper');
+} = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 
 describe('#transferShort', () => {
-  let shortSell, shortTx;
+  let dydxMargin, shortTx;
 
   async function transferShort_THROW(shortTx, to, from) {
-    const originalSeller = await shortSell.getShortSeller(shortTx.id);
+    const originalSeller = await dydxMargin.getshortSeller(shortTx.id);
     await expectThrow(
-      shortSell.transferShort(shortTx.id, to, { from: from })
+      dydxMargin.transferShort(shortTx.id, to, { from: from })
     );
-    const seller = await shortSell.getShortSeller(shortTx.id);
+    const seller = await dydxMargin.getshortSeller(shortTx.id);
     expect(seller).to.eq(originalSeller);
     return;
   }
 
   async function transferShort(shortTx, to, from, expectedSeller = null) {
     expectedSeller = expectedSeller || to;
-    const tx = await shortSell.transferShort(shortTx.id, to, { from: from});
+    const tx = await dydxMargin.transferShort(shortTx.id, to, { from: from});
 
     if (expectedSeller === to) {
       expectLog(tx.logs[0], 'ShortTransferred', {
@@ -52,7 +52,7 @@ describe('#transferShort', () => {
       });
     }
 
-    const seller = await shortSell.getShortSeller(shortTx.id);
+    const seller = await dydxMargin.getshortSeller(shortTx.id);
     expect(seller.toLowerCase()).to.eq((expectedSeller).toLowerCase());
 
     return tx;
@@ -62,7 +62,7 @@ describe('#transferShort', () => {
     const toAddress = accounts[9];
 
     before('set up a short', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       expect(shortTx.seller).to.not.equal(toAddress);
     });
@@ -91,10 +91,10 @@ describe('#transferShort', () => {
 
   contract('Margin', function(accounts) {
     it('successfully transfers to a contract with the correct interface', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
-        shortSell.address,
+        dydxMargin.address,
         ADDRESSES.ZERO,
         false);
 
@@ -108,10 +108,10 @@ describe('#transferShort', () => {
 
   contract('Margin', function(accounts) {
     it('successfully transfers to a contract that chains to another contract', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testCloseShortDelegator = await TestCloseShortDelegator.new(
-        shortSell.address,
+        dydxMargin.address,
         ADDRESSES.ZERO,
         false);
       const testShortOwner = await TestShortOwner.new(
@@ -130,7 +130,7 @@ describe('#transferShort', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to a contract that transfers to 0x0', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testShortOwner = await TestShortOwner.new(
         Margin.address,
@@ -143,7 +143,7 @@ describe('#transferShort', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to a contract that transfers back to original owner', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testShortOwner = await TestShortOwner.new(
         Margin.address,
@@ -156,7 +156,7 @@ describe('#transferShort', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to an arbitrary contract', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       await transferShort_THROW(shortTx, TokenA.address, shortTx.seller);
     });
@@ -164,21 +164,21 @@ describe('#transferShort', () => {
 });
 
 describe('#transferLoan', () => {
-  let shortSell, shortTx;
+  let dydxMargin, shortTx;
 
   async function transferLoan_THROW(shortTx, to, from,) {
-    const originalLender = await shortSell.getShortLender(shortTx.id);
+    const originalLender = await dydxMargin.getShortLender(shortTx.id);
     await expectThrow(
-      shortSell.transferLoan(shortTx.id, to, { from: from })
+      dydxMargin.transferLoan(shortTx.id, to, { from: from })
     );
-    const lender = await shortSell.getShortLender(shortTx.id);
+    const lender = await dydxMargin.getShortLender(shortTx.id);
     expect(lender).to.eq(originalLender);
     return;
   }
 
   async function transferLoan(shortTx, to, from, expectedLender = null) {
     expectedLender = expectedLender || to;
-    const tx = await shortSell.transferLoan(shortTx.id, to, { from: from});
+    const tx = await dydxMargin.transferLoan(shortTx.id, to, { from: from});
 
     if (expectedLender === to) {
       expectLog(tx.logs[0], 'LoanTransferred', {
@@ -199,7 +199,7 @@ describe('#transferLoan', () => {
       });
     }
 
-    const lender = await shortSell.getShortLender(shortTx.id);
+    const lender = await dydxMargin.getShortLender(shortTx.id);
     expect(lender.toLowerCase()).to.eq((expectedLender).toLowerCase());
 
     return tx;
@@ -209,7 +209,7 @@ describe('#transferLoan', () => {
     const toAddress = accounts[9];
 
     before('set up a short', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       expect(shortTx.loanOffering.payer).to.not.equal(toAddress);
     });
@@ -238,16 +238,16 @@ describe('#transferLoan', () => {
 
   contract('Margin', function(accounts) {
     it('successfully transfers to a contract with the correct interface', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
-        shortSell.address,
+        dydxMargin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
       const tx =
         await transferLoan(shortTx, testCallLoanDelegator.address, shortTx.loanOffering.payer);
-      const { lender } = await getShort(shortSell, shortTx.id);
+      const { lender } = await getShort(dydxMargin, shortTx.id);
       expect(lender.toLowerCase()).to.eq(testCallLoanDelegator.address.toLowerCase());
       console.log('\tMargin.transferLoan gas used (to contract): ' + tx.receipt.gasUsed);
     });
@@ -255,14 +255,14 @@ describe('#transferLoan', () => {
 
   contract('Margin', function(accounts) {
     it('successfully transfers to a contract that chains to another contract', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
-        shortSell.address,
+        dydxMargin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
       const testLoanOwner = await TestLoanOwner.new(
-        shortSell.address,
+        dydxMargin.address,
         testCallLoanDelegator.address,
         false);
 
@@ -277,10 +277,10 @@ describe('#transferLoan', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to a contract that transfers to 0x0', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testLoanOwner = await TestLoanOwner.new(
-        shortSell.address,
+        dydxMargin.address,
         ADDRESSES.ZERO,
         false);
 
@@ -290,10 +290,10 @@ describe('#transferLoan', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to a contract that transfers back to original owner', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       const testLoanOwner = await TestLoanOwner.new(
-        shortSell.address,
+        dydxMargin.address,
         shortTx.loanOffering.payer,
         false);
 
@@ -303,7 +303,7 @@ describe('#transferLoan', () => {
 
   contract('Margin', function(accounts) {
     it('fails to transfer to an arbitrary contract', async () => {
-      shortSell = await Margin.deployed();
+      dydxMargin = await Margin.deployed();
       shortTx = await doShort(accounts);
       await transferLoan_THROW(shortTx, TokenA.address, shortTx.loanOffering.payer);
     });

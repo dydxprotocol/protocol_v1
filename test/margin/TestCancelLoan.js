@@ -8,10 +8,10 @@ const Margin = artifacts.require("Margin");
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { createLoanOffering, signLoanOffering} = require('../helpers/LoanHelper');
 const { getBlockTimestamp } = require('../helpers/NodeHelper');
-const { callCancelLoanOffer } = require('../helpers/ShortSellHelper');
+const { callCancelLoanOffer } = require('../helpers/MarginHelper');
 
 describe('#cancelLoanOffering', () => {
-  let shortSell;
+  let dydxMargin;
   let additionalSalt = 888;
 
   async function getNewLoanOffering(accounts) {
@@ -22,15 +22,15 @@ describe('#cancelLoanOffering', () => {
   }
 
   contract('Margin', function(accounts) {
-    before('get shortSell', async () => {
-      shortSell = await Margin.deployed();
+    before('get dydxMargin', async () => {
+      dydxMargin = await Margin.deployed();
     });
 
     it('cancels an amount of a loan offering', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
       const cancelAmount = new BigNumber(1000);
 
-      const tx = await callCancelLoanOffer(shortSell, loanOffering, cancelAmount);
+      const tx = await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
 
       console.log('\tMargin.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
     });
@@ -40,18 +40,18 @@ describe('#cancelLoanOffering', () => {
       const cancelAmount = new BigNumber(1000);
       const cancelAmount2 = new BigNumber(2000);
 
-      await callCancelLoanOffer(shortSell, loanOffering, cancelAmount);
+      await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
 
-      await callCancelLoanOffer(shortSell, loanOffering, cancelAmount2);
+      await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount2);
     });
 
     it('only cancels up to the maximum amount', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
       const cancelAmount = loanOffering.rates.maxAmount.times(2).div(3).floor();
 
-      await callCancelLoanOffer(shortSell, loanOffering, cancelAmount);
+      await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
 
-      await callCancelLoanOffer(shortSell, loanOffering, cancelAmount);
+      await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
     });
 
     it('only allows the lender to cancel', async () => {
@@ -59,7 +59,7 @@ describe('#cancelLoanOffering', () => {
 
       await expectThrow(
         callCancelLoanOffer(
-          shortSell,
+          dydxMargin,
           loanOffering,
           loanOffering.rates.maxAmount,
           accounts[9])
@@ -71,7 +71,7 @@ describe('#cancelLoanOffering', () => {
       const cancelAmount = loanOffering.rates.maxAmount.div(4);
 
       const tx = await callCancelLoanOffer(
-        shortSell,
+        dydxMargin,
         loanOffering,
         cancelAmount
       );
@@ -83,7 +83,7 @@ describe('#cancelLoanOffering', () => {
       loanOfferingGood.expirationTimestamp = new BigNumber(now).plus(1000);
       loanOfferingGood.signature = await signLoanOffering(loanOfferingGood);
       await callCancelLoanOffer(
-        shortSell,
+        dydxMargin,
         loanOfferingGood,
         cancelAmount
       );
@@ -93,7 +93,7 @@ describe('#cancelLoanOffering', () => {
       loanOfferingBad.expirationTimestamp = new BigNumber(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
       await expectThrow( callCancelLoanOffer(
-        shortSell,
+        dydxMargin,
         loanOfferingBad,
         cancelAmount
       ));

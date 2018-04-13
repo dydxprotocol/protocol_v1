@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
@@ -31,7 +31,7 @@ library ShortShared {
         uint256 effectiveAmount;
         uint256 lenderAmount;
         uint256 depositAmount;
-        ShortSellCommon.LoanOffering loanOffering;
+        MarginCommon.LoanOffering loanOffering;
         address exchangeWrapper;
         bool depositInQuoteToken;
     }
@@ -41,7 +41,7 @@ library ShortShared {
     // -------------------------------------------
 
     function shortInternalPreStateUpdate(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx memory transaction,
         bytes32 shortId,
         bytes orderData
@@ -87,7 +87,7 @@ library ShortShared {
     }
 
     function shortInternalPostStateUpdate(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx memory transaction,
         bytes32 shortId
     )
@@ -106,7 +106,7 @@ library ShortShared {
     }
 
     function validateShort(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx transaction
     )
         internal
@@ -129,7 +129,7 @@ library ShortShared {
         // Validate the short amount is <= than max and >= min
         require(
             transaction.effectiveAmount.add(
-                ShortSellCommon.getUnavailableLoanOfferingAmountImpl(
+                MarginCommon.getUnavailableLoanOfferingAmountImpl(
                     state,
                     transaction.loanOffering.loanHash
                 )
@@ -156,7 +156,7 @@ library ShortShared {
     }
 
     function isValidSignature(
-        ShortSellCommon.LoanOffering loanOffering
+        MarginCommon.LoanOffering loanOffering
     )
         internal
         pure
@@ -199,7 +199,7 @@ library ShortShared {
     }
 
     function transferFromLender(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx transaction
     )
         internal
@@ -214,7 +214,7 @@ library ShortShared {
     }
 
     function transferDeposit(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx transaction,
         bytes32 shortId
     )
@@ -243,7 +243,7 @@ library ShortShared {
     }
 
     function transferLoanFees(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx transaction
     )
         internal
@@ -286,7 +286,7 @@ library ShortShared {
     }
 
     function executeSell(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         ShortTx transaction,
         bytes orderData,
         bytes32 shortId,

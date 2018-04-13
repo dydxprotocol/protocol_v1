@@ -1,8 +1,8 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellStorage } from "./ShortSellStorage.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginStorage } from "./MarginStorage.sol";
 
 
 /**
@@ -12,7 +12,7 @@ import { ShortSellStorage } from "./ShortSellStorage.sol";
  * A collection of public constant getter functions that allow users and applications to read the
  * state of any loan hash stored in the dYdX protocol.
  */
-contract LoanGetters is ShortSellStorage {
+contract LoanGetters is MarginStorage {
 
     // -------------------------------------
     // ----- Public Constant Functions -----
@@ -25,7 +25,7 @@ contract LoanGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        return ShortSellCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
+        return MarginCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
     }
 
     function loanFills(

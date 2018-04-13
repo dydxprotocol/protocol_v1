@@ -16,7 +16,7 @@ const {
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee
-} = require('../../helpers/ShortSellHelper');
+} = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
 } = require('../../helpers/0xHelper');

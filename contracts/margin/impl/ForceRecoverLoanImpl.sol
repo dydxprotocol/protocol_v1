@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
 import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegator.sol";
 
@@ -12,7 +12,7 @@ import { ForceRecoverLoanDelegator } from "../interfaces/ForceRecoverLoanDelegat
  * @title ForceRecoverLoanImpl
  * @author dYdX
  *
- * This library contains the implementation for the forceRecoverLoan function of ShortSell
+ * This library contains the implementation for the forceRecoverLoan function of Margin
  */
 library ForceRecoverLoanImpl {
     using SafeMath for uint256;
@@ -34,13 +34,13 @@ library ForceRecoverLoanImpl {
     // -------------------------------------------
 
     function forceRecoverLoanImpl(
-        ShortSellState.State storage state,
+        MarginState.State storage state,
         bytes32 shortId
     )
         public
         returns (uint256)
     {
-        ShortSellCommon.Short storage short = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage short = MarginCommon.getShortObject(state, shortId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
@@ -76,7 +76,7 @@ library ForceRecoverLoanImpl {
 
         // Delete the short
         // NOTE: Since short is a storage pointer, this will also set all of short's fields to 0
-        ShortSellCommon.cleanupShort(
+        MarginCommon.cleanupShort(
             state,
             shortId
         );

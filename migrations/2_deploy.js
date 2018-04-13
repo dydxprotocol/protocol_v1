@@ -55,7 +55,7 @@ function maybeDeploy0x(deployer, network) {
   return Promise.resolve(true);
 }
 
-async function deployShortSellContracts(deployer) {
+async function deployMarginContracts(deployer) {
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(InterestImpl),
@@ -147,7 +147,7 @@ async function grantAccessToVault() {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
-  await deployShortSellContracts(deployer);
+  await deployMarginContracts(deployer);
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault()

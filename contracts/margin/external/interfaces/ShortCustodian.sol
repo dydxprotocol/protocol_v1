@@ -19,7 +19,7 @@ contract ShortCustodian {
      * @param  shortId      Unique ID of the short
      * @return              Address of the true owner of the short position
      */
-    function getShortSellDeedHolder(
+    function getMarginDeedHolder(
         bytes32 shortId
     )
         external

@@ -15,7 +15,7 @@ const {
   doShort,
   doShortAndCall,
   getShort
-} = require('../helpers/ShortSellHelper');
+} = require('../helpers/MarginHelper');
 
 describe('#deposit', () => {
   contract('Margin', function(accounts) {
@@ -81,10 +81,10 @@ describe('#deposit', () => {
 
   contract('Margin', function(accounts) {
     it('allows deposit in increments', async () => {
-      const shortSell = await Margin.deployed();
+      const dydxMargin = await Margin.deployed();
       const { shortTx } = await doShortAndCall(accounts);
 
-      let { requiredDeposit } = await getShort(shortSell, shortTx.id);
+      let { requiredDeposit } = await getShort(dydxMargin, shortTx.id);
 
       await doDeposit({
         from: shortTx.seller,
@@ -92,7 +92,7 @@ describe('#deposit', () => {
         amount: requiredDeposit.minus(5)
       });
 
-      let short = await getShort(shortSell, shortTx.id);
+      let short = await getShort(dydxMargin, shortTx.id);
       requiredDeposit = short.requiredDeposit;
       let callTimestamp = short.callTimestamp;
       expect(requiredDeposit).to.be.bignumber.eq(5);
@@ -112,7 +112,7 @@ describe('#deposit', () => {
         depositAmount: amount2
       });
 
-      short = await getShort(shortSell, shortTx.id);
+      short = await getShort(dydxMargin, shortTx.id);
       requiredDeposit = short.requiredDeposit;
       callTimestamp = short.callTimestamp;
       expect(requiredDeposit).to.be.bignumber.eq(0);
@@ -127,16 +127,16 @@ async function doDeposit({
   printGas = false,
   amount = new BigNumber(1000)
 }) {
-  const [shortSell, quoteToken] = await Promise.all([
+  const [dydxMargin, quoteToken] = await Promise.all([
     Margin.deployed(),
     QuoteToken.deployed()
   ]);
 
-  const initialBalance = await shortSell.getShortBalance.call(shortTx.id);
+  const initialBalance = await dydxMargin.getShortBalance.call(shortTx.id);
   await quoteToken.issue(amount, { from });
   await quoteToken.approve(ProxyContract.address, amount, { from });
 
-  const tx = await shortSell.deposit(
+  const tx = await dydxMargin.deposit(
     shortTx.id,
     amount,
     { from }
@@ -146,7 +146,7 @@ async function doDeposit({
     console.log('\tMargin.deposit gas used: ' + tx.receipt.gasUsed);
   }
 
-  const newBalance = await shortSell.getShortBalance.call(shortTx.id);
+  const newBalance = await dydxMargin.getShortBalance.call(shortTx.id);
 
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 

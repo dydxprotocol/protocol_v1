@@ -1,17 +1,17 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { ShortSellState } from "./ShortSellState.sol";
+import { MarginState } from "./MarginState.sol";
 
 
 /**
- * @title ShortSellStorage
+ * @title MarginStorage
  * @author dYdX
  *
- * This contract serves as the storage for the entire state of ShortSell
+ * This contract serves as the storage for the entire state of MarginStorage
  */
-contract ShortSellStorage {
+contract MarginStorage {
 
-    ShortSellState.State state;
+    MarginState.State state;
 
 }

@@ -2,8 +2,8 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ShortSellCommon } from "./ShortSellCommon.sol";
-import { ShortSellStorage } from "./ShortSellStorage.sol";
+import { MarginCommon } from "./MarginCommon.sol";
+import { MarginStorage } from "./MarginStorage.sol";
 import { Vault } from "../Vault.sol";
 
 
@@ -14,7 +14,7 @@ import { Vault } from "../Vault.sol";
  * A collection of public constant getter functions that allow users and applications to read the
  * state of any short stored in the dYdX protocol.
  */
-contract ShortGetters is ShortSellStorage {
+contract ShortGetters is MarginStorage {
     using SafeMath for uint256;
 
     // -------------------------------------
@@ -34,7 +34,7 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (bool)
     {
-        return ShortSellCommon.containsShortImpl(state, shortId);
+        return MarginCommon.containsShortImpl(state, shortId);
     }
 
     /**
@@ -82,7 +82,7 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        if (!ShortSellCommon.containsShortImpl(state, shortId)) {
+        if (!MarginCommon.containsShortImpl(state, shortId)) {
             return 0;
         }
 
@@ -104,9 +104,9 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
 
-        uint256 nextStep = ShortSellCommon.calculateEffectiveTimeElapsed(
+        uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
             shortObject,
             block.timestamp
         );
@@ -134,9 +134,9 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
 
-        return ShortSellCommon.calculateOwedAmount(
+        return MarginCommon.calculateOwedAmount(
             shortObject,
             shortObject.shortAmount.sub(shortObject.closedAmount),
             block.timestamp
@@ -161,9 +161,9 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
 
-        return ShortSellCommon.calculateOwedAmount(
+        return MarginCommon.calculateOwedAmount(
             shortObject,
             amount,
             timestamp
@@ -189,9 +189,9 @@ contract ShortGetters is ShortSellStorage {
         external
         returns (uint256)
     {
-        ShortSellCommon.Short storage shortObject = ShortSellCommon.getShortObject(state, shortId);
+        MarginCommon.Short storage shortObject = MarginCommon.getShortObject(state, shortId);
 
-        return ShortSellCommon.calculateLenderAmountForAddValue(
+        return MarginCommon.calculateLenderAmountForAddValue(
             shortObject,
             amount,
             timestamp
@@ -240,7 +240,7 @@ contract ShortGetters is ShortSellStorage {
             uint32[6]
         )
     {
-        ShortSellCommon.Short storage short = state.shorts[shortId];
+        MarginCommon.Short storage short = state.shorts[shortId];
 
         return (
             [
@@ -279,7 +279,7 @@ contract ShortGetters is ShortSellStorage {
         return state.shorts[shortId].lender;
     }
 
-    function getShortSeller(
+    function getshortSeller(
         bytes32 shortId
     )
         view
