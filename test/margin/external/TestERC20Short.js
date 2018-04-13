@@ -87,10 +87,10 @@ contract('ERC20Short', function(accounts) {
       CONTRACTS.MARGIN,
       POSITIONS.PART.TX,
       POSITIONS.PART.SELL_ORDER,
-      POSITIONS.PART.TX.shortAmount.div(2));
+      POSITIONS.PART.TX.principal.div(2));
 
-    POSITIONS.FULL.NUM_TOKENS = POSITIONS.FULL.TX.shortAmount;
-    POSITIONS.PART.NUM_TOKENS = POSITIONS.PART.TX.shortAmount.div(2);
+    POSITIONS.FULL.NUM_TOKENS = POSITIONS.FULL.TX.principal;
+    POSITIONS.PART.NUM_TOKENS = POSITIONS.PART.TX.principal.div(2);
   }
 
   async function setUpShortTokens() {
@@ -237,7 +237,7 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const seller = POSITION.TX.seller;
-        const amount = POSITION.TX.shortAmount;
+        const amount = POSITION.TX.principal;
         await expectThrow(
           POSITION.TOKEN_CONTRACT.closeOnBehalfOf(
             seller, seller, POSITION.ID, amount.div(2))

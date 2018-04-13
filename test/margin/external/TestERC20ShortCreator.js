@@ -53,7 +53,7 @@ contract('ERC20ShortCreator', function(accounts) {
   });
 
   describe('#receivePositionOwnership', () => {
-    async function checkSuccess(OpenTx, shortTokenContract, remainingShortAmount) {
+    async function checkSuccess(OpenTx, shortTokenContract, remainingPrincipal) {
       const originalSeller = accounts[0];
       const [
         tokenMargin,
@@ -78,8 +78,8 @@ contract('ERC20ShortCreator', function(accounts) {
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
       expect(tokenHolder).to.equal(originalSeller);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);
-      expect(totalSupply).to.be.bignumber.equal(remainingShortAmount);
-      expect(ownerSupply).to.be.bignumber.equal(remainingShortAmount);
+      expect(totalSupply).to.be.bignumber.equal(remainingPrincipal);
+      expect(ownerSupply).to.be.bignumber.equal(remainingPrincipal);
     }
 
     it('fails for arbitrary caller', async () => {
@@ -98,7 +98,7 @@ contract('ERC20ShortCreator', function(accounts) {
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);
 
-      await checkSuccess(OpenTx, shortTokenContract, OpenTx.shortAmount);
+      await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal);
     });
 
     it('succeeds for half-closed short', async () => {
@@ -112,7 +112,7 @@ contract('ERC20ShortCreator', function(accounts) {
         dydxMargin,
         OpenTx,
         sellOrder,
-        OpenTx.shortAmount.div(2));
+        OpenTx.principal.div(2));
 
       // transfer short to ERC20ShortCreator
       await dydxMargin.transferPosition(OpenTx.id, ERC20ShortCreatorContract.address);
@@ -123,7 +123,7 @@ contract('ERC20ShortCreator', function(accounts) {
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
       const shortTokenContract = await ERC20Short.at(tokenAddress);
 
-      await checkSuccess(OpenTx, shortTokenContract, OpenTx.shortAmount.div(2));
+      await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal.div(2));
     });
   });
 });

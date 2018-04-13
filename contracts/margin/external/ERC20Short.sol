@@ -156,20 +156,20 @@ contract ERC20Short is
         require(MARGIN_ID == marginId);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
-        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
-        assert(currentShortAmount > 0);
+        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
+        assert(currentPrincipal > 0);
 
         // set relevant constants
         state = State.OPEN;
-        totalSupply_ = currentShortAmount;
-        balances[INITIAL_TOKEN_HOLDER] = currentShortAmount;
+        totalSupply_ = currentPrincipal;
+        balances[INITIAL_TOKEN_HOLDER] = currentPrincipal;
         quoteToken = position.quoteToken;
 
         // Record event
-        emit Initialized(MARGIN_ID, currentShortAmount);
+        emit Initialized(MARGIN_ID, currentPrincipal);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentShortAmount);
+        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentPrincipal);
 
         return address(this); // returning own address retains ownership of short
     }

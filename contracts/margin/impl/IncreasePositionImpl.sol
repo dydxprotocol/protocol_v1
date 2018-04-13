@@ -274,7 +274,7 @@ library IncreasePositionImpl {
 
         return MathHelpers.getPartialAmountRoundedUp(
             effectiveAmount,
-            position.shortAmount,
+            position.principal,
             quoteTokenBalance
         );
     }
@@ -287,7 +287,7 @@ library IncreasePositionImpl {
     )
         internal
     {
-        position.shortAmount = position.shortAmount.add(effectiveAmount);
+        position.principal = position.principal.add(effectiveAmount);
 
         address seller = position.seller;
         address lender = position.lender;

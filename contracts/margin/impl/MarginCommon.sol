@@ -26,7 +26,7 @@ library MarginCommon {
         address quoteToken;      // Immutable
         address lender;
         address seller;
-        uint256 shortAmount;
+        uint256 principal;
         uint256 closedAmount;
         uint256 requiredDeposit;
         uint32  callTimeLimit;   // Immutable

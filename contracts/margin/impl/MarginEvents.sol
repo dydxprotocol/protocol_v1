@@ -26,7 +26,7 @@ contract MarginEvents {
         address baseToken,
         address quoteToken,
         address loanFeeRecipient,
-        uint256 shortAmount,
+        uint256 principal,
         uint256 quoteTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,

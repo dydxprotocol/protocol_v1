@@ -10,7 +10,7 @@ const expect = require('chai').expect;
 
 describe('#liquidate', () => {
   const LIQUIDATE_PERCENT = .20; // 20%
-  let dydxMargin, OpenTx, erc20Short, lender, shortAmount;
+  let dydxMargin, OpenTx, erc20Short, lender, principal;
 
   async function configureShort(initialHolder, accounts) {
     dydxMargin = await Margin.deployed();
@@ -27,8 +27,8 @@ describe('#liquidate', () => {
 
     const totalSupply = await erc20Short.totalSupply();
     // Transfer 20% of the short position to the lender
-    shortAmount = totalSupply.toNumber() * LIQUIDATE_PERCENT;
-    await erc20Short.transfer(OpenTx.loanOffering.payer, shortAmount, { from: initialHolder });
+    principal = totalSupply.toNumber() * LIQUIDATE_PERCENT;
+    await erc20Short.transfer(OpenTx.loanOffering.payer, principal, { from: initialHolder });
   }
 
   contract('Margin', function(accounts) {
@@ -43,7 +43,7 @@ describe('#liquidate', () => {
       const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await callLiquidatePosition(dydxMargin, OpenTx, shortAmount, lender);
+      await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
       // It should burn the short tokens
       const lenderShortAfter = await erc20Short.balanceOf(lender);
@@ -73,7 +73,7 @@ describe('#liquidate', () => {
       const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
       // Liquidate quote tokens by burning short tokens
-      await callLiquidatePosition(dydxMargin, OpenTx, shortAmount, lender);
+      await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
       const lenderShortAfter = await erc20Short.balanceOf(lender);
       expect(lenderShortAfter.toNumber()).to.equal(0);

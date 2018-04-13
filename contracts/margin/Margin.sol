@@ -233,7 +233,7 @@ contract Margin is
      *
      * @param  marginId                 Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
-     *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     *                                  will be: min(requestedCloseAmount, currentPrincipal)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @param  exchangeWrapper          Address of the exchange wrapper
      * @param  payoutInQuoteToken       True to pay out the payoutRecipient in quote token,
@@ -273,7 +273,7 @@ contract Margin is
      *
      * @param  marginId                 Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
-     *                                  will be: min(requestedCloseAmount, currentShortAmount)
+     *                                  will be: min(requestedCloseAmount, currentPrincipal)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
      * @return                          Values corresponding to:
      *                                  1) Amount of position closed
@@ -308,7 +308,7 @@ contract Margin is
      *
      * @param  marginId                    Unique ID for the position
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
-     *                                     will be: min(requestedCloseAmount, currentShortAmount)
+     *                                     will be: min(requestedCloseAmount, currentPrincipal)
      * @return                             Values corresponding to:
      *                                     1) Amount of position closed
      *                                     2) Amount of quote token recieved by the msg.sender

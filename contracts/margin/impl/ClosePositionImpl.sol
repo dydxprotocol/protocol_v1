@@ -203,7 +203,7 @@ library ClosePositionImpl {
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,
-            transaction.currentShortAmount.sub(transaction.closeAmount),
+            transaction.currentPrincipal.sub(transaction.closeAmount),
             transaction.baseTokenOwed,
             payout,
             buybackCost,

@@ -55,7 +55,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
   expect(sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      OpenTx.shortAmount,
+      OpenTx.principal,
       OpenTx.depositAmount
     ).plus(quoteTokenFromSell)
       .minus(quoteTokenBuybackCost)
@@ -83,14 +83,14 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
       .plus(sellOrder.takerFee)
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.loanOffering.rates.maxAmount,
           OpenTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.buyOrder.takerTokenAmount,
           OpenTx.buyOrder.takerFee
         )
@@ -119,11 +119,11 @@ function checkSmartContractBalances(balances, OpenTx, closeAmount) {
   const startingShortQuoteTokenAmount = getPartialAmount(
     OpenTx.buyOrder.makerTokenAmount,
     OpenTx.buyOrder.takerTokenAmount,
-    OpenTx.shortAmount
+    OpenTx.principal
   ).plus(OpenTx.depositAmount);
   const expectedShortBalance = getPartialAmount(
-    OpenTx.shortAmount.minus(closeAmount),
-    OpenTx.shortAmount,
+    OpenTx.principal.minus(closeAmount),
+    OpenTx.principal,
     startingShortQuoteTokenAmount
   );
 
@@ -148,7 +148,7 @@ function checkLenderBalances(balances, baseTokenOwedToLender, OpenTx) {
   expect(lenderQuoteToken).to.be.bignumber.equal(0);
   expect(lenderBaseToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.maxAmount
-      .minus(OpenTx.shortAmount)
+      .minus(OpenTx.principal)
       .plus(baseTokenOwedToLender));
 }
 
@@ -266,7 +266,7 @@ async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmoun
   checkLenderBalances(balances, baseTokenOwedToLender, OpenTx);
   const maxInterest = await getMaxInterestFee(OpenTx);
   expect(balances.sellerBaseToken).to.be.bignumber.equal(
-    OpenTx.shortAmount
+    OpenTx.principal
       .plus(maxInterest)
       .minus(baseTokenOwedToLender)
   );
@@ -274,7 +274,7 @@ async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmoun
   expect(balances.sellerQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
-      OpenTx.shortAmount,
+      OpenTx.principal,
       OpenTx.depositAmount
     )
       .plus(quoteTokenFromSell)

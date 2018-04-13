@@ -77,7 +77,7 @@ contract('DutchAuctionCloser', function(accounts) {
       // grant tokens and set permissions for bidder
       const numTokens = await BaseTokenContract.balanceOf(dutchBidder);
       const maxInterest = await getMaxInterestFee(OpenTx);
-      const targetTokens = OpenTx.shortAmount.plus(maxInterest);
+      const targetTokens = OpenTx.principal.plus(maxInterest);
 
       if (numTokens < targetTokens) {
         await BaseTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
@@ -97,7 +97,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount.div(2),
+        OpenTx.principal.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -109,7 +109,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount.div(2),
+        OpenTx.principal.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -121,7 +121,7 @@ contract('DutchAuctionCloser', function(accounts) {
       await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount.div(2),
+        OpenTx.principal.div(2),
         dutchBidder,
         DutchAuctionCloser.address
       ));
@@ -132,7 +132,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
       const quoteVault = await VaultContract.balances.call(OpenTx.id, QuoteToken.address);
-      const closeAmount = OpenTx.shortAmount.div(2);
+      const closeAmount = OpenTx.principal.div(2);
 
       // closing half is fine
       const closeTx1 = await callClosePositionDirectly(

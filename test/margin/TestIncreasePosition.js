@@ -92,8 +92,8 @@ describe('#increasePosition', () => {
         testLoanOwner.valueAdded.call(OpenTx.id, addValueTx.loanOffering.payer),
       ]);
 
-      expect(shortValueAdded).to.be.bignumber.eq(addValueTx.shortAmount);
-      expect(loanValueAdded).to.be.bignumber.eq(addValueTx.shortAmount);
+      expect(shortValueAdded).to.be.bignumber.eq(addValueTx.principal);
+      expect(loanValueAdded).to.be.bignumber.eq(addValueTx.principal);
 
       await validate({
         dydxMargin,
@@ -270,7 +270,7 @@ describe('#increasePosition', () => {
       getBalances(OpenTx, baseToken, quoteToken, feeToken),
     ]);
 
-    addValueTx.shortAmount = addValueTx.shortAmount.div(4);
+    addValueTx.principal = addValueTx.principal.div(4);
     addValueTx.id = OpenTx.id;
 
     const sellerStartingQuoteToken = OpenTx.depositAmount.times(2);
@@ -318,8 +318,8 @@ describe('#increasePosition', () => {
       FeeToken.deployed(),
     ]);
 
-    expect(position.shortAmount).to.be.bignumber.eq(
-      OpenTx.shortAmount.plus(addValueTx.shortAmount)
+    expect(position.principal).to.be.bignumber.eq(
+      OpenTx.principal.plus(addValueTx.principal)
     );
 
     expect(position.seller).to.eq(OpenTx.owner);
@@ -338,13 +338,13 @@ describe('#increasePosition', () => {
       finalBalances
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(OpenTx.id),
-      getOwedAmount(OpenTx, tx, addValueTx.shortAmount, false),
+      getOwedAmount(OpenTx, tx, addValueTx.principal, false),
       getBalances(addValueTx, baseToken, quoteToken, feeToken)
     ]);
 
-    const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.shortAmount);
+    const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.principal);
     const finalQuoteTokenPerUnit = finalShortBalance
-      .div(OpenTx.shortAmount.plus(addValueTx.shortAmount));
+      .div(OpenTx.principal.plus(addValueTx.principal));
 
     const quoteTokenFromSell = getPartialAmount(
       addValueTx.buyOrder.makerTokenAmount,
@@ -352,8 +352,8 @@ describe('#increasePosition', () => {
       lentAmount
     );
     const expectedDepositAmount = getPartialAmount(
-      addValueTx.shortAmount,
-      OpenTx.shortAmount,
+      addValueTx.principal,
+      OpenTx.principal,
       startingShortBalance,
       true // round up
     ).minus(quoteTokenFromSell);
@@ -410,11 +410,11 @@ describe('#increasePositionDirectly', () => {
       expect(ownsShort).to.be.true;
       expect(ownsLoan).to.be.true;
 
-      const addAmount = OpenTx.shortAmount.div(2);
+      const addAmount = OpenTx.principal.div(2);
       const adder = accounts[8];
       const quoteTokenAmount = getPartialAmount(
         addAmount,
-        OpenTx.shortAmount,
+        OpenTx.principal,
         startingShortBalance,
         true
       );
@@ -439,13 +439,13 @@ describe('#increasePositionDirectly', () => {
 
       const position = await getPosition(dydxMargin, OpenTx.id);
 
-      expect(position.shortAmount).to.be.bignumber.eq(
-        OpenTx.shortAmount.plus(addAmount)
+      expect(position.principal).to.be.bignumber.eq(
+        OpenTx.principal.plus(addAmount)
       );
 
       const finalShortBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.shortAmount);
-      const finalQuoteTokenPerUnit = finalShortBalance.div(OpenTx.shortAmount.plus(addAmount));
+      const startingQuoteTokenPerUnit = startingShortBalance.div(OpenTx.principal);
+      const finalQuoteTokenPerUnit = finalShortBalance.div(OpenTx.principal.plus(addAmount));
 
       expect(finalQuoteTokenPerUnit).to.be.bignumber.eq(startingQuoteTokenPerUnit);
 

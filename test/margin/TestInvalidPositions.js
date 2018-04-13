@@ -58,7 +58,7 @@ describe('#short', () => {
         const OpenTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowancesForShort(OpenTx);
-        OpenTx.shortAmount = new BigNumber(0);
+        OpenTx.principal = new BigNumber(0);
 
         const dydxMargin = await Margin.deployed();
         await expectThrow( callOpenPosition(dydxMargin, OpenTx));
@@ -84,7 +84,7 @@ describe('#short', () => {
 
         await issueTokensAndSetAllowancesForShort(OpenTx);
 
-        OpenTx.shortAmount = OpenTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
+        OpenTx.principal = OpenTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
 
         const dydxMargin = await Margin.deployed();
         await expectThrow( callOpenPosition(dydxMargin, OpenTx));
@@ -111,7 +111,7 @@ describe('#short', () => {
 
         await issueTokensAndSetAllowancesForShort(OpenTx);
 
-        OpenTx.shortAmount = OpenTx.loanOffering.rates.minAmount.minus(1);
+        OpenTx.principal = OpenTx.loanOffering.rates.minAmount.minus(1);
 
         const dydxMargin = await Margin.deployed();
         await expectThrow( callOpenPosition(dydxMargin, OpenTx));
@@ -141,7 +141,7 @@ describe('#short', () => {
           issueTokensAndSetAllowancesForShort(OpenTx)
         ]);
 
-        OpenTx.loanOffering.rates.maxAmount = OpenTx.shortAmount;
+        OpenTx.loanOffering.rates.maxAmount = OpenTx.principal;
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
@@ -209,7 +209,7 @@ describe('#short', () => {
         const OpenTx = await createOpenTx(accounts);
 
         const storedAmount = OpenTx.loanOffering.rates.maxAmount;
-        OpenTx.loanOffering.rates.maxAmount = OpenTx.shortAmount.minus(new BigNumber(1));
+        OpenTx.loanOffering.rates.maxAmount = OpenTx.principal.minus(new BigNumber(1));
         await issueTokensAndSetAllowancesForShort(OpenTx);
         OpenTx.depositAmount = storedAmount;
 
@@ -226,7 +226,7 @@ describe('#short', () => {
         OpenTx.buyOrder.makerTokenAmount = getPartialAmount(
           OpenTx.buyOrder.makerTokenAmount,
           OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.shortAmount
+          OpenTx.principal
         ).minus(new BigNumber(1));
         await issueTokensAndSetAllowancesForShort(OpenTx);
         OpenTx.buyOrder.makerTokenAmount = storedAmount;
@@ -244,7 +244,7 @@ describe('#short', () => {
         OpenTx.buyOrder.makerFee = getPartialAmount(
           OpenTx.buyOrder.makerFee,
           OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.shortAmount
+          OpenTx.principal
         ).minus(new BigNumber(1));
         await issueTokensAndSetAllowancesForShort(OpenTx);
         OpenTx.buyOrder.makerFee = storedAmount;
@@ -262,7 +262,7 @@ describe('#short', () => {
         OpenTx.loanOffering.rates.lenderFee = getPartialAmount(
           OpenTx.loanOffering.rates.lenderFee,
           OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.shortAmount
+          OpenTx.principal
         ).minus(new BigNumber(1));
         await issueTokensAndSetAllowancesForShort(OpenTx);
         OpenTx.loanOffering.rates.lenderFee = storedAmount;
@@ -281,12 +281,12 @@ describe('#short', () => {
         OpenTx.loanOffering.rates.takerFee = getPartialAmount(
           OpenTx.loanOffering.rates.takerFee,
           OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.shortAmount
+          OpenTx.principal
         ).minus(new BigNumber(1));
         OpenTx.buyOrder.takerFee = getPartialAmount(
           OpenTx.buyOrder.takerFee,
           OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.shortAmount
+          OpenTx.principal
         );
         await issueTokensAndSetAllowancesForShort(OpenTx);
         OpenTx.loanOffering.rates.takerFee = storedAmount;
@@ -311,7 +311,7 @@ describe('#closePosition', () => {
 
         OpenTx.seller = OpenTx.loanOffering.payer;
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -325,7 +325,7 @@ describe('#closePosition', () => {
 
         OpenTx.seller = accounts[7];
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });
@@ -341,7 +341,7 @@ describe('#closePosition', () => {
 
         OpenTx.id = "0x123";
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -355,10 +355,10 @@ describe('#closePosition', () => {
 
         // First should succeed
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount);
+        await callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -384,7 +384,7 @@ describe('#closePosition', () => {
         await wait(OpenTx.loanOffering.maxDuration);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -399,7 +399,7 @@ describe('#closePosition', () => {
         sellOrder.ecSignature.r = "0x123";
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -411,11 +411,11 @@ describe('#closePosition', () => {
           Margin.deployed()
         ]);
 
-        sellOrder.makerTokenAmount = OpenTx.shortAmount.minus(new BigNumber(1));
+        sellOrder.makerTokenAmount = OpenTx.principal.minus(new BigNumber(1));
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });
@@ -433,7 +433,7 @@ describe('#closePosition', () => {
         sellOrder.makerTokenAmount = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -449,7 +449,7 @@ describe('#closePosition', () => {
         sellOrder.makerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
 
@@ -465,7 +465,7 @@ describe('#closePosition', () => {
         sellOrder.takerFee = new BigNumber(0);
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.shortAmount));
+        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
       });
     });
   });

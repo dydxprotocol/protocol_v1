@@ -35,7 +35,7 @@ describe('#closePosition', () => {
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
       // Close half the short at a time
-      const closeAmount = OpenTx.shortAmount.div(2);
+      const closeAmount = OpenTx.principal.div(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
@@ -69,7 +69,7 @@ describe('#closePosition', () => {
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-      const closeAmount = OpenTx.shortAmount.div(2);
+      const closeAmount = OpenTx.principal.div(2);
 
       await expectThrow(
         callClosePosition(
@@ -93,7 +93,7 @@ describe('#closePosition', () => {
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
       // Try to close twice the short amount
-      const closeAmount = OpenTx.shortAmount.times(2);
+      const closeAmount = OpenTx.principal.times(2);
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);
@@ -103,7 +103,7 @@ describe('#closePosition', () => {
       let exists = await dydxMargin.containsPosition.call(OpenTx.id);
       expect(exists).to.be.false;
 
-      await checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, OpenTx.shortAmount);
+      await checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, OpenTx.principal);
     });
   });
 
@@ -115,7 +115,7 @@ describe('#closePosition', () => {
       await issueForDirectClose(OpenTx);
 
       const dydxMargin = await Margin.deployed();
-      const closeAmount = OpenTx.shortAmount.div(2);
+      const closeAmount = OpenTx.principal.div(2);
 
       const closeTx = await callClosePositionDirectly(
         dydxMargin,

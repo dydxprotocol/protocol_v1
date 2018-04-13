@@ -34,7 +34,7 @@ library OpenPositionImpl {
         address baseToken,
         address quoteToken,
         address loanFeeRecipient,
-        uint256 shortAmount,
+        uint256 principal,
         uint256 quoteTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
@@ -167,7 +167,7 @@ library OpenPositionImpl {
 
         state.positions[marginId].baseToken = transaction.baseToken;
         state.positions[marginId].quoteToken = transaction.quoteToken;
-        state.positions[marginId].shortAmount = transaction.effectiveAmount;
+        state.positions[marginId].principal = transaction.effectiveAmount;
         state.positions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.positions[marginId].startTimestamp = uint32(block.timestamp);
         state.positions[marginId].maxDuration = transaction.loanOffering.maxDuration;

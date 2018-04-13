@@ -227,7 +227,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
 
   expect(position.baseToken).to.equal(OpenTx.baseToken);
   expect(position.quoteToken).to.equal(OpenTx.quoteToken);
-  expect(position.shortAmount).to.be.bignumber.equal(OpenTx.shortAmount);
+  expect(position.principal).to.be.bignumber.equal(OpenTx.principal);
   expect(position.interestRate).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.interestRate);
   expect(position.callTimeLimit).to.be.bignumber.equal(OpenTx.loanOffering.callTimeLimit);
@@ -266,7 +266,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
   const quoteTokenFromSell = getPartialAmount(
     OpenTx.buyOrder.makerTokenAmount,
     OpenTx.buyOrder.takerTokenAmount,
-    OpenTx.shortAmount
+    OpenTx.principal
   );
 
   expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenTx.depositAmount));
@@ -306,9 +306,9 @@ async function checkSuccess(dydxMargin, OpenTx) {
   ]);
 
   expect(lenderBaseToken).to.be.bignumber.equal(
-    OpenTx.loanOffering.rates.maxAmount.minus(OpenTx.shortAmount)
+    OpenTx.loanOffering.rates.maxAmount.minus(OpenTx.principal)
   );
-  expect(makerBaseToken).to.be.bignumber.equal(OpenTx.shortAmount);
+  expect(makerBaseToken).to.be.bignumber.equal(OpenTx.principal);
   expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
   expect(sellerQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
@@ -319,7 +319,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     OpenTx.loanOffering.rates.lenderFee
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.loanOffering.rates.maxAmount,
           OpenTx.loanOffering.rates.lenderFee
         )
@@ -330,7 +330,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     OpenTx.buyOrder.makerFee
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.buyOrder.takerTokenAmount,
           OpenTx.buyOrder.makerFee
         )
@@ -341,14 +341,14 @@ async function checkSuccess(dydxMargin, OpenTx) {
       .plus(OpenTx.buyOrder.takerFee)
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.loanOffering.rates.maxAmount,
           OpenTx.loanOffering.rates.takerFee
         )
       )
       .minus(
         getPartialAmount(
-          OpenTx.shortAmount,
+          OpenTx.principal,
           OpenTx.buyOrder.takerTokenAmount,
           OpenTx.buyOrder.takerFee
         )

@@ -138,7 +138,7 @@ contract PositionGetters is MarginStorage {
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
-            positionObject.shortAmount.sub(positionObject.closedAmount),
+            positionObject.principal.sub(positionObject.closedAmount),
             block.timestamp
         );
     }
@@ -216,7 +216,7 @@ contract PositionGetters is MarginStorage {
      *
      *                  Values corresponding to:
      *
-     *                  [0] = shortAmount
+     *                  [0] = principal
      *                  [1] = closedAmount
      *                  [2] = requiredDeposit
      *
@@ -250,7 +250,7 @@ contract PositionGetters is MarginStorage {
                 position.seller
             ],
             [
-                position.shortAmount,
+                position.principal,
                 position.closedAmount,
                 position.requiredDeposit
             ],
@@ -316,7 +316,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.positions[marginId].shortAmount;
+        return state.positions[marginId].principal;
     }
 
     function getPositionClosedAmount(
@@ -336,7 +336,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        return state.positions[marginId].shortAmount.sub(state.positions[marginId].closedAmount);
+        return state.positions[marginId].principal.sub(state.positions[marginId].closedAmount);
     }
 
     function getPositionInterestRate(

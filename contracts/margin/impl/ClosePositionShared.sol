@@ -29,7 +29,7 @@ library ClosePositionShared {
 
     struct CloseTx {
         bytes32 marginId;
-        uint256 currentShortAmount;
+        uint256 currentPrincipal;
         uint256 closeAmount;
         uint256 baseTokenOwed;
         uint256 startingQuoteToken;
@@ -54,7 +54,7 @@ library ClosePositionShared {
         internal
     {
         // Delete the position, or just increase the closedAmount
-        if (transaction.closeAmount == transaction.currentShortAmount) {
+        if (transaction.closeAmount == transaction.currentPrincipal) {
             MarginCommon.cleanupPosition(state, transaction.marginId);
         } else {
             state.positions[transaction.marginId].closedAmount =
@@ -180,10 +180,10 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
 
         uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, position.quoteToken);
-        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
+        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
-            currentShortAmount,
+            currentPrincipal,
             startingQuoteToken
         );
         uint256 baseTokenOwed = 0;
@@ -197,7 +197,7 @@ library ClosePositionShared {
 
         return CloseTx({
             marginId: marginId,
-            currentShortAmount: currentShortAmount,
+            currentPrincipal: currentPrincipal,
             closeAmount: closeAmount,
             baseTokenOwed: baseTokenOwed,
             startingQuoteToken: startingQuoteToken,
@@ -222,8 +222,8 @@ library ClosePositionShared {
         internal
         returns (uint256)
     {
-        uint256 currentShortAmount = position.shortAmount.sub(position.closedAmount);
-        uint256 newAmount = Math.min256(requestedAmount, currentShortAmount);
+        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
+        uint256 newAmount = Math.min256(requestedAmount, currentPrincipal);
 
         // If not the short seller, requires short seller to approve msg.sender
         if (position.seller != msg.sender) {
@@ -250,7 +250,7 @@ library ClosePositionShared {
         }
 
         require(newAmount > 0);
-        assert(newAmount <= currentShortAmount);
+        assert(newAmount <= currentPrincipal);
         assert(newAmount <= requestedAmount);
         return newAmount;
     }

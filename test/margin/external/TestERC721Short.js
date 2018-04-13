@@ -75,7 +75,7 @@ contract('ERC721Short', function(accounts) {
         dydxMargin,
         OpenTx,
         sellOrder,
-        OpenTx.shortAmount.div(2));
+        OpenTx.principal.div(2));
 
       // transfer short to ERC20ShortCreator
       await dydxMargin.transferPosition(OpenTx.id, ERC721ShortContract.address);
@@ -205,7 +205,7 @@ contract('ERC721Short', function(accounts) {
 
     async function initBase(account) {
       const maxInterest = await getMaxInterestFee(OpenTx);
-      const amount = OpenTx.shortAmount.plus(maxInterest);
+      const amount = OpenTx.principal.plus(maxInterest);
       await baseToken.issueTo(account, amount);
       await baseToken.approve(ProxyContract.address, amount, { from: account });
     }
@@ -221,7 +221,7 @@ contract('ERC721Short', function(accounts) {
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount,
+        OpenTx.principal,
         OpenTx.seller,
         unapprovedAcct
       );
@@ -232,7 +232,7 @@ contract('ERC721Short', function(accounts) {
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount,
+        OpenTx.principal,
         unapprovedAcct,
         approvedRecipient
       );
@@ -243,7 +243,7 @@ contract('ERC721Short', function(accounts) {
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount,
+        OpenTx.principal,
         approvedCloser,
         unapprovedAcct
       );
@@ -254,7 +254,7 @@ contract('ERC721Short', function(accounts) {
       await expectThrow( callClosePositionDirectly(
         dydxMargin,
         OpenTx,
-        OpenTx.shortAmount,
+        OpenTx.principal,
         unapprovedAcct,
         unapprovedAcct
       ));

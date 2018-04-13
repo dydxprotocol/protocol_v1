@@ -37,7 +37,7 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
     owner: accounts[0],
     baseToken: BaseToken.address,
     quoteToken: QuoteToken.address,
-    shortAmount: BIGNUMBERS.BASE_AMOUNT,
+    principal: BIGNUMBERS.BASE_AMOUNT,
     depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
@@ -81,7 +81,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
-    tx.shortAmount,
+    tx.principal,
     tx.depositAmount
   ];
 
@@ -132,9 +132,9 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
     baseToken: tx.loanOffering.baseToken,
     quoteToken: tx.loanOffering.quoteToken,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
-    shortAmount: tx.shortAmount,
+    principal: tx.principal,
     quoteTokenFromSell:
-      tx.shortAmount.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
+      tx.principal.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
     depositAmount: tx.depositAmount,
     interestRate: tx.loanOffering.rates.interestRate,
     callTimeLimit: tx.loanOffering.callTimeLimit,
@@ -196,7 +196,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
-    tx.shortAmount
+    tx.principal
   ];
 
   const values32 = [
@@ -237,7 +237,7 @@ async function callIncreasePosition(dydxMargin, tx) {
 
 async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const marginId = tx.id;
-  const [time1, time2, shortAmount, quoteTokenAmount] = await Promise.all([
+  const [time1, time2, principal, quoteTokenAmount] = await Promise.all([
     dydxMargin.getPositionStartTimestamp.call(marginId),
     getBlockTimestamp(response.receipt.blockNumber),
     dydxMargin.getPositionUnclosedAmount.call(marginId),
@@ -247,12 +247,12 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     new BigNumber(time2).minus(time1),
     tx.loanOffering.rates.interestPeriod,
     tx.loanOffering.rates.interestRate,
-    tx.shortAmount,
+    tx.principal,
     false
   );
   const quoteTokenFromSell =
     owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
-  const minTotalDeposit = quoteTokenAmount.div(shortAmount).times(tx.shortAmount);
+  const minTotalDeposit = quoteTokenAmount.div(principal).times(tx.principal);
 
   expectLog(response.logs[0], 'ValueAddedToShort', {
     marginId: marginId,
@@ -263,7 +263,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
-    effectiveAmountAdded: tx.shortAmount,
+    effectiveAmountAdded: tx.principal,
     quoteTokenFromSell: quoteTokenFromSell,
     depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
   });
@@ -677,7 +677,7 @@ async function getPosition(dydxMargin, id) {
       seller
     ],
     [
-      shortAmount,
+      principal,
       closedAmount,
       requiredDeposit
     ],
@@ -694,7 +694,7 @@ async function getPosition(dydxMargin, id) {
   return {
     baseToken,
     quoteToken,
-    shortAmount,
+    principal,
     closedAmount,
     interestRate,
     requiredDeposit,
@@ -736,7 +736,7 @@ async function issueForDirectClose(OpenTx) {
   // Issue to the short seller the maximum amount of base token they could have to pay
 
   const maxInterestFee = await getMaxInterestFee(OpenTx);
-  const maxBaseTokenOwed = OpenTx.shortAmount.plus(maxInterestFee);
+  const maxBaseTokenOwed = OpenTx.principal.plus(maxInterestFee);
 
   await Promise.all([
     baseToken.issueTo(
@@ -756,7 +756,7 @@ async function getMaxInterestFee(OpenTx) {
   const interestCalc = await TestInterestImpl.new();
 
   const interest = await interestCalc.getCompoundedInterest.call(
-    OpenTx.shortAmount,
+    OpenTx.principal,
     OpenTx.loanOffering.rates.interestRate,
     OpenTx.loanOffering.maxDuration
   );
