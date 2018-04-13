@@ -39,7 +39,7 @@ library CloseShortShared {
         address quoteToken;
         address shortSeller;
         address shortLender;
-        address exchangeWrapperAddress;
+        address exchangeWrapper;
         bool    payoutInQuoteToken;
     }
 
@@ -86,14 +86,14 @@ library CloseShortShared {
                 );
             }
         } else {
-            assert(transaction.exchangeWrapperAddress != address(0));
+            assert(transaction.exchangeWrapper != address(0));
 
             payout = receivedBaseToken.sub(transaction.baseTokenOwed);
 
             if (payout > 0) {
                 Proxy(state.PROXY).transferTokens(
                     transaction.baseToken,
-                    transaction.exchangeWrapperAddress,
+                    transaction.exchangeWrapper,
                     transaction.payoutRecipient,
                     payout
                 );
@@ -130,7 +130,7 @@ library CloseShortShared {
         bytes32 shortId,
         uint256 requestedAmount,
         address payoutRecipient,
-        address exchangeWrapperAddress,
+        address exchangeWrapper,
         bool payoutInQuoteToken,
         bool isLiquidation
     )
@@ -157,7 +157,7 @@ library CloseShortShared {
             shortId,
             closeAmount,
             payoutRecipient,
-            exchangeWrapperAddress,
+            exchangeWrapper,
             payoutInQuoteToken,
             isLiquidation
         );
@@ -169,7 +169,7 @@ library CloseShortShared {
         bytes32 shortId,
         uint256 closeAmount,
         address payoutRecipient,
-        address exchangeWrapperAddress,
+        address exchangeWrapper,
         bool payoutInQuoteToken,
         bool isLiquidation
     )
@@ -207,7 +207,7 @@ library CloseShortShared {
             quoteToken: short.quoteToken,
             shortSeller: short.seller,
             shortLender: short.lender,
-            exchangeWrapperAddress: exchangeWrapperAddress,
+            exchangeWrapper: exchangeWrapper,
             payoutInQuoteToken: payoutInQuoteToken
         });
     }

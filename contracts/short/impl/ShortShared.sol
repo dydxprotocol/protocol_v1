@@ -32,7 +32,7 @@ library ShortShared {
         uint256 lenderAmount;
         uint256 depositAmount;
         ShortSellCommon.LoanOffering loanOffering;
-        address exchangeWrapperAddress;
+        address exchangeWrapper;
         bool depositInQuoteToken;
     }
 
@@ -208,7 +208,7 @@ library ShortShared {
         Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
             transaction.loanOffering.payer,
-            transaction.exchangeWrapperAddress,
+            transaction.exchangeWrapper,
             transaction.lenderAmount
         );
     }
@@ -234,7 +234,7 @@ library ShortShared {
                 Proxy(state.PROXY).transferTokens(
                     transaction.baseToken,
                     msg.sender,
-                    transaction.exchangeWrapperAddress,
+                    transaction.exchangeWrapper,
                     transaction.depositAmount
                 );
                 return 0;
@@ -295,7 +295,7 @@ library ShortShared {
         internal
         returns (uint256)
     {
-        uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
+        uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
             transaction.quoteToken,
             transaction.baseToken,
             msg.sender,
@@ -306,7 +306,7 @@ library ShortShared {
         Vault(state.VAULT).transferToVault(
             shortId,
             transaction.quoteToken,
-            transaction.exchangeWrapperAddress,
+            transaction.exchangeWrapper,
             quoteTokenReceived
         );
 

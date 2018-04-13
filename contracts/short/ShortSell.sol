@@ -230,14 +230,14 @@ contract ShortSell is
 
     /**
     * Close a short sell. May be called by the short seller or with the approval of the short
-    * seller. May provide an order and exchangeWrapperAddress to facilitate the closing of the
+    * seller. May provide an order and exchangeWrapper to facilitate the closing of the
     * short position. The short seller is sent quote token stored in the contract.
      *
      * @param  shortId                  Unique ID for the short sell
      * @param  requestedCloseAmount     Amount of the short position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentShortAmount)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
-     * @param  exchangeWrapperAddress   Address of the exchange wrapper
+     * @param  exchangeWrapper   Address of the exchange wrapper
      * @param  payoutInQuoteToken       True to pay out the payoutRecipient in quote token,
      *                                  False to pay out the payoutRecipient in base token
      * @param  order                    Order object to be passed to the exchange wrapper
@@ -250,7 +250,7 @@ contract ShortSell is
         bytes32 shortId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
-        address exchangeWrapperAddress,
+        address exchangeWrapper,
         bool    payoutInQuoteToken,
         bytes   order
     )
@@ -264,7 +264,7 @@ contract ShortSell is
             shortId,
             requestedCloseAmount,
             payoutRecipient,
-            exchangeWrapperAddress,
+            exchangeWrapper,
             payoutInQuoteToken,
             order
         );

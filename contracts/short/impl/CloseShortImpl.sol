@@ -46,7 +46,7 @@ library CloseShortImpl {
         bytes32 shortId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
-        address exchangeWrapperAddress,
+        address exchangeWrapper,
         bool payoutInQuoteToken,
         bytes memory orderData
     )
@@ -58,7 +58,7 @@ library CloseShortImpl {
             shortId,
             requestedCloseAmount,
             payoutRecipient,
-            exchangeWrapperAddress,
+            exchangeWrapper,
             payoutInQuoteToken,
             false
         );
@@ -107,7 +107,7 @@ library CloseShortImpl {
         uint256 buybackCost = 0;
         uint256 receivedBaseToken = 0;
 
-        if (transaction.exchangeWrapperAddress == address(0)) {
+        if (transaction.exchangeWrapper == address(0)) {
             require(transaction.payoutInQuoteToken);
 
             // No buy order; send base tokens directly from the closer to the lender
@@ -141,7 +141,7 @@ library CloseShortImpl {
         uint256 quoteTokenPrice;
 
         if (transaction.payoutInQuoteToken) {
-            quoteTokenPrice = ExchangeWrapper(transaction.exchangeWrapperAddress)
+            quoteTokenPrice = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
                     transaction.baseToken,
                     transaction.quoteToken,
@@ -160,13 +160,13 @@ library CloseShortImpl {
             Vault(state.VAULT).transferFromVault(
                 transaction.shortId,
                 transaction.quoteToken,
-                transaction.exchangeWrapperAddress,
+                transaction.exchangeWrapper,
                 quoteTokenPrice
             );
         }
 
         // Trade the quote token for the base token
-        uint256 receivedBaseToken = ExchangeWrapper(transaction.exchangeWrapperAddress).exchange(
+        uint256 receivedBaseToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(
             transaction.baseToken,
             transaction.quoteToken,
             msg.sender,
@@ -183,7 +183,7 @@ library CloseShortImpl {
         // Transfer base token from the exchange wrapper to the lender
         Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
-            transaction.exchangeWrapperAddress,
+            transaction.exchangeWrapper,
             transaction.shortLender,
             transaction.baseTokenOwed
         );
