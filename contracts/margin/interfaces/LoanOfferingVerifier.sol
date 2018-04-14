@@ -56,7 +56,7 @@ contract LoanOfferingVerifier {
         address[9] addresses,
         uint256[8] values256,
         uint32[3] values32,
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         returns (bool);

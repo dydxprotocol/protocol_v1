@@ -18,50 +18,50 @@ library TransferImpl {
 
     function transferLoanImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         address newLender
     )
         public
     {
-        require(MarginCommon.containsPositionImpl(state, marginId));
-        address originalLender = state.positions[marginId].lender;
+        require(MarginCommon.containsPositionImpl(state, positionId));
+        address originalLender = state.positions[positionId].lender;
         require(msg.sender == originalLender);
         require(newLender != originalLender);
 
-        // Doesn't change the state of marginId; figures out the address of the final owner of loan.
+        // Doesn't change the state of positionId; figures out the address of the final owner of loan.
         // That is, newLender may pass ownership to a different address.
         address finalLender = TransferInternal.grantLoanOwnership(
-            marginId,
+            positionId,
             originalLender,
             newLender);
 
         require(finalLender != originalLender);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.positions[marginId].lender = finalLender;
+        state.positions[positionId].lender = finalLender;
     }
 
     function transferPositionImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         address newOwner
     )
         public
     {
-        require(MarginCommon.containsPositionImpl(state, marginId));
-        address originalOwner = state.positions[marginId].owner;
+        require(MarginCommon.containsPositionImpl(state, positionId));
+        address originalOwner = state.positions[positionId].owner;
         require(msg.sender == originalOwner);
         require(newOwner != originalOwner);
 
-        // Doesn't change the state of marginId; figures out the address of the final owner of position.
+        // Doesn't change the state of positionId; figures out the address of the final owner of position.
         // That is, newOwner may pass ownership to a different address.
         address finalOwner = TransferInternal.grantPositionOwnership(
-            marginId,
+            positionId,
             originalOwner,
             newOwner);
         require(finalOwner != originalOwner);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.positions[marginId].owner = finalOwner;
+        state.positions[positionId].owner = finalOwner;
     }
 }

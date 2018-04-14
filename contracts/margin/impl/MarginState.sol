@@ -36,7 +36,7 @@ library MarginState {
         // on-chain loan offerings
         mapping (bytes32 => bool) approvedLoans;
 
-        // Mapping that contains all margin positions. Mapped by: marginId -> Position
+        // Mapping that contains all margin positions. Mapped by: positionId -> Position
         mapping (bytes32 => MarginCommon.Position) positions;
 
         mapping (bytes32 => bool) closedPositions;

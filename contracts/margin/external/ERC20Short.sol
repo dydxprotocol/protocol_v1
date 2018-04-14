@@ -46,7 +46,7 @@ contract ERC20Short is
      * This ERC20Short was successfully initialized
      */
     event Initialized(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 initialSupply
     );
 
@@ -87,7 +87,7 @@ contract ERC20Short is
     address public INITIAL_TOKEN_HOLDER;
 
     // Unique ID of the position this contract is tokenizing
-    bytes32 public MARGIN_ID;
+    bytes32 public POSITION_ID;
 
     // Recipients that will fairly verify and redistribute funds from closing the position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
@@ -104,7 +104,7 @@ contract ERC20Short is
     // ============ Constructor ============
 
     function ERC20Short(
-        bytes32 marginId,
+        bytes32 positionId,
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients
@@ -112,7 +112,7 @@ contract ERC20Short is
         public
         ClosePositionDelegator(margin)
     {
-        MARGIN_ID = marginId;
+        POSITION_ID = positionId;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
 
@@ -129,12 +129,12 @@ contract ERC20Short is
      * indicate to Margin that it is willing to take ownership of the position.
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the position
-     * @return          This address on success, throw otherwise
+     * @param  positionId  Unique ID of the position
+     * @return             This address on success, throw otherwise
      */
     function receivePositionOwnership(
         address /* from */,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
@@ -143,9 +143,9 @@ contract ERC20Short is
     {
         // require uninitialized so that this cannot receive ownership for more than one position
         require(state == State.UNINITIALIZED);
-        require(MARGIN_ID == marginId);
+        require(POSITION_ID == positionId);
 
-        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
+        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, POSITION_ID);
         uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         assert(currentPrincipal > 0);
 
@@ -156,7 +156,7 @@ contract ERC20Short is
         quoteToken = position.quoteToken;
 
         // Record event
-        emit Initialized(MARGIN_ID, currentPrincipal);
+        emit Initialized(POSITION_ID, currentPrincipal);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentPrincipal);
@@ -169,13 +169,13 @@ contract ERC20Short is
      * owns. Tokens are minted and assigned to the address that added the value.
      *
      * @param  from         Address that added the value to the position
-     * @param  marginId     Unique ID of the position
+     * @param  positionId   Unique ID of the position
      * @param  amountAdded  Amount that was added to the position
      * @return              True to indicate that this contract consents to value being added
      */
     function marginPositionIncreased(
         address from,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amountAdded
     )
         onlyMargin
@@ -183,7 +183,7 @@ contract ERC20Short is
         external
         returns (bool)
     {
-        assert(marginId == MARGIN_ID);
+        assert(positionId == POSITION_ID);
 
         balances[from] = balances[from].add(amountAdded);
         totalSupply_ = totalSupply_.add(amountAdded);
@@ -201,16 +201,16 @@ contract ERC20Short is
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the position was successfully closed.
      *
-     * @param closer           Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the position being closed
-     * @return                 The amount the user is allowed to close for the specified position
+     * @param  closer           Address of the caller of the close function
+     * @param  payoutRecipient  Address of the recipient of any quote tokens paid out
+     * @param  positionId       Unique ID of the position
+     * @param  requestedAmount  Amount of the position being closed
+     * @return                  The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,
         address payoutRecipient,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount
     )
         onlyMargin
@@ -219,7 +219,7 @@ contract ERC20Short is
         returns (uint256)
     {
         assert(state == State.OPEN);
-        assert(MARGIN_ID == marginId);
+        assert(POSITION_ID == positionId);
 
         uint256 allowedAmount;
 
@@ -277,7 +277,7 @@ contract ERC20Short is
         returns (uint256)
     {
         // If in OPEN state, but the position is closed, set to CLOSED state
-        if (state == State.OPEN && Margin(MARGIN).isPositionClosed(MARGIN_ID)) {
+        if (state == State.OPEN && Margin(MARGIN).isPositionClosed(POSITION_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
@@ -326,16 +326,16 @@ contract ERC20Short is
     {
         return
             DetailedERC20(
-                Margin(MARGIN).getPositionBaseToken(MARGIN_ID)
+                Margin(MARGIN).getPositionBaseToken(POSITION_ID)
             ).decimals();
     }
 
     /**
-     * ERC20 name function. Returns a name based off marginId.
+     * ERC20 name function. Returns a name based off positionId.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the token which includes the hexadecimal marginId
+     * @return  The name of the token which includes the hexadecimal positionId
      */
     function name()
         external
@@ -347,24 +347,24 @@ contract ERC20Short is
         }
         // Copy intro into return value
         bytes memory intro = "dYdX Tokenized Short 0x";
-        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(MARGIN_ID)));
+        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(POSITION_ID)));
     }
 
     /**
      * Implements PositionCustodian functionality. Called by external contracts to see where to pay
      * tokens as a result of closing a position on behalf of this contract
      *
-     * @param  marginId Unique ID of the position
-     * @return          Address of this contract. Indicates funds should be sent to this contract
+     * @param  positionId  Unique ID of the position
+     * @return             Address of this contract. Indicates funds should be sent to this contract
      */
     function getPositionDeedHolder(
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         view
         returns (address)
     {
-        require(marginId == MARGIN_ID);
+        require(positionId == POSITION_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }

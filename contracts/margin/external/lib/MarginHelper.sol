@@ -14,7 +14,7 @@ import { MarginCommon } from "../../impl/MarginCommon.sol";
 library MarginHelper {
     function getPosition(
         address MARGIN,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
         view
@@ -28,7 +28,7 @@ library MarginHelper {
             addresses,
             values256,
             values32
-        ) = Margin(MARGIN).getPosition(marginId);
+        ) = Margin(MARGIN).getPosition(positionId);
 
         return MarginCommon.Position({
             baseToken: addresses[0],

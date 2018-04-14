@@ -34,16 +34,16 @@ contract LiquidatePositionDelegator is LoanOwner {
      * entire transaction or that the specified amount of the position was successfully
      * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
-     * @param liquidator       Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of quote tokens paid out
-     * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the loan being closed
-     * @return                 The amount the user is allowed to close for the specified loan
+     * @param  liquidator       Address of the caller of the close function
+     * @param  payoutRecipient  Address of the recipient of quote tokens paid out
+     * @param  positionId       Unique ID of the position
+     * @param  requestedAmount  Amount of the loan being closed
+     * @return                  The amount the user is allowed to close for the specified loan
      */
     function liquidateOnBehalfOf(
         address liquidator,
         address payoutRecipient,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount
     )
         onlyMargin

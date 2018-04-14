@@ -16,11 +16,11 @@ contract PositionCustodian {
      * Function that is intended to be called by external contracts to see where to pay any fees or
      * tokens as a result of closing a position on behalf of another contract.
      *
-     * @param  marginId     Unique ID of the position
+     * @param  positionId   Unique ID of the position
      * @return              Address of the true owner of the position
      */
     function getPositionDeedHolder(
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         view

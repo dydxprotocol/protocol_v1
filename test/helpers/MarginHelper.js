@@ -49,12 +49,12 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
 }
 
 async function callOpenPosition(dydxMargin, tx, safely = true) {
-  const marginId = web3Instance.utils.soliditySha3(
+  const positionId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     0
   );
 
-  let contains = await dydxMargin.containsPosition.call(marginId);
+  let contains = await dydxMargin.containsPosition.call(positionId);
   if (safely) {
     expect(contains).to.be.false;
   }
@@ -113,19 +113,19 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
   );
 
   if (safely) {
-    contains = await dydxMargin.containsPosition.call(marginId);
+    contains = await dydxMargin.containsPosition.call(positionId);
     expect(contains).to.be.true;
   }
 
-  await expectLogOpenPosition(dydxMargin, marginId, tx, response);
+  await expectLogOpenPosition(dydxMargin, positionId, tx, response);
 
-  response.id = marginId;
+  response.id = positionId;
   return response;
 }
 
-async function expectLogOpenPosition(dydxMargin, marginId, tx, response) {
+async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
   expectLog(response.logs[0], 'PositionOpened', {
-    marginId: marginId,
+    positionId: positionId,
     trader: tx.trader,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
@@ -142,18 +142,18 @@ async function expectLogOpenPosition(dydxMargin, marginId, tx, response) {
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
 
-  const newOwner = await dydxMargin.getPositionOwner.call(marginId);
-  const newLender = await dydxMargin.getPositionLender.call(marginId);
+  const newOwner = await dydxMargin.getPositionOwner.call(positionId);
+  const newLender = await dydxMargin.getPositionLender.call(positionId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
     expectLog(response.logs[++logIndex], 'LoanTransferred', {
-      marginId: marginId,
+      positionId: positionId,
       from: tx.loanOffering.payer,
       to: tx.loanOffering.owner
     });
     if (newLender !== tx.loanOffering.owner) {
       expectLog(response.logs[++logIndex], 'LoanTransferred', {
-        marginId: marginId,
+        positionId: positionId,
         from: tx.loanOffering.owner,
         to: newLender
       });
@@ -161,13 +161,13 @@ async function expectLogOpenPosition(dydxMargin, marginId, tx, response) {
   }
   if (tx.owner !== tx.trader) {
     expectLog(response.logs[++logIndex], 'PositionTransferred', {
-      marginId: marginId,
+      positionId: positionId,
       from: tx.trader,
       to: tx.owner
     });
     if (newOwner !== tx.owner) {
       expectLog(response.logs[++logIndex], 'PositionTransferred', {
-        marginId: marginId,
+        positionId: positionId,
         from: tx.owner,
         to: newOwner
       });
@@ -176,7 +176,7 @@ async function expectLogOpenPosition(dydxMargin, marginId, tx, response) {
 }
 
 async function callIncreasePosition(dydxMargin, tx) {
-  const marginId = tx.id;
+  const positionId = tx.id;
 
   const addresses = [
     tx.loanOffering.payer,
@@ -214,7 +214,7 @@ async function callIncreasePosition(dydxMargin, tx) {
   const order = zeroExOrderToBytes(tx.buyOrder);
 
   let response = await dydxMargin.increasePosition(
-    marginId,
+    positionId,
     addresses,
     values256,
     values32,
@@ -231,17 +231,17 @@ async function callIncreasePosition(dydxMargin, tx) {
     response
   );
 
-  response.id = marginId;
+  response.id = positionId;
   return response;
 }
 
 async function expectIncreasePositionLog(dydxMargin, tx, response) {
-  const marginId = tx.id;
+  const positionId = tx.id;
   const [time1, time2, principal, quoteTokenAmount] = await Promise.all([
-    dydxMargin.getPositionStartTimestamp.call(marginId),
+    dydxMargin.getPositionStartTimestamp.call(positionId),
     getBlockTimestamp(response.receipt.blockNumber),
-    dydxMargin.getPositionUnclosedAmount.call(marginId),
-    dydxMargin.getPositionBalance.call(marginId)
+    dydxMargin.getPositionUnclosedAmount.call(positionId),
+    dydxMargin.getPositionBalance.call(positionId)
   ]);
   const owed = await getOwedAmountForTime(
     new BigNumber(time2).minus(time1),
@@ -255,7 +255,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const minTotalDeposit = quoteTokenAmount.div(principal).times(tx.principal);
 
   expectLog(response.logs[0], 'PositionIncreased', {
-    marginId: marginId,
+    positionId: positionId,
     trader: tx.trader,
     lender: tx.loanOffering.payer,
     positionOwner: tx.owner,
@@ -440,15 +440,15 @@ async function callClosePositionDirectly(
   return tx;
 }
 
-async function getPreCloseVariables(dydxMargin, marginId) {
+async function getPreCloseVariables(dydxMargin, positionId) {
   const [
     startAmount,
     startQuote,
     startTimestamp
   ] = await Promise.all([
-    dydxMargin.getPositionUnclosedAmount.call(marginId),
-    dydxMargin.getPositionBalance.call(marginId),
-    dydxMargin.getPositionStartTimestamp.call(marginId)
+    dydxMargin.getPositionUnclosedAmount.call(positionId),
+    dydxMargin.getPositionBalance.call(positionId),
+    dydxMargin.getPositionStartTimestamp.call(positionId)
   ]);
   return {
     startAmount,
@@ -486,7 +486,7 @@ async function expectCloseLog(dydxMargin, params) {
     params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
 
   expectLog(params.tx.logs[0], 'PositionClosed', {
-    marginId: params.OpenTx.id,
+    positionId: params.OpenTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
@@ -520,7 +520,7 @@ async function callLiquidatePosition(
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
 
   expectLog(tx.logs[0], 'PositionLiquidated', {
-    marginId: OpenTx.id,
+    positionId: OpenTx.id,
     liquidator: from,
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,

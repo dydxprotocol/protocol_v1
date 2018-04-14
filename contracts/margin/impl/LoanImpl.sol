@@ -28,7 +28,7 @@ library LoanImpl {
      * A position was margin-called
      */
     event MarginCallInitiated(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed lender,
         address indexed owner,
         uint256 requiredDeposit
@@ -38,7 +38,7 @@ library LoanImpl {
      * A margin call was canceled
      */
     event MarginCallCanceled(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed lender,
         address indexed owner,
         uint256 depositAmount
@@ -68,19 +68,19 @@ library LoanImpl {
 
     function marginCallImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requiredDeposit
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
                 CallLoanDelegator(position.lender).marginCallOnBehalfOf(
                     msg.sender,
-                    marginId,
+                    positionId,
                     requiredDeposit
                 )
             );
@@ -96,7 +96,7 @@ library LoanImpl {
         position.requiredDeposit = requiredDeposit;
 
         emit MarginCallInitiated(
-            marginId,
+            positionId,
             position.lender,
             position.owner,
             requiredDeposit
@@ -105,18 +105,18 @@ library LoanImpl {
 
     function cancelMarginCallImpl(
         MarginState.State storage state,
-        bytes32 marginId
+        bytes32 positionId
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
                 CallLoanDelegator(position.lender).cancelMarginCallOnBehalfOf(
                     msg.sender,
-                    marginId
+                    positionId
                 )
             );
         }
@@ -124,11 +124,11 @@ library LoanImpl {
         // Ensure the loan has been called
         require(position.callTimestamp > 0);
 
-        state.positions[marginId].callTimestamp = 0;
-        state.positions[marginId].requiredDeposit = 0;
+        state.positions[positionId].callTimestamp = 0;
+        state.positions[positionId].requiredDeposit = 0;
 
         emit MarginCallCanceled(
-            marginId,
+            positionId,
             position.lender,
             position.owner,
             0

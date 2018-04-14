@@ -22,69 +22,69 @@ contract PositionGetters is MarginStorage {
     /**
      * Gets if a position is currently open
      *
-     * @param  marginId Unique ID of the position
-     * @return          True if the position is exists and is open
+     * @param  positionId  Unique ID of the position
+     * @return             True if the position is exists and is open
      */
     function containsPosition(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (bool)
     {
-        return MarginCommon.containsPositionImpl(state, marginId);
+        return MarginCommon.containsPositionImpl(state, positionId);
     }
 
     /**
      * Gets if a position is currently margin-called
      *
-     * @param  marginId Unique ID of the position
-     * @return          True if the position is margin-called
+     * @param  positionId  Unique ID of the position
+     * @return             True if the position is margin-called
      */
     function isPositionCalled(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (bool)
     {
-        return (state.positions[marginId].callTimestamp > 0);
+        return (state.positions[positionId].callTimestamp > 0);
     }
 
     /**
      * Gets if a position was previously closed
      *
-     * @param  marginId Unique ID of the position
-     * @return          True if the position is now closed
+     * @param  positionId  Unique ID of the position
+     * @return             True if the position is now closed
      */
     function isPositionClosed(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (bool)
     {
-        return state.closedPositions[marginId];
+        return state.closedPositions[positionId];
     }
 
     /**
      * Gets the number of quote tokens currently locked up in Vault for a particular position
      *
-     * @param  marginId Unique ID of the position
-     * @return          The number of quote tokens
+     * @param  positionId  Unique ID of the position
+     * @return             The number of quote tokens
      */
     function getPositionBalance(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        if (!MarginCommon.containsPositionImpl(state, marginId)) {
+        if (!MarginCommon.containsPositionImpl(state, positionId)) {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(marginId, state.positions[marginId].quoteToken);
+        return Vault(state.VAULT).balances(positionId, state.positions[positionId].quoteToken);
     }
 
     /**
@@ -92,17 +92,17 @@ contract PositionGetters is MarginStorage {
      * Returns 1 if the interest fee increases every second.
      * Returns 0 if the interest fee will never increase again.
      *
-     * @param  marginId Unique ID of the position
-     * @return          The number of seconds until the interest fee will increase
+     * @param  positionId  Unique ID of the position
+     * @return             The number of seconds until the interest fee will increase
      */
     function getTimeUntilInterestIncrease(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
             positionObject,
@@ -122,17 +122,17 @@ contract PositionGetters is MarginStorage {
      * Gets the amount of base tokens currently needed to close the position completely, including
      * interest fees.
      *
-     * @param  marginId Unique ID of the position
-     * @return          The number of base tokens
+     * @param  positionId  Unique ID of the position
+     * @return             The number of base tokens
      */
     function getPositionOwedAmount(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
@@ -145,13 +145,13 @@ contract PositionGetters is MarginStorage {
      * Gets the amount of base tokens needed to close a given amount of the position at a given time,
      * including interest fees.
      *
-     * @param  marginId     Unique ID of the position
-     * @param  marginId     Amount of position being closed
+     * @param  positionId   Unique ID of the position
+     * @param  positionId   Amount of position being closed
      * @param  timestamp    Block timestamp in seconds of close
      * @return              The number of base tokens owed at the given time and amount
      */
     function getPositionOwedAmountAtTime(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amount,
         uint32  timestamp
     )
@@ -159,7 +159,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
@@ -172,14 +172,14 @@ contract PositionGetters is MarginStorage {
      * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
      * onto the position at a given time.
      *
-     * @param  marginId     Unique ID of the position
-     * @param  marginId     Amount being added to position
+     * @param  positionId   Unique ID of the position
+     * @param  positionId   Amount being added to position
      * @param  timestamp    Block timestamp in seconds of addition
      * @return              The number of base tokens that can be borrowed at the given
      *                      time and amount
      */
     function getLenderAmountForAddValueAtTime(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amount,
         uint32  timestamp
     )
@@ -187,7 +187,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
             positionObject,
@@ -202,31 +202,31 @@ contract PositionGetters is MarginStorage {
      * Get a Position by id. This does not validate the position exists. If the position does not
      * exist, all 0's will be returned.
      *
-     * @param  marginId Unique ID of the position
-     * @return          Addresses corresponding to:
+     * @param  positionId  Unique ID of the position
+     * @return             Addresses corresponding to:
      *
-     *                  [0] = baseToken
-     *                  [1] = quoteToken
-     *                  [2] = lender
-     *                  [3] = owner
+     *                     [0] = baseToken
+     *                     [1] = quoteToken
+     *                     [2] = lender
+     *                     [3] = owner
      *
-     *                  Values corresponding to:
+     *                     Values corresponding to:
      *
-     *                  [0] = principal
-     *                  [1] = closedAmount
-     *                  [2] = requiredDeposit
+     *                     [0] = principal
+     *                     [1] = closedAmount
+     *                     [2] = requiredDeposit
      *
-     *                  Values corresponding to:
+     *                     Values corresponding to:
      *
-     *                  [0] = callTimeLimit
-     *                  [1] = startTimestamp
-     *                  [2] = callTimestamp
-     *                  [3] = maxDuration
-     *                  [4] = interestRate
-     *                  [5] = interestPeriod
+     *                     [0] = callTimeLimit
+     *                     [1] = startTimestamp
+     *                     [2] = callTimestamp
+     *                     [3] = maxDuration
+     *                     [4] = interestRate
+     *                     [5] = interestPeriod
      */
     function getPosition(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
@@ -236,7 +236,7 @@ contract PositionGetters is MarginStorage {
             uint32[6]
         )
     {
-        MarginCommon.Position storage position = state.positions[marginId];
+        MarginCommon.Position storage position = state.positions[positionId];
 
         return (
             [
@@ -264,142 +264,142 @@ contract PositionGetters is MarginStorage {
     // ============ Individual Properties ============
 
     function getPositionLender(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (address)
     {
-        return state.positions[marginId].lender;
+        return state.positions[positionId].lender;
     }
 
     function getPositionOwner(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (address)
     {
-        return state.positions[marginId].owner;
+        return state.positions[positionId].owner;
     }
 
     function getPositionQuoteToken(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (address)
     {
-        return state.positions[marginId].quoteToken;
+        return state.positions[positionId].quoteToken;
     }
 
     function getPositionBaseToken(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (address)
     {
-        return state.positions[marginId].baseToken;
+        return state.positions[positionId].baseToken;
     }
 
     function getPositionAmount(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        return state.positions[marginId].principal;
+        return state.positions[positionId].principal;
     }
 
     function getPositionClosedAmount(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        return state.positions[marginId].closedAmount;
+        return state.positions[positionId].closedAmount;
     }
 
     function getPositionUnclosedAmount(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        return state.positions[marginId].principal.sub(state.positions[marginId].closedAmount);
+        return state.positions[positionId].principal.sub(state.positions[positionId].closedAmount);
     }
 
     function getPositionInterestRate(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        return state.positions[marginId].interestRate;
+        return state.positions[positionId].interestRate;
     }
 
     function getPositionRequiredDeposit(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint256)
     {
-        return state.positions[marginId].requiredDeposit;
+        return state.positions[positionId].requiredDeposit;
     }
 
     function getPositionStartTimestamp(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint32)
     {
-        return state.positions[marginId].startTimestamp;
+        return state.positions[positionId].startTimestamp;
     }
 
     function getPositionCallTimestamp(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint32)
     {
-        return state.positions[marginId].callTimestamp;
+        return state.positions[positionId].callTimestamp;
     }
 
     function getPositionCallTimeLimit(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint32)
     {
-        return state.positions[marginId].callTimeLimit;
+        return state.positions[positionId].callTimeLimit;
     }
 
     function getPositionMaxDuration(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint32)
     {
-        return state.positions[marginId].maxDuration;
+        return state.positions[positionId].maxDuration;
     }
 
     function getPositioninterestPeriod(
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         external
         returns (uint32)
     {
-        return state.positions[marginId].interestPeriod;
+        return state.positions[positionId].interestPeriod;
     }
 }

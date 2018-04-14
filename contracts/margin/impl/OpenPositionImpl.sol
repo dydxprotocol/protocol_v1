@@ -25,7 +25,7 @@ library OpenPositionImpl {
      * A position was opened
      */
     event PositionOpened(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed trander,
         address indexed lender,
         bytes32 loanHash,
@@ -65,20 +65,20 @@ library OpenPositionImpl {
             depositInQuoteToken
         );
 
-        bytes32 marginId = getNextmarginId(state, transaction.loanOffering.loanHash);
+        bytes32 positionId = getNextpositionId(state, transaction.loanOffering.loanHash);
 
         uint256 quoteTokenFromSell;
 
         (quoteTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
-            marginId,
+            positionId,
             orderData
         );
 
         // Comes before updateState() so that PositionOpened event is before Transferred events
         recordPositionOpened(
-            marginId,
+            positionId,
             msg.sender,
             transaction,
             quoteTokenFromSell
@@ -86,22 +86,22 @@ library OpenPositionImpl {
 
         updateState(
             state,
-            marginId,
+            positionId,
             transaction
         );
 
         OpenPositionShared.openPositionInternalPostStateUpdate(
             state,
             transaction,
-            marginId
+            positionId
         );
 
-        return marginId;
+        return positionId;
     }
 
     // ============ Helper Functions ============
 
-    function getNextmarginId(
+    function getNextpositionId(
         MarginState.State storage state,
         bytes32 loanHash
     )
@@ -109,19 +109,19 @@ library OpenPositionImpl {
         view
         returns (bytes32)
     {
-        bytes32 marginId = keccak256(
+        bytes32 positionId = keccak256(
             loanHash,
             state.loanNumbers[loanHash]
         );
 
-        // Make this marginId doesn't already exist
-        assert(!MarginCommon.containsPositionImpl(state, marginId));
+        // Make this positionId doesn't already exist
+        assert(!MarginCommon.containsPositionImpl(state, positionId));
 
-        return marginId;
+        return positionId;
     }
 
     function recordPositionOpened(
-        bytes32 marginId,
+        bytes32 positionId,
         address trader,
         OpenPositionShared.OpenTx transaction,
         uint256 quoteTokenReceived
@@ -129,7 +129,7 @@ library OpenPositionImpl {
         internal
     {
         emit PositionOpened(
-            marginId,
+            positionId,
             trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
@@ -148,12 +148,12 @@ library OpenPositionImpl {
 
     function updateState(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         OpenPositionShared.OpenTx transaction
     )
         internal
     {
-        assert(!MarginCommon.containsPositionImpl(state, marginId));
+        assert(!MarginCommon.containsPositionImpl(state, positionId));
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
@@ -161,25 +161,25 @@ library OpenPositionImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.positions[marginId].baseToken = transaction.baseToken;
-        state.positions[marginId].quoteToken = transaction.quoteToken;
-        state.positions[marginId].principal = transaction.effectiveAmount;
-        state.positions[marginId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.positions[marginId].startTimestamp = uint32(block.timestamp);
-        state.positions[marginId].maxDuration = transaction.loanOffering.maxDuration;
-        state.positions[marginId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.positions[marginId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
+        state.positions[positionId].baseToken = transaction.baseToken;
+        state.positions[positionId].quoteToken = transaction.quoteToken;
+        state.positions[positionId].principal = transaction.effectiveAmount;
+        state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
+        state.positions[positionId].startTimestamp = uint32(block.timestamp);
+        state.positions[positionId].maxDuration = transaction.loanOffering.maxDuration;
+        state.positions[positionId].interestRate = transaction.loanOffering.rates.interestRate;
+        state.positions[positionId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
 
         bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
         bool newOwner = transaction.owner != msg.sender;
 
-        state.positions[marginId].lender = TransferInternal.grantLoanOwnership(
-            marginId,
+        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
+            positionId,
             newLender ? transaction.loanOffering.payer : address(0),
             transaction.loanOffering.owner);
 
-        state.positions[marginId].owner = TransferInternal.grantPositionOwnership(
-            marginId,
+        state.positions[positionId].owner = TransferInternal.grantPositionOwnership(
+            positionId,
             newOwner ? msg.sender : address(0),
             transaction.owner);
     }

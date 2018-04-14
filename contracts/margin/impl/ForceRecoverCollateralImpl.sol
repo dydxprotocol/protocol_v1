@@ -23,7 +23,7 @@ library ForceRecoverCollateralImpl {
      * Collateral for a position was forcibly recovered by the lender
      */
     event CollateralForceRecovered(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         uint256 amount
     );
 
@@ -31,12 +31,12 @@ library ForceRecoverCollateralImpl {
 
     function forceRecoverCollateralImpl(
         MarginState.State storage state,
-        bytes32 marginId
+        bytes32 positionId
     )
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
@@ -55,16 +55,16 @@ library ForceRecoverCollateralImpl {
             require(
                 ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
                     msg.sender,
-                    marginId
+                    positionId
                 )
             );
         }
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderQuoteTokenAmount = vault.balances(marginId, position.quoteToken);
+        uint256 lenderQuoteTokenAmount = vault.balances(positionId, position.quoteToken);
         vault.transferFromVault(
-            marginId,
+            positionId,
             position.quoteToken,
             position.lender,
             lenderQuoteTokenAmount
@@ -74,12 +74,12 @@ library ForceRecoverCollateralImpl {
         // NOTE: Since position is a storage pointer, this will also set all fields to 0
         MarginCommon.cleanupPosition(
             state,
-            marginId
+            positionId
         );
 
         // Log an event
         emit CollateralForceRecovered(
-            marginId,
+            positionId,
             lenderQuoteTokenAmount
         );
 

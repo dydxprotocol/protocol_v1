@@ -29,7 +29,7 @@ contract PayoutRecipient is OnlyMargin {
      * Function a contract must implement in order to receive payout from being the payoutRecipient
      * in a closePosition transaction. May redistribute any payout as necessary. Throws on error.
      *
-     * @param  marginId           Unique ID of the position
+     * @param  positionId         Unique ID of the position
      * @param  closeAmount        Amount of the position that was closed
      * @param  closer             Address of the account or contract that closed the position
      * @param  positionOwner      Address of the owner of the position
@@ -40,7 +40,7 @@ contract PayoutRecipient is OnlyMargin {
      * @return                    True if approved by the reciever
      */
     function receiveClosePositionPayout(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 closeAmount,
         address closer,
         address positionOwner,

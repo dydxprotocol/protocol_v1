@@ -37,16 +37,16 @@ contract ClosePositionDelegator is PositionOwner {
      * entire transaction or that the specified amount of the position was successfully
      * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
-     * @param closer           Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the position being closed
-     * @return                 The amount the user is allowed to close for the specified position
+     * @param  closer           Address of the caller of the close function
+     * @param  payoutRecipient  Address of the recipient of any quote tokens paid out
+     * @param  positionId       Unique ID of the position
+     * @param  requestedAmount  Amount of the position being closed
+     * @return                  The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,
         address payoutRecipient,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount
     )
         onlyMargin

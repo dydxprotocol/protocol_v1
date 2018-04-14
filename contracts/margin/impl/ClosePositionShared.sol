@@ -26,7 +26,7 @@ library ClosePositionShared {
     // ============ Structs ============
 
     struct CloseTx {
-        bytes32 marginId;
+        bytes32 positionId;
         uint256 currentPrincipal;
         uint256 closeAmount;
         uint256 baseTokenOwed;
@@ -51,10 +51,10 @@ library ClosePositionShared {
     {
         // Delete the position, or just increase the closedAmount
         if (transaction.closeAmount == transaction.currentPrincipal) {
-            MarginCommon.cleanupPosition(state, transaction.marginId);
+            MarginCommon.cleanupPosition(state, transaction.positionId);
         } else {
-            state.positions[transaction.marginId].closedAmount =
-                state.positions[transaction.marginId].closedAmount.add(transaction.closeAmount);
+            state.positions[transaction.positionId].closedAmount =
+                state.positions[transaction.positionId].closedAmount.add(transaction.closeAmount);
         }
     }
 
@@ -75,7 +75,7 @@ library ClosePositionShared {
 
             if (payout > 0) {
                 Vault(state.VAULT).transferFromVault(
-                    transaction.marginId,
+                    transaction.positionId,
                     transaction.quoteToken,
                     transaction.payoutRecipient,
                     payout
@@ -99,7 +99,7 @@ library ClosePositionShared {
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
             require(
                 PayoutRecipient(transaction.payoutRecipient).receiveClosePositionPayout(
-                    transaction.marginId,
+                    transaction.positionId,
                     transaction.closeAmount,
                     msg.sender,
                     transaction.positionOwner,
@@ -114,7 +114,7 @@ library ClosePositionShared {
         // The ending quote token balance of the vault should be the starting quote token balance
         // minus the available quote token amount
         assert(
-            Vault(state.VAULT).balances(transaction.marginId, transaction.quoteToken)
+            Vault(state.VAULT).balances(transaction.positionId, transaction.quoteToken)
             == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
         );
 
@@ -123,7 +123,7 @@ library ClosePositionShared {
 
     function createCloseTx(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -137,11 +137,11 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
         require(requestedAmount > 0);
 
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         uint256 closeAmount = getApprovedAmount(
             position,
-            marginId,
+            positionId,
             requestedAmount,
             payoutRecipient,
             isLiquidation
@@ -150,7 +150,7 @@ library ClosePositionShared {
         return parseCloseTx(
             state,
             position,
-            marginId,
+            positionId,
             closeAmount,
             payoutRecipient,
             exchangeWrapper,
@@ -162,7 +162,7 @@ library ClosePositionShared {
     function parseCloseTx(
         MarginState.State storage state,
         MarginCommon.Position storage position,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 closeAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -175,7 +175,7 @@ library ClosePositionShared {
     {
         require(payoutRecipient != address(0));
 
-        uint256 startingQuoteToken = Vault(state.VAULT).balances(marginId, position.quoteToken);
+        uint256 startingQuoteToken = Vault(state.VAULT).balances(positionId, position.quoteToken);
         uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
@@ -192,7 +192,7 @@ library ClosePositionShared {
         }
 
         return CloseTx({
-            marginId: marginId,
+            positionId: positionId,
             currentPrincipal: currentPrincipal,
             closeAmount: closeAmount,
             baseTokenOwed: baseTokenOwed,
@@ -210,7 +210,7 @@ library ClosePositionShared {
 
     function getApprovedAmount(
         MarginCommon.Position storage position,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount,
         address payoutRecipient,
         bool requireLenderApproval
@@ -226,7 +226,7 @@ library ClosePositionShared {
             uint256 allowedCloseAmount = ClosePositionDelegator(position.owner).closeOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
-                marginId,
+                positionId,
                 newAmount
             );
             require(allowedCloseAmount <= newAmount);
@@ -238,7 +238,7 @@ library ClosePositionShared {
             uint256 allowedLiquidationAmount = LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
-                marginId,
+                positionId,
                 newAmount
             );
             require(allowedLiquidationAmount <= newAmount);

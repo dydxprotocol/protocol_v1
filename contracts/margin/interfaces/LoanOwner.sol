@@ -28,14 +28,14 @@ contract LoanOwner is OnlyMargin {
      * Function a contract must implement in order to receive ownership of a loan sell via the
      * transferLoan function or the atomic-assign to the "owner" field in a loan offering.
      *
-     * @param  from     Address of the previous owner
-     * @param  marginId Unique ID of the position
-     * @return          The address to pass loan ownership to. Own address to keep loan ownership,
-                        0x0 to reject loan ownership completely.
+     * @param  from        Address of the previous owner
+     * @param  positionId  Unique ID of the position
+     * @return             The address to pass loan ownership to. This address to keep loan
+     *                     ownership, 0x0 to reject loan ownership completely.
      */
     function receiveLoanOwnership(
         address from,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         external
@@ -48,14 +48,14 @@ contract LoanOwner is OnlyMargin {
      * the additional value was added.
      *
      * @param  from         Lender adding additional funds to the position
-     * @param  marginId     Unique ID of the position
+     * @param  positionId   Unique ID of the position
      * @param  amountAdded  Amount to be added to the position
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise
      */
     function marginLoanIncreased(
         address from,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amountAdded
     )
         onlyMargin

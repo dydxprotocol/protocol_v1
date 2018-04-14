@@ -26,7 +26,7 @@ contract ERC20ShortCreator is
     // ============ Events ============
 
     event ERC20ShortCreated(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address tokenAddress
     );
 
@@ -61,7 +61,7 @@ contract ERC20ShortCreator is
      */
     function receivePositionOwnership(
         address from,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
@@ -69,13 +69,13 @@ contract ERC20ShortCreator is
         returns (address)
     {
         address tokenAddress = new ERC20Short(
-            marginId,
+            positionId,
             MARGIN,
             from,
             TRUSTED_RECIPIENTS
         );
 
-        emit ERC20ShortCreated(marginId, tokenAddress);
+        emit ERC20ShortCreated(positionId, tokenAddress);
 
         return tokenAddress;
     }

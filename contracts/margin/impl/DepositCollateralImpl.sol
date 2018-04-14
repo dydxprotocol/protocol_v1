@@ -22,7 +22,7 @@ library DepositCollateralImpl {
      * Additional collateral for a position was posted by the owner
      */
     event AdditionalCollateralDeposited(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         uint256 amount,
         address depositor
     );
@@ -31,7 +31,7 @@ library DepositCollateralImpl {
      * A loan call was canceled
      */
     event MarginCallCanceled(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed lender,
         address indexed owner,
         uint256 depositAmount
@@ -41,17 +41,17 @@ library DepositCollateralImpl {
 
     function depositCollateralImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 depositAmount
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
         require(depositAmount > 0);
         require(msg.sender == position.owner);
 
         Vault(state.VAULT).transferToVault(
-            marginId,
+            positionId,
             position.quoteToken,
             msg.sender,
             depositAmount
@@ -71,14 +71,14 @@ library DepositCollateralImpl {
         }
 
         emit AdditionalCollateralDeposited(
-            marginId,
+            positionId,
             depositAmount,
             msg.sender
         );
 
         if (loanCanceled) {
             emit MarginCallCanceled(
-                marginId,
+                positionId,
                 position.lender,
                 msg.sender,
                 depositAmount

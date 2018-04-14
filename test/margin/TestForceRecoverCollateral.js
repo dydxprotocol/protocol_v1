@@ -60,7 +60,7 @@ describe('#forceRecoverCollateral', () => {
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
       expectLog(tx.logs[0], 'CollateralForceRecovered', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         amount: quoteTokenBalance
       });
     });

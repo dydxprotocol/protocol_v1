@@ -83,12 +83,12 @@ library MarginCommon {
 
     function cleanupPosition(
         MarginState.State storage state,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
     {
-        delete state.positions[marginId];
-        state.closedPositions[marginId] = true;
+        delete state.positions[positionId];
+        state.closedPositions[positionId] = true;
     }
 
     function calculateOwedAmount(
@@ -227,24 +227,24 @@ library MarginCommon {
 
     function containsPositionImpl(
         MarginState.State storage state,
-        bytes32 marginId
+        bytes32 positionId
     )
         view
         internal
         returns (bool)
     {
-        return state.positions[marginId].startTimestamp != 0;
+        return state.positions[positionId].startTimestamp != 0;
     }
 
     function getPositionObject(
         MarginState.State storage state,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
         view
         returns (Position storage)
     {
-        Position storage position = state.positions[marginId];
+        Position storage position = state.positions[positionId];
 
         // This checks that the position exists
         require(position.startTimestamp != 0);

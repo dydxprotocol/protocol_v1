@@ -39,7 +39,7 @@ library OpenPositionShared {
     function openPositionInternalPreStateUpdate(
         MarginState.State storage state,
         OpenTx memory transaction,
-        bytes32 marginId,
+        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -57,7 +57,7 @@ library OpenPositionShared {
         transferFromLender(state, transaction);
 
         // Transfer deposit from the msg.sender
-        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, marginId);
+        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, positionId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
             : transaction.lenderAmount.add(transaction.depositAmount);
@@ -66,7 +66,7 @@ library OpenPositionShared {
             state,
             transaction,
             orderData,
-            marginId,
+            positionId,
             sellAmount
         );
 
@@ -85,7 +85,7 @@ library OpenPositionShared {
     function openPositionInternalPostStateUpdate(
         MarginState.State storage state,
         OpenTx memory transaction,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
     {
@@ -93,7 +93,7 @@ library OpenPositionShared {
         // This is done after other validations/state updates as it is an external call
         // NOTE: The position will exist in the Repo for this call
         //       (possible other contract calls back into Margin)
-        getConsentIfSmartContractLender(transaction, marginId);
+        getConsentIfSmartContractLender(transaction, positionId);
 
         transferLoanFees(
             state,
@@ -177,7 +177,7 @@ library OpenPositionShared {
 
     function getConsentIfSmartContractLender(
         OpenTx transaction,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
     {
@@ -188,7 +188,7 @@ library OpenPositionShared {
                     getLoanOfferingAddresses(transaction),
                     getLoanOfferingValues256(transaction),
                     getLoanOfferingValues32(transaction),
-                    marginId
+                    positionId
                 )
             );
         }
@@ -212,7 +212,7 @@ library OpenPositionShared {
     function transferDeposit(
         MarginState.State storage state,
         OpenTx transaction,
-        bytes32 marginId
+        bytes32 positionId
     )
         internal
         returns (uint256 /* quoteTokenFromDeposit */)
@@ -220,7 +220,7 @@ library OpenPositionShared {
         if (transaction.depositAmount > 0) {
             if (transaction.depositInQuoteToken) {
                 Vault(state.VAULT).transferToVault(
-                    marginId,
+                    positionId,
                     transaction.quoteToken,
                     msg.sender,
                     transaction.depositAmount
@@ -285,7 +285,7 @@ library OpenPositionShared {
         MarginState.State storage state,
         OpenTx transaction,
         bytes orderData,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 sellAmount
     )
         internal
@@ -300,7 +300,7 @@ library OpenPositionShared {
         );
 
         Vault(state.VAULT).transferToVault(
-            marginId,
+            positionId,
             transaction.quoteToken,
             transaction.exchangeWrapper,
             quoteTokenReceived

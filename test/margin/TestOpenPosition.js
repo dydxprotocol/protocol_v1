@@ -216,14 +216,14 @@ describe('#openPosition', () => {
 });
 
 async function checkSuccess(dydxMargin, OpenTx) {
-  const marginId = web3Instance.utils.soliditySha3(
+  const positionId = web3Instance.utils.soliditySha3(
     OpenTx.loanOffering.loanHash,
     0
   );
 
-  const contains = await dydxMargin.containsPosition.call(marginId);
+  const contains = await dydxMargin.containsPosition.call(positionId);
   expect(contains).to.equal(true);
-  const position = await getPosition(dydxMargin, marginId);
+  const position = await getPosition(dydxMargin, positionId);
 
   expect(position.baseToken).to.equal(OpenTx.baseToken);
   expect(position.quoteToken).to.equal(OpenTx.quoteToken);
@@ -261,7 +261,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     expect(position.lender).to.equal(toReturn ? toReturn : OpenTx.loanOffering.owner);
   }
 
-  const balance = await dydxMargin.getPositionBalance.call(marginId);
+  const balance = await dydxMargin.getPositionBalance.call(positionId);
 
   const quoteTokenFromSell = getPartialAmount(
     OpenTx.buyOrder.makerTokenAmount,

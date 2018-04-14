@@ -42,7 +42,7 @@ contract SharedLoan is
      * This SharedLoan was successfully initialized
      */
     event Initialized(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 initialAmount
     );
 
@@ -70,7 +70,7 @@ contract SharedLoan is
     address public INITIAL_LENDER;
 
     // Unique ID of the position this contract is lending for
-    bytes32 public MARGIN_ID;
+    bytes32 public POSITION_ID;
 
     // Addresses that can call in the loan
     mapping (address => bool) public TRUSTED_LOAN_CALLERS;
@@ -102,7 +102,7 @@ contract SharedLoan is
     // ============ Constructor ============
 
     function SharedLoan(
-        bytes32 marginId,
+        bytes32 positionId,
         address margin,
         address initialLender,
         address[] trustedLoanCallers
@@ -111,7 +111,7 @@ contract SharedLoan is
         ForceRecoverCollateralDelegator(margin)
         CallLoanDelegator(margin)
     {
-        MARGIN_ID = marginId;
+        POSITION_ID = positionId;
         state = State.UNINITIALIZED;
         INITIAL_LENDER = initialLender;
 
@@ -128,12 +128,12 @@ contract SharedLoan is
      * that it is willing to take ownership of the loan.
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the position
-     * @return          This address on success, throw otherwise
+     * @param  positionId  Unique ID of the position
+     * @return            This address on success, throw otherwise
      */
     function receiveLoanOwnership(
         address /* from */,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
@@ -142,9 +142,9 @@ contract SharedLoan is
     {
         // require uninitialized so that this cannot receive ownership from more than 1 loan
         require(state == State.UNINITIALIZED);
-        require(MARGIN_ID == marginId);
+        require(POSITION_ID == positionId);
 
-        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, MARGIN_ID);
+        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, POSITION_ID);
         uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         assert(currentPrincipal > 0);
 
@@ -155,7 +155,7 @@ contract SharedLoan is
         baseToken = position.baseToken;
         quoteToken = position.quoteToken;
 
-        emit Initialized(MARGIN_ID, currentPrincipal);
+        emit Initialized(POSITION_ID, currentPrincipal);
 
         emit BalanceAdded(
             INITIAL_LENDER,
@@ -170,13 +170,13 @@ contract SharedLoan is
      * is lending for. Balance is added to the address that lent the additional tokens.
      *
      * @param  from         Address that lent the additional tokens
-     * @param  marginId     Unique ID of the position
+     * @param  positionId   Unique ID of the position
      * @param  amountAdded  Amount that was added to the position
      * @return              True to indicate that this contract consents to value being added
      */
     function marginLoanIncreased(
         address from,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amountAdded
     )
         onlyMargin
@@ -184,7 +184,7 @@ contract SharedLoan is
         external
         returns (bool)
     {
-        require(marginId == MARGIN_ID);
+        require(positionId == POSITION_ID);
 
         balances[from] = balances[from].add(amountAdded);
         totalAmount = totalAmount.add(amountAdded);
@@ -200,15 +200,15 @@ contract SharedLoan is
     /**
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
-     * @param  who      Address attempting to initiate the loan call
-     * @param  marginId Unique ID of the position
+     * @param  who         Address attempting to initiate the loan call
+     * @param  positionId  Unique ID of the position
      *  param  (unused)
-     * @return          True to consent to the loan being called if the initiator is a trusted
-     *                  loan caller, false otherwise
+     * @return             True to consent to the loan being called if the initiator is a trusted
+     *                     loan caller, false otherwise
      */
     function marginCallOnBehalfOf(
         address who,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 /* depositAmount */
     )
         onlyMargin
@@ -217,7 +217,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(MARGIN_ID == marginId);
+        assert(POSITION_ID == positionId);
 
         return TRUSTED_LOAN_CALLERS[who];
     }
@@ -226,14 +226,14 @@ contract SharedLoan is
      * Called by Margin when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
-     * @param  who      Address attempting to initiate the loan call cancel
-     * @param  marginId Unique ID of the position
-     * @return          True to consent to the loan call being canceled if the initiator is a
-     *                  trusted loan caller, false otherwise
+     * @param  who         Address attempting to initiate the loan call cancel
+     * @param  positionId  Unique ID of the position
+     * @return             True to consent to the loan call being canceled if the initiator is a
+     *                     trusted loan caller, false otherwise
      */
     function cancelMarginCallOnBehalfOf(
         address who,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
@@ -241,7 +241,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(MARGIN_ID == marginId);
+        assert(POSITION_ID == positionId);
 
         return TRUSTED_LOAN_CALLERS[who];
     }
@@ -252,12 +252,12 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  marginId Unique ID of the position
-     * @return          True to consent to the loan being force recovered
+     * @param  positionId  Unique ID of the position
+     * @return             True to consent to the loan being force recovered
      */
     function forceRecoverCollateralOnBehalfOf(
         address /* who */,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
@@ -265,7 +265,7 @@ contract SharedLoan is
         returns (bool)
     {
         assert(state == State.OPEN);
-        assert(MARGIN_ID == marginId);
+        assert(POSITION_ID == positionId);
 
         state = State.CLOSED;
 
@@ -343,7 +343,7 @@ contract SharedLoan is
         internal
     {
         if (state != State.CLOSED) {
-            if (Margin(MARGIN).isPositionClosed(MARGIN_ID)) {
+            if (Margin(MARGIN).isPositionClosed(POSITION_ID)) {
                 state = State.CLOSED;
             }
         }

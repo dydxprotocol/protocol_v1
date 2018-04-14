@@ -28,7 +28,7 @@ library IncreasePositionImpl {
      * A position was increased
      */
     event PositionIncreased(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed trader,
         address indexed lender,
         address positionOwner,
@@ -45,7 +45,7 @@ library IncreasePositionImpl {
 
     function increasePositionImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -57,7 +57,7 @@ library IncreasePositionImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         OpenPositionShared.OpenTx memory transaction = parseAddValueToOpenTx(
             position,
@@ -73,13 +73,13 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            marginId,
+            positionId,
             orderData
         );
 
         updateState(
             position,
-            marginId,
+            positionId,
             transaction.effectiveAmount,
             transaction.loanOffering.payer
         );
@@ -91,13 +91,13 @@ library IncreasePositionImpl {
         OpenPositionShared.openPositionInternalPostStateUpdate(
             state,
             transaction,
-            marginId
+            positionId
         );
 
         // LOG EVENT
         recordPositionIncreased(
             transaction,
-            marginId,
+            positionId,
             position,
             quoteTokenFromSell
         );
@@ -107,23 +107,23 @@ library IncreasePositionImpl {
 
     function increasePositionDirectlyImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amount
     )
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
+        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
 
         uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
-            marginId,
+            positionId,
             state,
             amount,
             position
         );
 
         Vault(state.VAULT).transferToVault(
-            marginId,
+            positionId,
             position.quoteToken,
             msg.sender,
             quoteTokenAmount
@@ -131,13 +131,13 @@ library IncreasePositionImpl {
 
         updateState(
             position,
-            marginId,
+            positionId,
             amount,
             msg.sender
         );
 
         emit PositionIncreased(
-            marginId,
+            positionId,
             msg.sender,
             msg.sender,
             position.owner,
@@ -159,7 +159,7 @@ library IncreasePositionImpl {
         MarginState.State storage state,
         OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
-        bytes32 marginId,
+        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -170,7 +170,7 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            marginId,
+            positionId,
             orderData
         );
 
@@ -180,7 +180,7 @@ library IncreasePositionImpl {
         (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
-            marginId,
+            positionId,
             orderData
         );
 
@@ -213,7 +213,7 @@ library IncreasePositionImpl {
         MarginState.State storage state,
         OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
-        bytes32 marginId,
+        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -223,7 +223,7 @@ library IncreasePositionImpl {
         // Amount of quote token we need to add to the position to maintain the position's ratio
         // of quote token to base token
         uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
-            marginId,
+            positionId,
             state,
             transaction.effectiveAmount,
             position
@@ -257,7 +257,7 @@ library IncreasePositionImpl {
     }
 
     function getPositionMinimumQuoteToken(
-        bytes32 marginId,
+        bytes32 positionId,
         MarginState.State storage state,
         uint256 effectiveAmount,
         MarginCommon.Position storage position
@@ -266,7 +266,7 @@ library IncreasePositionImpl {
         view
         returns (uint256)
     {
-        uint256 quoteTokenBalance = Vault(state.VAULT).balances(marginId, position.quoteToken);
+        uint256 quoteTokenBalance = Vault(state.VAULT).balances(positionId, position.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             effectiveAmount,
@@ -277,7 +277,7 @@ library IncreasePositionImpl {
 
     function updateState(
         MarginCommon.Position storage position,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 effectiveAmount,
         address loanPayer
     )
@@ -294,7 +294,7 @@ library IncreasePositionImpl {
             require(
                 PositionOwner(owner).marginPositionIncreased(
                     msg.sender,
-                    marginId,
+                    positionId,
                     effectiveAmount
                 )
             );
@@ -307,7 +307,7 @@ library IncreasePositionImpl {
             require(
                 LoanOwner(lender).marginLoanIncreased(
                     loanPayer,
-                    marginId,
+                    positionId,
                     effectiveAmount
                 )
             );
@@ -316,14 +316,14 @@ library IncreasePositionImpl {
 
     function recordPositionIncreased(
         OpenPositionShared.OpenTx transaction,
-        bytes32 marginId,
+        bytes32 positionId,
         MarginCommon.Position storage position,
         uint256 quoteTokenFromSell
     )
         internal
     {
         emit PositionIncreased(
-            marginId,
+            positionId,
             msg.sender,
             transaction.loanOffering.payer,
             position.owner,

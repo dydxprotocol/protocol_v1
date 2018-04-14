@@ -35,18 +35,18 @@ describe('#transferPosition', () => {
 
     if (expectedOwner === to) {
       expectLog(tx.logs[0], 'PositionTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: from,
         to: to
       });
     } else {
       expectLog(tx.logs[0], 'PositionTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: from,
         to: to
       });
       expectLog(tx.logs[1], 'PositionTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: to,
         to: expectedOwner
       });
@@ -182,18 +182,18 @@ describe('#transferLoan', () => {
 
     if (expectedLender === to) {
       expectLog(tx.logs[0], 'LoanTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: from,
         to: to
       });
     } else {
       expectLog(tx.logs[0], 'LoanTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: from,
         to: to
       });
       expectLog(tx.logs[1], 'LoanTransferred', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         from: to,
         to: expectedLender
       });

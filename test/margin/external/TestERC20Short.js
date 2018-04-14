@@ -171,7 +171,7 @@ contract('ERC20Short', function(accounts) {
         const position = POSITIONS[type];
         const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
         expect(tsc.MARGIN).to.equal(CONTRACTS.MARGIN.address);
-        expect(tsc.MARGIN_ID).to.equal(position.ID);
+        expect(tsc.POSITION_ID).to.equal(position.ID);
         expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.quoteToken).to.equal(ADDRESSES.ZERO);
@@ -211,7 +211,7 @@ contract('ERC20Short', function(accounts) {
 
         // expect certain values
         expect(tsc2.MARGIN).to.equal(CONTRACTS.MARGIN.address);
-        expect(tsc2.MARGIN_ID).to.equal(POSITION.ID);
+        expect(tsc2.POSITION_ID).to.equal(POSITION.ID);
         expect(tsc2.state.equals(TOKENIZED_POSITION_STATE.OPEN)).to.be.true;
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc2.quoteToken).to.equal(position.quoteToken);
@@ -221,7 +221,7 @@ contract('ERC20Short', function(accounts) {
         expect(tsc2.quoteToken).to.not.equal(tsc1.quoteToken);
 
         // explicity make sure some things have not changed
-        expect(tsc2.MARGIN_ID).to.equal(tsc1.MARGIN_ID);
+        expect(tsc2.POSITION_ID).to.equal(tsc1.POSITION_ID);
         expect(tsc2.MARGIN).to.equal(tsc1.MARGIN);
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(tsc1.INITIAL_TOKEN_HOLDER);
       }
@@ -524,18 +524,18 @@ contract('ERC20Short', function(accounts) {
   });
 
   describe('#name', () => {
-    it('successfully returns the marginId of the position', async () => {
+    it('successfully returns the positionId of the position', async () => {
       await setUpPositions();
       await setUpTokens();
       await transferPositionsToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const [marginId, tokenName] = await Promise.all([
-          POSITION.TOKEN_CONTRACT.MARGIN_ID.call(),
+        const [positionId, tokenName] = await Promise.all([
+          POSITION.TOKEN_CONTRACT.POSITION_ID.call(),
           POSITION.TOKEN_CONTRACT.name.call()
         ]);
-        expect(marginId).to.be.bignumber.equal(POSITION.ID);
+        expect(positionId).to.be.bignumber.equal(POSITION.ID);
         expect(tokenName).to.equal("dYdX Tokenized Short " + POSITION.ID.toString());
       }
     });

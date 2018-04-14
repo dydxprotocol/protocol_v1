@@ -57,7 +57,7 @@ contract('ERC20ShortCreator', function(accounts) {
       const trader = accounts[0];
       const [
         tokenMargin,
-        tokenmarginId,
+        tokenpositionId,
         tokenState,
         tokenHolder,
         tokenQuoteToken,
@@ -65,7 +65,7 @@ contract('ERC20ShortCreator', function(accounts) {
         traderSupply,
       ] = await Promise.all([
         erc20Contract.MARGIN.call(),
-        erc20Contract.MARGIN_ID.call(),
+        erc20Contract.POSITION_ID.call(),
         erc20Contract.state.call(),
         erc20Contract.INITIAL_TOKEN_HOLDER.call(),
         erc20Contract.quoteToken.call(),
@@ -74,7 +74,7 @@ contract('ERC20ShortCreator', function(accounts) {
       ]);
 
       expect(tokenMargin).to.equal(dydxMargin.address);
-      expect(tokenmarginId).to.equal(OpenTx.id);
+      expect(tokenpositionId).to.equal(OpenTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
       expect(tokenHolder).to.equal(trader);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);

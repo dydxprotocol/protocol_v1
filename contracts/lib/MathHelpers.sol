@@ -16,10 +16,10 @@ library MathHelpers {
     /**
      * Calculates partial value given a numerator and denominator.
      *
-     * @param numerator    Numerator
-     * @param denominator  Denominator
-     * @param target       Value to calculate partial of
-     * @return             Rounded-up result of target * numerator / denominator
+     * @param  numerator    Numerator
+     * @param  denominator  Denominator
+     * @param  target       Value to calculate partial of
+     * @return              Rounded-up result of target * numerator / denominator
      */
     function getPartialAmount(
         uint256 numerator,
@@ -38,10 +38,10 @@ library MathHelpers {
     /**
      * Calculates partial value given a numerator and denominator, rounded up.
      *
-     * @param numerator    Numerator
-     * @param denominator  Denominator
-     * @param target       Value to calculate partial of
-     * @return             Rounded-up result of target * numerator / denominator
+     * @param  numerator    Numerator
+     * @param  denominator  Denominator
+     * @param  target       Value to calculate partial of
+     * @return              Rounded-up result of target * numerator / denominator
      */
     function getPartialAmountRoundedUp(
         uint256 numerator,
@@ -60,9 +60,9 @@ library MathHelpers {
     /**
      * Calculates division given a numerator and denominator, rounded up.
      *
-     * @param numerator    Numerator.
-     * @param denominator  Denominator.
-     * @return             Rounded-up result of numerator / denominator
+     * @param  numerator    Numerator.
+     * @param  denominator  Denominator.
+     * @return              Rounded-up result of numerator / denominator
      */
     function divisionRoundedUp(
         uint256 numerator,

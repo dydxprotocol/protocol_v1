@@ -17,7 +17,7 @@ contract MarginEvents {
      * A position was opened
      */
     event PositionOpened(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed trader,
         address indexed lender,
         bytes32 loanHash,
@@ -37,7 +37,7 @@ contract MarginEvents {
      * A position was closed or partially closed
      */
     event PositionClosed(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed closer,
         address indexed payoutRecipient,
         uint256 closeAmount,
@@ -52,7 +52,7 @@ contract MarginEvents {
      * A loan was liquidated
      */
     event PositionLiquidated(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
@@ -64,7 +64,7 @@ contract MarginEvents {
      * Collateral was forcibly recovered by the lender
      */
     event CollateralForceRecovered(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         uint256 amount
     );
 
@@ -72,7 +72,7 @@ contract MarginEvents {
      * A position was margin called
      */
     event MarginCallInitiated(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed lender,
         address indexed owner,
         uint256 requiredDeposit
@@ -82,7 +82,7 @@ contract MarginEvents {
      * A margin call was canceled
      */
     event MarginCallCanceled(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed lender,
         address indexed owner,
         uint256 depositAmount
@@ -112,7 +112,7 @@ contract MarginEvents {
      * Additional collateral for a position was posted by the owner
      */
     event AdditionalCollateralDeposited(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         uint256 amount,
         address depositor
     );
@@ -121,7 +121,7 @@ contract MarginEvents {
      * Ownership of a loan was transferred to a new address
      */
     event LoanTransferred(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed from,
         address indexed to
     );
@@ -130,7 +130,7 @@ contract MarginEvents {
      * Ownership of a position was transferred to a new address
      */
     event PositionTransferred(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed from,
         address indexed to
     );
@@ -139,7 +139,7 @@ contract MarginEvents {
      * A position was increased in size
      */
     event PositionIncreased(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed trader,
         address indexed lender,
         address positionOwner,

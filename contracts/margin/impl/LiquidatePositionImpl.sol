@@ -21,7 +21,7 @@ library LiquidatePositionImpl {
      * A loan was liquidated
      */
     event PositionLiquidated(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed liquidator,
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
@@ -33,7 +33,7 @@ library LiquidatePositionImpl {
 
     function liquidatePositionImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedLiquidationAmount,
         address payoutRecipient
     )
@@ -42,7 +42,7 @@ library LiquidatePositionImpl {
     {
         ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
             state,
-            marginId,
+            positionId,
             requestedLiquidationAmount,
             payoutRecipient,
             address(0),
@@ -75,7 +75,7 @@ library LiquidatePositionImpl {
         internal
     {
         emit PositionLiquidated(
-            transaction.marginId,
+            transaction.positionId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,

@@ -108,36 +108,36 @@ contract ERC721MarginPosition is
     /**
      * Transfer ownership of the position externally to this contract, thereby burning the token
      *
-     * @param  marginId Unique ID of the position
-     * @param  to       Address to transfer postion ownership to
+     * @param  positionId  Unique ID of the position
+     * @param  to          Address to transfer postion ownership to
      */
     function transferPosition(
-        bytes32 marginId,
+        bytes32 positionId,
         address to
     )
         nonReentrant
         external
     {
-        uint256 tokenId = uint256(marginId);
+        uint256 tokenId = uint256(positionId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferPosition(marginId, to);
+        Margin(MARGIN).transferPosition(positionId, to);
     }
 
     /**
      * Burn an invalid token. Callable by anyone. Used to burn unecessary tokens for clarity and to
      * free up storage. Throws if the position is not yet closed.
      *
-     * @param  marginId Unique ID of the position
+     * @param  positionId  Unique ID of the position
      */
     function burnTokenSafe(
-        bytes32 marginId
+        bytes32 positionId
     )
         nonReentrant
         external
     {
-        require(!Margin(MARGIN).containsPosition(marginId));
-        _burn(ownerOf(uint256(marginId)), uint256(marginId));
+        require(!Margin(MARGIN).containsPosition(positionId));
+        _burn(ownerOf(uint256(positionId)), uint256(positionId));
     }
 
     // ============ OnlyMargin Functions ============
@@ -147,33 +147,33 @@ contract ERC721MarginPosition is
      * This function mints a new ERC721 Token and returns this address to
      * indicate to Margin that it is willing to take ownership of the position.
      *
-     * @param  from     Address of previous position owner
-     * @param  marginId Unique ID of the position
-     * @return          This address on success, throw otherwise
+     * @param  from        Address of previous position owner
+     * @param  positionId  Unique ID of the position
+     * @return             This address on success, throw otherwise
      */
     function receivePositionOwnership(
         address from,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         nonReentrant
         external
         returns (address)
     {
-        _mint(from, uint256(marginId));
+        _mint(from, uint256(positionId));
         return address(this); // returning own address retains ownership of position
     }
 
     function marginPositionIncreased(
         address from,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 /* amountAdded */
     )
         onlyMargin
         external
         returns (bool)
     {
-        require(ownerOf(uint256(marginId)) != from);
+        require(ownerOf(uint256(positionId)) != from);
         return true;
     }
 
@@ -184,16 +184,16 @@ contract ERC721MarginPosition is
      * must assume that Margin will either revert the entire transaction or that the specified
      * amount of the position was successfully closed.
      *
-     * @param closer           Address of the caller of the close function
-     * @param payoutRecipient  Address of the recipient of any quote tokens paid out
-     * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the position being closed
-     * @return                 The amount the user is allowed to close for the specified position
+     * @param  closer           Address of the caller of the close function
+     * @param  payoutRecipient  Address of the recipient of any quote tokens paid out
+     * @param  positionId       Unique ID of the position
+     * @param  requestedAmount  Amount of the position being closed
+     * @return                  The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,
         address payoutRecipient,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedAmount
     )
         onlyMargin
@@ -204,7 +204,7 @@ contract ERC721MarginPosition is
         // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder
         // must return the owner of the position after it has been closed in the current transaction
 
-        address owner = ownerOf(uint256(marginId));
+        address owner = ownerOf(uint256(positionId));
         if (
             (closer == owner)
             || approvedClosers[owner][closer]
@@ -219,12 +219,12 @@ contract ERC721MarginPosition is
     // ============ PositionCustodian Functions ============
 
     function getPositionDeedHolder(
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         view
         returns (address)
     {
-        return ownerOf(uint256(marginId));
+        return ownerOf(uint256(positionId));
     }
 }

@@ -32,14 +32,14 @@ contract CallLoanDelegator is LoanOwner {
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan was successfully called-in
      *
-     * @param who            Address of the caller of the marginCall function
-     * @param marginId       Unique ID of the position
-     * @param depositAmount  Amount of quoteToken deposit that will be required to cancel the call
-     * @return               True if the user is allowed to call-in the position, false otherwise
+     * @param  who            Address of the caller of the marginCall function
+     * @param  positionId     Unique ID of the position
+     * @param  depositAmount  Amount of quoteToken deposit that will be required to cancel the call
+     * @return                True if the user is allowed to call-in the position, false otherwise
      */
     function marginCallOnBehalfOf(
         address who,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 depositAmount
     )
         onlyMargin
@@ -53,13 +53,13 @@ contract CallLoanDelegator is LoanOwner {
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled
      *
-     * @param who            Address of the caller of the cancelMarginCall function
-     * @param marginId       Unique ID of the position
-     * @return               True if the user is allowed to cancel the margin call, false otherwise
+     * @param  who            Address of the caller of the cancelMarginCall function
+     * @param  positionId     Unique ID of the position
+     * @return                True if the user is allowed to cancel the margin call, false otherwise
      */
     function cancelMarginCallOnBehalfOf(
         address who,
-        bytes32 marginId
+        bytes32 positionId
     )
         onlyMargin
         external

@@ -171,7 +171,7 @@ contract Margin is
      * @return                      Amount of base tokens pulled from the lender
      */
     function increasePosition(
-        bytes32     marginId,
+        bytes32     positionId,
         address[7]  addresses,
         uint256[8]  values256,
         uint32[2]   values32,
@@ -187,7 +187,7 @@ contract Margin is
     {
         return IncreasePositionImpl.increasePositionImpl(
             state,
-            marginId,
+            positionId,
             addresses,
             values256,
             values32,
@@ -202,12 +202,12 @@ contract Margin is
      * Increase a position directly by putting up quote token. The caller will serve as both the
      * lender and the position owner
      *
-     * @param marginId  Unique ID of the position sell
-     * @param amount    Amount (in base token) to add to the position
-     * @return          Amount of quote token pulled from the msg.sender
+     * @param  positionId  Unique ID of the position sell
+     * @param  amount    Amount (in base token) to add to the position
+     * @return           Amount of quote token pulled from the msg.sender
      */
     function increasePositionDirectly(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 amount
     )
         external
@@ -217,7 +217,7 @@ contract Margin is
     {
         return IncreasePositionImpl.increasePositionDirectlyImpl(
             state,
-            marginId,
+            positionId,
             amount
         );
     }
@@ -227,7 +227,7 @@ contract Margin is
      * an order and exchangeWrapper to facilitate the closing of the position. The payoutRecipient
      * an sent the resulting payout.
      *
-     * @param  marginId                 Unique ID for the position
+     * @param  positionId               Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentPrincipal)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
@@ -241,7 +241,7 @@ contract Margin is
      *                                  3) Amount of base token paid as interest fee to the lender
      */
     function closePosition(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -255,7 +255,7 @@ contract Margin is
     {
         return ClosePositionImpl.closePositionImpl(
             state,
-            marginId,
+            positionId,
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapper,
@@ -267,7 +267,7 @@ contract Margin is
     /**
      * Helper to close a position by paying base token directly
      *
-     * @param  marginId                 Unique ID for the position
+     * @param  positionId               Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, currentPrincipal)
      * @param  payoutRecipient          Address to send remaining quoteToken to after closing
@@ -277,7 +277,7 @@ contract Margin is
      *                                  3) Amount of base token paid as interest fee to the lender
      */
     function closePositionDirectly(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedCloseAmount,
         address payoutRecipient
     )
@@ -288,7 +288,7 @@ contract Margin is
     {
         return ClosePositionImpl.closePositionImpl(
             state,
-            marginId,
+            positionId,
             requestedCloseAmount,
             payoutRecipient,
             address(0),
@@ -302,7 +302,7 @@ contract Margin is
      * Must be approved by the position owner (e.g., by requiring the lender to own part of the
      * position, and burning it).
      *
-     * @param  marginId                    Unique ID for the position
+     * @param  positionId                  Unique ID for the position
      * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
      *                                     will be: min(requestedCloseAmount, currentPrincipal)
      * @return                             Values corresponding to:
@@ -310,7 +310,7 @@ contract Margin is
      *                                     2) Amount of quote token recieved by the msg.sender
      */
     function liquidatePosition(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedLiquidationAmount,
         address payoutRecipient
     )
@@ -321,7 +321,7 @@ contract Margin is
     {
         return LiquidatePositionImpl.liquidatePositionImpl(
             state,
-            marginId,
+            positionId,
             requestedLiquidationAmount,
             payoutRecipient
         );
@@ -333,11 +333,11 @@ contract Margin is
      * the call time limit of the position to close the position. If the owner does not close the
      * position, the lender can recover the collateral in the position.
      *
-     * @param  marginId         Unique ID for the position
+     * @param  positionId       Unique ID for the position
      * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
      */
     function marginCall(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requiredDeposit
     )
         external
@@ -345,7 +345,7 @@ contract Margin is
     {
         LoanImpl.marginCallImpl(
             state,
-            marginId,
+            positionId,
             requiredDeposit
         );
     }
@@ -353,43 +353,43 @@ contract Margin is
     /**
      * Cancel a margin call. Only callable by the position lender.
      *
-     * @param  marginId  Unique ID for the position
+     * @param  positionId  Unique ID for the position
      */
     function cancelMarginCall(
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         onlyWhileOperational
         nonReentrant
     {
-        LoanImpl.cancelMarginCallImpl(state, marginId);
+        LoanImpl.cancelMarginCallImpl(state, positionId);
     }
 
     /**
      * Function callable by the lender after the loan has been called-in for the call time limit but
      * remains unclosed. Used to recover the quote tokens held as collateral.
      *
-     * @param  marginId  Unique ID for the position
+     * @param  positionId  Unique ID for the position
      */
     function forceRecoverCollateral(
-        bytes32 marginId
+        bytes32 positionId
     )
         external
         nonReentrant
         returns (uint256)
     {
-        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, marginId);
+        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, positionId);
     }
 
     /**
      * Deposit additional quote token as collateral for a position. Cancels loan call if:
      * 0 < position.requiredDeposit < depositAmount
      *
-     * @param  marginId         Unique ID for the position
+     * @param  positionId       Unique ID for the position
      * @param  depositAmount    Additional amount in quote token to deposit
      */
     function depositCollateral(
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 depositAmount
     )
         external
@@ -398,7 +398,7 @@ contract Margin is
     {
         DepositCollateralImpl.depositCollateralImpl(
             state,
-            marginId,
+            positionId,
             depositAmount
         );
     }
@@ -513,11 +513,11 @@ contract Margin is
      * to all payouts for this loan. Only callable by the lender for a position. If the "who"
      * param is a contract, it must implement the LoanOwner interface.
      *
-     * @param  marginId  Unique ID for the position
+     * @param  positionId  Unique ID for the position
      * @param  who      New owner of the loan
      */
     function transferLoan(
-        bytes32 marginId,
+        bytes32 positionId,
         address who
     )
         external
@@ -525,7 +525,7 @@ contract Margin is
     {
         TransferImpl.transferLoanImpl(
             state,
-            marginId,
+            positionId,
             who);
     }
 
@@ -534,11 +534,11 @@ contract Margin is
      * payouts. Only callable by the owner of a position. If the "who" param is a contract, it must
      * implement the PositionOwner interface.
      *
-     * @param  marginId  Unique ID for the position
+     * @param  positionId  Unique ID for the position
      * @param  who       New owner of the position
      */
     function transferPosition(
-        bytes32 marginId,
+        bytes32 positionId,
         address who
     )
         external
@@ -546,7 +546,7 @@ contract Margin is
     {
         TransferImpl.transferPositionImpl(
             state,
-            marginId,
+            positionId,
             who);
     }
 

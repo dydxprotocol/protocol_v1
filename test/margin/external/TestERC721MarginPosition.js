@@ -25,8 +25,8 @@ const {
   createSignedSellOrder
 } = require('../../helpers/0xHelper');
 
-function uint256(marginId) {
-  return new BigNumber(web3Instance.utils.toBN(marginId));
+function uint256(positionId) {
+  return new BigNumber(web3Instance.utils.toBN(positionId));
 }
 
 contract('ERC721MarginPosition', function(accounts) {
@@ -85,7 +85,7 @@ contract('ERC721MarginPosition', function(accounts) {
   });
 
   describe('#getPositionDeedHolder', () => {
-    it('fails for bad marginId', async () => {
+    it('fails for bad positionId', async () => {
       await expectThrow(
         erc721Contract.getPositionDeedHolder(BYTES32.BAD_ID));
     });

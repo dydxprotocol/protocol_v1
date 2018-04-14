@@ -11,7 +11,7 @@ const TOKENIZED_POSITION_STATE = {
 async function getERC20ShortConstants(ERC20Short) {
   const [
     MARGIN,
-    MARGIN_ID,
+    POSITION_ID,
     state,
     name,
     symbol,
@@ -20,7 +20,7 @@ async function getERC20ShortConstants(ERC20Short) {
     totalSupply
   ] = await Promise.all([
     ERC20Short.MARGIN.call(),
-    ERC20Short.MARGIN_ID.call(),
+    ERC20Short.POSITION_ID.call(),
     ERC20Short.state.call(),
     ERC20Short.name.call(),
     ERC20Short.symbol.call(),
@@ -30,7 +30,7 @@ async function getERC20ShortConstants(ERC20Short) {
   ]);
   return {
     MARGIN,
-    MARGIN_ID,
+    POSITION_ID,
     state,
     name,
     symbol,

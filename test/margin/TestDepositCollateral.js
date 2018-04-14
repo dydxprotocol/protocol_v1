@@ -32,7 +32,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         amount: amount,
         depositor: OpenTx.trader
       });
@@ -52,7 +52,7 @@ describe('#deposit', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('fails for invalid marginId', async () => {
+    it('fails for invalid positionId', async () => {
       const OpenTx = await doOpenPosition(accounts);
 
       await expectThrow(
@@ -106,7 +106,7 @@ describe('#deposit', () => {
       });
 
       expectLog(tx2.logs[1], 'MarginCallCanceled', {
-        marginId: OpenTx.id,
+        positionId: OpenTx.id,
         lender: OpenTx.loanOffering.owner,
         owner: OpenTx.trader,
         depositAmount: amount2
@@ -151,7 +151,7 @@ async function doDepositCollateral({
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 
   expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
-    marginId: OpenTx.id,
+    positionId: OpenTx.id,
     amount: amount,
     depositor: from
   });

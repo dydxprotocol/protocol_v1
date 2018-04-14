@@ -24,7 +24,7 @@ library ClosePositionImpl {
      * A position was closed
      */
     event PositionClosed(
-        bytes32 indexed marginId,
+        bytes32 indexed positionId,
         address indexed closer,
         address indexed payoutRecipient,
         uint256 closeAmount,
@@ -39,7 +39,7 @@ library ClosePositionImpl {
 
     function closePositionImpl(
         MarginState.State storage state,
-        bytes32 marginId,
+        bytes32 positionId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapper,
@@ -51,7 +51,7 @@ library ClosePositionImpl {
     {
         ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
             state,
-            marginId,
+            positionId,
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapper,
@@ -154,7 +154,7 @@ library ClosePositionImpl {
         // Send the requisite quote token to do the buyback from vault to exchange wrapper
         if (quoteTokenPrice > 0) {
             Vault(state.VAULT).transferFromVault(
-                transaction.marginId,
+                transaction.positionId,
                 transaction.quoteToken,
                 transaction.exchangeWrapper,
                 quoteTokenPrice
@@ -195,7 +195,7 @@ library ClosePositionImpl {
         internal
     {
         emit PositionClosed(
-            transaction.marginId,
+            transaction.positionId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,

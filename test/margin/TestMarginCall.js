@@ -40,7 +40,7 @@ describe('#marginCall', () => {
       { from: from}
     );
     expectLog(tx.logs[0], 'MarginCallInitiated', {
-      marginId: OpenTx.id,
+      positionId: OpenTx.id,
       lender: lender,
       owner: trader,
       requiredDeposit: deposit
@@ -152,7 +152,7 @@ describe('#cancelMarginCall', () => {
       { from: from }
     );
     expectLog(tx.logs[0], 'MarginCallCanceled', {
-      marginId: OpenTx.id,
+      positionId: OpenTx.id,
       lender: lender,
       owner: trader,
       depositAmount: 0
