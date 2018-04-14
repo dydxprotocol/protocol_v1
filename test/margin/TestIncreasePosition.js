@@ -39,7 +39,7 @@ describe('#increasePosition', () => {
         dydxMargin,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       } = await setup(accounts);
 
       const tx = await callIncreasePosition(dydxMargin, addValueTx);
@@ -55,7 +55,7 @@ describe('#increasePosition', () => {
         tx,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       });
     });
   });
@@ -76,7 +76,7 @@ describe('#increasePosition', () => {
         dydxMargin,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       } = await setup(
         accounts,
         { positionOwner: testPositionOwner.address, loanOwner: testLoanOwner.address }
@@ -102,7 +102,7 @@ describe('#increasePosition', () => {
         tx,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       });
     });
   });
@@ -115,7 +115,7 @@ describe('#increasePosition', () => {
         dydxMargin,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       } = await setup(accounts);
 
       addValueTx.loanOffering.maxDuration = addValueTx.loanOffering.maxDuration * 2;
@@ -130,7 +130,7 @@ describe('#increasePosition', () => {
         tx,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       });
     });
   });
@@ -157,7 +157,7 @@ describe('#increasePosition', () => {
         dydxMargin,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       } = await setup(accounts);
 
       addValueTx.loanOffering.callTimeLimit = addValueTx.loanOffering.callTimeLimit * 2;
@@ -172,7 +172,7 @@ describe('#increasePosition', () => {
         tx,
         startingBalance,
         startingBalances,
-        sellerStartingQuoteToken
+        traderStartingQuoteToken
       });
     });
   });
@@ -196,13 +196,13 @@ describe('#increasePosition', () => {
       lenderBaseToken,
       makerBaseToken,
       exchangeWrapperBaseToken,
-      sellerQuoteToken,
+      traderQuoteToken,
       makerQuoteToken,
       vaultQuoteToken,
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
-      sellerFeeToken
+      traderFeeToken
     ] = await Promise.all([
       baseToken.balanceOf.call(tx.loanOffering.payer),
       baseToken.balanceOf.call(tx.buyOrder.maker),
@@ -220,13 +220,13 @@ describe('#increasePosition', () => {
       lenderBaseToken,
       makerBaseToken,
       exchangeWrapperBaseToken,
-      sellerQuoteToken,
+      traderQuoteToken,
       makerQuoteToken,
       vaultQuoteToken,
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
-      sellerFeeToken
+      traderFeeToken
     }
   }
 
@@ -273,11 +273,11 @@ describe('#increasePosition', () => {
     addValueTx.principal = addValueTx.principal.div(4);
     addValueTx.id = OpenTx.id;
 
-    const sellerStartingQuoteToken = OpenTx.depositAmount.times(2);
-    await quoteToken.issueTo(OpenTx.trader, sellerStartingQuoteToken);
+    const traderStartingQuoteToken = OpenTx.depositAmount.times(2);
+    await quoteToken.issueTo(OpenTx.trader, traderStartingQuoteToken);
     await quoteToken.approve(
       ProxyContract.address,
-      sellerStartingQuoteToken,
+      traderStartingQuoteToken,
       { from: OpenTx.trader }
     );
 
@@ -293,7 +293,7 @@ describe('#increasePosition', () => {
       feeToken,
       startingBalance,
       startingBalances,
-      sellerStartingQuoteToken
+      traderStartingQuoteToken
     };
   }
 
@@ -304,7 +304,7 @@ describe('#increasePosition', () => {
     tx,
     startingBalance,
     startingBalances,
-    sellerStartingQuoteToken
+    traderStartingQuoteToken
   }) {
     const [
       position,
@@ -367,8 +367,8 @@ describe('#increasePosition', () => {
       startingBalances.makerBaseToken.plus(lentAmount)
     );
     expect(finalBalances.exchangeWrapperBaseToken).to.be.bignumber.eq(0);
-    expect(finalBalances.sellerQuoteToken).to.be.bignumber.eq(
-      sellerStartingQuoteToken.minus(expectedDepositAmount)
+    expect(finalBalances.traderQuoteToken).to.be.bignumber.eq(
+      traderStartingQuoteToken.minus(expectedDepositAmount)
     );
     expect(finalBalances.makerQuoteToken).to.be.bignumber.eq(
       startingBalances.makerQuoteToken.minus(quoteTokenFromSell)

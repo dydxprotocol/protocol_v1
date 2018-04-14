@@ -134,7 +134,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and seller for accounts', async () => {
+    it('properly assigns owner for lender and owner for accounts', async () => {
       const dydxMargin = await Margin.deployed();
       const OpenTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(OpenTx);
@@ -147,7 +147,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and seller for contracts', async () => {
+    it('properly assigns owner for lender and owner for contracts', async () => {
       const dydxMargin = await Margin.deployed();
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
         Margin.address,
@@ -168,7 +168,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('properly assigns owner for lender and seller for chaining', async () => {
+    it('properly assigns owner for lender and owner for chaining', async () => {
       const dydxMargin = await Margin.deployed();
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
         Margin.address,
@@ -237,7 +237,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
 
   // if atomic owner is specified, then expect it
   if (OpenTx.owner === ADDRESSES.ZERO) {
-    expect(position.seller).to.equal(OpenTx.trader);
+    expect(position.owner).to.equal(OpenTx.trader);
   } else {
     let toReturn = null;
     try {
@@ -285,13 +285,13 @@ async function checkSuccess(dydxMargin, OpenTx) {
     lenderBaseToken,
     makerBaseToken,
     exchangeWrapperBaseToken,
-    sellerQuoteToken,
+    traderQuoteToken,
     makerQuoteToken,
     vaultQuoteToken,
     lenderFeeToken,
     makerFeeToken,
     exchangeWrapperFeeToken,
-    sellerFeeToken
+    traderFeeToken
   ] = await Promise.all([
     baseToken.balanceOf.call(OpenTx.loanOffering.payer),
     baseToken.balanceOf.call(OpenTx.buyOrder.maker),
@@ -310,7 +310,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
   );
   expect(makerBaseToken).to.be.bignumber.equal(OpenTx.principal);
   expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
-  expect(sellerQuoteToken).to.be.bignumber.equal(0);
+  expect(traderQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
     OpenTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
   );
@@ -336,7 +336,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
         )
       )
   );
-  expect(sellerFeeToken).to.be.bignumber.equal(
+  expect(traderFeeToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.takerFee
       .plus(OpenTx.buyOrder.takerFee)
       .minus(

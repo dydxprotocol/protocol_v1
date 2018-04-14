@@ -122,7 +122,7 @@ contract('ERC20MarginPosition', function(accounts) {
     ]);
   }
 
-  async function returnTokensToSeller() {
+  async function returnTokenstoTrader() {
     await Promise.all([
       POSITIONS.FULL.TOKEN_CONTRACT.transfer(POSITIONS.FULL.TX.trader, POSITIONS.FULL.NUM_TOKENS,
         { from: INITIAL_TOKEN_HOLDER }),
@@ -131,7 +131,7 @@ contract('ERC20MarginPosition', function(accounts) {
     ]);
   }
 
-  async function grantDirectCloseTokensToSeller(act = null) {
+  async function grantDirectCloseTokensToTrader(act = null) {
     const maxInterestFull = await getMaxInterestFee(POSITIONS.FULL.TX);
     const maxInterestPart = await getMaxInterestFee(POSITIONS.PART.TX);
     await issueTokenToAccountInAmountAndApproveProxy(
@@ -236,11 +236,11 @@ contract('ERC20MarginPosition', function(accounts) {
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const seller = POSITION.TX.trader;
+        const trader = POSITION.TX.trader;
         const amount = POSITION.TX.principal;
         await expectThrow(
           POSITION.TOKEN_CONTRACT.closeOnBehalfOf(
-            seller, seller, POSITION.ID, amount.div(2))
+            trader, trader, POSITION.ID, amount.div(2))
         );
       }
     });
@@ -295,8 +295,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('fails if value is zero', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -313,8 +313,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('closes up to the remainingAmount if user tries to close more', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -329,8 +329,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('closes at most the number of tokens owned', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
 
       const rando = accounts[9];
 
@@ -353,8 +353,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('fails if user does not own any of the tokenized position', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller(accounts[0]);
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader(accounts[0]);
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -371,8 +371,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('fails if closed', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -398,8 +398,8 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('succeeds otherwise', async () => {
       await transferPositionsToTokens();
-      await returnTokensToSeller();
-      await grantDirectCloseTokensToSeller();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -418,7 +418,7 @@ contract('ERC20MarginPosition', function(accounts) {
         await setUpPositions();
         await setUpTokens();
         await transferPositionsToTokens();
-        await returnTokensToSeller();
+        await returnTokenstoTrader();
         await marginCallPositions();
         await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
       }
@@ -426,7 +426,7 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('returns 0 when caller never had any tokens', async () => {
       // close half, force recover, then some random person can't withdraw any funds
-      await grantDirectCloseTokensToSeller();
+      await grantDirectCloseTokensToTrader();
       const rando = accounts[9];
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -445,10 +445,10 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('returns 0 when position is completely closed', async () => {
       // close the position completely and then try to withdraw
-      await grantDirectCloseTokensToSeller();
+      await grantDirectCloseTokensToTrader();
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const seller = POSITION.TX.trader;
+        const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
         await callClosePositionDirectly(
           CONTRACTS.MARGIN,
@@ -456,7 +456,7 @@ contract('ERC20MarginPosition', function(accounts) {
           POSITION.NUM_TOKENS
         );
         await expectThrow( CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
-        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, seller, { from: seller });
+        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
         expect(tx.result).to.be.bignumber.eq(0);
       }
@@ -464,16 +464,16 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('fails when position is still open', async () => {
       // close position halfway and then try to withdraw
-      await grantDirectCloseTokensToSeller();
+      await grantDirectCloseTokensToTrader();
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const seller = POSITION.TX.trader;
+        const trader = POSITION.TX.trader;
         await callClosePositionDirectly(
           CONTRACTS.MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
         );
-        await expectThrow( POSITION.TOKEN_CONTRACT.withdraw(seller, { from: seller }));
+        await expectThrow( POSITION.TOKEN_CONTRACT.withdraw(trader, { from: trader }));
       }
     });
 
@@ -481,12 +481,12 @@ contract('ERC20MarginPosition', function(accounts) {
       // close nothing, letting the lender forceRecoverCollateral
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const seller = POSITION.TX.trader;
+        const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
 
         await CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
 
-        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, seller, { from: seller });
+        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
         expect(tx.result).to.be.bignumber.equal(0);
       }
     });

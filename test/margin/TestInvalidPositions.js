@@ -191,7 +191,7 @@ describe('#openPosition', () => {
 
   describe('Balances', () => {
     contract('Margin', accounts => {
-      it('fails on insufficient seller balance', async () => {
+      it('fails on insufficient trader balance', async () => {
         const OpenTx = await createOpenTx(accounts);
 
         const storedAmount = OpenTx.depositAmount;
@@ -200,7 +200,7 @@ describe('#openPosition', () => {
         OpenTx.depositAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 

@@ -117,13 +117,13 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     expect(contains).to.be.true;
   }
 
-  await expectLogShort(dydxMargin, marginId, tx, response);
+  await expectLogOpenPosition(dydxMargin, marginId, tx, response);
 
   response.id = marginId;
   return response;
 }
 
-async function expectLogShort(dydxMargin, marginId, tx, response) {
+async function expectLogOpenPosition(dydxMargin, marginId, tx, response) {
   expectLog(response.logs[0], 'PositionOpened', {
     marginId: marginId,
     trader: tx.trader,
@@ -142,7 +142,7 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
 
-  const newSeller = await dydxMargin.getPositionOwner.call(marginId);
+  const newOwner = await dydxMargin.getPositionOwner.call(marginId);
   const newLender = await dydxMargin.getPositionLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
@@ -165,11 +165,11 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
       from: tx.trader,
       to: tx.owner
     });
-    if (newSeller !== tx.owner) {
+    if (newOwner !== tx.owner) {
       expectLog(response.logs[++logIndex], 'PositionTransferred', {
         marginId: marginId,
         from: tx.owner,
-        to: newSeller
+        to: newOwner
       });
     }
   }

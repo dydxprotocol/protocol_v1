@@ -41,18 +41,18 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
 
   const balances = await getBalances(dydxMargin, OpenTx, sellOrder);
   const {
-    sellerQuoteToken,
-    externalSellerQuoteToken,
-    externalSellerBaseToken,
-    sellerFeeToken,
-    externalSellerFeeToken,
+    traderQuoteToken,
+    externalEntityQuoteToken,
+    externalEntityBaseToken,
+    traderFeeToken,
+    externalEntityFeeToken,
     feeRecipientFeeToken
   } = balances;
 
   checkSmartContractBalances(balances, OpenTx, closeAmount);
   checkLenderBalances(balances, baseTokenOwedToLender, OpenTx);
 
-  expect(sellerQuoteToken).to.be.bignumber.equal(
+  expect(traderQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       OpenTx.principal,
@@ -60,8 +60,8 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
     ).plus(quoteTokenFromSell)
       .minus(quoteTokenBuybackCost)
   );
-  expect(externalSellerQuoteToken).to.be.bignumber.equal(quoteTokenBuybackCost);
-  expect(externalSellerBaseToken).to.be.bignumber.equal(
+  expect(externalEntityQuoteToken).to.be.bignumber.equal(quoteTokenBuybackCost);
+  expect(externalEntityBaseToken).to.be.bignumber.equal(
     sellOrder.makerTokenAmount.minus(baseTokenOwedToLender)
   );
   expect(feeRecipientFeeToken).to.be.bignumber.equal(
@@ -77,7 +77,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
       )
     )
   );
-  expect(sellerFeeToken).to.be.bignumber.equal(
+  expect(traderFeeToken).to.be.bignumber.equal(
     OpenTx.buyOrder.takerFee
       .plus(OpenTx.loanOffering.rates.takerFee)
       .plus(sellOrder.takerFee)
@@ -103,7 +103,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
         )
       )
   );
-  expect(externalSellerFeeToken).to.be.bignumber.equal(
+  expect(externalEntityFeeToken).to.be.bignumber.equal(
     sellOrder.makerFee
       .minus(
         getPartialAmount(
@@ -182,16 +182,16 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     FeeToken.deployed(),
   ]);
 
-  let externalSellerQuoteToken,
-    externalSellerBaseToken,
-    externalSellerFeeToken,
+  let externalEntityQuoteToken,
+    externalEntityBaseToken,
+    externalEntityFeeToken,
     feeRecipientFeeToken;
 
   if (sellOrder) {
     [
-      externalSellerQuoteToken,
-      externalSellerBaseToken,
-      externalSellerFeeToken,
+      externalEntityQuoteToken,
+      externalEntityBaseToken,
+      externalEntityFeeToken,
       feeRecipientFeeToken,
     ] = await Promise.all([
       quoteToken.balanceOf.call(sellOrder.maker),
@@ -202,13 +202,13 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
   }
 
   const [
-    sellerQuoteToken,
-    sellerBaseToken,
+    traderQuoteToken,
+    traderBaseToken,
 
     lenderQuoteToken,
     lenderBaseToken,
 
-    sellerFeeToken,
+    traderFeeToken,
 
     vaultFeeToken,
     vaultQuoteToken,
@@ -232,16 +232,16 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
   ]);
 
   return {
-    sellerQuoteToken,
-    sellerBaseToken,
+    traderQuoteToken,
+    traderBaseToken,
 
     lenderQuoteToken,
     lenderBaseToken,
 
-    externalSellerQuoteToken,
-    externalSellerBaseToken,
-    externalSellerFeeToken,
-    sellerFeeToken,
+    externalEntityQuoteToken,
+    externalEntityBaseToken,
+    externalEntityFeeToken,
+    traderFeeToken,
 
     feeRecipientFeeToken,
 
@@ -265,13 +265,13 @@ async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmoun
   checkSmartContractBalances(balances, OpenTx, closeAmount);
   checkLenderBalances(balances, baseTokenOwedToLender, OpenTx);
   const maxInterest = await getMaxInterestFee(OpenTx);
-  expect(balances.sellerBaseToken).to.be.bignumber.equal(
+  expect(balances.traderBaseToken).to.be.bignumber.equal(
     OpenTx.principal
       .plus(maxInterest)
       .minus(baseTokenOwedToLender)
   );
 
-  expect(balances.sellerQuoteToken).to.be.bignumber.equal(
+  expect(balances.traderQuoteToken).to.be.bignumber.equal(
     getPartialAmount(
       closeAmount,
       OpenTx.principal,

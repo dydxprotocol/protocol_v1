@@ -54,7 +54,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
 
   describe('#receivePositionOwnership', () => {
     async function checkSuccess(OpenTx, erc20Contract, remainingPrincipal) {
-      const originalSeller = accounts[0];
+      const trader = accounts[0];
       const [
         tokenMargin,
         tokenmarginId,
@@ -62,7 +62,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
         tokenHolder,
         tokenQuoteToken,
         totalSupply,
-        ownerSupply,
+        traderSupply,
       ] = await Promise.all([
         erc20Contract.MARGIN.call(),
         erc20Contract.MARGIN_ID.call(),
@@ -70,16 +70,16 @@ contract('ERC20MarginPositionCreator', function(accounts) {
         erc20Contract.INITIAL_TOKEN_HOLDER.call(),
         erc20Contract.quoteToken.call(),
         erc20Contract.totalSupply.call(),
-        erc20Contract.balanceOf.call(originalSeller),
+        erc20Contract.balanceOf.call(trader),
       ]);
 
       expect(tokenMargin).to.equal(dydxMargin.address);
       expect(tokenmarginId).to.equal(OpenTx.id);
       expect(tokenState).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
-      expect(tokenHolder).to.equal(originalSeller);
+      expect(tokenHolder).to.equal(trader);
       expect(tokenQuoteToken).to.equal(QuoteToken.address);
       expect(totalSupply).to.be.bignumber.equal(remainingPrincipal);
-      expect(ownerSupply).to.be.bignumber.equal(remainingPrincipal);
+      expect(traderSupply).to.be.bignumber.equal(remainingPrincipal);
     }
 
     it('fails for arbitrary caller', async () => {

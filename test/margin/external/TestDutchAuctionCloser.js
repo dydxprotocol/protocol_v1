@@ -165,7 +165,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       const [
         baseBidder,
-        quoteSeller,
+        quoteTrader,
         quoteBidder
       ] = await Promise.all([
         BaseTokenContract.balanceOf.call(dutchBidder),
@@ -179,7 +179,7 @@ contract('DutchAuctionCloser', function(accounts) {
           .minus(owedAmount1)
           .minus(owedAmount2)
       );
-      expect(quoteSeller.plus(quoteBidder)).to.be.bignumber.equal(quoteVault);
+      expect(quoteTrader.plus(quoteBidder)).to.be.bignumber.equal(quoteVault);
     });
   });
 });
