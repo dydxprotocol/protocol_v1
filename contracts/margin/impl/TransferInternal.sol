@@ -10,7 +10,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * @title TransferInternal
  * @author dYdX
  *
- * This library contains the implementation for transferring ownership of loans and shorts
+ * This library contains the implementation for transferring ownership of loans and positions
  */
 library TransferInternal {
 
@@ -26,7 +26,7 @@ library TransferInternal {
     );
 
     /**
-     * Ownership of a short was transferred to a new address
+     * Ownership of a postions was transferred to a new address
      */
     event PositionTransferred(
         bytes32 indexed marginId,
@@ -54,7 +54,7 @@ library TransferInternal {
         internal
         returns (address)
     {
-        // log event except upon short creation
+        // log event except upon position creation
         if (oldOwner != address(0)) {
             emit LoanTransferred(marginId, oldOwner, newOwner);
         }
@@ -75,10 +75,10 @@ library TransferInternal {
      * ownership of the position. This function does not actually set the state of the position
      *
      * @param  marginId  The Unique ID of the position
-     * @param  oldOwner  The previous owner of the short
-     * @param  newOwner  The intended owner of the short
-     * @return           The address that the intended owner wishes to assign the short to (may be
-     *                   the same as the intended owner). Zero if ownership is rejected.
+     * @param  oldOwner  The previous owner of the position
+     * @param  newOwner  The intended owner of the position
+     * @return           The address that the intended owner wishes to assign the position to (may
+     *                   be the same as the intended owner). Zero if ownership is rejected.
      */
     function grantPositionOwnership(
         bytes32 marginId,
@@ -88,7 +88,7 @@ library TransferInternal {
         internal
         returns (address)
     {
-        // log event except upon short creation
+        // log event except upon position creation
         if (oldOwner != address(0)) {
             emit PositionTransferred(marginId, oldOwner, newOwner);
         }

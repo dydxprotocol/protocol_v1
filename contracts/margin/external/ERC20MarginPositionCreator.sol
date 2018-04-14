@@ -11,10 +11,11 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * @title ERC20MarginPositionCreator
  * @author dYdX
  *
- * This contract is used to deploy new ERC20MarginPosition contracts. A new ERC20MarginPosition is automatically
- * deployed whenever a short is transferred to this contract. That short is then transferred to the
- * new ERC20MarginPosition, with the tokens initially being allocated to the address that transferred the
- * short originally to the ERC20ERC20MarginPositionCreator.
+ * This contract is used to deploy new ERC20MarginPosition contracts. A new ERC20MarginPosition is
+ * automatically deployed whenever a position is transferred to this contract. Ownership of that
+ * position is then transferred to the new ERC20MarginPosition, with the tokens initially being
+ * allocated to the address that transferred the position originally to the
+ * ERC20ERC20MarginPositionCreator.
  */
  /* solium-disable-next-line */
 contract ERC20MarginPositionCreator is
@@ -31,7 +32,7 @@ contract ERC20MarginPositionCreator is
 
     // ============ State Variables ============
 
-    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
+    // Recipients that will fairly verify and redistribute funds from closing the position
     address[] public TRUSTED_RECIPIENTS;
 
     // ============ Constructor ============
@@ -48,14 +49,14 @@ contract ERC20MarginPositionCreator is
         }
     }
 
-    // ============ Margin Only Functions ============
+    // ============ Margin-Only Functions ============
 
     /**
      * Implementation of PositionOwner functionality. Creates a new ERC20MarginPosition and assigns
-     * ownership to the ERC20MarginPosition. Called by Margin when a short is transferred to this
+     * ownership to the ERC20MarginPosition. Called by Margin when a postion is transferred to this
      * contract.
      *
-     * @param  from  Address of the previous owner of the short
+     * @param  from  Address of the previous owner of the position
      * @return       Address of the new ERC20MarginPosition contract
      */
     function receivePositionOwnership(

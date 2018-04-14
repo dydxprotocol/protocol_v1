@@ -91,7 +91,7 @@ library OpenPositionShared {
     {
         // If the lender is a smart contract, call out to it to get its consent for this loan
         // This is done after other validations/state updates as it is an external call
-        // NOTE: The short will exist in the Repo for this call
+        // NOTE: The position will exist in the Repo for this call
         //       (possible other contract calls back into Margin)
         getConsentIfSmartContractLender(transaction, marginId);
 
@@ -108,7 +108,7 @@ library OpenPositionShared {
         internal
         view
     {
-        // Disallow 0 value shorts
+        // Disallow positions with zero amount
         require(transaction.effectiveAmount > 0);
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
@@ -122,7 +122,7 @@ library OpenPositionShared {
             || state.approvedLoans[transaction.loanOffering.loanHash]
         );
 
-        // Validate the short amount is <= than max and >= min
+        // Validate the position amount is <= than max and >= min
         require(
             transaction.effectiveAmount.add(
                 MarginCommon.getUnavailableLoanOfferingAmountImpl(

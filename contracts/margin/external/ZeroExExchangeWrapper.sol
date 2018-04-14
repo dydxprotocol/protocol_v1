@@ -71,7 +71,7 @@ contract ZeroExExchangeWrapper is
         TokenInteract.approve(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
     }
 
-    // ============ Short Sell Only Functions ============
+    // ============ Margin-Only Functions ============
 
     function exchange(
         address makerToken,

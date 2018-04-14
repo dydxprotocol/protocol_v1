@@ -19,7 +19,7 @@ library DepositCollateralImpl {
     // ============ Events ============
 
     /**
-     * Additional deposit for a short sell was posted by the owner
+     * Additional collateral for a position was posted by the owner
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,

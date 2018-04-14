@@ -31,7 +31,7 @@ contract SharedLoanCreator is
 
     // ============ State Variables ============
 
-    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
+    // Recipients that will fairly verify and redistribute funds from closing the position
     address[] public TRUSTED_LOAN_CALLERS;
 
     // ============ Constructor ============
@@ -48,7 +48,7 @@ contract SharedLoanCreator is
         }
     }
 
-    // ============ Margin Only Functions ============
+    // ============ Margin-Only Functions ============
 
     /**
      * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan

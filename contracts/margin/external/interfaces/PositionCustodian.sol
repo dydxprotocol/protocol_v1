@@ -6,8 +6,8 @@ pragma experimental "v0.5.0";
  * @title PositionCustodian
  * @author dYdX
  *
- * Interface to interact with other second-layer contracts. For contracts that own short sell
- * positions as a proxy for other addresses.
+ * Interface to interact with other second-layer contracts. For contracts that own positions as a
+ * proxy for other addresses.
  */
  /* solium-disable-next-line */
 contract PositionCustodian {

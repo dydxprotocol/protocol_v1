@@ -25,7 +25,7 @@ library LoanImpl {
     // ============ Events ============
 
     /**
-     * The loan for a short sell was called in
+     * A position was margin-called
      */
     event MarginCallInitiated(
         bytes32 indexed marginId,
@@ -35,7 +35,7 @@ library LoanImpl {
     );
 
     /**
-     * A loan call was canceled
+     * A margin call was canceled
      */
     event MarginCallCanceled(
         bytes32 indexed marginId,

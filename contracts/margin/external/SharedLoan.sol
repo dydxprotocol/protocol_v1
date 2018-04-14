@@ -78,10 +78,10 @@ contract SharedLoan is
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the short's baseToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's baseToken. Cached for convenience and lower-cost withdrawals
     address public baseToken;
 
-    // Address of the short's quoteToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
     address public quoteToken;
 
     // Total amount lent
@@ -120,7 +120,7 @@ contract SharedLoan is
         }
     }
 
-    // ============ Short Sell Only Functions ============
+    // ============ Margin-Only Functions ============
 
     /**
      * Called by the Margin contract when anyone transfers ownership of a loan to this contract.
@@ -140,7 +140,7 @@ contract SharedLoan is
         external
         returns (address)
     {
-        // require uninitialized so that this cannot receive short ownership from more than 1 loan
+        // require uninitialized so that this cannot receive ownership from more than 1 loan
         require(state == State.UNINITIALIZED);
         require(MARGIN_ID == marginId);
 
@@ -171,7 +171,7 @@ contract SharedLoan is
      *
      * @param  from         Address that lent the additional tokens
      * @param  marginId     Unique ID of the position
-     * @param  amountAdded  Amount that was added to the short
+     * @param  amountAdded  Amount that was added to the position
      * @return              True to indicate that this contract consents to value being added
      */
     function marginLoanIncreased(

@@ -12,7 +12,7 @@ import { Vault } from "../Vault.sol";
  * @author dYdX
  *
  * A collection of public constant getter functions that allow users and applications to read the
- * state of any short stored in the dYdX protocol.
+ * state of any position stored in the dYdX protocol.
  */
 contract PositionGetters is MarginStorage {
     using SafeMath for uint256;
@@ -20,10 +20,10 @@ contract PositionGetters is MarginStorage {
     // ============ Public Constant Functions ============
 
     /**
-     * Gets if a short is currently open
+     * Gets if a position is currently open
      *
      * @param  marginId Unique ID of the position
-     * @return          True if the short is exists and is open
+     * @return          True if the position is exists and is open
      */
     function containsPosition(
         bytes32 marginId
@@ -36,10 +36,10 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a short is currently margin-called
+     * Gets if a position is currently margin-called
      *
      * @param  marginId Unique ID of the position
-     * @return          True if the short is margin-called
+     * @return          True if the position is margin-called
      */
     function isPositionCalled(
         bytes32 marginId
@@ -52,10 +52,10 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a short was previously closed
+     * Gets if a position was previously closed
      *
      * @param  marginId Unique ID of the position
-     * @return          True if the short is now closed
+     * @return          True if the position is now closed
      */
     function isPositionClosed(
         bytes32 marginId
@@ -64,11 +64,11 @@ contract PositionGetters is MarginStorage {
         external
         returns (bool)
     {
-        return state.closedShorts[marginId];
+        return state.closedPositions[marginId];
     }
 
     /**
-     * Gets the number of quote tokens currently locked up in Vault for a particular short
+     * Gets the number of quote tokens currently locked up in Vault for a particular position
      *
      * @param  marginId Unique ID of the position
      * @return          The number of quote tokens
@@ -88,7 +88,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the time until the interest fee charged for the short will increase.
+     * Gets the time until the interest fee charged for the position will increase.
      * Returns 1 if the interest fee increases every second.
      * Returns 0 if the interest fee will never increase again.
      *
@@ -119,7 +119,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of base tokens currently needed to close the short completely, including
+     * Gets the amount of base tokens currently needed to close the position completely, including
      * interest fees.
      *
      * @param  marginId Unique ID of the position
@@ -142,11 +142,11 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of base tokens needed to close a given amount of the short at a given time,
+     * Gets the amount of base tokens needed to close a given amount of the position at a given time,
      * including interest fees.
      *
      * @param  marginId     Unique ID of the position
-     * @param  marginId     Amount of short being closed
+     * @param  marginId     Amount of position being closed
      * @param  timestamp    Block timestamp in seconds of close
      * @return              The number of base tokens owed at the given time and amount
      */
@@ -170,10 +170,10 @@ contract PositionGetters is MarginStorage {
 
     /**
      * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
-     * onto the short at a given time.
+     * onto the position at a given time.
      *
      * @param  marginId     Unique ID of the position
-     * @param  marginId     Amount being added to short
+     * @param  marginId     Amount being added to position
      * @param  timestamp    Block timestamp in seconds of addition
      * @return              The number of base tokens that can be borrowed at the given
      *                      time and amount

@@ -21,7 +21,7 @@ library ClosePositionImpl {
     // ============ Events ============
 
     /**
-     * A short sell was closed
+     * A position was closed
      */
     event PositionClosed(
         bytes32 indexed marginId,
@@ -110,7 +110,7 @@ library ClosePositionImpl {
             Proxy(state.PROXY).transferTokens(
                 transaction.baseToken,
                 msg.sender,
-                transaction.shortLender,
+                transaction.positionLender,
                 transaction.baseTokenOwed
             );
         } else {
@@ -180,7 +180,7 @@ library ClosePositionImpl {
         Proxy(state.PROXY).transferTokens(
             transaction.baseToken,
             transaction.exchangeWrapper,
-            transaction.shortLender,
+            transaction.positionLender,
             transaction.baseTokenOwed
         );
 

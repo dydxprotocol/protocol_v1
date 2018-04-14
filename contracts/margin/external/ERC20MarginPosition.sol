@@ -51,7 +51,7 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * The short was completely closed and tokens can be withdrawn
+     * The position was completely closed and tokens can be withdrawn
      */
     event ClosedByTrustedParty(
         address closer,
@@ -60,12 +60,12 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * The short was completely closed and tokens can be withdrawn
+     * The position was completely closed and tokens can be withdrawn
      */
     event CompletelyClosed();
 
     /**
-     * A user burned tokens to withdraw quote tokens from this contract after the short was closed
+     * A user burned tokens to withdraw quote tokens from this contract after the position was closed
      */
     event TokensRedeemedAfterForceClose(
         address indexed redeemer,
@@ -74,7 +74,7 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * A user burned tokens in order to partially close the short
+     * A user burned tokens in order to partially close the position
      */
     event TokensRedeemedForClose(
         address indexed redeemer,
@@ -89,13 +89,13 @@ contract ERC20MarginPosition is
     // Unique ID of the position this contract is tokenizing
     bytes32 public MARGIN_ID;
 
-    // Addresses of recipients that will fairly verify and redistribute funds from closing the short
+    // Recipients that will fairly verify and redistribute funds from closing the position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the short's quoteToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
     address public quoteToken;
 
     // Symbol to be ERC20 compliant with frontends
@@ -121,10 +121,10 @@ contract ERC20MarginPosition is
         }
     }
 
-    // ============ Short Sell Only Functions ============
+    // ============ Margin-Only Functions ============
 
     /**
-     * Called by Margin when anyone transfers ownership of a short to this contract.
+     * Called by Margin when anyone transfers ownership of a position to this contract.
      * This function initializes the tokenization of the position given and returns this address to
      * indicate to Margin that it is willing to take ownership of the position.
      *
@@ -141,7 +141,7 @@ contract ERC20MarginPosition is
         external
         returns (address)
     {
-        // require uninitialized so that this cannot receive short ownership from more than 1 short
+        // require uninitialized so that this cannot receive position ownership for more than 1
         require(state == State.UNINITIALIZED);
         require(MARGIN_ID == marginId);
 
@@ -161,7 +161,7 @@ contract ERC20MarginPosition is
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         emit Transfer(address(0), INITIAL_TOKEN_HOLDER, currentPrincipal);
 
-        return address(this); // returning own address retains ownership of short
+        return address(this); // returning own address retains ownership of position
     }
 
     /**
@@ -170,7 +170,7 @@ contract ERC20MarginPosition is
      *
      * @param  from         Address that added the value to the position
      * @param  marginId     Unique ID of the position
-     * @param  amountAdded  Amount that was added to the short
+     * @param  amountAdded  Amount that was added to the position
      * @return              True to indicate that this contract consents to value being added
      */
     function marginPositionIncreased(
@@ -195,7 +195,7 @@ contract ERC20MarginPosition is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the short
+     * Called by Margin when an owner of this token is attempting to close some of the position
      * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
@@ -204,8 +204,8 @@ contract ERC20MarginPosition is
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
      * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the short being closed
-     * @return                 The amount the user is allowed to close for the specified short
+     * @param requestedAmount  Amount of the position being closed
+     * @return                 The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,
@@ -223,7 +223,7 @@ contract ERC20MarginPosition is
 
         uint256 allowedAmount;
 
-        // Tokens are not burned when a trusted recipient is used, but we require the short to be
+        // Tokens are not burned when a trusted recipient is used, but we require the position to be
         // completely closed. All token holders are then entitled to the quoteTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
@@ -252,12 +252,12 @@ contract ERC20MarginPosition is
     // ============ Public State Changing Functions ============
 
     /**
-     * Withdraw quote tokens from this contract for any of the short that was closed via external
+     * Withdraw quote tokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
      *
      * NOTE: It is possible that this contract could be sent quote token by external sources
      * other than from the Margin contract. In this case the payout for token holders
-     * would be greater than just that from the short sell payout. This is fine because
+     * would be greater than just that from the normal payout. This is fine because
      * nobody has incentive to send this contract extra funds, and if they do then it's
      * also fine just to let the token holders have it.
      *
@@ -276,7 +276,7 @@ contract ERC20MarginPosition is
         external
         returns (uint256)
     {
-        // If in OPEN state, but the short is closed, set to CLOSED state
+        // If in OPEN state, but the position is closed, set to CLOSED state
         if (state == State.OPEN && Margin(MARGIN).isPositionClosed(MARGIN_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
@@ -336,7 +336,7 @@ contract ERC20MarginPosition is
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the short token which includes the hexadecimal marginId of the position
+     * @return  The name of the position token which includes the hexadecimal marginId
      */
     function name()
         external

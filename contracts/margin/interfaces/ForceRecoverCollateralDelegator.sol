@@ -34,7 +34,7 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
      *
      * @param who            Address of the caller of the cancelMarginCall function
      * @param marginId       Unique ID of the position
-     * @return               True if the user is allowed to cancel the short call, false otherwise
+     * @return               True if the user is allowed to cancel the margin call, false otherwise
      */
     function forceRecoverCollateralOnBehalfOf(
         address who,

@@ -8,8 +8,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @title LoanOwner
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to own shorts on behalf of users in order
- * to unlock more complex logic.
+ * Interface that smart contracts must implement in order to own loans on behalf of other accounts
  */
 contract LoanOwner is OnlyMargin {
 

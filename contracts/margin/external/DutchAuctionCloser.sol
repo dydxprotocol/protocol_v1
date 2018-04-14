@@ -15,7 +15,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * @title DutchAuctionCloser
  * @author dYdX
  *
- * Contract for allowing anyone to close a called-in short by using a Dutch auction mechanism to
+ * Contract for allowing anyone to close a called-in position by using a Dutch auction mechanism to
  * give a fair price to the position owner. Price paid to the owner decreases linearly over time.
  */
  /* solium-disable-next-line */
@@ -26,7 +26,7 @@ contract DutchAuctionCloser is
     // ============ Events ============
 
     /**
-     * A short was closed by this contract
+     * A position was closed by this contract
      */
     event PositionClosedByDutchAuction(
         bytes32 indexed marginId,
@@ -75,9 +75,9 @@ contract DutchAuctionCloser is
      * Function to implement the PayoutRecipient interface.
      *
      * @param  marginId           Unique ID of the position
-     * @param  closeAmount        Amount of the short that was closed
-     * @param  shortCloser        Address of the account or contract that closed the short
-     * @param  positionOwner      Address of the owner of the short
+     * @param  closeAmount        Amount of the position that was closed
+     * @param  closer             Address of the account or contract that closed the position
+     * @param  positionOwner      Address of the owner of the position
      * @param  quoteToken         Address of the ERC20 quote token
      * @param  payout             Number of quote tokens received from the payout
      * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
@@ -87,7 +87,7 @@ contract DutchAuctionCloser is
     function receiveClosePositionPayout(
         bytes32 marginId,
         uint256 closeAmount,
-        address shortCloser,
+        address closer,
         address positionOwner,
         address quoteToken,
         uint256 payout,
@@ -105,18 +105,18 @@ contract DutchAuctionCloser is
             totalQuoteToken
         );
 
-        // pay quoteToken back to short owner
+        // pay quoteToken back to position owner
         address deedHolder = PositionCustodian(positionOwner).getPositionDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
-        // pay quoteToken back to short closer
+        // pay quoteToken back to bidder
         uint256 bidderReward = payout.sub(auctionPrice);
-        TokenInteract.transfer(quoteToken, shortCloser, bidderReward);
+        TokenInteract.transfer(quoteToken, closer, bidderReward);
 
         emit PositionClosedByDutchAuction(
             marginId,
             positionOwner,
-            shortCloser,
+            closer,
             closeAmount,
             bidderReward,
             auctionPrice

@@ -36,7 +36,7 @@ library ClosePositionShared {
         address baseToken;
         address quoteToken;
         address positionOwner;
-        address shortLender;
+        address positionLender;
         address exchangeWrapper;
         bool    payoutInQuoteToken;
     }
@@ -202,7 +202,7 @@ library ClosePositionShared {
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
             positionOwner: position.owner,
-            shortLender: position.lender,
+            positionLender: position.lender,
             exchangeWrapper: exchangeWrapper,
             payoutInQuoteToken: payoutInQuoteToken
         });

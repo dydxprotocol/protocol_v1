@@ -8,8 +8,8 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @title PositionOwner
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to own shorts on behalf of users in order
- * to unlock more complex logic.
+ * Interface that smart contracts must implement in order to own position on behalf of other
+ * accounts
  */
 contract PositionOwner is OnlyMargin {
 
@@ -31,7 +31,7 @@ contract PositionOwner is OnlyMargin {
      *
      * @param  from     Address of the previous owner
      * @param  marginId Unique ID of the position
-     * @return          The address to pass short ownership to. Own address to keep short ownership,
+     * @return          The address to pass position ownership to. Own address to keep ownership,
                         0x0 to reject loan ownership completely.
      */
     function receivePositionOwnership(
@@ -44,7 +44,7 @@ contract PositionOwner is OnlyMargin {
 
     /**
      * Function a contract must implement in order to allow additional value to be added onto
-     * an owned position. Margin will call this on the owner of a short
+     * an owned position. Margin will call this on the owner of a position
      * during Margin#increasePosition. If true is returned, the implementing contract can assume
      * the additional value was added.
      *

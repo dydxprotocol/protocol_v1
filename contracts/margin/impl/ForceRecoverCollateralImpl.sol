@@ -20,7 +20,7 @@ library ForceRecoverCollateralImpl {
     // ============ Events ============
 
     /**
-     * A short sell loan was forcibly recovered by the lender
+     * Collateral for a position was forcibly recovered by the lender
      */
     event CollateralForceRecovered(
         bytes32 indexed marginId,
@@ -40,7 +40,7 @@ library ForceRecoverCollateralImpl {
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
-        // 2) The maxDuration of the short has elapsed
+        // 2) The maxDuration of the position has elapsed
         require( /* solium-disable-next-line */
             (
                 position.callTimestamp > 0

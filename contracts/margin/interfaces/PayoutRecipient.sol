@@ -30,9 +30,9 @@ contract PayoutRecipient is OnlyMargin {
      * in a closePosition transaction. May redistribute any payout as necessary. Throws on error.
      *
      * @param  marginId           Unique ID of the position
-     * @param  closeAmount        Amount of the short that was closed
-     * @param  shortCloser        Address of the account or contract that closed the short
-     * @param  positionOwner      Address of the owner of the short
+     * @param  closeAmount        Amount of the position that was closed
+     * @param  closer             Address of the account or contract that closed the position
+     * @param  positionOwner      Address of the owner of the position
      * @param  quoteToken         Address of the ERC20 quote token
      * @param  payout             Number of tokens received from the payout
      * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
@@ -42,7 +42,7 @@ contract PayoutRecipient is OnlyMargin {
     function receiveClosePositionPayout(
         bytes32 marginId,
         uint256 closeAmount,
-        address shortCloser,
+        address closer,
         address positionOwner,
         address quoteToken,
         uint256 payout,

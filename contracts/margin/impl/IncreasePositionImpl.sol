@@ -25,7 +25,7 @@ library IncreasePositionImpl {
     // ============ Events ============
 
     /*
-     * Value was added to a short sell
+     * A position was increased
      */
     event PositionIncreased(
         bytes32 indexed marginId,
@@ -201,12 +201,12 @@ library IncreasePositionImpl {
         require(position.callTimeLimit <= transaction.loanOffering.callTimeLimit);
 
         // require the position to end no later than the loanOffering's maximum acceptable end time
-        uint256 shortEndTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
+        uint256 positionEndTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
-        require(shortEndTimestamp <= offeringEndTimestamp);
+        require(positionEndTimestamp <= offeringEndTimestamp);
 
         // Do not allow value to be added after the max duration
-        require(block.timestamp < shortEndTimestamp);
+        require(block.timestamp < positionEndTimestamp);
     }
 
     function setDepositAmount(
@@ -288,8 +288,8 @@ library IncreasePositionImpl {
         address owner = position.owner;
         address lender = position.lender;
 
-        // Unless msg.sender is the position short owner and is not a smart contract, call out
-        // to the short owner to ensure they consent to value being added
+        // Unless msg.sender is the position owner and is not a smart contract, call out
+        // to the owner to ensure they consent to value being added
         if (msg.sender != owner || AddressUtils.isContract(owner)) {
             require(
                 PositionOwner(owner).marginPositionIncreased(

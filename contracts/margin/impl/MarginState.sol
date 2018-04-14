@@ -27,7 +27,7 @@ library MarginState {
         // already been canceled
         mapping (bytes32 => uint256) loanCancels;
 
-        // Mapping from loanHash -> number, which stores the number of shorts taken out
+        // Mapping from loanHash -> number, which stores the number of unique positions taken out
         // for a given loan
         mapping (bytes32 => uint256) loanNumbers;
 
@@ -36,9 +36,9 @@ library MarginState {
         // on-chain loan offerings
         mapping (bytes32 => bool) approvedLoans;
 
-        // Mapping that contains all short sells. Mapped by: marginId -> Position
+        // Mapping that contains all margin positions. Mapped by: marginId -> Position
         mapping (bytes32 => MarginCommon.Position) positions;
 
-        mapping (bytes32 => bool) closedShorts;
+        mapping (bytes32 => bool) closedPositions;
     }
 }

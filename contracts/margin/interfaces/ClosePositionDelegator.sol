@@ -8,7 +8,7 @@ import { PositionOwner } from "./PositionOwner.sol";
  * @title ClosePositionDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses close a short
+ * Interface that smart contracts must implement in order to let other addresses close a position
  * owned by the smart contract.
  */
 contract ClosePositionDelegator is PositionOwner {
@@ -40,8 +40,8 @@ contract ClosePositionDelegator is PositionOwner {
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
      * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the short being closed
-     * @return                 The amount the user is allowed to close for the specified short
+     * @param requestedAmount  Amount of the position being closed
+     * @return                 The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,

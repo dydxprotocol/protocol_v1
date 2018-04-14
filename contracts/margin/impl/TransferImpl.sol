@@ -10,7 +10,7 @@ import { TransferInternal } from "./TransferInternal.sol";
  * @title TransferImpl
  * @author dYdX
  *
- * This library contains the implementation for transferring ownership of loans and shorts
+ * This library contains the implementation for transferring ownership of loans and positions
  */
 library TransferImpl {
 

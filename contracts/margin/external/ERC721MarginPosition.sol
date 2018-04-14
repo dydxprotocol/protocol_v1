@@ -15,7 +15,7 @@ import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
  *
  * Contract used to tokenize positions as ERC721-compliant non-fungible tokens. Holding the
  * token allows the holder to close the position. Functionality is added to let users approve
- * other addresses to close their shorts for them.
+ * other addresses to close their positions for them.
  */
  /* solium-disable-next-line */
 contract ERC721MarginPosition is
@@ -41,7 +41,7 @@ contract ERC721MarginPosition is
 
     // ============ State Variables ============
 
-    // Mapping from an address to other addresses that are approved to be short closers
+    // Mapping from an address to other addresses that are approved to be positions closers
     mapping (address => mapping (address => bool)) public approvedClosers;
 
     // Mapping from an address to other addresses that are approved to be payoutRecipients
@@ -52,7 +52,7 @@ contract ERC721MarginPosition is
     function ERC721MarginPosition(
         address margin
     )
-        ERC721Token("dYdX Short Sells", "dYdX")
+        ERC721Token("dYdX Margin Positions", "dYdX")
         public
         ClosePositionDelegator(margin)
     {
@@ -106,10 +106,10 @@ contract ERC721MarginPosition is
     }
 
     /**
-     * Transfer ownership of the short externally to this contract, thereby burning the token
+     * Transfer ownership of the position externally to this contract, thereby burning the token
      *
      * @param  marginId Unique ID of the position
-     * @param  to       Address to transfer short ownership to
+     * @param  to       Address to transfer postion ownership to
      */
     function transferPosition(
         bytes32 marginId,
@@ -126,7 +126,7 @@ contract ERC721MarginPosition is
 
     /**
      * Burn an invalid token. Callable by anyone. Used to burn unecessary tokens for clarity and to
-     * free up storage. Throws if the short is not yet closed.
+     * free up storage. Throws if the position is not yet closed.
      *
      * @param  marginId Unique ID of the position
      */
@@ -143,11 +143,11 @@ contract ERC721MarginPosition is
     // ============ OnlyMargin Functions ============
 
     /**
-     * Called by the Margin contract when anyone transfers ownership of a short to this contract.
+     * Called by the Margin contract when anyone transfers ownership of a position to this contract.
      * This function mints a new ERC721 Token and returns this address to
      * indicate to Margin that it is willing to take ownership of the position.
      *
-     * @param  from     Address of previous short owner
+     * @param  from     Address of previous position owner
      * @param  marginId Unique ID of the position
      * @return          This address on success, throw otherwise
      */
@@ -161,7 +161,7 @@ contract ERC721MarginPosition is
         returns (address)
     {
         _mint(from, uint256(marginId));
-        return address(this); // returning own address retains ownership of short
+        return address(this); // returning own address retains ownership of position
     }
 
     function marginPositionIncreased(
@@ -178,7 +178,7 @@ contract ERC721MarginPosition is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the short
+     * Called by Margin when an owner of this token is attempting to close some of the position
      * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
@@ -187,8 +187,8 @@ contract ERC721MarginPosition is
      * @param closer           Address of the caller of the close function
      * @param payoutRecipient  Address of the recipient of any quote tokens paid out
      * @param marginId         Unique ID of the position
-     * @param requestedAmount  Amount of the short being closed
-     * @return                 The amount the user is allowed to close for the specified short
+     * @param requestedAmount  Amount of the position being closed
+     * @return                 The amount the user is allowed to close for the specified position
      */
     function closeOnBehalfOf(
         address closer,

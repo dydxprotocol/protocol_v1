@@ -14,7 +14,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * @title OpenPositionImpl
  * @author dYdX
  *
- * This library contains the implementation for the short function of Margin
+ * This library contains the implementation for the openPosition function of Margin
  */
 library OpenPositionImpl {
     using SafeMath for uint256;
@@ -22,7 +22,7 @@ library OpenPositionImpl {
     // ============ Events ============
 
     /**
-     * A short sell occurred
+     * A position was opened
      */
     event PositionOpened(
         bytes32 indexed marginId,

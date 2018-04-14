@@ -88,7 +88,7 @@ library MarginCommon {
         internal
     {
         delete state.positions[marginId];
-        state.closedShorts[marginId] = true;
+        state.closedPositions[marginId] = true;
     }
 
     function calculateOwedAmount(
