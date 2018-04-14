@@ -77,7 +77,7 @@ contract('ERC721MarginPosition', function(accounts) {
         sellOrder,
         OpenTx.principal.div(2));
 
-      // transfer position to ERC20MarginPositionCreator
+      // transfer position to ERC20ShortCreator
       await dydxMargin.transferPosition(OpenTx.id, erc721Contract.address);
       const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);

@@ -17,15 +17,15 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
 /**
- * @title ERC20MarginPosition
+ * @title ERC20Short
  * @author dYdX
  *
- * Contract used to tokenize positions and allow them to be used as ERC20-compliant
- * tokens. Holding the tokens allows the holder to close a piece of the position, or be
+ * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
+ * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
  * entitled to some amount of quote tokens after settlement.
  */
  /* solium-disable-next-line */
-contract ERC20MarginPosition is
+contract ERC20Short is
     StandardToken,
     ClosePositionDelegator,
     PositionCustodian,
@@ -43,7 +43,7 @@ contract ERC20MarginPosition is
     // ============ Events ============
 
     /**
-     * This ERC20MarginPosition was successfully initialized
+     * This ERC20Short was successfully initialized
      */
     event Initialized(
         bytes32 marginId,
@@ -51,7 +51,7 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * The position was completely closed and tokens can be withdrawn
+     * The short was completely closed by a trusted third-party and tokens can be withdrawn
      */
     event ClosedByTrustedParty(
         address closer,
@@ -60,12 +60,12 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * The position was completely closed and tokens can be withdrawn
+     * The short was completely closed and tokens can be withdrawn
      */
     event CompletelyClosed();
 
     /**
-     * A user burned tokens to withdraw quote tokens from this contract after the position was closed
+     * A user burned tokens to withdraw quote tokens from this contract after the short was closed
      */
     event TokensRedeemedAfterForceClose(
         address indexed redeemer,
@@ -74,7 +74,7 @@ contract ERC20MarginPosition is
     );
 
     /**
-     * A user burned tokens in order to partially close the position
+     * A user burned tokens in order to partially close the short
      */
     event TokensRedeemedForClose(
         address indexed redeemer,
@@ -95,7 +95,7 @@ contract ERC20MarginPosition is
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
+    // Address of the short's quoteToken. Cached for convenience and lower-cost withdrawals
     address public quoteToken;
 
     // Symbol to be ERC20 compliant with frontends
@@ -103,7 +103,7 @@ contract ERC20MarginPosition is
 
     // ============ Constructor ============
 
-    function ERC20MarginPosition(
+    function ERC20Short(
         bytes32 marginId,
         address margin,
         address initialTokenHolder,
@@ -141,7 +141,7 @@ contract ERC20MarginPosition is
         external
         returns (address)
     {
-        // require uninitialized so that this cannot receive position ownership for more than 1
+        // require uninitialized so that this cannot receive ownership for more than one position
         require(state == State.UNINITIALIZED);
         require(MARGIN_ID == marginId);
 
@@ -195,7 +195,7 @@ contract ERC20MarginPosition is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the position
+     * Called by Margin when an owner of this token is attempting to close some of the
      * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
@@ -313,7 +313,7 @@ contract ERC20MarginPosition is
     // ============ Public Constant Functions ============
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the position's baseToken
+     * ERC20 decimals function. Returns the same number of decimals as the shorts's baseToken
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
@@ -331,12 +331,11 @@ contract ERC20MarginPosition is
     }
 
     /**
-     * ERC20 name function. Returns a name based off marginId. Throws if this contract does not own
-     * the position.
+     * ERC20 name function. Returns a name based off marginId.
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
-     * @return  The name of the position token which includes the hexadecimal marginId
+     * @return  The name of the token which includes the hexadecimal marginId
      */
     function name()
         external
@@ -344,10 +343,10 @@ contract ERC20MarginPosition is
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "dYdX Tokenized Margin Position [UNINITIALIZED]";
+            return "dYdX Tokenized Short [UNINITIALIZED]";
         }
         // Copy intro into return value
-        bytes memory intro = "dYdX Tokenized Margin Position 0x";
+        bytes memory intro = "dYdX Tokenized Short 0x";
         return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(MARGIN_ID)));
     }
 

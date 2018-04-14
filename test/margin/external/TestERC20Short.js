@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const Margin = artifacts.require("Margin");
-const ERC20MarginPosition = artifacts.require("ERC20MarginPosition");
+const ERC20Short = artifacts.require("ERC20Short");
 const BaseToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../../helpers/Constants');
 const {
@@ -23,13 +23,13 @@ const {
 const { transact } = require('../../helpers/ContractHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
-  getERC20MarginPositionConstants,
+  getERC20ShortConstants,
   TOKENIZED_POSITION_STATE
-} = require('../../helpers/ERC20MarginPositionHelper');
+} = require('./ERC20ShortHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
-contract('ERC20MarginPosition', function(accounts) {
+contract('ERC20Short', function(accounts) {
   let baseToken;
 
   let POSITIONS = {
@@ -100,12 +100,12 @@ contract('ERC20MarginPosition', function(accounts) {
       POSITIONS.FULL.TOKEN_CONTRACT,
       POSITIONS.PART.TOKEN_CONTRACT
     ] = await Promise.all([
-      ERC20MarginPosition.new(
+      ERC20Short.new(
         POSITIONS.FULL.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.TRUSTED_RECIPIENTS),
-      ERC20MarginPosition.new(
+      ERC20Short.new(
         POSITIONS.PART.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,
@@ -169,14 +169,14 @@ contract('ERC20MarginPosition', function(accounts) {
     it('sets constants correctly', async () => {
       for (let type in POSITIONS) {
         const position = POSITIONS[type];
-        const tsc = await getERC20MarginPositionConstants(position.TOKEN_CONTRACT);
+        const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
         expect(tsc.MARGIN).to.equal(CONTRACTS.MARGIN.address);
         expect(tsc.MARGIN_ID).to.equal(position.ID);
         expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.quoteToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
-        expect(tsc.name).to.equal("dYdX Tokenized Margin Position [UNINITIALIZED]");
+        expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
         for (let i in position.TRUSTED_RECIPIENTS) {
           const recipient = position.TRUSTED_RECIPIENTS[i];
           const isIn = await position.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(recipient);
@@ -199,13 +199,13 @@ contract('ERC20MarginPosition', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
 
-        const tsc1 = await getERC20MarginPositionConstants(POSITION.TOKEN_CONTRACT);
+        const tsc1 = await getERC20ShortConstants(POSITION.TOKEN_CONTRACT);
 
         await CONTRACTS.MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.trader });
 
         const [tsc2, position] = await Promise.all([
-          getERC20MarginPositionConstants(POSITION.TOKEN_CONTRACT),
+          getERC20ShortConstants(POSITION.TOKEN_CONTRACT),
           getPosition(CONTRACTS.MARGIN, POSITION.ID)
         ]);
 
@@ -510,7 +510,7 @@ contract('ERC20MarginPosition', function(accounts) {
 
     it('returns decimal value of baseToken, even if not initialized', async () => {
       await setUpPositions();
-      const tokenContract = await ERC20MarginPosition.new(
+      const tokenContract = await ERC20Short.new(
         POSITIONS.FULL.ID,
         CONTRACTS.MARGIN.address,
         INITIAL_TOKEN_HOLDER,
@@ -536,7 +536,7 @@ contract('ERC20MarginPosition', function(accounts) {
           POSITION.TOKEN_CONTRACT.name.call()
         ]);
         expect(marginId).to.be.bignumber.equal(POSITION.ID);
-        expect(tokenName).to.equal("dYdX Tokenized Margin Position " + POSITION.ID.toString());
+        expect(tokenName).to.equal("dYdX Tokenized Short " + POSITION.ID.toString());
       }
     });
   });

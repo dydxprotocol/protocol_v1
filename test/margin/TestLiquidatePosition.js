@@ -2,7 +2,7 @@
 
 const Margin= artifacts.require('Margin');
 const TestLiquidatePositionDelegator = artifacts.require('TestLiquidatePositionDelegator');
-const ERC20MarginPosition = artifacts.require('ERC20MarginPosition');
+const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
 const { doOpenPosition, callLiquidatePosition } = require('../helpers/MarginHelper');
 const { ADDRESSES } = require('../helpers/Constants');
@@ -15,8 +15,8 @@ describe('#liquidate', () => {
   async function configurePosition(initialHolder, accounts) {
     dydxMargin = await Margin.deployed();
     OpenTx = await doOpenPosition(accounts);
-    // Deploy an ERC20MarginPosition token
-    erc20Contract = await ERC20MarginPosition.new(OpenTx.id, dydxMargin.address, initialHolder, [
+    // Deploy an ERC20Short token
+    erc20Contract = await ERC20Short.new(OpenTx.id, dydxMargin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);
@@ -33,7 +33,7 @@ describe('#liquidate', () => {
 
   contract('Margin', function(accounts) {
     it('allows a lender to liquidate quote tokens', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configurePosition(initialHolder, accounts);
 
       const quoteToken = await ERC20.at(OpenTx.quoteToken);
@@ -57,7 +57,7 @@ describe('#liquidate', () => {
 
   contract('Margin', function(accounts) {
     it('allows liquidating quote tokens if the lender is a smart contract', async () => {
-      const initialHolder = accounts[9]; // Using same accounts as TestERC20MarginPosition.js
+      const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configurePosition(initialHolder, accounts);
 
       // Create a new loan owner smart contract that implements liquidate delegator

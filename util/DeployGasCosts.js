@@ -5,7 +5,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const ERC20MarginPosition = artifacts.require("ERC20MarginPosition");
+const ERC20Short = artifacts.require("ERC20Short");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const InterestImpl = artifacts.require("InterestImpl");
@@ -49,9 +49,9 @@ contract('Deploy Costs', () => {
     });
   });
 
-  describe('ERC20MarginPosition', () => {
+  describe('ERC20Short', () => {
     it('', async () => {
-      const contract = await ERC20MarginPosition.new(
+      const contract = await ERC20Short.new(
         BYTES32.ZERO,
         ADDRESSES.TEST[0],
         ADDRESSES.TEST[1],
@@ -59,7 +59,7 @@ contract('Deploy Costs', () => {
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
-      console.log('\tERC20MarginPosition deploy gas cost: ' + deployGasCost);
+      console.log('\tERC20Short deploy gas cost: ' + deployGasCost);
     });
   });
 

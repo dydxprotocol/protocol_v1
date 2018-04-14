@@ -178,7 +178,7 @@ contract ERC721MarginPosition is
     }
 
     /**
-     * Called by Margin when an owner of this token is attempting to close some of the position
+     * Called by Margin when an owner of this token is attempting to close some of the
      * position. Implementation is required per PositionOwner contract in order to be used by
      * Margin to approve closing parts of a position. If true is returned, this contract
      * must assume that Margin will either revert the entire transaction or that the specified
