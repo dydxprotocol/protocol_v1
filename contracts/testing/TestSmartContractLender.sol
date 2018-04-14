@@ -2,9 +2,10 @@ pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
 import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { LoanOfferingVerifier } from "../margin/interfaces/LoanOfferingVerifier.sol";
 
 
-contract TestSmartContractLender {
+contract TestSmartContractLender is LoanOfferingVerifier {
     bool SHOULD_ALLOW;
 
     function TestSmartContractLender(
@@ -17,12 +18,11 @@ contract TestSmartContractLender {
 
     function verifyLoanOffering(
         address[9],
-        uint256[8],
-        uint32[3],
+        uint256[7],
+        uint32[4],
         bytes32
     )
         external
-        view
         returns (bool)
     {
         return SHOULD_ALLOW;
