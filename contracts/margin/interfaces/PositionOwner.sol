@@ -26,7 +26,7 @@ contract PositionOwner is OnlyMargin {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to receive ownership of a short sell via the
+     * Function a contract must implement in order to receive ownership of a position via the
      * transferPosition function or the atomic-assign to the "owner" field when opening a position.
      *
      * @param  from     Address of the previous owner
@@ -54,7 +54,7 @@ contract PositionOwner is OnlyMargin {
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise
      */
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address from,
         bytes32 marginId,
         uint256 amountAdded

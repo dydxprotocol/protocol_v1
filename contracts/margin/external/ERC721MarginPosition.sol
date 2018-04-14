@@ -164,7 +164,7 @@ contract ERC721MarginPosition is
         return address(this); // returning own address retains ownership of short
     }
 
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address from,
         bytes32 marginId,
         uint256 /* amountAdded */

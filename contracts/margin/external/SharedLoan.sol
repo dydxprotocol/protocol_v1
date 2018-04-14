@@ -174,7 +174,7 @@ contract SharedLoan is
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address from,
         bytes32 marginId,
         uint256 amountAdded

@@ -40,7 +40,7 @@ contract TestForceRecoverCollateralDelegator is ForceRecoverCollateralDelegator 
         return who == RECOVERER;
     }
 
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address,
         bytes32,
         uint256

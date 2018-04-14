@@ -54,7 +54,7 @@ contract LoanOwner is OnlyMargin {
      * @return              True if the contract consents to additional value being added,
      *                      false otherwise
      */
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address from,
         bytes32 marginId,
         uint256 amountAdded

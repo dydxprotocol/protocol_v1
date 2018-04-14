@@ -69,7 +69,7 @@ library OpenPositionImpl {
 
         uint256 quoteTokenFromSell;
 
-        (quoteTokenFromSell,) = OpenPositionShared.shortInternalPreStateUpdate(
+        (quoteTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
             marginId,
@@ -90,7 +90,7 @@ library OpenPositionImpl {
             transaction
         );
 
-        OpenPositionShared.shortInternalPostStateUpdate(
+        OpenPositionShared.openPositionInternalPostStateUpdate(
             state,
             transaction,
             marginId

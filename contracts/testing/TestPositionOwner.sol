@@ -43,7 +43,7 @@ contract TestPositionOwner is PositionOwner {
         return TO_RETURN;
     }
 
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address from,
         bytes32 marginId,
         uint256 amount

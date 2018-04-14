@@ -55,7 +55,7 @@ contract TestCallLoanDelegator is CallLoanDelegator {
         return who == CANCELLER;
     }
 
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address,
         bytes32,
         uint256

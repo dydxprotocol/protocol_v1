@@ -43,7 +43,7 @@ contract TestLoanOwner is LoanOwner {
         return TO_RETURN;
     }
 
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address from,
         bytes32 marginId,
         uint256 amount

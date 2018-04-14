@@ -38,7 +38,7 @@ library TransferInternal {
 
     /**
      * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the loan. This function does not actually set the state of short
+     * ownership of the loan. This function does not actually set the state of the position
      *
      * @param  marginId  The Unique ID of the position
      * @param  oldOwner  The previous owner of the loan
@@ -72,7 +72,7 @@ library TransferInternal {
 
     /**
      * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the position. This function does not actually set the state of short
+     * ownership of the position. This function does not actually set the state of the position
      *
      * @param  marginId  The Unique ID of the position
      * @param  oldOwner  The previous owner of the short

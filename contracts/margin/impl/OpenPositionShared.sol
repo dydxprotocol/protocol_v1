@@ -36,7 +36,7 @@ library OpenPositionShared {
 
     // ============ Internal Implementation Functions ============
 
-    function shortInternalPreStateUpdate(
+    function openPositionInternalPreStateUpdate(
         MarginState.State storage state,
         OpenTx memory transaction,
         bytes32 marginId,
@@ -46,7 +46,7 @@ library OpenPositionShared {
         returns (uint256, uint256)
     {
         // Validate
-        validateShort(
+        validateOpenTx(
             state,
             transaction
         );
@@ -82,7 +82,7 @@ library OpenPositionShared {
         );
     }
 
-    function shortInternalPostStateUpdate(
+    function openPositionInternalPostStateUpdate(
         MarginState.State storage state,
         OpenTx memory transaction,
         bytes32 marginId
@@ -101,7 +101,7 @@ library OpenPositionShared {
         );
     }
 
-    function validateShort(
+    function validateOpenTx(
         MarginState.State storage state,
         OpenTx transaction
     )

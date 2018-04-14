@@ -46,7 +46,7 @@ contract TestClosePositionDelegator is ClosePositionDelegator {
         return who == CLOSER ? amount : 0;
     }
 
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address,
         bytes32,
         uint256

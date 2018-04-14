@@ -27,7 +27,7 @@ library IncreasePositionImpl {
     /*
      * Value was added to a short sell
      */
-    event ValueAddedToShort(
+    event PositionIncreased(
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,
@@ -88,14 +88,14 @@ library IncreasePositionImpl {
         state.loanFills[transaction.loanOffering.loanHash] =
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
 
-        OpenPositionShared.shortInternalPostStateUpdate(
+        OpenPositionShared.openPositionInternalPostStateUpdate(
             state,
             transaction,
             marginId
         );
 
         // LOG EVENT
-        recordValueAddedToShort(
+        recordPositionIncreased(
             transaction,
             marginId,
             position,
@@ -136,7 +136,7 @@ library IncreasePositionImpl {
             msg.sender
         );
 
-        emit ValueAddedToShort(
+        emit PositionIncreased(
             marginId,
             msg.sender,
             msg.sender,
@@ -177,7 +177,7 @@ library IncreasePositionImpl {
         uint256 quoteTokenFromSell;
         uint256 totalQuoteTokenReceived;
 
-        (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.shortInternalPreStateUpdate(
+        (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
             marginId,
@@ -292,7 +292,7 @@ library IncreasePositionImpl {
         // to the short seller to ensure they consent to value being added
         if (msg.sender != seller || AddressUtils.isContract(seller)) {
             require(
-                PositionOwner(seller).additionalShortValueAdded(
+                PositionOwner(seller).marginPositionIncreased(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -305,7 +305,7 @@ library IncreasePositionImpl {
         // to value being added
         if (loanPayer != lender || AddressUtils.isContract(lender)) {
             require(
-                LoanOwner(lender).additionalLoanValueAdded(
+                LoanOwner(lender).marginLoanIncreased(
                     loanPayer,
                     marginId,
                     effectiveAmount
@@ -314,7 +314,7 @@ library IncreasePositionImpl {
         }
     }
 
-    function recordValueAddedToShort(
+    function recordPositionIncreased(
         OpenPositionShared.OpenTx transaction,
         bytes32 marginId,
         MarginCommon.Position storage position,
@@ -322,7 +322,7 @@ library IncreasePositionImpl {
     )
         internal
     {
-        emit ValueAddedToShort(
+        emit PositionIncreased(
             marginId,
             msg.sender,
             transaction.loanOffering.payer,

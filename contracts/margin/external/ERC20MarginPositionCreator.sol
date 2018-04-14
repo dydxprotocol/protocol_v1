@@ -51,7 +51,7 @@ contract ERC20MarginPositionCreator is
     // ============ Margin Only Functions ============
 
     /**
-     * Implementation of PositionOwner functionality. Creates a new ERC20MarginPosition and assigns short
+     * Implementation of PositionOwner functionality. Creates a new ERC20MarginPosition and assigns
      * ownership to the ERC20MarginPosition. Called by Margin when a short is transferred to this
      * contract.
      *
@@ -79,7 +79,7 @@ contract ERC20MarginPositionCreator is
         return tokenAddress;
     }
 
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address,
         bytes32,
         uint256

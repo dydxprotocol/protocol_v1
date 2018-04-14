@@ -125,7 +125,7 @@ contract ERC20MarginPosition is
 
     /**
      * Called by Margin when anyone transfers ownership of a short to this contract.
-     * This function initializes the tokenization of the short given and returns this address to
+     * This function initializes the tokenization of the position given and returns this address to
      * indicate to Margin that it is willing to take ownership of the position.
      *
      *  param  (unused)
@@ -173,7 +173,7 @@ contract ERC20MarginPosition is
      * @param  amountAdded  Amount that was added to the short
      * @return              True to indicate that this contract consents to value being added
      */
-    function additionalShortValueAdded(
+    function marginPositionIncreased(
         address from,
         bytes32 marginId,
         uint256 amountAdded
@@ -313,7 +313,7 @@ contract ERC20MarginPosition is
     // ============ Public Constant Functions ============
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the short's baseToken
+     * ERC20 decimals function. Returns the same number of decimals as the position's baseToken
      *
      * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *

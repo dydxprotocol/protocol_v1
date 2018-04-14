@@ -65,7 +65,7 @@ Used to transfer user funds. Users set token allowance for the proxy authorizing
 
 ##### Margin.sol
 
-Contains business logic for short selling. All external functions for shorting are in this contract.
+Contains business logic for short selling. All external functions for margin trading are in this contract.
 
 ##### Vault.sol
 

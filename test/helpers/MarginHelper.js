@@ -254,7 +254,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
   const minTotalDeposit = quoteTokenAmount.div(principal).times(tx.principal);
 
-  expectLog(response.logs[0], 'ValueAddedToShort', {
+  expectLog(response.logs[0], 'PositionIncreased', {
     marginId: marginId,
     shortSeller: tx.seller,
     lender: tx.loanOffering.payer,

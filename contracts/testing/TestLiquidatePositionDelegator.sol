@@ -42,7 +42,7 @@ contract TestLiquidatePositionDelegator is LiquidatePositionDelegator {
         return who == CLOSER ? requestedAmount : 0;
     }
 
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address,
         bytes32,
         uint256

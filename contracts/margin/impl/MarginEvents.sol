@@ -138,7 +138,7 @@ contract MarginEvents {
     /*
      * Value was added to a short sell
      */
-    event ValueAddedToShort(
+    event PositionIncreased(
         bytes32 indexed marginId,
         address indexed shortSeller,
         address indexed lender,

@@ -79,7 +79,7 @@ contract SharedLoanCreator is
         return sharedLoanAddress;
     }
 
-    function additionalLoanValueAdded(
+    function marginLoanIncreased(
         address,
         bytes32,
         uint256
