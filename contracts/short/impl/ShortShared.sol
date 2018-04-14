@@ -354,13 +354,12 @@ library ShortShared {
     )
         internal
         pure
-        returns (uint256[8])
+        returns (uint256[7])
     {
         return [
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
             transaction.loanOffering.rates.minQuoteToken,
-            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,
@@ -373,11 +372,12 @@ library ShortShared {
     )
         internal
         pure
-        returns (uint32[3])
+        returns (uint32[4])
     {
         return [
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
+            transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.rates.interestPeriod
         ];
     }

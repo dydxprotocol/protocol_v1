@@ -24,9 +24,9 @@ contract LoanOfferingVerifier {
      *
      *  [0] = base token
      *  [1] = quote token
-     *  [2] = lender
-     *  [3] = signer
-     *  [4] = owner
+     *  [2] = loan payer
+     *  [3] = loan signer
+     *  [4] = loan owner
      *  [5] = loan taker
      *  [6] = loan fee recipient
      *  [7] = loan lender fee token
@@ -37,25 +37,25 @@ contract LoanOfferingVerifier {
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
      *  [2] = loan minimum quote token
-     *  [3] = loan interest rate
-     *  [4] = loan lender fee
-     *  [5] = loan taker fee
-     *  [6] = loan expiration timestamp (in seconds)
-     *  [7] = loan salt
+     *  [3] = loan lender fee
+     *  [4] = loan taker fee
+     *  [5] = loan expiration timestamp (in seconds)
+     *  [6] = loan salt
      *
      * @param  values32  Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = interest update period (in seconds)
+     *  [2] = loan interest rate (annual nominal percentage times 10**18)
+     *  [3] = loan interest update period (in seconds)
      *
      * @return              True if the contract consents to this loan, false if not.
      *                      If false, the loan will not occur
      */
     function verifyLoanOffering(
         address[9] addresses,
-        uint256[8] values256,
-        uint32[3] values32,
+        uint256[7] values256,
+        uint32[4] values32,
         bytes32 shortId
     )
         external
