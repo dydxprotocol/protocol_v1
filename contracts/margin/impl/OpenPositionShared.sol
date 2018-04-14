@@ -56,7 +56,7 @@ library OpenPositionShared {
         // NOTE: Doing this before updating state relies on #openPosition being non-reentrant
         transferFromLender(state, transaction);
 
-        // Transfer deposit from the short seller
+        // Transfer deposit from the msg.sender
         uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, marginId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount

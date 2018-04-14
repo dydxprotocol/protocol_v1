@@ -16,8 +16,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * @author dYdX
  *
  * Contract for allowing anyone to close a called-in short by using a Dutch auction mechanism to
- * give a fair price to the short seller. Price paid to the short seller decreases linearly over
- * time.
+ * give a fair price to the position owner. Price paid to the owner decreases linearly over time.
  */
  /* solium-disable-next-line */
 contract DutchAuctionCloser is
@@ -35,7 +34,7 @@ contract DutchAuctionCloser is
         address indexed bidder,
         uint256 closeAmount,
         uint256 quoteTokenForBidder,
-        uint256 quoteTokenForSeller
+        uint256 quoteTokenForOwner
     );
 
     // ============ Structs ============

@@ -27,12 +27,11 @@ contract ClosePositionDelegator is PositionOwner {
 
     /**
      * Function a contract must implement in order to let other addresses call closePosition() for the
-     * position. This allows short sellers to use more complex
-     * logic to control their positions. For example, this can be used to tokenize short
-     * positions and distribute shares as ERC20 tokens. Such a token would be burned for the closer
-     * in the amount called here. This interface also allows for regulatory compliance; it could
-     * require the block.timestamp to be at least some time, or the amount to be at least some
-     * minimum denomination.
+     * position. This allows margin traders to use more complex logic to control their positions.
+     * For example, this can be used to tokenize positions and distribute shares as ERC20 tokens.
+     * Such a token would be burned for the closer in the amount called here. This interface also
+     * allows for regulatory compliance; it could require the block.timestamp to be at least some
+     * time, or the amount to be at least some minimum denomination.
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the position was successfully

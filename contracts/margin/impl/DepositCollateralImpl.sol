@@ -19,7 +19,7 @@ library DepositCollateralImpl {
     // ============ Events ============
 
     /**
-     * Additional deposit for a short sell was posted by the short seller
+     * Additional deposit for a short sell was posted by the owner
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
@@ -48,7 +48,7 @@ library DepositCollateralImpl {
     {
         MarginCommon.Position storage position = MarginCommon.getPositionObject(state, marginId);
         require(depositAmount > 0);
-        require(msg.sender == position.seller);
+        require(msg.sender == position.owner);
 
         Vault(state.VAULT).transferToVault(
             marginId,

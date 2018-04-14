@@ -98,7 +98,7 @@ library LoanImpl {
         emit MarginCallInitiated(
             marginId,
             position.lender,
-            position.seller,
+            position.owner,
             requiredDeposit
         );
     }
@@ -130,7 +130,7 @@ library LoanImpl {
         emit MarginCallCanceled(
             marginId,
             position.lender,
-            position.seller,
+            position.owner,
             0
         );
     }

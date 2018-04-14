@@ -201,7 +201,7 @@ library ClosePositionShared {
             payoutRecipient: payoutRecipient,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
-            positionOwner: position.seller,
+            positionOwner: position.owner,
             shortLender: position.lender,
             exchangeWrapper: exchangeWrapper,
             payoutInQuoteToken: payoutInQuoteToken
@@ -221,9 +221,9 @@ library ClosePositionShared {
         uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         uint256 newAmount = Math.min256(requestedAmount, currentPrincipal);
 
-        // If not the short seller, requires short seller to approve msg.sender
-        if (position.seller != msg.sender) {
-            uint256 allowedCloseAmount = ClosePositionDelegator(position.seller).closeOnBehalfOf(
+        // If not the owner, requires owner to approve msg.sender
+        if (position.owner != msg.sender) {
+            uint256 allowedCloseAmount = ClosePositionDelegator(position.owner).closeOnBehalfOf(
                 msg.sender,
                 payoutRecipient,
                 marginId,

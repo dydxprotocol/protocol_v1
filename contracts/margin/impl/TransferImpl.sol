@@ -44,24 +44,24 @@ library TransferImpl {
     function transferPositionImpl(
         MarginState.State storage state,
         bytes32 marginId,
-        address newSeller
+        address newOwner
     )
         public
     {
         require(MarginCommon.containsPositionImpl(state, marginId));
-        address originalSeller = state.positions[marginId].seller;
-        require(msg.sender == originalSeller);
-        require(newSeller != originalSeller);
+        address originalOwner = state.positions[marginId].owner;
+        require(msg.sender == originalOwner);
+        require(newOwner != originalOwner);
 
         // Doesn't change the state of marginId; figures out the address of the final owner of position.
-        // That is, newSeller may pass ownership to a different address.
-        address finalSeller = TransferInternal.grantPositionOwnership(
+        // That is, newOwner may pass ownership to a different address.
+        address finalOwner = TransferInternal.grantPositionOwnership(
             marginId,
-            originalSeller,
-            newSeller);
-        require(finalSeller != originalSeller);
+            originalOwner,
+            newOwner);
+        require(finalOwner != originalOwner);
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
-        state.positions[marginId].seller = finalSeller;
+        state.positions[marginId].owner = finalOwner;
     }
 }

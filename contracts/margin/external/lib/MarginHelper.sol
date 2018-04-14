@@ -34,7 +34,7 @@ library MarginHelper {
             baseToken: addresses[0],
             quoteToken: addresses[1],
             lender: addresses[2],
-            seller: addresses[3],
+            owner: addresses[3],
             principal: values256[0],
             closedAmount: values256[1],
             requiredDeposit: values256[2],

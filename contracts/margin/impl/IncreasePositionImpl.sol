@@ -140,7 +140,7 @@ library IncreasePositionImpl {
             marginId,
             msg.sender,
             msg.sender,
-            position.seller,
+            position.owner,
             position.lender,
             "",
             address(0),
@@ -285,14 +285,14 @@ library IncreasePositionImpl {
     {
         position.principal = position.principal.add(effectiveAmount);
 
-        address seller = position.seller;
+        address owner = position.owner;
         address lender = position.lender;
 
-        // Unless msg.sender is the position short seller and is not a smart contract, call out
-        // to the short seller to ensure they consent to value being added
-        if (msg.sender != seller || AddressUtils.isContract(seller)) {
+        // Unless msg.sender is the position short owner and is not a smart contract, call out
+        // to the short owner to ensure they consent to value being added
+        if (msg.sender != owner || AddressUtils.isContract(owner)) {
             require(
-                PositionOwner(seller).marginPositionIncreased(
+                PositionOwner(owner).marginPositionIncreased(
                     msg.sender,
                     marginId,
                     effectiveAmount
@@ -326,7 +326,7 @@ library IncreasePositionImpl {
             marginId,
             msg.sender,
             transaction.loanOffering.payer,
-            position.seller,
+            position.owner,
             position.lender,
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
@@ -353,7 +353,7 @@ library IncreasePositionImpl {
         returns (OpenPositionShared.OpenTx memory)
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
-            owner: position.seller,
+            owner: position.owner,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
             effectiveAmount: values256[7],

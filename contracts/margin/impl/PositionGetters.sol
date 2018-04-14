@@ -208,7 +208,7 @@ contract PositionGetters is MarginStorage {
      *                  [0] = baseToken
      *                  [1] = quoteToken
      *                  [2] = lender
-     *                  [3] = seller
+     *                  [3] = owner
      *
      *                  Values corresponding to:
      *
@@ -243,7 +243,7 @@ contract PositionGetters is MarginStorage {
                 position.baseToken,
                 position.quoteToken,
                 position.lender,
-                position.seller
+                position.owner
             ],
             [
                 position.principal,
@@ -280,7 +280,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (address)
     {
-        return state.positions[marginId].seller;
+        return state.positions[marginId].owner;
     }
 
     function getPositionQuoteToken(
