@@ -41,7 +41,7 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
     depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
-    seller: accounts[0],
+    trader: accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address
   };
 
@@ -109,7 +109,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     sigRS,
     true,
     order,
-    { from: tx.seller }
+    { from: tx.trader }
   );
 
   if (safely) {
@@ -126,7 +126,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
 async function expectLogShort(dydxMargin, marginId, tx, response) {
   expectLog(response.logs[0], 'PositionOpened', {
     marginId: marginId,
-    shortSeller: tx.seller,
+    trader: tx.trader,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
     baseToken: tx.loanOffering.baseToken,
@@ -142,7 +142,7 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
     interestPeriod: tx.loanOffering.rates.interestPeriod
   });
 
-  const newSeller = await dydxMargin.getPositionSeller.call(marginId);
+  const newSeller = await dydxMargin.getPositionOwner.call(marginId);
   const newLender = await dydxMargin.getPositionLender.call(marginId);
   let logIndex = 0;
   if (tx.loanOffering.owner !== tx.loanOffering.payer) {
@@ -159,10 +159,10 @@ async function expectLogShort(dydxMargin, marginId, tx, response) {
       });
     }
   }
-  if (tx.owner !== tx.seller) {
+  if (tx.owner !== tx.trader) {
     expectLog(response.logs[++logIndex], 'PositionTransferred', {
       marginId: marginId,
-      from: tx.seller,
+      from: tx.trader,
       to: tx.owner
     });
     if (newSeller !== tx.owner) {
@@ -222,7 +222,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     sigRS,
     true,
     order,
-    { from: tx.seller }
+    { from: tx.trader }
   );
 
   await expectIncreasePositionLog(
@@ -256,7 +256,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
 
   expectLog(response.logs[0], 'PositionIncreased', {
     marginId: marginId,
-    shortSeller: tx.seller,
+    trader: tx.trader,
     lender: tx.loanOffering.payer,
     positionOwner: tx.owner,
     loanOwner: tx.loanOffering.owner,
@@ -269,7 +269,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
   });
 }
 
-async function issueTokensAndSetAllowancesForShort(tx) {
+async function issueTokensAndSetAllowances(tx) {
   const [baseToken, quoteToken, feeToken] = await Promise.all([
     BaseToken.deployed(),
     QuoteToken.deployed(),
@@ -282,7 +282,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       tx.loanOffering.rates.maxAmount
     ),
     quoteToken.issueTo(
-      tx.seller,
+      tx.trader,
       tx.depositAmount
     ),
     quoteToken.issueTo(
@@ -298,7 +298,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
       tx.loanOffering.rates.lenderFee
     ),
     feeToken.issueTo(
-      tx.seller,
+      tx.trader,
       tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
     )
   ]);
@@ -312,7 +312,7 @@ async function issueTokensAndSetAllowancesForShort(tx) {
     quoteToken.approve(
       ProxyContract.address,
       tx.depositAmount,
-      { from: tx.seller }
+      { from: tx.trader }
     ),
     quoteToken.approve(
       ZeroExProxy.address,
@@ -332,23 +332,23 @@ async function issueTokensAndSetAllowancesForShort(tx) {
     feeToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.takerFee,
-      { from: tx.seller }
+      { from: tx.trader }
     ),
     feeToken.approve(
       ZeroExExchangeWrapper.address,
       tx.buyOrder.takerFee,
-      { from: tx.seller }
+      { from: tx.trader }
     )
   ]);
 }
 
-async function doShort(accounts, _salt = DEFAULT_SALT, positionOwner) {
+async function doOpenPosition(accounts, _salt = DEFAULT_SALT, positionOwner) {
   const [OpenTx, dydxMargin] = await Promise.all([
     createOpenTx(accounts, _salt),
     Margin.deployed()
   ]);
 
-  await issueTokensAndSetAllowancesForShort(OpenTx);
+  await issueTokensAndSetAllowances(OpenTx);
 
   if (positionOwner) {
     OpenTx.owner = positionOwner;
@@ -369,7 +369,7 @@ async function callClosePosition(
   from = null,
   recipient = null
 ) {
-  const closer = from || OpenTx.seller;
+  const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
   const { startAmount, startQuote, startTimestamp } =
@@ -410,7 +410,7 @@ async function callClosePositionDirectly(
   from = null,
   recipient = null
 ) {
-  const closer = from || OpenTx.seller;
+  const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
   const { startAmount, startQuote, startTimestamp } =
@@ -640,7 +640,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
       sellOrder.makerTokenAmount
     ),
     feeToken.issueTo(
-      OpenTx.seller,
+      OpenTx.trader,
       sellOrder.takerFee
     ),
     feeToken.issueTo(
@@ -663,7 +663,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
     feeToken.approve(
       ZeroExExchangeWrapper.address,
       sellOrder.takerFee,
-      { from: OpenTx.seller }
+      { from: OpenTx.trader }
     )
   ]);
 }
@@ -674,7 +674,7 @@ async function getPosition(dydxMargin, id) {
       baseToken,
       quoteToken,
       lender,
-      seller
+      owner
     ],
     [
       principal,
@@ -704,11 +704,11 @@ async function getPosition(dydxMargin, id) {
     maxDuration,
     interestPeriod,
     lender,
-    seller
+    owner
   };
 }
 
-async function doShortAndCall(
+async function doOpenPositionAndCall(
   accounts,
   _salt = DEFAULT_SALT,
   _requiredDeposit = new BigNumber(10)
@@ -719,7 +719,7 @@ async function doShortAndCall(
     BaseToken.deployed()
   ]);
 
-  const OpenTx = await doShort(accounts, _salt);
+  const OpenTx = await doOpenPosition(accounts, _salt);
 
   const callTx = await dydxMargin.marginCall(
     OpenTx.id,
@@ -733,20 +733,20 @@ async function doShortAndCall(
 async function issueForDirectClose(OpenTx) {
   const baseToken = await BaseToken.deployed();
 
-  // Issue to the short seller the maximum amount of base token they could have to pay
+  // Issue to the trader the maximum amount of base token they could have to pay
 
   const maxInterestFee = await getMaxInterestFee(OpenTx);
   const maxBaseTokenOwed = OpenTx.principal.plus(maxInterestFee);
 
   await Promise.all([
     baseToken.issueTo(
-      OpenTx.seller,
+      OpenTx.trader,
       maxBaseTokenOwed
     ),
     baseToken.approve(
       ProxyContract.address,
       maxBaseTokenOwed,
-      { from: OpenTx.seller }
+      { from: OpenTx.trader }
     )
   ]);
 }
@@ -794,16 +794,16 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
 
 module.exports = {
   createOpenTx,
-  issueTokensAndSetAllowancesForShort,
+  issueTokensAndSetAllowances,
   callOpenPosition,
-  doShort,
+  doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callCancelLoanOffer,
   callClosePosition,
   callClosePositionDirectly,
   callLiquidatePosition,
   getPosition,
-  doShortAndCall,
+  doOpenPositionAndCall,
   issueForDirectClose,
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,

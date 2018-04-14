@@ -12,7 +12,7 @@ const Margin = artifacts.require("Margin");
 const { TOKENIZED_POSITION_STATE } = require('../../helpers/ERC20MarginPositionHelper');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
-  doShort,
+  doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition
 } = require('../../helpers/MarginHelper');
@@ -53,7 +53,7 @@ contract('ERC20MarginPositionCreator', function(accounts) {
   });
 
   describe('#receivePositionOwnership', () => {
-    async function checkSuccess(OpenTx, shortTokenContract, remainingPrincipal) {
+    async function checkSuccess(OpenTx, erc20Contract, remainingPrincipal) {
       const originalSeller = accounts[0];
       const [
         tokenMargin,
@@ -64,13 +64,13 @@ contract('ERC20MarginPositionCreator', function(accounts) {
         totalSupply,
         ownerSupply,
       ] = await Promise.all([
-        shortTokenContract.MARGIN.call(),
-        shortTokenContract.MARGIN_ID.call(),
-        shortTokenContract.state.call(),
-        shortTokenContract.INITIAL_TOKEN_HOLDER.call(),
-        shortTokenContract.quoteToken.call(),
-        shortTokenContract.totalSupply.call(),
-        shortTokenContract.balanceOf.call(originalSeller),
+        erc20Contract.MARGIN.call(),
+        erc20Contract.MARGIN_ID.call(),
+        erc20Contract.state.call(),
+        erc20Contract.INITIAL_TOKEN_HOLDER.call(),
+        erc20Contract.quoteToken.call(),
+        erc20Contract.totalSupply.call(),
+        erc20Contract.balanceOf.call(originalSeller),
       ]);
 
       expect(tokenMargin).to.equal(dydxMargin.address);
@@ -89,23 +89,21 @@ contract('ERC20MarginPositionCreator', function(accounts) {
       );
     });
 
-    it('succeeds for new short', async () => {
-      const OpenTx = await doShort(accounts, 1234, ERC20MarginPositionCreator.address);
-
-      // Get the return value of the tokenizeShort function
-      const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
+    it('succeeds for new position', async () => {
+      const OpenTx = await doOpenPosition(accounts, 1234, ERC20MarginPositionCreator.address);
 
       // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await ERC20MarginPosition.at(tokenAddress);
+      const tokenAddress = await dydxMargin.getPositionOwner(OpenTx.id);
+      const erc20Contract = await ERC20MarginPosition.at(tokenAddress);
 
-      await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal);
+      await checkSuccess(OpenTx, erc20Contract, OpenTx.principal);
     });
 
-    it('succeeds for half-closed short', async () => {
+    it('succeeds for half-closed position', async () => {
       const salt = 5678;
-      const OpenTx = await doShort(accounts, salt);
+      const OpenTx = await doOpenPosition(accounts, salt);
 
-      // close half the short
+      // close half the position
       const sellOrder = await createSignedSellOrder(accounts, salt);
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
       await callClosePosition(
@@ -114,16 +112,14 @@ contract('ERC20MarginPositionCreator', function(accounts) {
         sellOrder,
         OpenTx.principal.div(2));
 
-      // transfer short to ERC20MarginPositionCreator
+      // transfer position to ERC20MarginPositionCreator
       await dydxMargin.transferPosition(OpenTx.id, ERC20MarginPositionCreatorContract.address);
 
-      // Get the return value of the tokenizeShort function
-      const tokenAddress = await dydxMargin.getPositionSeller(OpenTx.id);
-
       // Get the ERC20MarginPosition on the blockchain and make sure that it was created correctly
-      const shortTokenContract = await ERC20MarginPosition.at(tokenAddress);
+      const tokenAddress = await dydxMargin.getPositionOwner(OpenTx.id);
+      const erc20Contract = await ERC20MarginPosition.at(tokenAddress);
 
-      await checkSuccess(OpenTx, shortTokenContract, OpenTx.principal.div(2));
+      await checkSuccess(OpenTx, erc20Contract, OpenTx.principal.div(2));
     });
   });
 });

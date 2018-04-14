@@ -26,7 +26,7 @@ library OpenPositionImpl {
      */
     event PositionOpened(
         bytes32 indexed marginId,
-        address indexed shortSeller,
+        address indexed trander,
         address indexed lender,
         bytes32 loanHash,
         address baseToken,
@@ -122,7 +122,7 @@ library OpenPositionImpl {
 
     function recordPositionOpened(
         bytes32 marginId,
-        address shortSeller,
+        address trader,
         OpenPositionShared.OpenTx transaction,
         uint256 quoteTokenReceived
     )
@@ -130,7 +130,7 @@ library OpenPositionImpl {
     {
         emit PositionOpened(
             marginId,
-            shortSeller,
+            trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
             transaction.baseToken,

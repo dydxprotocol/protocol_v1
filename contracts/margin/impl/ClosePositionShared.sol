@@ -35,7 +35,7 @@ library ClosePositionShared {
         address payoutRecipient;
         address baseToken;
         address quoteToken;
-        address shortSeller;
+        address positionOwner;
         address shortLender;
         address exchangeWrapper;
         bool    payoutInQuoteToken;
@@ -102,7 +102,7 @@ library ClosePositionShared {
                     transaction.marginId,
                     transaction.closeAmount,
                     msg.sender,
-                    transaction.shortSeller,
+                    transaction.positionOwner,
                     transaction.quoteToken,
                     payout,
                     transaction.availableQuoteToken,
@@ -201,7 +201,7 @@ library ClosePositionShared {
             payoutRecipient: payoutRecipient,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
-            shortSeller: position.seller,
+            positionOwner: position.seller,
             shortLender: position.lender,
             exchangeWrapper: exchangeWrapper,
             payoutInQuoteToken: payoutInQuoteToken

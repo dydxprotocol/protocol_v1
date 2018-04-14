@@ -10,8 +10,8 @@ const Margin = artifacts.require("Margin");
 const TestForceRecoverCollateralDelegator =
   artifacts.require("TestForceRecoverCollateralDelegator");
 const {
-  doShort,
-  doShortAndCall
+  doOpenPosition,
+  doOpenPositionAndCall
 } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
@@ -19,7 +19,7 @@ const { expectLog } = require('../helpers/EventHelper');
 describe('#forceRecoverCollateral', () => {
   contract('Margin', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
-      const { dydxMargin, vault, baseToken, OpenTx } = await doShortAndCall(accounts);
+      const { dydxMargin, vault, baseToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
       const quoteTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
@@ -38,7 +38,7 @@ describe('#forceRecoverCollateral', () => {
         baseTokenBalanceOfVault,
         vaultQuoteTokenBalance,
         quoteTokenBalanceOfVault,
-        shortExists,
+        positionExists,
         isPositionClosed,
         lenderQuoteTokenBalance
       ] = await Promise.all([
@@ -55,7 +55,7 @@ describe('#forceRecoverCollateral', () => {
       expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(vaultQuoteTokenBalance).to.be.bignumber.equal(0);
       expect(quoteTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(shortExists).to.be.false;
+      expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
 
@@ -68,7 +68,7 @@ describe('#forceRecoverCollateral', () => {
 
   contract('Margin', function(accounts) {
     it('only allows lender to call', async () => {
-      const { dydxMargin, OpenTx } = await doShortAndCall(accounts);
+      const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
       await expectThrow( dydxMargin.forceRecoverCollateral(
@@ -80,7 +80,7 @@ describe('#forceRecoverCollateral', () => {
 
   contract('Margin', function(accounts) {
     it('ForceRecoverCollateralDelegator loan owner only allows certain accounts', async () => {
-      const { dydxMargin, vault, baseToken, OpenTx } = await doShortAndCall(accounts);
+      const { dydxMargin, vault, baseToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
       const quoteTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
@@ -112,7 +112,7 @@ describe('#forceRecoverCollateral', () => {
         baseTokenBalanceOfVault,
         vaultQuoteTokenBalance,
         quoteTokenBalanceOfVault,
-        shortExists,
+        positionExists,
         isPositionClosed,
         lenderQuoteTokenBalance
       ] = await Promise.all([
@@ -129,7 +129,7 @@ describe('#forceRecoverCollateral', () => {
       expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(vaultQuoteTokenBalance).to.be.bignumber.equal(0);
       expect(quoteTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(shortExists).to.be.false;
+      expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
       expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
     });
@@ -137,7 +137,7 @@ describe('#forceRecoverCollateral', () => {
 
   contract('Margin', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
-      const { dydxMargin, OpenTx } = await doShortAndCall(accounts);
+      const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
       await expectThrow( dydxMargin.forceRecoverCollateral(
         OpenTx.id,
         { from: OpenTx.loanOffering.payer }
@@ -147,7 +147,7 @@ describe('#forceRecoverCollateral', () => {
   contract('Margin', function(accounts) {
     it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
       const dydxMargin = await Margin.deployed();
-      const OpenTx = await doShort(accounts);
+      const OpenTx = await doOpenPosition(accounts);
 
       const maxDuration = OpenTx.loanOffering.maxDuration;
       const almostMaxDuration = maxDuration - 100;

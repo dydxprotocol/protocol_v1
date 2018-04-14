@@ -344,10 +344,10 @@ contract ERC20MarginPosition is
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "dYdX Tokenized Short [UNINITIALIZED]";
+            return "dYdX Tokenized Margin Position [UNINITIALIZED]";
         }
         // Copy intro into return value
-        bytes memory intro = "dYdX Tokenized Short 0x";
+        bytes memory intro = "dYdX Tokenized Margin Position 0x";
         return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(MARGIN_ID)));
     }
 

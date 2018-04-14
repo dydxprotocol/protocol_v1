@@ -32,7 +32,7 @@ contract PayoutRecipient is OnlyMargin {
      * @param  marginId           Unique ID of the position
      * @param  closeAmount        Amount of the short that was closed
      * @param  shortCloser        Address of the account or contract that closed the short
-     * @param  shortSeller        Address of the owner of the short
+     * @param  positionOwner      Address of the owner of the short
      * @param  quoteToken         Address of the ERC20 quote token
      * @param  payout             Number of tokens received from the payout
      * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
@@ -43,7 +43,7 @@ contract PayoutRecipient is OnlyMargin {
         bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,
-        address shortSeller,
+        address positionOwner,
         address quoteToken,
         uint256 payout,
         uint256 totalQuoteToken,

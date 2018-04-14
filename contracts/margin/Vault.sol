@@ -29,8 +29,8 @@ contract Vault is
 
     address public PROXY;
 
-    // Map from short ID to map from token address to amount of that token attributed to the
-    // particular short ID
+    // Map from vault ID to map from token address to amount of that token attributed to the
+    // particular vault ID
     mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.

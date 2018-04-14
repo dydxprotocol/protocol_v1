@@ -14,11 +14,11 @@ contract MarginEvents {
     // ============ Events ============
 
     /**
-     * A short sell occurred
+     * A position was opened
      */
     event PositionOpened(
         bytes32 indexed marginId,
-        address indexed shortSeller,
+        address indexed trader,
         address indexed lender,
         bytes32 loanHash,
         address baseToken,
@@ -34,7 +34,7 @@ contract MarginEvents {
     );
 
     /**
-     * A short sell was closed
+     * A position was closed or partially closed
      */
     event PositionClosed(
         bytes32 indexed marginId,
@@ -61,7 +61,7 @@ contract MarginEvents {
     );
 
     /**
-     * A short sell loan was forcibly recovered by the lender
+     * Collateral was forcibly recovered by the lender
      */
     event CollateralForceRecovered(
         bytes32 indexed marginId,
@@ -69,22 +69,22 @@ contract MarginEvents {
     );
 
     /**
-     * The loan for a short sell was called in
+     * A position was margin called
      */
     event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed shortSeller,
+        address indexed owner,
         uint256 requiredDeposit
     );
 
     /**
-     * A loan call was canceled
+     * A margin call was canceled
      */
     event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed shortSeller,
+        address indexed owner,
         uint256 depositAmount
     );
 
@@ -109,7 +109,7 @@ contract MarginEvents {
     );
 
     /**
-     * Additional deposit for a short sell was posted by the short seller
+     * Additional collateral for a position was posted by the owner
      */
     event AdditionalCollateralDeposited(
         bytes32 indexed marginId,
@@ -127,7 +127,7 @@ contract MarginEvents {
     );
 
     /**
-     * Ownership of a short was transferred to a new address
+     * Ownership of a position was transferred to a new address
      */
     event PositionTransferred(
         bytes32 indexed marginId,
@@ -136,11 +136,11 @@ contract MarginEvents {
     );
 
     /*
-     * Value was added to a short sell
+     * A position was increased in size
      */
     event PositionIncreased(
         bytes32 indexed marginId,
-        address indexed shortSeller,
+        address indexed trader,
         address indexed lender,
         address positionOwner,
         address loanOwner,

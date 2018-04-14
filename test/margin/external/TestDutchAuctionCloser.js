@@ -17,7 +17,7 @@ const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
 const { getMaxInterestFee, callClosePositionDirectly } = require('../../helpers/MarginHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
-  doShort
+  doOpenPosition
 } = require('../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
@@ -65,7 +65,7 @@ contract('DutchAuctionCloser', function(accounts) {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
-      OpenTx = await doShort(accounts, salt++, ERC721MarginPosition.address);
+      OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
       await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, true);
       await dydxMargin.marginCall(
         OpenTx.id,
@@ -88,7 +88,7 @@ contract('DutchAuctionCloser', function(accounts) {
       }
     });
 
-    it('fails for unapproved short', async () => {
+    it('fails for unapproved position', async () => {
       // dont approve dutch auction closer
       await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, false);
 
@@ -127,7 +127,7 @@ contract('DutchAuctionCloser', function(accounts) {
       ));
     });
 
-    it('succeeds for full short', async () => {
+    it('succeeds for unclosed position', async () => {
       await wait(callTimeLimit * 3 / 4);
 
       const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
@@ -169,7 +169,7 @@ contract('DutchAuctionCloser', function(accounts) {
         quoteBidder
       ] = await Promise.all([
         BaseTokenContract.balanceOf.call(dutchBidder),
-        QuoteTokenContract.balanceOf.call(OpenTx.seller),
+        QuoteTokenContract.balanceOf.call(OpenTx.trader),
         QuoteTokenContract.balanceOf.call(dutchBidder),
       ]);
 

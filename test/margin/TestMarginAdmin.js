@@ -8,10 +8,10 @@ const ProxyContract = artifacts.require('Proxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
   createOpenTx,
-  issueTokensAndSetAllowancesForShort,
+  issueTokensAndSetAllowances,
   callOpenPosition,
   callCancelLoanOffer,
-  doShort,
+  doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition,
   callApproveLoanOffering,
@@ -91,11 +91,11 @@ describe('MarginAdmin', () => {
 
   describe('#onlyWhileOperational', () => {
     contract('Margin', accounts => {
-      it('Only allows #short while OPERATIONAL', async () => {
+      it('Only allows #openPosition while OPERATIONAL', async () => {
         const OpenTx = await createOpenTx(accounts);
         const dydxMargin = await Margin.deployed();
 
-        await issueTokensAndSetAllowancesForShort(OpenTx);
+        await issueTokensAndSetAllowances(OpenTx);
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow( callOpenPosition(dydxMargin, OpenTx));
@@ -108,7 +108,7 @@ describe('MarginAdmin', () => {
     contract('Margin', accounts => {
       it('Only allows #cancelMarginCall while OPERATIONAL', async () => {
         const dydxMargin = await Margin.deployed();
-        const OpenTx = await doShort(accounts);
+        const OpenTx = await doOpenPosition(accounts);
 
         await dydxMargin.marginCall(
           OpenTx.id,
@@ -136,23 +136,23 @@ describe('MarginAdmin', () => {
           Margin.deployed(),
           QuoteToken.deployed()
         ]);
-        const OpenTx = await doShort(accounts);
+        const OpenTx = await doOpenPosition(accounts);
         const amount = new BigNumber(1000);
-        await quoteToken.issue(amount, { from: OpenTx.seller });
-        await quoteToken.approve(ProxyContract.address, amount, { from: OpenTx.seller });
+        await quoteToken.issue(amount, { from: OpenTx.trader });
+        await quoteToken.approve(ProxyContract.address, amount, { from: OpenTx.trader });
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow( dydxMargin.depositCollateral(
           OpenTx.id,
           amount,
-          { from: OpenTx.seller }
+          { from: OpenTx.trader }
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await dydxMargin.depositCollateral(
           OpenTx.id,
           amount,
-          { from: OpenTx.seller }
+          { from: OpenTx.trader }
         );
       });
     });
@@ -162,7 +162,7 @@ describe('MarginAdmin', () => {
         const OpenTx = await createOpenTx(accounts);
         const dydxMargin = await Margin.deployed();
 
-        await issueTokensAndSetAllowancesForShort(OpenTx);
+        await issueTokensAndSetAllowances(OpenTx);
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow( callApproveLoanOffering(
@@ -183,7 +183,7 @@ describe('MarginAdmin', () => {
     const cancelAmount = new BigNumber(100);
 
     async function test(accounts, state, shouldFail = false) {
-      const OpenTx = await doShort(accounts);
+      const OpenTx = await doOpenPosition(accounts);
       const dydxMargin = await Margin.deployed();
       await issueForDirectClose(OpenTx);
 
@@ -234,7 +234,7 @@ describe('MarginAdmin', () => {
     const closeAmount = new BigNumber(100);
 
     async function test(accounts, state, shouldFail = false) {
-      const OpenTx = await doShort(accounts);
+      const OpenTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
         Margin.deployed()
@@ -278,7 +278,7 @@ describe('MarginAdmin', () => {
   describe('#closePositionDirectlyStateControl', () => {
     const closeAmount = new BigNumber(100);
     async function test(accounts, state) {
-      const OpenTx = await doShort(accounts);
+      const OpenTx = await doOpenPosition(accounts);
       const dydxMargin = await Margin.deployed();
       await issueForDirectClose(OpenTx);
 

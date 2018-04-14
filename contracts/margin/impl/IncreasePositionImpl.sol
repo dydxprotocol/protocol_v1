@@ -29,7 +29,7 @@ library IncreasePositionImpl {
      */
     event PositionIncreased(
         bytes32 indexed marginId,
-        address indexed shortSeller,
+        address indexed trader,
         address indexed lender,
         address positionOwner,
         address loanOwner,

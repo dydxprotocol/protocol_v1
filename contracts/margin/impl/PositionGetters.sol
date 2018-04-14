@@ -273,7 +273,7 @@ contract PositionGetters is MarginStorage {
         return state.positions[marginId].lender;
     }
 
-    function getPositionSeller(
+    function getPositionOwner(
         bytes32 marginId
     )
         view

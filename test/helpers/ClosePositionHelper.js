@@ -116,28 +116,28 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
 }
 
 function checkSmartContractBalances(balances, OpenTx, closeAmount) {
-  const startingShortQuoteTokenAmount = getPartialAmount(
+  const startingQuoteTokenAmount = getPartialAmount(
     OpenTx.buyOrder.makerTokenAmount,
     OpenTx.buyOrder.takerTokenAmount,
     OpenTx.principal
   ).plus(OpenTx.depositAmount);
-  const expectedShortBalance = getPartialAmount(
+  const expectedBalance = getPartialAmount(
     OpenTx.principal.minus(closeAmount),
     OpenTx.principal,
-    startingShortQuoteTokenAmount
+    startingQuoteTokenAmount
   );
 
   const {
     vaultFeeToken,
     vaultQuoteToken,
     vaultBaseToken,
-    shortBalance
+    positionBalance
   } = balances;
 
   expect(vaultFeeToken).to.be.bignumber.equal(0);
-  expect(vaultQuoteToken).to.be.bignumber.equal(expectedShortBalance);
+  expect(vaultQuoteToken).to.be.bignumber.equal(expectedBalance);
   expect(vaultBaseToken).to.be.bignumber.equal(0);
-  expect(shortBalance).to.be.bignumber.equal(expectedShortBalance);
+  expect(positionBalance).to.be.bignumber.equal(expectedBalance);
 }
 
 function checkLenderBalances(balances, baseTokenOwedToLender, OpenTx) {
@@ -153,11 +153,11 @@ function checkLenderBalances(balances, baseTokenOwedToLender, OpenTx) {
 }
 
 async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = true) {
-  let shortLifetime = await getPositionLifetime(OpenTx, closeTx);
+  let positionLifetime = await getPositionLifetime(OpenTx, closeTx);
   let interestPeriod = OpenTx.loanOffering.rates.interestPeriod;
   if (interestPeriod.gt(1)) {
-    shortLifetime = getPartialAmount(
-      shortLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
+    positionLifetime = getPartialAmount(
+      positionLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
   }
 
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
@@ -166,7 +166,7 @@ async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = tru
   const getOwedAmount = await interestCalc.getCompoundedInterest.call(
     closeAmount,
     OpenTx.loanOffering.rates.interestRate,
-    shortLifetime
+    positionLifetime
   );
   return getOwedAmount;
 }
@@ -214,15 +214,15 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     vaultQuoteToken,
     vaultBaseToken,
 
-    shortBalance
+    positionBalance
   ] = await Promise.all([
-    quoteToken.balanceOf.call(OpenTx.seller),
-    baseToken.balanceOf.call(OpenTx.seller),
+    quoteToken.balanceOf.call(OpenTx.trader),
+    baseToken.balanceOf.call(OpenTx.trader),
 
     quoteToken.balanceOf.call(OpenTx.loanOffering.payer),
     baseToken.balanceOf.call(OpenTx.loanOffering.payer),
 
-    feeToken.balanceOf.call(OpenTx.seller),
+    feeToken.balanceOf.call(OpenTx.trader),
 
     feeToken.balanceOf.call(Vault.address),
     quoteToken.balanceOf.call(Vault.address),
@@ -249,7 +249,7 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     vaultQuoteToken,
     vaultBaseToken,
 
-    shortBalance
+    positionBalance
   };
 }
 
@@ -282,12 +282,12 @@ async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmoun
 }
 
 async function getPositionLifetime(OpenTx, tx) {
-  const [shortTimestamp, PositionClosedTimestamp] = await Promise.all([
+  const [positionTimestamp, positionClosedTimestamp] = await Promise.all([
     getBlockTimestamp(OpenTx.response.receipt.blockNumber),
     getBlockTimestamp(tx.receipt.blockNumber)
   ]);
   const maxDuration = OpenTx.loanOffering.maxDuration;
-  let duration = PositionClosedTimestamp - shortTimestamp;
+  let duration = positionClosedTimestamp - positionTimestamp;
   if (duration > maxDuration) {
     duration = maxDuration;
   }

@@ -30,7 +30,7 @@ library LoanImpl {
     event MarginCallInitiated(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed shortSeller,
+        address indexed owner,
         uint256 requiredDeposit
     );
 
@@ -40,7 +40,7 @@ library LoanImpl {
     event MarginCallCanceled(
         bytes32 indexed marginId,
         address indexed lender,
-        address indexed shortSeller,
+        address indexed owner,
         uint256 depositAmount
     );
 

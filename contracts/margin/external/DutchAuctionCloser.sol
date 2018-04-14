@@ -31,7 +31,7 @@ contract DutchAuctionCloser is
      */
     event PositionClosedByDutchAuction(
         bytes32 indexed marginId,
-        address indexed shortSeller,
+        address indexed owner,
         address indexed bidder,
         uint256 closeAmount,
         uint256 quoteTokenForBidder,
@@ -78,7 +78,7 @@ contract DutchAuctionCloser is
      * @param  marginId           Unique ID of the position
      * @param  closeAmount        Amount of the short that was closed
      * @param  shortCloser        Address of the account or contract that closed the short
-     * @param  shortSeller        Address of the owner of the short
+     * @param  positionOwner      Address of the owner of the short
      * @param  quoteToken         Address of the ERC20 quote token
      * @param  payout             Number of quote tokens received from the payout
      * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
@@ -89,7 +89,7 @@ contract DutchAuctionCloser is
         bytes32 marginId,
         uint256 closeAmount,
         address shortCloser,
-        address shortSeller,
+        address positionOwner,
         address quoteToken,
         uint256 payout,
         uint256 totalQuoteToken,
@@ -107,7 +107,7 @@ contract DutchAuctionCloser is
         );
 
         // pay quoteToken back to short owner
-        address deedHolder = PositionCustodian(shortSeller).getPositionDeedHolder(marginId);
+        address deedHolder = PositionCustodian(positionOwner).getPositionDeedHolder(marginId);
         TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
 
         // pay quoteToken back to short closer
@@ -116,7 +116,7 @@ contract DutchAuctionCloser is
 
         emit PositionClosedByDutchAuction(
             marginId,
-            shortSeller,
+            positionOwner,
             shortCloser,
             closeAmount,
             bidderReward,

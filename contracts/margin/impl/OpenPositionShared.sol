@@ -53,7 +53,7 @@ library OpenPositionShared {
 
         // First pull funds from lender and sell them. Prefer to do this first to make order
         // collisions use up less gas.
-        // NOTE: Doing this before updating state relies on #short being non-reentrant
+        // NOTE: Doing this before updating state relies on #openPosition being non-reentrant
         transferFromLender(state, transaction);
 
         // Transfer deposit from the short seller
