@@ -15,10 +15,10 @@ Source code for Ethereum Smart Contracts used by the dYdX Protocol
 
 Contains implementations for:
 
-- Short Sell
+- Margin
 - ERC20 Short
-- ERC721 Short
-- Dutch Auction Short Closer
+- ERC721 Margin Position
+- Dutch Auction Closer
 - 0x Exchange Wrapper
 
 ### Development
@@ -63,9 +63,9 @@ npm run solint
 
 Used to transfer user funds. Users set token allowance for the proxy authorizing it to transfer their funds. Only allows authorized contracts to transfer funds.
 
-##### ShortSell.sol
+##### Margin.sol
 
-Contains business logic for short selling. All external functions for shorting are in this contract.
+Contains business logic for margin trading. All external functions for margin trading are in this contract.
 
 ##### Vault.sol
 
