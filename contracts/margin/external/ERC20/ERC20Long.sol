@@ -65,6 +65,8 @@ contract ERC20Long is ERC20Position {
         view
         returns (uint256)
     {
-        return principalAdded;
+        uint256 positionBalance = Margin(MARGIN).getPositionBalance(positionId);
+
+        return positionBalance.sub(totalSupply_);
     }
 }

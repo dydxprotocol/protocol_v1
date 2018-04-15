@@ -68,8 +68,6 @@ contract ERC20Short is ERC20Position {
         view
         returns (uint256)
     {
-        uint256 positionBalance = Margin(MARGIN).getPositionBalance(positionId);
-
-        return positionBalance.sub(totalSupply_);
+        return principalAdded;
     }
 }
