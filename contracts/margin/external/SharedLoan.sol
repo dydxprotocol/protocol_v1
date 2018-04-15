@@ -135,9 +135,9 @@ contract SharedLoan is
         address /* from */,
         bytes32 positionId
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (address)
     {
         // require uninitialized so that this cannot receive ownership from more than 1 loan
@@ -178,9 +178,9 @@ contract SharedLoan is
         bytes32 positionId,
         uint256 amountAdded
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (bool)
     {
         require(positionId == POSITION_ID);
@@ -210,9 +210,9 @@ contract SharedLoan is
         bytes32 positionId,
         uint256 /* depositAmount */
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (bool)
     {
         assert(state == State.OPEN);
@@ -234,9 +234,9 @@ contract SharedLoan is
         address who,
         bytes32 positionId
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (bool)
     {
         assert(state == State.OPEN);
@@ -258,9 +258,9 @@ contract SharedLoan is
         address /* who */,
         bytes32 positionId
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (bool)
     {
         assert(state == State.OPEN);
@@ -301,8 +301,8 @@ contract SharedLoan is
     function withdraw(
         address who
     )
-        nonReentrant
         public
+        nonReentrant
         returns (uint256, uint256)
     {
         require(state == State.OPEN || state == State.CLOSED);

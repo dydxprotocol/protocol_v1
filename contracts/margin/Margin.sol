@@ -4,7 +4,6 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Vault } from "./Vault.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { DepositCollateralImpl } from "./impl/DepositCollateralImpl.sol";
@@ -30,14 +29,14 @@ import { TransferImpl } from "./impl/TransferImpl.sol";
  */
  /* solium-disable-next-line */
 contract Margin is
-    Ownable,
     NoOwner,
     ReentrancyGuard,
     MarginStorage,
     MarginEvents,
     MarginAdmin,
     LoanGetters,
-    PositionGetters {
+    PositionGetters
+{
 
     using SafeMath for uint256;
 
@@ -47,9 +46,8 @@ contract Margin is
         address vault,
         address proxy
     )
-        Ownable()
-        MarginAdmin()
         public
+        MarginAdmin()
     {
         state = MarginState.State({
             VAULT: vault,
@@ -514,7 +512,7 @@ contract Margin is
      * param is a contract, it must implement the LoanOwner interface.
      *
      * @param  positionId  Unique ID for the position
-     * @param  who      New owner of the loan
+     * @param  who         New owner of the loan
      */
     function transferLoan(
         bytes32 positionId,
@@ -535,7 +533,7 @@ contract Margin is
      * implement the PositionOwner interface.
      *
      * @param  positionId  Unique ID for the position
-     * @param  who       New owner of the position
+     * @param  who         New owner of the position
      */
     function transferPosition(
         bytes32 positionId,
@@ -553,16 +551,16 @@ contract Margin is
     // ============ Public Constant Functions ============
 
     function getVaultAddress()
-        view
         external
+        view
         returns (address)
     {
         return state.VAULT;
     }
 
     function getProxyAddress()
-        view
         external
+        view
         returns (address)
     {
         return state.PROXY;

@@ -73,8 +73,8 @@ library MarginCommon {
         MarginState.State storage state,
         bytes32 loanHash
     )
-        view
         internal
+        view
         returns (uint256)
     {
         return state.loanFills[loanHash].add(state.loanCancels[loanHash]);
@@ -228,8 +228,8 @@ library MarginCommon {
         MarginState.State storage state,
         bytes32 positionId
     )
-        view
         internal
+        view
         returns (bool)
     {
         return state.positions[positionId].startTimestamp != 0;

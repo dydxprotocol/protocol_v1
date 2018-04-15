@@ -18,9 +18,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * Contract for allowing anyone to close a called-in position by using a Dutch auction mechanism to
  * give a fair price to the position owner. Price paid to the owner decreases linearly over time.
  */
- /* solium-disable-next-line */
-contract DutchAuctionCloser is
-    PayoutRecipient {
+contract DutchAuctionCloser is PayoutRecipient {
     using SafeMath for uint256;
 
     // ============ Events ============
@@ -94,8 +92,8 @@ contract DutchAuctionCloser is
         uint256 totalQuoteToken,
         bool    payoutInQuoteToken
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool)
     {
         require(payoutInQuoteToken);
@@ -131,8 +129,8 @@ contract DutchAuctionCloser is
         bytes32 positionId,
         uint256 totalQuoteToken
     )
-        view
         internal
+        view
         returns (uint256)
     {
         uint256 auctionStartTimestamp;
@@ -150,13 +148,16 @@ contract DutchAuctionCloser is
     function getAuctionTimeLimits(
         bytes32 positionId
     )
-        view
         internal
+        view
         returns (
-            uint256 auctionStartTimestamp,
-            uint256 auctionEndTimestamp
+            uint256 /* auctionStartTimestamp */,
+            uint256 /* auctionEndTimestamp */
         )
     {
+        uint256 auctionStartTimestamp;
+        uint256 auctionEndTimestamp;
+
         MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, positionId);
 
         uint256 maxTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
@@ -182,5 +183,10 @@ contract DutchAuctionCloser is
 
         require(block.timestamp >= auctionStartTimestamp);
         require(block.timestamp <= auctionEndTimestamp);
+
+        return (
+            auctionStartTimestamp,
+            auctionEndTimestamp
+        );
     }
 }

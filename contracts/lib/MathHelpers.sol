@@ -28,9 +28,7 @@ library MathHelpers {
     )
         internal
         pure
-        returns (
-            uint256 result
-        )
+        returns (uint256)
     {
         return numerator.mul(target).div(denominator);
     }
@@ -50,9 +48,7 @@ library MathHelpers {
     )
         internal
         pure
-        returns (
-            uint256 result
-        )
+        returns (uint256)
     {
         return divisionRoundedUp(numerator.mul(target), denominator);
     }
@@ -70,9 +66,7 @@ library MathHelpers {
     )
         internal
         pure
-        returns (
-            uint256 result
-        )
+        returns (uint256)
     {
         assert(denominator != 0);
         if (numerator == 0) {
@@ -90,9 +84,7 @@ library MathHelpers {
     )
         internal
         pure
-        returns (
-            uint256 max
-        )
+        returns (uint256)
     {
         return 2 ** 256 - 1;
     }

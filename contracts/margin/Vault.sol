@@ -22,7 +22,8 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
 contract Vault is
     StaticAccessControlled,
     HasNoEther,
-    HasNoContracts {
+    HasNoContracts
+{
     using SafeMath for uint256;
 
     // ============ State Variables ============
@@ -42,8 +43,8 @@ contract Vault is
         address proxy,
         uint256 gracePeriod
     )
-        StaticAccessControlled(gracePeriod)
         public
+        StaticAccessControlled(gracePeriod)
     {
         PROXY = proxy;
     }

@@ -40,7 +40,7 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
         address who,
         bytes32 positionId
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 }

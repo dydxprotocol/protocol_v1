@@ -19,8 +19,8 @@ contract LoanGetters is MarginStorage {
     function getUnavailableLoanOfferingAmount(
         bytes32 loanHash
     )
-        view
         external
+        view
         returns (uint256)
     {
         return MarginCommon.getUnavailableLoanOfferingAmountImpl(state, loanHash);
@@ -29,8 +29,8 @@ contract LoanGetters is MarginStorage {
     function loanFills(
         bytes32 loanHash
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.loanFills[loanHash];
@@ -39,8 +39,8 @@ contract LoanGetters is MarginStorage {
     function loanCancels(
         bytes32 loanHash
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.loanCancels[loanHash];
@@ -49,8 +49,8 @@ contract LoanGetters is MarginStorage {
     function loanNumbers(
         bytes32 loanHash
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.loanNumbers[loanHash];
@@ -59,8 +59,8 @@ contract LoanGetters is MarginStorage {
     function isLoanApproved(
         bytes32 loanHash
     )
-        view
         external
+        view
         returns (bool)
     {
         return state.approvedLoans[loanHash];

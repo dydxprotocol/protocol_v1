@@ -37,8 +37,8 @@ contract LoanOwner is OnlyMargin {
         address from,
         bytes32 positionId
     )
-        onlyMargin
         external
+        onlyMargin
         returns (address);
 
     /**
@@ -58,7 +58,7 @@ contract LoanOwner is OnlyMargin {
         bytes32 positionId,
         uint256 amountAdded
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 }

@@ -50,7 +50,7 @@ contract PayoutRecipient is OnlyMargin {
         bool    payoutInQuoteToken
 
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 }
