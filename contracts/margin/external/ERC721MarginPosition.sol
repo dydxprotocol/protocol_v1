@@ -199,7 +199,7 @@ contract ERC721MarginPosition is
      * amount of the position was successfully closed.
      *
      * @param  closer           Address of the caller of the close function
-     * @param  payoutRecipient  Address of the recipient of heldToken paid out
+     * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount of the position being closed
      * @return                  The amount the user is allowed to close for the specified position

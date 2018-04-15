@@ -228,7 +228,7 @@ contract Margin is
      * @param  positionId            Unique ID for the position
      * @param  requestedCloseAmount  Amount of the position to close. The amount closed
      *                               will be: min(requestedCloseAmount, principal)
-     * @param  payoutRecipient       Address to send remaining heldToken to after closing
+     * @param  payoutRecipient       Address of the recipient of tokens paid out from closing
      * @param  exchangeWrapper       Address of the exchange wrapper
      * @param  payoutInHeldToken     True to pay out the payoutRecipient in heldToken,
      *                               False to pay out the payoutRecipient in owedToken
@@ -268,7 +268,7 @@ contract Margin is
      * @param  positionId               Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, principal)
-     * @param  payoutRecipient          Address to send remaining heldToken to after closing
+     * @param  payoutRecipient          Address of the recipient of tokens paid out from closing
      * @return                          Values corresponding to:
      *                                  1) Amount of position closed
      *                                  2) Amount of heldToken received by the payoutRecipient
