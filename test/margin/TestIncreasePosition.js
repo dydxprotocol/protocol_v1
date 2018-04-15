@@ -326,7 +326,6 @@ describe('#increasePosition', () => {
     expect(position.lender).to.eq(OpenTx.loanOffering.owner);
     expect(position.baseToken).to.eq(OpenTx.baseToken);
     expect(position.quoteToken).to.eq(OpenTx.quoteToken);
-    expect(position.closedAmount).to.be.bignumber.eq(0);
     expect(position.interestRate).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestRate);
     expect(position.callTimeLimit).to.be.bignumber.eq(OpenTx.loanOffering.callTimeLimit);
     expect(position.interestPeriod).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestPeriod);

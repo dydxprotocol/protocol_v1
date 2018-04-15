@@ -79,7 +79,7 @@ library LiquidatePositionImpl {
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,
-            transaction.currentPrincipal.sub(transaction.closeAmount),
+            transaction.originalPrincipal.sub(transaction.closeAmount),
             transaction.availableQuoteToken
         );
     }

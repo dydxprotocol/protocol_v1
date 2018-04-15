@@ -47,9 +47,9 @@ describe('#closePosition', () => {
 
       await checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount);
 
-      const { closedAmount } = await getPosition(dydxMargin, OpenTx.id);
+      const position = await getPosition(dydxMargin, OpenTx.id);
 
-      expect(closedAmount).to.be.bignumber.equal(closeAmount);
+      expect(position.principal).to.be.bignumber.equal(OpenTx.principal.minus(closeAmount));
 
       // Simulate time between open and close so interest fee needs to be paid
       await wait(10000);

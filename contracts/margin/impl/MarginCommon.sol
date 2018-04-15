@@ -25,7 +25,6 @@ library MarginCommon {
         address lender;
         address owner;
         uint256 principal;
-        uint256 closedAmount;
         uint256 requiredDeposit;
         uint32  callTimeLimit;   // Immutable
         uint32  startTimestamp;  // Immutable, cannot be 0

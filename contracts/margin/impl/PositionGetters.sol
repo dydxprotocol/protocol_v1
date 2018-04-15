@@ -136,7 +136,7 @@ contract PositionGetters is MarginStorage {
 
         return MarginCommon.calculateOwedAmount(
             positionObject,
-            positionObject.principal.sub(positionObject.closedAmount),
+            positionObject.principal,
             block.timestamp
         );
     }
@@ -213,8 +213,7 @@ contract PositionGetters is MarginStorage {
      *                     Values corresponding to:
      *
      *                     [0] = principal
-     *                     [1] = closedAmount
-     *                     [2] = requiredDeposit
+     *                     [1] = requiredDeposit
      *
      *                     Values corresponding to:
      *
@@ -232,7 +231,7 @@ contract PositionGetters is MarginStorage {
         external
         returns (
             address[4],
-            uint256[3],
+            uint256[2],
             uint32[6]
         )
     {
@@ -247,7 +246,6 @@ contract PositionGetters is MarginStorage {
             ],
             [
                 position.principal,
-                position.closedAmount,
                 position.requiredDeposit
             ],
             [
@@ -303,7 +301,7 @@ contract PositionGetters is MarginStorage {
         return state.positions[positionId].baseToken;
     }
 
-    function getPositionAmount(
+    function getPositionPrincipal(
         bytes32 positionId
     )
         view
@@ -311,26 +309,6 @@ contract PositionGetters is MarginStorage {
         returns (uint256)
     {
         return state.positions[positionId].principal;
-    }
-
-    function getPositionClosedAmount(
-        bytes32 positionId
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return state.positions[positionId].closedAmount;
-    }
-
-    function getPositionUnclosedAmount(
-        bytes32 positionId
-    )
-        view
-        external
-        returns (uint256)
-    {
-        return state.positions[positionId].principal.sub(state.positions[positionId].closedAmount);
     }
 
     function getPositionInterestRate(
