@@ -4,7 +4,6 @@ pragma experimental "v0.5.0";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
-import { StringHelpers } from "../../../lib/StringHelpers.sol";
 
 
 /**
@@ -45,22 +44,9 @@ contract ERC20Short is ERC20Position {
             ).decimals();
     }
 
-    function name()
-        external
-        view
-        returns (string)
-    {
-        if (state == State.UNINITIALIZED) {
-            return "dYdX Tokenized Short [UNINITIALIZED]";
-        }
-        // Copy intro into return value
-        bytes memory intro = "dYdX Tokenized Short 0x";
-        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(POSITION_ID)));
-    }
-
     // ============ Internal Functions ============
 
-    function getTokenAmount(
+    function getAddedTokenAmount(
         bytes32 /* positionId */,
         uint256 principalAdded
     )
@@ -69,5 +55,13 @@ contract ERC20Short is ERC20Position {
         returns (uint256)
     {
         return principalAdded;
+    }
+
+    function getNameIntro()
+        internal
+        pure
+        returns (bytes)
+    {
+        return "dYdX Tokenized Short";
     }
 }

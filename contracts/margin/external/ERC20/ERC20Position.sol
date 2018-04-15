@@ -7,6 +7,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { StringHelpers } from "../../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { ClosePositionDelegator } from "../../interfaces/ClosePositionDelegator.sol";
@@ -149,7 +150,7 @@ contract ERC20Position is
         // set relevant constants
         state = State.OPEN;
 
-        uint256 tokenAmount = getTokenAmount(
+        uint256 tokenAmount = getAddedTokenAmount(
             positionId,
             position.principal
         );
@@ -188,7 +189,7 @@ contract ERC20Position is
     {
         assert(positionId == POSITION_ID);
 
-        uint256 tokenAmount = getTokenAmount(
+        uint256 tokenAmount = getAddedTokenAmount(
             positionId,
             amountAdded
         );
@@ -342,7 +343,22 @@ contract ERC20Position is
     function name()
         external
         view
-        returns (string);
+        returns (string)
+    {
+        if (state == State.UNINITIALIZED) {
+            return string(StringHelpers.strcat(getNameIntro(), " [UNINITIALIZED]"));
+        }
+
+        return string(
+            StringHelpers.strcat(
+                StringHelpers.strcat(
+                    getNameIntro(),
+                    " 0x"
+                ),
+                StringHelpers.bytes32ToHex(POSITION_ID)
+            )
+        );
+    }
 
     /**
      * Implements PositionCustodian functionality. Called by external contracts to see where to pay
@@ -365,11 +381,16 @@ contract ERC20Position is
 
     // ============ Internal Abstract Functions ============
 
-    function getTokenAmount(
+    function getAddedTokenAmount(
         bytes32 positionId,
         uint256 principalAdded
     )
         internal
         view
         returns (uint256);
+
+    function getNameIntro()
+        internal
+        pure
+        returns (bytes);
 }
