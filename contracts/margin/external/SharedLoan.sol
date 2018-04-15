@@ -145,21 +145,20 @@ contract SharedLoan is
         require(POSITION_ID == positionId);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, POSITION_ID);
-        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
-        assert(currentPrincipal > 0);
+        assert(position.principal > 0);
 
         // set relevant constants
         state = State.OPEN;
-        totalAmount = currentPrincipal;
-        balances[INITIAL_LENDER] = currentPrincipal;
+        totalAmount = position.principal;
+        balances[INITIAL_LENDER] = position.principal;
         baseToken = position.baseToken;
         quoteToken = position.quoteToken;
 
-        emit Initialized(POSITION_ID, currentPrincipal);
+        emit Initialized(POSITION_ID, position.principal);
 
         emit BalanceAdded(
             INITIAL_LENDER,
-            currentPrincipal
+            position.principal
         );
 
         return address(this); // returning own address retains ownership of loan

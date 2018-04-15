@@ -240,7 +240,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const [time1, time2, principal, quoteTokenAmount] = await Promise.all([
     dydxMargin.getPositionStartTimestamp.call(positionId),
     getBlockTimestamp(response.receipt.blockNumber),
-    dydxMargin.getPositionUnclosedAmount.call(positionId),
+    dydxMargin.getPositionPrincipal.call(positionId),
     dydxMargin.getPositionBalance.call(positionId)
   ]);
   const owed = await getOwedAmountForTime(
@@ -446,7 +446,7 @@ async function getPreCloseVariables(dydxMargin, positionId) {
     startQuote,
     startTimestamp
   ] = await Promise.all([
-    dydxMargin.getPositionUnclosedAmount.call(positionId),
+    dydxMargin.getPositionPrincipal.call(positionId),
     dydxMargin.getPositionBalance.call(positionId),
     dydxMargin.getPositionStartTimestamp.call(positionId)
   ]);
@@ -463,7 +463,7 @@ async function expectCloseLog(dydxMargin, params) {
     endQuote,
     endTimestamp
   ] = await Promise.all([
-    dydxMargin.getPositionUnclosedAmount.call(params.OpenTx.id),
+    dydxMargin.getPositionPrincipal.call(params.OpenTx.id),
     dydxMargin.getPositionBalance.call(params.OpenTx.id),
     getBlockTimestamp(params.tx.receipt.blockNumber)
   ]);
@@ -505,7 +505,7 @@ async function callLiquidatePosition(
   from,
   payoutRecipient = null
 ) {
-  const startAmount = await dydxMargin.getPositionUnclosedAmount.call(OpenTx.id);
+  const startAmount = await dydxMargin.getPositionPrincipal.call(OpenTx.id);
   const startQuote = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
   payoutRecipient = payoutRecipient || from
@@ -678,7 +678,6 @@ async function getPosition(dydxMargin, id) {
     ],
     [
       principal,
-      closedAmount,
       requiredDeposit
     ],
     [
@@ -695,7 +694,6 @@ async function getPosition(dydxMargin, id) {
     baseToken,
     quoteToken,
     principal,
-    closedAmount,
     interestRate,
     requiredDeposit,
     callTimeLimit,

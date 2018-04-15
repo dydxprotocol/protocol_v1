@@ -27,7 +27,7 @@ library ClosePositionShared {
 
     struct CloseTx {
         bytes32 positionId;
-        uint256 currentPrincipal;
+        uint256 originalPrincipal;
         uint256 closeAmount;
         uint256 baseTokenOwed;
         uint256 startingQuoteToken;
@@ -49,12 +49,15 @@ library ClosePositionShared {
     )
         internal
     {
-        // Delete the position, or just increase the closedAmount
-        if (transaction.closeAmount == transaction.currentPrincipal) {
+        // Delete the position, or just decrease the principal
+        if (transaction.closeAmount == transaction.originalPrincipal) {
             MarginCommon.cleanupPosition(state, transaction.positionId);
         } else {
-            state.positions[transaction.positionId].closedAmount =
-                state.positions[transaction.positionId].closedAmount.add(transaction.closeAmount);
+            assert(
+                transaction.originalPrincipal == state.positions[transaction.positionId].principal
+            );
+            state.positions[transaction.positionId].principal =
+                transaction.originalPrincipal.sub(transaction.closeAmount);
         }
     }
 
@@ -176,10 +179,9 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
 
         uint256 startingQuoteToken = Vault(state.VAULT).balances(positionId, position.quoteToken);
-        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
         uint256 availableQuoteToken = MathHelpers.getPartialAmount(
             closeAmount,
-            currentPrincipal,
+            position.principal,
             startingQuoteToken
         );
         uint256 baseTokenOwed = 0;
@@ -193,7 +195,7 @@ library ClosePositionShared {
 
         return CloseTx({
             positionId: positionId,
-            currentPrincipal: currentPrincipal,
+            originalPrincipal: position.principal,
             closeAmount: closeAmount,
             baseTokenOwed: baseTokenOwed,
             startingQuoteToken: startingQuoteToken,
@@ -218,8 +220,7 @@ library ClosePositionShared {
         internal
         returns (uint256)
     {
-        uint256 currentPrincipal = position.principal.sub(position.closedAmount);
-        uint256 newAmount = Math.min256(requestedAmount, currentPrincipal);
+        uint256 newAmount = Math.min256(requestedAmount, position.principal);
 
         // If not the owner, requires owner to approve msg.sender
         if (position.owner != msg.sender) {
@@ -246,7 +247,7 @@ library ClosePositionShared {
         }
 
         require(newAmount > 0);
-        assert(newAmount <= currentPrincipal);
+        assert(newAmount <= position.principal);
         assert(newAmount <= requestedAmount);
         return newAmount;
     }

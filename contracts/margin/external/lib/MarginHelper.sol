@@ -21,7 +21,7 @@ library MarginHelper {
         returns (MarginCommon.Position memory)
     {
         address[4] memory addresses;
-        uint256[3] memory values256;
+        uint256[2] memory values256;
         uint32[6] memory values32;
 
         (
@@ -36,8 +36,7 @@ library MarginHelper {
             lender: addresses[2],
             owner: addresses[3],
             principal: values256[0],
-            closedAmount: values256[1],
-            requiredDeposit: values256[2],
+            requiredDeposit: values256[1],
             callTimeLimit: values32[0],
             startTimestamp: values32[1],
             callTimestamp: values32[2],

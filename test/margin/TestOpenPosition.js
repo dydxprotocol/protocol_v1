@@ -231,7 +231,6 @@ async function checkSuccess(dydxMargin, OpenTx) {
   expect(position.interestRate).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.interestRate);
   expect(position.callTimeLimit).to.be.bignumber.equal(OpenTx.loanOffering.callTimeLimit);
-  expect(position.closedAmount).to.be.bignumber.equal(0);
   expect(position.callTimestamp).to.be.bignumber.equal(0);
   expect(position.maxDuration).to.be.bignumber.equal(OpenTx.loanOffering.maxDuration);
 
