@@ -263,7 +263,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
-    effectiveAmountAdded: tx.principal,
+    principalAdded: tx.principal,
     quoteTokenFromSell: quoteTokenFromSell,
     depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
   });

@@ -136,7 +136,7 @@ library OpenPositionImpl {
             transaction.baseToken,
             transaction.quoteToken,
             transaction.loanOffering.feeRecipient,
-            transaction.effectiveAmount,
+            transaction.principal,
             quoteTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.rates.interestRate,
@@ -157,13 +157,13 @@ library OpenPositionImpl {
 
         // Update global amounts for the loan and lender
         state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.principal);
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
         state.positions[positionId].baseToken = transaction.baseToken;
         state.positions[positionId].quoteToken = transaction.quoteToken;
-        state.positions[positionId].principal = transaction.effectiveAmount;
+        state.positions[positionId].principal = transaction.principal;
         state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.positions[positionId].startTimestamp = uint32(block.timestamp);
         state.positions[positionId].maxDuration = transaction.loanOffering.maxDuration;
@@ -202,7 +202,7 @@ library OpenPositionImpl {
             owner: addresses[0],
             baseToken: addresses[1],
             quoteToken: addresses[2],
-            effectiveAmount: values256[7],
+            principal: values256[7],
             lenderAmount: values256[7],
             depositAmount: values256[8],
             loanOffering: parseLoanOffering(
