@@ -79,7 +79,9 @@ contract ExchangeWrapper is OnlyMargin {
 
     /**
      * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
-     * Should match the taker token amount used in exchangeForAmount
+     * Should match the taker token amount used in exchangeForAmount. If the order cannot provide
+     * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
+     * than desiredMakerToken
      *
      * @param  makerToken         Address of the maker token, the token to recieve
      * @param  takerToken         Address of the taker token, the token to pay
