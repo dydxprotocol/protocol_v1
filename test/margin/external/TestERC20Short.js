@@ -29,7 +29,7 @@ const {
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
-contract('ERC20Short', function(accounts) {
+contract.only('ERC20Short', function(accounts) {
   let baseToken;
 
   let POSITIONS = {

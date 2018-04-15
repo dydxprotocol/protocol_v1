@@ -3,29 +3,24 @@ pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { ERC20Short } from "./ERC20Short.sol";
-import { PositionOwner } from "../interfaces/PositionOwner.sol";
+import { PositionOwner } from "../../interfaces/PositionOwner.sol";
 
 
 /**
- * @title ERC20ShortCreator
+ * @title ERC20PositionCreator
  * @author dYdX
  *
- * This contract is used to deploy new ERC20Short contracts. A new ERC20Short is
- * automatically deployed whenever a position is transferred to this contract. Ownership of that
- * position is then transferred to the new ERC20Short, with the tokens initially being
- * allocated to the address that transferred the position originally to the
- * ERC20ERC20ShortCreator.
+ * Contains common code for ERC20ShortCreator and ERC20LongCreator
  */
  /* solium-disable-next-line */
-contract ERC20ShortCreator is
+contract ERC20PositionCreator is
     NoOwner,
     PositionOwner,
     ReentrancyGuard
 {
     // ============ Events ============
 
-    event ERC20ShortCreated(
+    event TokenCreated(
         bytes32 indexed positionId,
         address tokenAddress
     );
@@ -37,7 +32,7 @@ contract ERC20ShortCreator is
 
     // ============ Constructor ============
 
-    function ERC20ShortCreator(
+    function ERC20PositionCreator(
         address margin,
         address[] trustedRecipients
     )
@@ -68,14 +63,12 @@ contract ERC20ShortCreator is
         external
         returns (address)
     {
-        address tokenAddress = new ERC20Short(
-            positionId,
-            MARGIN,
+        address tokenAddress = createTokenContract(
             from,
-            TRUSTED_RECIPIENTS
+            positionId
         );
 
-        emit ERC20ShortCreated(positionId, tokenAddress);
+        emit TokenCreated(positionId, tokenAddress);
 
         return tokenAddress;
     }
@@ -91,4 +84,13 @@ contract ERC20ShortCreator is
     {
         return false;
     }
+
+    // ============ Internal Abstract Functions ============
+
+    function createTokenContract(
+        address from,
+        bytes32 positionId
+    )
+        internal
+        returns (address);
 }
