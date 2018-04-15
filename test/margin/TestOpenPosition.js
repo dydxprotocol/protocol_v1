@@ -48,7 +48,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it.only('succeeds when deposit is paid in base token', async () => {
+    it('succeeds when deposit is paid in base token', async () => {
       const OpenTx = await createOpenTx(accounts, 4, false);
       const dydxMargin = await Margin.deployed();
       await issueTokensAndSetAllowances(OpenTx);

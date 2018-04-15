@@ -61,7 +61,7 @@ describe('#increasePosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('succeeds on valid inputs', async () => {
+    it.only('succeeds when depositing in base token', async () => {
       const {
         OpenTx,
         addValueTx,

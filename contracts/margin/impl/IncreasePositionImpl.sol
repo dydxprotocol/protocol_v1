@@ -77,7 +77,6 @@ library IncreasePositionImpl {
             positionId,
             orderData
         );
-        return 0;
 
         updateState(
             position,
@@ -182,16 +181,15 @@ library IncreasePositionImpl {
         uint256 quoteTokenFromSell;
         uint256 totalQuoteTokenReceived;
 
-        (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        (
+            quoteTokenFromSell,
+            totalQuoteTokenReceived
+        ) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
             positionId,
             orderData
         );
-
-        emit Test(positionMinimumQuoteToken, totalQuoteTokenReceived);
-
-        return 0;
 
         // This should always be true unless there is a faulty ExchangeWrapper (i.e. the
         // ExchangeWrapper traded at a different price from what it said it would)
@@ -260,6 +258,7 @@ library IncreasePositionImpl {
 
             require(transaction.lenderAmount <= baseTokenToSell);
             transaction.depositAmount = baseTokenToSell.sub(transaction.lenderAmount);
+            transaction.desiredTokenFromSell = positionMinimumQuoteToken;
         }
 
         return positionMinimumQuoteToken;
@@ -382,7 +381,8 @@ library IncreasePositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[6],
-            depositInQuoteToken: depositInQuoteToken
+            depositInQuoteToken: depositInQuoteToken,
+            desiredTokenFromSell: 0
         });
 
         return transaction;

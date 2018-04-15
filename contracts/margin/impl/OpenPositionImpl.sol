@@ -213,7 +213,8 @@ library OpenPositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[10],
-            depositInQuoteToken: depositInQuoteToken
+            depositInQuoteToken: depositInQuoteToken,
+            desiredTokenFromSell: 0
         });
 
         return transaction;

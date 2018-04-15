@@ -46,20 +46,6 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInQuoteToken 
     depositInQuoteToken: depositInQuoteToken
   };
 
-  if (!depositInQuoteToken) {
-    const minDeposit = getPartialAmount(
-      tx.buyOrder.takerTokenAmount,
-      tx.buyOrder.makerTokenAmount,
-      getPartialAmount(
-        tx.shortAmount,
-        tx.loanOffering.rates.maxAmount,
-        tx.loanOffering.rates.minQuoteToken,
-        true
-      )
-    );
-    tx.depositAmount = minDeposit;
-  }
-
   return tx;
 }
 
