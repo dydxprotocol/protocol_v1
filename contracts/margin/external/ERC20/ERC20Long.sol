@@ -3,6 +3,7 @@ pragma experimental "v0.5.0";
 
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
+import { Margin } from "../../Margin.sol";
 import { StringHelpers } from "../../../lib/StringHelpers.sol";
 
 
@@ -58,8 +59,8 @@ contract ERC20Long is ERC20Position {
     // ============ Internal Functions ============
 
     function getTokenAmount(
-        bytes32 /* positionId */,
-        uint256 principalAdded
+        bytes32 positionId,
+        uint256 /* principalAdded */
     )
         internal
         view

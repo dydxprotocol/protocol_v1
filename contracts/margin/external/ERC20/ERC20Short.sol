@@ -61,8 +61,8 @@ contract ERC20Short is ERC20Position {
     // ============ Internal Functions ============
 
     function getTokenAmount(
-        bytes32 positionId,
-        uint256 /* principalAdded */
+        bytes32 /* positionId */,
+        uint256 principalAdded
     )
         internal
         view
