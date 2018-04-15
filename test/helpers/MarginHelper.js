@@ -258,9 +258,26 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     tx.principal,
     false
   );
-  const quoteTokenFromSell =
-    owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
-  const minTotalDeposit = quoteTokenAmount.div(principal).times(tx.principal);
+  const minTotalDeposit = getPartialAmount(
+    quoteTokenAmount,
+    principal,
+    tx.principal
+  );
+  const quoteTokenFromSell = tx.depositInQuoteToken ?
+    getPartialAmount(
+      owed,
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount
+    )
+    : minTotalDeposit;
+  const depositAmount = tx.depositInQuoteToken ?
+    minTotalDeposit.minus(quoteTokenFromSell)
+    : getPartialAmount(
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount,
+      minTotalDeposit,
+      true
+    ).minus(owed);
 
   expectLog(response.logs[0], 'PositionIncreased', {
     positionId: positionId,
@@ -272,8 +289,9 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
     principalAdded: tx.principal,
-    quoteTokenFromSell: quoteTokenFromSell,
-    depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
+    quoteTokenFromSell,
+    depositAmount,
+    depositInQuoteToken: tx.depositInQuoteToken
   });
 }
 

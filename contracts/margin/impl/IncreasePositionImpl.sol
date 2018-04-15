@@ -157,8 +157,6 @@ library IncreasePositionImpl {
 
     // ============ Helper Functions ============
 
-    event Test(uint positionMinimumQuoteToken, uint totalQuoteTokenReceived);
-
     function preStateUpdate(
         MarginState.State storage state,
         OpenPositionShared.OpenTx transaction,

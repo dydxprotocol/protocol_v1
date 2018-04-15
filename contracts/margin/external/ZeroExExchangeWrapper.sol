@@ -199,7 +199,6 @@ contract ZeroExExchangeWrapper is
         internal
         returns (uint256)
     {
-
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
         assert(requestedFillAmount > 0);
         require(requestedFillAmount <= order.takerTokenAmount);
