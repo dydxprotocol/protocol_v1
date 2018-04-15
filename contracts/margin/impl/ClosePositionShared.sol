@@ -53,8 +53,11 @@ library ClosePositionShared {
         if (transaction.closeAmount == transaction.originalPrincipal) {
             MarginCommon.cleanupPosition(state, transaction.positionId);
         } else {
+            assert(
+                transaction.originalPrincipal == state.positions[transaction.positionId].principal
+            );
             state.positions[transaction.positionId].principal =
-                state.positions[transaction.positionId].principal.sub(transaction.closeAmount);
+                transaction.originalPrincipal.sub(transaction.closeAmount);
         }
     }
 
