@@ -36,7 +36,7 @@ library IncreasePositionImpl {
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,
-        uint256 effectiveAmountAdded,
+        uint256 principalAdded,
         uint256 quoteTokenFromSell,
         uint256 depositAmount
     );
@@ -80,13 +80,13 @@ library IncreasePositionImpl {
         updateState(
             position,
             positionId,
-            transaction.effectiveAmount,
+            transaction.principal,
             transaction.loanOffering.payer
         );
 
         // Update global amounts for the loan
         state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.effectiveAmount);
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.principal);
 
         OpenPositionShared.openPositionInternalPostStateUpdate(
             state,
@@ -225,7 +225,7 @@ library IncreasePositionImpl {
         uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
             positionId,
             state,
-            transaction.effectiveAmount,
+            transaction.principal,
             position
         );
 
@@ -259,7 +259,7 @@ library IncreasePositionImpl {
     function getPositionMinimumQuoteToken(
         bytes32 positionId,
         MarginState.State storage state,
-        uint256 effectiveAmount,
+        uint256 principalAdded,
         MarginCommon.Position storage position
     )
         internal
@@ -269,7 +269,7 @@ library IncreasePositionImpl {
         uint256 quoteTokenBalance = Vault(state.VAULT).balances(positionId, position.quoteToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
-            effectiveAmount,
+            principalAdded,
             position.principal,
             quoteTokenBalance
         );
@@ -278,12 +278,12 @@ library IncreasePositionImpl {
     function updateState(
         MarginCommon.Position storage position,
         bytes32 positionId,
-        uint256 effectiveAmount,
+        uint256 principalAdded,
         address loanPayer
     )
         internal
     {
-        position.principal = position.principal.add(effectiveAmount);
+        position.principal = position.principal.add(principalAdded);
 
         address owner = position.owner;
         address lender = position.lender;
@@ -295,7 +295,7 @@ library IncreasePositionImpl {
                 PositionOwner(owner).marginPositionIncreased(
                     msg.sender,
                     positionId,
-                    effectiveAmount
+                    principalAdded
                 )
             );
         }
@@ -308,7 +308,7 @@ library IncreasePositionImpl {
                 LoanOwner(lender).marginLoanIncreased(
                     loanPayer,
                     positionId,
-                    effectiveAmount
+                    principalAdded
                 )
             );
         }
@@ -331,7 +331,7 @@ library IncreasePositionImpl {
             transaction.loanOffering.loanHash,
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
-            transaction.effectiveAmount,
+            transaction.principal,
             quoteTokenFromSell,
             transaction.depositAmount
         );
@@ -356,7 +356,7 @@ library IncreasePositionImpl {
             owner: position.owner,
             baseToken: position.baseToken,
             quoteToken: position.quoteToken,
-            effectiveAmount: values256[7],
+            principal: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForAddValue(
                 position,
                 values256[7],

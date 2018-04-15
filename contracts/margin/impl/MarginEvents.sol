@@ -147,7 +147,7 @@ contract MarginEvents {
         bytes32 loanHash,
         address loanFeeRecipient,
         uint256 amountBorrowed,
-        uint256 effectiveAmountAdded,
+        uint256 principalAdded,
         uint256 quoteTokenFromSell,
         uint256 depositAmount
     );

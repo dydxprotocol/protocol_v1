@@ -132,8 +132,8 @@ contract Margin is
 
     /**
      * Increase the size of a position. Funds will be borrowed from the loan payer and sold as per
-     * the position. The value added to the position will be equal to the effective amount lent, and
-     * will incorporate interest already earned by the position so far.
+     * the position. The amount of base token borrowed from the lender will be >= the amount of
+     * principal added, as it will incorporate interest already earned by the position so far.
      *
      * @param  addresses            Addresses corresponding to:
      *
@@ -154,8 +154,8 @@ contract Margin is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = amount to add to the position (NOTE: the amount pulled from the lender will be
-     *                                              >= this amount)
+     *  [7]  = amount of principal to add to the position (NOTE: the amount pulled from the lender
+     *                                                           will be >= this amount)
      *
      * @param  values32             Values corresponding to:
      *

@@ -26,7 +26,7 @@ library OpenPositionShared {
         address owner;
         address baseToken;
         address quoteToken;
-        uint256 effectiveAmount;
+        uint256 principal;
         uint256 lenderAmount;
         uint256 depositAmount;
         MarginCommon.LoanOffering loanOffering;
@@ -109,7 +109,7 @@ library OpenPositionShared {
         view
     {
         // Disallow positions with zero amount
-        require(transaction.effectiveAmount > 0);
+        require(transaction.principal > 0);
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
@@ -124,14 +124,14 @@ library OpenPositionShared {
 
         // Validate the position amount is <= than max and >= min
         require(
-            transaction.effectiveAmount.add(
+            transaction.principal.add(
                 MarginCommon.getUnavailableLoanOfferingAmountImpl(
                     state,
                     transaction.loanOffering.loanHash
                 )
             ) <= transaction.loanOffering.rates.maxAmount
         );
-        require(transaction.effectiveAmount >= transaction.loanOffering.rates.minAmount);
+        require(transaction.principal >= transaction.loanOffering.rates.minAmount);
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
 
         // Check no casting errors
@@ -317,7 +317,7 @@ library OpenPositionShared {
         pure
     {
         uint256 loanOfferingMinimumQuoteToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.effectiveAmount,
+            transaction.principal,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minQuoteToken
         );
