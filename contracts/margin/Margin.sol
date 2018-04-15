@@ -230,7 +230,7 @@ contract Margin is
      *                               will be: min(requestedCloseAmount, principal)
      * @param  payoutRecipient       Address to send remaining heldToken to after closing
      * @param  exchangeWrapper       Address of the exchange wrapper
-     * @param  payoutInHeldToken    True to pay out the payoutRecipient in heldToken,
+     * @param  payoutInHeldToken     True to pay out the payoutRecipient in heldToken,
      *                               False to pay out the payoutRecipient in owedToken
      * @param  order                 Order object to be passed to the exchange wrapper
      * @return                       Values corresponding to:
