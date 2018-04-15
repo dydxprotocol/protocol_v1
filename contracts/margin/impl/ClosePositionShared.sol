@@ -29,16 +29,16 @@ library ClosePositionShared {
         bytes32 positionId;
         uint256 originalPrincipal;
         uint256 closeAmount;
-        uint256 baseTokenOwed;
-        uint256 startingQuoteToken;
-        uint256 availableQuoteToken;
+        uint256 owedTokenOwed;
+        uint256 startingHeldToken;
+        uint256 availableHeldToken;
         address payoutRecipient;
-        address baseToken;
-        address quoteToken;
+        address owedToken;
+        address heldToken;
         address positionOwner;
         address positionLender;
         address exchangeWrapper;
-        bool    payoutInQuoteToken;
+        bool    payoutInHeldToken;
     }
 
     // ============ Internal Implementation Functions ============
@@ -61,25 +61,25 @@ library ClosePositionShared {
         }
     }
 
-    function sendQuoteTokensToPayoutRecipient(
+    function sendHeldTokensToPayoutRecipient(
         MarginState.State storage state,
         ClosePositionShared.CloseTx memory transaction,
         uint256 buybackCost,
-        uint256 receivedBaseToken
+        uint256 receivedOwedToken
     )
         internal
         returns (uint256)
     {
         uint256 payout;
 
-        if (transaction.payoutInQuoteToken) {
-            // Send remaining quote token to payoutRecipient
-            payout = transaction.availableQuoteToken.sub(buybackCost);
+        if (transaction.payoutInHeldToken) {
+            // Send remaining heldToken to payoutRecipient
+            payout = transaction.availableHeldToken.sub(buybackCost);
 
             if (payout > 0) {
                 Vault(state.VAULT).transferFromVault(
                     transaction.positionId,
-                    transaction.quoteToken,
+                    transaction.heldToken,
                     transaction.payoutRecipient,
                     payout
                 );
@@ -87,11 +87,11 @@ library ClosePositionShared {
         } else {
             assert(transaction.exchangeWrapper != address(0));
 
-            payout = receivedBaseToken.sub(transaction.baseTokenOwed);
+            payout = receivedOwedToken.sub(transaction.owedTokenOwed);
 
             if (payout > 0) {
                 Proxy(state.PROXY).transferTokens(
-                    transaction.baseToken,
+                    transaction.owedToken,
                     transaction.exchangeWrapper,
                     transaction.payoutRecipient,
                     payout
@@ -106,19 +106,19 @@ library ClosePositionShared {
                     transaction.closeAmount,
                     msg.sender,
                     transaction.positionOwner,
-                    transaction.quoteToken,
+                    transaction.heldToken,
                     payout,
-                    transaction.availableQuoteToken,
-                    transaction.payoutInQuoteToken
+                    transaction.availableHeldToken,
+                    transaction.payoutInHeldToken
                 )
             );
         }
 
-        // The ending quote token balance of the vault should be the starting quote token balance
-        // minus the available quote token amount
+        // The ending heldToken balance of the vault should be the starting heldToken balance
+        // minus the available heldToken amount
         assert(
-            Vault(state.VAULT).balances(transaction.positionId, transaction.quoteToken)
-            == transaction.startingQuoteToken.sub(transaction.availableQuoteToken)
+            Vault(state.VAULT).balances(transaction.positionId, transaction.heldToken)
+            == transaction.startingHeldToken.sub(transaction.availableHeldToken)
         );
 
         return payout;
@@ -130,7 +130,7 @@ library ClosePositionShared {
         uint256 requestedAmount,
         address payoutRecipient,
         address exchangeWrapper,
-        bool payoutInQuoteToken,
+        bool payoutInHeldToken,
         bool isLiquidation
     )
         internal
@@ -140,7 +140,7 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
         require(requestedAmount > 0);
 
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         uint256 closeAmount = getApprovedAmount(
             position,
@@ -157,7 +157,7 @@ library ClosePositionShared {
             closeAmount,
             payoutRecipient,
             exchangeWrapper,
-            payoutInQuoteToken,
+            payoutInHeldToken,
             isLiquidation
         );
     }
@@ -169,7 +169,7 @@ library ClosePositionShared {
         uint256 closeAmount,
         address payoutRecipient,
         address exchangeWrapper,
-        bool payoutInQuoteToken,
+        bool payoutInHeldToken,
         bool isLiquidation
     )
         internal
@@ -178,15 +178,15 @@ library ClosePositionShared {
     {
         require(payoutRecipient != address(0));
 
-        uint256 startingQuoteToken = Vault(state.VAULT).balances(positionId, position.quoteToken);
-        uint256 availableQuoteToken = MathHelpers.getPartialAmount(
+        uint256 startingHeldToken = Vault(state.VAULT).balances(positionId, position.heldToken);
+        uint256 availableHeldToken = MathHelpers.getPartialAmount(
             closeAmount,
             position.principal,
-            startingQuoteToken
+            startingHeldToken
         );
-        uint256 baseTokenOwed = 0;
+        uint256 owedTokenOwed = 0;
         if (!isLiquidation) {
-            baseTokenOwed = MarginCommon.calculateOwedAmount(
+            owedTokenOwed = MarginCommon.calculateOwedAmount(
                 position,
                 closeAmount,
                 block.timestamp
@@ -197,16 +197,16 @@ library ClosePositionShared {
             positionId: positionId,
             originalPrincipal: position.principal,
             closeAmount: closeAmount,
-            baseTokenOwed: baseTokenOwed,
-            startingQuoteToken: startingQuoteToken,
-            availableQuoteToken: availableQuoteToken,
+            owedTokenOwed: owedTokenOwed,
+            startingHeldToken: startingHeldToken,
+            availableHeldToken: availableHeldToken,
             payoutRecipient: payoutRecipient,
-            baseToken: position.baseToken,
-            quoteToken: position.quoteToken,
+            owedToken: position.owedToken,
+            heldToken: position.heldToken,
             positionOwner: position.owner,
             positionLender: position.lender,
             exchangeWrapper: exchangeWrapper,
-            payoutInQuoteToken: payoutInQuoteToken
+            payoutInHeldToken: payoutInHeldToken
         });
     }
 
@@ -224,24 +224,26 @@ library ClosePositionShared {
 
         // If not the owner, requires owner to approve msg.sender
         if (position.owner != msg.sender) {
-            uint256 allowedCloseAmount = ClosePositionDelegator(position.owner).closeOnBehalfOf(
-                msg.sender,
-                payoutRecipient,
-                positionId,
-                newAmount
-            );
+            uint256 allowedCloseAmount =
+                ClosePositionDelegator(position.owner).closeOnBehalfOf(
+                    msg.sender,
+                    payoutRecipient,
+                    positionId,
+                    newAmount
+                );
             require(allowedCloseAmount <= newAmount);
             newAmount = allowedCloseAmount;
         }
 
         // If not the lender, requires lender to approve msg.sender
         if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLiquidationAmount = LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
-                msg.sender,
-                payoutRecipient,
-                positionId,
-                newAmount
-            );
+            uint256 allowedLiquidationAmount =
+                LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
+                    msg.sender,
+                    payoutRecipient,
+                    positionId,
+                    newAmount
+                );
             require(allowedLiquidationAmount <= newAmount);
             newAmount = allowedLiquidationAmount;
         }

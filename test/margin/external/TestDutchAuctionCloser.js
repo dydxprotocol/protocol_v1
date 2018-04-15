@@ -7,8 +7,8 @@ chai.use(require('chai-bignumber')());
 
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
-const QuoteToken = artifacts.require("TokenA");
-const BaseToken = artifacts.require("TokenB");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
@@ -26,7 +26,7 @@ const TWO = new BigNumber(2);
 
 contract('DutchAuctionCloser', function(accounts) {
   let dydxMargin, VaultContract, ERC721MarginPositionContract;
-  let BaseTokenContract, QuoteTokenContract;
+  let OwedTokenContract, HeldTokenContract;
   let OpenTx;
   const dutchBidder = accounts[9];
 
@@ -35,14 +35,14 @@ contract('DutchAuctionCloser', function(accounts) {
       dydxMargin,
       VaultContract,
       ERC721MarginPositionContract,
-      BaseTokenContract,
-      QuoteTokenContract,
+      OwedTokenContract,
+      HeldTokenContract,
     ] = await Promise.all([
       Margin.deployed(),
       Vault.deployed(),
       ERC721MarginPosition.deployed(),
-      BaseToken.deployed(),
-      QuoteToken.deployed(),
+      OwedToken.deployed(),
+      HeldToken.deployed(),
     ]);
   });
 
@@ -75,13 +75,13 @@ contract('DutchAuctionCloser', function(accounts) {
       callTimeLimit = OpenTx.loanOffering.callTimeLimit;
 
       // grant tokens and set permissions for bidder
-      const numTokens = await BaseTokenContract.balanceOf(dutchBidder);
+      const numTokens = await OwedTokenContract.balanceOf(dutchBidder);
       const maxInterest = await getMaxInterestFee(OpenTx);
       const targetTokens = OpenTx.principal.plus(maxInterest);
 
       if (numTokens < targetTokens) {
-        await BaseTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
-        await BaseTokenContract.approve(
+        await OwedTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
+        await OwedTokenContract.approve(
           ProxyContract.address,
           targetTokens,
           { from: dutchBidder });
@@ -130,8 +130,8 @@ contract('DutchAuctionCloser', function(accounts) {
     it('succeeds for unclosed position', async () => {
       await wait(callTimeLimit * 3 / 4);
 
-      const startingBidderBaseToken = await BaseTokenContract.balanceOf(dutchBidder);
-      const quoteVault = await VaultContract.balances.call(OpenTx.id, QuoteToken.address);
+      const startingBidderOwedToken = await OwedTokenContract.balanceOf(dutchBidder);
+      const heldTokenVault = await VaultContract.balances.call(OpenTx.id, HeldToken.address);
       const closeAmount = OpenTx.principal.div(2);
 
       // closing half is fine
@@ -164,22 +164,22 @@ contract('DutchAuctionCloser', function(accounts) {
       ));
 
       const [
-        baseBidder,
-        quoteTrader,
-        quoteBidder
+        owedTokenBidder,
+        heldTokenTrader,
+        heldTokenBidder
       ] = await Promise.all([
-        BaseTokenContract.balanceOf.call(dutchBidder),
-        QuoteTokenContract.balanceOf.call(OpenTx.trader),
-        QuoteTokenContract.balanceOf.call(dutchBidder),
+        OwedTokenContract.balanceOf.call(dutchBidder),
+        HeldTokenContract.balanceOf.call(OpenTx.trader),
+        HeldTokenContract.balanceOf.call(dutchBidder),
       ]);
 
       // check amounts
-      expect(baseBidder).to.be.bignumber.equal(
-        startingBidderBaseToken
+      expect(owedTokenBidder).to.be.bignumber.equal(
+        startingBidderOwedToken
           .minus(owedAmount1)
           .minus(owedAmount2)
       );
-      expect(quoteTrader.plus(quoteBidder)).to.be.bignumber.equal(quoteVault);
+      expect(heldTokenTrader.plus(heldTokenBidder)).to.be.bignumber.equal(heldTokenVault);
     });
   });
 });

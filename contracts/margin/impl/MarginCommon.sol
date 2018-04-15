@@ -20,8 +20,8 @@ library MarginCommon {
     // ============ Structs ============
 
     struct Position {
-        address baseToken;       // Immutable
-        address quoteToken;      // Immutable
+        address owedToken;       // Immutable
+        address heldToken;      // Immutable
         address lender;
         address owner;
         uint256 principal;
@@ -54,7 +54,7 @@ library MarginCommon {
     struct LoanRates {
         uint256 maxAmount;
         uint256 minAmount;
-        uint256 minQuoteToken;
+        uint256 minHeldToken;
         uint256 lenderFee;
         uint256 takerFee;
         uint32  interestRate;
@@ -180,8 +180,8 @@ library MarginCommon {
 
     function getLoanOfferingHash(
         LoanOffering loanOffering,
-        address quoteToken,
-        address baseToken
+        address heldToken,
+        address owedToken
     )
         internal
         view
@@ -189,8 +189,8 @@ library MarginCommon {
     {
         return keccak256(
             address(this),
-            baseToken,
-            quoteToken,
+            owedToken,
+            heldToken,
             loanOffering.payer,
             loanOffering.signer,
             loanOffering.owner,
@@ -212,7 +212,7 @@ library MarginCommon {
         return keccak256(
             loanOffering.rates.maxAmount,
             loanOffering.rates.minAmount,
-            loanOffering.rates.minQuoteToken,
+            loanOffering.rates.minHeldToken,
             loanOffering.rates.lenderFee,
             loanOffering.rates.takerFee,
             loanOffering.expirationTimestamp,
@@ -235,7 +235,7 @@ library MarginCommon {
         return state.positions[positionId].startTimestamp != 0;
     }
 
-    function getPositionObject(
+    function getPositionStorage(
         MarginState.State storage state,
         bytes32 positionId
     )

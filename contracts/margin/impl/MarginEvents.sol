@@ -21,16 +21,16 @@ contract MarginEvents {
         address indexed trader,
         address indexed lender,
         bytes32 loanHash,
-        address baseToken,
-        address quoteToken,
+        address owedToken,
+        address heldToken,
         address loanFeeRecipient,
         uint256 principal,
-        uint256 quoteTokenFromSell,
+        uint256 heldTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
         uint32  callTimeLimit,
         uint32  maxDuration,
-        bool    depositInQuoteToken
+        bool    depositInHeldToken
     );
 
     /**
@@ -42,10 +42,10 @@ contract MarginEvents {
         address indexed payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 baseTokenPaidToLender,
+        uint256 owedTokenPaidToLender,
         uint256 payoutAmount,
         uint256 buybackCost,
-        bool payoutInQuoteToken
+        bool payoutInHeldToken
     );
 
     /**
@@ -57,7 +57,7 @@ contract MarginEvents {
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
-        uint256 quoteTokenPayout
+        uint256 heldTokenPayout
     );
 
     /**
@@ -148,8 +148,8 @@ contract MarginEvents {
         address loanFeeRecipient,
         uint256 amountBorrowed,
         uint256 principalAdded,
-        uint256 quoteTokenFromSell,
+        uint256 heldTokenFromSell,
         uint256 depositAmount,
-        bool    depositInQuoteToken
+        bool    depositInHeldToken
     );
 }

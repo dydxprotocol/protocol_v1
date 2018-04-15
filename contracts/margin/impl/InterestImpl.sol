@@ -32,14 +32,14 @@ library InterestImpl {
      * roughly 10^18 decimal places. Continuously compounding interest follows the formula:
      * I = P * e^(R*T)
      *
-     * @param  tokenAmount         Amount of tokens lent
+     * @param  principal           Principal of the interest calculation
      * @param  interestRate        Annual nominal interest percentage times 10**6.
      *                             (example: 5% = 5e6)
      * @param  secondsOfInterest   Number of seconds that interest has been accruing
      * @return                     Total amount of tokens owed. Greater than tokenAmount.
      */
     function getCompoundedInterest(
-        uint256 tokenAmount,
+        uint256 principal,
         uint256 interestRate,
         uint256 secondsOfInterest
     )
@@ -58,7 +58,7 @@ library InterestImpl {
             DEFAULT_MACLAURIN_PRECISION
         );
 
-        return safeMultiplyUint256ByFraction(tokenAmount, percent);
+        return safeMultiplyUint256ByFraction(principal, percent);
     }
 
     // ============ Helper Functions ============

@@ -59,8 +59,8 @@ contract SharedLoan is
      */
     event TokensWithdrawn(
         address indexed who,
-        uint256 baseTokenAmount,
-        uint256 quoteTokenAmount,
+        uint256 owedTokenAmount,
+        uint256 heldTokenAmount,
         bool completelyRepaid
     );
 
@@ -78,26 +78,26 @@ contract SharedLoan is
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the position's baseToken. Cached for convenience and lower-cost withdrawals
-    address public baseToken;
+    // Address of the position's owedToken. Cached for convenience and lower-cost withdrawals
+    address public owedToken;
 
-    // Address of the position's quoteToken. Cached for convenience and lower-cost withdrawals
-    address public quoteToken;
+    // Address of the position's heldToken. Cached for convenience and lower-cost withdrawals
+    address public heldToken;
 
-    // Total amount lent
-    uint256 public totalAmount;
+    // Total principal
+    uint256 public totalPrincipal;
 
     // Amount that has been fully repaid and withdrawn
-    uint256 public totalAmountFullyWithdrawn;
+    uint256 public totalPrincipalFullyWithdrawn;
 
-    // Total amount of base token that has been withdrawn
-    uint256 public totalBaseTokenWithdrawn;
+    // Total amount of owedToken that has been withdrawn
+    uint256 public totalOwedTokenWithdrawn;
 
-    // Amount lent by each lender
+    // Principal attributed to each lender
     mapping (address => uint256) public balances;
 
-    // Amount of base token each lender has withdrawn before the loan was fully repaid
-    mapping (address => uint256) public baseTokenWithdrawnEarly;
+    // Amount of owedToken each lender has withdrawn before the loan was fully repaid
+    mapping (address => uint256) public owedTokenWithdrawnEarly;
 
     // ============ Constructor ============
 
@@ -149,10 +149,10 @@ contract SharedLoan is
 
         // set relevant constants
         state = State.OPEN;
-        totalAmount = position.principal;
+        totalPrincipal = position.principal;
         balances[INITIAL_LENDER] = position.principal;
-        baseToken = position.baseToken;
-        quoteToken = position.quoteToken;
+        owedToken = position.owedToken;
+        heldToken = position.heldToken;
 
         emit Initialized(POSITION_ID, position.principal);
 
@@ -166,9 +166,9 @@ contract SharedLoan is
 
     /**
      * Called by Margin when additional value is added onto the position this contract
-     * is lending for. Balance is added to the address that lent the additional tokens.
+     * is lending for. Balance is added to the address that loaned the additional tokens.
      *
-     * @param  from         Address that lent the additional tokens
+     * @param  from         Address that loaned the additional tokens
      * @param  positionId   Unique ID of the position
      * @param  amountAdded  Amount that was added to the position
      * @return              True to indicate that this contract consents to value being added
@@ -186,7 +186,7 @@ contract SharedLoan is
         require(positionId == POSITION_ID);
 
         balances[from] = balances[from].add(amountAdded);
-        totalAmount = totalAmount.add(amountAdded);
+        totalPrincipal = totalPrincipal.add(amountAdded);
 
         emit BalanceAdded(
             from,
@@ -290,13 +290,13 @@ contract SharedLoan is
 
     /**
      * Withdraw tokens that were repaid for this loan. Callable by anyone for a specific lender.
-     * Tokens will be sent directly to the lender. Tokens could include base token and/or
-     * quote token (if the loan was force recovered). Callable at any time
+     * Tokens will be sent directly to the lender. Tokens could include owedToken and/or
+     * heldToken (if the loan was force recovered). Callable at any time
      *
      * @param  who                  Lender to withdraw for
      * @return                      Values corresponding to:
-     *  1) Amount of base token paid out
-     *  2) Amount of quote token paid out
+     *  1) Amount of owedToken paid out
+     *  2) Amount of heldToken paid out
      */
     function withdraw(
         address who
@@ -313,26 +313,26 @@ contract SharedLoan is
             return (0, 0);
         }
 
-        uint256 baseTokenWithdrawn = withdrawBaseTokens(who);
-        uint256 quoteTokenWithdrawn = withdrawQuoteTokens(who);
+        uint256 owedTokenWithdrawn = withdrawOwedTokens(who);
+        uint256 heldTokenWithdrawn = withdrawHeldTokens(who);
         bool completelyRepaid = false;
 
         if (state == State.CLOSED) {
-            totalAmountFullyWithdrawn = totalAmountFullyWithdrawn.add(balances[who]);
+            totalPrincipalFullyWithdrawn = totalPrincipalFullyWithdrawn.add(balances[who]);
             balances[who] = 0;
             completelyRepaid = true;
         }
 
         emit TokensWithdrawn(
             who,
-            baseTokenWithdrawn,
-            quoteTokenWithdrawn,
+            owedTokenWithdrawn,
+            heldTokenWithdrawn,
             completelyRepaid
         );
 
         return (
-            baseTokenWithdrawn,
-            quoteTokenWithdrawn
+            owedTokenWithdrawn,
+            heldTokenWithdrawn
         );
     }
 
@@ -348,42 +348,42 @@ contract SharedLoan is
         }
     }
 
-    function withdrawBaseTokens(
+    function withdrawOwedTokens(
         address who
     )
         internal
         returns (uint256)
     {
-        uint256 currentBaseTokenBalance = TokenInteract.balanceOf(
-            baseToken,
+        uint256 currentOwedTokenBalance = TokenInteract.balanceOf(
+            owedToken,
             address(this));
 
-        uint256 totalBaseTokenEverHeld = currentBaseTokenBalance.add(
-            totalBaseTokenWithdrawn);
+        uint256 totalOwedTokenEverHeld = currentOwedTokenBalance.add(
+            totalOwedTokenWithdrawn);
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            totalAmount,
-            totalBaseTokenEverHeld
-        ).sub(baseTokenWithdrawnEarly[who]);
+            totalPrincipal,
+            totalOwedTokenEverHeld
+        ).sub(owedTokenWithdrawnEarly[who]);
 
         if (allowedAmount == 0) {
             return 0;
         }
 
-        totalBaseTokenWithdrawn =
-            totalBaseTokenWithdrawn.add(allowedAmount);
+        totalOwedTokenWithdrawn =
+            totalOwedTokenWithdrawn.add(allowedAmount);
         if (state == State.OPEN) {
-            baseTokenWithdrawnEarly[who] =
-                baseTokenWithdrawnEarly[who].add(allowedAmount);
+            owedTokenWithdrawnEarly[who] =
+                owedTokenWithdrawnEarly[who].add(allowedAmount);
         }
 
-        TokenInteract.transfer(baseToken, who, allowedAmount);
+        TokenInteract.transfer(owedToken, who, allowedAmount);
 
         return allowedAmount;
     }
 
-    function withdrawQuoteTokens(
+    function withdrawHeldTokens(
         address who
     )
         internal
@@ -393,21 +393,21 @@ contract SharedLoan is
             return 0;
         }
 
-        uint256 currentQuoteTokenBalance = TokenInteract.balanceOf(
-            quoteToken,
+        uint256 currentHeldTokenBalance = TokenInteract.balanceOf(
+            heldToken,
             address(this));
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
             balances[who],
-            totalAmount.sub(totalAmountFullyWithdrawn),
-            currentQuoteTokenBalance
+            totalPrincipal.sub(totalPrincipalFullyWithdrawn),
+            currentHeldTokenBalance
         );
 
         if (allowedAmount == 0) {
             return 0;
         }
 
-        TokenInteract.transfer(quoteToken, who, allowedAmount);
+        TokenInteract.transfer(heldToken, who, allowedAmount);
 
         return allowedAmount;
     }

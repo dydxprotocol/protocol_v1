@@ -31,8 +31,8 @@ contract DutchAuctionCloser is PayoutRecipient {
         address indexed owner,
         address indexed bidder,
         uint256 closeAmount,
-        uint256 quoteTokenForBidder,
-        uint256 quoteTokenForOwner
+        uint256 heldTokenForBidder,
+        uint256 heldTokenForOwner
     );
 
     // ============ Structs ============
@@ -76,10 +76,10 @@ contract DutchAuctionCloser is PayoutRecipient {
      * @param  closeAmount        Amount of the position that was closed
      * @param  closer             Address of the account or contract that closed the position
      * @param  positionOwner      Address of the owner of the position
-     * @param  quoteToken         Address of the ERC20 quote token
-     * @param  payout             Number of quote tokens received from the payout
-     * @param  totalQuoteToken    Total number of quote tokens removed from vault during close
-     * @param  payoutInQuoteToken True if payout is in quote token, false if in base token
+     * @param  heldToken          Address of the ERC20 heldToken
+     * @param  payout             Amount of heldToken received from the payout
+     * @param  totalHeldToken     Total amount of heldToken removed from vault during close
+     * @param  payoutInHeldToken  True if payout is in heldToken, false if in owedToken
      * @return                    True if approved by the reciever
      */
     function receiveClosePositionPayout(
@@ -87,29 +87,29 @@ contract DutchAuctionCloser is PayoutRecipient {
         uint256 closeAmount,
         address closer,
         address positionOwner,
-        address quoteToken,
+        address heldToken,
         uint256 payout,
-        uint256 totalQuoteToken,
-        bool    payoutInQuoteToken
+        uint256 totalHeldToken,
+        bool    payoutInHeldToken
     )
         external
         onlyMargin
         returns (bool)
     {
-        require(payoutInQuoteToken);
+        require(payoutInHeldToken);
 
         uint256 auctionPrice = getAuctionPrice(
             positionId,
-            totalQuoteToken
+            totalHeldToken
         );
 
-        // pay quoteToken back to position owner
+        // pay heldToken back to position owner
         address deedHolder = PositionCustodian(positionOwner).getPositionDeedHolder(positionId);
-        TokenInteract.transfer(quoteToken, deedHolder, auctionPrice);
+        TokenInteract.transfer(heldToken, deedHolder, auctionPrice);
 
-        // pay quoteToken back to bidder
+        // pay heldToken back to bidder
         uint256 bidderReward = payout.sub(auctionPrice);
-        TokenInteract.transfer(quoteToken, closer, bidderReward);
+        TokenInteract.transfer(heldToken, closer, bidderReward);
 
         emit PositionClosedByDutchAuction(
             positionId,
@@ -127,7 +127,7 @@ contract DutchAuctionCloser is PayoutRecipient {
 
     function getAuctionPrice(
         bytes32 positionId,
-        uint256 totalQuoteToken
+        uint256 totalHeldToken
     )
         internal
         view
@@ -141,7 +141,7 @@ contract DutchAuctionCloser is PayoutRecipient {
         return MathHelpers.getPartialAmount(
             auctionEndTimestamp.sub(block.timestamp),
             auctionEndTimestamp.sub(auctionStartTimestamp),
-            totalQuoteToken
+            totalHeldToken
         );
     }
 

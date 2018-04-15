@@ -8,8 +8,8 @@ import { LoanOwner } from "./LoanOwner.sol";
  * @title ForceRecoverCollateralDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses forceRecoverCollateral()
- * a loan owned by the smart contract.
+ * Interface that smart contracts must implement in order to let other addresses
+ * forceRecoverCollateral() a loan owned by the smart contract.
  */
 contract ForceRecoverCollateralDelegator is LoanOwner {
 
@@ -26,8 +26,8 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call forceRecoverCollateral()
-     * for the loan-side of a position.
+     * Function a contract must implement in order to let other addresses call
+     * forceRecoverCollateral() for the loan-side of a position.
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan call was successfully canceled

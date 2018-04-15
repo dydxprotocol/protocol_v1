@@ -60,7 +60,8 @@ library TransferInternal {
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = LoanOwner(newOwner).receiveLoanOwnership(oldOwner, positionId);
+            address nextOwner =
+                LoanOwner(newOwner).receiveLoanOwnership(oldOwner, positionId);
             if (nextOwner != newOwner) {
                 return grantLoanOwnership(positionId, newOwner, nextOwner);
             }
@@ -94,7 +95,8 @@ library TransferInternal {
         }
 
         if (AddressUtils.isContract(newOwner)) {
-            address nextOwner = PositionOwner(newOwner).receivePositionOwnership(oldOwner, positionId);
+            address nextOwner =
+                PositionOwner(newOwner).receivePositionOwnership(oldOwner, positionId);
             if (nextOwner != newOwner) {
                 return grantPositionOwnership(positionId, newOwner, nextOwner);
             }

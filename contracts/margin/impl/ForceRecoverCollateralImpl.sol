@@ -36,7 +36,7 @@ library ForceRecoverCollateralImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed
@@ -62,12 +62,12 @@ library ForceRecoverCollateralImpl {
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderQuoteTokenAmount = vault.balances(positionId, position.quoteToken);
+        uint256 lenderHeldTokenAmount = vault.balances(positionId, position.heldToken);
         vault.transferFromVault(
             positionId,
-            position.quoteToken,
+            position.heldToken,
             position.lender,
-            lenderQuoteTokenAmount
+            lenderHeldTokenAmount
         );
 
         // Delete the position
@@ -80,9 +80,9 @@ library ForceRecoverCollateralImpl {
         // Log an event
         emit CollateralForceRecovered(
             positionId,
-            lenderQuoteTokenAmount
+            lenderHeldTokenAmount
         );
 
-        return lenderQuoteTokenAmount;
+        return lenderHeldTokenAmount;
     }
 }

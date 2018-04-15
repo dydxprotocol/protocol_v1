@@ -26,7 +26,7 @@ contract ClosePositionDelegator is PositionOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call closePosition() for the
+     * Function a contract must implement in order to let other addresses call closePosition() for a
      * position. This allows margin traders to use more complex logic to control their positions.
      * For example, this can be used to tokenize positions and distribute shares as ERC20 tokens.
      * Such a token would be burned for the closer in the amount called here. This interface also
@@ -38,7 +38,7 @@ contract ClosePositionDelegator is PositionOwner {
      * closed. Returning 0 will indicate an error and cause Margin to throw.
      *
      * @param  closer           Address of the caller of the close function
-     * @param  payoutRecipient  Address of the recipient of any quote tokens paid out
+     * @param  payoutRecipient  Address of the recipient of heldToken paid out
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount of the position being closed
      * @return                  The amount the user is allowed to close for the specified position

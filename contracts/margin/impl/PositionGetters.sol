@@ -68,10 +68,10 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the number of quote tokens currently locked up in Vault for a particular position
+     * Gets the amount of heldToken currently locked up in Vault for a particular position
      *
      * @param  positionId  Unique ID of the position
-     * @return             The number of quote tokens
+     * @return             The amount of heldToken
      */
     function getPositionBalance(
         bytes32 positionId
@@ -84,7 +84,7 @@ contract PositionGetters is MarginStorage {
             return 0;
         }
 
-        return Vault(state.VAULT).balances(positionId, state.positions[positionId].quoteToken);
+        return Vault(state.VAULT).balances(positionId, state.positions[positionId].heldToken);
     }
 
     /**
@@ -102,10 +102,10 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
-            positionObject,
+            position,
             block.timestamp
         );
 
@@ -119,11 +119,11 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of base tokens currently needed to close the position completely, including
+     * Gets the amount of owedTokens currently needed to close the position completely, including
      * interest fees.
      *
      * @param  positionId  Unique ID of the position
-     * @return             The number of base tokens
+     * @return             The number of owedTokens
      */
     function getPositionOwedAmount(
         bytes32 positionId
@@ -132,23 +132,23 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
-            positionObject,
-            positionObject.principal,
+            position,
+            position.principal,
             block.timestamp
         );
     }
 
     /**
-     * Gets the amount of base tokens needed to close a given amount of the position at a given time,
+     * Gets the amount of owedTokens needed to close a given amount of the position at a given time,
      * including interest fees.
      *
      * @param  positionId   Unique ID of the position
      * @param  positionId   Amount of position being closed
      * @param  timestamp    Block timestamp in seconds of close
-     * @return              The number of base tokens owed at the given time and amount
+     * @return              The number of owedTokens owed at the given time and amount
      */
     function getPositionOwedAmountAtTime(
         bytes32 positionId,
@@ -159,23 +159,23 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
-            positionObject,
+            position,
             amount,
             timestamp
         );
     }
 
     /**
-     * Gets the amount of base tokens that can be borrowed from a lender to add a given amount
+     * Gets the amount of owedTokens that can be borrowed from a lender to add a given amount
      * onto the position at a given time.
      *
      * @param  positionId   Unique ID of the position
      * @param  positionId   Amount being added to position
      * @param  timestamp    Block timestamp in seconds of addition
-     * @return              The number of base tokens that can be borrowed at the given
+     * @return              The number of owedTokens that can be borrowed at the given
      *                      time and amount
      */
     function getLenderAmountForAddValueAtTime(
@@ -187,10 +187,10 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
-            positionObject,
+            position,
             amount,
             timestamp
         );
@@ -205,8 +205,8 @@ contract PositionGetters is MarginStorage {
      * @param  positionId  Unique ID of the position
      * @return             Addresses corresponding to:
      *
-     *                     [0] = baseToken
-     *                     [1] = quoteToken
+     *                     [0] = owedToken
+     *                     [1] = heldToken
      *                     [2] = lender
      *                     [3] = owner
      *
@@ -239,8 +239,8 @@ contract PositionGetters is MarginStorage {
 
         return (
             [
-                position.baseToken,
-                position.quoteToken,
+                position.owedToken,
+                position.heldToken,
                 position.lender,
                 position.owner
             ],
@@ -281,24 +281,24 @@ contract PositionGetters is MarginStorage {
         return state.positions[positionId].owner;
     }
 
-    function getPositionQuoteToken(
+    function getPositionHeldToken(
         bytes32 positionId
     )
         external
         view
         returns (address)
     {
-        return state.positions[positionId].quoteToken;
+        return state.positions[positionId].heldToken;
     }
 
-    function getPositionBaseToken(
+    function getPositionOwedToken(
         bytes32 positionId
     )
         external
         view
         returns (address)
     {
-        return state.positions[positionId].baseToken;
+        return state.positions[positionId].owedToken;
     }
 
     function getPositionPrincipal(

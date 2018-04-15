@@ -24,14 +24,14 @@ library OpenPositionShared {
 
     struct OpenTx {
         address owner;
-        address baseToken;
-        address quoteToken;
+        address owedToken;
+        address heldToken;
         uint256 principal;
         uint256 lenderAmount;
         uint256 depositAmount;
         MarginCommon.LoanOffering loanOffering;
         address exchangeWrapper;
-        bool depositInQuoteToken;
+        bool depositInHeldToken;
         uint256 desiredTokenFromSell;
     }
 
@@ -53,15 +53,15 @@ library OpenPositionShared {
 
         getConsentIfSmartContractLender(transaction, positionId);
 
-        pullBaseTokensFromLender(state, transaction);
+        pullOwedTokensFromLender(state, transaction);
 
         // Pull deposit from the msg.sender
-        uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, positionId);
+        uint256 heldTokenFromDeposit = transferDeposit(state, transaction, positionId);
 
-        uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
+        uint256 sellAmount = transaction.depositInHeldToken ? transaction.lenderAmount
             : transaction.lenderAmount.add(transaction.depositAmount);
 
-        uint256 quoteTokenFromSell = executeSell(
+        uint256 heldTokenFromSell = executeSell(
             state,
             transaction,
             orderData,
@@ -69,18 +69,18 @@ library OpenPositionShared {
             sellAmount
         );
 
-        uint256 totalQuoteTokenReceived = quoteTokenFromDeposit.add(quoteTokenFromSell);
-        validateMinimumQuoteToken(
+        uint256 totalHeldTokenReceived = heldTokenFromDeposit.add(heldTokenFromSell);
+        validateMinimumHeldToken(
             transaction,
-            totalQuoteTokenReceived
+            totalHeldTokenReceived
         );
 
         // Transfer feeTokens from trader and lender
         transferLoanFees(state, transaction);
 
         return (
-            quoteTokenFromSell,
-            totalQuoteTokenReceived
+            heldTokenFromSell,
+            totalHeldTokenReceived
         );
     }
 
@@ -131,7 +131,7 @@ library OpenPositionShared {
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration
         );
 
-        // The minimum quote token is validated after executing the sell
+        // The minimum heldToken is validated after executing the sell
     }
 
     function isValidSignature(
@@ -177,15 +177,15 @@ library OpenPositionShared {
         }
     }
 
-    function pullBaseTokensFromLender(
+    function pullOwedTokensFromLender(
         MarginState.State storage state,
         OpenTx transaction
     )
         internal
     {
-        // Transfer base token to the exchange wrapper
+        // Transfer owedToken to the exchange wrapper
         Proxy(state.PROXY).transferTokens(
-            transaction.baseToken,
+            transaction.owedToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapper,
             transaction.lenderAmount
@@ -198,20 +198,20 @@ library OpenPositionShared {
         bytes32 positionId
     )
         internal
-        returns (uint256 /* quoteTokenFromDeposit */)
+        returns (uint256 /* heldTokenFromDeposit */)
     {
         if (transaction.depositAmount > 0) {
-            if (transaction.depositInQuoteToken) {
+            if (transaction.depositInHeldToken) {
                 Vault(state.VAULT).transferToVault(
                     positionId,
-                    transaction.quoteToken,
+                    transaction.heldToken,
                     msg.sender,
                     transaction.depositAmount
                 );
                 return transaction.depositAmount;
             } else {
                 Proxy(state.PROXY).transferTokens(
-                    transaction.baseToken,
+                    transaction.owedToken,
                     msg.sender,
                     transaction.exchangeWrapper,
                     transaction.depositAmount
@@ -274,52 +274,52 @@ library OpenPositionShared {
         internal
         returns (uint256)
     {
-        uint256 quoteTokenReceived;
+        uint256 heldTokenReceived;
         if (transaction.desiredTokenFromSell == 0) {
-            quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-                transaction.quoteToken,
-                transaction.baseToken,
+            heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+                transaction.heldToken,
+                transaction.owedToken,
                 msg.sender,
                 sellAmount,
                 orderData
             );
         } else {
             uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
-                transaction.quoteToken,
-                transaction.baseToken,
+                transaction.heldToken,
+                transaction.owedToken,
                 msg.sender,
                 transaction.desiredTokenFromSell,
                 orderData
             );
 
             assert(soldAmount == sellAmount);
-            quoteTokenReceived = transaction.desiredTokenFromSell;
+            heldTokenReceived = transaction.desiredTokenFromSell;
         }
 
         Vault(state.VAULT).transferToVault(
             positionId,
-            transaction.quoteToken,
+            transaction.heldToken,
             transaction.exchangeWrapper,
-            quoteTokenReceived
+            heldTokenReceived
         );
 
-        return quoteTokenReceived;
+        return heldTokenReceived;
     }
 
-    function validateMinimumQuoteToken(
+    function validateMinimumHeldToken(
         OpenTx transaction,
-        uint256 totalQuoteTokenReceived
+        uint256 totalHeldTokenReceived
     )
         internal
         pure
     {
-        uint256 loanOfferingMinimumQuoteToken = MathHelpers.getPartialAmountRoundedUp(
+        uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
             transaction.principal,
             transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minQuoteToken
+            transaction.loanOffering.rates.minHeldToken
         );
 
-        require(totalQuoteTokenReceived >= loanOfferingMinimumQuoteToken);
+        require(totalHeldTokenReceived >= loanOfferingMinimumHeldToken);
     }
 
     function getLoanOfferingAddresses(
@@ -330,8 +330,8 @@ library OpenPositionShared {
         returns (address[9])
     {
         return [
-            transaction.baseToken,
-            transaction.quoteToken,
+            transaction.owedToken,
+            transaction.heldToken,
             transaction.loanOffering.payer,
             transaction.loanOffering.signer,
             transaction.loanOffering.owner,
@@ -352,7 +352,7 @@ library OpenPositionShared {
         return [
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minAmount,
-            transaction.loanOffering.rates.minQuoteToken,
+            transaction.loanOffering.rates.minHeldToken,
             transaction.loanOffering.rates.lenderFee,
             transaction.loanOffering.rates.takerFee,
             transaction.loanOffering.expirationTimestamp,

@@ -22,8 +22,8 @@ contract LoanOfferingVerifier {
      *
      * @param  addresses    Array of addresses:
      *
-     *  [0] = base token
-     *  [1] = quote token
+     *  [0] = owedToken
+     *  [1] = heldToken
      *  [2] = loan payer
      *  [3] = loan signer
      *  [4] = loan owner
@@ -36,7 +36,7 @@ contract LoanOfferingVerifier {
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
-     *  [2] = loan minimum quote token
+     *  [2] = loan minimum heldToken
      *  [3] = loan lender fee
      *  [4] = loan taker fee
      *  [5] = loan expiration timestamp (in seconds)

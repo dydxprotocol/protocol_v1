@@ -111,7 +111,7 @@ describe('#closePosition', () => {
     it('Successfully closes a position directly in increments', async () => {
       const OpenTx = await doOpenPosition(accounts);
 
-      // Give the position owner enough base token to close
+      // Give the position owner enough owedToken to close
       await issueForDirectClose(OpenTx);
 
       const dydxMargin = await Margin.deployed();

@@ -10,7 +10,7 @@ chai.use(require('chai-bignumber')());
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const Margin = artifacts.require("Margin");
 const ProxyContract = artifacts.require("Proxy");
-const BaseToken = artifacts.require("TokenB");
+const OwedToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
@@ -30,18 +30,18 @@ function uint256(positionId) {
 }
 
 contract('ERC721MarginPosition', function(accounts) {
-  let dydxMargin, erc721Contract, baseToken;
+  let dydxMargin, erc721Contract, owedToken;
   let salt = 1111;
 
   before('retrieve deployed contracts', async () => {
     [
       dydxMargin,
       erc721Contract,
-      baseToken
+      owedToken
     ] = await Promise.all([
       Margin.deployed(),
       ERC721MarginPosition.deployed(),
-      BaseToken.deployed()
+      OwedToken.deployed()
     ]);
   });
 
@@ -203,11 +203,11 @@ contract('ERC721MarginPosition', function(accounts) {
     const approvedRecipient = accounts[7];
     const unapprovedAcct = accounts[9];
 
-    async function initBase(account) {
+    async function initOwedToken(account) {
       const maxInterest = await getMaxInterestFee(OpenTx);
       const amount = OpenTx.principal.plus(maxInterest);
-      await baseToken.issueTo(account, amount);
-      await baseToken.approve(ProxyContract.address, amount, { from: account });
+      await owedToken.issueTo(account, amount);
+      await owedToken.approve(ProxyContract.address, amount, { from: account });
     }
 
     beforeEach('sets up position', async () => {
@@ -217,7 +217,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds for owner', async () => {
-      await initBase(OpenTx.trader);
+      await initOwedToken(OpenTx.trader);
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
@@ -228,7 +228,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds for approved recipients', async () => {
-      await initBase(unapprovedAcct);
+      await initOwedToken(unapprovedAcct);
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
@@ -239,7 +239,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds for approved closers', async () => {
-      await initBase(approvedCloser);
+      await initOwedToken(approvedCloser);
       await callClosePositionDirectly(
         dydxMargin,
         OpenTx,
@@ -250,7 +250,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('fails for non-approved recipients/closers', async () => {
-      await initBase(unapprovedAcct);
+      await initOwedToken(unapprovedAcct);
       await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,

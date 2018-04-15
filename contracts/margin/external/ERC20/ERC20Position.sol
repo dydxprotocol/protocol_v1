@@ -63,12 +63,12 @@ contract ERC20Position is
     event CompletelyClosed();
 
     /**
-     * A user burned tokens to withdraw quote tokens from this contract after the short was closed
+     * A user burned tokens to withdraw heldTokens from this contract after the short was closed
      */
     event TokensRedeemedAfterForceClose(
         address indexed redeemer,
         uint256 tokensRedeemed,
-        uint256 quoteTokenPayout
+        uint256 heldTokenPayout
     );
 
     /**
@@ -93,8 +93,8 @@ contract ERC20Position is
     // Current State of this contract. See State enum
     State public state;
 
-    // Address of the short's quoteToken. Cached for convenience and lower-cost withdrawals
-    address public quoteToken;
+    // Address of the short's heldToken. Cached for convenience and lower-cost withdrawals
+    address public heldToken;
 
     // Symbol to be ERC20 compliant with frontends
     string public symbol;
@@ -158,7 +158,7 @@ contract ERC20Position is
 
         totalSupply_ = tokenAmount;
         balances[INITIAL_TOKEN_HOLDER] = tokenAmount;
-        quoteToken = position.quoteToken;
+        heldToken = position.heldToken;
 
         // Record event
         emit Initialized(POSITION_ID, tokenAmount);
@@ -212,7 +212,7 @@ contract ERC20Position is
      * amount of the position was successfully closed.
      *
      * @param  closer           Address of the caller of the close function
-     * @param  payoutRecipient  Address of the recipient of any quote tokens paid out
+     * @param  payoutRecipient  Address of the recipient of heldToken paid out
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount of the position being closed
      * @return                  The amount the user is allowed to close for the specified position
@@ -234,7 +234,7 @@ contract ERC20Position is
         uint256 allowedAmount;
 
         // Tokens are not burned when a trusted recipient is used, but we require the position to be
-        // completely closed. All token holders are then entitled to the quoteTokens in the contract
+        // completely closed. All token holders are then entitled to the heldTokens in the contract
         if (requestedAmount >= totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
             allowedAmount = requestedAmount;
             emit ClosedByTrustedParty(closer, payoutRecipient, requestedAmount);
@@ -262,10 +262,10 @@ contract ERC20Position is
     // ============ Public State Changing Functions ============
 
     /**
-     * Withdraw quote tokens from this contract for any of the position that was closed via external
+     * Withdraw heldTokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
      *
-     * NOTE: It is possible that this contract could be sent quote token by external sources
+     * NOTE: It is possible that this contract could be sent heldToken by external sources
      * other than from the Margin contract. In this case the payout for token holders
      * would be greater than just that from the normal payout. This is fine because
      * nobody has incentive to send this contract extra funds, and if they do then it's
@@ -277,7 +277,7 @@ contract ERC20Position is
      * carry out such an attack.
      *
      * @param  who  Address of the account to withdraw for
-     * @return      The number of quote tokens withdrawn
+     * @return      The amount of heldToken withdrawn
      */
     function withdraw(
         address who
@@ -299,31 +299,31 @@ contract ERC20Position is
             return 0;
         }
 
-        uint256 quoteTokenBalance = TokenInteract.balanceOf(quoteToken, address(this));
+        uint256 heldTokenBalance = TokenInteract.balanceOf(heldToken, address(this));
 
         // NOTE the payout must be calculated before decrementing the totalSupply below
-        uint256 quoteTokenPayout = MathHelpers.getPartialAmount(
+        uint256 heldTokenPayout = MathHelpers.getPartialAmount(
             value,
             totalSupply_,
-            quoteTokenBalance
+            heldTokenBalance
         );
 
         // Destroy the tokens
         delete balances[who];
         totalSupply_ = totalSupply_.sub(value);
 
-        // Send the redeemer their proportion of quote token
-        TokenInteract.transfer(quoteToken, who, quoteTokenPayout);
+        // Send the redeemer their proportion of heldToken
+        TokenInteract.transfer(heldToken, who, heldTokenPayout);
 
-        emit TokensRedeemedAfterForceClose(who, value, quoteTokenPayout);
+        emit TokensRedeemedAfterForceClose(who, value, heldTokenPayout);
 
-        return quoteTokenPayout;
+        return heldTokenPayout;
     }
 
     // ============ Public Constant Functions ============
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the shorts's baseToken
+     * ERC20 decimals function. Returns the same number of decimals as the shorts's owedToken
      *
      * @return  The number of decimal places, or revert if the baseToken has no such function.
      */

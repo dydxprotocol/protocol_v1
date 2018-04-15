@@ -31,8 +31,8 @@ library MarginHelper {
         ) = Margin(MARGIN).getPosition(positionId);
 
         return MarginCommon.Position({
-            baseToken: addresses[0],
-            quoteToken: addresses[1],
+            owedToken: addresses[0],
+            heldToken: addresses[1],
             lender: addresses[2],
             owner: addresses[3],
             principal: values256[0],

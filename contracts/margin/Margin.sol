@@ -59,13 +59,13 @@ contract Margin is
 
     /**
      * Open a margin position. Called by the margin trader who must provide both a
-     * signed loan offering as well as a buy order with which to sell the base token.
+     * signed loan offering as well as a buy order with which to sell the owedToken.
      *
-     * @param  addresses            Addresses corresponding to:
+     * @param  addresses           Addresses corresponding to:
      *
      *  [0]  = position owner
-     *  [1]  = base token
-     *  [2]  = quote token
+     *  [1]  = owedToken
+     *  [2]  = heldToken
      *  [3]  = loan payer
      *  [4]  = loan signer
      *  [5]  = loan owner
@@ -75,11 +75,11 @@ contract Margin is
      *  [9]  = loan taker fee token
      *  [10]  = exchange wrapper address
      *
-     * @param  values256            Values corresponding to:
+     * @param  values256           Values corresponding to:
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
-     *  [2]  = loan minimum quote token
+     *  [2]  = loan minimum heldToken
      *  [3]  = loan lender fee
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
@@ -87,20 +87,20 @@ contract Margin is
      *  [7]  = position amount
      *  [8]  = deposit amount
      *
-     * @param  values32             Values corresponding to:
+     * @param  values32            Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      *
-     * @param  sigV                 ECDSA v parameter for loan offering
-     * @param  sigRS                ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
-     *                              token. If false, margin deposit will be pulled in base token,
-     *                              and then sold along with the base token borrowed from the lender
-     * @param  order                Order object to be passed to the exchange wrapper
-     * @return                      Unique ID for the new position
+     * @param  sigV                ECDSA v parameter for loan offering
+     * @param  sigRS               ECDSA r and s parameters for loan offering
+     * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
+     *                             False if the margin deposit will be in owedToken
+     *                             and then sold along with the owedToken borrowed from the lender
+     * @param  order               Order object to be passed to the exchange wrapper
+     * @return                     Unique ID for the new position
      */
     function openPosition(
         address[11] addresses,
@@ -108,7 +108,7 @@ contract Margin is
         uint32[4]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,
-        bool        depositInQuoteToken,
+        bool        depositInHeldToken,
         bytes       order
     )
         external
@@ -123,17 +123,17 @@ contract Margin is
             values32,
             sigV,
             sigRS,
-            depositInQuoteToken,
+            depositInHeldToken,
             order
         );
     }
 
     /**
      * Increase the size of a position. Funds will be borrowed from the loan payer and sold as per
-     * the position. The amount of base token borrowed from the lender will be >= the amount of
+     * the position. The amount of owedToken borrowed from the lender will be >= the amount of
      * principal added, as it will incorporate interest already earned by the position so far.
      *
-     * @param  addresses            Addresses corresponding to:
+     * @param  addresses           Addresses corresponding to:
      *
      *  [0]  = loan payer
      *  [1]  = loan signer
@@ -143,11 +143,11 @@ contract Margin is
      *  [5]  = loan taker fee token
      *  [6]  = exchange wrapper address
      *
-     * @param  values256            Values corresponding to:
+     * @param  values256           Values corresponding to:
      *
      *  [0]  = loan maximum amount
      *  [1]  = loan minimum amount
-     *  [2]  = loan minimum quote token
+     *  [2]  = loan minimum heldToken
      *  [3]  = loan lender fee
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
@@ -155,18 +155,18 @@ contract Margin is
      *  [7]  = amount of principal to add to the position (NOTE: the amount pulled from the lender
      *                                                           will be >= this amount)
      *
-     * @param  values32             Values corresponding to:
+     * @param  values32            Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *
-     * @param  sigV                 ECDSA v parameter for loan offering
-     * @param  sigRS                ECDSA r and s parameters for loan offering
-     * @param  depositInQuoteToken  True if the trader wishes to pay the margin deposit in quote
-     *                              token. If false, margin deposit will be pulled in base token,
-     *                              and then sold along with the base token borrowed from the lender
-     * @param  order                Order object to be passed to the exchange wrapper
-     * @return                      Amount of base tokens pulled from the lender
+     * @param  sigV                ECDSA v parameter for loan offering
+     * @param  sigRS               ECDSA r and s parameters for loan offering
+     * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
+     *                             False if the margin deposit will be pulled in owedToken,
+     *                             and then sold along with the owedToken borrowed from the lender
+     * @param  order               Order object to be passed to the exchange wrapper
+     * @return                     Amount of owedTokens pulled from the lender
      */
     function increasePosition(
         bytes32     positionId,
@@ -175,7 +175,7 @@ contract Margin is
         uint32[2]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,
-        bool        depositInQuoteToken,
+        bool        depositInHeldToken,
         bytes       order
     )
         external
@@ -191,18 +191,18 @@ contract Margin is
             values32,
             sigV,
             sigRS,
-            depositInQuoteToken,
+            depositInHeldToken,
             order
         );
     }
 
     /**
-     * Increase a position directly by putting up quote token. The caller will serve as both the
+     * Increase a position directly by putting up heldToken. The caller will serve as both the
      * lender and the position owner
      *
      * @param  positionId  Unique ID of the position sell
-     * @param  amount    Amount (in base token) to add to the position
-     * @return           Amount of quote token pulled from the msg.sender
+     * @param  amount    Amount (in owedToken) to add to the position
+     * @return           Amount of heldToken pulled from the msg.sender
      */
     function increasePositionDirectly(
         bytes32 positionId,
@@ -228,22 +228,22 @@ contract Margin is
      * @param  positionId               Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, principal)
-     * @param  payoutRecipient          Address to send remaining quoteToken to after closing
+     * @param  payoutRecipient          Address to send remaining heldToken to after closing
      * @param  exchangeWrapper          Address of the exchange wrapper
-     * @param  payoutInQuoteToken       True to pay out the payoutRecipient in quote token,
-     *                                  False to pay out the payoutRecipient in base token
+     * @param  payoutInHeldToken       True to pay out the payoutRecipient in heldToken,
+     *                                  False to pay out the payoutRecipient in owedToken
      * @param  order                    Order object to be passed to the exchange wrapper
      * @return                          Values corresponding to:
      *                                  1) Amount of position closed
-     *                                  2) Amount of quote token recieved by the payoutRecipient
-     *                                  3) Amount of base token paid as interest fee to the lender
+     *                                  2) Amount of heldToken recieved by the payoutRecipient
+     *                                  3) Amount of owedToken paid as interest fee to the lender
      */
     function closePosition(
         bytes32 positionId,
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapper,
-        bool    payoutInQuoteToken,
+        bool    payoutInHeldToken,
         bytes   order
     )
         external
@@ -257,22 +257,22 @@ contract Margin is
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapper,
-            payoutInQuoteToken,
+            payoutInHeldToken,
             order
         );
     }
 
     /**
-     * Helper to close a position by paying base token directly
+     * Helper to close a position by paying owedToken directly
      *
      * @param  positionId               Unique ID for the position
      * @param  requestedCloseAmount     Amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, principal)
-     * @param  payoutRecipient          Address to send remaining quoteToken to after closing
+     * @param  payoutRecipient          Address to send remaining heldToken to after closing
      * @return                          Values corresponding to:
      *                                  1) Amount of position closed
-     *                                  2) Amount of quote token received by the payoutRecipient
-     *                                  3) Amount of base token paid as interest fee to the lender
+     *                                  2) Amount of heldToken received by the payoutRecipient
+     *                                  3) Amount of owedToken paid as interest fee to the lender
      */
     function closePositionDirectly(
         bytes32 positionId,
@@ -296,7 +296,7 @@ contract Margin is
     }
 
     /**
-     * Liquidate position and withdraw quote tokens from the vault.
+     * Liquidate position and withdraw heldTokens from the vault.
      * Must be approved by the position owner (e.g., by requiring the lender to own part of the
      * position, and burning it).
      *
@@ -305,7 +305,7 @@ contract Margin is
      *                                     will be: min(requestedCloseAmount, principal)
      * @return                             Values corresponding to:
      *                                     1) Amount of position closed
-     *                                     2) Amount of quote token recieved by the msg.sender
+     *                                     2) Amount of heldToken recieved by the msg.sender
      */
     function liquidatePosition(
         bytes32 positionId,
@@ -365,7 +365,7 @@ contract Margin is
 
     /**
      * Function callable by the lender after the loan has been called-in for the call time limit but
-     * remains unclosed. Used to recover the quote tokens held as collateral.
+     * remains unclosed. Used to recover the heldTokens held as collateral.
      *
      * @param  positionId  Unique ID for the position
      */
@@ -380,11 +380,11 @@ contract Margin is
     }
 
     /**
-     * Deposit additional quote token as collateral for a position. Cancels loan call if:
+     * Deposit additional heldToken as collateral for a position. Cancels loan call if:
      * 0 < position.requiredDeposit < depositAmount
      *
      * @param  positionId       Unique ID for the position
-     * @param  depositAmount    Additional amount in quote token to deposit
+     * @param  depositAmount    Additional amount in heldToken to deposit
      */
     function depositCollateral(
         bytes32 positionId,
@@ -406,8 +406,8 @@ contract Margin is
      *
      * @param  addresses  Array of addresses:
      *
-     *  [0] = base token
-     *  [1] = quote token
+     *  [0] = owedToken
+     *  [1] = heldToken
      *  [2] = loan payer
      *  [3] = loan signer
      *  [4] = loan owner
@@ -420,7 +420,7 @@ contract Margin is
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
-     *  [2] = loan minimum quote token
+     *  [2] = loan minimum heldToken
      *  [3] = loan lender fee
      *  [4] = loan taker fee
      *  [5] = loan expiration timestamp (in seconds)
@@ -462,8 +462,8 @@ contract Margin is
      *
      * @param  addresses  Array of addresses:
      *
-     *  [0] = base token
-     *  [1] = quote token
+     *  [0] = owedToken
+     *  [1] = heldToken
      *  [2] = loan payer
      *  [3] = loan signer
      *  [4] = loan owner
@@ -476,7 +476,7 @@ contract Margin is
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
-     *  [2] = loan minimum quote token
+     *  [2] = loan minimum heldToken
      *  [3] = loan lender fee
      *  [4] = loan taker fee
      *  [5] = loan expiration timestamp (in seconds)
