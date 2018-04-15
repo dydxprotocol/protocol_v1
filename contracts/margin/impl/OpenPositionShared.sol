@@ -52,11 +52,7 @@ library OpenPositionShared {
 
         getConsentIfSmartContractLender(transaction, positionId);
 
-        // Pull feeTokens from trader and lender
-        transferLoanFees(state, transaction);
-
-        // Pull baseTokens from lender
-        transferFromLender(state, transaction);
+        pullBaseTokensFromLender(state, transaction);
 
         // Pull deposit from the msg.sender
         uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, positionId);
@@ -77,6 +73,9 @@ library OpenPositionShared {
             transaction,
             totalQuoteTokenReceived
         );
+
+        // Transfer feeTokens from trader and lender
+        transferLoanFees(state, transaction);
 
         return (
             quoteTokenFromSell,
@@ -177,7 +176,7 @@ library OpenPositionShared {
         }
     }
 
-    function transferFromLender(
+    function pullBaseTokensFromLender(
         MarginState.State storage state,
         OpenTx transaction
     )
