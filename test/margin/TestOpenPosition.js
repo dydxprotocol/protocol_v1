@@ -48,6 +48,25 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
+    it('succeeds when deposit is paid in base token', async () => {
+      const OpenTx = await createOpenTx(accounts, 4, false);
+      const dydxMargin = await Margin.deployed();
+
+      OpenTx.depositAmount = OpenTx.depositAmount.div(4);
+      await issueTokensAndSetAllowances(OpenTx);
+
+      const tx = await callOpenPosition(dydxMargin, OpenTx);
+
+      console.log(
+        '\tShortSell.short (Base token deposit / 0x Exchange Contract) gas used: '
+        + tx.receipt.gasUsed
+      );
+
+      await checkSuccess(dydxMargin, OpenTx);
+    });
+  });
+
+  contract('Margin', function(accounts) {
     it('allows smart contracts to be lenders', async () => {
       const OpenTx = await createOpenTx(accounts);
       const [
@@ -123,13 +142,13 @@ describe('#openPosition', () => {
       await issueTokensAndSetAllowances(OpenTx1);
       OpenTx1.owner = testLoanOwner.address; // loan owner can't take ownership
       OpenTx1.loanOffering.signature = await signLoanOffering(OpenTx1.loanOffering);
-      await expectThrow( callOpenPosition(dydxMargin, OpenTx1));
+      await expectThrow(callOpenPosition(dydxMargin, OpenTx1));
 
       const OpenTx2 = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(OpenTx2);
       OpenTx2.loanOffering.owner = testPositionOwner.address; // owner can't take loan
       OpenTx2.loanOffering.signature = await signLoanOffering(OpenTx2.loanOffering);
-      await expectThrow( callOpenPosition(dydxMargin, OpenTx2));
+      await expectThrow(callOpenPosition(dydxMargin, OpenTx2));
     });
   });
 
@@ -262,13 +281,19 @@ async function checkSuccess(dydxMargin, OpenTx) {
 
   const balance = await dydxMargin.getPositionBalance.call(positionId);
 
-  const quoteTokenFromSell = getPartialAmount(
-    OpenTx.buyOrder.makerTokenAmount,
-    OpenTx.buyOrder.takerTokenAmount,
-    OpenTx.principal
-  );
+  let soldAmount = OpenTx.principal;
+  if (!OpenTx.depositInQuoteToken) {
+    soldAmount = soldAmount.plus(OpenTx.depositAmount)
+  }
+  const expectedQuoteTokenFromSell = soldAmount
+    .div(OpenTx.buyOrder.takerTokenAmount)
+    .times(OpenTx.buyOrder.makerTokenAmount);
 
-  expect(balance).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenTx.depositAmount));
+  const expectedQuoteTokenBalance = OpenTx.depositInQuoteToken ?
+    expectedQuoteTokenFromSell.plus(OpenTx.depositAmount)
+    : expectedQuoteTokenFromSell;
+
+  expect(balance).to.be.bignumber.equal(expectedQuoteTokenBalance);
 
   const [
     baseToken,
@@ -307,13 +332,13 @@ async function checkSuccess(dydxMargin, OpenTx) {
   expect(lenderBaseToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.maxAmount.minus(OpenTx.principal)
   );
-  expect(makerBaseToken).to.be.bignumber.equal(OpenTx.principal);
+  expect(makerBaseToken).to.be.bignumber.equal(soldAmount);
   expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
   expect(traderQuoteToken).to.be.bignumber.equal(0);
   expect(makerQuoteToken).to.be.bignumber.equal(
-    OpenTx.buyOrder.makerTokenAmount.minus(quoteTokenFromSell)
+    OpenTx.buyOrder.makerTokenAmount.minus(expectedQuoteTokenFromSell)
   );
-  expect(vaultQuoteToken).to.be.bignumber.equal(quoteTokenFromSell.plus(OpenTx.depositAmount));
+  expect(vaultQuoteToken).to.be.bignumber.equal(expectedQuoteTokenBalance);
   expect(lenderFeeToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.lenderFee
       .minus(
@@ -329,7 +354,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     OpenTx.buyOrder.makerFee
       .minus(
         getPartialAmount(
-          OpenTx.principal,
+          soldAmount,
           OpenTx.buyOrder.takerTokenAmount,
           OpenTx.buyOrder.makerFee
         )
@@ -347,7 +372,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
       )
       .minus(
         getPartialAmount(
-          OpenTx.principal,
+          soldAmount,
           OpenTx.buyOrder.takerTokenAmount,
           OpenTx.buyOrder.takerFee
         )

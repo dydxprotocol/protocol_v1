@@ -32,6 +32,7 @@ library OpenPositionShared {
         MarginCommon.LoanOffering loanOffering;
         address exchangeWrapper;
         bool depositInQuoteToken;
+        uint256 desiredTokenFromSell;
     }
 
     // ============ Internal Implementation Functions ============
@@ -291,13 +292,27 @@ library OpenPositionShared {
         internal
         returns (uint256)
     {
-        uint256 quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-            transaction.quoteToken,
-            transaction.baseToken,
-            msg.sender,
-            sellAmount,
-            orderData
-        );
+        uint256 quoteTokenReceived;
+        if (transaction.desiredTokenFromSell == 0) {
+            quoteTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+                transaction.quoteToken,
+                transaction.baseToken,
+                msg.sender,
+                sellAmount,
+                orderData
+            );
+        } else {
+            uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
+                transaction.quoteToken,
+                transaction.baseToken,
+                msg.sender,
+                transaction.desiredTokenFromSell,
+                orderData
+            );
+
+            assert(soldAmount == sellAmount);
+            quoteTokenReceived = transaction.desiredTokenFromSell;
+        }
 
         Vault(state.VAULT).transferToVault(
             positionId,

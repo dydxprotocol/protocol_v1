@@ -27,7 +27,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 BigNumber.config({ DECIMAL_PLACES: 80 });
 
-async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
+async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInQuoteToken = true) {
   const [loanOffering, buyOrder] = await Promise.all([
     createLoanOffering(accounts, _salt),
     createSignedBuyOrder(accounts, _salt)
@@ -42,7 +42,8 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT) {
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: accounts[0],
-    exchangeWrapper: ZeroExExchangeWrapper.address
+    exchangeWrapper: ZeroExExchangeWrapper.address,
+    depositInQuoteToken: depositInQuoteToken
   };
 
   return tx;
@@ -107,7 +108,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     values32,
     sigV,
     sigRS,
-    true,
+    tx.depositInQuoteToken,
     order,
     { from: tx.trader }
   );
@@ -124,6 +125,14 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
 }
 
 async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
+  let soldAmount = tx.principal;
+  if (!tx.depositInQuoteToken) {
+    soldAmount = soldAmount.plus(tx.depositAmount)
+  }
+  const expectedQuoteTokenFromSell = soldAmount
+    .div(tx.buyOrder.takerTokenAmount)
+    .times(tx.buyOrder.makerTokenAmount);
+
   expectLog(response.logs[0], 'PositionOpened', {
     positionId: positionId,
     trader: tx.trader,
@@ -133,13 +142,12 @@ async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
     quoteToken: tx.loanOffering.quoteToken,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     principal: tx.principal,
-    quoteTokenFromSell:
-      tx.principal.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount),
+    quoteTokenFromSell: expectedQuoteTokenFromSell,
     depositAmount: tx.depositAmount,
     interestRate: tx.loanOffering.rates.interestRate,
     callTimeLimit: tx.loanOffering.callTimeLimit,
     maxDuration: tx.loanOffering.maxDuration,
-    interestPeriod: tx.loanOffering.rates.interestPeriod
+    depositInQuoteToken: tx.depositInQuoteToken
   });
 
   const newOwner = await dydxMargin.getPositionOwner.call(positionId);
@@ -220,7 +228,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     values32,
     sigV,
     sigRS,
-    true,
+    tx.depositInQuoteToken,
     order,
     { from: tx.trader }
   );
@@ -250,9 +258,26 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     tx.principal,
     false
   );
-  const quoteTokenFromSell =
-    owed.div(tx.buyOrder.takerTokenAmount).times(tx.buyOrder.makerTokenAmount);
-  const minTotalDeposit = quoteTokenAmount.div(principal).times(tx.principal);
+  const minTotalDeposit = getPartialAmount(
+    quoteTokenAmount,
+    principal,
+    tx.principal
+  );
+  const quoteTokenFromSell = tx.depositInQuoteToken ?
+    getPartialAmount(
+      owed,
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount
+    )
+    : minTotalDeposit;
+  const depositAmount = tx.depositInQuoteToken ?
+    minTotalDeposit.minus(quoteTokenFromSell)
+    : getPartialAmount(
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount,
+      minTotalDeposit,
+      true
+    ).minus(owed);
 
   expectLog(response.logs[0], 'PositionIncreased', {
     positionId: positionId,
@@ -264,8 +289,9 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
     principalAdded: tx.principal,
-    quoteTokenFromSell: quoteTokenFromSell,
-    depositAmount: minTotalDeposit.minus(quoteTokenFromSell)
+    quoteTokenFromSell,
+    depositAmount,
+    depositInQuoteToken: tx.depositInQuoteToken
   });
 }
 
@@ -276,12 +302,14 @@ async function issueTokensAndSetAllowances(tx) {
     FeeToken.deployed()
   ]);
 
+  const depositToken = tx.depositInQuoteToken ? quoteToken : baseToken;
+
   await Promise.all([
     baseToken.issueTo(
       tx.loanOffering.payer,
       tx.loanOffering.rates.maxAmount
     ),
-    quoteToken.issueTo(
+    depositToken.issueTo(
       tx.trader,
       tx.depositAmount
     ),
@@ -300,16 +328,13 @@ async function issueTokensAndSetAllowances(tx) {
     feeToken.issueTo(
       tx.trader,
       tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
-    )
-  ]);
-
-  return Promise.all([
+    ),
     baseToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
       { from: tx.loanOffering.payer }
     ),
-    quoteToken.approve(
+    depositToken.approve(
       ProxyContract.address,
       tx.depositAmount,
       { from: tx.trader }
@@ -646,10 +671,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
     feeToken.issueTo(
       sellOrder.maker,
       sellOrder.makerFee
-    )
-  ]);
-
-  return Promise.all([
+    ),
     baseToken.approve(
       ZeroExProxy.address,
       sellOrder.makerTokenAmount,

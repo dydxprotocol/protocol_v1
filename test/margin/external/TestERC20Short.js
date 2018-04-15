@@ -455,7 +455,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS
         );
-        await expectThrow( CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
+        await expectThrow(CONTRACTS.MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -473,7 +473,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
         );
-        await expectThrow( POSITION.TOKEN_CONTRACT.withdraw(trader, { from: trader }));
+        await expectThrow(POSITION.TOKEN_CONTRACT.withdraw(trader, { from: trader }));
       }
     });
 

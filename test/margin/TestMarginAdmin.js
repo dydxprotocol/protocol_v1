@@ -98,7 +98,7 @@ describe('MarginAdmin', () => {
         await issueTokensAndSetAllowances(OpenTx);
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await callOpenPosition(dydxMargin, OpenTx);
@@ -117,7 +117,7 @@ describe('MarginAdmin', () => {
         );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( dydxMargin.cancelMarginCall(
+        await expectThrow(dydxMargin.cancelMarginCall(
           OpenTx.id,
           { from: OpenTx.loanOffering.payer }
         ));
@@ -142,7 +142,7 @@ describe('MarginAdmin', () => {
         await quoteToken.approve(ProxyContract.address, amount, { from: OpenTx.trader });
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( dydxMargin.depositCollateral(
+        await expectThrow(dydxMargin.depositCollateral(
           OpenTx.id,
           amount,
           { from: OpenTx.trader }
@@ -165,7 +165,7 @@ describe('MarginAdmin', () => {
         await issueTokensAndSetAllowances(OpenTx);
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow( callApproveLoanOffering(
+        await expectThrow(callApproveLoanOffering(
           dydxMargin,
           OpenTx.loanOffering
         ));
@@ -243,7 +243,7 @@ describe('MarginAdmin', () => {
 
       await dydxMargin.setOperationState(state);
       if (shouldFail) {
-        await expectThrow( callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount) );
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount) );
       } else {
         await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
       }

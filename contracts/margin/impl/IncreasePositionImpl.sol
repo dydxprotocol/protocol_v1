@@ -38,7 +38,8 @@ library IncreasePositionImpl {
         uint256 amountBorrowed,
         uint256 principalAdded,
         uint256 quoteTokenFromSell,
-        uint256 depositAmount
+        uint256 depositAmount,
+        bool    depositInQuoteToken
     );
 
     // ============ Public Implementation Functions ============
@@ -147,7 +148,8 @@ library IncreasePositionImpl {
             0,
             amount,
             0,
-            quoteTokenAmount
+            quoteTokenAmount,
+            true
         );
 
         return quoteTokenAmount;
@@ -177,7 +179,10 @@ library IncreasePositionImpl {
         uint256 quoteTokenFromSell;
         uint256 totalQuoteTokenReceived;
 
-        (quoteTokenFromSell, totalQuoteTokenReceived) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        (
+            quoteTokenFromSell,
+            totalQuoteTokenReceived
+        ) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
             positionId,
@@ -251,6 +256,7 @@ library IncreasePositionImpl {
 
             require(transaction.lenderAmount <= baseTokenToSell);
             transaction.depositAmount = baseTokenToSell.sub(transaction.lenderAmount);
+            transaction.desiredTokenFromSell = positionMinimumQuoteToken;
         }
 
         return positionMinimumQuoteToken;
@@ -333,7 +339,8 @@ library IncreasePositionImpl {
             transaction.lenderAmount,
             transaction.principal,
             quoteTokenFromSell,
-            transaction.depositAmount
+            transaction.depositAmount,
+            transaction.depositInQuoteToken
         );
     }
 
@@ -372,7 +379,8 @@ library IncreasePositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[6],
-            depositInQuoteToken: depositInQuoteToken
+            depositInQuoteToken: depositInQuoteToken,
+            desiredTokenFromSell: 0
         });
 
         return transaction;

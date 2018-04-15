@@ -71,7 +71,7 @@ describe('#forceRecoverCollateral', () => {
       const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
-      await expectThrow( dydxMargin.forceRecoverCollateral(
+      await expectThrow(dydxMargin.forceRecoverCollateral(
         OpenTx.id,
         { from: accounts[7] }
       ));
@@ -95,7 +95,7 @@ describe('#forceRecoverCollateral', () => {
         testForceRecoverCollateralDelegator.address,
         { from: OpenTx.loanOffering.payer });
 
-      await expectThrow( dydxMargin.forceRecoverCollateral(
+      await expectThrow(dydxMargin.forceRecoverCollateral(
         OpenTx.id,
         { from: accounts[6] }
       ));
@@ -138,7 +138,7 @@ describe('#forceRecoverCollateral', () => {
   contract('Margin', function(accounts) {
     it('does not allow before call time limit elapsed', async () => {
       const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
-      await expectThrow( dydxMargin.forceRecoverCollateral(
+      await expectThrow(dydxMargin.forceRecoverCollateral(
         OpenTx.id,
         { from: OpenTx.loanOffering.payer }
       ));
@@ -156,7 +156,7 @@ describe('#forceRecoverCollateral', () => {
 
       // loan was not called and it is too early
       await wait(almostMaxDuration);
-      await expectThrow( dydxMargin.forceRecoverCollateral(
+      await expectThrow(dydxMargin.forceRecoverCollateral(
         OpenTx.id,
         { from: OpenTx.loanOffering.payer }
       ));

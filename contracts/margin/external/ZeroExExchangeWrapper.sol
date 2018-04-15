@@ -8,6 +8,7 @@ import { ZeroExExchangeInterface } from "../../interfaces/ZeroExExchangeInterfac
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
+import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 
 
 /**
@@ -44,7 +45,6 @@ contract ZeroExExchangeWrapper is
         uint256 takerFeeTokenBalance;
     }
 
-    address public MARGIN;
     address public DYDX_PROXY;
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_PROXY;
@@ -58,8 +58,8 @@ contract ZeroExExchangeWrapper is
         address zrxToken
     )
         public
+        OnlyMargin(margin)
     {
-        MARGIN = margin;
         DYDX_PROXY = dydxProxy;
         ZERO_EX_EXCHANGE = zeroExExchange;
         ZERO_EX_PROXY = zeroExProxy;
@@ -81,41 +81,17 @@ contract ZeroExExchangeWrapper is
         bytes orderData
     )
         external
+        onlyMargin
         returns (uint256)
     {
-        require(msg.sender == MARGIN);
-
         Order memory order = parseOrder(orderData);
 
-        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-        assert(requestedFillAmount > 0);
-        require(requestedFillAmount <= order.takerTokenAmount);
-
-        transferTakerFee(
-            order,
-            tradeOriginator,
-            requestedFillAmount
-        );
-
-        TokenInteract.approve(
-            takerToken,
-            ZERO_EX_PROXY,
-            requestedFillAmount
-        );
-
-        uint256 filledTakerTokenAmount = doTrade(
+        uint256 receivedMakerTokenAmount = exchangeImpl(
             order,
             makerToken,
             takerToken,
+            tradeOriginator,
             requestedFillAmount
-        );
-
-        require(filledTakerTokenAmount == requestedFillAmount);
-
-        uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
-            order.makerTokenAmount,
-            order.takerTokenAmount,
-            filledTakerTokenAmount
         );
 
         TokenInteract.approve(
@@ -125,6 +101,50 @@ contract ZeroExExchangeWrapper is
         );
 
         return receivedMakerTokenAmount;
+    }
+
+    function exchangeForAmount(
+        address makerToken,
+        address takerToken,
+        address tradeOriginator,
+        uint256 desiredMakerToken,
+        bytes orderData
+    )
+        external
+        onlyMargin
+        returns (uint256)
+    {
+        Order memory order = parseOrder(orderData);
+
+        uint256 requiredTakerTokenAmount = MathHelpers.getPartialAmountRoundedUp(
+            order.takerTokenAmount,
+            order.makerTokenAmount,
+            desiredMakerToken
+        );
+
+        uint256 receivedMakerTokenAmount = exchangeImpl(
+            order,
+            makerToken,
+            takerToken,
+            tradeOriginator,
+            requiredTakerTokenAmount
+        );
+
+        assert(receivedMakerTokenAmount >= desiredMakerToken);
+
+        /**
+         * Version 1 implementation is to leave any excess received maker token locked in this
+         * this contract (forever). With normal token amounts (on the order of 10^18), it will
+         * not be worth the extra gas cost to send this extra token back to anyone.
+         */
+
+        TokenInteract.approve(
+            makerToken,
+            DYDX_PROXY,
+            desiredMakerToken
+        );
+
+        return requiredTakerTokenAmount;
     }
 
     // ============ Public Constant Functions ============
@@ -160,7 +180,7 @@ contract ZeroExExchangeWrapper is
     {
         Order memory order = parseOrder(orderData);
 
-        return MathHelpers.getPartialAmount(
+        return MathHelpers.getPartialAmountRoundedUp(
             order.takerTokenAmount,
             order.makerTokenAmount,
             desiredMakerToken
@@ -168,6 +188,50 @@ contract ZeroExExchangeWrapper is
     }
 
     // ============ Internal Functions ============
+
+    function exchangeImpl(
+        Order order,
+        address makerToken,
+        address takerToken,
+        address tradeOriginator,
+        uint256 requestedFillAmount
+    )
+        internal
+        returns (uint256)
+    {
+        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
+        assert(requestedFillAmount > 0);
+        require(requestedFillAmount <= order.takerTokenAmount);
+
+        transferTakerFee(
+            order,
+            tradeOriginator,
+            requestedFillAmount
+        );
+
+        TokenInteract.approve(
+            takerToken,
+            ZERO_EX_PROXY,
+            requestedFillAmount
+        );
+
+        uint256 filledTakerTokenAmount = doTrade(
+            order,
+            makerToken,
+            takerToken,
+            requestedFillAmount
+        );
+
+        require(filledTakerTokenAmount == requestedFillAmount);
+
+        uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
+            order.makerTokenAmount,
+            order.takerTokenAmount,
+            filledTakerTokenAmount
+        );
+
+        return receivedMakerTokenAmount;
+    }
 
     function transferTakerFee(
         Order order,

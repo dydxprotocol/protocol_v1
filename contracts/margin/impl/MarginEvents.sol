@@ -30,7 +30,7 @@ contract MarginEvents {
         uint256 interestRate,
         uint32  callTimeLimit,
         uint32  maxDuration,
-        uint32  interestPeriod
+        bool    depositInQuoteToken
     );
 
     /**
@@ -149,6 +149,7 @@ contract MarginEvents {
         uint256 amountBorrowed,
         uint256 principalAdded,
         uint256 quoteTokenFromSell,
-        uint256 depositAmount
+        uint256 depositAmount,
+        bool    depositInQuoteToken
     );
 }

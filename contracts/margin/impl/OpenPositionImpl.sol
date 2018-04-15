@@ -38,7 +38,7 @@ library OpenPositionImpl {
         uint256 interestRate,
         uint32  callTimeLimit,
         uint32  maxDuration,
-        uint32  interestPeriod
+        bool    depositInQuoteToken
     );
 
     // ============ Public Implementation Functions ============
@@ -142,7 +142,7 @@ library OpenPositionImpl {
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
-            transaction.loanOffering.rates.interestPeriod
+            transaction.depositInQuoteToken
         );
     }
 
@@ -213,7 +213,8 @@ library OpenPositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[10],
-            depositInQuoteToken: depositInQuoteToken
+            depositInQuoteToken: depositInQuoteToken,
+            desiredTokenFromSell: 0
         });
 
         return transaction;

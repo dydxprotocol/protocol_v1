@@ -181,7 +181,7 @@ contract('ERC721MarginPosition', function(accounts) {
 
     it('succeeds when called by ownerOf', async () => {
       await erc721Contract.transferPosition(OpenTx.id, receiver, { from: trader });
-      await expectThrow( erc721Contract.ownerOf.call(uint256(OpenTx.id)));
+      await expectThrow(erc721Contract.ownerOf.call(uint256(OpenTx.id)));
       const newOwner = await dydxMargin.getPositionOwner.call(OpenTx.id);
       expect(newOwner).to.equal(receiver);
     });
@@ -251,7 +251,7 @@ contract('ERC721MarginPosition', function(accounts) {
 
     it('fails for non-approved recipients/closers', async () => {
       await initBase(unapprovedAcct);
-      await expectThrow( callClosePositionDirectly(
+      await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.principal,

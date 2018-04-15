@@ -94,7 +94,7 @@ contract('DutchAuctionCloser', function(accounts) {
 
       await wait(callTimeLimit * 3 / 4);
 
-      await expectThrow( callClosePositionDirectly(
+      await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
@@ -106,7 +106,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('fails if bid too early', async () => {
       await wait(callTimeLimit / 4);
 
-      await expectThrow( callClosePositionDirectly(
+      await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
@@ -118,7 +118,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('fails if bid too late', async () => {
       await wait(callTimeLimit + 1);
 
-      await expectThrow( callClosePositionDirectly(
+      await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
@@ -155,7 +155,7 @@ contract('DutchAuctionCloser', function(accounts) {
       const owedAmount2 = await getOwedAmount(OpenTx, closeTx2, closeAmount);
 
       // cannot close half a third time
-      await expectThrow( callClosePositionDirectly(
+      await expectThrow(callClosePositionDirectly(
         dydxMargin,
         OpenTx,
         closeAmount,

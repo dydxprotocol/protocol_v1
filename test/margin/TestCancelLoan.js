@@ -92,7 +92,7 @@ describe('#cancelLoanOffering', () => {
       let loanOfferingBad = Object.assign({}, loanOffering);
       loanOfferingBad.expirationTimestamp = new BigNumber(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
-      await expectThrow( callCancelLoanOffer(
+      await expectThrow(callCancelLoanOffer(
         dydxMargin,
         loanOfferingBad,
         cancelAmount
