@@ -46,6 +46,20 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInQuoteToken 
     depositInQuoteToken: depositInQuoteToken
   };
 
+  if (!depositInQuoteToken) {
+    const minDeposit = getPartialAmount(
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount,
+      getPartialAmount(
+        tx.shortAmount,
+        tx.loanOffering.rates.maxAmount,
+        tx.loanOffering.rates.minQuoteToken,
+        true
+      )
+    );
+    tx.depositAmount = minDeposit;
+  }
+
   return tx;
 }
 
@@ -310,10 +324,7 @@ async function issueTokensAndSetAllowances(tx) {
     feeToken.issueTo(
       tx.trader,
       tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
-    )
-  ]);
-
-  return Promise.all([
+    ),
     baseToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
@@ -656,10 +667,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
     feeToken.issueTo(
       sellOrder.maker,
       sellOrder.makerFee
-    )
-  ]);
-
-  return Promise.all([
+    ),
     baseToken.approve(
       ZeroExProxy.address,
       sellOrder.makerTokenAmount,

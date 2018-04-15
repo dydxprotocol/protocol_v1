@@ -50,17 +50,6 @@ describe('#openPosition', () => {
   contract('Margin', function(accounts) {
     it.only('succeeds when deposit is paid in base token', async () => {
       const OpenTx = await createOpenTx(accounts, 4, false);
-      const minDeposit = getPartialAmount(
-        OpenTx.buyOrder.takerTokenAmount,
-        OpenTx.buyOrder.makerTokenAmount,
-        getPartialAmount(
-          OpenTx.principal,
-          OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.loanOffering.rates.minQuoteToken,
-          true
-        )
-      );
-      OpenTx.depositAmount = minDeposit;
       const dydxMargin = await Margin.deployed();
       await issueTokensAndSetAllowances(OpenTx);
 

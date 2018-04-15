@@ -38,7 +38,8 @@ library IncreasePositionImpl {
         uint256 amountBorrowed,
         uint256 principalAdded,
         uint256 quoteTokenFromSell,
-        uint256 depositAmount
+        uint256 depositAmount,
+        bool    depositInQuoteToken
     );
 
     // ============ Public Implementation Functions ============
@@ -76,6 +77,7 @@ library IncreasePositionImpl {
             positionId,
             orderData
         );
+        return 0;
 
         updateState(
             position,
@@ -147,13 +149,16 @@ library IncreasePositionImpl {
             0,
             amount,
             0,
-            quoteTokenAmount
+            quoteTokenAmount,
+            true
         );
 
         return quoteTokenAmount;
     }
 
     // ============ Helper Functions ============
+
+    event Test(uint positionMinimumQuoteToken, uint totalQuoteTokenReceived);
 
     function preStateUpdate(
         MarginState.State storage state,
@@ -183,6 +188,10 @@ library IncreasePositionImpl {
             positionId,
             orderData
         );
+
+        emit Test(positionMinimumQuoteToken, totalQuoteTokenReceived);
+
+        return 0;
 
         // This should always be true unless there is a faulty ExchangeWrapper (i.e. the
         // ExchangeWrapper traded at a different price from what it said it would)
@@ -333,7 +342,8 @@ library IncreasePositionImpl {
             transaction.lenderAmount,
             transaction.principal,
             quoteTokenFromSell,
-            transaction.depositAmount
+            transaction.depositAmount,
+            transaction.depositInQuoteToken
         );
     }
 

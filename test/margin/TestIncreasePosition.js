@@ -61,6 +61,31 @@ describe('#increasePosition', () => {
   });
 
   contract('Margin', function(accounts) {
+    it('succeeds on valid inputs', async () => {
+      const {
+        OpenTx,
+        addValueTx,
+        dydxMargin,
+        startingBalance,
+        startingBalances,
+        traderStartingQuoteToken
+      } = await setup(accounts, { depositInQuoteToken: false });
+
+      const tx = await callIncreasePosition(dydxMargin, addValueTx);
+
+      await validate({
+        dydxMargin,
+        OpenTx,
+        addValueTx,
+        tx,
+        startingBalance,
+        startingBalances,
+        traderStartingQuoteToken
+      });
+    });
+  });
+
+  contract('Margin', function(accounts) {
     it('succeeds when positions are owned by contracts', async () => {
       const [
         testPositionOwner,
@@ -230,7 +255,11 @@ describe('#increasePosition', () => {
     }
   }
 
-  async function setup(accounts, { loanOwner, positionOwner } = {}) {
+  async function setup(accounts, { loanOwner, positionOwner, depositInQuoteToken } = {}) {
+    if (depositInQuoteToken === undefined) {
+      depositInQuoteToken = true;
+    }
+
     const [dydxMargin, baseToken, quoteToken, feeToken] = await Promise.all([
       Margin.deployed(),
       BaseToken.deployed(),
@@ -242,7 +271,7 @@ describe('#increasePosition', () => {
       addValueTx
     ] = await Promise.all([
       createOpenTx(accounts),
-      createOpenTx(accounts, salt++)
+      createOpenTx(accounts, salt++, depositInQuoteToken)
     ]);
 
     if (loanOwner) {
@@ -256,7 +285,26 @@ describe('#increasePosition', () => {
       addValueTx.owner = positionOwner;
     }
 
-    await issueTokensAndSetAllowances(OpenTx);
+    let baseTokenDepositPromise;
+
+    if (!depositInQuoteToken) {
+      baseTokenDepositPromise = Promise.all([
+        baseToken.issueTo(
+          addValueTx.trader,
+          addValueTx.depositAmount
+        ),
+        baseToken.approve(
+          ProxyContract.address,
+          addValueTx.depositAmount,
+          { from: addValueTx.trader }
+        )
+      ]);
+    }
+
+    await Promise.all([
+      issueTokensAndSetAllowances(OpenTx),
+      baseTokenDepositPromise
+    ]);
 
     const response = await callOpenPosition(dydxMargin, OpenTx);
     OpenTx.id = response.id;

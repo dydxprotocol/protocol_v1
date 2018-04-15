@@ -83,6 +83,84 @@ contract ZeroExExchangeWrapper is
         external
         returns (uint256)
     {
+        return exchangeImpl(
+            makerToken,
+            takerToken,
+            tradeOriginator,
+            requestedFillAmount,
+            orderData
+        );
+    }
+
+    function exchangeForAmount(
+        address makerToken,
+        address takerToken,
+        address tradeOriginator,
+        uint256 desiredMakerToken,
+        bytes orderData
+    )
+        external
+        returns (uint256)
+    {
+        uint256 requiredTakerTokenAmount = MathHelpers.getPartialAmountRoundedUp(
+            order.takerTokenAmount,
+            order.makerTokenAmount,
+            desiredMakerToken
+        );
+    }
+
+    // ============ Public Constant Functions ============
+
+    function getTradeMakerTokenAmount(
+        address /* makerToken */,
+        address /* takerToken */,
+        uint256 requestedFillAmount,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        Order memory order = parseOrder(orderData);
+
+        return MathHelpers.getPartialAmount(
+            requestedFillAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+    }
+
+    function getTakerTokenPrice(
+        address /* makerToken */,
+        address /* takerToken */,
+        uint256 desiredMakerToken,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        Order memory order = parseOrder(orderData);
+
+        return MathHelpers.getPartialAmountRoundedUp(
+            order.takerTokenAmount,
+            order.makerTokenAmount,
+            desiredMakerToken
+        );
+    }
+
+    // ============ Internal Functions ============
+
+    function exchangeImpl(
+        address makerToken,
+        address takerToken,
+        address tradeOriginator,
+        uint256 requestedFillAmount,
+        bytes orderData
+    )
+        external
+        returns (uint256)
+    {
         require(msg.sender == MARGIN);
 
         Order memory order = parseOrder(orderData);
@@ -126,48 +204,6 @@ contract ZeroExExchangeWrapper is
 
         return receivedMakerTokenAmount;
     }
-
-    // ============ Public Constant Functions ============
-
-    function getTradeMakerTokenAmount(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 requestedFillAmount,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmount(
-            requestedFillAmount,
-            order.takerTokenAmount,
-            order.makerTokenAmount
-        );
-    }
-
-    function getTakerTokenPrice(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 desiredMakerToken,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmount(
-            order.takerTokenAmount,
-            order.makerTokenAmount,
-            desiredMakerToken
-        );
-    }
-
-    // ============ Internal Functions ============
 
     function transferTakerFee(
         Order order,

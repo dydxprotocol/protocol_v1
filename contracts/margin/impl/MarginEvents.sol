@@ -149,6 +149,7 @@ contract MarginEvents {
         uint256 amountBorrowed,
         uint256 principalAdded,
         uint256 quoteTokenFromSell,
-        uint256 depositAmount
+        uint256 depositAmount,
+        bool    depositInQuoteToken
     );
 }
