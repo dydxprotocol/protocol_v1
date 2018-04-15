@@ -4,28 +4,25 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { StandardToken } from "zeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
-import { Margin } from "../Margin.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { StringHelpers } from "../../lib/StringHelpers.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { MarginCommon } from "../impl/MarginCommon.sol";
-import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
-import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
-import { MarginHelper } from "./lib/MarginHelper.sol";
+import { Margin } from "../../Margin.sol";
+import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { StringHelpers } from "../../../lib/StringHelpers.sol";
+import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { MarginCommon } from "../../impl/MarginCommon.sol";
+import { ClosePositionDelegator } from "../../interfaces/ClosePositionDelegator.sol";
+import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
+import { MarginHelper } from "../lib/MarginHelper.sol";
 
 
 /**
- * @title ERC20Short
+ * @title ERC20Position
  * @author dYdX
  *
- * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
- * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
- * entitled to some amount of quote tokens after settlement.
+ * Shared code for ERC20Short and ERC20Long
  */
  /* solium-disable-next-line */
-contract ERC20Short is
+contract ERC20Position is
     StandardToken,
     ClosePositionDelegator,
     PositionCustodian,
@@ -99,15 +96,16 @@ contract ERC20Short is
     address public quoteToken;
 
     // Symbol to be ERC20 compliant with frontends
-    string public symbol = "DYDX-S";
+    string public symbol;
 
     // ============ Constructor ============
 
-    function ERC20Short(
+    function ERC20Position(
         bytes32 positionId,
         address margin,
         address initialTokenHolder,
-        address[] trustedRecipients
+        address[] trustedRecipients,
+        string _symbol
     )
         public
         ClosePositionDelegator(margin)
@@ -115,6 +113,7 @@ contract ERC20Short is
         POSITION_ID = positionId;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
+        symbol = _symbol;
 
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS[trustedRecipients[i]] = true;
@@ -150,15 +149,21 @@ contract ERC20Short is
 
         // set relevant constants
         state = State.OPEN;
-        totalSupply_ = position.principal;
-        balances[INITIAL_TOKEN_HOLDER] = position.principal;
+
+        uint256 tokenAmount = getAddedTokenAmount(
+            positionId,
+            position.principal
+        );
+
+        totalSupply_ = tokenAmount;
+        balances[INITIAL_TOKEN_HOLDER] = tokenAmount;
         quoteToken = position.quoteToken;
 
         // Record event
-        emit Initialized(POSITION_ID, position.principal);
+        emit Initialized(POSITION_ID, tokenAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, position.principal);
+        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, tokenAmount);
 
         return address(this); // returning own address retains ownership of position
     }
@@ -184,11 +189,16 @@ contract ERC20Short is
     {
         assert(positionId == POSITION_ID);
 
-        balances[from] = balances[from].add(amountAdded);
-        totalSupply_ = totalSupply_.add(amountAdded);
+        uint256 tokenAmount = getAddedTokenAmount(
+            positionId,
+            amountAdded
+        );
+
+        balances[from] = balances[from].add(tokenAmount);
+        totalSupply_ = totalSupply_.add(tokenAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), from, amountAdded);
+        emit Transfer(address(0), from, tokenAmount);
 
         return true;
     }
@@ -321,13 +331,7 @@ contract ERC20Short is
     function decimals()
         external
         view
-        returns (uint8)
-    {
-        return
-            DetailedERC20(
-                Margin(MARGIN).getPositionBaseToken(POSITION_ID)
-            ).decimals();
-    }
+        returns (uint8);
 
     /**
      * ERC20 name function. Returns a name based off positionId.
@@ -342,11 +346,18 @@ contract ERC20Short is
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "dYdX Tokenized Short [UNINITIALIZED]";
+            return string(StringHelpers.strcat(getNameIntro(), " [UNINITIALIZED]"));
         }
-        // Copy intro into return value
-        bytes memory intro = "dYdX Tokenized Short 0x";
-        return string(StringHelpers.strcat(intro, StringHelpers.bytes32ToHex(POSITION_ID)));
+
+        return string(
+            StringHelpers.strcat(
+                StringHelpers.strcat(
+                    getNameIntro(),
+                    " 0x"
+                ),
+                StringHelpers.bytes32ToHex(POSITION_ID)
+            )
+        );
     }
 
     /**
@@ -367,4 +378,19 @@ contract ERC20Short is
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }
+
+    // ============ Internal Abstract Functions ============
+
+    function getAddedTokenAmount(
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+        view
+        returns (uint256);
+
+    function getNameIntro()
+        internal
+        pure
+        returns (bytes);
 }
