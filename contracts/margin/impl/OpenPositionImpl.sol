@@ -90,12 +90,6 @@ library OpenPositionImpl {
             transaction
         );
 
-        OpenPositionShared.openPositionInternalPostStateUpdate(
-            state,
-            transaction,
-            positionId
-        );
-
         return positionId;
     }
 

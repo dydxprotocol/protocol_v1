@@ -45,18 +45,20 @@ library OpenPositionShared {
         internal
         returns (uint256, uint256)
     {
-        // Validate
         validateOpenTx(
             state,
             transaction
         );
 
-        // First pull funds from lender and sell them. Prefer to do this first to make order
-        // collisions use up less gas.
-        // NOTE: Doing this before updating state relies on #openPosition being non-reentrant
+        getConsentIfSmartContractLender(transaction, positionId);
+
+        // Pull feeTokens from trader and lender
+        transferLoanFees(state, transaction);
+
+        // Pull baseTokens from lender
         transferFromLender(state, transaction);
 
-        // Transfer deposit from the msg.sender
+        // Pull deposit from the msg.sender
         uint256 quoteTokenFromDeposit = transferDeposit(state, transaction, positionId);
 
         uint256 sellAmount = transaction.depositInQuoteToken ? transaction.lenderAmount
@@ -79,25 +81,6 @@ library OpenPositionShared {
         return (
             quoteTokenFromSell,
             totalQuoteTokenReceived
-        );
-    }
-
-    function openPositionInternalPostStateUpdate(
-        MarginState.State storage state,
-        OpenTx memory transaction,
-        bytes32 positionId
-    )
-        internal
-    {
-        // If the lender is a smart contract, call out to it to get its consent for this loan
-        // This is done after other validations/state updates as it is an external call
-        // NOTE: The position will exist in the Repo for this call
-        //       (possible other contract calls back into Margin)
-        getConsentIfSmartContractLender(transaction, positionId);
-
-        transferLoanFees(
-            state,
-            transaction
         );
     }
 
@@ -181,7 +164,7 @@ library OpenPositionShared {
     )
         internal
     {
-        // If the signer != payer, get consent from payer
+        // If the signer != payer, assume payer is a smart contract and ask it for consent
         if (transaction.loanOffering.signer != transaction.loanOffering.payer) {
             require(
                 LoanOfferingVerifier(transaction.loanOffering.payer).verifyLoanOffering(

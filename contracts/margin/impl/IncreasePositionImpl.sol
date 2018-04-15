@@ -88,12 +88,6 @@ library IncreasePositionImpl {
         state.loanFills[transaction.loanOffering.loanHash] =
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.principal);
 
-        OpenPositionShared.openPositionInternalPostStateUpdate(
-            state,
-            transaction,
-            positionId
-        );
-
         // LOG EVENT
         recordPositionIncreased(
             transaction,
