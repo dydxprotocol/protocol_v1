@@ -26,7 +26,8 @@ contract ERC20Position is
     StandardToken,
     ClosePositionDelegator,
     PositionCustodian,
-    ReentrancyGuard {
+    ReentrancyGuard
+{
     using SafeMath for uint256;
 
     // ============ Enums ============
@@ -135,9 +136,9 @@ contract ERC20Position is
         address /* from */,
         bytes32 positionId
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (address)
     {
         // require uninitialized so that this cannot receive ownership for more than one position
@@ -172,26 +173,26 @@ contract ERC20Position is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
-     * @param  from         Address that added the value to the position
-     * @param  positionId   Unique ID of the position
-     * @param  amountAdded  Amount that was added to the position
-     * @return              True to indicate that this contract consents to value being added
+     * @param  from            Address that added the value to the position
+     * @param  positionId      Unique ID of the position
+     * @param  principalAdded  Amount that was added to the position
+     * @return                 True to indicate that this contract consents to value being added
      */
     function marginPositionIncreased(
         address from,
         bytes32 positionId,
-        uint256 amountAdded
+        uint256 principalAdded
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (bool)
     {
         assert(positionId == POSITION_ID);
 
         uint256 tokenAmount = getAddedTokenAmount(
             positionId,
-            amountAdded
+            principalAdded
         );
 
         balances[from] = balances[from].add(tokenAmount);
@@ -222,9 +223,9 @@ contract ERC20Position is
         bytes32 positionId,
         uint256 requestedAmount
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (uint256)
     {
         assert(state == State.OPEN);
@@ -281,8 +282,8 @@ contract ERC20Position is
     function withdraw(
         address who
     )
-        nonReentrant
         external
+        nonReentrant
         returns (uint256)
     {
         // If in OPEN state, but the position is closed, set to CLOSED state
@@ -323,8 +324,6 @@ contract ERC20Position is
 
     /**
      * ERC20 decimals function. Returns the same number of decimals as the shorts's baseToken
-     *
-     * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
      *
      * @return  The number of decimal places, or revert if the baseToken has no such function.
      */

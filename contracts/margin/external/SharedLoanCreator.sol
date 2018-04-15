@@ -62,9 +62,8 @@ contract SharedLoanCreator is
         address from,
         bytes32 positionId
     )
-        onlyMargin
-        nonReentrant
         external
+        onlyMargin
         returns (address)
     {
         address sharedLoanAddress = new SharedLoan(
@@ -84,11 +83,11 @@ contract SharedLoanCreator is
         bytes32,
         uint256
     )
-        onlyMargin
-        nonReentrant
         external
+        onlyMargin
         returns (bool)
     {
-        return false;
+        // This should never happen
+        assert(false);
     }
 }

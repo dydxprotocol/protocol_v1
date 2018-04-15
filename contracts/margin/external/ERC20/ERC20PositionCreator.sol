@@ -58,9 +58,8 @@ contract ERC20PositionCreator is
         address from,
         bytes32 positionId
     )
-        onlyMargin
-        nonReentrant
         external
+        onlyMargin
         returns (address)
     {
         address tokenAddress = createTokenContract(
@@ -78,11 +77,12 @@ contract ERC20PositionCreator is
         bytes32,
         uint256
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool)
     {
-        return false;
+        // This should never happen
+        assert(false);
     }
 
     // ============ Internal Abstract Functions ============

@@ -22,7 +22,8 @@ contract ERC721MarginPosition is
     ERC721Token,
     ClosePositionDelegator,
     PositionCustodian,
-    ReentrancyGuard {
+    ReentrancyGuard
+{
     using SafeMath for uint256;
 
     // ============ Events ============
@@ -52,8 +53,8 @@ contract ERC721MarginPosition is
     function ERC721MarginPosition(
         address margin
     )
-        ERC721Token("dYdX Margin Positions", "dYdX")
         public
+        ERC721Token("dYdX Margin Positions", "DYDX-M")
         ClosePositionDelegator(margin)
     {
     }
@@ -70,8 +71,8 @@ contract ERC721MarginPosition is
         address closer,
         bool isApproved
     )
-        nonReentrant
         external
+        nonReentrant
     {
         // cannot approve self since any address can already close its own positions
         require(closer != msg.sender);
@@ -96,8 +97,8 @@ contract ERC721MarginPosition is
         address recipient,
         bool isApproved
     )
-        nonReentrant
         external
+        nonReentrant
     {
         if (approvedRecipients[msg.sender][recipient] != isApproved) {
             approvedRecipients[msg.sender][recipient] = isApproved;
@@ -115,8 +116,8 @@ contract ERC721MarginPosition is
         bytes32 positionId,
         address to
     )
-        nonReentrant
         external
+        nonReentrant
     {
         uint256 tokenId = uint256(positionId);
         require(msg.sender == ownerOf(tokenId));
@@ -133,8 +134,8 @@ contract ERC721MarginPosition is
     function burnTokenSafe(
         bytes32 positionId
     )
-        nonReentrant
         external
+        nonReentrant
     {
         require(!Margin(MARGIN).containsPosition(positionId));
         _burn(ownerOf(uint256(positionId)), uint256(positionId));
@@ -155,26 +156,39 @@ contract ERC721MarginPosition is
         address from,
         bytes32 positionId
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (address)
     {
         _mint(from, uint256(positionId));
         return address(this); // returning own address retains ownership of position
     }
 
+    /**
+     * Called by Margin when additional value is added onto the position this contract
+     * owns. Only allows token owner to add value.
+     *
+     * @param  from            Address that added the value to the position
+     * @param  positionId      Unique ID of the position
+     *  param  principalAdded  (unused)
+     * @return                 True if the adder is the token owner, false otherwise
+     */
     function marginPositionIncreased(
         address from,
         bytes32 positionId,
-        uint256 /* amountAdded */
+        uint256 /* principalAdded */
     )
-        onlyMargin
         external
+        onlyMargin
+        nonReentrant
         returns (bool)
     {
-        require(ownerOf(uint256(positionId)) != from);
-        return true;
+        if (ownerOf(uint256(positionId)) == from) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -196,9 +210,9 @@ contract ERC721MarginPosition is
         bytes32 positionId,
         uint256 requestedAmount
     )
+        external
         onlyMargin
         nonReentrant
-        external
         returns (uint256)
     {
         // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder

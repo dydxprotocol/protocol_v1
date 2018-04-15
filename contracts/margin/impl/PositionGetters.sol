@@ -28,8 +28,8 @@ contract PositionGetters is MarginStorage {
     function containsPosition(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (bool)
     {
         return MarginCommon.containsPositionImpl(state, positionId);
@@ -44,8 +44,8 @@ contract PositionGetters is MarginStorage {
     function isPositionCalled(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (bool)
     {
         return (state.positions[positionId].callTimestamp > 0);
@@ -60,8 +60,8 @@ contract PositionGetters is MarginStorage {
     function isPositionClosed(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (bool)
     {
         return state.closedPositions[positionId];
@@ -76,8 +76,8 @@ contract PositionGetters is MarginStorage {
     function getPositionBalance(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         if (!MarginCommon.containsPositionImpl(state, positionId)) {
@@ -98,8 +98,8 @@ contract PositionGetters is MarginStorage {
     function getTimeUntilInterestIncrease(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
@@ -128,8 +128,8 @@ contract PositionGetters is MarginStorage {
     function getPositionOwedAmount(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
@@ -155,8 +155,8 @@ contract PositionGetters is MarginStorage {
         uint256 amount,
         uint32  timestamp
     )
-        view
         external
+        view
         returns (uint256)
     {
         MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
@@ -183,8 +183,8 @@ contract PositionGetters is MarginStorage {
         uint256 amount,
         uint32  timestamp
     )
-        view
         external
+        view
         returns (uint256)
     {
         MarginCommon.Position storage positionObject = MarginCommon.getPositionObject(state, positionId);
@@ -227,8 +227,8 @@ contract PositionGetters is MarginStorage {
     function getPosition(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (
             address[4],
             uint256[2],
@@ -264,8 +264,8 @@ contract PositionGetters is MarginStorage {
     function getPositionLender(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (address)
     {
         return state.positions[positionId].lender;
@@ -274,8 +274,8 @@ contract PositionGetters is MarginStorage {
     function getPositionOwner(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (address)
     {
         return state.positions[positionId].owner;
@@ -284,8 +284,8 @@ contract PositionGetters is MarginStorage {
     function getPositionQuoteToken(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (address)
     {
         return state.positions[positionId].quoteToken;
@@ -294,8 +294,8 @@ contract PositionGetters is MarginStorage {
     function getPositionBaseToken(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (address)
     {
         return state.positions[positionId].baseToken;
@@ -304,8 +304,8 @@ contract PositionGetters is MarginStorage {
     function getPositionPrincipal(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.positions[positionId].principal;
@@ -314,8 +314,8 @@ contract PositionGetters is MarginStorage {
     function getPositionInterestRate(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.positions[positionId].interestRate;
@@ -324,8 +324,8 @@ contract PositionGetters is MarginStorage {
     function getPositionRequiredDeposit(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint256)
     {
         return state.positions[positionId].requiredDeposit;
@@ -334,8 +334,8 @@ contract PositionGetters is MarginStorage {
     function getPositionStartTimestamp(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint32)
     {
         return state.positions[positionId].startTimestamp;
@@ -344,8 +344,8 @@ contract PositionGetters is MarginStorage {
     function getPositionCallTimestamp(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint32)
     {
         return state.positions[positionId].callTimestamp;
@@ -354,8 +354,8 @@ contract PositionGetters is MarginStorage {
     function getPositionCallTimeLimit(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint32)
     {
         return state.positions[positionId].callTimeLimit;
@@ -364,8 +364,8 @@ contract PositionGetters is MarginStorage {
     function getPositionMaxDuration(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint32)
     {
         return state.positions[positionId].maxDuration;
@@ -374,8 +374,8 @@ contract PositionGetters is MarginStorage {
     function getPositioninterestPeriod(
         bytes32 positionId
     )
-        view
         external
+        view
         returns (uint32)
     {
         return state.positions[positionId].interestPeriod;

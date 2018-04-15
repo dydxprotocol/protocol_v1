@@ -51,6 +51,7 @@ contract MarginAdmin is Ownable {
 
     function MarginAdmin()
         public
+        Ownable()
     {
         operationState = OperationState.OPERATIONAL;
     }
@@ -94,8 +95,8 @@ contract MarginAdmin is Ownable {
     function setOperationState(
         OperationState state
     )
-        onlyOwner
         external
+        onlyOwner
     {
         if (state != operationState) {
             emit OperationStateChanged(

@@ -43,8 +43,8 @@ contract Proxy is StaticAccessControlled, NoOwner {
         address to,
         uint256 value
     )
-        requiresAuthorization
         external
+        requiresAuthorization
     {
         TokenInteract.transferFrom(
             token,
@@ -68,8 +68,8 @@ contract Proxy is StaticAccessControlled, NoOwner {
         address who,
         address token
     )
-        view
         external
+        view
         returns (uint256)
     {
         return Math.min256(

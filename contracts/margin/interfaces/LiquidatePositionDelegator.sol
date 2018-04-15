@@ -46,7 +46,7 @@ contract LiquidatePositionDelegator is LoanOwner {
         bytes32 positionId,
         uint256 requestedAmount
     )
-        onlyMargin
         external
+        onlyMargin
         returns (uint256);
 }

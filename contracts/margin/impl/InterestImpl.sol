@@ -45,9 +45,7 @@ library InterestImpl {
     )
         public
         pure
-        returns (
-            uint256
-        )
+        returns (uint256)
     {
         Fraction256.Fraction memory rt = Fraction256.Fraction({
             num: interestRate.mul(secondsOfInterest),

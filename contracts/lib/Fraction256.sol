@@ -10,7 +10,6 @@ pragma experimental "v0.5.0";
  * be stored within 256 bits.
  */
 library Fraction256 {
-
     struct Fraction {
         uint256 num;
         uint256 den;

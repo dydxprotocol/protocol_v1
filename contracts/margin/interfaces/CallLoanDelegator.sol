@@ -42,8 +42,8 @@ contract CallLoanDelegator is LoanOwner {
         bytes32 positionId,
         uint256 depositAmount
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 
     /**
@@ -61,7 +61,7 @@ contract CallLoanDelegator is LoanOwner {
         address who,
         bytes32 positionId
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 }

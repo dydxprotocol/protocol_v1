@@ -49,7 +49,7 @@ contract ClosePositionDelegator is PositionOwner {
         bytes32 positionId,
         uint256 requestedAmount
     )
-        onlyMargin
         external
+        onlyMargin
         returns (uint256);
 }

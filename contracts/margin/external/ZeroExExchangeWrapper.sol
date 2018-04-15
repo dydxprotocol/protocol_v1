@@ -21,7 +21,8 @@ import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 contract ZeroExExchangeWrapper is
     HasNoEther,
     HasNoContracts,
-    ExchangeWrapper {
+    ExchangeWrapper
+{
     using SafeMath for uint256;
 
     struct Order {

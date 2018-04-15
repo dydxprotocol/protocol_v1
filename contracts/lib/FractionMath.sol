@@ -18,8 +18,8 @@ library FractionMath {
         Fraction256.Fraction memory a,
         Fraction256.Fraction memory b
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         uint256 left = a.num.mul(b.den);
@@ -46,8 +46,8 @@ library FractionMath {
         Fraction256.Fraction memory a,
         Fraction256.Fraction memory b
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         return bound(
@@ -62,8 +62,8 @@ library FractionMath {
         Fraction256.Fraction memory a,
         uint256 d
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         return bound(
@@ -78,8 +78,8 @@ library FractionMath {
         Fraction256.Fraction memory a,
         Fraction256.Fraction memory b
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         return bound(
@@ -94,8 +94,8 @@ library FractionMath {
         Fraction256.Fraction memory a,
         uint256 m
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         return bound(
@@ -113,8 +113,8 @@ library FractionMath {
     function bound(
         Fraction256.Fraction memory a
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         uint256 max = a.num > a.den ? a.num : a.den;
@@ -130,8 +130,8 @@ library FractionMath {
     function validate(
         Fraction256.Fraction memory a
     )
-        pure
         internal
+        pure
     {
         assert(a.num < 2**128 && a.den < 2**128 && a.den > 0);
     }
@@ -139,8 +139,8 @@ library FractionMath {
     function copy(
         Fraction256.Fraction memory a
     )
-        pure
         internal
+        pure
         returns (Fraction256.Fraction memory)
     {
         return Fraction256.Fraction({ num: a.num, den: a.den });

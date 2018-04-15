@@ -38,8 +38,8 @@ contract PositionOwner is OnlyMargin {
         address from,
         bytes32 positionId
     )
-        onlyMargin
         external
+        onlyMargin
         returns (address);
 
     /**
@@ -48,18 +48,18 @@ contract PositionOwner is OnlyMargin {
      * during Margin#increasePosition. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
-     * @param  from         Address initiating the addition of funds to the position
-     * @param  positionId   Unique ID of the position
-     * @param  amountAdded  Amount to be added to the position
-     * @return              True if the contract consents to additional value being added,
-     *                      false otherwise
+     * @param  from            Address initiating the addition of funds to the position
+     * @param  positionId      Unique ID of the position
+     * @param  principalAdded  Amount of principal to be added to the position
+     * @return                 True if the contract consents to additional value being added,
+     *                         false otherwise
      */
     function marginPositionIncreased(
         address from,
         bytes32 positionId,
-        uint256 amountAdded
+        uint256 principalAdded
     )
-        onlyMargin
         external
+        onlyMargin
         returns (bool);
 }

@@ -26,8 +26,8 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
     function StaticAccessControlled(
         uint256 gracePeriod
     )
-        Ownable()
         public
+        Ownable()
     {
         GRACE_PERIOD_EXPIRATION = block.timestamp.add(gracePeriod);
     }
@@ -37,8 +37,8 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
     function grantAccess(
         address who
     )
-        onlyOwner
         external
+        onlyOwner
     {
         require(block.timestamp < GRACE_PERIOD_EXPIRATION);
 
