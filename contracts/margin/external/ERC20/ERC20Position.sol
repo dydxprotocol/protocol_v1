@@ -262,6 +262,24 @@ contract ERC20Position is
     // ============ Public State Changing Functions ============
 
     /**
+     * Helper to allow withdrawal for multiple owners in one call
+     *
+     * @param  who  Array of addresses to withdraw for
+     */
+    function withdrawMultiple(
+        address[] who
+    )
+        external
+        nonReentrant
+    {
+        setStateClosedIfClosed();
+        require(state == State.CLOSED);
+
+        for (uint256 i = 0; i < who.length; i++) {
+            withdrawImpl(who[i]);
+        }
+    }
+    /**
      * Withdraw heldTokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
      *
@@ -286,38 +304,10 @@ contract ERC20Position is
         nonReentrant
         returns (uint256)
     {
-        // If in OPEN state, but the position is closed, set to CLOSED state
-        if (state == State.OPEN && Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
-            state = State.CLOSED;
-            emit CompletelyClosed();
-        }
+        setStateClosedIfClosed();
         require(state == State.CLOSED);
 
-        uint256 value = balanceOf(who);
-
-        if (value == 0) {
-            return 0;
-        }
-
-        uint256 heldTokenBalance = TokenInteract.balanceOf(heldToken, address(this));
-
-        // NOTE the payout must be calculated before decrementing the totalSupply below
-        uint256 heldTokenPayout = MathHelpers.getPartialAmount(
-            value,
-            totalSupply_,
-            heldTokenBalance
-        );
-
-        // Destroy the tokens
-        delete balances[who];
-        totalSupply_ = totalSupply_.sub(value);
-
-        // Send the redeemer their proportion of heldToken
-        TokenInteract.transfer(heldToken, who, heldTokenPayout);
-
-        emit TokensRedeemedAfterForceClose(who, value, heldTokenPayout);
-
-        return heldTokenPayout;
+        return withdrawImpl(who);
     }
 
     // ============ Public Constant Functions ============
@@ -376,6 +366,52 @@ contract ERC20Position is
         require(positionId == POSITION_ID);
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
+    }
+
+    // ============ Internal Functions ============
+
+    function withdrawImpl(
+        address who
+    )
+        internal
+        returns (uint256)
+    {
+        uint256 value = balanceOf(who);
+
+        if (value == 0) {
+            return 0;
+        }
+
+        uint256 heldTokenBalance = TokenInteract.balanceOf(heldToken, address(this));
+
+        // NOTE the payout must be calculated before decrementing the totalSupply below
+        uint256 heldTokenPayout = MathHelpers.getPartialAmount(
+            value,
+            totalSupply_,
+            heldTokenBalance
+        );
+
+        // Destroy the tokens
+        delete balances[who];
+        totalSupply_ = totalSupply_.sub(value);
+
+        // Send the redeemer their proportion of heldToken
+        TokenInteract.transfer(heldToken, who, heldTokenPayout);
+
+        emit TokensRedeemedAfterForceClose(who, value, heldTokenPayout);
+
+        return heldTokenPayout;
+    }
+
+    function setStateClosedIfClosed(
+    )
+        internal
+    {
+        // If in OPEN state, but the position is closed, set to CLOSED state
+        if (state == State.OPEN && Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
+            state = State.CLOSED;
+            emit CompletelyClosed();
+        }
     }
 
     // ============ Internal Abstract Functions ============

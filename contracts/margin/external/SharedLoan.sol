@@ -283,8 +283,11 @@ contract SharedLoan is
     )
         external
     {
+        require(state == State.OPEN || state == State.CLOSED);
+        updateStateOnClosed();
+
         for (uint256 i = 0; i < who.length; i++) {
-            withdraw(who[i]);
+            withdrawImpl(who[i]);
         }
     }
 
@@ -306,9 +309,29 @@ contract SharedLoan is
         returns (uint256, uint256)
     {
         require(state == State.OPEN || state == State.CLOSED);
-
         updateStateOnClosed();
 
+        return withdrawImpl(who);
+    }
+
+    // ============ Internal Functions ============
+
+    function updateStateOnClosed()
+        internal
+    {
+        if (state != State.CLOSED) {
+            if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
+                state = State.CLOSED;
+            }
+        }
+    }
+
+    function withdrawImpl(
+        address who
+    )
+        internal
+        returns (uint256, uint256)
+    {
         if (balances[who] == 0) {
             return (0, 0);
         }
@@ -334,18 +357,6 @@ contract SharedLoan is
             owedTokenWithdrawn,
             heldTokenWithdrawn
         );
-    }
-
-    // ============ Internal Functions ============
-
-    function updateStateOnClosed()
-        internal
-    {
-        if (state != State.CLOSED) {
-            if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
-                state = State.CLOSED;
-            }
-        }
     }
 
     function withdrawOwedTokens(
