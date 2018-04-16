@@ -175,15 +175,15 @@ contract PositionGetters is MarginStorage {
      * Gets the amount of owedTokens that can be borrowed from a lender to add a given amount
      * onto the position at a given time.
      *
-     * @param  positionId   Unique ID of the position
-     * @param  positionId   Amount being added to position
-     * @param  timestamp    Block timestamp in seconds of addition
-     * @return              The number of owedTokens that can be borrowed at the given
-     *                      time and amount
+     * @param  positionId      Unique ID of the position
+     * @param  principalToAdd  Amount being added to principal
+     * @param  timestamp       Block timestamp in seconds of addition
+     * @return                 The number of owedTokens that can be borrowed at the given
+     *                         time and amount
      */
-    function getLenderAmountForAddValueAtTime(
+    function getLenderAmountForIncreasePositionAtTime(
         bytes32 positionId,
-        uint256 amount,
+        uint256 principalToAdd,
         uint32  timestamp
     )
         external
@@ -193,9 +193,9 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        return MarginCommon.calculateLenderAmountForAddValue(
+        return MarginCommon.calculateLenderAmountForIncreasePosition(
             position,
-            amount,
+            principalToAdd,
             timestamp
         );
     }

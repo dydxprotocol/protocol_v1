@@ -134,9 +134,9 @@ library MarginCommon {
         );
     }
 
-    function calculateLenderAmountForAddValue(
+    function calculateLenderAmountForIncreasePosition(
         Position memory position,
-        uint256 addAmount,
+        uint256 principalToAdd,
         uint256 endTimestamp
     )
         internal
@@ -146,7 +146,7 @@ library MarginCommon {
         uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(position, endTimestamp);
 
         return InterestImpl.getCompoundedInterest(
-            addAmount,
+            principalToAdd,
             position.interestRate,
             timeElapsed
         );

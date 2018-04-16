@@ -61,7 +61,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        OpenPositionShared.OpenTx memory transaction = parseAddValueToOpenTx(
+        OpenPositionShared.OpenTx memory transaction = parseIncreasePositionTx(
             position,
             addresses,
             values256,
@@ -342,7 +342,7 @@ library IncreasePositionImpl {
 
     // ============ Parsing Functions ============
 
-    function parseAddValueToOpenTx(
+    function parseIncreasePositionTx(
         MarginCommon.Position storage position,
         address[7] addresses,
         uint256[8] values256,
@@ -360,13 +360,13 @@ library IncreasePositionImpl {
             owedToken: position.owedToken,
             heldToken: position.heldToken,
             principal: values256[7],
-            lenderAmount: MarginCommon.calculateLenderAmountForAddValue(
+            lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
                 position,
                 values256[7],
                 block.timestamp
             ),
             depositAmount: 0,
-            loanOffering: parseLoanOfferingFromAddValueTx(
+            loanOffering: parseLoanOfferingFromIncreasePositionTx(
                 position,
                 addresses,
                 values256,
@@ -382,7 +382,7 @@ library IncreasePositionImpl {
         return transaction;
     }
 
-    function parseLoanOfferingFromAddValueTx(
+    function parseLoanOfferingFromIncreasePositionTx(
         MarginCommon.Position storage position,
         address[7] addresses,
         uint256[8] values256,
@@ -402,7 +402,7 @@ library IncreasePositionImpl {
             feeRecipient: addresses[3],
             lenderFeeToken: addresses[4],
             takerFeeToken: addresses[5],
-            rates: parseLoanOfferingRatesFromAddValueTx(position, values256),
+            rates: parseLoanOfferingRatesFromIncreasePositionTx(position, values256),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
@@ -420,7 +420,7 @@ library IncreasePositionImpl {
         return loanOffering;
     }
 
-    function parseLoanOfferingRatesFromAddValueTx(
+    function parseLoanOfferingRatesFromIncreasePositionTx(
         MarginCommon.Position storage position,
         uint256[8] values256
     )
