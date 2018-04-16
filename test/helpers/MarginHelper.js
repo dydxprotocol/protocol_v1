@@ -367,7 +367,11 @@ async function issueTokensAndSetAllowances(tx) {
   ]);
 }
 
-async function doOpenPosition(accounts, _salt = DEFAULT_SALT, positionOwner) {
+async function doOpenPosition(
+  accounts,
+  _salt = DEFAULT_SALT,
+  positionOwner = null
+) {
   const [OpenTx, dydxMargin] = await Promise.all([
     createOpenTx(accounts, _salt),
     Margin.deployed()

@@ -93,7 +93,7 @@ contract('ERC20ShortCreator', function(accounts) {
       const OpenTx = await doOpenPosition(accounts, 1234, ERC20ShortCreator.address);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
-      const tokenAddress = await dydxMargin.getPositionOwner(OpenTx.id);
+      const tokenAddress = await dydxMargin.getPositionOwner.call(OpenTx.id);
       const erc20Contract = await ERC20Short.at(tokenAddress);
 
       await checkSuccess(OpenTx, erc20Contract, OpenTx.principal);
@@ -116,7 +116,7 @@ contract('ERC20ShortCreator', function(accounts) {
       await dydxMargin.transferPosition(OpenTx.id, ERC20ShortCreatorContract.address);
 
       // Get the ERC20Short on the blockchain and make sure that it was created correctly
-      const tokenAddress = await dydxMargin.getPositionOwner(OpenTx.id);
+      const tokenAddress = await dydxMargin.getPositionOwner.call(OpenTx.id);
       const erc20Contract = await ERC20Short.at(tokenAddress);
 
       await checkSuccess(OpenTx, erc20Contract, OpenTx.principal.div(2));

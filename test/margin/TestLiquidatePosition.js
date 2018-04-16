@@ -40,7 +40,7 @@ describe('#liquidate', () => {
       const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
       expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
-      const heldTokenBalance = await dydxMargin.getPositionBalance(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
       // Liquidate heldTokens by burning tokens
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
@@ -70,7 +70,7 @@ describe('#liquidate', () => {
       const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
       expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
-      const heldTokenBalance = await dydxMargin.getPositionBalance(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
       // Liquidate heldTokens by burning tokens
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
