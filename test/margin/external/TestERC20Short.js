@@ -115,10 +115,16 @@ contract('ERC20Short', function(accounts) {
 
   async function transferPositionsToTokens() {
     await Promise.all([
-      CONTRACTS.DYDX_MARGIN.transferPosition(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
-        { from: POSITIONS.FULL.TX.trader }),
-      CONTRACTS.DYDX_MARGIN.transferPosition(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
-        { from: POSITIONS.PART.TX.trader }),
+      CONTRACTS.DYDX_MARGIN.transferPosition(
+        POSITIONS.FULL.ID,
+        POSITIONS.FULL.TOKEN_CONTRACT.address,
+        { from: POSITIONS.FULL.TX.trader }
+      ),
+      CONTRACTS.DYDX_MARGIN.transferPosition(
+        POSITIONS.PART.ID,
+        POSITIONS.PART.TOKEN_CONTRACT.address,
+        { from: POSITIONS.PART.TX.trader }
+      ),
     ]);
   }
 
@@ -455,7 +461,9 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS
         );
-        await expectThrow(CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender }));
+        await expectThrow(
+          CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender })
+        );
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
         expect(tx.result).to.be.bignumber.eq(0);
