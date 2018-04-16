@@ -235,7 +235,7 @@ contract Margin is
      * @param  order                 Order object to be passed to the exchange wrapper
      * @return                       Values corresponding to:
      *                               1) Amount of position closed
-     *                               2) Amount of heldToken recieved by the payoutRecipient
+     *                               2) Amount of heldToken received by the payoutRecipient
      *                               3) Amount of owedToken paid as interest fee to the lender
      */
     function closePosition(
@@ -305,7 +305,7 @@ contract Margin is
      *                                     will be: min(requestedCloseAmount, principal)
      * @return                             Values corresponding to:
      *                                     1) Amount of position closed
-     *                                     2) Amount of heldToken recieved by the msg.sender
+     *                                     2) Amount of heldToken received by the msg.sender
      */
     function liquidatePosition(
         bytes32 positionId,
