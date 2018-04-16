@@ -37,9 +37,9 @@ library IncreasePositionImpl {
         address loanFeeRecipient,
         uint256 amountBorrowed,
         uint256 principalAdded,
-        uint256 quoteTokenFromSell,
+        uint256 heldTokenFromSell,
         uint256 depositAmount,
-        bool    depositInQuoteToken
+        bool    depositInHeldToken
     );
 
     // ============ Public Implementation Functions ============
@@ -52,13 +52,14 @@ library IncreasePositionImpl {
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
-        bool depositInQuoteToken,
+        bool depositInHeldToken,
         bytes orderData
     )
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         OpenPositionShared.OpenTx memory transaction = parseAddValueToOpenTx(
             position,
@@ -67,10 +68,10 @@ library IncreasePositionImpl {
             values32,
             sigV,
             sigRS,
-            depositInQuoteToken
+            depositInHeldToken
         );
 
-        uint256 quoteTokenFromSell = preStateUpdate(
+        uint256 heldTokenFromSell = preStateUpdate(
             state,
             transaction,
             position,
@@ -94,7 +95,7 @@ library IncreasePositionImpl {
             transaction,
             positionId,
             position,
-            quoteTokenFromSell
+            heldTokenFromSell
         );
 
         return transaction.lenderAmount;
@@ -108,9 +109,10 @@ library IncreasePositionImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
-        uint256 quoteTokenAmount = getPositionMinimumQuoteToken(
+        uint256 heldTokenAmount = getPositionMinimumHeldToken(
             positionId,
             state,
             amount,
@@ -119,9 +121,9 @@ library IncreasePositionImpl {
 
         Vault(state.VAULT).transferToVault(
             positionId,
-            position.quoteToken,
+            position.heldToken,
             msg.sender,
-            quoteTokenAmount
+            heldTokenAmount
         );
 
         updateState(
@@ -142,11 +144,11 @@ library IncreasePositionImpl {
             0,
             amount,
             0,
-            quoteTokenAmount,
+            heldTokenAmount,
             true
         );
 
-        return quoteTokenAmount;
+        return heldTokenAmount;
     }
 
     // ============ Helper Functions ============
@@ -159,10 +161,10 @@ library IncreasePositionImpl {
         bytes orderData
     )
         internal
-        returns (uint256 /* quoteTokenFromSell */)
+        returns (uint256 /* heldTokenFromSell */)
     {
         validate(transaction, position);
-        uint256 positionMinimumQuoteToken = setDepositAmount(
+        uint256 positionMinimumHeldToken = setDepositAmount(
             state,
             transaction,
             position,
@@ -170,12 +172,12 @@ library IncreasePositionImpl {
             orderData
         );
 
-        uint256 quoteTokenFromSell;
-        uint256 totalQuoteTokenReceived;
+        uint256 heldTokenFromSell;
+        uint256 totalHeldTokenReceived;
 
         (
-            quoteTokenFromSell,
-            totalQuoteTokenReceived
+            heldTokenFromSell,
+            totalHeldTokenReceived
         ) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
@@ -185,9 +187,9 @@ library IncreasePositionImpl {
 
         // This should always be true unless there is a faulty ExchangeWrapper (i.e. the
         // ExchangeWrapper traded at a different price from what it said it would)
-        assert(positionMinimumQuoteToken == totalQuoteTokenReceived);
+        assert(positionMinimumHeldToken == totalHeldTokenReceived);
 
-        return quoteTokenFromSell;
+        return heldTokenFromSell;
     }
 
     function validate(
@@ -217,46 +219,46 @@ library IncreasePositionImpl {
     )
         internal
         view // Does modify transaction
-        returns (uint256 /* positionMinimumQuoteToken */)
+        returns (uint256 /* positionMinimumHeldToken */)
     {
-        // Amount of quote token we need to add to the position to maintain the position's ratio
-        // of quote token to base token
-        uint256 positionMinimumQuoteToken = getPositionMinimumQuoteToken(
+        // Amount of heldToken we need to add to the position to maintain the position's ratio
+        // of heldToken to owedToken
+        uint256 positionMinimumHeldToken = getPositionMinimumHeldToken(
             positionId,
             state,
             transaction.principal,
             position
         );
 
-        if (transaction.depositInQuoteToken) {
-            uint256 quoteTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper)
+        if (transaction.depositInHeldToken) {
+            uint256 heldTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTradeMakerTokenAmount(
-                    transaction.quoteToken,
-                    transaction.baseToken,
+                    transaction.heldToken,
+                    transaction.owedToken,
                     transaction.lenderAmount,
                     orderData
                 );
 
-            require(quoteTokenFromSell <= positionMinimumQuoteToken);
-            transaction.depositAmount = positionMinimumQuoteToken.sub(quoteTokenFromSell);
+            require(heldTokenFromSell <= positionMinimumHeldToken);
+            transaction.depositAmount = positionMinimumHeldToken.sub(heldTokenFromSell);
         } else {
-            uint256 baseTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
+            uint256 owedTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
-                    transaction.quoteToken,
-                    transaction.baseToken,
-                    positionMinimumQuoteToken,
+                    transaction.heldToken,
+                    transaction.owedToken,
+                    positionMinimumHeldToken,
                     orderData
                 );
 
-            require(transaction.lenderAmount <= baseTokenToSell);
-            transaction.depositAmount = baseTokenToSell.sub(transaction.lenderAmount);
-            transaction.desiredTokenFromSell = positionMinimumQuoteToken;
+            require(transaction.lenderAmount <= owedTokenToSell);
+            transaction.depositAmount = owedTokenToSell.sub(transaction.lenderAmount);
+            transaction.desiredTokenFromSell = positionMinimumHeldToken;
         }
 
-        return positionMinimumQuoteToken;
+        return positionMinimumHeldToken;
     }
 
-    function getPositionMinimumQuoteToken(
+    function getPositionMinimumHeldToken(
         bytes32 positionId,
         MarginState.State storage state,
         uint256 principalAdded,
@@ -266,12 +268,12 @@ library IncreasePositionImpl {
         view
         returns (uint256)
     {
-        uint256 quoteTokenBalance = Vault(state.VAULT).balances(positionId, position.quoteToken);
+        uint256 heldTokenBalance = Vault(state.VAULT).balances(positionId, position.heldToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             principalAdded,
             position.principal,
-            quoteTokenBalance
+            heldTokenBalance
         );
     }
 
@@ -318,7 +320,7 @@ library IncreasePositionImpl {
         OpenPositionShared.OpenTx transaction,
         bytes32 positionId,
         MarginCommon.Position storage position,
-        uint256 quoteTokenFromSell
+        uint256 heldTokenFromSell
     )
         internal
     {
@@ -332,9 +334,9 @@ library IncreasePositionImpl {
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
             transaction.principal,
-            quoteTokenFromSell,
+            heldTokenFromSell,
             transaction.depositAmount,
-            transaction.depositInQuoteToken
+            transaction.depositInHeldToken
         );
     }
 
@@ -347,7 +349,7 @@ library IncreasePositionImpl {
         uint32[2] values32,
         uint8 sigV,
         bytes32[2] sigRS,
-        bool depositInQuoteToken
+        bool depositInHeldToken
     )
         internal
         view
@@ -355,8 +357,8 @@ library IncreasePositionImpl {
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: position.owner,
-            baseToken: position.baseToken,
-            quoteToken: position.quoteToken,
+            owedToken: position.owedToken,
+            heldToken: position.heldToken,
             principal: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForAddValue(
                 position,
@@ -373,7 +375,7 @@ library IncreasePositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[6],
-            depositInQuoteToken: depositInQuoteToken,
+            depositInHeldToken: depositInHeldToken,
             desiredTokenFromSell: 0
         });
 
@@ -411,8 +413,8 @@ library IncreasePositionImpl {
 
         loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
             loanOffering,
-            position.quoteToken,
-            position.baseToken
+            position.heldToken,
+            position.owedToken
         );
 
         return loanOffering;
@@ -429,7 +431,7 @@ library IncreasePositionImpl {
         MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minQuoteToken: values256[2],
+            minHeldToken: values256[2],
             interestRate: position.interestRate,
             lenderFee: values256[3],
             takerFee: values256[4],

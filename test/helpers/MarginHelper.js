@@ -5,8 +5,8 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const QuoteToken = artifacts.require("TokenA");
-const BaseToken = artifacts.require("TokenB");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ProxyContract = artifacts.require("Proxy");
@@ -27,7 +27,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 BigNumber.config({ DECIMAL_PLACES: 80 });
 
-async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInQuoteToken = true) {
+async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInHeldToken = true) {
   const [loanOffering, buyOrder] = await Promise.all([
     createLoanOffering(accounts, _salt),
     createSignedBuyOrder(accounts, _salt)
@@ -35,15 +35,15 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInQuoteToken 
 
   const tx = {
     owner: accounts[0],
-    baseToken: BaseToken.address,
-    quoteToken: QuoteToken.address,
+    owedToken: OwedToken.address,
+    heldToken: HeldToken.address,
     principal: BIGNUMBERS.BASE_AMOUNT,
     depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address,
-    depositInQuoteToken: depositInQuoteToken
+    depositInHeldToken: depositInHeldToken
   };
 
   return tx;
@@ -62,8 +62,8 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
 
   const addresses = [
     tx.owner,
-    tx.loanOffering.baseToken,
-    tx.loanOffering.quoteToken,
+    tx.loanOffering.owedToken,
+    tx.loanOffering.heldToken,
     tx.loanOffering.payer,
     tx.loanOffering.signer,
     tx.loanOffering.owner,
@@ -77,7 +77,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
   const values256 = [
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
-    tx.loanOffering.rates.minQuoteToken,
+    tx.loanOffering.rates.minHeldToken,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -108,7 +108,7 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     values32,
     sigV,
     sigRS,
-    tx.depositInQuoteToken,
+    tx.depositInHeldToken,
     order,
     { from: tx.trader }
   );
@@ -126,10 +126,10 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
 
 async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
   let soldAmount = tx.principal;
-  if (!tx.depositInQuoteToken) {
+  if (!tx.depositInHeldToken) {
     soldAmount = soldAmount.plus(tx.depositAmount)
   }
-  const expectedQuoteTokenFromSell = soldAmount
+  const expectedHeldTokenFromSell = soldAmount
     .div(tx.buyOrder.takerTokenAmount)
     .times(tx.buyOrder.makerTokenAmount);
 
@@ -138,16 +138,16 @@ async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
     trader: tx.trader,
     lender: tx.loanOffering.payer,
     loanHash: tx.loanOffering.loanHash,
-    baseToken: tx.loanOffering.baseToken,
-    quoteToken: tx.loanOffering.quoteToken,
+    owedToken: tx.loanOffering.owedToken,
+    heldToken: tx.loanOffering.heldToken,
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     principal: tx.principal,
-    quoteTokenFromSell: expectedQuoteTokenFromSell,
+    heldTokenFromSell: expectedHeldTokenFromSell,
     depositAmount: tx.depositAmount,
     interestRate: tx.loanOffering.rates.interestRate,
     callTimeLimit: tx.loanOffering.callTimeLimit,
     maxDuration: tx.loanOffering.maxDuration,
-    depositInQuoteToken: tx.depositInQuoteToken
+    depositInHeldToken: tx.depositInHeldToken
   });
 
   const newOwner = await dydxMargin.getPositionOwner.call(positionId);
@@ -199,7 +199,7 @@ async function callIncreasePosition(dydxMargin, tx) {
   const values256 = [
     tx.loanOffering.rates.maxAmount,
     tx.loanOffering.rates.minAmount,
-    tx.loanOffering.rates.minQuoteToken,
+    tx.loanOffering.rates.minHeldToken,
     tx.loanOffering.rates.lenderFee,
     tx.loanOffering.rates.takerFee,
     tx.loanOffering.expirationTimestamp,
@@ -228,7 +228,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     values32,
     sigV,
     sigRS,
-    tx.depositInQuoteToken,
+    tx.depositInHeldToken,
     order,
     { from: tx.trader }
   );
@@ -245,7 +245,7 @@ async function callIncreasePosition(dydxMargin, tx) {
 
 async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const positionId = tx.id;
-  const [time1, time2, principal, quoteTokenAmount] = await Promise.all([
+  const [time1, time2, principal, heldTokenAmount] = await Promise.all([
     dydxMargin.getPositionStartTimestamp.call(positionId),
     getBlockTimestamp(response.receipt.blockNumber),
     dydxMargin.getPositionPrincipal.call(positionId),
@@ -259,19 +259,19 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     false
   );
   const minTotalDeposit = getPartialAmount(
-    quoteTokenAmount,
+    heldTokenAmount,
     principal,
     tx.principal
   );
-  const quoteTokenFromSell = tx.depositInQuoteToken ?
+  const heldTokenFromSell = tx.depositInHeldToken ?
     getPartialAmount(
       owed,
       tx.buyOrder.takerTokenAmount,
       tx.buyOrder.makerTokenAmount
     )
     : minTotalDeposit;
-  const depositAmount = tx.depositInQuoteToken ?
-    minTotalDeposit.minus(quoteTokenFromSell)
+  const depositAmount = tx.depositInHeldToken ?
+    minTotalDeposit.minus(heldTokenFromSell)
     : getPartialAmount(
       tx.buyOrder.takerTokenAmount,
       tx.buyOrder.makerTokenAmount,
@@ -289,23 +289,23 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     loanFeeRecipient: tx.loanOffering.feeRecipient,
     amountBorrowed: owed,
     principalAdded: tx.principal,
-    quoteTokenFromSell,
+    heldTokenFromSell,
     depositAmount,
-    depositInQuoteToken: tx.depositInQuoteToken
+    depositInHeldToken: tx.depositInHeldToken
   });
 }
 
 async function issueTokensAndSetAllowances(tx) {
-  const [baseToken, quoteToken, feeToken] = await Promise.all([
-    BaseToken.deployed(),
-    QuoteToken.deployed(),
+  const [owedToken, heldToken, feeToken] = await Promise.all([
+    OwedToken.deployed(),
+    HeldToken.deployed(),
     FeeToken.deployed()
   ]);
 
-  const depositToken = tx.depositInQuoteToken ? quoteToken : baseToken;
+  const depositToken = tx.depositInHeldToken ? heldToken : owedToken;
 
   await Promise.all([
-    baseToken.issueTo(
+    owedToken.issueTo(
       tx.loanOffering.payer,
       tx.loanOffering.rates.maxAmount
     ),
@@ -313,7 +313,7 @@ async function issueTokensAndSetAllowances(tx) {
       tx.trader,
       tx.depositAmount
     ),
-    quoteToken.issueTo(
+    heldToken.issueTo(
       tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount
     ),
@@ -329,7 +329,7 @@ async function issueTokensAndSetAllowances(tx) {
       tx.trader,
       tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
     ),
-    baseToken.approve(
+    owedToken.approve(
       ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
       { from: tx.loanOffering.payer }
@@ -339,7 +339,7 @@ async function issueTokensAndSetAllowances(tx) {
       tx.depositAmount,
       { from: tx.trader }
     ),
-    quoteToken.approve(
+    heldToken.approve(
       ZeroExProxy.address,
       tx.buyOrder.makerTokenAmount,
       { from: tx.buyOrder.maker }
@@ -397,7 +397,7 @@ async function callClosePosition(
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
-  const { startAmount, startQuote, startTimestamp } =
+  const { startAmount, startHeldToken, startTimestamp } =
     await getPreCloseVariables(dydxMargin, OpenTx.id);
 
   const tx = await transact(
@@ -419,7 +419,7 @@ async function callClosePosition(
       closer,
       recipient,
       startAmount,
-      startQuote,
+      startHeldToken,
       startTimestamp,
       tx
     }
@@ -438,7 +438,7 @@ async function callClosePositionDirectly(
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
-  const { startAmount, startQuote, startTimestamp } =
+  const { startAmount, startHeldToken, startTimestamp } =
     await getPreCloseVariables(dydxMargin, OpenTx.id);
 
   const tx = await transact(
@@ -456,7 +456,7 @@ async function callClosePositionDirectly(
       closer,
       recipient,
       startAmount,
-      startQuote,
+      startHeldToken,
       startTimestamp,
       tx
     }
@@ -468,7 +468,7 @@ async function callClosePositionDirectly(
 async function getPreCloseVariables(dydxMargin, positionId) {
   const [
     startAmount,
-    startQuote,
+    startHeldToken,
     startTimestamp
   ] = await Promise.all([
     dydxMargin.getPositionPrincipal.call(positionId),
@@ -477,7 +477,7 @@ async function getPreCloseVariables(dydxMargin, positionId) {
   ]);
   return {
     startAmount,
-    startQuote,
+    startHeldToken,
     startTimestamp
   }
 }
@@ -485,7 +485,7 @@ async function getPreCloseVariables(dydxMargin, positionId) {
 async function expectCloseLog(dydxMargin, params) {
   const [
     endAmount,
-    endQuote,
+    endHeldToken,
     endTimestamp
   ] = await Promise.all([
     dydxMargin.getPositionPrincipal.call(params.OpenTx.id),
@@ -504,11 +504,11 @@ async function expectCloseLog(dydxMargin, params) {
   const buybackCost = params.sellOrder
     ? owed.div(params.sellOrder.makerTokenAmount).times(params.sellOrder.takerTokenAmount)
     : 0;
-  const quoteTokenPayout =
-    actualCloseAmount.div(params.startAmount).times(params.startQuote).minus(buybackCost);
+  const heldTokenPayout =
+    actualCloseAmount.div(params.startAmount).times(params.startHeldToken).minus(buybackCost);
 
-  expect(endQuote).to.be.bignumber.equal(
-    params.startQuote.minus(quoteTokenPayout).minus(buybackCost));
+  expect(endHeldToken).to.be.bignumber.equal(
+    params.startHeldToken.minus(heldTokenPayout).minus(buybackCost));
 
   expectLog(params.tx.logs[0], 'PositionClosed', {
     positionId: params.OpenTx.id,
@@ -516,10 +516,10 @@ async function expectCloseLog(dydxMargin, params) {
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
     remainingAmount: params.startAmount.minus(actualCloseAmount),
-    baseTokenPaidToLender: owed,
-    payoutAmount: quoteTokenPayout,
+    owedTokenPaidToLender: owed,
+    payoutAmount: heldTokenPayout,
     buybackCost: buybackCost,
-    payoutInQuoteToken: true
+    payoutInHeldToken: true
   });
 }
 
@@ -531,7 +531,7 @@ async function callLiquidatePosition(
   payoutRecipient = null
 ) {
   const startAmount = await dydxMargin.getPositionPrincipal.call(OpenTx.id);
-  const startQuote = await dydxMargin.getPositionBalance.call(OpenTx.id);
+  const startHeldToken = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
   payoutRecipient = payoutRecipient || from
   const tx = await transact(
@@ -550,7 +550,7 @@ async function callLiquidatePosition(
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,
     remainingAmount: startAmount.minus(actualLiquidateAmount),
-    quoteTokenPayout: actualLiquidateAmount.times(startQuote).div(startAmount)
+    heldTokenPayout: actualLiquidateAmount.times(startHeldToken).div(startAmount)
   });
 
   return tx;
@@ -622,8 +622,8 @@ async function callApproveLoanOffering(
 
 function formatLoanOffering(loanOffering) {
   const addresses = [
-    loanOffering.baseToken,
-    loanOffering.quoteToken,
+    loanOffering.owedToken,
+    loanOffering.heldToken,
     loanOffering.payer,
     loanOffering.signer,
     loanOffering.owner,
@@ -636,7 +636,7 @@ function formatLoanOffering(loanOffering) {
   const values256 = [
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minQuoteToken,
+    loanOffering.rates.minHeldToken,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -654,13 +654,13 @@ function formatLoanOffering(loanOffering) {
 }
 
 async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
-  const [baseToken, feeToken] = await Promise.all([
-    BaseToken.deployed(),
+  const [owedToken, feeToken] = await Promise.all([
+    OwedToken.deployed(),
     FeeToken.deployed(),
   ]);
 
   await Promise.all([
-    baseToken.issueTo(
+    owedToken.issueTo(
       sellOrder.maker,
       sellOrder.makerTokenAmount
     ),
@@ -672,7 +672,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
       sellOrder.maker,
       sellOrder.makerFee
     ),
-    baseToken.approve(
+    owedToken.approve(
       ZeroExProxy.address,
       sellOrder.makerTokenAmount,
       { from: sellOrder.maker }
@@ -693,8 +693,8 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
 async function getPosition(dydxMargin, id) {
   const [
     [
-      baseToken,
-      quoteToken,
+      owedToken,
+      heldToken,
       lender,
       owner
     ],
@@ -713,8 +713,8 @@ async function getPosition(dydxMargin, id) {
   ] = await dydxMargin.getPosition.call(id);
 
   return {
-    baseToken,
-    quoteToken,
+    owedToken,
+    heldToken,
     principal,
     interestRate,
     requiredDeposit,
@@ -733,10 +733,10 @@ async function doOpenPositionAndCall(
   _salt = DEFAULT_SALT,
   _requiredDeposit = new BigNumber(10)
 ) {
-  const [dydxMargin, vault, baseToken] = await Promise.all([
+  const [dydxMargin, vault, owedToken] = await Promise.all([
     Margin.deployed(),
     Vault.deployed(),
-    BaseToken.deployed()
+    OwedToken.deployed()
   ]);
 
   const OpenTx = await doOpenPosition(accounts, _salt);
@@ -747,25 +747,25 @@ async function doOpenPositionAndCall(
     { from: OpenTx.loanOffering.payer }
   );
 
-  return { dydxMargin, vault, baseToken, OpenTx, callTx };
+  return { dydxMargin, vault, owedToken, OpenTx, callTx };
 }
 
 async function issueForDirectClose(OpenTx) {
-  const baseToken = await BaseToken.deployed();
+  const owedToken = await OwedToken.deployed();
 
-  // Issue to the trader the maximum amount of base token they could have to pay
+  // Issue to the trader the maximum amount of owedToken they could have to pay
 
   const maxInterestFee = await getMaxInterestFee(OpenTx);
-  const maxBaseTokenOwed = OpenTx.principal.plus(maxInterestFee);
+  const maxOwedTokenOwed = OpenTx.principal.plus(maxInterestFee);
 
   await Promise.all([
-    baseToken.issueTo(
+    owedToken.issueTo(
       OpenTx.trader,
-      maxBaseTokenOwed
+      maxOwedTokenOwed
     ),
-    baseToken.approve(
+    owedToken.approve(
       ProxyContract.address,
-      maxBaseTokenOwed,
+      maxOwedTokenOwed,
       { from: OpenTx.trader }
     )
   ]);

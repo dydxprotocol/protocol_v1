@@ -26,7 +26,7 @@ library LiquidatePositionImpl {
         address indexed payoutRecipient,
         uint256 liquidatedAmount,
         uint256 remainingAmount,
-        uint256 quoteTokenPayout
+        uint256 heldTokenPayout
     );
 
     // ============ Public Implementation Functions ============
@@ -50,11 +50,11 @@ library LiquidatePositionImpl {
             true
         );
 
-        uint256 quoteTokenPayout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
+        uint256 heldTokenPayout = ClosePositionShared.sendHeldTokensToPayoutRecipient(
             state,
             transaction,
             0, // No buyback cost
-            0  // Did not receive any base token
+            0  // Did not receive any owedToken
         );
 
         ClosePositionShared.closePositionStateUpdate(state, transaction);
@@ -63,7 +63,7 @@ library LiquidatePositionImpl {
 
         return (
             transaction.closeAmount,
-            quoteTokenPayout
+            heldTokenPayout
         );
     }
 
@@ -80,7 +80,7 @@ library LiquidatePositionImpl {
             transaction.payoutRecipient,
             transaction.closeAmount,
             transaction.originalPrincipal.sub(transaction.closeAmount),
-            transaction.availableQuoteToken
+            transaction.availableHeldToken
         );
     }
 

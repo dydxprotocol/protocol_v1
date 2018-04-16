@@ -1,8 +1,8 @@
 /*global artifacts, web3*/
 
 const BigNumber = require('bignumber.js');
-const QuoteToken = artifacts.require("TokenA");
-const BaseToken = artifacts.require("TokenB");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroEx = require('0x.js').ZeroEx;
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
@@ -15,8 +15,8 @@ const web3Instance = new Web3(web3.currentProvider);
 
 async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
   let loanOffering = {
-    baseToken: BaseToken.address,
-    quoteToken: QuoteToken.address,
+    owedToken: OwedToken.address,
+    heldToken: HeldToken.address,
     payer: accounts[1],
     signer: accounts[1],
     owner: accounts[1],
@@ -27,7 +27,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     rates: {
       maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minQuoteToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
+      minHeldToken:      BIGNUMBERS.BASE_AMOUNT.times(1.01),
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
       interestRate:       new BigNumber('365e4'), // 3.65% nominal per year
@@ -48,7 +48,7 @@ async function signLoanOffering(loanOffering) {
   const valuesHash = web3Instance.utils.soliditySha3(
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
-    loanOffering.rates.minQuoteToken,
+    loanOffering.rates.minHeldToken,
     loanOffering.rates.lenderFee,
     loanOffering.rates.takerFee,
     loanOffering.expirationTimestamp,
@@ -60,8 +60,8 @@ async function signLoanOffering(loanOffering) {
   );
   const hash = web3Instance.utils.soliditySha3(
     Margin.address,
-    loanOffering.baseToken,
-    loanOffering.quoteToken,
+    loanOffering.owedToken,
+    loanOffering.heldToken,
     loanOffering.payer,
     loanOffering.signer,
     loanOffering.owner,

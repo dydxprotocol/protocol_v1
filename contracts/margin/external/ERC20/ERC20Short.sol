@@ -12,7 +12,7 @@ import { Margin } from "../../Margin.sol";
  *
  * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
- * entitled to some amount of quote tokens after settlement.
+ * entitled to some amount of heldTokens after settlement.
  */
 contract ERC20Short is ERC20Position {
     function ERC20Short(
@@ -40,7 +40,7 @@ contract ERC20Short is ERC20Position {
     {
         return
             DetailedERC20(
-                Margin(MARGIN).getPositionBaseToken(POSITION_ID)
+                Margin(MARGIN).getPositionOwedToken(POSITION_ID)
             ).decimals();
     }
 

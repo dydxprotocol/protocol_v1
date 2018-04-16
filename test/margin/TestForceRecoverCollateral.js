@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const { wait } = require('@digix/tempo')(web3);
-const QuoteToken = artifacts.require("TokenA");
+const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 const TestForceRecoverCollateralDelegator =
   artifacts.require("TestForceRecoverCollateralDelegator");
@@ -19,10 +19,10 @@ const { expectLog } = require('../helpers/EventHelper');
 describe('#forceRecoverCollateral', () => {
   contract('Margin', function(accounts) {
     it('allows funds to be recovered by the lender', async () => {
-      const { dydxMargin, vault, baseToken, OpenTx } = await doOpenPositionAndCall(accounts);
+      const { dydxMargin, vault, owedToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
-      const quoteTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
       const tx = await dydxMargin.forceRecoverCollateral(
         OpenTx.id,
@@ -31,37 +31,37 @@ describe('#forceRecoverCollateral', () => {
 
       console.log('\tMargin.forceRecoverCollateral gas used: ' + tx.receipt.gasUsed);
 
-      const quoteToken = await QuoteToken.deployed();
+      const heldToken = await HeldToken.deployed();
 
       const [
-        vaultBaseTokenBalance,
-        baseTokenBalanceOfVault,
-        vaultQuoteTokenBalance,
-        quoteTokenBalanceOfVault,
+        vaultOwedTokenBalance,
+        owedTokenBalanceOfVault,
+        vaultHeldTokenBalance,
+        heldTokenBalanceOfVault,
         positionExists,
         isPositionClosed,
-        lenderQuoteTokenBalance
+        lenderHeldTokenBalance
       ] = await Promise.all([
-        vault.totalBalances.call(baseToken.address),
-        baseToken.balanceOf.call(vault.address),
-        vault.totalBalances.call(quoteToken.address),
-        quoteToken.balanceOf.call(vault.address),
+        vault.totalBalances.call(owedToken.address),
+        owedToken.balanceOf.call(vault.address),
+        vault.totalBalances.call(heldToken.address),
+        heldToken.balanceOf.call(vault.address),
         dydxMargin.containsPosition.call(OpenTx.id),
         dydxMargin.isPositionClosed.call(OpenTx.id),
-        quoteToken.balanceOf.call(OpenTx.loanOffering.payer)
+        heldToken.balanceOf.call(OpenTx.loanOffering.payer)
       ]);
 
-      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
-      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(vaultQuoteTokenBalance).to.be.bignumber.equal(0);
-      expect(quoteTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultOwedTokenBalance).to.be.bignumber.equal(0);
+      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultHeldTokenBalance).to.be.bignumber.equal(0);
+      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
-      expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
+      expect(lenderHeldTokenBalance).to.be.bignumber.equal(heldTokenBalance);
 
       expectLog(tx.logs[0], 'CollateralForceRecovered', {
         positionId: OpenTx.id,
-        amount: quoteTokenBalance
+        amount: heldTokenBalance
       });
     });
   });
@@ -80,10 +80,10 @@ describe('#forceRecoverCollateral', () => {
 
   contract('Margin', function(accounts) {
     it('ForceRecoverCollateralDelegator loan owner only allows certain accounts', async () => {
-      const { dydxMargin, vault, baseToken, OpenTx } = await doOpenPositionAndCall(accounts);
+      const { dydxMargin, vault, owedToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
-      const quoteTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
 
       const recoverer = accounts[9];
       const testForceRecoverCollateralDelegator = await TestForceRecoverCollateralDelegator.new(
@@ -105,33 +105,33 @@ describe('#forceRecoverCollateral', () => {
         { from: recoverer }
       );
 
-      const quoteToken = await QuoteToken.deployed();
+      const heldToken = await HeldToken.deployed();
 
       const [
-        vaultBaseTokenBalance,
-        baseTokenBalanceOfVault,
-        vaultQuoteTokenBalance,
-        quoteTokenBalanceOfVault,
+        vaultOwedTokenBalance,
+        owedTokenBalanceOfVault,
+        vaultHeldTokenBalance,
+        heldTokenBalanceOfVault,
         positionExists,
         isPositionClosed,
-        lenderQuoteTokenBalance
+        lenderHeldTokenBalance
       ] = await Promise.all([
-        vault.totalBalances.call(baseToken.address),
-        baseToken.balanceOf.call(vault.address),
-        vault.totalBalances.call(quoteToken.address),
-        quoteToken.balanceOf.call(vault.address),
+        vault.totalBalances.call(owedToken.address),
+        owedToken.balanceOf.call(vault.address),
+        vault.totalBalances.call(heldToken.address),
+        heldToken.balanceOf.call(vault.address),
         dydxMargin.containsPosition.call(OpenTx.id),
         dydxMargin.isPositionClosed.call(OpenTx.id),
-        quoteToken.balanceOf.call(testForceRecoverCollateralDelegator.address)
+        heldToken.balanceOf.call(testForceRecoverCollateralDelegator.address)
       ]);
 
-      expect(vaultBaseTokenBalance).to.be.bignumber.equal(0);
-      expect(baseTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(vaultQuoteTokenBalance).to.be.bignumber.equal(0);
-      expect(quoteTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultOwedTokenBalance).to.be.bignumber.equal(0);
+      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultHeldTokenBalance).to.be.bignumber.equal(0);
+      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(0);
       expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
-      expect(lenderQuoteTokenBalance).to.be.bignumber.equal(quoteTokenBalance);
+      expect(lenderHeldTokenBalance).to.be.bignumber.equal(heldTokenBalance);
     });
   });
 

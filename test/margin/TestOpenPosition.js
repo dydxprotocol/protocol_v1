@@ -6,8 +6,8 @@ chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 
 const Margin = artifacts.require("Margin");
-const QuoteToken = artifacts.require("TokenA");
-const BaseToken = artifacts.require("TokenB");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
@@ -48,7 +48,7 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('succeeds when deposit is paid in base token', async () => {
+    it('succeeds when deposit is paid in owedToken', async () => {
       const OpenTx = await createOpenTx(accounts, 4, false);
       const dydxMargin = await Margin.deployed();
 
@@ -58,7 +58,7 @@ describe('#openPosition', () => {
       const tx = await callOpenPosition(dydxMargin, OpenTx);
 
       console.log(
-        '\tShortSell.short (Base token deposit / 0x Exchange Contract) gas used: '
+        '\tShortSell.short (owedToken deposit / 0x Exchange Contract) gas used: '
         + tx.receipt.gasUsed
       );
 
@@ -72,12 +72,12 @@ describe('#openPosition', () => {
       const [
         dydxMargin,
         feeToken,
-        baseToken,
+        owedToken,
         testSmartContractLender
       ] = await Promise.all([
         Margin.deployed(),
         FeeToken.deployed(),
-        BaseToken.deployed(),
+        OwedToken.deployed(),
         TestSmartContractLender.new(true)
       ]);
 
@@ -85,10 +85,10 @@ describe('#openPosition', () => {
 
       const [
         lenderFeeTokenBalance,
-        lenderBaseTokenBalance
+        lenderOwedTokenBalance
       ] = await Promise.all([
         feeToken.balanceOf.call(OpenTx.loanOffering.payer),
-        baseToken.balanceOf.call(OpenTx.loanOffering.payer)
+        owedToken.balanceOf.call(OpenTx.loanOffering.payer)
       ]);
       await Promise.all([
         feeToken.transfer(
@@ -96,9 +96,9 @@ describe('#openPosition', () => {
           lenderFeeTokenBalance,
           { from: OpenTx.loanOffering.payer }
         ),
-        baseToken.transfer(
+        owedToken.transfer(
           testSmartContractLender.address,
-          lenderBaseTokenBalance,
+          lenderOwedTokenBalance,
           { from: OpenTx.loanOffering.payer }
         )
       ]);
@@ -109,9 +109,9 @@ describe('#openPosition', () => {
           lenderFeeTokenBalance
         ),
         testSmartContractLender.allow(
-          baseToken.address,
+          owedToken.address,
           ProxyContract.address,
-          lenderBaseTokenBalance
+          lenderOwedTokenBalance
         )
       ]);
       const testCallLoanDelegator = await TestCallLoanDelegator.new(
@@ -244,8 +244,8 @@ async function checkSuccess(dydxMargin, OpenTx) {
   expect(contains).to.equal(true);
   const position = await getPosition(dydxMargin, positionId);
 
-  expect(position.baseToken).to.equal(OpenTx.baseToken);
-  expect(position.quoteToken).to.equal(OpenTx.quoteToken);
+  expect(position.owedToken).to.equal(OpenTx.owedToken);
+  expect(position.heldToken).to.equal(OpenTx.heldToken);
   expect(position.principal).to.be.bignumber.equal(OpenTx.principal);
   expect(position.interestRate).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.interestRate);
@@ -282,63 +282,63 @@ async function checkSuccess(dydxMargin, OpenTx) {
   const balance = await dydxMargin.getPositionBalance.call(positionId);
 
   let soldAmount = OpenTx.principal;
-  if (!OpenTx.depositInQuoteToken) {
+  if (!OpenTx.depositInHeldToken) {
     soldAmount = soldAmount.plus(OpenTx.depositAmount)
   }
-  const expectedQuoteTokenFromSell = soldAmount
+  const expectedHeldTokenFromSell = soldAmount
     .div(OpenTx.buyOrder.takerTokenAmount)
     .times(OpenTx.buyOrder.makerTokenAmount);
 
-  const expectedQuoteTokenBalance = OpenTx.depositInQuoteToken ?
-    expectedQuoteTokenFromSell.plus(OpenTx.depositAmount)
-    : expectedQuoteTokenFromSell;
+  const expectedHeldTokenBalance = OpenTx.depositInHeldToken ?
+    expectedHeldTokenFromSell.plus(OpenTx.depositAmount)
+    : expectedHeldTokenFromSell;
 
-  expect(balance).to.be.bignumber.equal(expectedQuoteTokenBalance);
+  expect(balance).to.be.bignumber.equal(expectedHeldTokenBalance);
 
   const [
-    baseToken,
-    quoteToken,
+    owedToken,
+    heldToken,
     feeToken
   ] = await Promise.all([
-    BaseToken.deployed(),
-    QuoteToken.deployed(),
+    OwedToken.deployed(),
+    HeldToken.deployed(),
     FeeToken.deployed()
   ]);
 
   const [
-    lenderBaseToken,
-    makerBaseToken,
-    exchangeWrapperBaseToken,
-    traderQuoteToken,
-    makerQuoteToken,
-    vaultQuoteToken,
+    lenderOwedToken,
+    makerOwedToken,
+    exchangeWrapperOwedToken,
+    traderHeldToken,
+    makerHeldToken,
+    vaultHeldToken,
     lenderFeeToken,
     makerFeeToken,
     exchangeWrapperFeeToken,
     traderFeeToken
   ] = await Promise.all([
-    baseToken.balanceOf.call(OpenTx.loanOffering.payer),
-    baseToken.balanceOf.call(OpenTx.buyOrder.maker),
-    baseToken.balanceOf.call(ExchangeWrapper.address),
-    quoteToken.balanceOf.call(OpenTx.trader),
-    quoteToken.balanceOf.call(OpenTx.buyOrder.maker),
-    quoteToken.balanceOf.call(Vault.address),
+    owedToken.balanceOf.call(OpenTx.loanOffering.payer),
+    owedToken.balanceOf.call(OpenTx.buyOrder.maker),
+    owedToken.balanceOf.call(ExchangeWrapper.address),
+    heldToken.balanceOf.call(OpenTx.trader),
+    heldToken.balanceOf.call(OpenTx.buyOrder.maker),
+    heldToken.balanceOf.call(Vault.address),
     feeToken.balanceOf.call(OpenTx.loanOffering.payer),
     feeToken.balanceOf.call(OpenTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(OpenTx.trader),
   ]);
 
-  expect(lenderBaseToken).to.be.bignumber.equal(
+  expect(lenderOwedToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.maxAmount.minus(OpenTx.principal)
   );
-  expect(makerBaseToken).to.be.bignumber.equal(soldAmount);
-  expect(exchangeWrapperBaseToken).to.be.bignumber.equal(0);
-  expect(traderQuoteToken).to.be.bignumber.equal(0);
-  expect(makerQuoteToken).to.be.bignumber.equal(
-    OpenTx.buyOrder.makerTokenAmount.minus(expectedQuoteTokenFromSell)
+  expect(makerOwedToken).to.be.bignumber.equal(soldAmount);
+  expect(exchangeWrapperOwedToken).to.be.bignumber.equal(0);
+  expect(traderHeldToken).to.be.bignumber.equal(0);
+  expect(makerHeldToken).to.be.bignumber.equal(
+    OpenTx.buyOrder.makerTokenAmount.minus(expectedHeldTokenFromSell)
   );
-  expect(vaultQuoteToken).to.be.bignumber.equal(expectedQuoteTokenBalance);
+  expect(vaultHeldToken).to.be.bignumber.equal(expectedHeldTokenBalance);
   expect(lenderFeeToken).to.be.bignumber.equal(
     OpenTx.loanOffering.rates.lenderFee
       .minus(

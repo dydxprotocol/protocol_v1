@@ -6,8 +6,8 @@ chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 
 const Margin = artifacts.require("Margin");
-const QuoteToken = artifacts.require("TokenA");
-const BaseToken = artifacts.require("TokenB");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ProxyContract = artifacts.require("Proxy");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
@@ -59,14 +59,14 @@ describe('#increasePosition', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('succeeds when depositing in base token', async () => {
+    it('succeeds when depositing in owedToken', async () => {
       const {
         OpenTx,
         addValueTx,
         dydxMargin,
         startingBalance,
         startingBalances
-      } = await setup(accounts, { depositInQuoteToken: false });
+      } = await setup(accounts, { depositInHeldToken: false });
 
       const tx = await callIncreasePosition(dydxMargin, addValueTx);
 
@@ -206,29 +206,29 @@ describe('#increasePosition', () => {
     });
   });
 
-  async function getBalances(tx, baseToken, quoteToken, feeToken) {
+  async function getBalances(tx, owedToken, heldToken, feeToken) {
     const [
-      traderBaseToken,
-      lenderBaseToken,
-      makerBaseToken,
-      exchangeWrapperBaseToken,
-      traderQuoteToken,
-      makerQuoteToken,
-      vaultQuoteToken,
-      exchangeWrapperQuoteToken,
+      traderOwedToken,
+      lenderOwedToken,
+      makerOwedToken,
+      exchangeWrapperOwedToken,
+      traderHeldToken,
+      makerHeldToken,
+      vaultHeldToken,
+      exchangeWrapperHeldToken,
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
       traderFeeToken
     ] = await Promise.all([
-      baseToken.balanceOf.call(tx.trader),
-      baseToken.balanceOf.call(tx.loanOffering.payer),
-      baseToken.balanceOf.call(tx.buyOrder.maker),
-      baseToken.balanceOf.call(ExchangeWrapper.address),
-      quoteToken.balanceOf.call(tx.trader),
-      quoteToken.balanceOf.call(tx.buyOrder.maker),
-      quoteToken.balanceOf.call(Vault.address),
-      quoteToken.balanceOf.call(ExchangeWrapper.address),
+      owedToken.balanceOf.call(tx.trader),
+      owedToken.balanceOf.call(tx.loanOffering.payer),
+      owedToken.balanceOf.call(tx.buyOrder.maker),
+      owedToken.balanceOf.call(ExchangeWrapper.address),
+      heldToken.balanceOf.call(tx.trader),
+      heldToken.balanceOf.call(tx.buyOrder.maker),
+      heldToken.balanceOf.call(Vault.address),
+      heldToken.balanceOf.call(ExchangeWrapper.address),
       feeToken.balanceOf.call(tx.loanOffering.payer),
       feeToken.balanceOf.call(tx.buyOrder.maker),
       feeToken.balanceOf.call(ExchangeWrapper.address),
@@ -236,14 +236,14 @@ describe('#increasePosition', () => {
     ]);
 
     return {
-      traderBaseToken,
-      lenderBaseToken,
-      makerBaseToken,
-      exchangeWrapperBaseToken,
-      traderQuoteToken,
-      makerQuoteToken,
-      vaultQuoteToken,
-      exchangeWrapperQuoteToken,
+      traderOwedToken,
+      lenderOwedToken,
+      makerOwedToken,
+      exchangeWrapperOwedToken,
+      traderHeldToken,
+      makerHeldToken,
+      vaultHeldToken,
+      exchangeWrapperHeldToken,
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
@@ -251,15 +251,15 @@ describe('#increasePosition', () => {
     }
   }
 
-  async function setup(accounts, { loanOwner, positionOwner, depositInQuoteToken } = {}) {
-    if (depositInQuoteToken === undefined) {
-      depositInQuoteToken = true;
+  async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } = {}) {
+    if (depositInHeldToken === undefined) {
+      depositInHeldToken = true;
     }
 
-    const [dydxMargin, baseToken, quoteToken, feeToken] = await Promise.all([
+    const [dydxMargin, owedToken, heldToken, feeToken] = await Promise.all([
       Margin.deployed(),
-      BaseToken.deployed(),
-      QuoteToken.deployed(),
+      OwedToken.deployed(),
+      HeldToken.deployed(),
       FeeToken.deployed()
     ]);
     const [
@@ -267,7 +267,7 @@ describe('#increasePosition', () => {
       addValueTx
     ] = await Promise.all([
       createOpenTx(accounts),
-      createOpenTx(accounts, salt++, depositInQuoteToken)
+      createOpenTx(accounts, salt++, depositInHeldToken)
     ]);
 
     if (loanOwner) {
@@ -287,10 +287,10 @@ describe('#increasePosition', () => {
 
     let issueDepositPromise;
 
-    if (depositInQuoteToken) {
+    if (depositInHeldToken) {
       issueDepositPromise = Promise.all([
-        quoteToken.issueTo(OpenTx.trader, addValueTx.depositAmount),
-        quoteToken.approve(
+        heldToken.issueTo(OpenTx.trader, addValueTx.depositAmount),
+        heldToken.approve(
           ProxyContract.address,
           addValueTx.depositAmount,
           { from: OpenTx.trader }
@@ -298,11 +298,11 @@ describe('#increasePosition', () => {
       ]);
     } else {
       issueDepositPromise = Promise.all([
-        baseToken.issueTo(
+        owedToken.issueTo(
           addValueTx.trader,
           addValueTx.depositAmount
         ),
-        baseToken.approve(
+        owedToken.approve(
           ProxyContract.address,
           addValueTx.depositAmount,
           { from: addValueTx.trader }
@@ -320,7 +320,7 @@ describe('#increasePosition', () => {
       startingBalances,
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(OpenTx.id),
-      getBalances(OpenTx, baseToken, quoteToken, feeToken),
+      getBalances(OpenTx, owedToken, heldToken, feeToken),
     ]);
 
     addValueTx.principal = addValueTx.principal.div(4);
@@ -333,8 +333,8 @@ describe('#increasePosition', () => {
       OpenTx,
       addValueTx,
       dydxMargin,
-      baseToken,
-      quoteToken,
+      owedToken,
+      heldToken,
       feeToken,
       startingBalance,
       startingBalances
@@ -351,13 +351,13 @@ describe('#increasePosition', () => {
   }) {
     const [
       position,
-      baseToken,
-      quoteToken,
+      owedToken,
+      heldToken,
       feeToken
     ]= await Promise.all([
       getPosition(dydxMargin, OpenTx.id),
-      BaseToken.deployed(),
-      QuoteToken.deployed(),
+      OwedToken.deployed(),
+      HeldToken.deployed(),
       FeeToken.deployed(),
     ]);
 
@@ -367,8 +367,8 @@ describe('#increasePosition', () => {
 
     expect(position.owner).to.eq(OpenTx.owner);
     expect(position.lender).to.eq(OpenTx.loanOffering.owner);
-    expect(position.baseToken).to.eq(OpenTx.baseToken);
-    expect(position.quoteToken).to.eq(OpenTx.quoteToken);
+    expect(position.owedToken).to.eq(OpenTx.owedToken);
+    expect(position.heldToken).to.eq(OpenTx.heldToken);
     expect(position.interestRate).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestRate);
     expect(position.callTimeLimit).to.be.bignumber.eq(OpenTx.loanOffering.callTimeLimit);
     expect(position.interestPeriod).to.be.bignumber.eq(OpenTx.loanOffering.rates.interestPeriod);
@@ -376,80 +376,80 @@ describe('#increasePosition', () => {
 
     const [
       finalBalance,
-      lentAmount,
+      owedAmount,
       finalBalances
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(OpenTx.id),
       getOwedAmount(OpenTx, tx, addValueTx.principal, false),
-      getBalances(addValueTx, baseToken, quoteToken, feeToken)
+      getBalances(addValueTx, owedToken, heldToken, feeToken)
     ]);
 
-    const startingQuoteTokenPerUnit = startingBalance.div(OpenTx.principal);
-    const finalQuoteTokenPerUnit = finalBalance
+    const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
+    const finalHeldTokenPerUnit = finalBalance
       .div(OpenTx.principal.plus(addValueTx.principal));
 
-    const totalQuoteTokenAdded = getPartialAmount(
+    const totalHeldTokenAdded = getPartialAmount(
       addValueTx.principal,
       OpenTx.principal,
       startingBalance,
       true // round up
     );
 
-    const soldAmount = addValueTx.depositInQuoteToken ?
-      lentAmount
+    const soldAmount = addValueTx.depositInHeldToken ?
+      owedAmount
       : getPartialAmount(
         addValueTx.buyOrder.takerTokenAmount,
         addValueTx.buyOrder.makerTokenAmount,
-        totalQuoteTokenAdded,
+        totalHeldTokenAdded,
         true
       );
-    const quoteTokenFromSell = getPartialAmount(
+    const heldTokenFromSell = getPartialAmount(
       addValueTx.buyOrder.makerTokenAmount,
       addValueTx.buyOrder.takerTokenAmount,
       soldAmount
     );
 
-    const quoteTokenDeposit = addValueTx.depositInQuoteToken ?
-      totalQuoteTokenAdded.minus(quoteTokenFromSell) : 0;
-    const baseTokenDeposit = addValueTx.depositInQuoteToken ?
-      0 : soldAmount.minus(lentAmount);
+    const heldTokenDeposit = addValueTx.depositInHeldToken ?
+      totalHeldTokenAdded.minus(heldTokenFromSell) : 0;
+    const owedTokenDeposit = addValueTx.depositInHeldToken ?
+      0 : soldAmount.minus(owedAmount);
 
-    const leftoverBaseToken = addValueTx.depositInQuoteToken ?
-      0 : quoteTokenFromSell.minus(totalQuoteTokenAdded);
+    const leftoverOwedToken = addValueTx.depositInHeldToken ?
+      0 : heldTokenFromSell.minus(totalHeldTokenAdded);
 
-    // Quote Token Per Unit
-    expect(startingQuoteTokenPerUnit).to.be.bignumber.eq(finalQuoteTokenPerUnit);
+    // heldToken Per Unit
+    expect(startingHeldTokenPerUnit).to.be.bignumber.eq(finalHeldTokenPerUnit);
 
-    // Lender Base Token
-    expect(finalBalances.lenderBaseToken).to.be.bignumber.eq(
-      startingBalances.lenderBaseToken.minus(lentAmount)
+    // Lender owedToken
+    expect(finalBalances.lenderOwedToken).to.be.bignumber.eq(
+      startingBalances.lenderOwedToken.minus(owedAmount)
     );
 
-    // Maker Base Token
-    expect(finalBalances.makerBaseToken).to.be.bignumber.eq(
-      startingBalances.makerBaseToken.plus(soldAmount)
+    // Maker owedToken
+    expect(finalBalances.makerOwedToken).to.be.bignumber.eq(
+      startingBalances.makerOwedToken.plus(soldAmount)
     );
 
-    // Maker Quote Token
-    expect(finalBalances.makerQuoteToken).to.be.bignumber.eq(
-      startingBalances.makerQuoteToken.minus(quoteTokenFromSell)
+    // Maker heldToken
+    expect(finalBalances.makerHeldToken).to.be.bignumber.eq(
+      startingBalances.makerHeldToken.minus(heldTokenFromSell)
     );
 
-    // Trader Quote Token
-    expect(finalBalances.traderQuoteToken).to.be.bignumber.eq(
-      startingBalances.traderQuoteToken.minus(quoteTokenDeposit)
+    // Trader heldToken
+    expect(finalBalances.traderHeldToken).to.be.bignumber.eq(
+      startingBalances.traderHeldToken.minus(heldTokenDeposit)
     );
 
-    // Trader Base Token
-    expect(finalBalances.traderBaseToken).to.be.bignumber.eq(
-      startingBalances.traderBaseToken.minus(baseTokenDeposit)
+    // Trader owedToken
+    expect(finalBalances.traderOwedToken).to.be.bignumber.eq(
+      startingBalances.traderOwedToken.minus(owedTokenDeposit)
     );
 
-    // Exchange Wrapper Base Token
-    expect(finalBalances.exchangeWrapperBaseToken).to.be.bignumber.eq(0);
+    // Exchange Wrapper owedToken
+    expect(finalBalances.exchangeWrapperOwedToken).to.be.bignumber.eq(0);
 
-    // Exchange Wrapper Quote Token
-    expect(finalBalances.exchangeWrapperQuoteToken).to.be.bignumber.eq(leftoverBaseToken);
+    // Exchange Wrapper heldToken
+    expect(finalBalances.exchangeWrapperHeldToken).to.be.bignumber.eq(leftoverOwedToken);
   }
 });
 
@@ -459,13 +459,13 @@ describe('#increasePositionDirectly', () => {
       const [
         OpenTx,
         dydxMargin,
-        quoteToken,
+        heldToken,
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
         createOpenTx(accounts),
         Margin.deployed(),
-        QuoteToken.deployed(),
+        HeldToken.deployed(),
         TestPositionOwner.new(Margin.address, "1", true),
         TestLoanOwner.new(Margin.address, "1", true),
       ]);
@@ -489,20 +489,20 @@ describe('#increasePositionDirectly', () => {
 
       const addAmount = OpenTx.principal.div(2);
       const adder = accounts[8];
-      const quoteTokenAmount = getPartialAmount(
+      const heldTokenAmount = getPartialAmount(
         addAmount,
         OpenTx.principal,
         startingBalance,
         true
       );
 
-      await quoteToken.issueTo(
+      await heldToken.issueTo(
         adder,
-        quoteTokenAmount
+        heldTokenAmount
       );
-      await quoteToken.approve(
+      await heldToken.approve(
         ProxyContract.address,
-        quoteTokenAmount,
+        heldTokenAmount,
         { from: adder }
       );
 
@@ -521,22 +521,22 @@ describe('#increasePositionDirectly', () => {
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const startingQuoteTokenPerUnit = startingBalance.div(OpenTx.principal);
-      const finalQuoteTokenPerUnit = finalBalance.div(OpenTx.principal.plus(addAmount));
+      const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
+      const finalHeldTokenPerUnit = finalBalance.div(OpenTx.principal.plus(addAmount));
 
-      expect(finalQuoteTokenPerUnit).to.be.bignumber.eq(startingQuoteTokenPerUnit);
+      expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenPerUnit);
 
       const [
-        adderQuoteToken,
+        adderHeldToken,
         afterIncreasePosition,
         adderLoanValueAdded
       ] = await Promise.all([
-        quoteToken.balanceOf.call(adder),
+        heldToken.balanceOf.call(adder),
         testPositionOwner.valueAdded.call(OpenTx.id, adder),
         testLoanOwner.valueAdded.call(OpenTx.id, adder),
       ]);
 
-      expect(adderQuoteToken).to.be.bignumber.eq(0);
+      expect(adderHeldToken).to.be.bignumber.eq(0);
       expect(afterIncreasePosition).to.be.bignumber.eq(addAmount);
       expect(adderLoanValueAdded).to.be.bignumber.eq(addAmount);
     });

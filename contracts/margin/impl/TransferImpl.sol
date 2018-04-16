@@ -28,7 +28,7 @@ library TransferImpl {
         require(msg.sender == originalLender);
         require(newLender != originalLender);
 
-        // Doesn't change the state of positionId; figures out the address of the final owner of loan.
+        // Doesn't change the state of positionId; figures out the final owner of loan.
         // That is, newLender may pass ownership to a different address.
         address finalLender = TransferInternal.grantLoanOwnership(
             positionId,
@@ -53,7 +53,7 @@ library TransferImpl {
         require(msg.sender == originalOwner);
         require(newOwner != originalOwner);
 
-        // Doesn't change the state of positionId; figures out the address of the final owner of position.
+        // Doesn't change the state of positionId; figures out the final owner of position.
         // That is, newOwner may pass ownership to a different address.
         address finalOwner = TransferInternal.grantPositionOwnership(
             positionId,

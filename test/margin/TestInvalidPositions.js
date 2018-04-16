@@ -92,12 +92,12 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails on too low quote token amount', async () => {
+      it('fails on too low heldToken amount', async () => {
         const OpenTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(OpenTx);
 
-        OpenTx.loanOffering.rates.minQuoteToken = BIGNUMBERS.BASE_AMOUNT.times(100);
+        OpenTx.loanOffering.rates.minHeldToken = BIGNUMBERS.BASE_AMOUNT.times(100);
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();

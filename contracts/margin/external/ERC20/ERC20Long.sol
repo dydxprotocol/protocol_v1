@@ -12,7 +12,7 @@ import { Margin } from "../../Margin.sol";
  *
  * Contract used to tokenize leveraged long positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the position, or be
- * entitled to some amount of quote tokens after settlement.
+ * entitled to some amount of heldTokens after settlement.
  */
 contract ERC20Long is ERC20Position {
     function ERC20Long(
@@ -39,7 +39,7 @@ contract ERC20Long is ERC20Position {
         returns (uint8)
     {
         return
-            DetailedERC20(quoteToken).decimals();
+            DetailedERC20(heldToken).decimals();
     }
 
     // ============ Internal Functions ============

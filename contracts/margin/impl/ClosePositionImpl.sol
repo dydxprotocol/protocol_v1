@@ -29,10 +29,10 @@ library ClosePositionImpl {
         address indexed payoutRecipient,
         uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 baseTokenPaidToLender,
+        uint256 owedTokenPaidToLender,
         uint256 payoutAmount,
         uint256 buybackCost,
-        bool payoutInQuoteToken
+        bool payoutInHeldToken
     );
 
     // ============ Public Implementation Functions ============
@@ -43,7 +43,7 @@ library ClosePositionImpl {
         uint256 requestedCloseAmount,
         address payoutRecipient,
         address exchangeWrapper,
-        bool payoutInQuoteToken,
+        bool payoutInHeldToken,
         bytes memory orderData
     )
         public
@@ -55,24 +55,24 @@ library ClosePositionImpl {
             requestedCloseAmount,
             payoutRecipient,
             exchangeWrapper,
-            payoutInQuoteToken,
+            payoutInHeldToken,
             false
         );
 
         uint256 buybackCost;
-        uint256 receivedBaseToken;
+        uint256 receivedOwedToken;
 
-        (buybackCost, receivedBaseToken) = returnBaseTokensToLender(
+        (buybackCost, receivedOwedToken) = returnOwedTokensToLender(
             state,
             transaction,
             orderData
         );
 
-        uint256 payout = ClosePositionShared.sendQuoteTokensToPayoutRecipient(
+        uint256 payout = ClosePositionShared.sendHeldTokensToPayoutRecipient(
             state,
             transaction,
             buybackCost,
-            receivedBaseToken
+            receivedOwedToken
         );
 
         ClosePositionShared.closePositionStateUpdate(state, transaction);
@@ -86,13 +86,13 @@ library ClosePositionImpl {
         return (
             transaction.closeAmount,
             payout,
-            transaction.baseTokenOwed
+            transaction.owedTokenOwed
         );
     }
 
     // ============ Helper Functions ============
 
-    function returnBaseTokensToLender(
+    function returnOwedTokensToLender(
         MarginState.State storage state,
         ClosePositionShared.CloseTx memory transaction,
         bytes memory orderData
@@ -101,30 +101,30 @@ library ClosePositionImpl {
         returns (uint256, uint256)
     {
         uint256 buybackCost = 0;
-        uint256 receivedBaseToken = 0;
+        uint256 receivedOwedToken = 0;
 
         if (transaction.exchangeWrapper == address(0)) {
-            require(transaction.payoutInQuoteToken);
+            require(transaction.payoutInHeldToken);
 
-            // No buy order; send base tokens directly from the closer to the lender
+            // No buy order; send owedTokens directly from the closer to the lender
             Proxy(state.PROXY).transferTokens(
-                transaction.baseToken,
+                transaction.owedToken,
                 msg.sender,
                 transaction.positionLender,
-                transaction.baseTokenOwed
+                transaction.owedTokenOwed
             );
         } else {
-            // Buy back base tokens using buy order and send to lender
-            (buybackCost, receivedBaseToken) = buyBackBaseToken(
+            // Buy back owedTokens using buy order and send to lender
+            (buybackCost, receivedOwedToken) = buyBackOwedToken(
                 state,
                 transaction,
                 orderData
             );
         }
-        return (buybackCost, receivedBaseToken);
+        return (buybackCost, receivedOwedToken);
     }
 
-    function buyBackBaseToken(
+    function buyBackOwedToken(
         MarginState.State storage state,
         ClosePositionShared.CloseTx transaction,
         bytes memory orderData
@@ -132,59 +132,59 @@ library ClosePositionImpl {
         internal
         returns (uint256, uint256)
     {
-        // Ask the exchange wrapper what the price in quote token to buy back the close
-        // amount of base token is
-        uint256 quoteTokenPrice;
+        // Ask the exchange wrapper what the price in heldToken to buy back the close
+        // amount of owedToken is
+        uint256 heldTokenPrice;
 
-        if (transaction.payoutInQuoteToken) {
-            quoteTokenPrice = ExchangeWrapper(transaction.exchangeWrapper)
+        if (transaction.payoutInHeldToken) {
+            heldTokenPrice = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
-                    transaction.baseToken,
-                    transaction.quoteToken,
-                    transaction.baseTokenOwed,
+                    transaction.owedToken,
+                    transaction.heldToken,
+                    transaction.owedTokenOwed,
                     orderData
                 );
 
-            // Require enough available quote token to pay for the buyback
-            require(quoteTokenPrice <= transaction.availableQuoteToken);
+            // Require enough available heldToken to pay for the buyback
+            require(heldTokenPrice <= transaction.availableHeldToken);
         } else {
-            quoteTokenPrice = transaction.availableQuoteToken;
+            heldTokenPrice = transaction.availableHeldToken;
         }
 
-        // Send the requisite quote token to do the buyback from vault to exchange wrapper
-        if (quoteTokenPrice > 0) {
+        // Send the requisite heldToken to do the buyback from vault to exchange wrapper
+        if (heldTokenPrice > 0) {
             Vault(state.VAULT).transferFromVault(
                 transaction.positionId,
-                transaction.quoteToken,
+                transaction.heldToken,
                 transaction.exchangeWrapper,
-                quoteTokenPrice
+                heldTokenPrice
             );
         }
 
-        // Trade the quote token for the base token
-        uint256 receivedBaseToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-            transaction.baseToken,
-            transaction.quoteToken,
+        // Trade the heldToken for the owedToken
+        uint256 receivedOwedToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+            transaction.owedToken,
+            transaction.heldToken,
             msg.sender,
-            quoteTokenPrice,
+            heldTokenPrice,
             orderData
         );
 
-        if (transaction.payoutInQuoteToken) {
-            assert(receivedBaseToken == transaction.baseTokenOwed);
+        if (transaction.payoutInHeldToken) {
+            assert(receivedOwedToken == transaction.owedTokenOwed);
         } else {
-            require(receivedBaseToken >= transaction.baseTokenOwed);
+            require(receivedOwedToken >= transaction.owedTokenOwed);
         }
 
-        // Transfer base token from the exchange wrapper to the lender
+        // Transfer owedToken from the exchange wrapper to the lender
         Proxy(state.PROXY).transferTokens(
-            transaction.baseToken,
+            transaction.owedToken,
             transaction.exchangeWrapper,
             transaction.positionLender,
-            transaction.baseTokenOwed
+            transaction.owedTokenOwed
         );
 
-        return (quoteTokenPrice, receivedBaseToken);
+        return (heldTokenPrice, receivedOwedToken);
     }
 
     function logEventOnClose(
@@ -200,10 +200,10 @@ library ClosePositionImpl {
             transaction.payoutRecipient,
             transaction.closeAmount,
             transaction.originalPrincipal.sub(transaction.closeAmount),
-            transaction.baseTokenOwed,
+            transaction.owedTokenOwed,
             payout,
             buybackCost,
-            transaction.payoutInQuoteToken
+            transaction.payoutInHeldToken
         );
     }
 

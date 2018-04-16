@@ -46,13 +46,14 @@ library DepositCollateralImpl {
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
         require(depositAmount > 0);
         require(msg.sender == position.owner);
 
         Vault(state.VAULT).transferToVault(
             positionId,
-            position.quoteToken,
+            position.heldToken,
             msg.sender,
             depositAmount
         );

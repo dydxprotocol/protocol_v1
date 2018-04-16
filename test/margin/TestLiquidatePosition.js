@@ -32,31 +32,31 @@ describe('#liquidate', () => {
   }
 
   contract('Margin', function(accounts) {
-    it('allows a lender to liquidate quote tokens', async () => {
+    it('allows a lender to liquidate heldTokens', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configurePosition(initialHolder, accounts);
 
-      const quoteToken = await ERC20.at(OpenTx.quoteToken);
-      const lenderQuoteBefore = await quoteToken.balanceOf(lender);
-      expect(lenderQuoteBefore.toNumber()).to.equal(0);
+      const heldToken = await ERC20.at(OpenTx.heldToken);
+      const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+      expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
-      const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
-      // Liquidate quote tokens by burning tokens
+      // Liquidate heldTokens by burning tokens
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
       // It should burn the tokens
       const lenderAfter = await erc20Contract.balanceOf(lender);
       expect(lenderAfter.toNumber()).to.equal(0);
 
-      // It should liquidate the correct amount of the quote balance
-      const lenderQuoteAfter = await quoteToken.balanceOf(lender);
-      expect(lenderQuoteAfter.toNumber()).to.equal(quoteBalance.toNumber() * LIQUIDATE_PERCENT);
+      // It should liquidate the correct amount of the heldToken balance
+      const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
+      expect(lenderHeldTokenAfter).to.be.bignumber.equal(heldTokenBalance.times(LIQUIDATE_PERCENT));
     });
   });
 
   contract('Margin', function(accounts) {
-    it('allows liquidating quote tokens if the lender is a smart contract', async () => {
+    it('allows liquidating heldTokens if the lender is a smart contract', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configurePosition(initialHolder, accounts);
 
@@ -66,20 +66,20 @@ describe('#liquidate', () => {
       // Transfer the loan to the liquidate delegator
       await dydxMargin.transferLoan(OpenTx.id, liquidateDelegator.address, { from: lender });
 
-      const quoteToken = await ERC20.at(OpenTx.quoteToken);
-      const lenderQuoteBefore = await quoteToken.balanceOf(lender);
-      expect(lenderQuoteBefore.toNumber()).to.equal(0);
+      const heldToken = await ERC20.at(OpenTx.heldToken);
+      const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+      expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
-      const quoteBalance = await dydxMargin.getPositionBalance(OpenTx.id);
+      const heldTokenBalance = await dydxMargin.getPositionBalance(OpenTx.id);
 
-      // Liquidate quote tokens by burning tokens
+      // Liquidate heldTokens by burning tokens
       await callLiquidatePosition(dydxMargin, OpenTx, principal, lender);
 
       const lenderAfter = await erc20Contract.balanceOf(lender);
       expect(lenderAfter.toNumber()).to.equal(0);
 
-      const lenderQuoteAfter = await quoteToken.balanceOf(lender);
-      expect(lenderQuoteAfter.toNumber()).to.equal(quoteBalance.toNumber() * LIQUIDATE_PERCENT);
+      const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
+      expect(lenderHeldTokenAfter).to.be.bignumber.equal(heldTokenBalance.times(LIQUIDATE_PERCENT));
     });
   });
 });

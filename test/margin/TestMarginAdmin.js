@@ -3,7 +3,7 @@
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
-const QuoteToken = artifacts.require('TokenA');
+const HeldToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
@@ -132,14 +132,14 @@ describe('MarginAdmin', () => {
 
     contract('Margin', accounts => {
       it('Allows #deposit while OPERATIONAL', async () => {
-        const [dydxMargin, quoteToken] = await Promise.all([
+        const [dydxMargin, heldToken] = await Promise.all([
           Margin.deployed(),
-          QuoteToken.deployed()
+          HeldToken.deployed()
         ]);
         const OpenTx = await doOpenPosition(accounts);
         const amount = new BigNumber(1000);
-        await quoteToken.issue(amount, { from: OpenTx.trader });
-        await quoteToken.approve(ProxyContract.address, amount, { from: OpenTx.trader });
+        await heldToken.issue(amount, { from: OpenTx.trader });
+        await heldToken.approve(ProxyContract.address, amount, { from: OpenTx.trader });
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(dydxMargin.depositCollateral(

@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 
 const Margin = artifacts.require("Margin");
 const ERC20Short = artifacts.require("ERC20Short");
-const BaseToken = artifacts.require("TokenB");
+const OwedToken = artifacts.require("TokenB");
 const { ADDRESSES } = require('../../helpers/Constants');
 const {
   callClosePosition,
@@ -30,7 +30,7 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Short', function(accounts) {
-  let baseToken;
+  let owedToken;
 
   let POSITIONS = {
     FULL: {
@@ -60,10 +60,10 @@ contract('ERC20Short', function(accounts) {
   before('Set up Proxy, Margin accounts', async () => {
     [
       CONTRACTS.MARGIN,
-      baseToken
+      owedToken
     ] = await Promise.all([
       Margin.deployed(),
-      BaseToken.deployed()
+      OwedToken.deployed()
     ]);
   });
 
@@ -135,11 +135,11 @@ contract('ERC20Short', function(accounts) {
     const maxInterestFull = await getMaxInterestFee(POSITIONS.FULL.TX);
     const maxInterestPart = await getMaxInterestFee(POSITIONS.PART.TX);
     await issueTokenToAccountInAmountAndApproveProxy(
-      baseToken,
+      owedToken,
       act ? act : POSITIONS.FULL.TX.trader,
       POSITIONS.FULL.NUM_TOKENS.plus(maxInterestFull));
     await issueTokenToAccountInAmountAndApproveProxy(
-      baseToken,
+      owedToken,
       act ? act : POSITIONS.PART.TX.trader,
       POSITIONS.PART.NUM_TOKENS.plus(maxInterestPart));
   }
@@ -174,7 +174,7 @@ contract('ERC20Short', function(accounts) {
         expect(tsc.POSITION_ID).to.equal(position.ID);
         expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc.quoteToken).to.equal(ADDRESSES.ZERO);
+        expect(tsc.heldToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
         expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
         for (let i in position.TRUSTED_RECIPIENTS) {
@@ -214,11 +214,11 @@ contract('ERC20Short', function(accounts) {
         expect(tsc2.POSITION_ID).to.equal(POSITION.ID);
         expect(tsc2.state.equals(TOKENIZED_POSITION_STATE.OPEN)).to.be.true;
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc2.quoteToken).to.equal(position.quoteToken);
+        expect(tsc2.heldToken).to.equal(position.heldToken);
 
         // explicity make sure some things have changed
         expect(tsc2.state.equals(tsc1.state)).to.be.false;
-        expect(tsc2.quoteToken).to.not.equal(tsc1.quoteToken);
+        expect(tsc2.heldToken).to.not.equal(tsc1.heldToken);
 
         // explicity make sure some things have not changed
         expect(tsc2.POSITION_ID).to.equal(tsc1.POSITION_ID);
@@ -253,9 +253,9 @@ contract('ERC20Short', function(accounts) {
     });
 
     it('fails if not transferred', async () => {
-      // give base tokens to token holder
+      // give owedTokens to token holder
       issueTokenToAccountInAmountAndApproveProxy(
-        baseToken,
+        owedToken,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.NUM_TOKENS + POSITIONS.PART.NUM_TOKENS);
 
@@ -271,7 +271,7 @@ contract('ERC20Short', function(accounts) {
       }
     });
 
-    it('fails if user does not have the amount of baseToken required', async () => {
+    it('fails if user does not have the amount of owedToken required', async () => {
       await transferPositionsToTokens();
       await Promise.all([
         POSITIONS.FULL.TOKEN_CONTRACT.transfer(accounts[0], POSITIONS.FULL.NUM_TOKENS,
@@ -493,7 +493,7 @@ contract('ERC20Short', function(accounts) {
   });
 
   describe('#decimals', () => {
-    it('returns decimal value of baseToken', async () => {
+    it('returns decimal value of owedToken', async () => {
       await setUpPositions();
       await setUpTokens();
       await transferPositionsToTokens();
@@ -502,13 +502,13 @@ contract('ERC20Short', function(accounts) {
         const POSITION = POSITIONS[type];
         const [decimal, expectedDecimal] = await Promise.all([
           POSITION.TOKEN_CONTRACT.decimals.call(),
-          baseToken.decimals.call()
+          owedToken.decimals.call()
         ]);
         expect(decimal).to.be.bignumber.equal(expectedDecimal);
       }
     });
 
-    it('returns decimal value of baseToken, even if not initialized', async () => {
+    it('returns decimal value of owedToken, even if not initialized', async () => {
       await setUpPositions();
       const tokenContract = await ERC20Short.new(
         POSITIONS.FULL.ID,
@@ -517,7 +517,7 @@ contract('ERC20Short', function(accounts) {
         []);
       const [decimal, expectedDecimal] = await Promise.all([
         tokenContract.decimals.call(),
-        baseToken.decimals.call()
+        owedToken.decimals.call()
       ]);
       expect(decimal).to.be.bignumber.equal(expectedDecimal);
     });

@@ -29,16 +29,16 @@ library OpenPositionImpl {
         address indexed trander,
         address indexed lender,
         bytes32 loanHash,
-        address baseToken,
-        address quoteToken,
+        address owedToken,
+        address heldToken,
         address loanFeeRecipient,
         uint256 principal,
-        uint256 quoteTokenFromSell,
+        uint256 heldTokenFromSell,
         uint256 depositAmount,
         uint256 interestRate,
         uint32  callTimeLimit,
         uint32  maxDuration,
-        bool    depositInQuoteToken
+        bool    depositInHeldToken
     );
 
     // ============ Public Implementation Functions ============
@@ -50,7 +50,7 @@ library OpenPositionImpl {
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
-        bool depositInQuoteToken,
+        bool depositInHeldToken,
         bytes orderData
     )
         public
@@ -62,14 +62,14 @@ library OpenPositionImpl {
             values32,
             sigV,
             sigRS,
-            depositInQuoteToken
+            depositInHeldToken
         );
 
         bytes32 positionId = getNextpositionId(state, transaction.loanOffering.loanHash);
 
-        uint256 quoteTokenFromSell;
+        uint256 heldTokenFromSell;
 
-        (quoteTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        (heldTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
             positionId,
@@ -81,7 +81,7 @@ library OpenPositionImpl {
             positionId,
             msg.sender,
             transaction,
-            quoteTokenFromSell
+            heldTokenFromSell
         );
 
         updateState(
@@ -118,7 +118,7 @@ library OpenPositionImpl {
         bytes32 positionId,
         address trader,
         OpenPositionShared.OpenTx transaction,
-        uint256 quoteTokenReceived
+        uint256 heldTokenReceived
     )
         internal
     {
@@ -127,16 +127,16 @@ library OpenPositionImpl {
             trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
-            transaction.baseToken,
-            transaction.quoteToken,
+            transaction.owedToken,
+            transaction.heldToken,
             transaction.loanOffering.feeRecipient,
             transaction.principal,
-            quoteTokenReceived,
+            heldTokenReceived,
             transaction.depositAmount,
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
             transaction.loanOffering.maxDuration,
-            transaction.depositInQuoteToken
+            transaction.depositInHeldToken
         );
     }
 
@@ -155,8 +155,8 @@ library OpenPositionImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.positions[positionId].baseToken = transaction.baseToken;
-        state.positions[positionId].quoteToken = transaction.quoteToken;
+        state.positions[positionId].owedToken = transaction.owedToken;
+        state.positions[positionId].heldToken = transaction.heldToken;
         state.positions[positionId].principal = transaction.principal;
         state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.positions[positionId].startTimestamp = uint32(block.timestamp);
@@ -186,7 +186,7 @@ library OpenPositionImpl {
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
-        bool depositInQuoteToken
+        bool depositInHeldToken
     )
         internal
         view
@@ -194,8 +194,8 @@ library OpenPositionImpl {
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: addresses[0],
-            baseToken: addresses[1],
-            quoteToken: addresses[2],
+            owedToken: addresses[1],
+            heldToken: addresses[2],
             principal: values256[7],
             lenderAmount: values256[7],
             depositAmount: values256[8],
@@ -207,7 +207,7 @@ library OpenPositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[10],
-            depositInQuoteToken: depositInQuoteToken,
+            depositInHeldToken: depositInHeldToken,
             desiredTokenFromSell: 0
         });
 
@@ -262,7 +262,7 @@ library OpenPositionImpl {
         MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minQuoteToken: values256[2],
+            minHeldToken: values256[2],
             interestRate: values32[2],
             lenderFee: values256[3],
             takerFee: values256[4],

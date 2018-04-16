@@ -73,7 +73,8 @@ library LoanImpl {
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
@@ -109,7 +110,8 @@ library LoanImpl {
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionObject(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
@@ -259,7 +261,7 @@ library LoanImpl {
         MarginCommon.LoanRates memory rates = MarginCommon.LoanRates({
             maxAmount: values256[0],
             minAmount: values256[1],
-            minQuoteToken: values256[2],
+            minHeldToken: values256[2],
             interestRate: values32[2],
             lenderFee: values256[3],
             takerFee: values256[4],

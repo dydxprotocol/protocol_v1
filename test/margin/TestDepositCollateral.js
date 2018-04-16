@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const QuoteToken = artifacts.require('TokenA');
+const HeldToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
 const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -127,14 +127,14 @@ async function doDepositCollateral({
   printGas = false,
   amount = new BigNumber(1000)
 }) {
-  const [dydxMargin, quoteToken] = await Promise.all([
+  const [dydxMargin, heldToken] = await Promise.all([
     Margin.deployed(),
-    QuoteToken.deployed()
+    HeldToken.deployed()
   ]);
 
   const initialBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-  await quoteToken.issue(amount, { from });
-  await quoteToken.approve(ProxyContract.address, amount, { from });
+  await heldToken.issue(amount, { from });
+  await heldToken.approve(ProxyContract.address, amount, { from });
 
   const tx = await dydxMargin.depositCollateral(
     OpenTx.id,
