@@ -293,10 +293,10 @@ contract SharedLoan is
      * Tokens will be sent directly to the lender. Tokens could include owedToken and/or
      * heldToken (if the loan was force recovered). Callable at any time
      *
-     * @param  who                  Lender to withdraw for
-     * @return                      Values corresponding to:
-     *  1) Amount of owedToken paid out
-     *  2) Amount of heldToken paid out
+     * @param  who  Lender to withdraw for
+     * @return      Values corresponding to:
+     *              1) Amount of owedToken paid out
+     *              2) Amount of heldToken paid out
      */
     function withdraw(
         address who
