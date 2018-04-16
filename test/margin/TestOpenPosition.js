@@ -26,7 +26,8 @@ const {
   issueTokensAndSetAllowances,
   callOpenPosition,
   getPosition,
-  callApproveLoanOffering
+  callApproveLoanOffering,
+  getTokenAmountsFromOpen
 } = require('../helpers/MarginHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
@@ -57,7 +58,7 @@ describe('#openPosition', () => {
       const tx = await callOpenPosition(dydxMargin, OpenTx);
 
       console.log(
-        '\tShortSell.short (owedToken deposit / 0x Exchange Contract) gas used: '
+        '\tMargin.short (owedToken deposit / 0x Exchange Contract) gas used: '
         + tx.receipt.gasUsed
       );
 
@@ -280,17 +281,11 @@ async function checkSuccess(dydxMargin, OpenTx) {
 
   const balance = await dydxMargin.getPositionBalance.call(positionId);
 
-  let soldAmount = OpenTx.principal;
-  if (!OpenTx.depositInHeldToken) {
-    soldAmount = soldAmount.plus(OpenTx.depositAmount)
-  }
-  const expectedHeldTokenFromSell = soldAmount
-    .div(OpenTx.buyOrder.takerTokenAmount)
-    .times(OpenTx.buyOrder.makerTokenAmount);
-
-  const expectedHeldTokenBalance = OpenTx.depositInHeldToken ?
-    expectedHeldTokenFromSell.plus(OpenTx.depositAmount)
-    : expectedHeldTokenFromSell;
+  const {
+    soldAmount,
+    expectedHeldTokenFromSell,
+    expectedHeldTokenBalance
+  } = getTokenAmountsFromOpen(OpenTx);
 
   expect(balance).to.be.bignumber.equal(expectedHeldTokenBalance);
 

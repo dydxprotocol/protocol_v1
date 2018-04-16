@@ -310,7 +310,7 @@ describe('#increasePosition', () => {
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,
         OpenTx.trader,
-        increasePosTx.depositAmount
+        OpenTx.depositAmount
       );
     } else {
       await issueTokenToAccountInAmountAndApproveProxy(

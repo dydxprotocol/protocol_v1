@@ -22,6 +22,7 @@ const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
+const { createSignedSellOrder } = require('./0xHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -433,6 +434,22 @@ async function doOpenPosition(
   OpenTx.id = response.id;
   OpenTx.response = response;
   return OpenTx;
+}
+
+async function doClosePosition(
+  accounts,
+  openTx,
+  closeAmount,
+  salt = DEFAULT_SALT,
+  optionalArgs = {}
+) {
+  const [sellOrder, dydxMargin] = await Promise.all([
+    createSignedSellOrder(accounts, salt),
+    Margin.deployed()
+  ]);
+  await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+  let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount, optionalArgs);
+  return closeTx;
 }
 
 async function callClosePosition(
@@ -934,6 +951,26 @@ async function getOwedAmountForTime(
   return owedAmount;
 }
 
+function getTokenAmountsFromOpen(openTx) {
+  let soldAmount = openTx.principal;
+  if (!openTx.depositInHeldToken) {
+    soldAmount = soldAmount.plus(openTx.depositAmount)
+  }
+  const expectedHeldTokenFromSell = soldAmount
+    .div(openTx.buyOrder.takerTokenAmount)
+    .times(openTx.buyOrder.makerTokenAmount);
+
+  const expectedHeldTokenBalance = openTx.depositInHeldToken ?
+    expectedHeldTokenFromSell.plus(openTx.depositAmount)
+    : expectedHeldTokenFromSell;
+
+  return {
+    soldAmount,
+    expectedHeldTokenFromSell,
+    expectedHeldTokenBalance
+  };
+}
+
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
   await Promise.all([
     token.issueTo(account, amount),
@@ -947,6 +984,7 @@ module.exports = {
   issueTokensAndSetAllowances,
   callOpenPosition,
   doOpenPosition,
+  doClosePosition,
   issueTokensAndSetAllowancesForClose,
   callCancelLoanOffer,
   callClosePosition,
@@ -958,5 +996,6 @@ module.exports = {
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee,
-  callIncreasePosition
+  callIncreasePosition,
+  getTokenAmountsFromOpen
 };
