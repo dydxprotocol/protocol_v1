@@ -14,7 +14,7 @@ contract OnlyMargin {
     // ============ Constants ============
 
     // address of the known and trusted Margin contract on the blockchain
-    address public MARGIN;
+    address public DYDX_MARGIN;
 
     // ============ Constructor ============
 
@@ -23,14 +23,14 @@ contract OnlyMargin {
     )
         public
     {
-        MARGIN = margin;
+        DYDX_MARGIN = margin;
     }
 
     // ============ Modifiers ============
 
     modifier onlyMargin()
     {
-        require(msg.sender == MARGIN);
+        require(msg.sender == DYDX_MARGIN);
         _;
     }
 }

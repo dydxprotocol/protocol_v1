@@ -38,7 +38,7 @@ contract('ERC20ShortCreator', function(accounts) {
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
       contract = await ERC20ShortCreator.new(Margin.address, trustedRecipientsExpected);
-      const dydxMarginAddress = await contract.MARGIN.call();
+      const dydxMarginAddress = await contract.DYDX_MARGIN.call();
       expect(dydxMarginAddress).to.equal(Margin.address);
 
       const numRecipients = trustedRecipientsExpected.length;
@@ -64,7 +64,7 @@ contract('ERC20ShortCreator', function(accounts) {
         totalSupply,
         traderSupply,
       ] = await Promise.all([
-        erc20Contract.MARGIN.call(),
+        erc20Contract.DYDX_MARGIN.call(),
         erc20Contract.POSITION_ID.call(),
         erc20Contract.state.call(),
         erc20Contract.INITIAL_TOKEN_HOLDER.call(),

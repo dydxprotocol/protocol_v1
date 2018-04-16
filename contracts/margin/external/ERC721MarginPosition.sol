@@ -122,7 +122,7 @@ contract ERC721MarginPosition is
         uint256 tokenId = uint256(positionId);
         require(msg.sender == ownerOf(tokenId));
         _burn(msg.sender, tokenId); // requires msg.sender to be owner
-        Margin(MARGIN).transferPosition(positionId, to);
+        Margin(DYDX_MARGIN).transferPosition(positionId, to);
     }
 
     /**
@@ -137,7 +137,7 @@ contract ERC721MarginPosition is
         external
         nonReentrant
     {
-        require(!Margin(MARGIN).containsPosition(positionId));
+        require(!Margin(DYDX_MARGIN).containsPosition(positionId));
         _burn(ownerOf(uint256(positionId)), uint256(positionId));
     }
 

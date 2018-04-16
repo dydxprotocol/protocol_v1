@@ -50,7 +50,7 @@ contract('DutchAuctionCloser', function(accounts) {
     it('sets constants correctly', async () => {
       const contract = await DutchAuctionCloser.new(Margin.address, ONE, TWO);
       const [ssAddress, num, den] = await Promise.all([
-        contract.MARGIN.call(),
+        contract.DYDX_MARGIN.call(),
         contract.CALL_TIMELIMIT_NUMERATOR.call(),
         contract.CALL_TIMELIMIT_DENOMINATOR.call(),
       ]);

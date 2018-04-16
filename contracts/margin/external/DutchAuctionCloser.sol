@@ -158,7 +158,7 @@ contract DutchAuctionCloser is PayoutRecipient {
         uint256 auctionStartTimestamp;
         uint256 auctionEndTimestamp;
 
-        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, positionId);
+        MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, positionId);
 
         uint256 maxTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 callTimestamp = uint256(position.callTimestamp);

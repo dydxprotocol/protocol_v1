@@ -48,7 +48,7 @@ contract('ERC721MarginPosition', function(accounts) {
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
       const contract = await ERC721MarginPosition.new(Margin.address);
-      const dydxMarginAddress = await contract.MARGIN.call();
+      const dydxMarginAddress = await contract.DYDX_MARGIN.call();
       expect(dydxMarginAddress).to.equal(Margin.address);
     });
   });

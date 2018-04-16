@@ -72,8 +72,8 @@ contract SharedLoan is
     // Unique ID of the position this contract is lending for
     bytes32 public POSITION_ID;
 
-    // Addresses that can call in the loan
-    mapping (address => bool) public TRUSTED_LOAN_CALLERS;
+    // Addresses that can margin-call the position
+    mapping (address => bool) public TRUSTED_MARGIN_CALLERS;
 
     // Current State of this contract. See State enum
     State public state;
@@ -116,7 +116,7 @@ contract SharedLoan is
         INITIAL_LENDER = initialLender;
 
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_LOAN_CALLERS[trustedLoanCallers[i]] = true;
+            TRUSTED_MARGIN_CALLERS[trustedLoanCallers[i]] = true;
         }
     }
 
@@ -144,7 +144,7 @@ contract SharedLoan is
         require(state == State.UNINITIALIZED);
         require(POSITION_ID == positionId);
 
-        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, POSITION_ID);
+        MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
 
         // set relevant constants
@@ -218,7 +218,7 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        return TRUSTED_LOAN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[who];
     }
 
     /**
@@ -242,7 +242,7 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        return TRUSTED_LOAN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[who];
     }
 
     /**
@@ -342,7 +342,7 @@ contract SharedLoan is
         internal
     {
         if (state != State.CLOSED) {
-            if (Margin(MARGIN).isPositionClosed(POSITION_ID)) {
+            if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
                 state = State.CLOSED;
             }
         }

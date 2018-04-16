@@ -40,7 +40,7 @@ contract ERC20Short is ERC20Position {
     {
         return
             DetailedERC20(
-                Margin(MARGIN).getPositionOwedToken(POSITION_ID)
+                Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID)
             ).decimals();
     }
 

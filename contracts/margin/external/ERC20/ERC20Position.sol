@@ -145,7 +145,7 @@ contract ERC20Position is
         require(state == State.UNINITIALIZED);
         require(POSITION_ID == positionId);
 
-        MarginCommon.Position memory position = MarginHelper.getPosition(MARGIN, POSITION_ID);
+        MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
 
         // set relevant constants
@@ -287,7 +287,7 @@ contract ERC20Position is
         returns (uint256)
     {
         // If in OPEN state, but the position is closed, set to CLOSED state
-        if (state == State.OPEN && Margin(MARGIN).isPositionClosed(POSITION_ID)) {
+        if (state == State.OPEN && Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
             state = State.CLOSED;
             emit CompletelyClosed();
         }
