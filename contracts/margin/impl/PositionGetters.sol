@@ -144,17 +144,17 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of owedTokens needed to close a given amount of the position at a given time,
-     * including interest fees.
+     * Gets the amount of owedTokens needed to close a given principal of the position at a given
+     * time, including interest fees.
      *
-     * @param  positionId   Unique ID of the position
-     * @param  positionId   Amount of position being closed
-     * @param  timestamp    Block timestamp in seconds of close
-     * @return              The number of owedTokens owed at the given time and amount
+     * @param  positionId         Unique ID of the position
+     * @param  principalToClose   Amount of principal being closed
+     * @param  timestamp          Block timestamp in seconds of close
+     * @return                    The number of owedTokens owed
      */
     function getPositionOwedAmountAtTime(
         bytes32 positionId,
-        uint256 amount,
+        uint256 principalToClose,
         uint32  timestamp
     )
         external
@@ -166,20 +166,19 @@ contract PositionGetters is MarginStorage {
 
         return MarginCommon.calculateOwedAmount(
             position,
-            amount,
+            principalToClose,
             timestamp
         );
     }
 
     /**
-     * Gets the amount of owedTokens that can be borrowed from a lender to add a given amount
+     * Gets the amount of owedTokens that can be borrowed from a lender to add a given principal
      * onto the position at a given time.
      *
      * @param  positionId      Unique ID of the position
      * @param  principalToAdd  Amount being added to principal
      * @param  timestamp       Block timestamp in seconds of addition
-     * @return                 The number of owedTokens that can be borrowed at the given
-     *                         time and amount
+     * @return                 The number of owedTokens that will be borrowed
      */
     function getLenderAmountForIncreasePositionAtTime(
         bytes32 positionId,

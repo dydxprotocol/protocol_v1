@@ -32,7 +32,7 @@ contract SharedLoanCreator is
     // ============ State Variables ============
 
     // Recipients that will fairly verify and redistribute funds from closing the position
-    address[] public TRUSTED_LOAN_CALLERS;
+    address[] public TRUSTED_MARGIN_CALLERS;
 
     // ============ Constructor ============
 
@@ -44,7 +44,7 @@ contract SharedLoanCreator is
         LoanOwner(margin)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_LOAN_CALLERS.push(trustedLoanCallers[i]);
+            TRUSTED_MARGIN_CALLERS.push(trustedLoanCallers[i]);
         }
     }
 
@@ -68,9 +68,9 @@ contract SharedLoanCreator is
     {
         address sharedLoanAddress = new SharedLoan(
             positionId,
-            MARGIN,
+            DYDX_MARGIN,
             from,
-            TRUSTED_LOAN_CALLERS
+            TRUSTED_MARGIN_CALLERS
         );
 
         emit SharedLoanCreated(positionId, sharedLoanAddress);

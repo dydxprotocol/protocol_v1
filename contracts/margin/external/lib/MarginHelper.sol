@@ -13,7 +13,7 @@ import { MarginCommon } from "../../impl/MarginCommon.sol";
  */
 library MarginHelper {
     function getPosition(
-        address MARGIN,
+        address DYDX_MARGIN,
         bytes32 positionId
     )
         internal
@@ -28,7 +28,7 @@ library MarginHelper {
             addresses,
             values256,
             values32
-        ) = Margin(MARGIN).getPosition(positionId);
+        ) = Margin(DYDX_MARGIN).getPosition(positionId);
 
         return MarginCommon.Position({
             owedToken: addresses[0],

@@ -84,7 +84,7 @@ contract Margin is
      *  [4]  = loan taker fee
      *  [5]  = loan expiration timestamp (in seconds)
      *  [6]  = loan salt
-     *  [7]  = position amount
+     *  [7]  = position amount of principal
      *  [8]  = deposit amount
      *
      * @param  values32            Values corresponding to:
@@ -200,13 +200,13 @@ contract Margin is
      * Increase a position directly by putting up heldToken. The caller will serve as both the
      * lender and the position owner
      *
-     * @param  positionId  Unique ID of the position sell
-     * @param  amount    Amount (in owedToken) to add to the position
-     * @return           Amount of heldToken pulled from the msg.sender
+     * @param  positionId      Unique ID of the position sell
+     * @param  principalToAdd  Principal amount to add to the position
+     * @return                 Amount of heldToken pulled from the msg.sender
      */
     function increasePositionDirectly(
         bytes32 positionId,
-        uint256 amount
+        uint256 principalToAdd
     )
         external
         onlyWhileOperational
@@ -216,7 +216,7 @@ contract Margin is
         return IncreasePositionImpl.increasePositionDirectlyImpl(
             state,
             positionId,
-            amount
+            principalToAdd
         );
     }
 
@@ -226,7 +226,7 @@ contract Margin is
      * an sent the resulting payout.
      *
      * @param  positionId            Unique ID for the position
-     * @param  requestedCloseAmount  Amount of the position to close. The amount closed
+     * @param  requestedCloseAmount  Principal amount of the position to close. The amount closed
      *                               will be: min(requestedCloseAmount, principal)
      * @param  payoutRecipient       Address of the recipient of tokens paid out from closing
      * @param  exchangeWrapper       Address of the exchange wrapper
@@ -266,7 +266,7 @@ contract Margin is
      * Helper to close a position by paying owedToken directly
      *
      * @param  positionId               Unique ID for the position
-     * @param  requestedCloseAmount     Amount of the position to close. The amount closed
+     * @param  requestedCloseAmount     Principal amount of the position to close. The amount closed
      *                                  will be: min(requestedCloseAmount, principal)
      * @param  payoutRecipient          Address of the recipient of tokens paid out from closing
      * @return                          Values corresponding to:
@@ -301,7 +301,7 @@ contract Margin is
      * position, and burning it).
      *
      * @param  positionId                  Unique ID for the position
-     * @param  requestedLiquidationAmount  Amount of the loan to close. The amount closed
+     * @param  requestedLiquidationAmount  Principal amount of the loan to close. The amount closed
      *                                     will be: min(requestedCloseAmount, principal)
      * @return                             Values corresponding to:
      *                                     1) Amount of position closed

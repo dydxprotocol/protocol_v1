@@ -52,7 +52,7 @@ contract ERC20Long is ERC20Position {
         view
         returns (uint256)
     {
-        uint256 positionBalance = Margin(MARGIN).getPositionBalance(positionId);
+        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
 
         return positionBalance.sub(totalSupply_);
     }

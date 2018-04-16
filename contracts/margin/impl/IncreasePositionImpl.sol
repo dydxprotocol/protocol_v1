@@ -104,7 +104,7 @@ library IncreasePositionImpl {
     function increasePositionDirectlyImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        uint256 amount
+        uint256 principalToAdd
     )
         public
         returns (uint256)
@@ -115,7 +115,7 @@ library IncreasePositionImpl {
         uint256 heldTokenAmount = getPositionMinimumHeldToken(
             positionId,
             state,
-            amount,
+            principalToAdd,
             position
         );
 
@@ -129,7 +129,7 @@ library IncreasePositionImpl {
         updateState(
             position,
             positionId,
-            amount,
+            principalToAdd,
             msg.sender
         );
 
@@ -142,7 +142,7 @@ library IncreasePositionImpl {
             "",
             address(0),
             0,
-            amount,
+            principalToAdd,
             0,
             heldTokenAmount,
             true
