@@ -21,7 +21,7 @@ library MarginCommon {
 
     struct Position {
         address owedToken;       // Immutable
-        address heldToken;      // Immutable
+        address heldToken;       // Immutable
         address lender;
         address owner;
         uint256 principal;
