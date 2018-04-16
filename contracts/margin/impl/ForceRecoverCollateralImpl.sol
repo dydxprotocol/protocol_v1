@@ -36,7 +36,8 @@ library ForceRecoverCollateralImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         // Can only force recover after either:
         // 1) The loan was called and the call period has elapsed

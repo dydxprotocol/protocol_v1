@@ -58,7 +58,8 @@ library IncreasePositionImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         OpenPositionShared.OpenTx memory transaction = parseAddValueToOpenTx(
             position,
@@ -108,7 +109,8 @@ library IncreasePositionImpl {
         public
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         uint256 heldTokenAmount = getPositionMinimumHeldToken(
             positionId,

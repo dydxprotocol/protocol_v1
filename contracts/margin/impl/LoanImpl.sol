@@ -73,7 +73,8 @@ library LoanImpl {
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
@@ -109,7 +110,8 @@ library LoanImpl {
     )
         public
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {

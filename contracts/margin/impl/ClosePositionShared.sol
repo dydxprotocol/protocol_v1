@@ -140,7 +140,8 @@ library ClosePositionShared {
         require(payoutRecipient != address(0));
         require(requestedAmount > 0);
 
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         uint256 closeAmount = getApprovedAmount(
             position,

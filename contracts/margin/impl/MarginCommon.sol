@@ -235,7 +235,7 @@ library MarginCommon {
         return state.positions[positionId].startTimestamp != 0;
     }
 
-    function getPositionStorage(
+    function getPositionFromStorage(
         MarginState.State storage state,
         bytes32 positionId
     )

@@ -102,7 +102,8 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
             position,
@@ -132,7 +133,8 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
             position,
@@ -159,7 +161,8 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         return MarginCommon.calculateOwedAmount(
             position,
@@ -187,7 +190,8 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        MarginCommon.Position storage position = MarginCommon.getPositionStorage(state, positionId);
+        MarginCommon.Position storage position =
+            MarginCommon.getPositionFromStorage(state, positionId);
 
         return MarginCommon.calculateLenderAmountForAddValue(
             position,
