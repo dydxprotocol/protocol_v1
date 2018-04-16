@@ -62,6 +62,54 @@ describe('#closePosition', () => {
   });
 
   contract('Margin', function(accounts) {
+    it.only('Successfully closes a position when paying out in owedToken', async () => {
+      const OpenTx = await doOpenPosition(accounts);
+      const [sellOrder, dydxMargin] = await Promise.all([
+        createSignedSellOrder(accounts),
+        Margin.deployed()
+      ]);
+      await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+
+      // Close half the position at a time
+      const closeAmount = OpenTx.principal.div(2);
+
+      // Simulate time between open and close so interest fee needs to be paid
+      await wait(10000);
+
+      let closeTx = await callClosePosition({
+        dydxMargin,
+        OpenTx,
+        sellOrder,
+        closeAmount,
+        payoutInHeldToken: false
+      });
+
+      let exists = await dydxMargin.containsPosition.call(OpenTx.id);
+      expect(exists).to.be.true;
+
+      await checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount);
+
+      const position = await getPosition(dydxMargin, OpenTx.id);
+
+      expect(position.principal).to.be.bignumber.equal(OpenTx.principal.minus(closeAmount));
+
+      // Simulate time between open and close so interest fee needs to be paid
+      await wait(10000);
+
+      // Close the rest of the position
+      await callClosePosition({
+        dydxMargin,
+        OpenTx,
+        sellOrder,
+        closeAmount,
+        payoutInHeldToken: false
+      });
+      exists = await dydxMargin.containsPosition.call(OpenTx.id);
+      expect(exists).to.be.false;
+    });
+  });
+
+  contract('Margin', function(accounts) {
     it('only allows the position owner to close', async () => {
       const OpenTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([

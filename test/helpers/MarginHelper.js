@@ -386,14 +386,15 @@ async function doOpenPosition(accounts, _salt = DEFAULT_SALT, positionOwner) {
   return OpenTx;
 }
 
-async function callClosePosition(
+async function callClosePosition({
   dydxMargin,
   OpenTx,
   sellOrder,
   closeAmount,
   from = null,
-  recipient = null
-) {
+  recipient = null,
+  payoutInHeldToken = true
+}) {
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
@@ -406,7 +407,7 @@ async function callClosePosition(
     closeAmount,
     recipient,
     ZeroExExchangeWrapper.address,
-    true,
+    payoutInHeldToken,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
   );
@@ -428,13 +429,13 @@ async function callClosePosition(
   return tx;
 }
 
-async function callClosePositionDirectly(
+async function callClosePositionDirectly({
   dydxMargin,
   OpenTx,
   closeAmount,
   from = null,
   recipient = null
-) {
+}) {
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
@@ -448,6 +449,8 @@ async function callClosePositionDirectly(
     recipient,
     { from: closer }
   );
+
+  tx.payoutInHeldToken = true;
 
   await expectCloseLog(
     dydxMargin,
@@ -532,7 +535,7 @@ async function expectCloseLog(dydxMargin, params) {
     owedTokenPaidToLender,
     payoutAmount: heldTokenPayout,
     buybackCost: buybackCost,
-    payoutInHeldToken: true
+    payoutInHeldToken: params.payoutInHeldToken
   });
 }
 
