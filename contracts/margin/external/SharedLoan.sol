@@ -282,6 +282,7 @@ contract SharedLoan is
         address[] who
     )
         external
+        nonReentrant
     {
         require(state == State.OPEN || state == State.CLOSED);
         updateStateOnClosed();
@@ -304,7 +305,7 @@ contract SharedLoan is
     function withdraw(
         address who
     )
-        public
+        external
         nonReentrant
         returns (uint256, uint256)
     {
@@ -332,16 +333,18 @@ contract SharedLoan is
         internal
         returns (uint256, uint256)
     {
-        if (balances[who] == 0) {
+        uint256 balance = balances[who];
+
+        if (balance == 0) {
             return (0, 0);
         }
 
-        uint256 owedTokenWithdrawn = withdrawOwedTokens(who);
-        uint256 heldTokenWithdrawn = withdrawHeldTokens(who);
+        uint256 owedTokenWithdrawn = withdrawOwedTokens(who, balance);
+        uint256 heldTokenWithdrawn = withdrawHeldTokens(who, balance);
         bool completelyRepaid = false;
 
         if (state == State.CLOSED) {
-            totalPrincipalFullyWithdrawn = totalPrincipalFullyWithdrawn.add(balances[who]);
+            totalPrincipalFullyWithdrawn = totalPrincipalFullyWithdrawn.add(balance);
             balances[who] = 0;
             completelyRepaid = true;
         }
@@ -360,7 +363,8 @@ contract SharedLoan is
     }
 
     function withdrawOwedTokens(
-        address who
+        address who,
+        uint256 balance
     )
         internal
         returns (uint256)
@@ -373,7 +377,7 @@ contract SharedLoan is
             totalOwedTokenWithdrawn);
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
-            balances[who],
+            balance,
             totalPrincipal,
             totalOwedTokenEverHeld
         ).sub(owedTokenWithdrawnEarly[who]);
@@ -395,7 +399,8 @@ contract SharedLoan is
     }
 
     function withdrawHeldTokens(
-        address who
+        address who,
+        uint256 balance
     )
         internal
         returns (uint256)
@@ -409,7 +414,7 @@ contract SharedLoan is
             address(this));
 
         uint256 allowedAmount = MathHelpers.getPartialAmount(
-            balances[who],
+            balance,
             totalPrincipal.sub(totalPrincipalFullyWithdrawn),
             currentHeldTokenBalance
         );
