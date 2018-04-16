@@ -80,7 +80,7 @@ contract DutchAuctionCloser is PayoutRecipient {
      * @param  payout             Amount of heldToken received from the payout
      * @param  totalHeldToken     Total amount of heldToken removed from vault during close
      * @param  payoutInHeldToken  True if payout is in heldToken, false if in owedToken
-     * @return                    True if approved by the reciever
+     * @return                    True if approved by the receiver
      */
     function receiveClosePositionPayout(
         bytes32 positionId,

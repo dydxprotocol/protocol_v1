@@ -16,12 +16,12 @@ contract ExchangeWrapper is OnlyMargin {
     /**
      * Exchange some amount of takerToken for makerTokens.
      *
-     * @param  makerToken           Address of the maker token, the token to recieve
+     * @param  makerToken           Address of the maker token, the token to receive
      * @param  takerToken           Address of the taker token, the token to pay
      * @param  tradeOriginator      The msg.sender of the first call into the dYdX contract
      * @param  requestedFillAmount  Amount of taker token being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken recieved
+     * @return                      The amount of makerToken received
      */
     function exchange(
         address makerToken,
@@ -38,7 +38,7 @@ contract ExchangeWrapper is OnlyMargin {
      * Exchange taker tokens for an exact amount of maker tokens. Any extra maker tokens exist
      * as a result of the trade will be left in the exchange wrapper
      *
-     * @param  makerToken           Address of the maker token, the token to recieve
+     * @param  makerToken           Address of the maker token, the token to receive
      * @param  takerToken           Address of the taker token, the token to pay
      * @param  tradeOriginator      The msg.sender of the first call into the dYdX contract
      * @param  desiredMakerToken    Amount of maker token requested
@@ -60,11 +60,11 @@ contract ExchangeWrapper is OnlyMargin {
      * Get amount of makerToken that will be paid out by exchange for a given trade. Should match
      * the amount of maker token returned by exchange
      *
-     * @param  makerToken           Address of the maker token, the token to recieve
+     * @param  makerToken           Address of the maker token, the token to receive
      * @param  takerToken           Address of the taker token, the token to pay
      * @param  requestedFillAmount  Amount of taker token being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken that would be recieved as a result of
+     * @return                      The amount of makerToken that would be received as a result of
      *                              taking this trade
      */
     function getTradeMakerTokenAmount(
@@ -83,7 +83,7 @@ contract ExchangeWrapper is OnlyMargin {
      * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
      * than desiredMakerToken
      *
-     * @param  makerToken         Address of the maker token, the token to recieve
+     * @param  makerToken         Address of the maker token, the token to receive
      * @param  takerToken         Address of the taker token, the token to pay
      * @param  desiredMakerToken  Amount of maker token requested
      * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
