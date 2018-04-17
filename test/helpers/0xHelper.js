@@ -22,7 +22,7 @@ async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
     maker: accounts[5],
     makerFee: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(.01)),
     makerTokenAddress: OwedToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
+    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2.382472)),
     salt: new BigNumber(_salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(.1)),

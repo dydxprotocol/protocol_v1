@@ -502,10 +502,23 @@ async function expectCloseLog(dydxMargin, params) {
     true
   );
   const buybackCost = params.sellOrder
-    ? owed.div(params.sellOrder.makerTokenAmount).times(params.sellOrder.takerTokenAmount)
-    : 0;
-  const heldTokenPayout =
-    actualCloseAmount.div(params.startAmount).times(params.startHeldToken).minus(buybackCost);
+    ? getPartialAmount(
+      owed,
+      params.sellOrder.makerTokenAmount,
+      params.sellOrder.takerTokenAmount,
+      true // round up
+    ) : 0;
+  const owedTokenPaidToLender = params.sellOrder
+    ? getPartialAmount(
+      buybackCost,
+      params.sellOrder.takerTokenAmount,
+      params.sellOrder.makerTokenAmount
+    ) : owed;
+  const heldTokenPayout = getPartialAmount(
+    actualCloseAmount,
+    params.startAmount,
+    params.startHeldToken
+  ).minus(buybackCost);
 
   expect(endHeldToken).to.be.bignumber.equal(
     params.startHeldToken.minus(heldTokenPayout).minus(buybackCost));
@@ -516,7 +529,7 @@ async function expectCloseLog(dydxMargin, params) {
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
     remainingAmount: params.startAmount.minus(actualCloseAmount),
-    owedTokenPaidToLender: owed,
+    owedTokenPaidToLender,
     payoutAmount: heldTokenPayout,
     buybackCost: buybackCost,
     payoutInHeldToken: true
