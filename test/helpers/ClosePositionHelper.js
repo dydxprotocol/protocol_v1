@@ -36,7 +36,14 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
   const heldTokenBuybackCost = getPartialAmount(
     sellOrder.takerTokenAmount,
     sellOrder.makerTokenAmount,
-    owedTokenOwedToLender
+    owedTokenOwedToLender,
+    true // round up
+  );
+
+  const owedTokenPaidToLender = getPartialAmount(
+    heldTokenBuybackCost,
+    sellOrder.takerTokenAmount,
+    sellOrder.makerTokenAmount,
   );
 
   const balances = await getBalances(dydxMargin, OpenTx, sellOrder);
@@ -50,7 +57,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
   } = balances;
 
   checkSmartContractBalances(balances, OpenTx, closeAmount);
-  checkLenderBalances(balances, owedTokenOwedToLender, OpenTx);
+  checkLenderBalances(balances, owedTokenPaidToLender, OpenTx);
 
   expect(traderHeldToken).to.be.bignumber.equal(
     getPartialAmount(
@@ -62,16 +69,16 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
   );
   expect(externalEntityHeldToken).to.be.bignumber.equal(heldTokenBuybackCost);
   expect(externalEntityOwedToken).to.be.bignumber.equal(
-    sellOrder.makerTokenAmount.minus(owedTokenOwedToLender)
+    sellOrder.makerTokenAmount.minus(owedTokenPaidToLender)
   );
   expect(feeRecipientFeeToken).to.be.bignumber.equal(
     getPartialAmount(
-      owedTokenOwedToLender,
+      owedTokenPaidToLender,
       sellOrder.makerTokenAmount,
       sellOrder.takerFee
     ).plus(
       getPartialAmount(
-        owedTokenOwedToLender,
+        owedTokenPaidToLender,
         sellOrder.makerTokenAmount,
         sellOrder.makerFee
       )
@@ -97,7 +104,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
       )
       .minus(
         getPartialAmount(
-          owedTokenOwedToLender,
+          owedTokenPaidToLender,
           sellOrder.makerTokenAmount,
           sellOrder.takerFee
         )
@@ -107,7 +114,7 @@ async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount)
     sellOrder.makerFee
       .minus(
         getPartialAmount(
-          owedTokenOwedToLender,
+          owedTokenPaidToLender,
           sellOrder.makerTokenAmount,
           sellOrder.makerFee
         )

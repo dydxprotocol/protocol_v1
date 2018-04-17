@@ -180,7 +180,7 @@ describe('MarginAdmin', () => {
   });
 
   describe('#cancelLoanStateControl', () => {
-    const cancelAmount = new BigNumber(100);
+    const cancelAmount = new BigNumber(100000);
 
     async function test(accounts, state, shouldFail = false) {
       const OpenTx = await doOpenPosition(accounts);
@@ -231,7 +231,7 @@ describe('MarginAdmin', () => {
   });
 
   describe('#closePositionStateControl', () => {
-    const closeAmount = new BigNumber(100);
+    const closeAmount = new BigNumber(100000);
 
     async function test(accounts, state, shouldFail = false) {
       const OpenTx = await doOpenPosition(accounts);
@@ -276,7 +276,7 @@ describe('MarginAdmin', () => {
 
 
   describe('#closePositionDirectlyStateControl', () => {
-    const closeAmount = new BigNumber(100);
+    const closeAmount = new BigNumber(100000);
     async function test(accounts, state) {
       const OpenTx = await doOpenPosition(accounts);
       const dydxMargin = await Margin.deployed();

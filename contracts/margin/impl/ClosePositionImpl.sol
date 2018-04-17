@@ -171,7 +171,7 @@ library ClosePositionImpl {
         );
 
         if (transaction.payoutInHeldToken) {
-            assert(receivedOwedToken == transaction.owedTokenOwed);
+            assert(receivedOwedToken >= transaction.owedTokenOwed);
         } else {
             require(receivedOwedToken >= transaction.owedTokenOwed);
         }
@@ -181,7 +181,7 @@ library ClosePositionImpl {
             transaction.owedToken,
             transaction.exchangeWrapper,
             transaction.positionLender,
-            transaction.owedTokenOwed
+            receivedOwedToken
         );
 
         return (heldTokenPrice, receivedOwedToken);
