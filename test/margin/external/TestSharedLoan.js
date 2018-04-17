@@ -42,7 +42,7 @@ contract('SharedLoan', function(accounts) {
     ID: null,
     TX: null,
     NUM_TOKENS: null,
-    TRUSTED_LOAN_CALLERS: null,
+    TRUSTED_MARGIN_CALLERS: null,
     INITIAL_LENDER: null,
     POSITION_OWNER: null
   }
@@ -58,7 +58,7 @@ contract('SharedLoan', function(accounts) {
   }
 
   async function setUpSharedLoan() {
-    SHARED_LOAN.TRUSTED_MARGIN_CALLERS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
+    SHARED_LOAN.TRUSTED_MARGIN_CALLERS = [accounts[8], ADDRESSES.TEST[2]];
     SHARED_LOAN.CONTRACT = await SharedLoan.new(
       SHARED_LOAN.ID,
       dydxMargin.address,
@@ -272,20 +272,67 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#marginCallOnBehalfOf', () => {
-    it('fails if not authorized', async () => {
-      //TODO(brendan)
+    const depositAmount = new BigNumber(0);
+
+    beforeEach('set up position', async () => {
+      await setUpPosition();
+      await setUpSharedLoan();
+      await transferLoanToSharedLoan();
+      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      expect(isCalled).to.be.false;
     });
+
+    it('fails if not authorized', async () => {
+      await expectThrow(
+        dydxMargin.marginCall(
+          SHARED_LOAN.ID,
+          depositAmount,
+          { from: SHARED_LOAN.INITIAL_LENDER }
+        )
+      );
+    });
+
     it('succeeds if authorized', async () => {
-      //TODO(brendan)
+      await dydxMargin.marginCall(
+        SHARED_LOAN.ID,
+        depositAmount,
+        { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
+      );
+      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      expect(isCalled).to.be.true;
     });
   });
 
   describe('#cancelMarginCallOnBehalfOf', () => {
-    it('fails if not authorized', async () => {
-      //TODO(brendan)
+    beforeEach('set up position and margin-call', async () => {
+      await setUpPosition();
+      await dydxMargin.marginCall(
+        SHARED_LOAN.ID,
+        new BigNumber(0),
+        { from: SHARED_LOAN.TX.loanOffering.owner }
+      );
+      await setUpSharedLoan();
+      await transferLoanToSharedLoan();
+      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      expect(isCalled).to.be.true;
     });
+
+    it('fails if not authorized', async () => {
+      await expectThrow(
+        dydxMargin.cancelMarginCall(
+          SHARED_LOAN.ID,
+          { from: SHARED_LOAN.INITIAL_LENDER }
+        )
+      );
+    });
+
     it('succeeds if authorized', async () => {
-      //TODO(brendan)
+      await dydxMargin.cancelMarginCall(
+        SHARED_LOAN.ID,
+        { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
+      );
+      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      expect(isCalled).to.be.false;
     });
   });
 
