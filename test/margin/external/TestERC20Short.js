@@ -178,7 +178,7 @@ contract('ERC20Short', function(accounts) {
         const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
         expect(tsc.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
         expect(tsc.POSITION_ID).to.equal(position.ID);
-        expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
+        expect(tsc.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.UNINITIALIZED);
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.heldToken).to.equal(ADDRESSES.ZERO);
         expect(tsc.symbol).to.equal("DYDX-S");
@@ -218,7 +218,7 @@ contract('ERC20Short', function(accounts) {
         // expect certain values
         expect(tsc2.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
         expect(tsc2.POSITION_ID).to.equal(POSITION.ID);
-        expect(tsc2.state.equals(TOKENIZED_POSITION_STATE.OPEN)).to.be.true;
+        expect(tsc2.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc2.heldToken).to.equal(position.heldToken);
 
@@ -230,6 +230,19 @@ contract('ERC20Short', function(accounts) {
         expect(tsc2.POSITION_ID).to.equal(tsc1.POSITION_ID);
         expect(tsc2.DYDX_MARGIN).to.equal(tsc1.DYDX_MARGIN);
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(tsc1.INITIAL_TOKEN_HOLDER);
+      }
+    });
+
+    it('fails for msg.sender != Margin', async () => {
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.receivePositionOwnership(
+            INITIAL_TOKEN_HOLDER,
+            POSITION.ID,
+            { from: INITIAL_TOKEN_HOLDER }
+          )
+        );
       }
     });
   });

@@ -9,7 +9,7 @@ const SHARED_LOAN_STATE = {
   CLOSED: new BigNumber(2)
 };
 
-async function getSharedLoanConstants(sharedLoanContract, payer) {
+async function getSharedLoanConstants(sharedLoanContract, initialLender) {
   const [
     MarginAddress,
     InitialLender,
@@ -34,9 +34,9 @@ async function getSharedLoanConstants(sharedLoanContract, payer) {
     sharedLoanContract.totalPrincipal.call(),
     sharedLoanContract.totalPrincipalFullyWithdrawn.call(),
     sharedLoanContract.totalOwedTokenWithdrawn.call(),
-    sharedLoanContract.balances.call(payer),
+    sharedLoanContract.balances.call(initialLender),
     sharedLoanContract.balances.call(ADDRESSES.ZERO),
-    sharedLoanContract.owedTokenWithdrawnEarly.call(payer),
+    sharedLoanContract.owedTokenWithdrawnEarly.call(initialLender),
     sharedLoanContract.owedTokenWithdrawnEarly.call(ADDRESSES.ZERO)
   ]);
   return {

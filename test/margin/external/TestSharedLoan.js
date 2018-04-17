@@ -4,499 +4,221 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
+const SharedLoan = artifacts.require("SharedLoan");
+const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
-const ERC20Short = artifacts.require("ERC20Short");
-const OwedToken = artifacts.require("TokenB");
-const { ADDRESSES } = require('../../helpers/Constants');
+
+const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
+const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
+const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
+const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { signLoanOffering } = require('../../helpers/LoanHelper');
 const {
-  callClosePosition,
-  callClosePositionDirectly,
+  callOpenPosition,
   doOpenPosition,
-  getPosition,
+  createOpenTx,
+  issueTokensAndSetAllowances,
   issueTokensAndSetAllowancesForClose,
-  issueTokenToAccountInAmountAndApproveProxy,
-  getMaxInterestFee
+  callClosePosition,
+  getPosition
 } = require('../../helpers/MarginHelper');
-const {
-  createSignedSellOrder
-} = require('../../helpers/0xHelper');
-const { transact } = require('../../helpers/ContractHelper');
-const { expectThrow } = require('../../helpers/ExpectHelper');
-const {
-  getERC20ShortConstants,
-  TOKENIZED_POSITION_STATE
-} = require('./ERC20ShortHelper');
-const { wait } = require('@digix/tempo')(web3);
-const BigNumber = require('bignumber.js');
 
-contract('ERC20Short', function(accounts) {
-  let owedToken;
+contract('SharedLoan', function(accounts) {
 
-  let POSITIONS = {
-    FULL: {
-      TOKEN_CONTRACT: null,
-      TX: null,
-      ID: null,
-      SELL_ORDER: null,
-      NUM_TOKENS: 0,
-      SALT: 0
-    },
-    PART: {
-      TOKEN_CONTRACT: null,
-      TX: null,
-      ID: null,
-      SELL_ORDER: null,
-      NUM_TOKENS: 0,
-      SALT: 0
-    }
-  };
+  // ============ Constants ============
 
-  let CONTRACTS = {
-    DYDX_MARGIN: null,
+  let dydxMargin;
+  let salt = 987654;
+  let SHARED_LOAN = {
+    CONTRACT: null,
+    ID: null,
+    TX: null,
+    NUM_TOKENS: null,
+    TRUSTED_LOAN_CALLERS: null,
+    INITIAL_LENDER: null
   }
-  let pepper = 0;
-  const INITIAL_TOKEN_HOLDER = accounts[9];
+
+  // ============ Before ============
 
   before('Set up Proxy, Margin accounts', async () => {
-    [
-      CONTRACTS.DYDX_MARGIN,
-      owedToken
-    ] = await Promise.all([
-      Margin.deployed(),
-      OwedToken.deployed()
-    ]);
+    dydxMargin = await Margin.deployed();
   });
 
-  async function setUpPositions() {
-    pepper++;
+  // ============ Helper Functions ============
 
-    POSITIONS.FULL.SALT = 222 + pepper;
-    POSITIONS.PART.SALT = 333 + pepper;
-
-    POSITIONS.FULL.TX = await doOpenPosition(accounts.slice(1), POSITIONS.FULL.SALT);
-    POSITIONS.PART.TX = await doOpenPosition(accounts.slice(2), POSITIONS.PART.SALT);
-
-    expect(POSITIONS.FULL.TX.trader).to.be.not.equal(POSITIONS.PART.TX.trader);
-
-    POSITIONS.FULL.ID = POSITIONS.FULL.TX.id;
-    POSITIONS.PART.ID = POSITIONS.PART.TX.id;
-
-    POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(accounts, POSITIONS.PART.SALT);
-    await issueTokensAndSetAllowancesForClose(POSITIONS.PART.TX, POSITIONS.PART.SELL_ORDER);
-    await callClosePosition(
-      CONTRACTS.DYDX_MARGIN,
-      POSITIONS.PART.TX,
-      POSITIONS.PART.SELL_ORDER,
-      POSITIONS.PART.TX.principal.div(2));
-
-    POSITIONS.FULL.NUM_TOKENS = POSITIONS.FULL.TX.principal;
-    POSITIONS.PART.NUM_TOKENS = POSITIONS.PART.TX.principal.div(2);
+  async function setUpPosition() {
+    const openTx = await doOpenPosition(accounts, salt++);
+    SHARED_LOAN.ID = openTx.id;
+    SHARED_LOAN.TX = openTx;
+    SHARED_LOAN.INITIAL_LENDER = accounts[9];
   }
 
-  async function setUpTokens() {
-    POSITIONS.FULL.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
-    POSITIONS.PART.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
-    [
-      POSITIONS.FULL.TOKEN_CONTRACT,
-      POSITIONS.PART.TOKEN_CONTRACT
-    ] = await Promise.all([
-      ERC20Short.new(
-        POSITIONS.FULL.ID,
-        CONTRACTS.DYDX_MARGIN.address,
-        INITIAL_TOKEN_HOLDER,
-        POSITIONS.FULL.TRUSTED_RECIPIENTS),
-      ERC20Short.new(
-        POSITIONS.PART.ID,
-        CONTRACTS.DYDX_MARGIN.address,
-        INITIAL_TOKEN_HOLDER,
-        POSITIONS.PART.TRUSTED_RECIPIENTS)
-    ]);
+  async function setUpSharedLoan() {
+    SHARED_LOAN.TRUSTED_MARGIN_CALLERS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
+    SHARED_LOAN.CONTRACT = await SharedLoan.new(
+      SHARED_LOAN.ID,
+      dydxMargin.address,
+      SHARED_LOAN.INITIAL_LENDER,
+      SHARED_LOAN.TRUSTED_MARGIN_CALLERS
+    );
   }
 
-  async function transferPositionsToTokens() {
-    await Promise.all([
-      CONTRACTS.DYDX_MARGIN.transferPosition(
-        POSITIONS.FULL.ID,
-        POSITIONS.FULL.TOKEN_CONTRACT.address,
-        { from: POSITIONS.FULL.TX.trader }
-      ),
-      CONTRACTS.DYDX_MARGIN.transferPosition(
-        POSITIONS.PART.ID,
-        POSITIONS.PART.TOKEN_CONTRACT.address,
-        { from: POSITIONS.PART.TX.trader }
-      ),
-    ]);
+  async function transferPositionToSharedLoan() {
+    await dydxMargin.transferLoan(
+      SHARED_LOAN.ID,
+      SHARED_LOAN.CONTRACT.address,
+      { from: SHARED_LOAN.TX.loanOffering.owner }
+    );
   }
 
-  async function returnTokenstoTrader() {
-    await Promise.all([
-      POSITIONS.FULL.TOKEN_CONTRACT.transfer(POSITIONS.FULL.TX.trader, POSITIONS.FULL.NUM_TOKENS,
-        { from: INITIAL_TOKEN_HOLDER }),
-      POSITIONS.PART.TOKEN_CONTRACT.transfer(POSITIONS.PART.TX.trader, POSITIONS.PART.NUM_TOKENS,
-        { from: INITIAL_TOKEN_HOLDER })
-    ]);
-  }
-
-  async function grantDirectCloseTokensToTrader(act = null) {
-    const maxInterestFull = await getMaxInterestFee(POSITIONS.FULL.TX);
-    const maxInterestPart = await getMaxInterestFee(POSITIONS.PART.TX);
-    await issueTokenToAccountInAmountAndApproveProxy(
-      owedToken,
-      act ? act : POSITIONS.FULL.TX.trader,
-      POSITIONS.FULL.NUM_TOKENS.plus(maxInterestFull));
-    await issueTokenToAccountInAmountAndApproveProxy(
-      owedToken,
-      act ? act : POSITIONS.PART.TX.trader,
-      POSITIONS.PART.NUM_TOKENS.plus(maxInterestPart));
-  }
-
-  async function marginCallPositions() {
-    const requiredDeposit = new BigNumber(10);
-    await Promise.all([
-      CONTRACTS.DYDX_MARGIN.marginCall(
-        POSITIONS.FULL.ID,
-        requiredDeposit,
-        { from : POSITIONS.FULL.TX.loanOffering.payer }
-      ),
-      CONTRACTS.DYDX_MARGIN.marginCall(
-        POSITIONS.PART.ID,
-        requiredDeposit,
-        { from : POSITIONS.PART.TX.loanOffering.payer }
-      ),
-    ]);
-  }
+  // ============ Tests ============
 
   describe('Constructor', () => {
-    before('set up positions and tokens', async () => {
-      await setUpPositions();
-      await setUpTokens();
-    });
-
     it('sets constants correctly', async () => {
-      for (let type in POSITIONS) {
-        const position = POSITIONS[type];
-        const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
-        expect(tsc.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
-        expect(tsc.POSITION_ID).to.equal(position.ID);
-        expect(tsc.state.equals(TOKENIZED_POSITION_STATE.UNINITIALIZED)).to.be.true;
-        expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc.heldToken).to.equal(ADDRESSES.ZERO);
-        expect(tsc.symbol).to.equal("DYDX-S");
-        expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
-        for (let i in position.TRUSTED_RECIPIENTS) {
-          const recipient = position.TRUSTED_RECIPIENTS[i];
-          const isIn = await position.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(recipient);
-          expect(isIn).to.be.true;
-        }
-        const hasZero = await position.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(ADDRESSES.ZERO);
-        expect(hasZero).to.be.false;
-      }
-    });
-  });
+      const positionId = BYTES32.TEST[0];
+      const initialLender = ADDRESSES.TEST[7];
+      const loanCaller1 = ADDRESSES.TEST[8];
+      const loanCaller2 = ADDRESSES.TEST[9];
 
-  describe('#receivePositionOwnership', () => {
-    beforeEach('set up new positions and tokens', async () => {
-      // Create new positions since state is modified by transferring them
-      await setUpPositions();
-      await setUpTokens();
-    });
+      const sharedLoanContract = await SharedLoan.new(
+        positionId,
+        dydxMargin.address,
+        initialLender,
+        [loanCaller1, loanCaller2]
+      );
 
-    it('succeeds for FULL and PART positions', async () => {
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
+      const tsc = await getSharedLoanConstants(sharedLoanContract, initialLender);
 
-        const tsc1 = await getERC20ShortConstants(POSITION.TOKEN_CONTRACT);
+      expect(tsc.MarginAddress).to.equal(dydxMargin.address);
+      expect(tsc.InitialLender).to.equal(initialLender);
+      expect(tsc.PositionId).to.equal(positionId);
+      expect(tsc.State).to.be.bignumber.equal(SHARED_LOAN_STATE.UNINITIALIZED);
+      expect(tsc.OwedToken).to.equal(ADDRESSES.ZERO);
+      expect(tsc.HeldToken).to.equal(ADDRESSES.ZERO);
+      expect(tsc.TotalPrincipal).to.be.bignumber.equal(0);
+      expect(tsc.TotalPrincipalFullyWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc.TotalOwedTokenWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc.BalancesLender).to.be.bignumber.equal(0);
+      expect(tsc.BalancesZero).to.be.bignumber.equal(0);
+      expect(tsc.OwedTokenWithdrawnEarlyLender).to.be.bignumber.equal(0);
+      expect(tsc.OwedTokenWithdrawnEarlyZero).to.be.bignumber.equal(0);
 
-        await CONTRACTS.DYDX_MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
-          { from: POSITION.TX.trader });
-
-        const [tsc2, position] = await Promise.all([
-          getERC20ShortConstants(POSITION.TOKEN_CONTRACT),
-          getPosition(CONTRACTS.DYDX_MARGIN, POSITION.ID)
-        ]);
-
-        // expect certain values
-        expect(tsc2.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
-        expect(tsc2.POSITION_ID).to.equal(POSITION.ID);
-        expect(tsc2.state.equals(TOKENIZED_POSITION_STATE.OPEN)).to.be.true;
-        expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
-        expect(tsc2.heldToken).to.equal(position.heldToken);
-
-        // explicity make sure some things have changed
-        expect(tsc2.state.equals(tsc1.state)).to.be.false;
-        expect(tsc2.heldToken).to.not.equal(tsc1.heldToken);
-
-        // explicity make sure some things have not changed
-        expect(tsc2.POSITION_ID).to.equal(tsc1.POSITION_ID);
-        expect(tsc2.DYDX_MARGIN).to.equal(tsc1.DYDX_MARGIN);
-        expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(tsc1.INITIAL_TOKEN_HOLDER);
-      }
-    });
-  });
-
-  describe('#closeOnBehalfOf', () => {
-    it('fails if not authorized', async () => {
-      await setUpPositions();
-      await setUpTokens();
-      await transferPositionsToTokens();
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const trader = POSITION.TX.trader;
-        const amount = POSITION.TX.principal;
-        await expectThrow(
-          POSITION.TOKEN_CONTRACT.closeOnBehalfOf(
-            trader, trader, POSITION.ID, amount.div(2))
-        );
-      }
-    });
-  });
-
-  describe('#closeOnBehalfOf via #closePositiondirectly', () => {
-    beforeEach('set up positions and tokens', async () => {
-      await setUpPositions();
-      await setUpTokens();
-    });
-
-    it('fails if not transferred', async () => {
-      // give owedTokens to token holder
-      issueTokenToAccountInAmountAndApproveProxy(
-        owedToken,
-        INITIAL_TOKEN_HOLDER,
-        POSITIONS.FULL.NUM_TOKENS + POSITIONS.PART.NUM_TOKENS);
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await expectThrow(
-          callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
-            POSITION.TX,
-            POSITION.NUM_TOKENS,
-            INITIAL_TOKEN_HOLDER)
-        );
-      }
-    });
-
-    it('fails if user does not have the amount of owedToken required', async () => {
-      await transferPositionsToTokens();
-      await Promise.all([
-        POSITIONS.FULL.TOKEN_CONTRACT.transfer(accounts[0], POSITIONS.FULL.NUM_TOKENS,
-          { from: INITIAL_TOKEN_HOLDER }),
-        POSITIONS.PART.TOKEN_CONTRACT.transfer(accounts[0], POSITIONS.PART.NUM_TOKENS,
-          { from: INITIAL_TOKEN_HOLDER })
+      const [lc1, lc2, lc3] = await Promise.all([
+        sharedLoanContract.TRUSTED_MARGIN_CALLERS.call(loanCaller1),
+        sharedLoanContract.TRUSTED_MARGIN_CALLERS.call(loanCaller2),
+        sharedLoanContract.TRUSTED_MARGIN_CALLERS.call(initialLender)
       ]);
 
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await expectThrow(
-          callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
-            POSITION.TX,
-            POSITION.NUM_TOKENS,
-            POSITION.TX.trader
-          )
-        );
-      }
+      expect(lc1).to.be.true;
+      expect(lc2).to.be.true;
+      expect(lc3).to.be.false;
+    });
+  });
+
+  describe('#receiveLoanOwnership', () => {
+    beforeEach('set up new positions and tokens', async () => {
+      // Create new positions since state is modified by transferring them
+      await setUpPosition();
+      await setUpSharedLoan();
     });
 
-    it('fails if value is zero', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader();
+    it('succeeds', async () => {
+      const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
 
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await expectThrow(
-          callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
-            POSITION.TX,
-            0,
-            POSITION.TX.trader
-          )
-        );
-      }
+      await transferPositionToSharedLoan();
+
+      const [tsc2, position] = await Promise.all([
+        getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER),
+        getPosition(dydxMargin, SHARED_LOAN.ID)
+      ]);
+
+      // expect certain values
+      expect(tsc2.MarginAddress).to.equal(dydxMargin.address);
+      expect(tsc2.InitialLender).to.equal(SHARED_LOAN.INITIAL_LENDER);
+      expect(tsc2.PositionId).to.equal(SHARED_LOAN.ID);
+      expect(tsc2.State).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
+      expect(tsc2.OwedToken).to.equal(SHARED_LOAN.TX.loanOffering.owedToken);
+      expect(tsc2.HeldToken).to.equal(SHARED_LOAN.TX.loanOffering.heldToken);
+      expect(tsc2.TotalPrincipal).to.be.bignumber.equal(position.principal);
+      expect(tsc2.TotalPrincipalFullyWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc2.TotalOwedTokenWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc2.BalancesLender).to.be.bignumber.equal(position.principal);
+      expect(tsc2.BalancesZero).to.be.bignumber.equal(0);
+      expect(tsc2.OwedTokenWithdrawnEarlyLender).to.be.bignumber.equal(0);
+      expect(tsc2.OwedTokenWithdrawnEarlyZero).to.be.bignumber.equal(0);
+
+      // explicity make sure some things have changed
+      expect(tsc2.State).to.be.bignumber.not.equal(tsc1.State);
+      expect(tsc2.HeldToken).to.not.equal(tsc1.HeldToken);
+      expect(tsc2.OwedToken).to.not.equal(tsc1.OwedToken);
+      expect(tsc2.TotalPrincipal).to.not.equal(tsc1.TotalPrincipal);
+      expect(tsc2.BalancesLender).to.not.equal(tsc1.BalancesLender);
+
+      // explicity make sure some things have not changed
+      expect(tsc2.MarginAddress).to.equal(tsc1.MarginAddress);
+      expect(tsc2.InitialLender).to.equal(tsc1.InitialLender);
+      expect(tsc2.PositionId).to.equal(tsc1.PositionId);
+      expect(tsc2.TotalPrincipalFullyWithdrawn)
+        .to.be.bignumber.equal(tsc1.TotalPrincipalFullyWithdrawn);
+      expect(tsc2.TotalOwedTokenWithdrawn)
+        .to.be.bignumber.equal(tsc1.TotalOwedTokenWithdrawn);
+      expect(tsc2.BalancesZero).to.be.bignumber.equal(tsc1.BalancesZero);
+      expect(tsc2.OwedTokenWithdrawnEarlyLender)
+        .to.be.bignumber.equal(tsc1.OwedTokenWithdrawnEarlyLender);
+      expect(tsc2.OwedTokenWithdrawnEarlyZero)
+        .to.be.bignumber.equal(tsc1.OwedTokenWithdrawnEarlyZero);
     });
 
-    it('closes up to the remainingAmount if user tries to close more', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader();
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS + 1,
-          POSITION.TX.trader
-        );
-      }
+    it('fails for msg.sender != Margin', async () => {
+      await expectThrow(
+        SHARED_LOAN.CONTRACT.receiveLoanOwnership(
+          SHARED_LOAN.INITIAL_LENDER,
+          SHARED_LOAN.ID,
+          { from: SHARED_LOAN.INITIAL_LENDER}
+        )
+      );
     });
+  });
 
-    it('closes at most the number of tokens owned', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader();
-
-      const rando = accounts[9];
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-
-        // give away half of the tokens
-        await POSITION.TOKEN_CONTRACT.transfer(rando, POSITION.NUM_TOKENS.div(2),
-          { from: POSITION.TX.trader });
-
-        // try to close with too-large amount, but it will get bounded by the number of tokens owned
-        const tx = await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS.times(10)
-        );
-        expect(tx.result[0] /* amountClosed */).to.be.bignumber.equal(POSITION.NUM_TOKENS.div(2));
-      }
+  describe('#marginLoanIncreased', () => {
+    it('', async () => {
+      //TODO(brendan)
     });
+  });
 
-    it('fails if user does not own any of the tokenized position', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader(accounts[0]);
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await expectThrow(
-          callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
-            POSITION.TX,
-            POSITION.NUM_TOKENS,
-            accounts[0]
-          )
-        );
-      }
+  describe('#marginCallOnBehalfOf', () => {
+    it('fails if not authorized', async () => {
+      //TODO(brendan)
     });
-
-    it('fails if closed', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader();
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        // do it once to close it
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS,
-          POSITION.TX.trader
-        );
-
-        // try again
-        await expectThrow(
-          callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
-            POSITION.TX,
-            POSITION.NUM_TOKENS,
-            POSITION.TX.trader
-          )
-        );
-      }
+    it('succeeds if authorized', async () => {
+      //TODO(brendan)
     });
+  });
 
-    it('succeeds otherwise', async () => {
-      await transferPositionsToTokens();
-      await returnTokenstoTrader();
-      await grantDirectCloseTokensToTrader();
+  describe('#cancelMarginCallOnBehalfOf', () => {
+    it('fails if not authorized', async () => {
+      //TODO(brendan)
+    });
+    it('succeeds if authorized', async () => {
+      //TODO(brendan)
+    });
+  });
 
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS
-        );
-      }
+  describe('#forceRecoverCollateralOnBehalfOf', () => {
+    it('fails if not authorized', async () => {
+      //TODO(brendan)
+    });
+    it('succeeds if authorized', async () => {
+      //TODO(brendan)
     });
   });
 
   describe('#withdraw', () => {
-    beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
-      async () => {
-        await setUpPositions();
-        await setUpTokens();
-        await transferPositionsToTokens();
-        await returnTokenstoTrader();
-        await marginCallPositions();
-        await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
-      }
-    );
-
-    it('returns 0 when caller never had any tokens', async () => {
-      // close half, force recover, then some random person can't withdraw any funds
-      await grantDirectCloseTokensToTrader();
-      const rando = accounts[9];
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const lender = POSITION.TX.loanOffering.payer;
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS.div(2)
-        );
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
-        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
-
-        expect(tx.result).to.be.bignumber.eq(0);
-      }
-    });
-
-    it('returns 0 when position is completely closed', async () => {
-      // close the position completely and then try to withdraw
-      await grantDirectCloseTokensToTrader();
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const trader = POSITION.TX.trader;
-        const lender = POSITION.TX.loanOffering.payer;
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS
-        );
-        await expectThrow(
-          CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender })
-        );
-        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
-
-        expect(tx.result).to.be.bignumber.eq(0);
-      }
-    });
-
-    it('fails when position is still open', async () => {
-      // close position halfway and then try to withdraw
-      await grantDirectCloseTokensToTrader();
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const trader = POSITION.TX.trader;
-        await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
-          POSITION.TX,
-          POSITION.NUM_TOKENS.div(2)
-        );
-        await expectThrow(POSITION.TOKEN_CONTRACT.withdraw(trader, { from: trader }));
-      }
-    });
-
-    it('withdraws no tokens after forceRecoverCollateral', async () => {
-      // close nothing, letting the lender forceRecoverCollateral
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const trader = POSITION.TX.trader;
-        const lender = POSITION.TX.loanOffering.payer;
-
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
-
-        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
-        expect(tx.result).to.be.bignumber.equal(0);
-      }
-    });
+    //TODO(brendan)
   });
+
+  describe('#withdrawAll', () => {
+    //TODO(brendan)
+  });
+
 });

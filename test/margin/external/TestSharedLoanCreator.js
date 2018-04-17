@@ -1,4 +1,4 @@
-/*global web3, artifacts, contract, describe, it, before*/
+/*global artifacts, contract, describe, it, before*/
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -6,10 +6,9 @@ chai.use(require('chai-bignumber')());
 
 const SharedLoanCreator = artifacts.require("SharedLoanCreator");
 const SharedLoan = artifacts.require("SharedLoan");
-const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
-const { ADDRESSES, BIGNUMBERS } = require('../../helpers/Constants');
+const { BIGNUMBERS } = require('../../helpers/Constants');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
 const { createSignedSellOrder } = require('../../helpers/0xHelper');

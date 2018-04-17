@@ -279,6 +279,7 @@ contract ERC20Position is
             withdrawImpl(who[i]);
         }
     }
+
     /**
      * Withdraw heldTokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
