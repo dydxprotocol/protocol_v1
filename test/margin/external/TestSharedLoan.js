@@ -30,6 +30,7 @@ const {
   callClosePosition,
   getPosition
 } = require('../../helpers/MarginHelper');
+const { wait } = require('@digix/tempo')(web3);
 
 contract('SharedLoan', function(accounts) {
 
@@ -274,7 +275,7 @@ contract('SharedLoan', function(accounts) {
   describe('#marginCallOnBehalfOf', () => {
     const depositAmount = new BigNumber(0);
 
-    beforeEach('set up position', async () => {
+    before('set up position', async () => {
       await setUpPosition();
       await setUpSharedLoan();
       await transferLoanToSharedLoan();
@@ -304,7 +305,7 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#cancelMarginCallOnBehalfOf', () => {
-    beforeEach('set up position and margin-call', async () => {
+    before('set up position and margin-call', async () => {
       await setUpPosition();
       await dydxMargin.marginCall(
         SHARED_LOAN.ID,
@@ -337,11 +338,47 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#forceRecoverCollateralOnBehalfOf', () => {
-    it('fails if not authorized', async () => {
-      //TODO(brendan)
+    const depositAmount = new BigNumber(0);
+
+    before('set up position and margin-call', async () => {
+      // set up the position and margin-call
+      await setUpPosition();
+      await dydxMargin.marginCall(
+        SHARED_LOAN.ID,
+        depositAmount,
+        { from: SHARED_LOAN.TX.loanOffering.owner }
+      );
+      await setUpSharedLoan();
+      await transferLoanToSharedLoan();
+
+      // expect proper state of the position
+      const [isClosed, isCalled, state] = await Promise.all([
+        dydxMargin.isPositionClosed.call(SHARED_LOAN.ID),
+        dydxMargin.isPositionCalled.call(SHARED_LOAN.ID),
+        SHARED_LOAN.CONTRACT.state.call()
+      ]);
+      expect(isClosed).to.be.false;
+      expect(isCalled).to.be.true;
+      expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
     });
-    it('succeeds if authorized', async () => {
-      //TODO(brendan)
+
+    it('succeeds for arbitrary caller', async () => {
+      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
+
+      await dydxMargin.forceRecoverCollateral(
+        SHARED_LOAN.ID,
+        { from: accounts[6] }
+      );
+
+      // expect proper state of the position
+      const [isClosed, isCalled, state] = await Promise.all([
+        dydxMargin.isPositionClosed.call(SHARED_LOAN.ID),
+        dydxMargin.isPositionCalled.call(SHARED_LOAN.ID),
+        SHARED_LOAN.CONTRACT.state.call()
+      ]);
+      expect(isClosed).to.be.true;
+      expect(isCalled).to.be.false;
+      expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.CLOSED);
     });
   });
 
