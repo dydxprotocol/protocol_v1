@@ -3,21 +3,29 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
+const BigNumber = require('bignumber.js');
 
 const SharedLoan = artifacts.require("SharedLoan");
-const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
+const TestPositionOwner = artifacts.require("TestPositionOwner");
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
+const FeeToken = artifacts.require("TokenC");
+const ProxyContract = artifacts.require("Proxy");
 
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
+const { getPartialAmount } = require('../../helpers/MathHelper');
 const { createSignedSellOrder } = require('../../helpers/0xHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const {
+  issueTokenToAccountInAmountAndApproveProxy,
   callOpenPosition,
   doOpenPosition,
   createOpenTx,
   issueTokensAndSetAllowances,
+  callIncreasePosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition,
   getPosition
@@ -35,14 +43,9 @@ contract('SharedLoan', function(accounts) {
     TX: null,
     NUM_TOKENS: null,
     TRUSTED_LOAN_CALLERS: null,
-    INITIAL_LENDER: null
+    INITIAL_LENDER: null,
+    POSITION_OWNER: null
   }
-
-  // ============ Before ============
-
-  before('Set up Proxy, Margin accounts', async () => {
-    dydxMargin = await Margin.deployed();
-  });
 
   // ============ Helper Functions ============
 
@@ -51,6 +54,7 @@ contract('SharedLoan', function(accounts) {
     SHARED_LOAN.ID = openTx.id;
     SHARED_LOAN.TX = openTx;
     SHARED_LOAN.INITIAL_LENDER = accounts[9];
+    SHARED_LOAN.POSITION_OWNER = openTx.owner;
   }
 
   async function setUpSharedLoan() {
@@ -63,13 +67,33 @@ contract('SharedLoan', function(accounts) {
     );
   }
 
-  async function transferPositionToSharedLoan() {
+  async function transferLoanToSharedLoan() {
     await dydxMargin.transferLoan(
       SHARED_LOAN.ID,
       SHARED_LOAN.CONTRACT.address,
       { from: SHARED_LOAN.TX.loanOffering.owner }
     );
   }
+
+  async function transferPositionToTestPositionOwner() {
+    const positionOwner = await TestPositionOwner.new(
+      dydxMargin.address,
+      ADDRESSES.ONE,
+      true
+    );
+    await dydxMargin.transferPosition(
+      SHARED_LOAN.ID,
+      positionOwner.address,
+      { from: SHARED_LOAN.TX.owner }
+    );
+    SHARED_LOAN.POSITION_OWNER = positionOwner.address;
+  }
+
+  // ============ Before ============
+
+  before('Set up Proxy, Margin accounts', async () => {
+    dydxMargin = await Margin.deployed();
+  });
 
   // ============ Tests ============
 
@@ -125,7 +149,7 @@ contract('SharedLoan', function(accounts) {
     it('succeeds', async () => {
       const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
 
-      await transferPositionToSharedLoan();
+      await transferLoanToSharedLoan();
 
       const [tsc2, position] = await Promise.all([
         getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER),
@@ -181,8 +205,69 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#marginLoanIncreased', () => {
-    it('', async () => {
-      //TODO(brendan)
+    beforeEach('transferPostion to one that will allow marginPostionIncreased', async () => {
+      await setUpPosition();
+      await setUpSharedLoan();
+      await transferLoanToSharedLoan();
+      await transferPositionToTestPositionOwner();
+    });
+
+    it('succeeds', async () => {
+      // get constants before increasing position
+      const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
+
+      // increase position
+      const adder = accounts[8];
+      const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
+      const heldToken = await HeldToken.deployed();
+      const [principal, amountHeld] = await Promise.all([
+        dydxMargin.getPositionPrincipal(SHARED_LOAN.ID),
+        dydxMargin.getPositionBalance(SHARED_LOAN.ID),
+      ]);
+      const heldTokenAmount = getPartialAmount(
+        addedPrincipal,
+        principal,
+        amountHeld,
+        true
+      );
+      await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
+      await dydxMargin.increasePositionDirectly(
+        SHARED_LOAN.ID,
+        addedPrincipal,
+        { from: adder }
+      );
+
+      // get constants after increasing position
+      const tsc2 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, adder);
+
+      // check basic constants
+      expect(tsc2.MarginAddress).to.equal(dydxMargin.address);
+      expect(tsc2.InitialLender).to.equal(SHARED_LOAN.INITIAL_LENDER);
+      expect(tsc2.PositionId).to.equal(SHARED_LOAN.ID);
+      expect(tsc2.State).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
+      expect(tsc2.OwedToken).to.equal(SHARED_LOAN.TX.loanOffering.owedToken);
+      expect(tsc2.HeldToken).to.equal(SHARED_LOAN.TX.loanOffering.heldToken);
+      expect(tsc2.TotalPrincipalFullyWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc2.TotalOwedTokenWithdrawn).to.be.bignumber.equal(0);
+      expect(tsc2.BalancesZero).to.be.bignumber.equal(0);
+      expect(tsc2.OwedTokenWithdrawnEarlyLender).to.be.bignumber.equal(0);
+      expect(tsc2.OwedTokenWithdrawnEarlyZero).to.be.bignumber.equal(0);
+
+      // check changed values
+      expect(tsc2.TotalPrincipal).to.be.bignumber.equal(tsc1.TotalPrincipal.plus(addedPrincipal));
+      expect(tsc2.BalancesLender).to.be.bignumber.equal(addedPrincipal);
+    });
+
+    it('fails for msg.sender != Margin', async () => {
+      const increaseAmount = new BigNumber('1e18');
+      await expectThrow(
+        SHARED_LOAN.CONTRACT.marginLoanIncreased(
+          SHARED_LOAN.INITIAL_LENDER,
+          SHARED_LOAN.ID,
+          increaseAmount,
+          { from: SHARED_LOAN.INITIAL_LENDER}
+        )
+      );
     });
   });
 
