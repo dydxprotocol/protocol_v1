@@ -340,10 +340,11 @@ contract SharedLoan is
         }
 
         uint256 owedTokenWithdrawn = withdrawOwedTokens(who, balance);
-        uint256 heldTokenWithdrawn = withdrawHeldTokens(who, balance);
+        uint256 heldTokenWithdrawn = 0;
         bool completelyRepaid = false;
 
         if (state == State.CLOSED) {
+            heldTokenWithdrawn = withdrawHeldTokens(who, balance);
             totalPrincipalFullyWithdrawn = totalPrincipalFullyWithdrawn.add(balance);
             balances[who] = 0;
             completelyRepaid = true;
