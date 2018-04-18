@@ -7,8 +7,8 @@ const BigNumber = require('bignumber.js');
 
 function expectLog(log, name, params) {
   const nameErrorMessage = 'event ' + name + ' had incorrect name';
-  expect(log, name).to.be.not.equal(undefined, nameErrorMessage);
-  expect(log.event).to.be.equal(name, nameErrorMessage);
+  expect(log, nameErrorMessage).to.be.not.equal(undefined);
+  expect(log.event, nameErrorMessage).to.be.equal(name);
 
   for (let key in params) {
     const expected = params[key];
