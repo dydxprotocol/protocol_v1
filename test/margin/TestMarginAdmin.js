@@ -243,7 +243,7 @@ describe('MarginAdmin', () => {
 
       await dydxMargin.setOperationState(state);
       if (shouldFail) {
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount) );
+        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount));
       } else {
         await callClosePosition(dydxMargin, OpenTx, sellOrder, closeAmount);
       }
