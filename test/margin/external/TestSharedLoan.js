@@ -13,6 +13,7 @@ const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ProxyContract = artifacts.require("Proxy");
 
+const { transact } = require('../../helpers/ContractHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
@@ -37,6 +38,7 @@ contract('SharedLoan', function(accounts) {
   // ============ Constants ============
 
   let dydxMargin;
+  let owedToken, heldToken;
   let salt = 987654;
   let SHARED_LOAN = {
     CONTRACT: null,
@@ -90,10 +92,37 @@ contract('SharedLoan', function(accounts) {
     SHARED_LOAN.POSITION_OWNER = positionOwner.address;
   }
 
+  async function increasePositionDirectly(adder, addedPrincipal) {
+    const [principal, amountHeld] = await Promise.all([
+      dydxMargin.getPositionPrincipal(SHARED_LOAN.ID),
+      dydxMargin.getPositionBalance(SHARED_LOAN.ID),
+    ]);
+    const heldTokenAmount = getPartialAmount(
+      addedPrincipal,
+      principal,
+      amountHeld,
+      true
+    );
+    await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
+    await dydxMargin.increasePositionDirectly(
+      SHARED_LOAN.ID,
+      addedPrincipal,
+      { from: adder }
+    );
+  }
+
   // ============ Before ============
 
   before('Set up Proxy, Margin accounts', async () => {
-    dydxMargin = await Margin.deployed();
+    [
+      dydxMargin,
+      owedToken,
+      heldToken
+    ] = await Promise.all([
+      Margin.deployed(),
+      OwedToken.deployed(),
+      HeldToken.deployed()
+    ]);
   });
 
   // ============ Tests ============
@@ -217,26 +246,9 @@ contract('SharedLoan', function(accounts) {
       // get constants before increasing position
       const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
 
-      // increase position
       const adder = accounts[8];
       const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
-      const heldToken = await HeldToken.deployed();
-      const [principal, amountHeld] = await Promise.all([
-        dydxMargin.getPositionPrincipal(SHARED_LOAN.ID),
-        dydxMargin.getPositionBalance(SHARED_LOAN.ID),
-      ]);
-      const heldTokenAmount = getPartialAmount(
-        addedPrincipal,
-        principal,
-        amountHeld,
-        true
-      );
-      await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
-      await dydxMargin.increasePositionDirectly(
-        SHARED_LOAN.ID,
-        addedPrincipal,
-        { from: adder }
-      );
+      await increasePositionDirectly(adder, addedPrincipal);
 
       // get constants after increasing position
       const tsc2 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, adder);
@@ -273,8 +285,6 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#marginCallOnBehalfOf', () => {
-    const depositAmount = new BigNumber(0);
-
     before('set up position', async () => {
       await setUpPosition();
       await setUpSharedLoan();
@@ -287,7 +297,7 @@ contract('SharedLoan', function(accounts) {
       await expectThrow(
         dydxMargin.marginCall(
           SHARED_LOAN.ID,
-          depositAmount,
+          BIGNUMBERS.ZERO,
           { from: SHARED_LOAN.INITIAL_LENDER }
         )
       );
@@ -296,7 +306,7 @@ contract('SharedLoan', function(accounts) {
     it('succeeds if authorized', async () => {
       await dydxMargin.marginCall(
         SHARED_LOAN.ID,
-        depositAmount,
+        BIGNUMBERS.ZERO,
         { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
       );
       const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
@@ -309,7 +319,7 @@ contract('SharedLoan', function(accounts) {
       await setUpPosition();
       await dydxMargin.marginCall(
         SHARED_LOAN.ID,
-        new BigNumber(0),
+        BIGNUMBERS.ZERO,
         { from: SHARED_LOAN.TX.loanOffering.owner }
       );
       await setUpSharedLoan();
@@ -338,14 +348,12 @@ contract('SharedLoan', function(accounts) {
   });
 
   describe('#forceRecoverCollateralOnBehalfOf', () => {
-    const depositAmount = new BigNumber(0);
-
     before('set up position and margin-call', async () => {
       // set up the position and margin-call
       await setUpPosition();
       await dydxMargin.marginCall(
         SHARED_LOAN.ID,
-        depositAmount,
+        BIGNUMBERS.ZERO,
         { from: SHARED_LOAN.TX.loanOffering.owner }
       );
       await setUpSharedLoan();
@@ -382,8 +390,109 @@ contract('SharedLoan', function(accounts) {
     });
   });
 
-  describe('#withdraw', () => {
-    //TODO(brendan)
+  describe.only('#withdraw', () => {
+    let accountA, accountB, accountC;
+
+    // ============ Helper Functions ============
+
+    async function callWithdraw(account) {
+      const [owedBefore, heldBefore] = await Promise.all([
+        owedToken.balanceOf.call(account),
+        heldToken.balanceOf.call(account),
+      ]);
+
+      const retVal = await transact(SHARED_LOAN.CONTRACT.withdraw, account);
+      const owedGotten = retVal.result[0];
+      const heldGotten = retVal.result[1];
+
+      const [owedAfter, heldAfter] = await Promise.all([
+        owedToken.balanceOf.call(account),
+        heldToken.balanceOf.call(account),
+      ]);
+
+      expect(owedAfter).to.be.bignumber.equal(owedBefore.plus(owedGotten));
+      expect(heldAfter).to.be.bignumber.equal(heldBefore.plus(heldGotten));
+
+      return {owedGotten, heldGotten};
+    }
+
+    // ============ Before ============
+
+    before('Set up three lenders with equal equity in the position', async () => {
+      await setUpPosition();
+      await setUpSharedLoan();
+
+      accountA = SHARED_LOAN.TX.loanOffering.owner;
+      accountB = accounts[8];
+      accountC = accounts[9];
+
+      await dydxMargin.marginCall(
+        SHARED_LOAN.ID,
+        BIGNUMBERS.ZERO,
+        { from: SHARED_LOAN.TX.loanOffering.owner }
+      );
+      await transferLoanToSharedLoan();
+      await transferPositionToTestPositionOwner();
+      await increasePositionDirectly(accountB, SHARED_LOAN.TX.principal);
+      await increasePositionDirectly(accountC, SHARED_LOAN.TX.principal);
+
+      // TODO:assert good state
+    });
+
+    // ============ Tests ============
+
+    it('succeeds for complicated case', async () => {
+      const thirdOfPrincipal = SHARED_LOAN.TX.principal;
+      const closer = accounts[7];
+
+      // close 1/3
+      await issueTokenToAccountInAmountAndApproveProxy(
+        owedToken,
+        closer,
+        thirdOfPrincipal.times(10)
+      );
+      await dydxMargin.closePositionDirectly(
+        SHARED_LOAN.ID,
+        thirdOfPrincipal,
+        closer,
+        { from: closer }
+      );
+
+      // withdraw accountA
+      await callWithdraw(accountA);
+
+      // close 1/3
+      await issueTokenToAccountInAmountAndApproveProxy(
+        owedToken,
+        closer,
+        thirdOfPrincipal.times(10)
+      );
+      await dydxMargin.closePositionDirectly(
+        SHARED_LOAN.ID,
+        thirdOfPrincipal,
+        closer,
+        { from: closer }
+      );
+
+      // withdraw accountB
+      await callWithdraw(accountB);
+
+      // call and forceRecover the last 1/3
+      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
+      await dydxMargin.forceRecoverCollateral(SHARED_LOAN.ID);
+
+      // withdraw accountC
+      await callWithdraw(accountC);
+
+
+      // withdraw accountA
+      await callWithdraw(accountA);
+
+
+      // withdraw accountB
+      await callWithdraw(accountB);
+
+    });
   });
 
   describe('#withdrawAll', () => {
