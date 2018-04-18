@@ -14,7 +14,6 @@ const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
-const { getMaxInterestFee } = require('./MarginHelper');
 
 module.exports = {
   checkSuccess,
@@ -26,137 +25,204 @@ module.exports = {
   getPositionLifetime
 };
 
-async function checkSuccess(dydxMargin, OpenTx, closeTx, sellOrder, closeAmount) {
-  const owedTokenOwedToLender = await getOwedAmount(OpenTx, closeTx, closeAmount);
-  const heldTokenFromSell = getPartialAmount(
-    OpenTx.buyOrder.makerTokenAmount,
-    OpenTx.buyOrder.takerTokenAmount,
-    closeAmount
-  );
-  const heldTokenBuybackCost = getPartialAmount(
-    sellOrder.takerTokenAmount,
-    sellOrder.makerTokenAmount,
+async function checkSuccess(
+  dydxMargin,
+  OpenTx,
+  closeTx,
+  sellOrder,
+  closeAmount,
+  startingBalances,
+  payoutInHeldToken = true
+) {
+  const [
     owedTokenOwedToLender,
-    true // round up
+    balances,
+    exists,
+    isClosed
+  ] = await Promise.all([
+    getOwedAmount(OpenTx, closeTx, closeAmount),
+    getBalances(dydxMargin, OpenTx, sellOrder),
+    dydxMargin.containsPosition.call(OpenTx.id),
+    dydxMargin.isPositionClosed.call(OpenTx.id)
+  ]);
+
+  const expectedUsedHeldToken = getPartialAmount(
+    closeAmount,
+    startingBalances.positionPrincipal,
+    startingBalances.positionBalance
   );
 
-  const owedTokenPaidToLender = getPartialAmount(
+  const heldTokenBuybackCost = payoutInHeldToken ?
+    getPartialAmount(
+      sellOrder.takerTokenAmount,
+      sellOrder.makerTokenAmount,
+      owedTokenOwedToLender,
+      true // round up
+    ) : expectedUsedHeldToken;
+
+  const owedTokenPaidToLender = payoutInHeldToken ? getPartialAmount(
     heldTokenBuybackCost,
     sellOrder.takerTokenAmount,
     sellOrder.makerTokenAmount,
+  ) : owedTokenOwedToLender;
+
+  const owedTokenFromSell = getPartialAmount(
+    heldTokenBuybackCost,
+    sellOrder.takerTokenAmount,
+    sellOrder.makerTokenAmount
   );
 
-  const balances = await getBalances(dydxMargin, OpenTx, sellOrder);
-  const {
-    traderHeldToken,
-    externalEntityHeldToken,
-    externalEntityOwedToken,
-    traderFeeToken,
-    externalEntityFeeToken,
-    feeRecipientFeeToken
-  } = balances;
+  if (balances.positionBalance.equals(0)) {
+    expect(exists).to.be.false;
+    expect(isClosed).to.be.true;
+  } else {
+    expect(exists).to.be.true;
+    expect(isClosed).to.be.false;
+  }
 
-  checkSmartContractBalances(balances, OpenTx, closeAmount);
-  checkLenderBalances(balances, owedTokenPaidToLender, OpenTx);
+  expect(owedTokenPaidToLender).to.be.bignumber.gte(owedTokenOwedToLender);
 
-  expect(traderHeldToken).to.be.bignumber.equal(
-    getPartialAmount(
-      closeAmount,
-      OpenTx.principal,
-      OpenTx.depositAmount
-    ).plus(heldTokenFromSell)
-      .minus(heldTokenBuybackCost)
+  checkSmartContractBalances(balances, startingBalances, expectedUsedHeldToken);
+  checkLenderBalances(balances, startingBalances, owedTokenPaidToLender);
+  checkTraderBalances(
+    balances,
+    startingBalances,
+    sellOrder,
+    closeAmount,
+    heldTokenBuybackCost,
+    owedTokenPaidToLender,
+    expectedUsedHeldToken,
+    owedTokenFromSell,
+    owedTokenOwedToLender,
+    payoutInHeldToken
   );
-  expect(externalEntityHeldToken).to.be.bignumber.equal(heldTokenBuybackCost);
-  expect(externalEntityOwedToken).to.be.bignumber.equal(
-    sellOrder.makerTokenAmount.minus(owedTokenPaidToLender)
+  checkMakerBalances(
+    balances,
+    startingBalances,
+    sellOrder,
+    heldTokenBuybackCost,
+    owedTokenFromSell
   );
-  expect(feeRecipientFeeToken).to.be.bignumber.equal(
-    getPartialAmount(
-      owedTokenPaidToLender,
-      sellOrder.makerTokenAmount,
-      sellOrder.takerFee
+
+  expect(balances.feeRecipientFeeToken).to.be.bignumber.equal(
+    startingBalances.feeRecipientFeeToken.plus(
+      getPartialAmount(
+        heldTokenBuybackCost,
+        sellOrder.takerTokenAmount,
+        sellOrder.takerFee
+      )
     ).plus(
       getPartialAmount(
-        owedTokenPaidToLender,
+        heldTokenBuybackCost,
+        sellOrder.takerTokenAmount,
+        sellOrder.makerFee
+      )
+    )
+  );
+}
+
+function checkSmartContractBalances(
+  {
+    vaultFeeToken,
+    vaultHeldToken,
+    vaultOwedToken,
+    positionBalance
+  },
+  startingBalances,
+  expectedUsedHeldToken,
+) {
+  expect(vaultFeeToken).to.be.bignumber.equal(startingBalances.vaultFeeToken);
+  expect(vaultHeldToken).to.be.bignumber.equal(
+    startingBalances.vaultHeldToken.minus(expectedUsedHeldToken)
+  );
+  expect(vaultOwedToken).to.be.bignumber.equal(startingBalances.vaultOwedToken);
+  expect(positionBalance).to.be.bignumber.equal(
+    startingBalances.positionBalance.minus(expectedUsedHeldToken)
+  );
+}
+
+function checkLenderBalances(
+  {
+    lenderHeldToken,
+    lenderOwedToken,
+  },
+  startingBalances,
+  owedTokenOwedToLender
+) {
+  expect(lenderHeldToken).to.be.bignumber.equal(startingBalances.lenderHeldToken);
+  expect(lenderOwedToken).to.be.bignumber.equal(
+    startingBalances.lenderOwedToken.plus(owedTokenOwedToLender)
+  );
+}
+
+function checkTraderBalances(
+  {
+    traderHeldToken,
+    traderFeeToken,
+    traderOwedToken
+  },
+  startingBalances,
+  sellOrder,
+  closeAmount,
+  heldTokenBuybackCost,
+  owedTokenPaidToLender,
+  expectedUsedHeldToken,
+  owedTokenFromSell,
+  owedTokenOwedToLender,
+  payoutInHeldToken
+) {
+  const expectedHeldTokenChange = payoutInHeldToken ?
+    expectedUsedHeldToken.minus(heldTokenBuybackCost) : 0;
+
+  // Trader Held Token
+  expect(traderHeldToken).to.be.bignumber.equal(
+    startingBalances.traderHeldToken.plus(expectedHeldTokenChange)
+  );
+
+  // Trader Owed Token
+  expect(traderOwedToken).to.be.bignumber.equal(
+    startingBalances.traderOwedToken.plus(owedTokenFromSell.minus(owedTokenOwedToLender))
+  );
+
+  // Trader Fee Token
+  expect(traderFeeToken).to.be.bignumber.equal(
+    startingBalances.traderFeeToken.minus(
+      getPartialAmount(
+        heldTokenBuybackCost,
+        sellOrder.takerTokenAmount,
+        sellOrder.takerFee
+      )
+    )
+  );
+}
+
+function checkMakerBalances(
+  { makerHeldToken, makerOwedToken, makerFeeToken },
+  startingBalances,
+  sellOrder,
+  heldTokenBuybackCost,
+  owedTokenFromSell
+) {
+  // Maker Held Token
+  expect(makerHeldToken).to.be.bignumber.equal(
+    startingBalances.makerHeldToken.plus(heldTokenBuybackCost)
+  );
+
+  // Maker Owed Token
+  expect(makerOwedToken).to.be.bignumber.equal(
+    startingBalances.makerOwedToken.minus(owedTokenFromSell)
+  );
+
+  // Maker Fee Token
+  expect(makerFeeToken).to.be.bignumber.equal(
+    startingBalances.makerFeeToken.minus(
+      getPartialAmount(
+        owedTokenFromSell,
         sellOrder.makerTokenAmount,
         sellOrder.makerFee
       )
     )
   );
-  expect(traderFeeToken).to.be.bignumber.equal(
-    OpenTx.buyOrder.takerFee
-      .plus(OpenTx.loanOffering.rates.takerFee)
-      .plus(sellOrder.takerFee)
-      .minus(
-        getPartialAmount(
-          OpenTx.principal,
-          OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.loanOffering.rates.takerFee
-        )
-      )
-      .minus(
-        getPartialAmount(
-          OpenTx.principal,
-          OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.buyOrder.takerFee
-        )
-      )
-      .minus(
-        getPartialAmount(
-          owedTokenPaidToLender,
-          sellOrder.makerTokenAmount,
-          sellOrder.takerFee
-        )
-      )
-  );
-  expect(externalEntityFeeToken).to.be.bignumber.equal(
-    sellOrder.makerFee
-      .minus(
-        getPartialAmount(
-          owedTokenPaidToLender,
-          sellOrder.makerTokenAmount,
-          sellOrder.makerFee
-        )
-      )
-  );
-}
-
-function checkSmartContractBalances(balances, OpenTx, closeAmount) {
-  const startingHeldTokenAmount = getPartialAmount(
-    OpenTx.buyOrder.makerTokenAmount,
-    OpenTx.buyOrder.takerTokenAmount,
-    OpenTx.principal
-  ).plus(OpenTx.depositAmount);
-  const expectedBalance = getPartialAmount(
-    OpenTx.principal.minus(closeAmount),
-    OpenTx.principal,
-    startingHeldTokenAmount
-  );
-
-  const {
-    vaultFeeToken,
-    vaultHeldToken,
-    vaultOwedToken,
-    positionBalance
-  } = balances;
-
-  expect(vaultFeeToken).to.be.bignumber.equal(0);
-  expect(vaultHeldToken).to.be.bignumber.equal(expectedBalance);
-  expect(vaultOwedToken).to.be.bignumber.equal(0);
-  expect(positionBalance).to.be.bignumber.equal(expectedBalance);
-}
-
-function checkLenderBalances(balances, owedTokenOwedToLender, OpenTx) {
-  const {
-    lenderHeldToken,
-    lenderOwedToken,
-  } = balances;
-  expect(lenderHeldToken).to.be.bignumber.equal(0);
-  expect(lenderOwedToken).to.be.bignumber.equal(
-    OpenTx.loanOffering.rates.maxAmount
-      .minus(OpenTx.principal)
-      .plus(owedTokenOwedToLender));
 }
 
 async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = true) {
@@ -189,16 +255,16 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     FeeToken.deployed(),
   ]);
 
-  let externalEntityHeldToken,
-    externalEntityOwedToken,
-    externalEntityFeeToken,
+  let makerHeldToken,
+    makerOwedToken,
+    makerFeeToken,
     feeRecipientFeeToken;
 
   if (sellOrder) {
     [
-      externalEntityHeldToken,
-      externalEntityOwedToken,
-      externalEntityFeeToken,
+      makerHeldToken,
+      makerOwedToken,
+      makerFeeToken,
       feeRecipientFeeToken,
     ] = await Promise.all([
       heldToken.balanceOf.call(sellOrder.maker),
@@ -221,7 +287,8 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     vaultHeldToken,
     vaultOwedToken,
 
-    positionBalance
+    positionBalance,
+    positionPrincipal
   ] = await Promise.all([
     heldToken.balanceOf.call(OpenTx.trader),
     owedToken.balanceOf.call(OpenTx.trader),
@@ -235,7 +302,8 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     heldToken.balanceOf.call(Vault.address),
     owedToken.balanceOf.call(Vault.address),
 
-    dydxMargin.getPositionBalance.call(OpenTx.id)
+    dydxMargin.getPositionBalance.call(OpenTx.id),
+    dydxMargin.getPositionPrincipal.call(OpenTx.id),
   ]);
 
   return {
@@ -245,9 +313,9 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     lenderHeldToken,
     lenderOwedToken,
 
-    externalEntityHeldToken,
-    externalEntityOwedToken,
-    externalEntityFeeToken,
+    makerHeldToken,
+    makerOwedToken,
+    makerFeeToken,
     traderFeeToken,
 
     feeRecipientFeeToken,
@@ -256,35 +324,41 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     vaultHeldToken,
     vaultOwedToken,
 
-    positionBalance
+    positionBalance,
+    positionPrincipal
   };
 }
 
-async function checkSuccessCloseDirectly(dydxMargin, OpenTx, closeTx, closeAmount) {
-  const owedTokenOwedToLender = await getOwedAmount(OpenTx, closeTx, closeAmount);
-  const balances = await getBalances(dydxMargin, OpenTx);
-  const heldTokenFromSell = getPartialAmount(
-    OpenTx.buyOrder.makerTokenAmount,
-    OpenTx.buyOrder.takerTokenAmount,
-    closeAmount
+async function checkSuccessCloseDirectly(
+  dydxMargin,
+  OpenTx,
+  closeTx,
+  closeAmount,
+  startingBalances
+) {
+  const [
+    balances,
+    owedTokenOwedToLender
+  ] = await Promise.all([
+    getBalances(dydxMargin, OpenTx),
+    getOwedAmount(OpenTx, closeTx, closeAmount)
+  ]);
+
+  const expectedUsedHeldToken = getPartialAmount(
+    closeAmount,
+    startingBalances.positionPrincipal,
+    startingBalances.positionBalance
   );
 
-  checkSmartContractBalances(balances, OpenTx, closeAmount);
-  checkLenderBalances(balances, owedTokenOwedToLender, OpenTx);
-  const maxInterest = await getMaxInterestFee(OpenTx);
+  checkSmartContractBalances(balances, startingBalances, expectedUsedHeldToken);
+  checkLenderBalances(balances, startingBalances, owedTokenOwedToLender);
+
   expect(balances.traderOwedToken).to.be.bignumber.equal(
-    OpenTx.principal
-      .plus(maxInterest)
-      .minus(owedTokenOwedToLender)
+    startingBalances.traderOwedToken.minus(owedTokenOwedToLender)
   );
 
   expect(balances.traderHeldToken).to.be.bignumber.equal(
-    getPartialAmount(
-      closeAmount,
-      OpenTx.principal,
-      OpenTx.depositAmount
-    )
-      .plus(heldTokenFromSell)
+    startingBalances.traderHeldToken.plus(expectedUsedHeldToken)
   );
 }
 

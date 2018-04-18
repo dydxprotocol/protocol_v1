@@ -121,6 +121,11 @@ library ClosePositionShared {
             == transaction.startingHeldToken.sub(transaction.availableHeldToken)
         );
 
+        // There should be no owed token locked in the position
+        assert(
+            Vault(state.VAULT).balances(transaction.positionId, transaction.owedToken) == 0
+        );
+
         return payout;
     }
 

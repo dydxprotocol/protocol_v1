@@ -170,10 +170,14 @@ library ClosePositionImpl {
             orderData
         );
 
+        require(receivedOwedToken >= transaction.owedTokenOwed);
+
+        uint256 lenderOwedToken;
+
         if (transaction.payoutInHeldToken) {
-            assert(receivedOwedToken >= transaction.owedTokenOwed);
+            lenderOwedToken = receivedOwedToken;
         } else {
-            require(receivedOwedToken >= transaction.owedTokenOwed);
+            lenderOwedToken = transaction.owedTokenOwed;
         }
 
         // Transfer owedToken from the exchange wrapper to the lender
@@ -181,7 +185,7 @@ library ClosePositionImpl {
             transaction.owedToken,
             transaction.exchangeWrapper,
             transaction.positionLender,
-            receivedOwedToken
+            lenderOwedToken
         );
 
         return (heldTokenPrice, receivedOwedToken);
