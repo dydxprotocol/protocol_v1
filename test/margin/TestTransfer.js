@@ -6,7 +6,7 @@ const TokenA = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
-const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
+const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const {
   doOpenPosition,
@@ -240,15 +240,15 @@ describe('#transferLoan', () => {
     it('successfully transfers to a contract with the correct interface', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doOpenPosition(accounts);
-      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
       const tx =
-        await transferLoan(OpenTx, testCallLoanDelegator.address, OpenTx.loanOffering.payer);
+        await transferLoan(OpenTx, testMarginCallDelegator.address, OpenTx.loanOffering.payer);
       const { lender } = await getPosition(dydxMargin, OpenTx.id);
-      expect(lender.toLowerCase()).to.eq(testCallLoanDelegator.address.toLowerCase());
+      expect(lender.toLowerCase()).to.eq(testMarginCallDelegator.address.toLowerCase());
       console.log('\tMargin.transferLoan gas used (to contract): ' + tx.receipt.gasUsed);
     });
   });
@@ -257,20 +257,20 @@ describe('#transferLoan', () => {
     it('successfully transfers to a contract that chains to another contract', async () => {
       dydxMargin = await Margin.deployed();
       OpenTx = await doOpenPosition(accounts);
-      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
-        testCallLoanDelegator.address,
+        testMarginCallDelegator.address,
         false);
 
       const tx = await transferLoan(
         OpenTx,
         testLoanOwner.address,
         OpenTx.loanOffering.payer,
-        testCallLoanDelegator.address);
+        testMarginCallDelegator.address);
       console.log('\tMargin.transferLoan gas used (chain thru): ' + tx.receipt.gasUsed);
     });
   });

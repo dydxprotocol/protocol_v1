@@ -168,7 +168,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
   });
 
-  describe('#transferPosition', () => {
+  describe('#untokenizePosition', () => {
     const receiver = accounts[9];
     const trader = accounts[0];
     let OpenTx;
@@ -180,7 +180,7 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds when called by ownerOf', async () => {
-      await erc721Contract.transferPosition(OpenTx.id, receiver, { from: trader });
+      await erc721Contract.untokenizePosition(OpenTx.id, receiver, { from: trader });
       await expectThrow(erc721Contract.ownerOf.call(uint256(OpenTx.id)));
       const newOwner = await dydxMargin.getPositionOwner.call(OpenTx.id);
       expect(newOwner).to.equal(receiver);
@@ -188,12 +188,12 @@ contract('ERC721MarginPosition', function(accounts) {
 
     it('fails for a non-owner', async () => {
       await expectThrow(
-        erc721Contract.transferPosition(OpenTx.id, receiver, { from: accounts[2] }));
+        erc721Contract.untokenizePosition(OpenTx.id, receiver, { from: accounts[2] }));
     });
 
     it('fails for a non-existant position', async () => {
       await expectThrow(
-        erc721Contract.transferPosition(BYTES32.BAD_ID, receiver, { from: trader }));
+        erc721Contract.untokenizePosition(BYTES32.BAD_ID, receiver, { from: trader }));
     });
   });
 

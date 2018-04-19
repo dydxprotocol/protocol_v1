@@ -1,21 +1,21 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
-import { CallLoanDelegator } from "../margin/interfaces/CallLoanDelegator.sol";
+import { MarginCallDelegator } from "../margin/interfaces/MarginCallDelegator.sol";
 
 
-contract TestCallLoanDelegator is CallLoanDelegator {
+contract TestMarginCallDelegator is MarginCallDelegator {
 
     address public CALLER;
     address public CANCELLER;
 
-    function TestCallLoanDelegator(
+    function TestMarginCallDelegator(
         address margin,
         address caller,
         address canceller
     )
         public
-        CallLoanDelegator(margin)
+        MarginCallDelegator(margin)
     {
         CALLER = caller;
         CANCELLER = canceller;

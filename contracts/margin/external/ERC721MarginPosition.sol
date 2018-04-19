@@ -54,7 +54,7 @@ contract ERC721MarginPosition is
         address margin
     )
         public
-        ERC721Token("dYdX Margin Positions", "DYDX-M")
+        ERC721Token("dYdX Margin Positions", "DYDX-MarginPosition")
         ClosePositionDelegator(margin)
     {
     }
@@ -112,7 +112,7 @@ contract ERC721MarginPosition is
      * @param  positionId  Unique ID of the position
      * @param  to          Address to transfer postion ownership to
      */
-    function transferPosition(
+    function untokenizePosition(
         bytes32 positionId,
         address to
     )

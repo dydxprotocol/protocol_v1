@@ -12,7 +12,7 @@ const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
-const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
+const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
@@ -114,14 +114,14 @@ describe('#openPosition', () => {
           lenderOwedTokenBalance
         )
       ]);
-      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
       OpenTx.loanOffering.signer = OpenTx.loanOffering.payer;
       OpenTx.loanOffering.payer = testSmartContractLender.address;
-      OpenTx.loanOffering.owner = testCallLoanDelegator.address;
+      OpenTx.loanOffering.owner = testMarginCallDelegator.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
       const tx = await callOpenPosition(dydxMargin, OpenTx);
@@ -168,7 +168,7 @@ describe('#openPosition', () => {
   contract('Margin', function(accounts) {
     it('properly assigns owner for lender and owner for contracts', async () => {
       const dydxMargin = await Margin.deployed();
-      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
@@ -179,7 +179,7 @@ describe('#openPosition', () => {
       const OpenTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(OpenTx);
       OpenTx.owner = testClosePositionDelegator.address;
-      OpenTx.loanOffering.owner = testCallLoanDelegator.address;
+      OpenTx.loanOffering.owner = testMarginCallDelegator.address;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
       await callOpenPosition(dydxMargin, OpenTx);
       await checkSuccess(dydxMargin, OpenTx);
@@ -189,7 +189,7 @@ describe('#openPosition', () => {
   contract('Margin', function(accounts) {
     it('properly assigns owner for lender and owner for chaining', async () => {
       const dydxMargin = await Margin.deployed();
-      const testCallLoanDelegator = await TestCallLoanDelegator.new(
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
@@ -199,7 +199,7 @@ describe('#openPosition', () => {
         false);
       const testLoanOwner = await TestLoanOwner.new(
         Margin.address,
-        testCallLoanDelegator.address,
+        testMarginCallDelegator.address,
         false);
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,

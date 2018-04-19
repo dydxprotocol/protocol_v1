@@ -47,16 +47,16 @@ contract LoanOwner is OnlyMargin {
      * Margin#increasePosition. If true is returned, the implementing contract can assume
      * the additional value was added.
      *
-     * @param  from         Lender adding additional funds to the position
-     * @param  positionId   Unique ID of the position
-     * @param  amountAdded  Amount to be added to the position
-     * @return              True if the contract consents to additional value being added,
-     *                      false otherwise
+     * @param  from            Lender adding additional funds to the position
+     * @param  positionId      Unique ID of the position
+     * @param  principalAdded  Principal amount to be added to the position
+     * @return                 True if the contract consents to additional value being added,
+     *                          false otherwise
      */
     function marginLoanIncreased(
         address from,
         bytes32 positionId,
-        uint256 amountAdded
+        uint256 principalAdded
     )
         external
         onlyMargin

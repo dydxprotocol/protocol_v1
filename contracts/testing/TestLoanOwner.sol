@@ -46,13 +46,13 @@ contract TestLoanOwner is LoanOwner {
     function marginLoanIncreased(
         address from,
         bytes32 positionId,
-        uint256 amount
+        uint256 principalAdded
     )
         onlyMargin
         external
         returns (bool)
     {
-        valueAdded[positionId][from] = valueAdded[positionId][from].add(amount);
+        valueAdded[positionId][from] = valueAdded[positionId][from].add(principalAdded);
         return TO_RETURN_ON_ADD;
     }
 }

@@ -6,7 +6,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const TestCallLoanDelegator = artifacts.require("TestCallLoanDelegator");
+const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const {
   doOpenPosition,
   getPosition,
@@ -88,11 +88,11 @@ describe('#marginCall', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('CallLoanDelegator loan owner only allows certain accounts', async () => {
+    it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
       const caller = accounts[8];
-      const loanCaller = await TestCallLoanDelegator.new(
+      const loanCaller = await TestMarginCallDelegator.new(
         Margin.address,
         caller,
         ADDRESSES.ZERO);
@@ -211,11 +211,11 @@ describe('#cancelMarginCall', () => {
   });
 
   contract('Margin', function(accounts) {
-    it('CallLoanDelegator loan owner only allows certain accounts', async () => {
+    it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const { OpenTx } = await doOpenPositionAndCall(accounts);
       const canceller = accounts[9];
-      const loanCaller = await TestCallLoanDelegator.new(
+      const loanCaller = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
         canceller);
