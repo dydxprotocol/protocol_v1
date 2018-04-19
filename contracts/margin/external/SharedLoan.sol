@@ -406,10 +406,6 @@ contract SharedLoan is
         internal
         returns (uint256)
     {
-        if (state != State.CLOSED) {
-            return 0;
-        }
-
         uint256 currentHeldTokenBalance = TokenInteract.balanceOf(
             heldToken,
             address(this));
