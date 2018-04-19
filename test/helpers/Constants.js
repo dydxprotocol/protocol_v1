@@ -10,6 +10,7 @@ module.exports = {
   zeroExFeeTokenConstant: '0x0000000000000000000000000000010',
   ADDRESSES: {
     ZERO: '0x0000000000000000000000000000000000000000',
+    ONE: '0x0000000000000000000000000000000000000001',
     TEST: [
       '0x06012c8cf97bead5deae237070f9587f8e7a266d', // CryptoKittiesCore
       '0x06012c8cf97bead5deae237070f9587f8e7a2661', // 1
@@ -31,18 +32,18 @@ module.exports = {
   },
   BYTES32: {
     ZERO: '0x0000000000000000000000000000000000000000000000000000000000000000'.valueOf(),
-    BAD_ID: web3Instance.utils.utf8ToHex("XXXXXXXX"),
+    BAD_ID: web3Instance.utils.utf8ToHex("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"),
     TEST: [
-      web3Instance.utils.utf8ToHex("12345670"),
-      web3Instance.utils.utf8ToHex("12345671"),
-      web3Instance.utils.utf8ToHex("12345672"),
-      web3Instance.utils.utf8ToHex("12345673"),
-      web3Instance.utils.utf8ToHex("12345674"),
-      web3Instance.utils.utf8ToHex("12345675"),
-      web3Instance.utils.utf8ToHex("12345676"),
-      web3Instance.utils.utf8ToHex("12345677"),
-      web3Instance.utils.utf8ToHex("12345678"),
-      web3Instance.utils.utf8ToHex("12345679"),
+      web3Instance.utils.utf8ToHex("12345670123456701234567012345670"),
+      web3Instance.utils.utf8ToHex("12345671123456711234567112345671"),
+      web3Instance.utils.utf8ToHex("12345672123456721234567212345672"),
+      web3Instance.utils.utf8ToHex("12345673123456731234567312345673"),
+      web3Instance.utils.utf8ToHex("12345674123456741234567412345674"),
+      web3Instance.utils.utf8ToHex("12345675123456751234567512345675"),
+      web3Instance.utils.utf8ToHex("12345676123456761234567612345676"),
+      web3Instance.utils.utf8ToHex("12345677123456771234567712345677"),
+      web3Instance.utils.utf8ToHex("12345678123456781234567812345678"),
+      web3Instance.utils.utf8ToHex("12345679123456791234567912345679"),
     ]
   },
   DEFAULT_SALT: 425

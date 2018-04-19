@@ -9,10 +9,9 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ProxyContract = artifacts.require("Proxy");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
-const { DEFAULT_SALT } = require('../helpers/Constants');
+const { ADDRESSES, DEFAULT_SALT } = require('../helpers/Constants');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const { getOwedAmount } = require('../helpers/ClosePositionHelper');
@@ -25,7 +24,8 @@ const {
   callIncreasePosition,
   createOpenTx,
   issueTokensAndSetAllowances,
-  callOpenPosition
+  callOpenPosition,
+  issueTokenToAccountInAmountAndApproveProxy,
 } = require('../helpers/MarginHelper');
 
 let salt = DEFAULT_SALT + 1;
@@ -87,8 +87,8 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, "1", true),
-        TestLoanOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
       ]);
 
       const {
@@ -285,32 +285,19 @@ describe('#increasePosition', () => {
 
     const response = await callOpenPosition(dydxMargin, OpenTx);
 
-    let issueDepositPromise;
-
     if (depositInHeldToken) {
-      issueDepositPromise = Promise.all([
-        heldToken.issueTo(OpenTx.trader, increasePosTx.depositAmount),
-        heldToken.approve(
-          ProxyContract.address,
-          increasePosTx.depositAmount,
-          { from: OpenTx.trader }
-        )
-      ]);
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
+        OpenTx.trader,
+        increasePosTx.depositAmount
+      );
     } else {
-      issueDepositPromise = Promise.all([
-        owedToken.issueTo(
-          increasePosTx.trader,
-          increasePosTx.depositAmount
-        ),
-        owedToken.approve(
-          ProxyContract.address,
-          increasePosTx.depositAmount,
-          { from: increasePosTx.trader }
-        )
-      ]);
+      await issueTokenToAccountInAmountAndApproveProxy(
+        owedToken,
+        increasePosTx.trader,
+        increasePosTx.depositAmount
+      );
     }
-
-    await issueDepositPromise;
 
     OpenTx.id = response.id;
     OpenTx.response = response;
@@ -466,8 +453,8 @@ describe('#increasePositionDirectly', () => {
         createOpenTx(accounts),
         Margin.deployed(),
         HeldToken.deployed(),
-        TestPositionOwner.new(Margin.address, "1", true),
-        TestLoanOwner.new(Margin.address, "1", true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
       ]);
 
       OpenTx.owner = testPositionOwner.address;
@@ -496,14 +483,10 @@ describe('#increasePositionDirectly', () => {
         true
       );
 
-      await heldToken.issueTo(
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
         adder,
         heldTokenAmount
-      );
-      await heldToken.approve(
-        ProxyContract.address,
-        heldTokenAmount,
-        { from: adder }
       );
 
       const tx = await dydxMargin.increasePositionDirectly(

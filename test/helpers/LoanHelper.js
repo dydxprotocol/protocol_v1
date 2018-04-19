@@ -4,8 +4,7 @@ const BigNumber = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroEx = require('0x.js').ZeroEx;
-const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const Web3 = require('web3');
 const Margin = artifacts.require("Margin");
 const promisify = require("es6-promisify");
@@ -20,7 +19,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     payer: accounts[1],
     signer: accounts[1],
     owner: accounts[1],
-    taker: ZeroEx.NULL_ADDRESS,
+    taker: ADDRESSES.ZERO,
     feeRecipient: accounts[3],
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
@@ -74,11 +73,8 @@ async function signLoanOffering(loanOffering) {
 
   loanOffering.loanHash = hash;
 
-  const signer = loanOffering.signer === ZeroEx.NULL_ADDRESS
-    ? loanOffering.payer : loanOffering.signer;
-
   const signature = await promisify(web3Instance.eth.sign)(
-    hash, signer
+    hash, loanOffering.signer
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);

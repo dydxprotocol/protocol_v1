@@ -6,6 +6,7 @@ const ProxyContract = artifacts.require("Proxy");
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
+const SharedLoanCreator = artifacts.require("SharedLoanCreator");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
@@ -128,6 +129,12 @@ async function deployMarginContracts(deployer) {
     ERC20ShortCreator,
     Margin.address,
     [DutchAuctionCloser.address]
+  );
+
+  await deployer.deploy(
+    SharedLoanCreator,
+    Margin.address,
+    [/* Trusted Margin Callers */] //TODO: add dYdX multisig address
   );
 }
 

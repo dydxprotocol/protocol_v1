@@ -9,6 +9,7 @@ async function expectThrow(promise) {
     assertCertainError(e, 'Exception while processing transaction: revert');
   }
 }
+
 // For solidity function calls that violate assert()
 async function expectAssertFailure(promise) {
   try {
@@ -19,6 +20,7 @@ async function expectAssertFailure(promise) {
   }
 }
 
+// Helper function
 function assertCertainError(error, expected_error_msg) {
   // This complication is so that the actual error will appear in truffle test output
   const message = error.message;

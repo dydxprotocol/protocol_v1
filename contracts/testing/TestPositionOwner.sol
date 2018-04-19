@@ -1,11 +1,15 @@
 pragma solidity 0.4.21;
 pragma experimental "v0.5.0";
 
+import { ClosePositionDelegator } from "../margin/interfaces/ClosePositionDelegator.sol";
 import { PositionOwner } from "../margin/interfaces/PositionOwner.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 
-contract TestPositionOwner is PositionOwner {
+contract TestPositionOwner is
+    PositionOwner,
+    ClosePositionDelegator
+{
     using SafeMath for uint256;
 
     address public TO_RETURN;
@@ -20,6 +24,7 @@ contract TestPositionOwner is PositionOwner {
         bool toReturnOnAdd
     )
         public
+        ClosePositionDelegator(margin)
         PositionOwner(margin)
     {
         if (toReturn == address(1)) {
@@ -54,5 +59,18 @@ contract TestPositionOwner is PositionOwner {
     {
         valueAdded[positionId][from] = valueAdded[positionId][from].add(amount);
         return TO_RETURN_ON_ADD;
+    }
+
+    function closeOnBehalfOf(
+        address closer,
+        address payoutRecipient,
+        bytes32 positionId,
+        uint256 requestedAmount
+    )
+        external
+        onlyMargin
+        returns (uint256)
+    {
+        return requestedAmount;
     }
 }

@@ -20,11 +20,11 @@ describe('#transferPosition', () => {
   let dydxMargin, OpenTx;
 
   async function transferPosition_THROW(OpenTx, to, from) {
-    const originalOwner = await dydxMargin.getPositionOwner(OpenTx.id);
+    const originalOwner = await dydxMargin.getPositionOwner.call(OpenTx.id);
     await expectThrow(
       dydxMargin.transferPosition(OpenTx.id, to, { from: from })
     );
-    const currentOwner = await dydxMargin.getPositionOwner(OpenTx.id);
+    const currentOwner = await dydxMargin.getPositionOwner.call(OpenTx.id);
     expect(currentOwner).to.eq(originalOwner);
     return;
   }
@@ -52,7 +52,7 @@ describe('#transferPosition', () => {
       });
     }
 
-    const currentOwner = await dydxMargin.getPositionOwner(OpenTx.id);
+    const currentOwner = await dydxMargin.getPositionOwner.call(OpenTx.id);
     expect(currentOwner.toLowerCase()).to.eq(expectedOwner.toLowerCase());
 
     return tx;
@@ -167,11 +167,11 @@ describe('#transferLoan', () => {
   let dydxMargin, OpenTx;
 
   async function transferLoan_THROW(OpenTx, to, from,) {
-    const originalLender = await dydxMargin.getPositionLender(OpenTx.id);
+    const originalLender = await dydxMargin.getPositionLender.call(OpenTx.id);
     await expectThrow(
       dydxMargin.transferLoan(OpenTx.id, to, { from: from })
     );
-    const lender = await dydxMargin.getPositionLender(OpenTx.id);
+    const lender = await dydxMargin.getPositionLender.call(OpenTx.id);
     expect(lender).to.eq(originalLender);
     return;
   }
@@ -199,7 +199,7 @@ describe('#transferLoan', () => {
       });
     }
 
-    const lender = await dydxMargin.getPositionLender(OpenTx.id);
+    const lender = await dydxMargin.getPositionLender.call(OpenTx.id);
     expect(lender.toLowerCase()).to.eq((expectedLender).toLowerCase());
 
     return tx;

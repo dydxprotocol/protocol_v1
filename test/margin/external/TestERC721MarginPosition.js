@@ -87,7 +87,7 @@ contract('ERC721MarginPosition', function(accounts) {
   describe('#getPositionDeedHolder', () => {
     it('fails for bad positionId', async () => {
       await expectThrow(
-        erc721Contract.getPositionDeedHolder(BYTES32.BAD_ID));
+        erc721Contract.getPositionDeedHolder.call(BYTES32.BAD_ID));
     });
 
     it('succeeds for owned position', async () => {
