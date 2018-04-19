@@ -35,7 +35,7 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
      * @param  who                  Address of the caller of the cancelMarginCall function
      * @param  positionId           Unique ID of the position
      * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      True if the user is allowed to cancel the margin call
+     * @return                      True if forceRecoverCollateral() is permitted
      */
     function forceRecoverCollateralOnBehalfOf(
         address who,
