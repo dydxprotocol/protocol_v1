@@ -112,7 +112,7 @@ library ClosePositionImpl {
                 transaction.owedToken,
                 msg.sender,
                 transaction.positionLender,
-                transaction.owedTokenOwed
+                lenderOwedToken
             );
         } else {
             // Buy back owedTokens using buy order and send to lender
@@ -122,8 +122,9 @@ library ClosePositionImpl {
                 orderData
             );
 
-            // If no owedToken needed for payout, give all owedToken to lender
+            // If no owedToken needed for payout: give lender all owedToken, even if more than owed
             if (transaction.payoutInHeldToken) {
+                assert(receivedOwedToken >= lenderOwedToken);
                 lenderOwedToken = receivedOwedToken;
             }
 
