@@ -68,7 +68,7 @@ library ClosePositionImpl {
             orderData
         );
 
-        uint256 payout = ClosePositionShared.sendHeldTokensToPayoutRecipient(
+        uint256 payout = ClosePositionShared.sendTokensToPayoutRecipient(
             state,
             transaction,
             buybackCost,
@@ -102,6 +102,7 @@ library ClosePositionImpl {
     {
         uint256 buybackCost = 0;
         uint256 receivedOwedToken = 0;
+        uint256 lenderOwedToken = transaction.owedTokenOwed;
 
         if (transaction.exchangeWrapper == address(0)) {
             require(transaction.payoutInHeldToken);
@@ -120,7 +121,24 @@ library ClosePositionImpl {
                 transaction,
                 orderData
             );
+
+            // If no owedToken needed for payout, give all owedToken to lender
+            if (transaction.payoutInHeldToken) {
+                lenderOwedToken = receivedOwedToken;
+            }
+
+            // Transfer owedToken from the exchange wrapper to the lender
+            Proxy(state.PROXY).transferTokens(
+                transaction.owedToken,
+                transaction.exchangeWrapper,
+                transaction.positionLender,
+                lenderOwedToken
+            );
         }
+
+        state.totalOwedTokenRepaidToLender[transaction.positionId] =
+            state.totalOwedTokenRepaidToLender[transaction.positionId].add(lenderOwedToken);
+
         return (buybackCost, receivedOwedToken);
     }
 
@@ -171,22 +189,6 @@ library ClosePositionImpl {
         );
 
         require(receivedOwedToken >= transaction.owedTokenOwed);
-
-        uint256 lenderOwedToken;
-
-        if (transaction.payoutInHeldToken) {
-            lenderOwedToken = receivedOwedToken;
-        } else {
-            lenderOwedToken = transaction.owedTokenOwed;
-        }
-
-        // Transfer owedToken from the exchange wrapper to the lender
-        Proxy(state.PROXY).transferTokens(
-            transaction.owedToken,
-            transaction.exchangeWrapper,
-            transaction.positionLender,
-            lenderOwedToken
-        );
 
         return (heldTokenPrice, receivedOwedToken);
     }

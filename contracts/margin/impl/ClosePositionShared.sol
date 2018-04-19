@@ -61,7 +61,7 @@ library ClosePositionShared {
         }
     }
 
-    function sendHeldTokensToPayoutRecipient(
+    function sendTokensToPayoutRecipient(
         MarginState.State storage state,
         ClosePositionShared.CloseTx memory transaction,
         uint256 buybackCost,

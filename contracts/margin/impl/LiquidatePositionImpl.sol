@@ -50,7 +50,7 @@ library LiquidatePositionImpl {
             true
         );
 
-        uint256 heldTokenPayout = ClosePositionShared.sendHeldTokensToPayoutRecipient(
+        uint256 heldTokenPayout = ClosePositionShared.sendTokensToPayoutRecipient(
             state,
             transaction,
             0, // No buyback cost

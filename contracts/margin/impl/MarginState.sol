@@ -36,9 +36,15 @@ library MarginState {
         // on-chain loan offerings
         mapping (bytes32 => bool) approvedLoans;
 
-        // Mapping that contains all margin positions. Mapped by: positionId -> Position
+        // Mapping from positionId -> Position, which stores all the open margin positions.
         mapping (bytes32 => MarginCommon.Position) positions;
 
+        // Mapping from positionId -> bool, which stores whether the position has previously been
+        // open, but is now closed.
         mapping (bytes32 => bool) closedPositions;
+
+        // Mapping from positionId -> uint256, which stores the total amount of owedToken that has
+        // ever been repaid to the lender for each position. Does not reset.
+        mapping (bytes32 => uint256) totalOwedTokenRepaidToLender;
     }
 }
