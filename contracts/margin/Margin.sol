@@ -326,10 +326,10 @@ contract Margin is
     }
 
     /**
-     * Margin call a position.
-     * Only callable by the lender of a position. After the call, the owner will have time equal to
-     * the call time limit of the position to close the position. If the owner does not close the
-     * position, the lender can recover the collateral in the position.
+     * Margin-call a position.
+     * Only callable with the approval of the position lender. After the call, the position owner
+     * will have time equal to the call time-limit of the position to close the position. If the
+     * owner does not close the position, the lender can recover the collateral in the position.
      *
      * @param  positionId       Unique ID for the position
      * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
@@ -349,7 +349,7 @@ contract Margin is
     }
 
     /**
-     * Cancel a margin call. Only callable by the position lender.
+     * Cancel a margin call. Only callable with the approval of the position lender.
      *
      * @param  positionId  Unique ID for the position
      */
@@ -364,24 +364,32 @@ contract Margin is
     }
 
     /**
-     * Function callable by the lender after the loan has been called-in for the call time limit but
-     * remains unclosed. Used to recover the heldTokens held as collateral.
+     * Used to recover the heldTokens held as collateral. Is callable after the maximum duration of
+     * the loan has expired or the loan has been margin-called for the duration of the call
+     * time-limit but remains unclosed. Only callable with the approval of the position lender.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId           Unique ID for the position
+     * @param  collateralRecipient  Address to send the recovered tokens to
+     * @return                      Amount of heldToken recovered
      */
     function forceRecoverCollateral(
-        bytes32 positionId
+        bytes32 positionId,
+        address collateralRecipient
     )
         external
         nonReentrant
         returns (uint256)
     {
-        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, positionId);
+        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(
+            state,
+            positionId,
+            collateralRecipient
+        );
     }
 
     /**
      * Deposit additional heldToken as collateral for a position. Cancels loan call if:
-     * 0 < position.requiredDeposit < depositAmount
+     * 0 < position.requiredDeposit < depositAmount. Only callable by the position owner.
      *
      * @param  positionId       Unique ID for the position
      * @param  depositAmount    Additional amount in heldToken to deposit

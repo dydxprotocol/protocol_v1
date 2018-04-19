@@ -20,10 +20,11 @@ library ForceRecoverCollateralImpl {
     // ============ Events ============
 
     /**
-     * Collateral for a position was forcibly recovered by the lender
+     * Collateral for a position was forcibly recovered
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
+        address indexed collateralRecipient,
         uint256 amount
     );
 
@@ -31,7 +32,8 @@ library ForceRecoverCollateralImpl {
 
     function forceRecoverCollateralImpl(
         MarginState.State storage state,
-        bytes32 positionId
+        bytes32 positionId,
+        address collateralRecipient
     )
         public
         returns (uint256)
@@ -56,19 +58,20 @@ library ForceRecoverCollateralImpl {
             require(
                 ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
                     msg.sender,
-                    positionId
+                    positionId,
+                    collateralRecipient
                 )
             );
         }
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
-        uint256 lenderHeldTokenAmount = vault.balances(positionId, position.heldToken);
+        uint256 heldTokenRecovered = vault.balances(positionId, position.heldToken);
         vault.transferFromVault(
             positionId,
             position.heldToken,
-            position.lender,
-            lenderHeldTokenAmount
+            collateralRecipient,
+            heldTokenRecovered
         );
 
         // Delete the position
@@ -81,9 +84,10 @@ library ForceRecoverCollateralImpl {
         // Log an event
         emit CollateralForceRecovered(
             positionId,
-            lenderHeldTokenAmount
+            collateralRecipient,
+            heldTokenRecovered
         );
 
-        return lenderHeldTokenAmount;
+        return heldTokenRecovered;
     }
 }
