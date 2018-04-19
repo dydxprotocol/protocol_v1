@@ -367,16 +367,23 @@ contract Margin is
      * Function callable by the lender after the loan has been called-in for the call time limit but
      * remains unclosed. Used to recover the heldTokens held as collateral.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId           Unique ID for the position
+     * @param  collateralRecipient  Address to send the recovered tokens to
+     * @return                      Amount of heldToken recovered
      */
     function forceRecoverCollateral(
-        bytes32 positionId
+        bytes32 positionId,
+        address collateralRecipient
     )
         external
         nonReentrant
         returns (uint256)
     {
-        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(state, positionId);
+        return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(
+            state,
+            positionId,
+            collateralRecipient
+        );
     }
 
     /**

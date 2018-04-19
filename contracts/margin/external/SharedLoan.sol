@@ -251,12 +251,14 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  positionId  Unique ID of the position
-     * @return             True to consent to the loan being force recovered
+     * @param  positionId           Unique ID of the position
+     * @param  collateralRecipient  Address to send the recovered tokens to
+     * @return                      True if the user is allowed to cancel the margin call
      */
     function forceRecoverCollateralOnBehalfOf(
         address /* who */,
-        bytes32 positionId
+        bytes32 positionId,
+        address collateralRecipient
     )
         external
         onlyMargin
@@ -265,6 +267,8 @@ contract SharedLoan is
     {
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
+
+        require(collateralRecipient == address(this));
 
         state = State.CLOSED;
 

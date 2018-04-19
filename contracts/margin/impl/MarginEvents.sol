@@ -65,6 +65,7 @@ contract MarginEvents {
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
+        address indexed collateralRecipient,
         uint256 amount
     );
 

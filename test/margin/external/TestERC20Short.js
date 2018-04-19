@@ -455,7 +455,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TX,
           POSITION.NUM_TOKENS.div(2)
         );
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
+        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
 
         expect(tx.result).to.be.bignumber.eq(0);
@@ -475,7 +475,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.NUM_TOKENS
         );
         await expectThrow(
-          CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender })
+          CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender })
         );
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
@@ -505,7 +505,7 @@ contract('ERC20Short', function(accounts) {
         const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
 
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, { from: lender });
+        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
 
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
         expect(tx.result).to.be.bignumber.equal(0);
