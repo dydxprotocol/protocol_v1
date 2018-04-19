@@ -355,7 +355,7 @@ contract('SharedLoan', function(accounts) {
   // ============ forceRecoverCollateralOnBehalfOf ============
 
   describe('#forceRecoverCollateralOnBehalfOf', () => {
-    before('set up position and margin-call', async () => {
+    beforeEach('set up position and margin-call', async () => {
       // set up the position and margin-call
       await setUpPosition();
       await dydxMargin.marginCall(
@@ -377,11 +377,12 @@ contract('SharedLoan', function(accounts) {
       expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
     });
 
-    it('succeeds for arbitrary caller', async () => {
+    it('succeeds for arbitrary caller if recipient is sharedLoan', async () => {
       await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
 
       await dydxMargin.forceRecoverCollateral(
         SHARED_LOAN.ID,
+        SHARED_LOAN.CONTRACT.address,
         { from: accounts[6] }
       );
 
@@ -394,6 +395,18 @@ contract('SharedLoan', function(accounts) {
       expect(isClosed).to.be.true;
       expect(isCalled).to.be.false;
       expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.CLOSED);
+    });
+
+    it('fails for arbitrary caller if recipient is NOT sharedLoan', async () => {
+      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
+
+      await expectThrow(
+        dydxMargin.forceRecoverCollateral(
+          SHARED_LOAN.ID,
+          ADDRESSES.TEST[8],
+          { from: accounts[6] }
+        )
+      );
     });
   });
 
@@ -541,7 +554,7 @@ contract('SharedLoan', function(accounts) {
         { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
       );
       await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
-      await dydxMargin.forceRecoverCollateral(SHARED_LOAN.ID);
+      await dydxMargin.forceRecoverCollateral(SHARED_LOAN.ID, SHARED_LOAN.CONTRACT.address);
     }
 
     // ============ Before Each ============
