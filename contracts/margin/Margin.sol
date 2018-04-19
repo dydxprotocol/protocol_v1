@@ -366,7 +366,7 @@ contract Margin is
     /**
      * Used to recover the heldTokens held as collateral. Is callable after the maximum duration of
      * the loan has expired or the loan has been margin-called for the duration of the call
-     * time-limit but remains unclosed.
+     * time-limit but remains unclosed. Only callable with the approval of the position lender.
      *
      * @param  positionId           Unique ID for the position
      * @param  collateralRecipient  Address to send the recovered tokens to
