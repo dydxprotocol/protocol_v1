@@ -61,7 +61,7 @@ contract MarginEvents {
     );
 
     /**
-     * Collateral was forcibly recovered by the lender
+     * Collateral for a position was forcibly recovered
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
