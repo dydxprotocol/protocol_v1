@@ -49,13 +49,14 @@ contract ERC721MarginLoan is
     // Mapping from an address to other addresses that are approved to be margin-callers
     mapping (address => mapping (address => bool)) public approvedCallers;
 
-    // Mapping from a positionId to the value of totalOwedTokensRepaidToLender for the position when
-    // it was initially transferred to this address.
+    // Mapping from a positionId to the total number of owedToken ever repaid to the lender for the
+    // position. Updated only upon acquiring the loan or upon withdrawing owedToken from this
+    // contract for the given positionId.
     mapping (bytes32 => uint256) public owedTokensRepaidSinceLastWithdraw;
 
     // Mapping from a positionId to the address of the owedToken of that position. Needed because
     // margin erases this information when the position is closed.
-    mapping (bytes32 => address) public owedTokenForPosition;
+    mapping (bytes32 => address) public owedTokenAddress;
 
     // ============ Constructor ============
 
@@ -63,7 +64,7 @@ contract ERC721MarginLoan is
         address margin
     )
         public
-        ERC721Token("dYdX Margin Loans", "DYDX-Loan")
+        ERC721Token("dYdX ERC721 Margin Loans", "D/LO")
         MarginCallDelegator(margin)
         ForceRecoverCollateralDelegator(margin)
     {
@@ -72,7 +73,7 @@ contract ERC721MarginLoan is
     // ============ Token-Holder functions ============
 
     /**
-     * Approves any address to margin-call any of the positions owned by the sender.
+     * Approves an address to margin-call any of the positions owned by the sender.
      *
      * @param  caller      Address of the margin-caller
      * @param  isApproved  True if approving the caller, false if revoking approval
@@ -103,30 +104,29 @@ contract ERC721MarginLoan is
 
     /**
      * Transfer ownership of the loan externally to this contract, thereby burning the token.
+     * Requires that there is no owedToken held in this contract for the loan being transferred
+     * because once the loan is untokenized, there is no way for the lender to withdraw the tokens
+     * from this contract.
      *
      * @param  positionId  Unique ID of the position
      * @param  to          Address to transfer loan ownership to
-     * @param  safely      If true, requires that there is no owedToken held in this contract for
-     *                     the loan being transferred. Once the loan is untokenized, there is no way
-     *                     for the lender to withdraw the tokens from this contract.
      */
     function untokenizeLoan(
         bytes32 positionId,
-        address to,
-        bool safely
+        address to
     )
         external
         nonReentrant
     {
         uint256 tokenId = uint256(positionId);
-        require(msg.sender == ownerOf(tokenId));
+        address owner = ownerOf(tokenId);
+        require(msg.sender == owner);
 
-        if (safely) {
-            uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
-            require(totalRepaid == owedTokensRepaidSinceLastWithdraw[positionId]);
-        }
+        // require no un-withdrawn owedToken
+        uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
+        require(totalRepaid == owedTokensRepaidSinceLastWithdraw[positionId]);
 
-        _burn(msg.sender, tokenId); // requires msg.sender to be owner
+        burnPositionToken(owner, positionId);
         Margin(DYDX_MARGIN).transferLoan(positionId, to);
     }
 
@@ -184,9 +184,12 @@ contract ERC721MarginLoan is
     {
         _mint(from, uint256(positionId));
 
-        owedTokensRepaidSinceLastWithdraw[positionId] =
-            Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
-        owedTokenForPosition[positionId] =
+        uint256 owedTokenRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
+        if (owedTokenRepaid > 0) {
+            owedTokensRepaidSinceLastWithdraw[positionId] = owedTokenRepaid;
+        }
+
+        owedTokenAddress[positionId] =
             Margin(DYDX_MARGIN).getPositionOwedToken(positionId);
 
         return address(this); // returning own address retains ownership of position
@@ -206,8 +209,8 @@ contract ERC721MarginLoan is
         uint256  /* principalAdded */
     )
         external
+        /* pure */
         onlyMargin
-        nonReentrant
         returns (bool)
     {
         return false;
@@ -228,8 +231,8 @@ contract ERC721MarginLoan is
         uint256 /* depositAmount */
     )
         external
+        /* view */
         onlyMargin
-        nonReentrant
         returns (bool)
     {
         address owner = ownerOf(uint256(positionId));
@@ -249,8 +252,8 @@ contract ERC721MarginLoan is
         bytes32 positionId
     )
         external
+        /* view */
         onlyMargin
-        nonReentrant
         returns (bool)
     {
         address owner = ownerOf(uint256(positionId));
@@ -272,8 +275,8 @@ contract ERC721MarginLoan is
         address collateralRecipient
     )
         external
+        /* view */
         onlyMargin
-        nonReentrant
         returns (bool)
     {
         return ownerOf(uint256(positionId)) == collateralRecipient;
@@ -293,6 +296,10 @@ contract ERC721MarginLoan is
         internal
         returns (uint256)
     {
+        address owner = ownerOf(uint256(positionId));
+        require(owner != address(0));
+
+        address owedToken = owedTokenAddress[positionId];
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
         uint256 tokensToSend = totalRepaid.sub(owedTokensRepaidSinceLastWithdraw[positionId]);
 
@@ -300,10 +307,14 @@ contract ERC721MarginLoan is
             return 0;
         }
 
-        owedTokensRepaidSinceLastWithdraw[positionId] = totalRepaid;
+        // update state based on whether the position is closed or not
+        if (Margin(DYDX_MARGIN).isPositionClosed(positionId)) {
+            burnPositionToken(owner, positionId);
+        } else {
+            owedTokensRepaidSinceLastWithdraw[positionId] = totalRepaid;
+        }
 
-        address owedToken = owedTokenForPosition[positionId];
-        address owner = ownerOf(uint256(positionId));
+        assert(TokenInteract.balanceOf(owedToken, address(this)) >= tokensToSend);
         TokenInteract.transfer(owedToken, owner, tokensToSend);
 
         emit OwedTokenWithdrawn(
@@ -314,5 +325,24 @@ contract ERC721MarginLoan is
         );
 
         return tokensToSend;
+    }
+
+    /**
+     * Burns the token and removes all unnecessary storage dedicated to that token.
+     *
+     * @param  positionId  Unique ID of the position
+     */
+    function burnPositionToken(
+        address owner,
+        bytes32 positionId
+    )
+        internal
+    {
+        delete owedTokensRepaidSinceLastWithdraw[positionId];
+        delete owedTokenAddress[positionId];
+        uint256 tokenId = uint256(positionId);
+
+        // requires that owner actually is the owner of the token
+        _burn(owner, tokenId);
     }
 }
