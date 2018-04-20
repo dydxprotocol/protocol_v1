@@ -68,6 +68,22 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
+     * Gets the total amount of owedToken ever repaid to the lender for a position.
+     *
+     * @param  positionId  Unique ID of the position
+     * @return             Total amount of owedToken ever repaid
+     */
+    function getTotalOwedTokenRepaidToLender(
+        bytes32 positionId
+    )
+        external
+        view
+        returns (uint256)
+    {
+        return state.totalOwedTokenRepaidToLender[positionId];
+    }
+
+    /**
      * Gets the amount of heldToken currently locked up in Vault for a particular position
      *
      * @param  positionId  Unique ID of the position
