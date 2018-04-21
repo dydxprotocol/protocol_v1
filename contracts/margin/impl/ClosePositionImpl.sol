@@ -171,14 +171,12 @@ library ClosePositionImpl {
         }
 
         // Send the requisite heldToken to do the buyback from vault to exchange wrapper
-        if (heldTokenPrice > 0) {
-            Vault(state.VAULT).transferFromVault(
-                transaction.positionId,
-                transaction.heldToken,
-                transaction.exchangeWrapper,
-                heldTokenPrice
-            );
-        }
+        Vault(state.VAULT).transferFromVault(
+            transaction.positionId,
+            transaction.heldToken,
+            transaction.exchangeWrapper,
+            heldTokenPrice
+        );
 
         // Trade the heldToken for the owedToken
         uint256 receivedOwedToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(

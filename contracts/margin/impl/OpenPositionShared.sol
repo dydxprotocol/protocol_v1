@@ -200,24 +200,22 @@ library OpenPositionShared {
         internal
         returns (uint256 /* heldTokenFromDeposit */)
     {
-        if (transaction.depositAmount > 0) {
-            if (transaction.depositInHeldToken) {
-                Vault(state.VAULT).transferToVault(
-                    positionId,
-                    transaction.heldToken,
-                    msg.sender,
-                    transaction.depositAmount
-                );
-                return transaction.depositAmount;
-            } else {
-                Proxy(state.PROXY).transferTokens(
-                    transaction.owedToken,
-                    msg.sender,
-                    transaction.exchangeWrapper,
-                    transaction.depositAmount
-                );
-                return 0;
-            }
+        if (transaction.depositInHeldToken) {
+            Vault(state.VAULT).transferToVault(
+                positionId,
+                transaction.heldToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+            return transaction.depositAmount;
+        } else {
+            Proxy(state.PROXY).transferTokens(
+                transaction.owedToken,
+                msg.sender,
+                transaction.exchangeWrapper,
+                transaction.depositAmount
+            );
+            return 0;
         }
     }
 
