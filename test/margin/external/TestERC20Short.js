@@ -181,8 +181,8 @@ contract('ERC20Short', function(accounts) {
         expect(tsc.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.UNINITIALIZED);
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
         expect(tsc.heldToken).to.equal(ADDRESSES.ZERO);
-        expect(tsc.symbol).to.equal("DYDX-S");
-        expect(tsc.name).to.equal("dYdX Tokenized Short [UNINITIALIZED]");
+        expect(tsc.symbol).to.equal("d/S");
+        expect(tsc.name).to.equal("dYdX Short Token [UNINITIALIZED]");
         for (let i in position.TRUSTED_RECIPIENTS) {
           const recipient = position.TRUSTED_RECIPIENTS[i];
           const isIn = await position.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(recipient);
@@ -557,7 +557,7 @@ contract('ERC20Short', function(accounts) {
           POSITION.TOKEN_CONTRACT.name.call()
         ]);
         expect(positionId).to.be.bignumber.equal(POSITION.ID);
-        expect(tokenName).to.equal("dYdX Tokenized Short " + POSITION.ID.toString());
+        expect(tokenName).to.equal("dYdX Short Token " + POSITION.ID.toString());
       }
     });
   });

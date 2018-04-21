@@ -5,17 +5,17 @@ import { LoanOwner } from "./LoanOwner.sol";
 
 
 /**
- * @title CallLoanDelegator
+ * @title MarginCallDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses call-in a loan
+ * Interface that smart contracts must implement in order to let other addresses margin-call a loan
  * owned by the smart contract.
  */
-contract CallLoanDelegator is LoanOwner {
+contract MarginCallDelegator is LoanOwner {
 
     // ============ Constructor ============
 
-    function CallLoanDelegator(
+    function MarginCallDelegator(
         address margin
     )
         public

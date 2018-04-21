@@ -7,8 +7,8 @@ import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
-import { CallLoanDelegator } from "../interfaces/CallLoanDelegator.sol";
 import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
+import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -22,7 +22,7 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  */
 /* solium-disable-next-line */
 contract SharedLoan is
-    CallLoanDelegator,
+    MarginCallDelegator,
     ForceRecoverCollateralDelegator,
     ReentrancyGuard
 {
@@ -109,7 +109,7 @@ contract SharedLoan is
     )
         public
         ForceRecoverCollateralDelegator(margin)
-        CallLoanDelegator(margin)
+        MarginCallDelegator(margin)
     {
         POSITION_ID = positionId;
         state = State.UNINITIALIZED;
@@ -168,15 +168,15 @@ contract SharedLoan is
      * Called by Margin when additional value is added onto the position this contract
      * is lending for. Balance is added to the address that loaned the additional tokens.
      *
-     * @param  from         Address that loaned the additional tokens
-     * @param  positionId   Unique ID of the position
-     * @param  amountAdded  Amount that was added to the position
-     * @return              True to indicate that this contract consents to value being added
+     * @param  from            Address that loaned the additional tokens
+     * @param  positionId      Unique ID of the position
+     * @param  principalAdded  Amount that was added to the position
+     * @return                 True to indicate that this contract consents to value being added
      */
     function marginLoanIncreased(
         address from,
         bytes32 positionId,
-        uint256 amountAdded
+        uint256 principalAdded
     )
         external
         onlyMargin
@@ -185,12 +185,12 @@ contract SharedLoan is
     {
         require(positionId == POSITION_ID);
 
-        balances[from] = balances[from].add(amountAdded);
-        totalPrincipal = totalPrincipal.add(amountAdded);
+        balances[from] = balances[from].add(principalAdded);
+        totalPrincipal = totalPrincipal.add(principalAdded);
 
         emit BalanceAdded(
             from,
-            amountAdded
+            principalAdded
         );
 
         return true;
