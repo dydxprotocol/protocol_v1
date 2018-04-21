@@ -54,7 +54,7 @@ contract ERC721MarginPosition is
         address margin
     )
         public
-        ERC721Token("dYdX ERC721 Margin Positions", "D/PO")
+        ERC721Token("dYdX ERC721 Margin Positions", "d/PO")
         ClosePositionDelegator(margin)
     {
     }

@@ -27,7 +27,7 @@ contract ERC20Long is ERC20Position {
             margin,
             initialTokenHolder,
             trustedRecipients,
-            "D/LL"
+            "d/LL"
         )
     {}
 
@@ -62,6 +62,6 @@ contract ERC20Long is ERC20Position {
         pure
         returns (bytes)
     {
-        return "dYdX ERC20 Leveraged-Long";
+        return "dYdX Leveraged-Long";
     }
 }

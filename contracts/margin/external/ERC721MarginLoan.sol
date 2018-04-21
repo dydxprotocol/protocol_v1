@@ -64,7 +64,7 @@ contract ERC721MarginLoan is
         address margin
     )
         public
-        ERC721Token("dYdX ERC721 Margin Loans", "D/LO")
+        ERC721Token("dYdX ERC721 Margin Loans", "d/LO")
         MarginCallDelegator(margin)
         ForceRecoverCollateralDelegator(margin)
     {

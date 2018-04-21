@@ -27,7 +27,7 @@ contract ERC20Short is ERC20Position {
             margin,
             initialTokenHolder,
             trustedRecipients,
-            "D/SS"
+            "d/SS"
         )
     {}
 
@@ -62,6 +62,6 @@ contract ERC20Short is ERC20Position {
         pure
         returns (bytes)
     {
-        return "dYdX ERC20 Short-Sell";
+        return "dYdX Short-Sell";
     }
 }
