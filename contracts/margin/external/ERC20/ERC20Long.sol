@@ -62,6 +62,6 @@ contract ERC20Long is ERC20Position {
         pure
         returns (bytes)
     {
-        return "dYdX Leveraged-Long";
+        return "dYdX Leveraged Long Token";
     }
 }
