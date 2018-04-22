@@ -14,13 +14,18 @@ const OwedToken = artifacts.require("TokenB");
 const { transact } = require('../../helpers/ContractHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
+const { createSignedSellOrder } = require('../../helpers/0xHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
 const { getPartialAmount, uint256 } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { expectLog } = require('../../helpers/EventHelper');
 const {
+  issueTokensAndSetAllowances,
+  issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
+  callClosePosition,
   callOpenPosition,
+  doOpenPosition,
   getPosition,
   createOpenTx
 } = require('../../helpers/MarginHelper');
@@ -38,7 +43,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ Helper Functions ============
 
-  async function setUpLoan() {
+  async function loadContracts() {
     [
       dydxMargin,
       owedToken,
@@ -49,16 +54,26 @@ describe('ERC721MarginLoan', function(accounts) {
       HeldToken.deployed()
     ]);
     loanContract = await ERC721MarginLoan.new(dydxMargin.address);
-    openTx = createOpenTx(accounts, salt++);
-    openTx.loanOffering.owner = loanContract;
+  }
+
+  async function setUpLoan(accounts) {
+    openTx = await createOpenTx(accounts, salt++);
+    openTx.loanOffering.owner = loanContract.address;
     openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
-    openTx = await callOpenPosition(dydxMargin, openTx);
+    await issueTokensAndSetAllowances(openTx);
+    const temp = await callOpenPosition(dydxMargin, openTx);
+    openTx.id = temp.id;
   }
 
   // ============ Constructor ============
 
-  contract('Constructor', () => {
+  contract('Constructor', function(accounts) {
+    before('load contracts', async () => {
+      await loadContracts(accounts);
+    });
+
     it('sets constants correctly', async () => {
+      await setUpLoan(accounts);
       const [
         marginAddress,
         isApproved,
@@ -80,7 +95,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
       // Check random values in mappings
       expect(isApproved).to.be.false;
-      expect(owedTokensRepaid).to.be.bignumber(0);
+      expect(owedTokensRepaid).to.be.bignumber.equal(0);
       expect(owedTokenAddress).to.equal(ADDRESSES.ZERO);
 
       // Check ERC721 values
@@ -91,7 +106,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ approveCaller ============
 
-  contract('#approveCaller', () => {
+  contract('#approveCaller', function(accounts) {
     const sender = accounts[6];
     const helper = accounts[7];
     const eventName = 'MarginCallerApproval';
@@ -106,8 +121,15 @@ describe('ERC721MarginLoan', function(accounts) {
       isApproved: false
     };
 
+    before('load contracts', async () => {
+      await loadContracts(accounts);
+    });
+
     beforeEach('set up loan', async () => {
-      await setUpLoan();
+      await setUpLoan(accounts);
+
+      // reset approval to false
+      await loanContract.approveCaller(helper, false, { from: sender });
     });
 
     it('succeeds in approving', async () => {
@@ -155,12 +177,16 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ untokenizeLoan ============
 
-  contract('#untokenizeLoan', () => {
+  contract('#untokenizeLoan', function(accounts) {
     const receiver = accounts[9];
     const lender = accounts[1];
 
+    before('load contracts', async () => {
+      await loadContracts(accounts);
+    });
+
     beforeEach('set up loan', async () => {
-      await setUpLoan();
+      await setUpLoan(accounts);
       const owner = await loanContract.ownerOf.call(uint256(openTx.id));
       expect(owner).to.equal(lender);
     });
@@ -185,66 +211,82 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ receiveLoanOwnership ============
 
-  contract('#receiveLoanOwnership', () => {
-    beforeEach('set up new positions and tokens', async () => {
-      // Create new positions since state is modified by transferring them
-      await setUpPosition();
-      await setUpSharedLoan();
+  contract('#receiveLoanOwnership', function(accounts) {
+    before('load contracts', async () => {
+      await loadContracts(accounts);
     });
 
     it('succeeds', async () => {
-      const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
+      const openTx1 = await doOpenPosition(accounts, salt++);
+      const openTx2 = await doOpenPosition(accounts, salt++);
 
-      await transferLoanToSharedLoan();
+      // expect no erc721 tokens yet
+      await expectThrow(
+        loanContract.ownerOf.call(uint256(openTx1.id))
+      );
+      await expectThrow(
+        loanContract.ownerOf.call(uint256(openTx2.id))
+      );
 
-      const [tsc2, position] = await Promise.all([
-        getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER),
-        getPosition(dydxMargin, SHARED_LOAN.ID)
+      // close half of openTx2
+      const sellOrder = await createSignedSellOrder(accounts);
+      await issueTokensAndSetAllowancesForClose(openTx2, sellOrder);
+      const closeTx = await callClosePosition(
+        dydxMargin,
+        openTx2,
+        sellOrder,
+        openTx2.principal.div(2)
+      );
+
+      // transfer loans to token contract
+      await Promise.all([
+        dydxMargin.transferLoan(
+          openTx1.id,
+          loanContract.address,
+          { from: openTx1.loanOffering.owner }
+        ),
+        dydxMargin.transferLoan(
+          openTx2.id,
+          loanContract.address,
+          { from: openTx2.loanOffering.owner }
+        )
+      ]);
+
+      // get values
+      const [
+        owner1,
+        owner2,
+        owedTokenAddress1,
+        owedTokenAddress2,
+        repaid1,
+        repaid2,
+        expectedRepaid2
+      ] = await Promise.all([
+        loanContract.ownerOf.call(uint256(openTx1.id)),
+        loanContract.ownerOf.call(uint256(openTx2.id)),
+        loanContract.owedTokenAddress.call(uint256(openTx1.id)),
+        loanContract.owedTokenAddress.call(uint256(openTx2.id)),
+        loanContract.owedTokensRepaidSinceLastWithdraw.call(uint256(openTx1.id)),
+        loanContract.owedTokensRepaidSinceLastWithdraw.call(uint256(openTx2.id)),
+        dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx2.id)
       ]);
 
       // expect certain values
-      expect(tsc2.MarginAddress).to.equal(dydxMargin.address);
-      expect(tsc2.InitialLender).to.equal(SHARED_LOAN.INITIAL_LENDER);
-      expect(tsc2.PositionId).to.equal(SHARED_LOAN.ID);
-      expect(tsc2.State).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
-      expect(tsc2.OwedToken).to.equal(SHARED_LOAN.TX.loanOffering.owedToken);
-      expect(tsc2.HeldToken).to.equal(SHARED_LOAN.TX.loanOffering.heldToken);
-      expect(tsc2.TotalPrincipal).to.be.bignumber.equal(position.principal);
-      expect(tsc2.TotalPrincipalFullyWithdrawn).to.be.bignumber.equal(0);
-      expect(tsc2.TotalOwedTokenWithdrawn).to.be.bignumber.equal(0);
-      expect(tsc2.BalancesLender).to.be.bignumber.equal(position.principal);
-      expect(tsc2.BalancesZero).to.be.bignumber.equal(0);
-      expect(tsc2.OwedTokenWithdrawnEarlyLender).to.be.bignumber.equal(0);
-      expect(tsc2.OwedTokenWithdrawnEarlyZero).to.be.bignumber.equal(0);
-
-      // explicity make sure some things have changed
-      expect(tsc2.State).to.be.bignumber.not.equal(tsc1.State);
-      expect(tsc2.HeldToken).to.not.equal(tsc1.HeldToken);
-      expect(tsc2.OwedToken).to.not.equal(tsc1.OwedToken);
-      expect(tsc2.TotalPrincipal).to.not.equal(tsc1.TotalPrincipal);
-      expect(tsc2.BalancesLender).to.not.equal(tsc1.BalancesLender);
-
-      // explicity make sure some things have not changed
-      expect(tsc2.MarginAddress).to.equal(tsc1.MarginAddress);
-      expect(tsc2.InitialLender).to.equal(tsc1.InitialLender);
-      expect(tsc2.PositionId).to.equal(tsc1.PositionId);
-      expect(tsc2.TotalPrincipalFullyWithdrawn)
-        .to.be.bignumber.equal(tsc1.TotalPrincipalFullyWithdrawn);
-      expect(tsc2.TotalOwedTokenWithdrawn)
-        .to.be.bignumber.equal(tsc1.TotalOwedTokenWithdrawn);
-      expect(tsc2.BalancesZero).to.be.bignumber.equal(tsc1.BalancesZero);
-      expect(tsc2.OwedTokenWithdrawnEarlyLender)
-        .to.be.bignumber.equal(tsc1.OwedTokenWithdrawnEarlyLender);
-      expect(tsc2.OwedTokenWithdrawnEarlyZero)
-        .to.be.bignumber.equal(tsc1.OwedTokenWithdrawnEarlyZero);
+      expect(owner1).to.equal(openTx1.loanOffering.owner);
+      expect(owner2).to.equal(openTx2.loanOffering.owner);
+      expect(owedTokenAddress1).to.equal(openTx1.loanOffering.owedToken);
+      expect(owedTokenAddress2).to.equal(openTx2.loanOffering.owedToken);
+      expect(repaid1).to.be.bignumber.equal(0);
+      expect(repaid2).to.be.bignumber.equal(expectedRepaid2);
     });
 
     it('fails for msg.sender != Margin', async () => {
+      const lender = accounts[1];
       await expectThrow(
-        SHARED_LOAN.CONTRACT.receiveLoanOwnership(
-          SHARED_LOAN.INITIAL_LENDER,
-          SHARED_LOAN.ID,
-          { from: SHARED_LOAN.INITIAL_LENDER}
+        loanContract.receiveLoanOwnership(
+          lender,
+          BYTES32.TEST[0],
+          { from: lender}
         )
       );
     });
@@ -252,59 +294,55 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ marginLoanIncreased ============
 
-  describe('#marginLoanIncreased', () => {
-    beforeEach('transferPostion to one that will allow marginPostionIncreased', async () => {
-      await setUpPosition();
-      await setUpSharedLoan();
-      await transferLoanToSharedLoan();
-      await transferPositionToTestPositionOwner();
+  contract('#marginLoanIncreased', function(accounts) {
+    before('load contracts', async () => {
+      await loadContracts(accounts);
     });
 
-    it('succeeds', async () => {
-      // get constants before increasing position
-      const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
+    beforeEach('set up loan', async () => {
+      await setUpLoan(accounts);
+    });
 
+    it('fails always', async () => {
       const adder = accounts[8];
-      const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
-      await increasePositionDirectly(adder, addedPrincipal);
-
-      // get constants after increasing position
-      const tsc2 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, adder);
-
-      // check basic constants
-      expect(tsc2.MarginAddress).to.equal(dydxMargin.address);
-      expect(tsc2.InitialLender).to.equal(SHARED_LOAN.INITIAL_LENDER);
-      expect(tsc2.PositionId).to.equal(SHARED_LOAN.ID);
-      expect(tsc2.State).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
-      expect(tsc2.OwedToken).to.equal(SHARED_LOAN.TX.loanOffering.owedToken);
-      expect(tsc2.HeldToken).to.equal(SHARED_LOAN.TX.loanOffering.heldToken);
-      expect(tsc2.TotalPrincipalFullyWithdrawn).to.be.bignumber.equal(0);
-      expect(tsc2.TotalOwedTokenWithdrawn).to.be.bignumber.equal(0);
-      expect(tsc2.BalancesZero).to.be.bignumber.equal(0);
-      expect(tsc2.OwedTokenWithdrawnEarlyLender).to.be.bignumber.equal(0);
-      expect(tsc2.OwedTokenWithdrawnEarlyZero).to.be.bignumber.equal(0);
-
-      // check changed values
-      expect(tsc2.TotalPrincipal).to.be.bignumber.equal(tsc1.TotalPrincipal.plus(addedPrincipal));
-      expect(tsc2.BalancesLender).to.be.bignumber.equal(addedPrincipal);
+      const addedPrincipal = openTx.principal.div(2);
+      const [principal, amountHeld] = await Promise.all([
+        dydxMargin.getPositionPrincipal(openTx.id),
+        dydxMargin.getPositionBalance(openTx.id),
+      ]);
+      const heldTokenAmount = getPartialAmount(
+        addedPrincipal,
+        principal,
+        amountHeld,
+        true
+      );
+      await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
+      await expectThrow(
+        dydxMargin.increasePositionDirectly(
+          openTx.id,
+          addedPrincipal,
+          { from: adder }
+        )
+      );
     });
 
     it('fails for msg.sender != Margin', async () => {
+      const lender = accounts[1];
       const increaseAmount = new BigNumber('1e18');
       await expectThrow(
-        SHARED_LOAN.CONTRACT.marginLoanIncreased(
-          SHARED_LOAN.INITIAL_LENDER,
-          SHARED_LOAN.ID,
+        loanContract.marginLoanIncreased(
+          lender,
+          openTx.id,
           increaseAmount,
-          { from: SHARED_LOAN.INITIAL_LENDER}
+          { from: lender }
         )
       );
     });
   });
-
+/*
   // ============ marginCallOnBehalfOf ============
 
-  describe('#marginCallOnBehalfOf', () => {
+  contract('#marginCallOnBehalfOf', function(accounts) {
     before('set up position', async () => {
       await setUpPosition();
       await setUpSharedLoan();
@@ -336,7 +374,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ cancelMarginCallOnBehalfOf ============
 
-  describe('#cancelMarginCallOnBehalfOf', () => {
+  contract('#cancelMarginCallOnBehalfOf', function(accounts) {
     before('set up position and margin-call', async () => {
       await setUpPosition();
       await dydxMargin.marginCall(
@@ -371,7 +409,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ forceRecoverCollateralOnBehalfOf ============
 
-  describe('#forceRecoverCollateralOnBehalfOf', () => {
+  contract('#forceRecoverCollateralOnBehalfOf', function(accounts) {
     beforeEach('set up position and margin-call', async () => {
       // set up the position and margin-call
       await setUpPosition();
@@ -429,7 +467,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ withdraw ============
 
-  describe('#withdraw and #withdrawMultiple', () => {
+  contract('#withdraw and #withdrawMultiple', function(accounts) {
     let accountA, accountB, accountC;
     let principalShare;
     const closer = accounts[6];
@@ -709,5 +747,5 @@ describe('ERC721MarginLoan', function(accounts) {
       await callWithdrawMultiple(arg);
     });
   });
-
+*/
 });
