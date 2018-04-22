@@ -17,6 +17,7 @@ const { expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
 const { getPartialAmount } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
+const { expectLog } = require('../../helpers/EventHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
   callOpenPosition,
@@ -56,8 +57,8 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ Constructor ============
 
-  contract('ERC721MarginLoan', () => {
-    it('Constructor sets constants correctly', async () => {
+  contract('Constructor', () => {
+    it('sets constants correctly', async () => {
       const [
         marginAddress,
         isApproved,
@@ -68,8 +69,8 @@ describe('ERC721MarginLoan', function(accounts) {
       ] = await Promise.all([
         loanContract.DYDX_MARGIN.call(),
         loanContract.approvedCallers.call(accounts[0], accounts[1]),
-        loanContract.owedTokensRepaidSinceLastWithdraw.call(BYTES32.TEST[0]);
-        loanContract.owedTokenAddress.call(BYTES32.TEST[0]);
+        loanContract.owedTokensRepaidSinceLastWithdraw.call(BYTES32.TEST[0]),
+        loanContract.owedTokenAddress.call(BYTES32.TEST[0]),
         loanContract.name.call(),
         loanContract.symbol.call()
       ]);
@@ -90,7 +91,69 @@ describe('ERC721MarginLoan', function(accounts) {
 
   // ============ receiveLoanOwnership ============
 
-  describe('#receiveLoanOwnership', () => {
+  contract('#approveCaller', () => {
+    const sender = accounts[6];
+    const helper = accounts[7];
+    const eventName = 'MarginCallerApproval';
+    const approvedEventTrue = {
+      lender: sender,
+      caller: helper,
+      isApproved: true
+    };
+    const approvedEventFalse = {
+      lender: sender,
+      caller: helper,
+      isApproved: false
+    };
+
+    beforeEach('set up loan', async () => {
+      await setUpLoan();
+    });
+
+    it('succeeds in approving', async () => {
+      const tx = await loanContract.approveCaller(helper, true, { from: sender });
+      const approved = await loanContract.approvedCallers.call(sender, helper);
+      expect(approved).to.be.true;
+      expectLog(tx.logs[0], eventName, approvedEventTrue);
+    });
+
+    it('succeeds in revoking approval', async () => {
+      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
+      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
+      const approved = await loanContract.approvedCallers.call(sender, helper);
+      expect(approved).to.be.false;
+      expectLog(tx1.logs[0], eventName, approvedEventTrue);
+      expectLog(tx2.logs[0], eventName, approvedEventFalse);
+    });
+
+    it('succeeds when true => true', async () => {
+      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
+      const tx2 = await loanContract.approveCaller(helper, true, { from: sender });
+      const approved = await loanContract.approvedCallers.call(sender, helper);
+      expect(approved).to.be.true;
+      expectLog(tx1.logs[0], eventName, approvedEventTrue);
+      expect(tx2.logs.length === 0);
+    });
+
+    it('succeeds when false => false', async () => {
+      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
+      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
+      const tx3 = await loanContract.approveCaller(helper, false, { from: sender });
+      const approved = await loanContract.approvedCallers.call(sender, helper);
+      expect(approved).to.be.false;
+      expectLog(tx1.logs[0], eventName, approvedEventTrue);
+      expectLog(tx2.logs[0], eventName, approvedEventFalse);
+      expect(tx3.logs.length === 0);
+    });
+
+    it('throws when address approves itself', async () => {
+      await expectThrow(
+        loanContract.approveCaller(helper, true, { from: helper })
+      );
+    });
+  });
+
+  contract('#receiveLoanOwnership', () => {
     beforeEach('set up new positions and tokens', async () => {
       // Create new positions since state is modified by transferring them
       await setUpPosition();

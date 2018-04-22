@@ -33,7 +33,7 @@ contract ERC721MarginLoan is
 
     event MarginCallerApproval(
         address indexed lender,
-        address indexed approved,
+        address indexed caller,
         bool isApproved
     );
 
