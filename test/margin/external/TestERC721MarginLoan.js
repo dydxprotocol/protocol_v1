@@ -7,15 +7,12 @@ const BigNumber = require('bignumber.js');
 
 const ERC721MarginLoan = artifacts.require("ERC721MarginLoan");
 const Margin = artifacts.require("Margin");
-const TestPositionOwner = artifacts.require("TestPositionOwner");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
-const { transact } = require('../../helpers/ContractHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { createSignedSellOrder } = require('../../helpers/0xHelper');
-const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
 const { getPartialAmount, uint256 } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { expectLog } = require('../../helpers/EventHelper');
@@ -26,12 +23,11 @@ const {
   callClosePosition,
   callOpenPosition,
   doOpenPosition,
-  getPosition,
   createOpenTx
 } = require('../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
-describe('ERC721MarginLoan', function(accounts) {
+describe('ERC721MarginLoan', () => {
 
   // ============ Constants ============
 
@@ -63,6 +59,22 @@ describe('ERC721MarginLoan', function(accounts) {
     await issueTokensAndSetAllowances(openTx);
     const temp = await callOpenPosition(dydxMargin, openTx);
     openTx.id = temp.id;
+
+    const owner = await loanContract.ownerOf.call(uint256(openTx.id));
+    expect(owner).to.be.equal(openTx.loanOffering.payer);
+  }
+
+  async function expectNoToken(positionId) {
+    const tokenId = uint256(positionId);
+    await expectThrow(
+      loanContract.ownerOf.call(tokenId)
+    );
+    const [owedToken, owedTokenRepaid] = await Promise.all([
+      loanContract.owedTokenAddress.call(tokenId),
+      loanContract.owedTokensRepaidSinceLastWithdraw.call(tokenId)
+    ]);
+    expect(owedToken).to.be.bignumber.equal(0);
+    expect(owedTokenRepaid).to.be.bignumber.equal(0);
   }
 
   // ============ Constructor ============
@@ -193,7 +205,7 @@ describe('ERC721MarginLoan', function(accounts) {
 
     it('succeeds when called by ownerOf', async () => {
       await loanContract.untokenizeLoan(openTx.id, receiver, { from: lender });
-      await expectThrow(loanContract.ownerOf.call(uint256(openTx.id)));
+      await expectNoToken(openTx.id);
       const newOwner = await dydxMargin.getPositionLender.call(openTx.id);
       expect(newOwner).to.equal(receiver);
     });
@@ -221,17 +233,13 @@ describe('ERC721MarginLoan', function(accounts) {
       const openTx2 = await doOpenPosition(accounts, salt++);
 
       // expect no erc721 tokens yet
-      await expectThrow(
-        loanContract.ownerOf.call(uint256(openTx1.id))
-      );
-      await expectThrow(
-        loanContract.ownerOf.call(uint256(openTx2.id))
-      );
+      await expectNoToken(openTx1.id);
+      await expectNoToken(openTx2.id);
 
       // close half of openTx2
       const sellOrder = await createSignedSellOrder(accounts);
       await issueTokensAndSetAllowancesForClose(openTx2, sellOrder);
-      const closeTx = await callClosePosition(
+      await callClosePosition(
         dydxMargin,
         openTx2,
         sellOrder,
@@ -339,35 +347,39 @@ describe('ERC721MarginLoan', function(accounts) {
       );
     });
   });
-/*
+
   // ============ marginCallOnBehalfOf ============
 
   contract('#marginCallOnBehalfOf', function(accounts) {
-    before('set up position', async () => {
-      await setUpPosition();
-      await setUpSharedLoan();
-      await transferLoanToSharedLoan();
-      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
-      expect(isCalled).to.be.false;
+    const caller = accounts[9];
+    const rando = accounts[8];
+
+    before('load contracts', async () => {
+      await loadContracts();
+    });
+
+    beforeEach('set up loan', async () => {
+      await setUpLoan(accounts);
+      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
     });
 
     it('fails if not authorized', async () => {
       await expectThrow(
         dydxMargin.marginCall(
-          SHARED_LOAN.ID,
+          openTx.id,
           BIGNUMBERS.ZERO,
-          { from: SHARED_LOAN.INITIAL_LENDER }
+          { from: rando }
         )
       );
     });
 
     it('succeeds if authorized', async () => {
       await dydxMargin.marginCall(
-        SHARED_LOAN.ID,
+        openTx.id,
         BIGNUMBERS.ZERO,
-        { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
+        { from: caller }
       );
-      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      const isCalled = await dydxMargin.isPositionCalled.call(openTx.id);
       expect(isCalled).to.be.true;
     });
   });
@@ -375,34 +387,40 @@ describe('ERC721MarginLoan', function(accounts) {
   // ============ cancelMarginCallOnBehalfOf ============
 
   contract('#cancelMarginCallOnBehalfOf', function(accounts) {
-    before('set up position and margin-call', async () => {
-      await setUpPosition();
+    const caller = accounts[9];
+    const rando = accounts[8];
+
+    before('load contracts', async () => {
+      await loadContracts();
+    });
+
+    beforeEach('set up loan and margin-call', async () => {
+      await setUpLoan(accounts);
+      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
       await dydxMargin.marginCall(
-        SHARED_LOAN.ID,
+        openTx.id,
         BIGNUMBERS.ZERO,
-        { from: SHARED_LOAN.TX.loanOffering.owner }
+        { from: openTx.loanOffering.payer }
       );
-      await setUpSharedLoan();
-      await transferLoanToSharedLoan();
-      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      const isCalled = await dydxMargin.isPositionCalled.call(openTx.id);
       expect(isCalled).to.be.true;
     });
 
     it('fails if not authorized', async () => {
       await expectThrow(
         dydxMargin.cancelMarginCall(
-          SHARED_LOAN.ID,
-          { from: SHARED_LOAN.INITIAL_LENDER }
+          openTx.id,
+          { from: rando }
         )
       );
     });
 
     it('succeeds if authorized', async () => {
       await dydxMargin.cancelMarginCall(
-        SHARED_LOAN.ID,
-        { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
+        openTx.id,
+        { from: caller }
       );
-      const isCalled = await dydxMargin.isPositionCalled.call(SHARED_LOAN.ID);
+      const isCalled = await dydxMargin.isPositionCalled.call(openTx.id);
       expect(isCalled).to.be.false;
     });
   });
@@ -410,61 +428,57 @@ describe('ERC721MarginLoan', function(accounts) {
   // ============ forceRecoverCollateralOnBehalfOf ============
 
   contract('#forceRecoverCollateralOnBehalfOf', function(accounts) {
-    beforeEach('set up position and margin-call', async () => {
-      // set up the position and margin-call
-      await setUpPosition();
-      await dydxMargin.marginCall(
-        SHARED_LOAN.ID,
-        BIGNUMBERS.ZERO,
-        { from: SHARED_LOAN.TX.loanOffering.owner }
-      );
-      await setUpSharedLoan();
-      await transferLoanToSharedLoan();
+    const recoverer = accounts[9];
+    const rando = accounts[8];
 
-      // expect proper state of the position
-      const [isClosed, isCalled, state] = await Promise.all([
-        dydxMargin.isPositionClosed.call(SHARED_LOAN.ID),
-        dydxMargin.isPositionCalled.call(SHARED_LOAN.ID),
-        SHARED_LOAN.CONTRACT.state.call()
-      ]);
-      expect(isClosed).to.be.false;
-      expect(isCalled).to.be.true;
-      expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.OPEN);
+    before('load contracts', async () => {
+      await loadContracts();
     });
 
-    it('succeeds for arbitrary caller if recipient is sharedLoan', async () => {
-      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
+    beforeEach('set up loan', async () => {
+      await setUpLoan(accounts);
+      await dydxMargin.marginCall(
+        openTx.id,
+        BIGNUMBERS.ZERO,
+        { from: openTx.loanOffering.payer }
+      );
+      await wait(openTx.loanOffering.callTimeLimit);
+    });
+
+    it('succeeds for arbitrary caller if recipient is owner', async () => {
+      const [heldToken1, heldTokenInVault] = await Promise.all([
+        heldToken.balanceOf.call(openTx.loanOffering.payer),
+        dydxMargin.getPositionBalance.call(openTx.id)
+      ]);
 
       await dydxMargin.forceRecoverCollateral(
-        SHARED_LOAN.ID,
-        SHARED_LOAN.CONTRACT.address,
-        { from: accounts[6] }
+        openTx.id,
+        openTx.loanOffering.payer,
+        { from: recoverer }
       );
 
       // expect proper state of the position
-      const [isClosed, isCalled, state] = await Promise.all([
-        dydxMargin.isPositionClosed.call(SHARED_LOAN.ID),
-        dydxMargin.isPositionCalled.call(SHARED_LOAN.ID),
-        SHARED_LOAN.CONTRACT.state.call()
+      const [isClosed, isCalled, heldToken2] = await Promise.all([
+        dydxMargin.isPositionClosed.call(openTx.id),
+        dydxMargin.isPositionCalled.call(openTx.id),
+        heldToken.balanceOf.call(openTx.loanOffering.payer)
       ]);
       expect(isClosed).to.be.true;
       expect(isCalled).to.be.false;
-      expect(state).to.be.bignumber.equal(SHARED_LOAN_STATE.CLOSED);
+      expect(heldToken2).to.be.bignumber.equal(heldToken1.plus(heldTokenInVault));
     });
 
-    it('fails for arbitrary caller if recipient is NOT sharedLoan', async () => {
-      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
-
+    it('fails for arbitrary caller if recipient is NOT owner', async () => {
       await expectThrow(
         dydxMargin.forceRecoverCollateral(
-          SHARED_LOAN.ID,
-          ADDRESSES.TEST[8],
-          { from: accounts[6] }
+          openTx.id,
+          rando,
+          { from: recoverer }
         )
       );
     });
   });
-
+/*
   // ============ withdraw ============
 
   contract('#withdraw and #withdrawMultiple', function(accounts) {

@@ -31,12 +31,35 @@ contract ERC721MarginLoan is
 
     // ============ Events ============
 
+    /**
+     * A token was created by transferring direct loan ownership to this contract.
+     */
+    event LoanTokenized(
+        bytes32 indexed positionId,
+        address indexed lender
+    );
+
+    /**
+     * A token was burned, either from transferring direct loan ownership to an address other than
+     * this contract, or from withdrawing all funds from a closed position.
+     */
+    event LoanUntokenized(
+        bytes32 indexed positionId,
+        address indexed lender
+    );
+
+    /**
+     * Margin-calling approval was granted or revoked.
+     */
     event MarginCallerApproval(
         address indexed lender,
         address indexed caller,
         bool isApproved
     );
 
+    /**
+     * OwedToken was withdrawn by a lender for a position.
+     */
     event OwedTokenWithdrawn(
         bytes32 indexed positionId,
         address indexed lender,
@@ -192,6 +215,8 @@ contract ERC721MarginLoan is
         owedTokenAddress[positionId] =
             Margin(DYDX_MARGIN).getPositionOwedToken(positionId);
 
+        emit LoanTokenized(positionId, from);
+
         return address(this); // returning own address retains ownership of position
     }
 
@@ -343,6 +368,7 @@ contract ERC721MarginLoan is
         uint256 tokenId = uint256(positionId);
 
         // requires that owner actually is the owner of the token
+        emit LoanUntokenized(positionId, owner);
         _burn(owner, tokenId);
     }
 }
