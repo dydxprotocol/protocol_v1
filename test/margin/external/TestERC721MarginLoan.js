@@ -15,7 +15,7 @@ const { transact } = require('../../helpers/ContractHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
-const { getPartialAmount } = require('../../helpers/MathHelper');
+const { getPartialAmount, uint256 } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { expectLog } = require('../../helpers/EventHelper');
 const {
@@ -49,7 +49,7 @@ describe('ERC721MarginLoan', function(accounts) {
       HeldToken.deployed()
     ]);
     loanContract = await ERC721MarginLoan.new(dydxMargin.address);
-    openTx = createOpenTx(accounts);
+    openTx = createOpenTx(accounts, salt++);
     openTx.loanOffering.owner = loanContract;
     openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
     openTx = await callOpenPosition(dydxMargin, openTx);
@@ -89,7 +89,7 @@ describe('ERC721MarginLoan', function(accounts) {
     });
   });
 
-  // ============ receiveLoanOwnership ============
+  // ============ approveCaller ============
 
   contract('#approveCaller', () => {
     const sender = accounts[6];
@@ -152,6 +152,38 @@ describe('ERC721MarginLoan', function(accounts) {
       );
     });
   });
+
+  // ============ untokenizeLoan ============
+
+  contract('#untokenizeLoan', () => {
+    const receiver = accounts[9];
+    const lender = accounts[1];
+
+    beforeEach('set up loan', async () => {
+      await setUpLoan();
+      const owner = await loanContract.ownerOf.call(uint256(openTx.id));
+      expect(owner).to.equal(lender);
+    });
+
+    it('succeeds when called by ownerOf', async () => {
+      await loanContract.untokenizeLoan(openTx.id, receiver, { from: lender });
+      await expectThrow(loanContract.ownerOf.call(uint256(openTx.id)));
+      const newOwner = await dydxMargin.getPositionLender.call(openTx.id);
+      expect(newOwner).to.equal(receiver);
+    });
+
+    it('fails for a non-owner', async () => {
+      await expectThrow(
+        loanContract.untokenizeLoan(openTx.id, receiver, { from: accounts[2] }));
+    });
+
+    it('fails for a non-existant position', async () => {
+      await expectThrow(
+        loanContract.untokenizeLoan(BYTES32.BAD_ID, receiver, { from: lender }));
+    });
+  });
+
+  // ============ receiveLoanOwnership ============
 
   contract('#receiveLoanOwnership', () => {
     beforeEach('set up new positions and tokens', async () => {
