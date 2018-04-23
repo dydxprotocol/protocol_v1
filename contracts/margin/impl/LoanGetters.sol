@@ -10,7 +10,7 @@ import { MarginStorage } from "./MarginStorage.sol";
  * @author dYdX
  *
  * A collection of public constant getter functions that allows reading of the state of any loan
- * hash stored in the dYdX protocol.
+ * offering stored in the dYdX protocol.
  */
 contract LoanGetters is MarginStorage {
 

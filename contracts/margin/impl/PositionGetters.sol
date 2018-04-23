@@ -121,18 +121,18 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
+        uint256 effectiveTimeElapsed = MarginCommon.calculateEffectiveTimeElapsed(
             position,
             block.timestamp
         );
 
-        uint256 absoluteDuration = block.timestamp.sub(position.startTimestamp);
-        if (absoluteDuration > nextStep) { // past maxDuration
+        uint256 absoluteTimeElapsed = block.timestamp.sub(position.startTimestamp);
+        if (absoluteTimeElapsed > effectiveTimeElapsed) { // past maxDuration
             return 0;
         } else {
             // nextStep is the final second at which the calculated interest fee is the same as it
             // is currently, so add 1 to get the correct value
-            return nextStep.add(1).sub(absoluteDuration);
+            return effectiveTimeElapsed.add(1).sub(absoluteTimeElapsed);
         }
     }
 
