@@ -18,7 +18,7 @@ library LiquidatePositionImpl {
     // ============ Events ============
 
     /**
-     * A loan was liquidated
+     * A position was liquidated
      */
     event PositionLiquidated(
         bytes32 indexed positionId,

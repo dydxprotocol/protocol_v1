@@ -10,7 +10,7 @@ import { PositionOwner } from "../interfaces/PositionOwner.sol";
  * @title TransferInternal
  * @author dYdX
  *
- * This library contains the implementation for transferring ownership of loans and positions
+ * This library contains the implementation for transferring ownership of loans and positions.
  */
 library TransferInternal {
 
@@ -26,7 +26,7 @@ library TransferInternal {
     );
 
     /**
-     * Ownership of a postions was transferred to a new address
+     * Ownership of a postion was transferred to a new address
      */
     event PositionTransferred(
         bytes32 indexed positionId,
@@ -37,14 +37,14 @@ library TransferInternal {
     // ============ Internal Implementation Functions ============
 
     /**
-     * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the loan. This function does not actually set the state of the position
+     * Returns either the address of the new loan owner, or the address to which they wish to
+     * pass ownership of the loan. This function does not actually set the state of the position
      *
      * @param  positionId  The Unique ID of the position
      * @param  oldOwner    The previous owner of the loan
      * @param  newOwner    The intended owner of the loan
      * @return             The address that the intended owner wishes to assign the loan to (may be
-     *                     the same as the intended owner). Zero if ownership is rejected.
+     *                     the same as the intended owner).
      */
     function grantLoanOwnership(
         bytes32 positionId,
@@ -72,14 +72,14 @@ library TransferInternal {
     }
 
     /**
-     * Returns either the address of the new owner, or the address to which they wish to pass
-     * ownership of the position. This function does not actually set the state of the position
+     * Returns either the address of the new position owner, or the address to which they wish to
+     * pass ownership of the position. This function does not actually set the state of the position
      *
      * @param  positionId  The Unique ID of the position
      * @param  oldOwner    The previous owner of the position
      * @param  newOwner    The intended owner of the position
      * @return             The address that the intended owner wishes to assign the position to (may
-     *                     be the same as the intended owner). Zero if ownership is rejected.
+     *                     be the same as the intended owner).
      */
     function grantPositionOwnership(
         bytes32 positionId,

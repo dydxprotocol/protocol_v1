@@ -20,7 +20,7 @@ contract PositionGetters is MarginStorage {
     // ============ Public Constant Functions ============
 
     /**
-     * Gets if a position is currently open
+     * Gets if a position is currently open.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is exists and is open
@@ -36,7 +36,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a position is currently margin-called
+     * Gets if a position is currently margin-called.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is margin-called
@@ -52,7 +52,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a position was previously closed
+     * Gets if a position was previously open and is now closed.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is now closed
@@ -84,7 +84,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of heldToken currently locked up in Vault for a particular position
+     * Gets the amount of heldToken currently locked up in Vault for a particular position.
      *
      * @param  positionId  Unique ID of the position
      * @return             The amount of heldToken
@@ -126,12 +126,13 @@ contract PositionGetters is MarginStorage {
             block.timestamp
         );
 
-        if (block.timestamp > nextStep) { // past maxDuration
+        uint256 absoluteDuration = block.timestamp.sub(position.startTimestamp);
+        if (absoluteDuration > nextStep) { // past maxDuration
             return 0;
         } else {
             // nextStep is the final second at which the calculated interest fee is the same as it
             // is currently, so add 1 to get the correct value
-            return nextStep.add(1).sub(block.timestamp);
+            return nextStep.add(1).sub(absoluteDuration);
         }
     }
 
@@ -160,8 +161,8 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of owedTokens needed to close a given principal of the position at a given
-     * time, including interest fees.
+     * Gets the amount of owedTokens needed to close a given principal amount of the position at a
+     * given time, including interest fees.
      *
      * @param  positionId         Unique ID of the position
      * @param  principalToClose   Amount of principal being closed
@@ -189,7 +190,7 @@ contract PositionGetters is MarginStorage {
 
     /**
      * Gets the amount of owedTokens that can be borrowed from a lender to add a given principal
-     * onto the position at a given time.
+     * amount to the position at a given time.
      *
      * @param  positionId      Unique ID of the position
      * @param  principalToAdd  Amount being added to principal

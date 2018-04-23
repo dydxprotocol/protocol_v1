@@ -33,6 +33,24 @@ contract MarginEvents {
         bool    depositInHeldToken
     );
 
+    /*
+     * A position was increased
+     */
+    event PositionIncreased(
+        bytes32 indexed positionId,
+        address indexed trader,
+        address indexed lender,
+        address positionOwner,
+        address loanOwner,
+        bytes32 loanHash,
+        address loanFeeRecipient,
+        uint256 amountBorrowed,
+        uint256 principalAdded,
+        uint256 heldTokenFromSell,
+        uint256 depositAmount,
+        bool    depositInHeldToken
+    );
+
     /**
      * A position was closed or partially closed
      */
@@ -49,7 +67,7 @@ contract MarginEvents {
     );
 
     /**
-     * A loan was liquidated
+     * A position was liquidated
      */
     event PositionLiquidated(
         bytes32 indexed positionId,
@@ -70,7 +88,7 @@ contract MarginEvents {
     );
 
     /**
-     * A position was margin called
+     * A position was margin-called
      */
     event MarginCallInitiated(
         bytes32 indexed positionId,
@@ -134,23 +152,5 @@ contract MarginEvents {
         bytes32 indexed positionId,
         address indexed from,
         address indexed to
-    );
-
-    /*
-     * A position was increased in size
-     */
-    event PositionIncreased(
-        bytes32 indexed positionId,
-        address indexed trader,
-        address indexed lender,
-        address positionOwner,
-        address loanOwner,
-        bytes32 loanHash,
-        address loanFeeRecipient,
-        uint256 amountBorrowed,
-        uint256 principalAdded,
-        uint256 heldTokenFromSell,
-        uint256 depositAmount,
-        bool    depositInHeldToken
     );
 }
