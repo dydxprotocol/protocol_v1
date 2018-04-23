@@ -79,9 +79,9 @@ workflows:
       - build:
           requires:
             - checkout_and_install
-      - lint:
-          requires:
-            - checkout_and_install
+      # - lint:
+      #     requires:
+      #       - checkout_and_install
       - test:
           requires:
             - build
