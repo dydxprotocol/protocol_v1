@@ -14,6 +14,7 @@ const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { createSignedSellOrder } = require('../../helpers/0xHelper');
 const { getPartialAmount, uint256 } = require('../../helpers/MathHelper');
+const { transact } = require('../../helpers/ContractHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { expectLog } = require('../../helpers/EventHelper');
 const {
@@ -52,8 +53,12 @@ describe('ERC721MarginLoan', () => {
     loanContract = await ERC721MarginLoan.new(dydxMargin.address);
   }
 
-  async function setUpLoan(accounts) {
+  async function setUpLoan(accounts, payer = null) {
     openTx = await createOpenTx(accounts, salt++);
+    if (payer) {
+      openTx.loanOffering.payer = payer;
+      openTx.loanOffering.signer = payer;
+    }
     openTx.loanOffering.owner = loanContract.address;
     openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
     await issueTokensAndSetAllowances(openTx);
@@ -62,6 +67,7 @@ describe('ERC721MarginLoan', () => {
 
     const owner = await loanContract.ownerOf.call(uint256(openTx.id));
     expect(owner).to.be.equal(openTx.loanOffering.payer);
+    return openTx;
   }
 
   async function expectNoToken(positionId) {
@@ -75,6 +81,20 @@ describe('ERC721MarginLoan', () => {
     ]);
     expect(owedToken).to.be.bignumber.equal(0);
     expect(owedTokenRepaid).to.be.bignumber.equal(0);
+  }
+
+  async function closePosition(openTx, amount) {
+    await issueTokenToAccountInAmountAndApproveProxy(
+      owedToken,
+      openTx.owner,
+      amount.times(100)
+    );
+    await dydxMargin.closePositionDirectly(
+      openTx.id,
+      amount,
+      openTx.owner,
+      { from: openTx.owner }
+    );
   }
 
   // ============ Constructor ============
@@ -218,6 +238,13 @@ describe('ERC721MarginLoan', () => {
     it('fails for a non-existant position', async () => {
       await expectThrow(
         loanContract.untokenizeLoan(BYTES32.BAD_ID, receiver, { from: lender }));
+    });
+
+    it('fails for a non-wthdrawn position', async () => {
+      await closePosition(openTx, openTx.principal.div(2));
+      await expectThrow(
+        loanContract.untokenizeLoan(openTx.id, receiver, { from: lender })
+      );
     });
   });
 
@@ -478,288 +505,196 @@ describe('ERC721MarginLoan', () => {
       );
     });
   });
-/*
+
   // ============ withdraw ============
 
   contract('#withdraw and #withdrawMultiple', function(accounts) {
-    let accountA, accountB, accountC;
-    let principalShare;
-    const closer = accounts[6];
+    const lender1 = accounts[8];
+    const lender2 = accounts[9];
+    let openTx1, openTx2;
+    let halfClose;
 
     // ============ Helper Functions ============
 
-    async function callWithdraw(account) {
-      const [owedBefore, heldBefore] = await Promise.all([
-        owedToken.balanceOf.call(account),
-        heldToken.balanceOf.call(account),
-      ]);
-
-      const retVal = await transact(SHARED_LOAN.CONTRACT.withdraw, account);
-      const owedGotten = retVal.result[0];
-      const heldGotten = retVal.result[1];
-
-      const [owedAfter, heldAfter] = await Promise.all([
-        owedToken.balanceOf.call(account),
-        heldToken.balanceOf.call(account),
-      ]);
-
-      expect(owedAfter).to.be.bignumber.equal(owedBefore.plus(owedGotten));
-      expect(heldAfter).to.be.bignumber.equal(heldBefore.plus(heldGotten));
-
-      return {owedGotten, heldGotten};
+    async function callWithdraw(positionId) {
+      const lender = await loanContract.ownerOf.call(uint256(positionId));
+      const owed1 = await owedToken.balanceOf.call(lender);
+      const tx = await transact(loanContract.withdraw, positionId);
+      const owedGotten = tx.result;
+      const owed2 = await owedToken.balanceOf.call(lender);
+      expect(owed2).to.be.bignumber.equal(owed1.plus(owedGotten));
+      return owedGotten;
     }
 
-    async function withdrawAccount(account, runningTally) {
-      // withdraw once and validate change
-      const w1 = await callWithdraw(account);
-      runningTally.heldToken = new BigNumber(runningTally.heldToken).plus(w1.heldGotten);
-      runningTally.owedToken = new BigNumber(runningTally.owedToken).plus(w1.owedGotten);
-
-      // withdraw again and expect no change
-      const w2 = await callWithdraw(account);
-      expect(w2.owedGotten).to.be.bignumber.equal(0);
-      expect(w2.heldGotten).to.be.bignumber.equal(0);
-
-      return runningTally;
-    }
-
-    async function closeAmount(closer, amount) {
-      await issueTokenToAccountInAmountAndApproveProxy(
-        owedToken,
-        closer,
-        amount.times(100)
-      );
-      await dydxMargin.closePositionDirectly(
-        SHARED_LOAN.ID,
-        amount,
-        closer,
-        { from: closer }
-      );
-    }
-
-    async function expectSharedLoanBalances(expectedBalances) {
-      const[balA, balB, balC] = await Promise.all([
-        SHARED_LOAN.CONTRACT.balances.call(accountA),
-        SHARED_LOAN.CONTRACT.balances.call(accountB),
-        SHARED_LOAN.CONTRACT.balances.call(accountC)
-      ]);
-      expect(balA).to.be.bignumber.equal(expectedBalances[0]);
-      expect(balB).to.be.bignumber.equal(expectedBalances[1]);
-      expect(balC).to.be.bignumber.equal(expectedBalances[2]);
-    }
-
-    async function callWithdrawMultiple(arg) {
+    async function callWithdrawMultiple(ids) {
       const [
-        heldA1,
-        owedA1,
-        heldB1,
-        owedB1,
-        heldC1,
-        owedC1,
+        owedToken1Before,
+        owedToken2Before
       ] = await Promise.all([
-        heldToken.balanceOf.call(accountA),
-        owedToken.balanceOf.call(accountA),
-        heldToken.balanceOf.call(accountB),
-        owedToken.balanceOf.call(accountB),
-        heldToken.balanceOf.call(accountC),
-        owedToken.balanceOf.call(accountC),
+        owedToken.balanceOf.call(lender1),
+        owedToken.balanceOf.call(lender2),
       ]);
 
       let expectMap = {};
-      expectMap[accountA] = [0,0];
-      expectMap[accountB] = [0,0];
-      expectMap[accountC] = [0,0];
 
-      for (let i in arg) {
-        const account = arg[i];
-        const vals = await SHARED_LOAN.CONTRACT.withdraw.call(account);
-        expectMap[account] = [vals[0], vals[1]];
+      for (let i in ids) {
+        const positionId = ids[i];
+        const result = await loanContract.withdraw.call(positionId);
+        expectMap[positionId] = result;
       }
 
-      await SHARED_LOAN.CONTRACT.withdrawMultiple(arg);
+      await loanContract.withdrawMultiple(ids);
 
       const [
-        heldA2,
-        owedA2,
-        heldB2,
-        owedB2,
-        heldC2,
-        owedC2,
+        owedToken1After,
+        owedToken2After
       ] = await Promise.all([
-        heldToken.balanceOf.call(accountA),
-        owedToken.balanceOf.call(accountA),
-        heldToken.balanceOf.call(accountB),
-        owedToken.balanceOf.call(accountB),
-        heldToken.balanceOf.call(accountC),
-        owedToken.balanceOf.call(accountC),
+        owedToken.balanceOf.call(lender1),
+        owedToken.balanceOf.call(lender2),
       ]);
 
-      expect(owedA2.minus(owedA1)).to.be.bignumber.equal(expectMap[accountA][0]);
-      expect(owedB2.minus(owedB1)).to.be.bignumber.equal(expectMap[accountB][0]);
-      expect(owedC2.minus(owedC1)).to.be.bignumber.equal(expectMap[accountC][0]);
-      expectWithinError(heldA2.minus(heldA1), expectMap[accountA][1], 1);
-      expectWithinError(heldB2.minus(heldB1), expectMap[accountB][1], 1);
-      expectWithinError(heldC2.minus(heldC1), expectMap[accountC][1], 1);
-
-      const isClosed = await dydxMargin.isPositionClosed.call(SHARED_LOAN.ID);
-      const principalPer = SHARED_LOAN.TX.principal;
-      if (isClosed) {
-        await expectSharedLoanBalances([
-          arg.indexOf(accountA) >= 0 ? 0 : principalPer,
-          arg.indexOf(accountB) >= 0 ? 0 : principalPer,
-          arg.indexOf(accountC) >= 0 ? 0 : principalPer,
-        ]);
-      } else {
-        await expectSharedLoanBalances([
-          principalPer, principalPer, principalPer
-        ]);
-      }
-    }
-
-    async function callForceRecover() {
-      await dydxMargin.marginCall(
-        SHARED_LOAN.ID,
-        BIGNUMBERS.ZERO,
-        { from: SHARED_LOAN.TRUSTED_MARGIN_CALLERS[0] }
+      expect(owedToken1After.minus(owedToken1Before)).to.be.bignumber.equal(
+        expectMap[openTx1.id] || 0
       );
-      await wait(SHARED_LOAN.TX.loanOffering.callTimeLimit);
-      await dydxMargin.forceRecoverCollateral(SHARED_LOAN.ID, SHARED_LOAN.CONTRACT.address);
+      expect(owedToken2After.minus(owedToken2Before)).to.be.bignumber.equal(
+        expectMap[openTx2.id] || 0
+      );
     }
+
+    // ============ Before  ============
+
+    before('load contracts', async () => {
+      await loadContracts(accounts);
+    });
 
     // ============ Before Each ============
 
-    beforeEach('Set up three lenders with equal equity in the position', async () => {
-      principalShare = SHARED_LOAN.TX.principal;
-      await setUpPosition();
-      await setUpSharedLoan();
+    beforeEach('set up two loans, one is half-closed', async () => {
+      // set up position 1
+      openTx1 = await setUpLoan(accounts, lender1);
 
-      accountA = SHARED_LOAN.INITIAL_LENDER;
-      accountB = accounts[7];
-      accountC = accounts[8];
-      expect(accountA).to.not.equal(accountB);
-      expect(accountB).to.not.equal(accountC);
-      expect(accountC).to.not.equal(accountA);
+      // set up (half-closed) position 2
+      openTx2 = await doOpenPosition(accounts, salt++);
+      await expectNoToken(openTx2.id);
+      await closePosition(openTx2, openTx2.principal.div(2));
 
-      await transferLoanToSharedLoan();
-      await transferPositionToTestPositionOwner();
-      await increasePositionDirectly(accountB, SHARED_LOAN.TX.principal);
-      await increasePositionDirectly(accountC, SHARED_LOAN.TX.principal);
+      // expect same size
+      expect(openTx1.principal).is.bignumber.equal(openTx2.principal);
+      halfClose = openTx1.principal.div(2);
 
-      // Check balances
-      await expectSharedLoanBalances([
-        SHARED_LOAN.TX.principal, SHARED_LOAN.TX.principal, SHARED_LOAN.TX.principal]
+      // transfer loans to erc721 contract
+      await dydxMargin.transferLoan(
+        openTx2.id,
+        lender2,
+        { from: openTx2.loanOffering.owner }
       );
+      await dydxMargin.transferLoan(
+        openTx2.id,
+        loanContract.address,
+        { from: lender2 }
+      );
+
+      const [owner1, owner2] = await Promise.all([
+        loanContract.ownerOf.call(uint256(openTx1.id)),
+        loanContract.ownerOf.call(uint256(openTx2.id))
+      ]);
+      expect(owner1).to.equal(lender1);
+      expect(owner2).to.equal(lender2);
+      expect(lender1).to.not.equal(lender2);
     });
 
     // ============ Tests ============
 
     it('#withdraw succeeds for complicated case', async () => {
-      let runningTallyA = {heldToken: 0, owedToken: 0};
-      let runningTallyB = {heldToken: 0, owedToken: 0};
-      let runningTallyC = {heldToken: 0, owedToken: 0};
+      // Withdraw right away an expect nothing
+      let [owedTokenWithdrawn1, owedTokenWithdrawn2] = await Promise.all([
+        transact(loanContract.withdraw, openTx1.id),
+        transact(loanContract.withdraw, openTx2.id)
+      ]);
+      expect(owedTokenWithdrawn1.result).to.be.bignumber.equal(0);
+      expect(owedTokenWithdrawn2.result).to.be.bignumber.equal(0);
 
-      // close 1/3
-      await closeAmount(closer, principalShare);
+      // Get initial owedTokenRepaid for both
+      const [totalRepaid1Before, totalRepaid2Before] = await Promise.all([
+        dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx1.id),
+        dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx2.id)
+      ]);
 
-      // withdraw accountA
-      runningTallyA = await withdrawAccount(accountA, runningTallyA);
+      // Halfway close #1, completely close #2
+      await closePosition(openTx1, openTx1.principal.div(2));
+      await closePosition(openTx2, openTx2.principal.div(2));
+      const [totalRepaid1After, totalRepaid2After, isClosed1, isClosed2] = await Promise.all([
+        dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx1.id),
+        dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx2.id),
+        dydxMargin.isPositionClosed.call(openTx1.id),
+        dydxMargin.isPositionClosed.call(openTx2.id)
+      ]);
+      expect(isClosed1).to.be.false;
+      expect(isClosed2).to.be.true;
 
-      // close 1/3
-      await closeAmount(closer, principalShare);
 
-      // withdraw accountB
-      runningTallyB = await withdrawAccount(accountB, runningTallyB);
+      // Withdraw tokens again and ensure that the right number was withdrawn
+      [owedTokenWithdrawn1, owedTokenWithdrawn2] = await Promise.all([
+        callWithdraw(openTx1.id),
+        callWithdraw(openTx2.id)
+      ]);
+      expect(owedTokenWithdrawn1).to.be.bignumber.equal(
+        totalRepaid1After.minus(totalRepaid1Before)
+      );
+      expect(owedTokenWithdrawn2).to.be.bignumber.equal(
+        totalRepaid2After.minus(totalRepaid2Before)
+      );
 
-      // call and forceRecover the last 1/3
-      await callForceRecover();
+      // Wtihdrawing from 1 again yields nothing
+      owedTokenWithdrawn1 = await callWithdraw(openTx1.id);
+      expect(owedTokenWithdrawn1).to.be.bignumber.equal(0);
 
-      // withdraw accountC
-      runningTallyC = await withdrawAccount(accountC, runningTallyC);
-
-      // withdraw accountA
-      runningTallyA = await withdrawAccount(accountA, runningTallyA);
-
-      // withdraw accountB
-      runningTallyB = await withdrawAccount(accountB, runningTallyB);
-
-      // expect owedToken received to be exactly equal
-      expect(runningTallyA.owedToken)
-        .to.be.bignumber.equal(runningTallyA.owedToken)
-        .to.be.bignumber.equal(runningTallyA.owedToken);
-
-      // expect heldToken received to be within 1 of each other
-      expectWithinError(runningTallyA.heldToken, runningTallyB.heldToken, 1);
-      expectWithinError(runningTallyB.heldToken, runningTallyC.heldToken, 1);
-      expectWithinError(runningTallyC.heldToken, runningTallyA.heldToken, 1);
-
-      // expect no balances remaining
-      await expectSharedLoanBalances([0, 0, 0]);
-
-      // expect few tokens locked in SharedLoan contract
-      {
-        const[balO, balH] = await Promise.all([
-          owedToken.balanceOf.call(SHARED_LOAN.CONTRACT.address),
-          heldToken.balanceOf.call(SHARED_LOAN.CONTRACT.address),
-        ]);
-        expectWithinError(balO, 0, 3); // expect balance of owedToken to be at most 3
-        expect(balH).to.be.bignumber.equal(0);
-      }
-
-      // expect no new tokens
-      {
-        const [remainingA, remainingB, remainingC] = await Promise.all([
-          callWithdraw(accountA),
-          callWithdraw(accountB),
-          callWithdraw(accountC)
-        ]);
-        expect(remainingA.owedGotten).to.be.bignumber.equal(0);
-        expect(remainingA.heldGotten).to.be.bignumber.equal(0);
-        expect(remainingB.owedGotten).to.be.bignumber.equal(0);
-        expect(remainingB.heldGotten).to.be.bignumber.equal(0);
-        expect(remainingC.owedGotten).to.be.bignumber.equal(0);
-        expect(remainingC.heldGotten).to.be.bignumber.equal(0);
-      }
+      // #2 is closed now so it doesn't exist.
+      await expectThrow(loanContract.withdraw(openTx2.id));
+      await expectThrow(loanContract.ownerOf.call(uint256(openTx2.id)));
     });
 
-    it('#withdrawMultiple succeeds for zero accounts', async () => {
+    it('#withdrawMultiple succeeds for empty array', async () => {
       const arg = [];
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
+      await closePosition(openTx2, halfClose);
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
-      await callForceRecover();
-      await callWithdrawMultiple(arg);
-    });
-
-    it('#withdrawMultiple succeeds for one account', async () => {
-      const arg = [accountB];
-      await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
-      await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
-      await callForceRecover();
+      await closePosition(openTx1, halfClose);
       await callWithdrawMultiple(arg);
     });
 
-    it('#withdrawMultiple succeeds for multiple accounts', async () => {
-      const arg = [accountC, accountB];
+    it('#withdrawMultiple succeeds for one position', async () => {
+      const arg = [openTx1.id];
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
+      await closePosition(openTx1, halfClose);
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
-      await callForceRecover();
+      await closePosition(openTx1, halfClose);
       await callWithdrawMultiple(arg);
     });
 
-    it('#withdrawMultiple succeeds when passed the same account multiple times', async () => {
-      const arg = [accountB, accountA, accountB, accountB];
+    it('#withdrawMultiple succeeds for multiple positions', async () => {
+      const arg = [openTx1.id, openTx2.id];
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
+      await closePosition(openTx1, halfClose);
       await callWithdrawMultiple(arg);
-      await closeAmount(closer, principalShare);
-      await callForceRecover();
+      await closePosition(openTx2, halfClose);
       await callWithdrawMultiple(arg);
+    });
+
+    it('#withdrawMultiple succeeds when passed the same position multiple times', async () => {
+      const arg = [openTx1.id, openTx2.id, openTx1.id];
+      await callWithdrawMultiple(arg);
+      await closePosition(openTx1, halfClose);
+      await callWithdrawMultiple(arg);
+      await closePosition(openTx2, halfClose);
+      await callWithdrawMultiple(arg);
+    });
+
+    it('#withdrawMultiple fails for the same CLOSED position multiple times', async () => {
+      const arg = [openTx2.id, openTx2.id];
+      await callWithdrawMultiple(arg);
+      await closePosition(openTx2, halfClose);
+      await expectThrow(callWithdrawMultiple(arg));
     });
   });
-*/
 });
