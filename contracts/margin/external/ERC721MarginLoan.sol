@@ -65,7 +65,8 @@ contract ERC721MarginLoan is
         bytes32 indexed positionId,
         address indexed lender,
         address owedToken,
-        uint256 owedTokenWithdrawn
+        uint256 owedTokenWithdrawn,
+        bool completelyRepaid
     );
 
     // ============ State Variables ============
@@ -336,8 +337,10 @@ contract ERC721MarginLoan is
         }
 
         // update state based on whether the position is closed or not
+        bool completelyRepaid = false;
         if (Margin(DYDX_MARGIN).isPositionClosed(positionId)) {
             burnPositionToken(owner, positionId);
+            completelyRepaid = true;
         } else {
             owedTokensRepaidSinceLastWithdraw[positionId] = totalRepaid;
         }
@@ -349,7 +352,8 @@ contract ERC721MarginLoan is
             positionId,
             owner,
             owedToken,
-            tokensToSend
+            tokensToSend,
+            completelyRepaid
         );
 
         return tokensToSend;
