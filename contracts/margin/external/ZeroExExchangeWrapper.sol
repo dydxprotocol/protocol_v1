@@ -251,14 +251,12 @@ contract ZeroExExchangeWrapper is
             order.takerFee
         );
 
-        if (takerFee > 0) {
-            TokenInteract.transferFrom(
-                ZRX,
-                tradeOriginator,
-                address(this),
-                takerFee
-            );
-        }
+        TokenInteract.transferFrom(
+            ZRX,
+            tradeOriginator,
+            address(this),
+            takerFee
+        );
     }
 
     function doTrade(

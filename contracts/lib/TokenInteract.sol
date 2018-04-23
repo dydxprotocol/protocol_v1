@@ -51,7 +51,9 @@ library TokenInteract {
     )
         internal
     {
-        require(ERC20(token).transfer(to, amount));
+        if (amount > 0) {
+            require(ERC20(token).transfer(to, amount));
+        }
     }
 
     function transferFrom(
@@ -62,6 +64,8 @@ library TokenInteract {
     )
         internal
     {
-        require(ERC20(token).transferFrom(from, to, amount));
+        if (amount > 0) {
+            require(ERC20(token).transferFrom(from, to, amount));
+        }
     }
 }

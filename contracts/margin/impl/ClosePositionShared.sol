@@ -76,27 +76,23 @@ library ClosePositionShared {
             // Send remaining heldToken to payoutRecipient
             payout = transaction.availableHeldToken.sub(buybackCost);
 
-            if (payout > 0) {
-                Vault(state.VAULT).transferFromVault(
-                    transaction.positionId,
-                    transaction.heldToken,
-                    transaction.payoutRecipient,
-                    payout
-                );
-            }
+            Vault(state.VAULT).transferFromVault(
+                transaction.positionId,
+                transaction.heldToken,
+                transaction.payoutRecipient,
+                payout
+            );
         } else {
             assert(transaction.exchangeWrapper != address(0));
 
             payout = receivedOwedToken.sub(transaction.owedTokenOwed);
 
-            if (payout > 0) {
-                Proxy(state.PROXY).transferTokens(
-                    transaction.owedToken,
-                    transaction.exchangeWrapper,
-                    transaction.payoutRecipient,
-                    payout
-                );
-            }
+            Proxy(state.PROXY).transferTokens(
+                transaction.owedToken,
+                transaction.exchangeWrapper,
+                transaction.payoutRecipient,
+                payout
+            );
         }
 
         if (AddressUtils.isContract(transaction.payoutRecipient)) {
