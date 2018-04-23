@@ -4,11 +4,11 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { ZeroExExchangeInterface } from "../../interfaces/ZeroExExchangeInterface.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
+import { ZeroExExchangeInterface } from "../../../interfaces/ZeroExExchangeInterface.sol";
+import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 
 
 /**
