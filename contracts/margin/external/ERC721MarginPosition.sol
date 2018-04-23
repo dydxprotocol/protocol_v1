@@ -28,12 +28,36 @@ contract ERC721MarginPosition is
 
     // ============ Events ============
 
+    /**
+     * A token was created by transferring direct position ownership to this contract.
+     */
+    event PositionTokenized(
+        bytes32 indexed positionId,
+        address indexed owner
+    );
+
+    /**
+     * A token was burned from transferring direct position ownership to an address other than
+     * this contract.
+     */
+    event PositionUntokenized(
+        bytes32 indexed positionId,
+        address indexed owner,
+        address ownershipSentTo
+    );
+
+    /**
+     * Closer approval was granted or revoked.
+     */
     event CloserApproval(
         address indexed owner,
         address indexed approved,
         bool isApproved
     );
 
+    /**
+     * Recipient approval was granted or revoked.
+     */
     event RecipientApproval(
         address indexed owner,
         address indexed approved,
@@ -120,9 +144,12 @@ contract ERC721MarginPosition is
         nonReentrant
     {
         uint256 tokenId = uint256(positionId);
-        require(msg.sender == ownerOf(tokenId));
-        _burn(msg.sender, tokenId); // requires msg.sender to be owner
+        address owner = ownerOf(tokenId);
+        require(msg.sender == owner);
+        _burn(owner, tokenId);
         Margin(DYDX_MARGIN).transferPosition(positionId, to);
+
+        emit PositionUntokenized(positionId, owner, to);
     }
 
     /**
@@ -162,6 +189,7 @@ contract ERC721MarginPosition is
         returns (address)
     {
         _mint(from, uint256(positionId));
+        emit PositionTokenized(positionId, from);
         return address(this); // returning own address retains ownership of position
     }
 

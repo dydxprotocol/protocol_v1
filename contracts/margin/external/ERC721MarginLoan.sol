@@ -31,17 +31,42 @@ contract ERC721MarginLoan is
 
     // ============ Events ============
 
+    /**
+     * A token was created by transferring direct loan ownership to this contract.
+     */
+    event LoanTokenized(
+        bytes32 indexed positionId,
+        address indexed lender
+    );
+
+    /**
+     * A token was burned from transferring direct loan ownership to an address other than
+     * this contract.
+     */
+    event LoanUntokenized(
+        bytes32 indexed positionId,
+        address indexed lender,
+        address ownershipSentTo
+    );
+
+    /**
+     * Margin-calling approval was granted or revoked.
+     */
     event MarginCallerApproval(
         address indexed lender,
-        address indexed approved,
+        address indexed caller,
         bool isApproved
     );
 
+    /**
+     * OwedToken was withdrawn by a lender for a position.
+     */
     event OwedTokenWithdrawn(
         bytes32 indexed positionId,
         address indexed lender,
         address owedToken,
-        uint256 owedTokenWithdrawn
+        uint256 owedTokenWithdrawn,
+        bool completelyRepaid
     );
 
     // ============ State Variables ============
@@ -128,6 +153,8 @@ contract ERC721MarginLoan is
 
         burnPositionToken(owner, positionId);
         Margin(DYDX_MARGIN).transferLoan(positionId, to);
+
+        emit LoanUntokenized(positionId, owner, to);
     }
 
     /**
@@ -191,6 +218,8 @@ contract ERC721MarginLoan is
 
         owedTokenAddress[positionId] =
             Margin(DYDX_MARGIN).getPositionOwedToken(positionId);
+
+        emit LoanTokenized(positionId, from);
 
         return address(this); // returning own address retains ownership of position
     }
@@ -308,8 +337,10 @@ contract ERC721MarginLoan is
         }
 
         // update state based on whether the position is closed or not
+        bool completelyRepaid = false;
         if (Margin(DYDX_MARGIN).isPositionClosed(positionId)) {
             burnPositionToken(owner, positionId);
+            completelyRepaid = true;
         } else {
             owedTokensRepaidSinceLastWithdraw[positionId] = totalRepaid;
         }
@@ -321,7 +352,8 @@ contract ERC721MarginLoan is
             positionId,
             owner,
             owedToken,
-            tokensToSend
+            tokensToSend,
+            completelyRepaid
         );
 
         return tokensToSend;

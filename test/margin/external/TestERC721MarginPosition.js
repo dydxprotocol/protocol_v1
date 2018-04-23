@@ -1,8 +1,5 @@
-/*global web3, artifacts, contract, describe, it, before, beforeEach,*/
+/*global artifacts, contract, describe, it, before, beforeEach,*/
 
-const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
-const web3Instance = new Web3(web3.currentProvider);
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
@@ -14,6 +11,8 @@ const OwedToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
+const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { uint256 } = require('../../helpers/MathHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
@@ -21,13 +20,6 @@ const {
   getMaxInterestFee,
   callClosePositionDirectly
 } = require('../../helpers/MarginHelper');
-const {
-  createSignedSellOrder
-} = require('../../helpers/0xHelper');
-
-function uint256(positionId) {
-  return new BigNumber(web3Instance.utils.toBN(positionId));
-}
 
 contract('ERC721MarginPosition', function(accounts) {
   let dydxMargin, erc721Contract, owedToken;
