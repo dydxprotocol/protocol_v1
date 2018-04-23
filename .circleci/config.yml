@@ -46,7 +46,7 @@ jobs:
             - ~/protocol
       - run:
           name: Lint
-          command: npm run lint && npm run solint && npm run dydxlint
+          command: npm run lint && npm run dydxlint # && npm run solint
   test:
     docker:
       - image: circleci/node:8.6.0
@@ -79,9 +79,9 @@ workflows:
       - build:
           requires:
             - checkout_and_install
-      # - lint:
-      #     requires:
-      #       - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
       - test:
           requires:
             - build
