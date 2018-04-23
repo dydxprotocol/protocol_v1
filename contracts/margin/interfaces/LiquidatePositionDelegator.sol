@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { LoanOwner } from "./LoanOwner.sol";
@@ -10,18 +10,11 @@ import { LoanOwner } from "./LoanOwner.sol";
  *
  * Interface that smart contracts must implement in order to let other addresses liquidate a loan
  * owned by the smart contract.
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
 contract LiquidatePositionDelegator is LoanOwner {
-
-    // ============ Constructor ============
-
-    function LiquidatePositionDelegator(
-        address margin
-    )
-        public
-        LoanOwner(margin)
-    {
-    }
 
     // ============ Public Interface functions ============
 
@@ -47,6 +40,6 @@ contract LiquidatePositionDelegator is LoanOwner {
         uint256 requestedAmount
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (uint256);
 }

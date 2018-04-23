@@ -1,8 +1,9 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { PositionOwner } from "../../interfaces/PositionOwner.sol";
 
 
@@ -14,9 +15,10 @@ import { PositionOwner } from "../../interfaces/PositionOwner.sol";
  */
  /* solium-disable-next-line */
 contract ERC20PositionCreator is
+    ReentrancyGuard,
     NoOwner,
-    PositionOwner,
-    ReentrancyGuard
+    OnlyMargin,
+    PositionOwner
 {
     // ============ Events ============
 
@@ -32,12 +34,12 @@ contract ERC20PositionCreator is
 
     // ============ Constructor ============
 
-    function ERC20PositionCreator(
+    constructor(
         address margin,
         address[] trustedRecipients
     )
         public
-        PositionOwner(margin)
+        OnlyMargin(margin)
     {
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);

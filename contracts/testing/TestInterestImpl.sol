@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { MathHelpers } from "../lib/MathHelpers.sol";
@@ -8,10 +8,6 @@ import { InterestImpl } from "../margin/impl/InterestImpl.sol";
 contract TestInterestImpl {
 
     uint256 test = 1; // to keep these functions as non-pure for testing
-
-    function TestInterestImpl()
-        public
-    {}
 
     function getCompoundedInterest(
         uint256 tokenAmount,

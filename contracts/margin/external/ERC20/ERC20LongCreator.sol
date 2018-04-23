@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ERC20Long } from "./ERC20Long.sol";
@@ -16,7 +16,7 @@ import { ERC20PositionCreator } from "./ERC20PositionCreator.sol";
  * ERC20LongCreator.
  */
 contract ERC20LongCreator is ERC20PositionCreator {
-    function ERC20LongCreator(
+    constructor(
         address margin,
         address[] trustedRecipients
     )

@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
@@ -15,7 +15,7 @@ import { Margin } from "../../Margin.sol";
  * entitled to some amount of heldTokens after settlement.
  */
 contract ERC20Short is ERC20Position {
-    function ERC20Short(
+    constructor(
         bytes32 positionId,
         address margin,
         address initialTokenHolder,

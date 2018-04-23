@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -9,6 +9,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
 import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
 import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
+import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
 
@@ -22,9 +23,10 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  */
 /* solium-disable-next-line */
 contract SharedLoan is
+    ReentrancyGuard,
+    OnlyMargin,
     MarginCallDelegator,
-    ForceRecoverCollateralDelegator,
-    ReentrancyGuard
+    ForceRecoverCollateralDelegator
 {
     using SafeMath for uint256;
 
@@ -101,15 +103,14 @@ contract SharedLoan is
 
     // ============ Constructor ============
 
-    function SharedLoan(
+    constructor(
         bytes32 positionId,
         address margin,
         address initialLender,
         address[] trustedLoanCallers
     )
         public
-        ForceRecoverCollateralDelegator(margin)
-        MarginCallDelegator(margin)
+        OnlyMargin(margin)
     {
         POSITION_ID = positionId;
         state = State.UNINITIALIZED;

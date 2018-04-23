@@ -85,6 +85,6 @@ workflows:
       - test:
           requires:
             - build
-      # - coverage:
-      #     requires:
-      #       - checkout_and_install
+      - coverage:
+          requires:
+            - checkout_and_install

@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -9,6 +9,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
+import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 
 
 /**
@@ -22,10 +23,12 @@ import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
  */
  /* solium-disable-next-line */
 contract ERC721MarginLoan is
+    ReentrancyGuard,
     ERC721Token,
+    OnlyMargin,
+    LoanOwner,
     MarginCallDelegator,
-    ForceRecoverCollateralDelegator,
-    ReentrancyGuard
+    ForceRecoverCollateralDelegator
 {
     using SafeMath for uint256;
 
@@ -85,15 +88,13 @@ contract ERC721MarginLoan is
 
     // ============ Constructor ============
 
-    function ERC721MarginLoan(
+    constructor(
         address margin
     )
         public
         ERC721Token("dYdX ERC721 Margin Loans", "d/LO")
-        MarginCallDelegator(margin)
-        ForceRecoverCollateralDelegator(margin)
-    {
-    }
+        OnlyMargin(margin)
+    {}
 
     // ============ Token-Holder functions ============
 

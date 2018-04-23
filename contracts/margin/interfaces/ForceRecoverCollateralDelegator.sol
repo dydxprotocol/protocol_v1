@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { LoanOwner } from "./LoanOwner.sol";
@@ -10,18 +10,11 @@ import { LoanOwner } from "./LoanOwner.sol";
  *
  * Interface that smart contracts must implement in order to let other addresses
  * forceRecoverCollateral() a loan owned by the smart contract.
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
 contract ForceRecoverCollateralDelegator is LoanOwner {
-
-    // ============ Constructor ============
-
-    function ForceRecoverCollateralDelegator(
-        address margin
-    )
-        public
-        LoanOwner(margin)
-    {
-    }
 
     // ============ Public Interface functions ============
 
@@ -43,6 +36,6 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
         address collateralRecipient
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (bool);
 }

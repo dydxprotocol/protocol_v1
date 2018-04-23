@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 
@@ -12,7 +12,7 @@ contract Migrations {
         }
     }
 
-    function Migrations() public {
+    constructor() public {
         owner = msg.sender;
     }
 
