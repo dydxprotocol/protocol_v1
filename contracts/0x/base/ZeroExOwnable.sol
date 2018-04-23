@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 
 
 /*
@@ -10,7 +10,7 @@ pragma solidity 0.4.21;
 contract ZeroExOwnable {
     address public owner;
 
-    function ZeroExOwnable() public {
+    constructor() public {
         owner = msg.sender;
     }
 

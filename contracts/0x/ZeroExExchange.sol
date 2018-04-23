@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 
 import "./ZeroExProxy.sol";
 import "./base/ZeroExToken.sol";
@@ -85,7 +85,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         bytes32 orderHash;
     }
 
-    function ZeroExExchange(address _zrxToken, address _tokenTransferProxy) public {
+    constructor(address _zrxToken, address _tokenTransferProxy) public {
         ZRX_TOKEN_CONTRACT = _zrxToken;
         TOKEN_TRANSFER_PROXY_CONTRACT = _tokenTransferProxy;
     }

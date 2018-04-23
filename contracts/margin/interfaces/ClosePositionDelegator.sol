@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { PositionOwner } from "./PositionOwner.sol";
@@ -10,18 +10,11 @@ import { PositionOwner } from "./PositionOwner.sol";
  *
  * Interface that smart contracts must implement in order to let other addresses close a position
  * owned by the smart contract.
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
 contract ClosePositionDelegator is PositionOwner {
-
-    // ============ Constructor ============
-
-    function ClosePositionDelegator(
-        address margin
-    )
-        public
-        PositionOwner(margin)
-    {
-    }
 
     // ============ Public Interface functions ============
 
@@ -50,6 +43,6 @@ contract ClosePositionDelegator is PositionOwner {
         uint256 requestedAmount
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (uint256);
 }

@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -6,6 +6,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
+import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
@@ -18,7 +19,11 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * Contract for allowing anyone to close a called-in position by using a Dutch auction mechanism to
  * give a fair price to the position owner. Price paid to the owner decreases linearly over time.
  */
-contract DutchAuctionCloser is PayoutRecipient {
+ /* solium-disable-next-line */
+contract DutchAuctionCloser is
+    OnlyMargin,
+    PayoutRecipient
+{
     using SafeMath for uint256;
 
     // ============ Events ============
@@ -52,13 +57,13 @@ contract DutchAuctionCloser is PayoutRecipient {
 
     // ============ Constructor ============
 
-    function DutchAuctionCloser(
+    constructor(
         address margin,
         uint256 callTimeLimitNumerator,
         uint256 callTimeLimitDenominator
     )
         public
-        PayoutRecipient(margin)
+        OnlyMargin(margin)
     {
         // these two requirements also require (_denominator > 0)
         require(callTimeLimitNumerator <= callTimeLimitDenominator);

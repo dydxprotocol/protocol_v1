@@ -1,7 +1,5 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
-
-import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
@@ -10,18 +8,11 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  *
  * Interface that smart contracts must implement in order to own position on behalf of other
  * accounts
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
-contract PositionOwner is OnlyMargin {
-
-    // ============ Constructor ============
-
-    function PositionOwner(
-        address margin
-    )
-        public
-        OnlyMargin(margin)
-    {
-    }
+contract PositionOwner {
 
     // ============ Public Interface functions ============
 
@@ -39,7 +30,7 @@ contract PositionOwner is OnlyMargin {
         bytes32 positionId
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (address);
 
     /**
@@ -60,6 +51,6 @@ contract PositionOwner is OnlyMargin {
         uint256 principalAdded
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (bool);
 }

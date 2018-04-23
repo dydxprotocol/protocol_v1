@@ -1,21 +1,22 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { MarginCallDelegator } from "../margin/interfaces/MarginCallDelegator.sol";
+import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestMarginCallDelegator is MarginCallDelegator {
+contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
 
     address public CALLER;
     address public CANCELLER;
 
-    function TestMarginCallDelegator(
+    constructor(
         address margin,
         address caller,
         address canceller
     )
         public
-        MarginCallDelegator(margin)
+        OnlyMargin(margin)
     {
         CALLER = caller;
         CANCELLER = canceller;

@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -11,6 +11,7 @@ import { StringHelpers } from "../../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { ClosePositionDelegator } from "../../interfaces/ClosePositionDelegator.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";
 
@@ -23,10 +24,11 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  */
  /* solium-disable-next-line */
 contract ERC20Position is
+    ReentrancyGuard,
     StandardToken,
+    OnlyMargin,
     ClosePositionDelegator,
-    PositionCustodian,
-    ReentrancyGuard
+    PositionCustodian
 {
     using SafeMath for uint256;
 
@@ -101,7 +103,7 @@ contract ERC20Position is
 
     // ============ Constructor ============
 
-    function ERC20Position(
+    constructor(
         bytes32 positionId,
         address margin,
         address initialTokenHolder,
@@ -109,7 +111,7 @@ contract ERC20Position is
         string _symbol
     )
         public
-        ClosePositionDelegator(margin)
+        OnlyMargin(margin)
     {
         POSITION_ID = positionId;
         state = State.UNINITIALIZED;

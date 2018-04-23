@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { OnlyMargin } from "./OnlyMargin.sol";
@@ -9,18 +9,11 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to own loans on behalf of other accounts
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
-contract LoanOwner is OnlyMargin {
-
-    // ============ Constructor ============
-
-    function LoanOwner(
-        address margin
-    )
-        public
-        OnlyMargin(margin)
-    {
-    }
+contract LoanOwner {
 
     // ============ Public Interface functions ============
 
@@ -38,7 +31,7 @@ contract LoanOwner is OnlyMargin {
         bytes32 positionId
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (address);
 
     /**
@@ -59,6 +52,6 @@ contract LoanOwner is OnlyMargin {
         uint256 principalAdded
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (bool);
 }

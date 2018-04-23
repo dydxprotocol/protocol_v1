@@ -1,21 +1,22 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ClosePositionDelegator } from "../margin/interfaces/ClosePositionDelegator.sol";
+import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestClosePositionDelegator is ClosePositionDelegator {
+contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
 
     address public CLOSER;
     bool public IS_DEGENERATE; // if true, returns more than requestedAmount;
 
-    function TestClosePositionDelegator(
+    constructor(
         address margin,
         address closer,
         bool isDegenerate
     )
         public
-        ClosePositionDelegator(margin)
+        OnlyMargin(margin)
     {
         CLOSER = closer;
         IS_DEGENERATE = isDegenerate;

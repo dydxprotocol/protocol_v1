@@ -1,21 +1,22 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ForceRecoverCollateralDelegator } from "../margin/interfaces/ForceRecoverCollateralDelegator.sol";
+import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestForceRecoverCollateralDelegator is ForceRecoverCollateralDelegator {
+contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollateralDelegator {
 
     address public RECOVERER;
     address public COLLATERAL_RECIPIENT;
 
-    function TestForceRecoverCollateralDelegator(
+    constructor(
         address margin,
         address recoverer,
         address collateralRecipient
     )
         public
-        ForceRecoverCollateralDelegator(margin)
+        OnlyMargin(margin)
     {
         RECOVERER = recoverer;
         COLLATERAL_RECIPIENT = collateralRecipient;

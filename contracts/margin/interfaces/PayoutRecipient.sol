@@ -1,7 +1,5 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
-
-import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
@@ -10,18 +8,11 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  *
  * Interface that smart contracts must implement in order to be the payoutRecipient in a
  * closePosition transaction.
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
-contract PayoutRecipient is OnlyMargin {
-
-    // ============ Constructor ============
-
-    function PayoutRecipient(
-        address margin
-    )
-        public
-        OnlyMargin(margin)
-    {
-    }
+contract PayoutRecipient {
 
     // ============ Public Interface functions ============
 
@@ -51,6 +42,6 @@ contract PayoutRecipient is OnlyMargin {
 
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (bool);
 }

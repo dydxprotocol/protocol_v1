@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -21,6 +21,7 @@ import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 contract ZeroExExchangeWrapper is
     HasNoEther,
     HasNoContracts,
+    OnlyMargin,
     ExchangeWrapper
 {
     using SafeMath for uint256;
@@ -51,7 +52,7 @@ contract ZeroExExchangeWrapper is
     address public ZERO_EX_PROXY;
     address public ZRX;
 
-    function ZeroExExchangeWrapper(
+    constructor(
         address margin,
         address dydxProxy,
         address zeroExExchange,

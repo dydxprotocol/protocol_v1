@@ -1,11 +1,12 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "../margin/interfaces/LoanOwner.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { LoanOwner } from "../margin/interfaces/LoanOwner.sol";
+import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestLoanOwner is LoanOwner {
+contract TestLoanOwner is OnlyMargin, LoanOwner {
     using SafeMath for uint256;
 
     address public TO_RETURN;
@@ -14,13 +15,13 @@ contract TestLoanOwner is LoanOwner {
     mapping(bytes32 => mapping(address => bool)) public hasReceived;
     mapping(bytes32 => mapping(address => uint256)) public valueAdded;
 
-    function TestLoanOwner(
+    constructor(
         address margin,
         address toReturn,
         bool toReturnOnAdd
     )
         public
-        LoanOwner(margin)
+        OnlyMargin(margin)
     {
         if (toReturn == address(1)) {
             TO_RETURN = address(this);

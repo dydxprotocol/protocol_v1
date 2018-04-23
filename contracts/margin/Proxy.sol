@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -19,13 +19,12 @@ contract Proxy is StaticAccessControlled, NoOwner {
 
     // ============ Constructor ============
 
-    function Proxy(
+    constructor(
         uint256 gracePeriod
     )
         public
         StaticAccessControlled(gracePeriod)
-    {
-    }
+    {}
 
     // ============ Authorized-Only State Changing Functions ============
 

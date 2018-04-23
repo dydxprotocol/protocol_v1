@@ -1,10 +1,11 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { SharedLoan } from "./SharedLoan.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
+import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 
 
 /**
@@ -18,9 +19,10 @@ import { LoanOwner } from "../interfaces/LoanOwner.sol";
  */
 /* solium-disable-next-line */
 contract SharedLoanCreator is
+    ReentrancyGuard,
     NoOwner,
-    LoanOwner,
-    ReentrancyGuard
+    OnlyMargin,
+    LoanOwner
 {
     // ============ Events ============
 
@@ -36,12 +38,12 @@ contract SharedLoanCreator is
 
     // ============ Constructor ============
 
-    function SharedLoanCreator(
+    constructor(
         address margin,
         address[] trustedLoanCallers
     )
         public
-        LoanOwner(margin)
+        OnlyMargin(margin)
     {
         for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
             TRUSTED_MARGIN_CALLERS.push(trustedLoanCallers[i]);

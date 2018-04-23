@@ -109,7 +109,7 @@ def main():
     everythingOkay = True
     for file in files:
         everythingOkay &= lintImports(dir_path, file)
-        everythingOkay &= lintCommentHeader(dir_path, file,"0.4.21")
+        everythingOkay &= lintCommentHeader(dir_path, file,"0.4.23")
 
     if everythingOkay:
         print "No 'import' issues found."

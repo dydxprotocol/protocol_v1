@@ -1,7 +1,5 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
-
-import { OnlyMargin } from "./OnlyMargin.sol";
 
 
 /**
@@ -10,8 +8,11 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  *
  * Contract interface that Exchange Wrapper smart contracts must implement in order to be used to
  * open or close positions on the dYdX using external exchanges.
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
-contract ExchangeWrapper is OnlyMargin {
+contract ExchangeWrapper {
 
     /**
      * Exchange some amount of takerToken for makerTokens.
@@ -31,7 +32,7 @@ contract ExchangeWrapper is OnlyMargin {
         bytes orderData
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (uint256);
 
     /**
@@ -53,7 +54,7 @@ contract ExchangeWrapper is OnlyMargin {
         bytes orderData
     )
         external
-        onlyMargin
+        /* onlyMargin */
         returns (uint256);
 
     /**

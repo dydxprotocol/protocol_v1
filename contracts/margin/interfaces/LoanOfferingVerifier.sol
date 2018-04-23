@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 
@@ -8,6 +8,9 @@ pragma experimental "v0.5.0";
  *
  * Interface that smart contracts must implement to be able to make off-chain generated
  * loan offerings
+ *
+ * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
+ *       to these functions
  */
 contract LoanOfferingVerifier {
     /**
@@ -60,5 +63,6 @@ contract LoanOfferingVerifier {
         bytes32 positionId
     )
         external
+        /* onlyMargin */
         returns (bool);
 }
