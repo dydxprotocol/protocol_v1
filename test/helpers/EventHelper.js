@@ -10,11 +10,6 @@ function expectLog(log, name, params) {
   expect(log, nameErrorMessage).to.be.not.equal(undefined);
   expect(log.event, nameErrorMessage).to.be.equal(name);
 
-  // if no params, we only check that the event name was correct
-  if (!params) {
-    return;
-  }
-
   for (let key in params) {
     const expected = params[key];
     const actual = log.args[key];

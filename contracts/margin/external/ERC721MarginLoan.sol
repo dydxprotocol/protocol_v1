@@ -40,12 +40,13 @@ contract ERC721MarginLoan is
     );
 
     /**
-     * A token was burned, either from transferring direct loan ownership to an address other than
-     * this contract, or from withdrawing all funds from a closed position.
+     * A token was burned from transferring direct loan ownership to an address other than
+     * this contract.
      */
     event LoanUntokenized(
         bytes32 indexed positionId,
-        address indexed lender
+        address indexed lender,
+        address ownershipSentTo
     );
 
     /**
@@ -151,6 +152,8 @@ contract ERC721MarginLoan is
 
         burnPositionToken(owner, positionId);
         Margin(DYDX_MARGIN).transferLoan(positionId, to);
+
+        emit LoanUntokenized(positionId, owner, to);
     }
 
     /**
@@ -368,7 +371,6 @@ contract ERC721MarginLoan is
         uint256 tokenId = uint256(positionId);
 
         // requires that owner actually is the owner of the token
-        emit LoanUntokenized(positionId, owner);
         _burn(owner, tokenId);
     }
 }
