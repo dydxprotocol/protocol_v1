@@ -11,8 +11,8 @@ import { Vault } from "../Vault.sol";
  * @title PositionGetters
  * @author dYdX
  *
- * A collection of public constant getter functions that allow users and applications to read the
- * state of any position stored in the dYdX protocol.
+ * A collection of public constant getter functions that allows reading of the state of any position
+ * stored in the dYdX protocol.
  */
 contract PositionGetters is MarginStorage {
     using SafeMath for uint256;

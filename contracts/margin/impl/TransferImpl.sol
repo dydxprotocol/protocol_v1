@@ -10,7 +10,8 @@ import { TransferInternal } from "./TransferInternal.sol";
  * @title TransferImpl
  * @author dYdX
  *
- * This library contains the implementation for transferring ownership of loans and positions
+ * This library contains the implementation for the transferPosition and transferLoan functions of
+ * Margin
  */
 library TransferImpl {
 
