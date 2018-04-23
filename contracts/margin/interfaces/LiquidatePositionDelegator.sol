@@ -19,19 +19,17 @@ contract LiquidatePositionDelegator is LoanOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call liquidate() for the
-     * lender position. This allows lenders to use more complex logic to control their lending
-     * positions.
+     * Function a contract must implement in order to let other addresses call liquidate().
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
-     * entire transaction or that the specified amount of the position was successfully
-     * closed. Returning 0 will indicate an error and cause Margin to throw.
+     * entire transaction or that the specified amount of the position was successfully closed.
      *
-     * @param  liquidator       Address of the caller of the close function
-     * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
+     * @param  liquidator       Address of the caller of the liquidatePosition() function
+     * @param  payoutRecipient  Address of the recipient of tokens paid out from liquidation
      * @param  positionId       Unique ID of the position
-     * @param  requestedAmount  Amount of the loan being closed
-     * @return                  The amount the user is allowed to close for the specified loan
+     * @param  requestedAmount  Requested principal amount of the loan to liquidate
+     * @return                  The amount the user is allowed to liquidate for the specified loan.
+     *                          Must be a positive integer less than requestedAmount to not throw.
      */
     function liquidateOnBehalfOf(
         address liquidator,

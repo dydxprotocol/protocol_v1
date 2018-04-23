@@ -501,7 +501,7 @@ contract Margin is
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest rate (annual nominal percentage times 10**18)
+     *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      */
     function approveLoanOffering(

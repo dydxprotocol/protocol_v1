@@ -39,7 +39,6 @@ contract PayoutRecipient {
         uint256 payout,
         uint256 totalHeldToken,
         bool    payoutInHeldToken
-
     )
         external
         /* onlyMargin */

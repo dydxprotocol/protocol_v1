@@ -22,8 +22,9 @@ contract PositionOwner {
      *
      * @param  from        Address of the previous owner
      * @param  positionId  Unique ID of the position
-     * @return             The address to pass position ownership to. This address to keep
-     *                     ownership, 0x0 to reject loan ownership completely.
+     * @return             This address to keep ownership.
+     *                     Address 0x0 to reject ownership completely.
+     *                     A different address to pass-on ownership.
      */
     function receivePositionOwnership(
         address from,
@@ -35,9 +36,10 @@ contract PositionOwner {
 
     /**
      * Function a contract must implement in order to allow additional value to be added onto
-     * an owned position. Margin will call this on the owner of a position
-     * during Margin#increasePosition. If true is returned, the implementing contract can assume
-     * the additional value was added.
+     * an owned position. Margin will call this on the owner of a positio during increasePosition().
+     *
+     * NOTE: If returning true, this contract must assume that Margin will either revert the
+     * entire transaction or that the position size was successfully increased.
      *
      * @param  from            Address initiating the addition of funds to the position
      * @param  positionId      Unique ID of the position

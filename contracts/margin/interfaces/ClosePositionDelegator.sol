@@ -9,7 +9,7 @@ import { PositionOwner } from "./PositionOwner.sol";
  * @author dYdX
  *
  * Interface that smart contracts must implement in order to let other addresses close a position
- * owned by the smart contract.
+ * owned by the smart contract, allowing more complex logic to control positions.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
@@ -19,22 +19,17 @@ contract ClosePositionDelegator is PositionOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call closePosition() for a
-     * position. This allows margin traders to use more complex logic to control their positions.
-     * For example, this can be used to tokenize positions and distribute shares as ERC20 tokens.
-     * Such a token would be burned for the closer in the amount called here. This interface also
-     * allows for regulatory compliance; it could require the block.timestamp to be at least some
-     * time, or the amount to be at least some minimum denomination.
+     * Function a contract must implement in order to let other addresses call closePosition().
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
-     * entire transaction or that the specified amount of the position was successfully
-     * closed. Returning 0 will indicate an error and cause Margin to throw.
+     * entire transaction or that the specified amount of the position was successfully closed.
      *
-     * @param  closer           Address of the caller of the close function
+     * @param  closer           Address of the caller of the closePosition() function
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
-     * @param  requestedAmount  Amount of the position being closed
-     * @return                  The amount the user is allowed to close for the specified position
+     * @param  requestedAmount  Requested principal amount of the position to close
+     * @return                  The amount the user is allowed to close for the specified position.
+     *                          Must be a positive integer less than requestedAmount to not throw.
      */
     function closeOnBehalfOf(
         address closer,

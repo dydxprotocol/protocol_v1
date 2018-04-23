@@ -8,7 +8,7 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  * @title LoanOwner
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to own loans on behalf of other accounts
+ * Interface that smart contracts must implement in order to own loans on behalf of other accounts.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
@@ -23,8 +23,9 @@ contract LoanOwner {
      *
      * @param  from        Address of the previous owner
      * @param  positionId  Unique ID of the position
-     * @return             The address to pass loan ownership to. This address to keep loan
-     *                     ownership, 0x0 to reject loan ownership completely.
+     * @return             This address to keep ownership.
+     *                     Address 0x0 to reject ownership completely.
+     *                     A different address to pass-on ownership.
      */
     function receiveLoanOwnership(
         address from,
@@ -36,15 +37,16 @@ contract LoanOwner {
 
     /**
      * Function a contract must implement in order to allow additional value to be added onto
-     * an owned loan. Margin will call this on the owner of a loan during
-     * Margin#increasePosition. If true is returned, the implementing contract can assume
-     * the additional value was added.
+     * an owned loan. Margin will call this on the owner of a loan during increasePosition().
+     *
+     * NOTE: If returning true, this contract must assume that Margin will either revert the
+     * entire transaction or that the loan size was successfully increased.
      *
      * @param  from            Lender adding additional funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Principal amount to be added to the position
      * @return                 True if the contract consents to additional value being added,
-     *                          false otherwise
+     *                         false otherwise
      */
     function marginLoanIncreased(
         address from,
