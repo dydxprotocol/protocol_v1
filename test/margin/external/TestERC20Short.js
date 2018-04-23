@@ -285,7 +285,7 @@ contract('ERC20Short', function(accounts) {
             CONTRACTS.DYDX_MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
-            INITIAL_TOKEN_HOLDER)
+            { from: INITIAL_TOKEN_HOLDER })
         );
       }
     });
@@ -306,7 +306,7 @@ contract('ERC20Short', function(accounts) {
             CONTRACTS.DYDX_MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
-            POSITION.TX.trader
+            { from: POSITION.TX.trader }
           )
         );
       }
@@ -324,7 +324,7 @@ contract('ERC20Short', function(accounts) {
             CONTRACTS.DYDX_MARGIN,
             POSITION.TX,
             0,
-            POSITION.TX.trader
+            { from: POSITION.TX.trader }
           )
         );
       }
@@ -341,7 +341,7 @@ contract('ERC20Short', function(accounts) {
           CONTRACTS.DYDX_MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS + 1,
-          POSITION.TX.trader
+          { from: POSITION.TX.trader }
         );
       }
     });
@@ -382,7 +382,7 @@ contract('ERC20Short', function(accounts) {
             CONTRACTS.DYDX_MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
-            accounts[0]
+            { from: accounts[0] }
           )
         );
       }
@@ -400,7 +400,7 @@ contract('ERC20Short', function(accounts) {
           CONTRACTS.DYDX_MARGIN,
           POSITION.TX,
           POSITION.NUM_TOKENS,
-          POSITION.TX.trader
+          { from: POSITION.TX.trader }
         );
 
         // try again
@@ -409,7 +409,7 @@ contract('ERC20Short', function(accounts) {
             CONTRACTS.DYDX_MARGIN,
             POSITION.TX,
             POSITION.NUM_TOKENS,
-            POSITION.TX.trader
+            { from: POSITION.TX.trader }
           )
         );
       }

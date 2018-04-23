@@ -214,8 +214,10 @@ contract('ERC721MarginPosition', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal,
-        OpenTx.trader,
-        unapprovedAcct
+        {
+          from: OpenTx.trader,
+          recipient: unapprovedAcct
+        }
       );
     });
 
@@ -225,8 +227,10 @@ contract('ERC721MarginPosition', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal,
-        unapprovedAcct,
-        approvedRecipient
+        {
+          from: unapprovedAcct,
+          recipient: approvedRecipient
+        }
       );
     });
 
@@ -236,8 +240,10 @@ contract('ERC721MarginPosition', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal,
-        approvedCloser,
-        unapprovedAcct
+        {
+          from: approvedCloser,
+          recipient: unapprovedAcct
+        }
       );
     });
 
@@ -247,8 +253,10 @@ contract('ERC721MarginPosition', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal,
-        unapprovedAcct,
-        unapprovedAcct
+        {
+          from: unapprovedAcct,
+          recipient: unapprovedAcct
+        }
       ));
     });
   });

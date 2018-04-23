@@ -1,7 +1,3 @@
-module.exports = {
-  transact
-};
-
 /**
  * Calls a solidity function and returns the return value.
  * @param  {SolidityFunction} contractFunction the function of the contract to call
@@ -16,3 +12,7 @@ async function transact(contractFunction /* , ... */){
   tx.result = retValue;
   return tx;
 }
+
+module.exports = {
+  transact
+};
