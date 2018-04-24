@@ -4,10 +4,10 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
-import { Margin } from "../Margin.sol";
-import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
-import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
-import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
+import { Margin } from "../../Margin.sol";
+import { ClosePositionDelegator } from "../../interfaces/ClosePositionDelegator.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
+import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 
 
 /**

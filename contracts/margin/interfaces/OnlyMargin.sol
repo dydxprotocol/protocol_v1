@@ -13,7 +13,7 @@ contract OnlyMargin {
 
     // ============ Constants ============
 
-    // address of the known and trusted Margin contract on the blockchain
+    // Address of the known and trusted Margin contract on the blockchain
     address public DYDX_MARGIN;
 
     // ============ Constructor ============

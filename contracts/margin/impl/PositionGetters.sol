@@ -11,8 +11,8 @@ import { Vault } from "../Vault.sol";
  * @title PositionGetters
  * @author dYdX
  *
- * A collection of public constant getter functions that allow users and applications to read the
- * state of any position stored in the dYdX protocol.
+ * A collection of public constant getter functions that allows reading of the state of any position
+ * stored in the dYdX protocol.
  */
 contract PositionGetters is MarginStorage {
     using SafeMath for uint256;
@@ -20,7 +20,7 @@ contract PositionGetters is MarginStorage {
     // ============ Public Constant Functions ============
 
     /**
-     * Gets if a position is currently open
+     * Gets if a position is currently open.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is exists and is open
@@ -36,7 +36,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a position is currently margin-called
+     * Gets if a position is currently margin-called.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is margin-called
@@ -52,7 +52,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets if a position was previously closed
+     * Gets if a position was previously open and is now closed.
      *
      * @param  positionId  Unique ID of the position
      * @return             True if the position is now closed
@@ -84,7 +84,7 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of heldToken currently locked up in Vault for a particular position
+     * Gets the amount of heldToken currently locked up in Vault for a particular position.
      *
      * @param  positionId  Unique ID of the position
      * @return             The amount of heldToken
@@ -121,17 +121,18 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        uint256 nextStep = MarginCommon.calculateEffectiveTimeElapsed(
+        uint256 effectiveTimeElapsed = MarginCommon.calculateEffectiveTimeElapsed(
             position,
             block.timestamp
         );
 
-        if (block.timestamp > nextStep) { // past maxDuration
+        uint256 absoluteTimeElapsed = block.timestamp.sub(position.startTimestamp);
+        if (absoluteTimeElapsed > effectiveTimeElapsed) { // past maxDuration
             return 0;
         } else {
             // nextStep is the final second at which the calculated interest fee is the same as it
             // is currently, so add 1 to get the correct value
-            return nextStep.add(1).sub(block.timestamp);
+            return effectiveTimeElapsed.add(1).sub(absoluteTimeElapsed);
         }
     }
 
@@ -160,8 +161,8 @@ contract PositionGetters is MarginStorage {
     }
 
     /**
-     * Gets the amount of owedTokens needed to close a given principal of the position at a given
-     * time, including interest fees.
+     * Gets the amount of owedTokens needed to close a given principal amount of the position at a
+     * given time, including interest fees.
      *
      * @param  positionId         Unique ID of the position
      * @param  principalToClose   Amount of principal being closed
@@ -189,7 +190,7 @@ contract PositionGetters is MarginStorage {
 
     /**
      * Gets the amount of owedTokens that can be borrowed from a lender to add a given principal
-     * onto the position at a given time.
+     * amount to the position at a given time.
      *
      * @param  positionId      Unique ID of the position
      * @param  principalToAdd  Amount being added to principal

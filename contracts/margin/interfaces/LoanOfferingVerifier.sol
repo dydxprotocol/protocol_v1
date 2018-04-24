@@ -7,7 +7,7 @@ pragma experimental "v0.5.0";
  * @author dYdX
  *
  * Interface that smart contracts must implement to be able to make off-chain generated
- * loan offerings
+ * loan offerings.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
@@ -16,8 +16,8 @@ contract LoanOfferingVerifier {
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
      * will be generated off-chain and signed by a signer. The Margin contract will verify that
-     * the signature for the loan offering was made by signer. If "owner" is a non-zero address,
-     * then it will be the lender, otherwise the implementing contract will be the lender.
+     * the signature for the loan offering was made by signer. The "loan owner" address will own the
+     * loan-side of the resulting position.
      *
      * If true is returned, and no errors are thrown by the Margin contract, the loan will have
      * occurred. This means that verifyLoanOffering can also be used to update internal contract
@@ -49,7 +49,7 @@ contract LoanOfferingVerifier {
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest rate (annual nominal percentage times 10**18)
+     *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      *
      * @param  positionId   Unique ID of the position

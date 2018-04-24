@@ -28,7 +28,7 @@ library DepositCollateralImpl {
     );
 
     /**
-     * A loan call was canceled
+     * A margin call was canceled
      */
     event MarginCallCanceled(
         bytes32 indexed positionId,

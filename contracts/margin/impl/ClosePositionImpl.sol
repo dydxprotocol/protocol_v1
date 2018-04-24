@@ -21,7 +21,7 @@ library ClosePositionImpl {
     // ============ Events ============
 
     /**
-     * A position was closed
+     * A position was closed or partially closed
      */
     event PositionClosed(
         bytes32 indexed positionId,

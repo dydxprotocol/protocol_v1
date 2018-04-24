@@ -163,7 +163,7 @@ contract Margin is
      * @param  sigV                ECDSA v parameter for loan offering
      * @param  sigRS               ECDSA r and s parameters for loan offering
      * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
-     *                             False if the margin deposit will be pulled in owedToken,
+     *                             False if the margin deposit will be pulled in owedToken
      *                             and then sold along with the owedToken borrowed from the lender
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Amount of owedTokens pulled from the lender
@@ -223,20 +223,23 @@ contract Margin is
     /**
      * Close a position. May be called by the owner or with the approval of the owner. May provide
      * an order and exchangeWrapper to facilitate the closing of the position. The payoutRecipient
-     * an sent the resulting payout.
+     * is sent the resulting payout.
      *
      * @param  positionId            Unique ID for the position
-     * @param  requestedCloseAmount  Principal amount of the position to close. The amount closed
-     *                               will be: min(requestedCloseAmount, principal)
+     * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
+     *                               closed is also bounded by:
+     *                               1) The principal of the position
+     *                               2) The amount allowed by the owner if closer != owner
      * @param  payoutRecipient       Address of the recipient of tokens paid out from closing
      * @param  exchangeWrapper       Address of the exchange wrapper
      * @param  payoutInHeldToken     True to pay out the payoutRecipient in heldToken,
      *                               False to pay out the payoutRecipient in owedToken
      * @param  order                 Order object to be passed to the exchange wrapper
      * @return                       Values corresponding to:
-     *                               1) Amount of position closed
-     *                               2) Amount of heldToken received by the payoutRecipient
-     *                               3) Amount of owedToken paid as interest fee to the lender
+     *                               1) Principal of position closed
+     *                               2) Amount of tokens (heldToken if payoutInHeldtoken is true,
+     *                                  owedToken otherwise) received by the payoutRecipient
+     *                               3) Amount of owedToken paid (incl. interest fee) to the lender
      */
     function closePosition(
         bytes32 positionId,
@@ -263,16 +266,18 @@ contract Margin is
     }
 
     /**
-     * Helper to close a position by paying owedToken directly
+     * Helper to close a position by paying owedToken directly rather than using an exchangeWrapper.
      *
-     * @param  positionId               Unique ID for the position
-     * @param  requestedCloseAmount     Principal amount of the position to close. The amount closed
-     *                                  will be: min(requestedCloseAmount, principal)
-     * @param  payoutRecipient          Address of the recipient of tokens paid out from closing
-     * @return                          Values corresponding to:
-     *                                  1) Amount of position closed
-     *                                  2) Amount of heldToken received by the payoutRecipient
-     *                                  3) Amount of owedToken paid as interest fee to the lender
+     * @param  positionId            Unique ID for the position
+     * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
+     *                               closed is also bounded by:
+     *                               1) The principal of the position
+     *                               2) The amount allowed by the owner if closer != owner
+     * @param  payoutRecipient       Address of the recipient of tokens paid out from closing
+     * @return                       Values corresponding to:
+     *                               1) Principal amount of position closed
+     *                               2) Amount of heldToken received by the payoutRecipient
+     *                               3) Amount of owedToken paid (incl. interest fee) to the lender
      */
     function closePositionDirectly(
         bytes32 positionId,
@@ -296,15 +301,17 @@ contract Margin is
     }
 
     /**
-     * Liquidate position and withdraw heldTokens from the vault.
-     * Must be approved by the position owner (e.g., by requiring the lender to own part of the
-     * position, and burning it).
+     * Reduce the size of a position and withdraw a proportional amount of heldToken from the vault.
+     * Must be approved by both the position owner and lender.
      *
      * @param  positionId                  Unique ID for the position
-     * @param  requestedLiquidationAmount  Principal amount of the loan to close. The amount closed
-     *                                     will be: min(requestedCloseAmount, principal)
+     * @param  requestedLiquidationAmount  Principal amount of the position to liquidate. The actual
+     *                                     amount liquidated is also bounded by:
+     *                                     1) The principal of the position
+     *                                     2) The amount allowed by the owner if closer != owner
+     *                                     2) The amount allowed by the lender if closer != lender
      * @return                             Values corresponding to:
-     *                                     1) Amount of position closed
+     *                                     1) Principal amount of position liquidated
      *                                     2) Amount of heldToken received by the msg.sender
      */
     function liquidatePosition(
@@ -326,13 +333,13 @@ contract Margin is
     }
 
     /**
-     * Margin-call a position.
-     * Only callable with the approval of the position lender. After the call, the position owner
-     * will have time equal to the call time-limit of the position to close the position. If the
-     * owner does not close the position, the lender can recover the collateral in the position.
+     * Margin-call a position. Only callable with the approval of the position lender. After the
+     * call, the position owner will have time equal to the callTimeLimit of the position to close
+     * the position. If the owner does not close the position, the lender can recover the collateral
+     * in the position.
      *
      * @param  positionId       Unique ID for the position
-     * @param  requiredDeposit  Amount of deposit the owner must put up to cancel the call
+     * @param  requiredDeposit  Amount of deposit the owner will have to put up to cancel the call
      */
     function marginCall(
         bytes32 positionId,
@@ -349,7 +356,7 @@ contract Margin is
     }
 
     /**
-     * Cancel a margin call. Only callable with the approval of the position lender.
+     * Cancel a margin-call. Only callable with the approval of the position lender.
      *
      * @param  positionId  Unique ID for the position
      */
@@ -365,8 +372,8 @@ contract Margin is
 
     /**
      * Used to recover the heldTokens held as collateral. Is callable after the maximum duration of
-     * the loan has expired or the loan has been margin-called for the duration of the call
-     * time-limit but remains unclosed. Only callable with the approval of the position lender.
+     * the loan has expired or the loan has been margin-called for the duration of the callTimeLimit
+     * but remains unclosed. Only callable with the approval of the position lender.
      *
      * @param  positionId           Unique ID for the position
      * @param  collateralRecipient  Address to send the recovered tokens to
@@ -388,7 +395,7 @@ contract Margin is
     }
 
     /**
-     * Deposit additional heldToken as collateral for a position. Cancels loan call if:
+     * Deposit additional heldToken as collateral for a position. Cancels margin-call if:
      * 0 < position.requiredDeposit < depositAmount. Only callable by the position owner.
      *
      * @param  positionId       Unique ID for the position
@@ -410,7 +417,7 @@ contract Margin is
     }
 
     /**
-     * Cancel an amount of a loan offering. Only callable by the offering's lender.
+     * Cancel an amount of a loan offering. Only callable by the loan offering's payer or signer.
      *
      * @param  addresses  Array of addresses:
      *
@@ -494,7 +501,7 @@ contract Margin is
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest rate (annual nominal percentage times 10**18)
+     *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      */
     function approveLoanOffering(
@@ -558,6 +565,11 @@ contract Margin is
 
     // ============ Public Constant Functions ============
 
+    /**
+     * Gets the address of the Vault contract that holds and accounts for tokens.
+     *
+     * @return  The address of the Vault contract
+     */
     function getVaultAddress()
         external
         view
@@ -566,6 +578,12 @@ contract Margin is
         return state.VAULT;
     }
 
+    /**
+     * Gets the address of the Proxy contract that accounts must set allowance on in order to make
+     * loans or open/close positions.
+     *
+     * @return  The address of the Proxy contract
+     */
     function getProxyAddress()
         external
         view

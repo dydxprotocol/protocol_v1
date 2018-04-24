@@ -28,10 +28,11 @@ contract Vault is
 
     // ============ State Variables ============
 
+    // Address of the Proxy contract. Used for moving tokens.
     address public PROXY;
 
     // Map from vault ID to map from token address to amount of that token attributed to the
-    // particular vault ID
+    // particular vault ID.
     mapping (bytes32 => mapping (address => uint256)) public balances;
 
     // Map from token address to total amount of that token attributed to some account.
@@ -117,6 +118,8 @@ contract Vault is
         // Final validation
         validateBalance(token);
     }
+
+    // ============ Helper Functions ============
 
     /**
      * Verifies that this contract is in control of at least as many tokens as accounted for

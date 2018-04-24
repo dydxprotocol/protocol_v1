@@ -19,16 +19,15 @@ contract MarginCallDelegator is LoanOwner {
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call marginCall() for
-     * the loan-side of a position.
+     * Function a contract must implement in order to let other addresses call marginCall().
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan was successfully called-in
+     * entire transaction or that the loan was successfully margin-called.
      *
      * @param  who            Address of the caller of the marginCall function
      * @param  positionId     Unique ID of the position
      * @param  depositAmount  Amount of heldToken deposit that will be required to cancel the call
-     * @return                True if the user is allowed to call-in the position, false otherwise
+     * @return                True if "who" is allowed to margin-call the position, false otherwise
      */
     function marginCallOnBehalfOf(
         address who,
@@ -40,15 +39,14 @@ contract MarginCallDelegator is LoanOwner {
         returns (bool);
 
     /**
-     * Function a contract must implement in order to let other addresses call cancelMarginCall()
-     * for the loan-side of a position.
+     * Function a contract must implement in order to let other addresses call cancelMarginCall().
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan call was successfully canceled
+     * entire transaction or that the loan call was successfully canceled.
      *
-     * @param  who            Address of the caller of the cancelMarginCall function
-     * @param  positionId     Unique ID of the position
-     * @return                True if the user is allowed to cancel the margin call, false otherwise
+     * @param  who         Address of the caller of the cancelMarginCall function
+     * @param  positionId  Unique ID of the position
+     * @return             True if "who" is allowed to cancel the margin-call, false otherwise
      */
     function cancelMarginCallOnBehalfOf(
         address who,

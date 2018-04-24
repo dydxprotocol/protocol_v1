@@ -20,12 +20,12 @@ contract ForceRecoverCollateralDelegator is LoanOwner {
 
     /**
      * Function a contract must implement in order to let other addresses call
-     * forceRecoverCollateral() for the loan-side of a position.
+     * forceRecoverCollateral().
      *
      * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan call was successfully canceled
+     * entire transaction or that the loan call was successfully canceled.
      *
-     * @param  who                  Address of the caller of the cancelMarginCall function
+     * @param  who                  Address of the caller of the forceRecoverCollateral() function
      * @param  positionId           Unique ID of the position
      * @param  collateralRecipient  Address to send the recovered tokens to
      * @return                      True if forceRecoverCollateral() is permitted

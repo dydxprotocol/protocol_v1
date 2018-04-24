@@ -8,8 +8,7 @@ import { MarginCommon } from "./MarginCommon.sol";
  * @title MarginState
  * @author dYdX
  *
- * Contains state for the Margin contract. Also used by libraries that implement
- * Margin functions
+ * Contains state for the Margin contract. Also used by libraries that implement Margin functions.
  */
 library MarginState {
     struct State {
