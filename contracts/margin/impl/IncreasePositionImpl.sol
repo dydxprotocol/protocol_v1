@@ -86,10 +86,6 @@ library IncreasePositionImpl {
             transaction.loanOffering.payer
         );
 
-        // Update global amounts for the loan
-        state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.principal);
-
         // LOG EVENT
         recordPositionIncreased(
             transaction,

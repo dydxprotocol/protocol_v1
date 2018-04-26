@@ -149,9 +149,7 @@ library OpenPositionImpl {
     {
         assert(!MarginCommon.containsPositionImpl(state, positionId));
 
-        // Update global amounts for the loan and lender
-        state.loanFills[transaction.loanOffering.loanHash] =
-            state.loanFills[transaction.loanOffering.loanHash].add(transaction.principal);
+        // Update global amounts for the loan
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 

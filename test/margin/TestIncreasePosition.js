@@ -206,7 +206,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  async function getBalances(tx, owedToken, heldToken, feeToken) {
+  async function getBalances(tx, owedToken, heldToken, feeToken, dydxMargin) {
     const [
       traderOwedToken,
       lenderOwedToken,
@@ -219,7 +219,8 @@ describe('#increasePosition', () => {
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
-      traderFeeToken
+      traderFeeToken,
+      loanOfferingFilledAmount
     ] = await Promise.all([
       owedToken.balanceOf.call(tx.trader),
       owedToken.balanceOf.call(tx.loanOffering.payer),
@@ -233,6 +234,7 @@ describe('#increasePosition', () => {
       feeToken.balanceOf.call(tx.buyOrder.maker),
       feeToken.balanceOf.call(ExchangeWrapper.address),
       feeToken.balanceOf.call(tx.trader),
+      dydxMargin.loanFills.call(tx.loanOffering.loanHash)
     ]);
 
     return {
@@ -247,7 +249,8 @@ describe('#increasePosition', () => {
       lenderFeeToken,
       makerFeeToken,
       exchangeWrapperFeeToken,
-      traderFeeToken
+      traderFeeToken,
+      loanOfferingFilledAmount
     }
   }
 
@@ -307,7 +310,7 @@ describe('#increasePosition', () => {
       startingBalances,
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(OpenTx.id),
-      getBalances(OpenTx, owedToken, heldToken, feeToken),
+      getBalances(increasePosTx, owedToken, heldToken, feeToken, dydxMargin),
     ]);
 
     increasePosTx.principal = increasePosTx.principal.div(4);
@@ -368,7 +371,7 @@ describe('#increasePosition', () => {
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(OpenTx.id),
       getOwedAmount(OpenTx, tx, increasePosTx.principal, false),
-      getBalances(increasePosTx, owedToken, heldToken, feeToken)
+      getBalances(increasePosTx, owedToken, heldToken, feeToken, dydxMargin)
     ]);
 
     const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
@@ -437,6 +440,11 @@ describe('#increasePosition', () => {
 
     // Exchange Wrapper heldToken
     expect(finalBalances.exchangeWrapperHeldToken).to.be.bignumber.eq(leftoverOwedToken);
+
+    // Loan Offering Filled Amount
+    expect(finalBalances.loanOfferingFilledAmount).to.be.bignumber.eq(
+      startingBalances.loanOfferingFilledAmount.plus(owedAmount)
+    );
   }
 });
 
