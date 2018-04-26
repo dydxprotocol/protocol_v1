@@ -298,7 +298,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
   const [
     owedToken,
     heldToken,
-    feeToken
+    feeToken,
   ] = await Promise.all([
     OwedToken.deployed(),
     HeldToken.deployed(),
@@ -315,7 +315,8 @@ async function checkSuccess(dydxMargin, OpenTx) {
     lenderFeeToken,
     makerFeeToken,
     exchangeWrapperFeeToken,
-    traderFeeToken
+    traderFeeToken,
+    loanOfferingFilledAmount
   ] = await Promise.all([
     owedToken.balanceOf.call(OpenTx.loanOffering.payer),
     owedToken.balanceOf.call(OpenTx.buyOrder.maker),
@@ -327,6 +328,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     feeToken.balanceOf.call(OpenTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(OpenTx.trader),
+    dydxMargin.loanFills.call(OpenTx.loanOffering.loanHash)
   ]);
 
   expect(lenderOwedToken).to.be.bignumber.equal(
@@ -378,4 +380,5 @@ async function checkSuccess(dydxMargin, OpenTx) {
         )
       )
   );
+  expect(loanOfferingFilledAmount).to.be.bignumber.eq(OpenTx.principal);
 }

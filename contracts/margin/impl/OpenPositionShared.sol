@@ -78,6 +78,10 @@ library OpenPositionShared {
         // Transfer feeTokens from trader and lender
         transferLoanFees(state, transaction);
 
+        // Update global amounts for the loan
+        state.loanFills[transaction.loanOffering.loanHash] =
+            state.loanFills[transaction.loanOffering.loanHash].add(transaction.lenderAmount);
+
         return (
             heldTokenFromSell,
             totalHeldTokenReceived
