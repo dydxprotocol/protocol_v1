@@ -6,10 +6,20 @@ const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
 const { doOpenPosition, callLiquidatePosition } = require('../helpers/MarginHelper');
 const { ADDRESSES } = require('../helpers/Constants');
+const { getPartialAmount } = require('../helpers/MathHelper');
 const expect = require('chai').expect;
 
+function multiplyByLiquidatePercent(input) {
+  const liquidateNum = 1;
+  const liquidateDen = 5;
+  return getPartialAmount(
+    liquidateNum,
+    liquidateDen,
+    input
+  );
+}
+
 describe('#liquidate', () => {
-  const LIQUIDATE_PERCENT = .20; // 20%
   let dydxMargin, OpenTx, erc20Contract, lender, principal;
 
   async function configurePosition(initialHolder, accounts) {
@@ -27,7 +37,7 @@ describe('#liquidate', () => {
 
     const totalSupply = await erc20Contract.totalSupply();
     // Transfer 20% of the position to the lender
-    principal = totalSupply.toNumber() * LIQUIDATE_PERCENT;
+    principal = multiplyByLiquidatePercent(totalSupply);
     await erc20Contract.transfer(OpenTx.loanOffering.payer, principal, { from: initialHolder });
   }
 
@@ -51,7 +61,8 @@ describe('#liquidate', () => {
 
       // It should liquidate the correct amount of the heldToken balance
       const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
-      expect(lenderHeldTokenAfter).to.be.bignumber.equal(heldTokenBalance.times(LIQUIDATE_PERCENT));
+      expect(lenderHeldTokenAfter).to.be.bignumber.equal(
+        multiplyByLiquidatePercent(heldTokenBalance));
     });
   });
 
@@ -79,7 +90,8 @@ describe('#liquidate', () => {
       expect(lenderAfter.toNumber()).to.equal(0);
 
       const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
-      expect(lenderHeldTokenAfter).to.be.bignumber.equal(heldTokenBalance.times(LIQUIDATE_PERCENT));
+      expect(lenderHeldTokenAfter).to.be.bignumber.equal(
+        multiplyByLiquidatePercent(heldTokenBalance));
     });
   });
 });

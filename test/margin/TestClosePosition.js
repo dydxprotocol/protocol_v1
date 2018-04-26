@@ -31,6 +31,7 @@ describe('#closePosition', () => {
         createSignedSellOrder(accounts),
         Margin.deployed()
       ]);
+
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
       // Close half the position at a time

@@ -26,7 +26,7 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
     rates: {
       maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
       minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minHeldToken:       BIGNUMBERS.BASE_AMOUNT.times(1.01),
+      minHeldToken:       BIGNUMBERS.BASE_AMOUNT.times(11),
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
       interestRate:       new BigNumber('365e4'), // 3.65% nominal per year

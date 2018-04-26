@@ -14,20 +14,23 @@ const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const web3Instance = new Web3(web3.currentProvider);
 
 async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
-  // 4 heldToken : 1 owedToken rate
   let order = {
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
     maker: accounts[5],
-    makerFee: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(.01)),
-    makerTokenAddress: OwedToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2.382472)),
+    makerFee: BIGNUMBERS.BASE_AMOUNT.times(0.01),
     salt: new BigNumber(_salt),
     taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(.1)),
+    takerFee: BIGNUMBERS.BASE_AMOUNT.times(0.1),
+
+    // owedToken
+    makerTokenAddress: OwedToken.address,
+    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(6.382472),
+
+    // heldToken
     takerTokenAddress: HeldToken.address,
-    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(8))
+    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(19.123475)
   };
 
   const signature = await signOrder(order);
@@ -38,22 +41,25 @@ async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
 }
 
 async function createSignedBuyOrder(accounts, _salt = DEFAULT_SALT) {
-  // 3 heldToken : 1 owedToken rate
   let order = {
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
     makerFee: BIGNUMBERS.BASE_AMOUNT.times(.02),
-    makerTokenAddress: HeldToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(6),
     salt: new BigNumber(_salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BIGNUMBERS.BASE_AMOUNT.times(.1),
-    takerTokenAddress: OwedToken.address,
-    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(2),
     makerFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
+
+    // heldToken
+    makerTokenAddress: HeldToken.address,
+    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(15),
+
+    // owedToken
+    takerTokenAddress: OwedToken.address,
+    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(5),
   };
 
   const signature = await signOrder(order);

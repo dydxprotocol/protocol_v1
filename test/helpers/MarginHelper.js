@@ -38,27 +38,57 @@ async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInHeldToken =
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
     principal: BIGNUMBERS.BASE_AMOUNT,
-    depositAmount: BIGNUMBERS.BASE_AMOUNT.times(new BigNumber(2)),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address,
-    depositInHeldToken: depositInHeldToken
+    depositInHeldToken: depositInHeldToken,
   };
+  tx.depositAmount = getMinimumDeposit(tx);
 
   return tx;
 }
 
-async function callOpenPosition(dydxMargin, tx, safely = true) {
+function getMinimumDeposit(openTx) {
+  let minimumDeposit;
+
+  const totalCollateralRequired = getPartialAmount(
+    openTx.principal,
+    openTx.loanOffering.rates.maxAmount,
+    openTx.loanOffering.rates.minHeldToken,
+    true
+  );
+
+  if (openTx.depositInHeldToken) {
+    const heldTokenFromSell = getPartialAmount(
+      openTx.principal,
+      openTx.buyOrder.takerTokenAmount,
+      openTx.buyOrder.makerTokenAmount
+    );
+    minimumDeposit = totalCollateralRequired.minus(heldTokenFromSell);
+  } else {
+    const owedTokenNeededToSell = getPartialAmount(
+      totalCollateralRequired,
+      openTx.buyOrder.makerTokenAmount,
+      openTx.buyOrder.takerTokenAmount,
+      true
+    );
+    minimumDeposit = owedTokenNeededToSell.minus(openTx.principal);
+  }
+
+  expect(minimumDeposit).to.be.bignumber.gt(0);
+  return minimumDeposit;
+}
+
+async function callOpenPosition(dydxMargin, tx) {
+  const loanNumber = await dydxMargin.loanNumbers.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
-    0
+    loanNumber
   );
 
   let contains = await dydxMargin.containsPosition.call(positionId);
-  if (safely) {
-    expect(contains).to.be.false;
-  }
+  expect(contains).to.be.false;
 
   const addresses = [
     tx.owner,
@@ -113,10 +143,8 @@ async function callOpenPosition(dydxMargin, tx, safely = true) {
     { from: tx.trader }
   );
 
-  if (safely) {
-    contains = await dydxMargin.containsPosition.call(positionId);
-    expect(contains).to.be.true;
-  }
+  contains = await dydxMargin.containsPosition.call(positionId);
+  expect(contains).to.be.true;
 
   await expectLogOpenPosition(dydxMargin, positionId, tx, response);
 
@@ -261,7 +289,8 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
   const minTotalDeposit = getPartialAmount(
     heldTokenAmount,
     principal,
-    tx.principal
+    tx.principal,
+    true
   );
   const heldTokenFromSell = tx.depositInHeldToken ?
     getPartialAmount(
@@ -634,7 +663,7 @@ async function callLiquidatePosition(
     payoutRecipient: payoutRecipient,
     liquidatedAmount: actualLiquidateAmount,
     remainingAmount: startAmount.minus(actualLiquidateAmount),
-    heldTokenPayout: actualLiquidateAmount.times(startHeldToken).div(startAmount)
+    heldTokenPayout: getPartialAmount(actualLiquidateAmount, startAmount, startHeldToken)
   });
 
   return tx;
@@ -898,6 +927,7 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
 
 module.exports = {
   createOpenTx,
+  getMinimumDeposit,
   issueTokensAndSetAllowances,
   callOpenPosition,
   doOpenPosition,

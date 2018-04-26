@@ -371,9 +371,9 @@ describe('#increasePosition', () => {
       getBalances(increasePosTx, owedToken, heldToken, feeToken)
     ]);
 
-    const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
-    const finalHeldTokenPerUnit = finalBalance
-      .div(OpenTx.principal.plus(increasePosTx.principal));
+    const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+    const finalHeldTokenPerUnit =
+      getPartialAmount(finalBalance, (OpenTx.principal.plus(increasePosTx.principal)));
 
     const totalHeldTokenAdded = getPartialAmount(
       increasePosTx.principal,
@@ -504,8 +504,9 @@ describe('#increasePositionDirectly', () => {
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
-      const finalHeldTokenPerUnit = finalBalance.div(OpenTx.principal.plus(addAmount));
+      const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+      const finalHeldTokenPerUnit =
+        getPartialAmount(finalBalance, OpenTx.principal.plus(addAmount));
 
       expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenPerUnit);
 
