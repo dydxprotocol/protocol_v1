@@ -178,8 +178,6 @@ library ClosePositionShared {
         view
         returns (CloseTx memory)
     {
-        require(payoutRecipient != address(0));
-
         uint256 startingHeldTokenBalance = Vault(state.VAULT).balances(positionId, position.heldToken);
         uint256 availableHeldToken = MathHelpers.getPartialAmount(
             closeAmount,
