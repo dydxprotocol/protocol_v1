@@ -63,7 +63,7 @@ contract MarginEvents {
         uint256 remainingAmount,
         uint256 owedTokenPaidToLender,
         uint256 payoutAmount,
-        uint256 buybackCost,
+        uint256 buybackCostInHeldToken,
         bool payoutInHeldToken
     );
 

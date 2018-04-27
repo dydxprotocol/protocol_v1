@@ -127,8 +127,8 @@ library OpenPositionImpl {
             trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
-            transaction.owedToken,
-            transaction.heldToken,
+            transaction.loanOffering.owedToken,
+            transaction.loanOffering.heldToken,
             transaction.loanOffering.feeRecipient,
             transaction.principal,
             heldTokenReceived,
@@ -153,8 +153,8 @@ library OpenPositionImpl {
         state.loanNumbers[transaction.loanOffering.loanHash] =
             state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
-        state.positions[positionId].owedToken = transaction.owedToken;
-        state.positions[positionId].heldToken = transaction.heldToken;
+        state.positions[positionId].owedToken = transaction.loanOffering.owedToken;
+        state.positions[positionId].heldToken = transaction.loanOffering.heldToken;
         state.positions[positionId].principal = transaction.principal;
         state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
         state.positions[positionId].startTimestamp = uint32(block.timestamp);
@@ -192,8 +192,6 @@ library OpenPositionImpl {
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: addresses[0],
-            owedToken: addresses[1],
-            heldToken: addresses[2],
             principal: values256[7],
             lenderAmount: values256[7],
             depositAmount: values256[8],
@@ -224,6 +222,8 @@ library OpenPositionImpl {
         returns (MarginCommon.LoanOffering memory)
     {
         MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
+            owedToken: addresses[1],
+            heldToken: addresses[2],
             payer: addresses[3],
             signer: addresses[4],
             owner: addresses[5],
@@ -240,11 +240,7 @@ library OpenPositionImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
-            loanOffering,
-            addresses[2],
-            addresses[1]
-        );
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
 
         return loanOffering;
     }

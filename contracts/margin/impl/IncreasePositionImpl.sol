@@ -229,8 +229,8 @@ library IncreasePositionImpl {
         if (transaction.depositInHeldToken) {
             uint256 heldTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTradeMakerTokenAmount(
-                    transaction.heldToken,
-                    transaction.owedToken,
+                    transaction.loanOffering.heldToken,
+                    transaction.loanOffering.owedToken,
                     transaction.lenderAmount,
                     orderData
                 );
@@ -240,8 +240,8 @@ library IncreasePositionImpl {
         } else {
             uint256 owedTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
-                    transaction.heldToken,
-                    transaction.owedToken,
+                    transaction.loanOffering.heldToken,
+                    transaction.loanOffering.owedToken,
                     positionMinimumHeldToken,
                     orderData
                 );
@@ -264,7 +264,8 @@ library IncreasePositionImpl {
         view
         returns (uint256)
     {
-        uint256 heldTokenBalance = Vault(state.VAULT).balances(positionId, position.heldToken);
+        uint256 heldTokenBalance = Vault(state.VAULT).balances(
+            positionId, position.heldToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
             principalAdded,
@@ -353,8 +354,6 @@ library IncreasePositionImpl {
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
             owner: position.owner,
-            owedToken: position.owedToken,
-            heldToken: position.heldToken,
             principal: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
                 position,
@@ -391,6 +390,8 @@ library IncreasePositionImpl {
         returns (MarginCommon.LoanOffering memory)
     {
         MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
+            owedToken: position.owedToken,
+            heldToken: position.heldToken,
             payer: addresses[0],
             signer: addresses[1],
             owner: position.lender,
@@ -407,11 +408,7 @@ library IncreasePositionImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
-            loanOffering,
-            position.heldToken,
-            position.owedToken
-        );
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
 
         return loanOffering;
     }

@@ -221,6 +221,8 @@ library LoanImpl {
         returns (MarginCommon.LoanOffering memory)
     {
         MarginCommon.LoanOffering memory loanOffering = MarginCommon.LoanOffering({
+            owedToken: addresses[0],
+            heldToken: addresses[1],
             payer: addresses[2],
             signer: addresses[3],
             owner: addresses[4],
@@ -241,11 +243,7 @@ library LoanImpl {
             })
         });
 
-        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
-            loanOffering,
-            addresses[1],
-            addresses[0]
-        );
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
 
         return loanOffering;
     }

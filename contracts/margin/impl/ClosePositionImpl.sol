@@ -31,7 +31,7 @@ library ClosePositionImpl {
         uint256 remainingAmount,
         uint256 owedTokenPaidToLender,
         uint256 payoutAmount,
-        uint256 buybackCost,
+        uint256 buybackCostInHeldToken,
         bool payoutInHeldToken
     );
 
@@ -59,10 +59,10 @@ library ClosePositionImpl {
             false
         );
 
-        uint256 buybackCost;
+        uint256 buybackCostInHeldToken;
         uint256 receivedOwedToken;
 
-        (buybackCost, receivedOwedToken) = returnOwedTokensToLender(
+        (buybackCostInHeldToken, receivedOwedToken) = returnOwedTokensToLender(
             state,
             transaction,
             orderData
@@ -71,7 +71,7 @@ library ClosePositionImpl {
         uint256 payout = ClosePositionShared.sendTokensToPayoutRecipient(
             state,
             transaction,
-            buybackCost,
+            buybackCostInHeldToken,
             receivedOwedToken
         );
 
@@ -79,7 +79,7 @@ library ClosePositionImpl {
 
         logEventOnClose(
             transaction,
-            buybackCost,
+            buybackCostInHeldToken,
             payout
         );
 
@@ -100,7 +100,7 @@ library ClosePositionImpl {
         internal
         returns (uint256, uint256)
     {
-        uint256 buybackCost = 0;
+        uint256 buybackCostInHeldToken = 0;
         uint256 receivedOwedToken = 0;
         uint256 lenderOwedToken = transaction.owedTokenOwed;
 
@@ -116,7 +116,7 @@ library ClosePositionImpl {
             );
         } else {
             // Buy back owedTokens using buy order and send to lender
-            (buybackCost, receivedOwedToken) = buyBackOwedToken(
+            (buybackCostInHeldToken, receivedOwedToken) = buyBackOwedToken(
                 state,
                 transaction,
                 orderData
@@ -140,7 +140,7 @@ library ClosePositionImpl {
         state.totalOwedTokenRepaidToLender[transaction.positionId] =
             state.totalOwedTokenRepaidToLender[transaction.positionId].add(lenderOwedToken);
 
-        return (buybackCost, receivedOwedToken);
+        return (buybackCostInHeldToken, receivedOwedToken);
     }
 
     function buyBackOwedToken(
@@ -153,10 +153,10 @@ library ClosePositionImpl {
     {
         // Ask the exchange wrapper what the price in heldToken to buy back the close
         // amount of owedToken is
-        uint256 heldTokenPrice;
+        uint256 buybackCostInHeldToken;
 
         if (transaction.payoutInHeldToken) {
-            heldTokenPrice = ExchangeWrapper(transaction.exchangeWrapper)
+            buybackCostInHeldToken = ExchangeWrapper(transaction.exchangeWrapper)
                 .getTakerTokenPrice(
                     transaction.owedToken,
                     transaction.heldToken,
@@ -165,9 +165,9 @@ library ClosePositionImpl {
                 );
 
             // Require enough available heldToken to pay for the buyback
-            require(heldTokenPrice <= transaction.availableHeldToken);
+            require(buybackCostInHeldToken <= transaction.availableHeldToken);
         } else {
-            heldTokenPrice = transaction.availableHeldToken;
+            buybackCostInHeldToken = transaction.availableHeldToken;
         }
 
         // Send the requisite heldToken to do the buyback from vault to exchange wrapper
@@ -175,7 +175,7 @@ library ClosePositionImpl {
             transaction.positionId,
             transaction.heldToken,
             transaction.exchangeWrapper,
-            heldTokenPrice
+            buybackCostInHeldToken
         );
 
         // Trade the heldToken for the owedToken
@@ -183,18 +183,18 @@ library ClosePositionImpl {
             transaction.owedToken,
             transaction.heldToken,
             msg.sender,
-            heldTokenPrice,
+            buybackCostInHeldToken,
             orderData
         );
 
         require(receivedOwedToken >= transaction.owedTokenOwed);
 
-        return (heldTokenPrice, receivedOwedToken);
+        return (buybackCostInHeldToken, receivedOwedToken);
     }
 
     function logEventOnClose(
         ClosePositionShared.CloseTx transaction,
-        uint256 buybackCost,
+        uint256 buybackCostInHeldToken,
         uint256 payout
     )
         internal
@@ -207,7 +207,7 @@ library ClosePositionImpl {
             transaction.originalPrincipal.sub(transaction.closeAmount),
             transaction.owedTokenOwed,
             payout,
-            buybackCost,
+            buybackCostInHeldToken,
             transaction.payoutInHeldToken
         );
     }

@@ -4,7 +4,6 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
-const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -393,7 +392,7 @@ describe('#increasePosition', () => {
       getBalances(increasePosTx, owedToken, heldToken, feeToken, dydxMargin)
     ]);
 
-    const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+    const startingHeldTokenBalancePerUnit = getPartialAmount(startingBalance, OpenTx.principal);
     const finalHeldTokenPerUnit =
       getPartialAmount(finalBalance, (OpenTx.principal.plus(increasePosTx.principal)));
 
@@ -427,7 +426,7 @@ describe('#increasePosition', () => {
       0 : heldTokenFromSell.minus(totalHeldTokenAdded);
 
     // heldToken Per Unit
-    expect(startingHeldTokenPerUnit).to.be.bignumber.eq(finalHeldTokenPerUnit);
+    expect(startingHeldTokenBalancePerUnit).to.be.bignumber.eq(finalHeldTokenPerUnit);
 
     // Lender owedToken
     expect(finalBalances.lenderOwedToken).to.be.bignumber.eq(
@@ -531,11 +530,11 @@ describe('#increasePositionDirectly', () => {
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+      const startingHeldTokenBalancePerUnit = getPartialAmount(startingBalance, OpenTx.principal);
       const finalHeldTokenPerUnit =
         getPartialAmount(finalBalance, OpenTx.principal.plus(addAmount));
 
-      expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenPerUnit);
+      expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenBalancePerUnit);
 
       const [
         adderHeldToken,
