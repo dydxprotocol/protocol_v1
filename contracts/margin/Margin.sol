@@ -339,7 +339,8 @@ contract Margin is
      * in the position.
      *
      * @param  positionId       Unique ID for the position
-     * @param  requiredDeposit  Amount of deposit the owner will have to put up to cancel the call
+     * @param  requiredDeposit  Amount of deposit the position owner will have to put up to cancel
+     *                          the margin-call
      */
     function marginCall(
         bytes32 positionId,

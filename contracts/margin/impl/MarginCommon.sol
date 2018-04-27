@@ -35,6 +35,8 @@ library MarginCommon {
     }
 
     struct LoanOffering {
+        address   owedToken;
+        address   heldToken;
         address   payer;
         address   signer;
         address   owner;
@@ -179,9 +181,7 @@ library MarginCommon {
     }
 
     function getLoanOfferingHash(
-        LoanOffering loanOffering,
-        address heldToken,
-        address owedToken
+        LoanOffering loanOffering
     )
         internal
         view
@@ -189,8 +189,8 @@ library MarginCommon {
     {
         return keccak256(
             address(this),
-            owedToken,
-            heldToken,
+            loanOffering.owedToken,
+            loanOffering.heldToken,
             loanOffering.payer,
             loanOffering.signer,
             loanOffering.owner,

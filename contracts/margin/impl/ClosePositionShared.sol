@@ -30,7 +30,7 @@ library ClosePositionShared {
         uint256 originalPrincipal;
         uint256 closeAmount;
         uint256 owedTokenOwed;
-        uint256 startingHeldToken;
+        uint256 startingHeldTokenBalance;
         uint256 availableHeldToken;
         address payoutRecipient;
         address owedToken;
@@ -64,7 +64,7 @@ library ClosePositionShared {
     function sendTokensToPayoutRecipient(
         MarginState.State storage state,
         ClosePositionShared.CloseTx memory transaction,
-        uint256 buybackCost,
+        uint256 buybackCostInHeldToken,
         uint256 receivedOwedToken
     )
         internal
@@ -74,7 +74,7 @@ library ClosePositionShared {
 
         if (transaction.payoutInHeldToken) {
             // Send remaining heldToken to payoutRecipient
-            payout = transaction.availableHeldToken.sub(buybackCost);
+            payout = transaction.availableHeldToken.sub(buybackCostInHeldToken);
 
             Vault(state.VAULT).transferFromVault(
                 transaction.positionId,
@@ -114,7 +114,7 @@ library ClosePositionShared {
         // minus the available heldToken amount
         assert(
             Vault(state.VAULT).balances(transaction.positionId, transaction.heldToken)
-            == transaction.startingHeldToken.sub(transaction.availableHeldToken)
+            == transaction.startingHeldTokenBalance.sub(transaction.availableHeldToken)
         );
 
         // There should be no owed token locked in the position
@@ -180,11 +180,11 @@ library ClosePositionShared {
     {
         require(payoutRecipient != address(0));
 
-        uint256 startingHeldToken = Vault(state.VAULT).balances(positionId, position.heldToken);
+        uint256 startingHeldTokenBalance = Vault(state.VAULT).balances(positionId, position.heldToken);
         uint256 availableHeldToken = MathHelpers.getPartialAmount(
             closeAmount,
             position.principal,
-            startingHeldToken
+            startingHeldTokenBalance
         );
         uint256 owedTokenOwed = 0;
         if (!isLiquidation) {
@@ -200,7 +200,7 @@ library ClosePositionShared {
             originalPrincipal: position.principal,
             closeAmount: closeAmount,
             owedTokenOwed: owedTokenOwed,
-            startingHeldToken: startingHeldToken,
+            startingHeldTokenBalance: startingHeldTokenBalance,
             availableHeldToken: availableHeldToken,
             payoutRecipient: payoutRecipient,
             owedToken: position.owedToken,

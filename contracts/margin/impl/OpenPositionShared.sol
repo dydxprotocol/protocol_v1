@@ -24,8 +24,6 @@ library OpenPositionShared {
 
     struct OpenTx {
         address owner;
-        address owedToken;
-        address heldToken;
         uint256 principal;
         uint256 lenderAmount;
         uint256 depositAmount;
@@ -189,7 +187,7 @@ library OpenPositionShared {
     {
         // Transfer owedToken to the exchange wrapper
         Proxy(state.PROXY).transferTokens(
-            transaction.owedToken,
+            transaction.loanOffering.owedToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapper,
             transaction.lenderAmount
@@ -207,14 +205,14 @@ library OpenPositionShared {
         if (transaction.depositInHeldToken) {
             Vault(state.VAULT).transferToVault(
                 positionId,
-                transaction.heldToken,
+                transaction.loanOffering.heldToken,
                 msg.sender,
                 transaction.depositAmount
             );
             return transaction.depositAmount;
         } else {
             Proxy(state.PROXY).transferTokens(
-                transaction.owedToken,
+                transaction.loanOffering.owedToken,
                 msg.sender,
                 transaction.exchangeWrapper,
                 transaction.depositAmount
@@ -279,16 +277,16 @@ library OpenPositionShared {
         uint256 heldTokenReceived;
         if (transaction.desiredTokenFromSell == 0) {
             heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-                transaction.heldToken,
-                transaction.owedToken,
+                transaction.loanOffering.heldToken,
+                transaction.loanOffering.owedToken,
                 msg.sender,
                 sellAmount,
                 orderData
             );
         } else {
             uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
-                transaction.heldToken,
-                transaction.owedToken,
+                transaction.loanOffering.heldToken,
+                transaction.loanOffering.owedToken,
                 msg.sender,
                 transaction.desiredTokenFromSell,
                 orderData
@@ -300,7 +298,7 @@ library OpenPositionShared {
 
         Vault(state.VAULT).transferToVault(
             positionId,
-            transaction.heldToken,
+            transaction.loanOffering.heldToken,
             transaction.exchangeWrapper,
             heldTokenReceived
         );
@@ -332,8 +330,8 @@ library OpenPositionShared {
         returns (address[9])
     {
         return [
-            transaction.owedToken,
-            transaction.heldToken,
+            transaction.loanOffering.owedToken,
+            transaction.loanOffering.heldToken,
             transaction.loanOffering.payer,
             transaction.loanOffering.signer,
             transaction.loanOffering.owner,

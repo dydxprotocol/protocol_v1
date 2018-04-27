@@ -427,7 +427,7 @@ describe('#increasePosition', () => {
       0 : heldTokenFromSell.minus(totalHeldTokenAdded);
 
     // heldToken Per Unit
-    expect(startingHeldTokenPerUnit).to.be.bignumber.eq(finalHeldTokenPerUnit);
+    expect(startingHeldTokenBalancePerUnit).to.be.bignumber.eq(finalHeldTokenPerUnit);
 
     // Lender owedToken
     expect(finalBalances.lenderOwedToken).to.be.bignumber.eq(
@@ -531,11 +531,16 @@ describe('#increasePositionDirectly', () => {
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+<<<<<<< HEAD
       const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
       const finalHeldTokenPerUnit =
         getPartialAmount(finalBalance, OpenTx.principal.plus(addAmount));
+=======
+      const startingHeldTokenBalancePerUnit = startingBalance.div(OpenTx.principal);
+      const finalHeldTokenPerUnit = finalBalance.div(OpenTx.principal.plus(addAmount));
+>>>>>>> Fix Small Issues
 
-      expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenPerUnit);
+      expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenBalancePerUnit);
 
       const [
         adderHeldToken,
