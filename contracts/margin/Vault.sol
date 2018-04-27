@@ -1,9 +1,9 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { Proxy } from "./Proxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";

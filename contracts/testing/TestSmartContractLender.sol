@@ -1,7 +1,7 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { ERC20 } from "zeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import { LoanOfferingVerifier } from "../margin/interfaces/LoanOfferingVerifier.sol";
 
 
