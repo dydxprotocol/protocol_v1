@@ -4,6 +4,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
+const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -78,6 +79,20 @@ describe('#increasePosition', () => {
         startingBalance,
         startingBalances
       });
+    });
+  });
+
+  contract('Margin', function(accounts) {
+    it('fails when loanOffering.minHeldToken is too high', async () => {
+      const {
+        OpenTx,
+        increasePosTx,
+        dydxMargin
+      } = await setup(accounts);
+
+      increasePosTx.loanOffering.rates.minHeldToken = OpenTx.loanOffering.rates.minHeldToken;
+      increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
+      await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
     });
   });
 
@@ -277,12 +292,16 @@ describe('#increasePosition', () => {
       OpenTx.loanOffering.owner = loanOwner;
       OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
       increasePosTx.loanOffering.owner = loanOwner;
-      increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
     }
     if (positionOwner) {
       OpenTx.owner = positionOwner;
       increasePosTx.owner = positionOwner;
     }
+
+    // Lower minHeldToken since more owedTokens are given than the increasePosTx.principal
+    increasePosTx.loanOffering.rates.minHeldToken =
+      increasePosTx.loanOffering.rates.minHeldToken.div(2);
+    increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
 
     await issueTokensAndSetAllowances(OpenTx);
 
@@ -374,9 +393,9 @@ describe('#increasePosition', () => {
       getBalances(increasePosTx, owedToken, heldToken, feeToken, dydxMargin)
     ]);
 
-    const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
-    const finalHeldTokenPerUnit = finalBalance
-      .div(OpenTx.principal.plus(increasePosTx.principal));
+    const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+    const finalHeldTokenPerUnit =
+      getPartialAmount(finalBalance, (OpenTx.principal.plus(increasePosTx.principal)));
 
     const totalHeldTokenAdded = getPartialAmount(
       increasePosTx.principal,
@@ -512,8 +531,9 @@ describe('#increasePositionDirectly', () => {
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const startingHeldTokenPerUnit = startingBalance.div(OpenTx.principal);
-      const finalHeldTokenPerUnit = finalBalance.div(OpenTx.principal.plus(addAmount));
+      const startingHeldTokenPerUnit = getPartialAmount(startingBalance, OpenTx.principal);
+      const finalHeldTokenPerUnit =
+        getPartialAmount(finalBalance, OpenTx.principal.plus(addAmount));
 
       expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenPerUnit);
 

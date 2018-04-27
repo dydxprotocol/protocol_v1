@@ -52,7 +52,6 @@ describe('#openPosition', () => {
       const OpenTx = await createOpenTx(accounts, 4, false);
       const dydxMargin = await Margin.deployed();
 
-      OpenTx.depositAmount = OpenTx.depositAmount.div(4);
       await issueTokensAndSetAllowances(OpenTx);
 
       const tx = await callOpenPosition(dydxMargin, OpenTx);

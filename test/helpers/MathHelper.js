@@ -4,10 +4,11 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const web3Instance = new Web3(web3.currentProvider);
 
+
 function getPartialAmount(
   numerator,
   denominator,
-  target,
+  target = 1,
   roundsUp = false
 ) {
   if (!(numerator instanceof BigNumber)) {

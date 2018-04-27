@@ -1,5 +1,7 @@
 /*global artifacts, web3, contract, describe, it*/
 
+const expect = require('chai').expect;
+
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
@@ -9,6 +11,7 @@ const {
   callOpenPosition,
   callCancelLoanOffer,
   doOpenPosition,
+  getMinimumDeposit,
   issueTokensAndSetAllowancesForClose,
   callClosePosition
 } = require('../helpers/MarginHelper');
@@ -132,24 +135,39 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
+      async function getLoanFill(dydxMargin, openTx) {
+        const result = await dydxMargin.loanFills.call(openTx.loanOffering.loanHash);
+        return result;
+      }
       it('fails if loan offer already filled', async () => {
         const OpenTx = await createOpenTx(accounts);
 
-        // Set 2x balances
-        await Promise.all([
-          issueTokensAndSetAllowances(OpenTx),
-          issueTokensAndSetAllowances(OpenTx)
-        ]);
-
-        OpenTx.loanOffering.rates.maxAmount = OpenTx.principal;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        const halfLoanAmount = OpenTx.loanOffering.rates.maxAmount.div(2);
+        OpenTx.principal = halfLoanAmount;
+        OpenTx.depositAmount = getMinimumDeposit(OpenTx);
 
         const dydxMargin = await Margin.deployed();
 
-        // First should succeed
-        await callOpenPosition(dydxMargin, OpenTx, /*safely=*/ false);
+        const fill0 = await getLoanFill(dydxMargin, OpenTx);
+        expect(fill0).to.be.bignumber.equal(0);
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx, /*safely=*/ false));
+        // first call should succeed for 1/2
+        await issueTokensAndSetAllowances(OpenTx);
+        await callOpenPosition(dydxMargin, OpenTx);
+
+        const fill1 = await getLoanFill(dydxMargin, OpenTx);
+        expect(fill1).to.be.bignumber.equal(halfLoanAmount);
+
+        // second call should succeed for 1/2
+        await issueTokensAndSetAllowances(OpenTx);
+        await callOpenPosition(dydxMargin, OpenTx);
+
+        const fill2 = await getLoanFill(dydxMargin, OpenTx);
+        expect(fill2).to.be.bignumber.equal(halfLoanAmount.times(2));
+
+        // third call should fail
+        await issueTokensAndSetAllowances(OpenTx);
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
 
