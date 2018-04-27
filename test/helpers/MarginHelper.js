@@ -601,31 +601,31 @@ async function expectCloseLog(dydxMargin, params) {
     params.startHeldToken
   );
 
-  let buybackCost = 0;
+  let buybackCostInHeldToken = 0;
   let payoutAmount = availableHeldToken;
   let owedTokenPaidToLender = owed;
 
   if (params.sellOrder) {
     if (params.payoutInHeldToken) {
-      buybackCost = getPartialAmount(
+      buybackCostInHeldToken = getPartialAmount(
         owed,
         params.sellOrder.makerTokenAmount,
         params.sellOrder.takerTokenAmount,
         true // round up
       );
     } else {
-      buybackCost = availableHeldToken;
+      buybackCostInHeldToken = availableHeldToken;
     }
 
     const owedTokenFromSell = getPartialAmount(
-      buybackCost,
+      buybackCostInHeldToken,
       params.sellOrder.takerTokenAmount,
       params.sellOrder.makerTokenAmount
     );
 
     if (params.payoutInHeldToken) {
       owedTokenPaidToLender = owedTokenFromSell;
-      payoutAmount = availableHeldToken.minus(buybackCost);
+      payoutAmount = availableHeldToken.minus(buybackCostInHeldToken);
     } else {
       payoutAmount = owedTokenFromSell.minus(owedTokenPaidToLender);
     }
@@ -647,7 +647,7 @@ async function expectCloseLog(dydxMargin, params) {
     remainingAmount: params.startAmount.minus(actualCloseAmount),
     owedTokenPaidToLender,
     payoutAmount,
-    buybackCost,
+    buybackCostInHeldToken,
     payoutInHeldToken: params.payoutInHeldToken
   });
 }
