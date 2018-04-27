@@ -312,7 +312,7 @@ library OpenPositionShared {
         pure
     {
         uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.principal, //TODO: change to transaction.lenderAmount
+            transaction.lenderAmount,
             transaction.loanOffering.rates.maxAmount,
             transaction.loanOffering.rates.minHeldToken
         );

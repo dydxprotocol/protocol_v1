@@ -249,6 +249,11 @@ async function callIncreasePosition(dydxMargin, tx) {
 
   const order = zeroExOrderToBytes(tx.buyOrder);
 
+  const [principal, balance] = await Promise.all([
+    dydxMargin.getPositionPrincipal.call(positionId),
+    dydxMargin.getPositionBalance.call(positionId)
+  ]);
+
   let response = await dydxMargin.increasePosition(
     positionId,
     addresses,
@@ -264,16 +269,17 @@ async function callIncreasePosition(dydxMargin, tx) {
   await expectIncreasePositionLog(
     dydxMargin,
     tx,
-    response
+    response,
+    { principal, balance }
   );
 
   response.id = positionId;
   return response;
 }
 
-async function expectIncreasePositionLog(dydxMargin, tx, response) {
+async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
   const positionId = tx.id;
-  const [time1, time2, principal, heldTokenAmount] = await Promise.all([
+  const [time1, time2, principal, endingBalance] = await Promise.all([
     dydxMargin.getPositionStartTimestamp.call(positionId),
     getBlockTimestamp(response.receipt.blockNumber),
     dydxMargin.getPositionPrincipal.call(positionId),
@@ -287,7 +293,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     false
   );
   const minTotalDeposit = getPartialAmount(
-    heldTokenAmount,
+    endingBalance,
     principal,
     tx.principal,
     true
@@ -322,6 +328,16 @@ async function expectIncreasePositionLog(dydxMargin, tx, response) {
     depositAmount,
     depositInHeldToken: tx.depositInHeldToken
   });
+
+  const youMustAddThisMuchCollateralToPosition = getPartialAmount(
+    owed,
+    tx.loanOffering.rates.maxAmount,
+    tx.loanOffering.rates.minHeldToken,
+    true
+  );
+  expect(endingBalance.minus(start.balance)).to.be.bignumber.gte(
+    youMustAddThisMuchCollateralToPosition
+  );
 }
 
 async function issueTokensAndSetAllowances(tx) {
