@@ -240,9 +240,7 @@ library OpenPositionImpl {
             signature: parseLoanOfferingSignature(sigV, sigRS)
         });
 
-        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(
-            loanOffering
-        );
+        loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
 
         return loanOffering;
     }
