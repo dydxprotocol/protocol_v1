@@ -4,6 +4,7 @@ pragma experimental "v0.5.0";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
+import { MathHelpers } from "../../../lib/MathHelpers.sol";
 
 
 /**
@@ -44,7 +45,7 @@ contract ERC20Long is ERC20Position {
 
     // ============ Internal Functions ============
 
-    function getAddedTokenAmount(
+    function getTokenAmountOnAdd(
         bytes32 positionId,
         uint256 /* principalAdded */
     )
@@ -55,6 +56,24 @@ contract ERC20Long is ERC20Position {
         uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
 
         return positionBalance.sub(totalSupply_);
+    }
+
+    function getTokenAmountOnClose(
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
+        uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
+
+        return MathHelpers.getPartialAmount(
+            principalAdded,
+            positionPrincipal,
+            positionBalance
+        );
     }
 
     function getNameIntro()
