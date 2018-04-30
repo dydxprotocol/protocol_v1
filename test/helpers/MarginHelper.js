@@ -668,7 +668,7 @@ async function callLiquidatePosition(
     OpenTx.id,
     liquidateAmount,
     payoutRecipient,
-    { from: from }
+    { from }
   );
 
   const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
@@ -732,7 +732,7 @@ async function callApproveLoanOffering(
     addresses,
     values256,
     values32,
-    { from: from }
+    { from }
   );
 
   const approved = await dydxMargin.isLoanApproved.call(loanOffering.loanHash);
