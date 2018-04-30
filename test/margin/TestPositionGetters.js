@@ -22,7 +22,7 @@ const { getBlockTimestamp } = require("../helpers/NodeHelper");
 const { expectWithinError, getPartialAmount } = require("../helpers/MathHelper");
 const { wait } = require('@digix/tempo')(web3);
 
-const standardTimeError = 5;
+const standardTimeError = 10;
 
 contract('PositionGetters', (accounts) => {
 
