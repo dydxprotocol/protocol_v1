@@ -81,7 +81,7 @@ function getMinimumDeposit(openTx) {
 }
 
 async function callOpenPosition(dydxMargin, tx) {
-  const loanNumber = await dydxMargin.getLoanUniquePositions.call(tx.loanOffering.loanHash);
+  const loanNumber = await dydxMargin.getLoanNumber.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     loanNumber

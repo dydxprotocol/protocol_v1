@@ -82,7 +82,7 @@ contract('LoanGetters', (accounts) => {
     ]);
   });
 
-  describe('#getLoanUniquePositions', () => {
+  describe('#getLoanNumber', () => {
     it('succeeds', async () => {
       let lup;
       let openTx = await createOpenTx(accounts);
@@ -93,13 +93,13 @@ contract('LoanGetters', (accounts) => {
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
 
       // expect 0 to start
-      lup = await dydxMargin.getLoanUniquePositions.call(loanHash);
+      lup = await dydxMargin.getLoanNumber.call(loanHash);
       expect(lup).to.be.bignumber.equal(0);
 
       // expect 1 after opening once
       await issueTokensAndSetAllowances(openTx);
       const openTxResult = await callOpenPosition(dydxMargin, openTx);
-      lup = await dydxMargin.getLoanUniquePositions.call(loanHash);
+      lup = await dydxMargin.getLoanNumber.call(loanHash);
       expect(lup).to.be.bignumber.equal(1);
 
       // expect 1 for original loanOffering, expect 0 for loanOffering used to increase
@@ -110,15 +110,15 @@ contract('LoanGetters', (accounts) => {
         incrTx.depositAmount.times(4)
       );
       await callIncreasePosition(dydxMargin, incrTx);
-      lup = await dydxMargin.getLoanUniquePositions.call(loanHash);
+      lup = await dydxMargin.getLoanNumber.call(loanHash);
       expect(lup).to.be.bignumber.equal(1);
-      lup = await dydxMargin.getLoanUniquePositions.call(incrTx.loanOffering.loanHash);
+      lup = await dydxMargin.getLoanNumber.call(incrTx.loanOffering.loanHash);
       expect(lup).to.be.bignumber.equal(0);
 
       // expect 2 after opening a second time
       await issueTokensAndSetAllowances(openTx);
       await callOpenPosition(dydxMargin, openTx);
-      lup = await dydxMargin.getLoanUniquePositions.call(loanHash);
+      lup = await dydxMargin.getLoanNumber.call(loanHash);
       expect(lup).to.be.bignumber.equal(2);
     });
   });

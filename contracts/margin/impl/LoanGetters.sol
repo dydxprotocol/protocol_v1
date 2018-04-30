@@ -71,7 +71,7 @@ contract LoanGetters is MarginStorage {
      * @param  loanHash  Unique hash of the loan offering
      * @return           The total number of new positions that have been opened using this loan.
      */
-    function getLoanUniquePositions(
+    function getLoanNumber(
         bytes32 loanHash
     )
         external
