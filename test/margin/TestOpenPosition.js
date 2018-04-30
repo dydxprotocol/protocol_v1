@@ -220,7 +220,7 @@ describe('#openPosition', () => {
       const dydxMargin = await Margin.deployed();
 
       await issueTokensAndSetAllowances(OpenTx);
-      await callApproveLoanOffering(dydxMargin, OpenTx.loanOffering);
+      await callApproveLoanOffering(dydxMargin, OpenTx.loanOffering, OpenTx.loanOffering.signer);
 
       OpenTx.loanOffering.signature.v = 0;
       OpenTx.loanOffering.signature.r = "";

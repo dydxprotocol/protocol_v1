@@ -13,6 +13,7 @@ const { callApproveLoanOffering } = require('../helpers/MarginHelper');
 describe('#approveLoanOffering', () => {
   let dydxMargin;
   let additionalSalt = 888;
+  let defaultSigner;
 
   async function getNewLoanOffering(accounts) {
     let loanOffering = await createLoanOffering(accounts);
@@ -24,12 +25,13 @@ describe('#approveLoanOffering', () => {
   contract('Margin', function(accounts) {
     before('get dydxMargin', async () => {
       dydxMargin = await Margin.deployed();
+      defaultSigner = accounts[1];
     });
 
     it('approves a loan offering', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
 
-      const tx = await callApproveLoanOffering(dydxMargin, loanOffering);
+      const tx = await callApproveLoanOffering(dydxMargin, loanOffering, defaultSigner);
 
       console.log('\tMargin.cancelLoanOffering gas used: ' + tx.receipt.gasUsed);
     });
@@ -37,26 +39,29 @@ describe('#approveLoanOffering', () => {
     it('succeeds without event if already approved', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
 
-      await callApproveLoanOffering(dydxMargin, loanOffering);
+      await callApproveLoanOffering(dydxMargin, loanOffering, defaultSigner);
 
-      await callApproveLoanOffering(dydxMargin, loanOffering);
+      await callApproveLoanOffering(dydxMargin, loanOffering, defaultSigner);
     });
 
-    it('fails if not approved by the payer', async () => {
+    it('fails if not approved by the signer', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
+      const newSigner = accounts[9];
+      loanOffering.signer = newSigner;
+      loanOffering.signature = await signLoanOffering(loanOffering);
 
       await expectThrow(
-        callApproveLoanOffering(
-          dydxMargin,
-          loanOffering,
-          accounts[9])
+        callApproveLoanOffering(dydxMargin, loanOffering, defaultSigner)
       );
+
+      // make sure it still works and doesn't throw for a different reason
+      await callApproveLoanOffering(dydxMargin, loanOffering, newSigner);
     });
 
     it('does not approve if past expirationTimestamp anyway', async () => {
       const loanOffering = await getNewLoanOffering(accounts);
 
-      const tx = await callApproveLoanOffering(dydxMargin, loanOffering);
+      const tx = await callApproveLoanOffering(dydxMargin, loanOffering, defaultSigner);
       const now = await getBlockTimestamp(tx.receipt.blockNumber);
 
       // Test unexpired loan offering
@@ -65,7 +70,8 @@ describe('#approveLoanOffering', () => {
       loanOfferingGood.signature = await signLoanOffering(loanOfferingGood);
       await callApproveLoanOffering(
         dydxMargin,
-        loanOfferingGood
+        loanOfferingGood,
+        defaultSigner
       );
 
       // Test expired loan offering
@@ -74,7 +80,8 @@ describe('#approveLoanOffering', () => {
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
       await expectThrow(callApproveLoanOffering(
         dydxMargin,
-        loanOfferingBad
+        loanOfferingBad,
+        defaultSigner
       ));
     });
   });

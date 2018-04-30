@@ -167,13 +167,15 @@ describe('MarginAdmin', () => {
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(callApproveLoanOffering(
           dydxMargin,
-          OpenTx.loanOffering
+          OpenTx.loanOffering,
+          OpenTx.loanOffering.signer
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await callApproveLoanOffering(
           dydxMargin,
-          OpenTx.loanOffering
+          OpenTx.loanOffering,
+          OpenTx.loanOffering.signer
         );
       });
     });
