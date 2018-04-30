@@ -238,16 +238,14 @@ describe('#transferLoan', () => {
     });
 
     it('successfully transfers to a contract with the correct interface', async () => {
-      openTx = await doOpenPosition(accounts);
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      const tx =
-        await transferLoan(openTx, testMarginCallDelegator.address, lender);
-      const { lender } = await getPosition(dydxMargin, openTx.id);
-      expect(lender.toLowerCase()).to.eq(testMarginCallDelegator.address.toLowerCase());
+      const tx = await transferLoan(openTx, testMarginCallDelegator.address, lender);
+      const newLender = await dydxMargin.getPositionLender.call(openTx.id);
+      expect(newLender.toLowerCase()).to.eq(testMarginCallDelegator.address.toLowerCase());
       console.log('\tMargin.transferLoan gas used (to contract): ' + tx.receipt.gasUsed);
     });
 
@@ -300,7 +298,7 @@ describe('#transferLoan', () => {
         dydxMargin.getProxyAddress.call()
       ]);
 
-      await transferLoan_THROW(openTx, dydxMargin, lender);
+      await transferLoan_THROW(openTx, dydxMargin.address, lender);
       await transferLoan_THROW(openTx, vaultAddress, lender);
       await transferLoan_THROW(openTx, proxyAddress, lender);
       await transferLoan_THROW(openTx, openTx.loanOffering.heldToken, lender);
