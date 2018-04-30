@@ -22,7 +22,6 @@ const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
-const { wait } = require('@digix/tempo')(web3);
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -454,8 +453,6 @@ async function callClosePosition(
 
   const start = await getStartVariables(addresses, OpenTx.id);
 
-  await wait(1);
-
   const tx = await transact(
     dydxMargin.closePosition,
     OpenTx.id,
@@ -498,8 +495,6 @@ async function callClosePositionDirectly(
   const addresses = await getAddresses(dydxMargin, OpenTx.id);
 
   const start = await getStartVariables(addresses, OpenTx.id);
-
-  await wait(1);
 
   const tx = await transact(
     dydxMargin.closePositionDirectly,
