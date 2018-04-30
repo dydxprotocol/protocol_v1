@@ -143,6 +143,10 @@ describe('#transferPosition', () => {
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
     });
 
+    it('fails to transfer to zero address', async () => {
+      await transferPosition_THROW(openTx, ADDRESSES.ZERO, owner);
+    });
+
     it('fails to transfer to an arbitrary contract', async () => {
       const [
         vaultAddress,
@@ -285,8 +289,8 @@ describe('#transferLoan', () => {
       await transferLoan_THROW(openTx, testLoanOwner.address, lender);
     });
 
-    it('fails to transfer to an arbitrary contract', async () => {
-      await transferLoan_THROW(openTx, TokenA.address, lender);
+    it('fails to transfer to zero address', async () => {
+      await transferLoan_THROW(openTx, ADDRESSES.ZERO, lender);
     });
 
     it('fails to transfer to an arbitrary contract', async () => {
