@@ -28,4 +28,9 @@ contract('LoanGetters', () => {
     it('', async () => {
     });
   });
+
+  describe('#isLoanApproved', function(accounts) {
+    it('', async () => {
+    });
+  });
 });

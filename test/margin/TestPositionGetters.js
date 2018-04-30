@@ -480,7 +480,7 @@ contract('PositionGetters', (accounts) => {
       expectWithinError(owedAmount4, owedAmount2.mul(2), 1);
     });
 
-    it.only('check values for totalRepaid', async () => {
+    it('check values for totalRepaid', async () => {
       const oneHour = 60 * 60;
       const oneDay = oneHour * 24;
       await wait(oneDay * 4.5);

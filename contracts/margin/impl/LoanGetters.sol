@@ -23,7 +23,7 @@ contract LoanGetters is MarginStorage {
      * @return           The total unavailable amount of the loan offering, which is equal to the
      *                   filled amount plus the canceled amount.
      */
-    function getUnavailableLoanOfferingAmount(
+    function getLoanUnavailableAmount(
         bytes32 loanHash
     )
         external
@@ -34,12 +34,12 @@ contract LoanGetters is MarginStorage {
     }
 
     /**
-     * Gets the principal amount of a loan offering that has been filled.
+     * Gets the total amount of owed token lent for a loan.
      *
      * @param  loanHash  Unique hash of the loan offering
      * @return           The total filled amount of the loan offering.
      */
-    function loanFills(
+    function getLoanFilledAmount(
         bytes32 loanHash
     )
         external
@@ -50,12 +50,12 @@ contract LoanGetters is MarginStorage {
     }
 
     /**
-     * Gets the principal amount of a loan offering that has been canceled.
+     * Gets the amount of a loan offering that has been canceled.
      *
      * @param  loanHash  Unique hash of the loan offering
      * @return           The total canceled amount of the loan offering.
      */
-    function loanCancels(
+    function getLoanCanceledAmount(
         bytes32 loanHash
     )
         external
@@ -71,7 +71,7 @@ contract LoanGetters is MarginStorage {
      * @param  loanHash  Unique hash of the loan offering
      * @return           The total number of new positions that have been opened using this loan.
      */
-    function loanNumbers(
+    function getLoanUniquePositions(
         bytes32 loanHash
     )
         external
