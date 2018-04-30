@@ -22,6 +22,8 @@ const { getBlockTimestamp } = require("../helpers/NodeHelper");
 const { expectWithinError, getPartialAmount } = require("../helpers/MathHelper");
 const { wait } = require('@digix/tempo')(web3);
 
+const standardTimeError = 5;
+
 contract('PositionGetters', (accounts) => {
 
   // ============ Constants ============
@@ -222,7 +224,7 @@ contract('PositionGetters', (accounts) => {
 
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
       expect(position.balance).to.be.bignumber.equal(expectedHeldTokenBalance);
-      expectWithinError(position.timeUntilIncrease, 86400, 1);
+      expectWithinError(position.timeUntilIncrease, 86400, standardTimeError);
       expect(position.owedAmount).to.be.bignumber.equal(interestAfterOneDay);
 
       const halfPInterestAfterFiveDays = new BigNumber(interestAfterFiveDays).div(2);
@@ -342,23 +344,23 @@ contract('PositionGetters', (accounts) => {
 
       await wait(1);
       const t1 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
-      expectWithinError(t1, oneDay, 1);
+      expectWithinError(t1, oneDay, standardTimeError);
 
       await wait(oneDay);
       const t2 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
-      expectWithinError(t2, t1, 1);
+      expectWithinError(t2, t1, standardTimeError);
 
       await wait(oneHour);
       const t3 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
-      expectWithinError(t3, t2 - oneHour, 1);
+      expectWithinError(t3, t2 - oneHour, standardTimeError);
 
       await wait(oneHour);
       const t4 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
-      expectWithinError(t4, t3 - oneHour, 1);
+      expectWithinError(t4, t3 - oneHour, standardTimeError);
 
       await wait(oneDay);
       const t5 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
-      expectWithinError(t5, t4, 1);
+      expectWithinError(t5, t4, standardTimeError);
     });
 
     it('check values for owedAmount', async () => {
