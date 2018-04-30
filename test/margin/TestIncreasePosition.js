@@ -248,7 +248,7 @@ describe('#increasePosition', () => {
       feeToken.balanceOf.call(tx.buyOrder.maker),
       feeToken.balanceOf.call(ExchangeWrapper.address),
       feeToken.balanceOf.call(tx.trader),
-      dydxMargin.loanFills.call(tx.loanOffering.loanHash)
+      dydxMargin.getLoanFilledAmount.call(tx.loanOffering.loanHash)
     ]);
 
     return {
@@ -309,8 +309,8 @@ describe('#increasePosition', () => {
     if (depositInHeldToken) {
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,
-        OpenTx.trader,
-        OpenTx.depositAmount
+        increasePosTx.trader,
+        increasePosTx.depositAmount
       );
     } else {
       await issueTokenToAccountInAmountAndApproveProxy(

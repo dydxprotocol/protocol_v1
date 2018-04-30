@@ -322,7 +322,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
     feeToken.balanceOf.call(OpenTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(OpenTx.trader),
-    dydxMargin.loanFills.call(OpenTx.loanOffering.loanHash)
+    dydxMargin.getLoanFilledAmount.call(OpenTx.loanOffering.loanHash)
   ]);
 
   expect(lenderOwedToken).to.be.bignumber.equal(

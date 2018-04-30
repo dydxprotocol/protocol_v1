@@ -17,8 +17,9 @@ const {
   getTokenAmountsFromOpen
 } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const { signLoanOffering } = require('../helpers/LoanHelper');
 const { getBlockTimestamp } = require("../helpers/NodeHelper");
-const { expectWithinError } = require("../helpers/MathHelper");
+const { expectWithinError, getPartialAmount } = require("../helpers/MathHelper");
 const { wait } = require('@digix/tempo')(web3);
 
 contract('PositionGetters', (accounts) => {
@@ -282,21 +283,25 @@ contract('PositionGetters', (accounts) => {
       const principal2 = await dydxMargin.getPositionPrincipal.call(positionId);
       const balance2 = await dydxMargin.getPositionBalance.call(positionId);
       expect(principal2).to.be.bignumber.equal(openTx.principal.div(2));
-      expect(balance2).to.be.bignumber.equal(expectedHeldTokenBalance.div(2));
+      const expectedHeldTokenBalance2 = getPartialAmount(expectedHeldTokenBalance, 2, 1, true);
+      expect(balance2).to.be.bignumber.equal(expectedHeldTokenBalance2);
 
       const increasePosTx = await createOpenTx(accounts, salt++);
       increasePosTx.id = openTx.id;
+      increasePosTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+      increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,
         increasePosTx.trader,
-        increasePosTx.depositAmount
+        increasePosTx.depositAmount.times(4)
       );
       await callIncreasePosition(dydxMargin, increasePosTx);
 
       const principal3 = await dydxMargin.getPositionPrincipal.call(positionId);
       const balance3 = await dydxMargin.getPositionBalance.call(positionId);
       expect(principal3).to.be.bignumber.equal(openTx.principal.times(3).div(2));
-      expect(balance3).to.be.bignumber.equal(expectedHeldTokenBalance.times(3).div(2));
+      const expectedHeldTokenBalance3 = getPartialAmount(expectedHeldTokenBalance2, 1, 3, true);
+      expect(balance3).to.be.bignumber.equal(expectedHeldTokenBalance3);
     });
 
     it('check values for isCalled and callTimestamp and requiredDeposit', async () => {

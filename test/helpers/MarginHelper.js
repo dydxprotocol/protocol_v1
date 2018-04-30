@@ -81,7 +81,7 @@ function getMinimumDeposit(openTx) {
 }
 
 async function callOpenPosition(dydxMargin, tx) {
-  const loanNumber = await dydxMargin.loanNumbers.call(tx.loanOffering.loanHash);
+  const loanNumber = await dydxMargin.getLoanUniquePositions.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     loanNumber
@@ -709,7 +709,7 @@ async function callCancelLoanOffer(
 ) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
-  const canceledAmount1 = await dydxMargin.loanCancels.call(loanOffering.loanHash);
+  const canceledAmount1 = await dydxMargin.getLoanCanceledAmount.call(loanOffering.loanHash);
   const tx = await dydxMargin.cancelLoanOffering(
     addresses,
     values256,
@@ -717,7 +717,7 @@ async function callCancelLoanOffer(
     cancelAmount,
     { from: from || loanOffering.payer }
   );
-  const canceledAmount2 = await dydxMargin.loanCancels.call(loanOffering.loanHash);
+  const canceledAmount2 = await dydxMargin.getLoanCanceledAmount.call(loanOffering.loanHash);
 
   const expectedCanceledAmount = BigNumber.min(
     canceledAmount1.plus(cancelAmount),
