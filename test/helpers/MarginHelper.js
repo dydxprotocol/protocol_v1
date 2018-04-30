@@ -16,13 +16,12 @@ const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
-const { createSignedBuyOrder } = require('./0xHelper');
+const { createSignedBuyOrder, createSignedSellOrder } = require('./0xHelper');
 const { transact } = require('./ContractHelper');
 const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
-const { createSignedSellOrder } = require('./0xHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 

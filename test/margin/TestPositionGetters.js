@@ -1,4 +1,4 @@
-/*global artifacts, contract, describe, before, beforeEach, it*/
+/*global web3, artifacts, contract, describe, before, beforeEach, it*/
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -7,7 +7,6 @@ const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
 const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 const {
   callIncreasePosition,
@@ -19,16 +18,21 @@ const {
 } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { getBlockTimestamp } = require("../helpers/NodeHelper");
+const { expectWithinError } = require("../helpers/MathHelper");
+const { wait } = require('@digix/tempo')(web3);
 
 contract('PositionGetters', (accounts) => {
 
   // ============ Constants ============
 
-  let dydxMargin;
-  let heldToken, owedToken;
+  let dydxMargin, heldToken;
   let positionId;
   let openTx;
   let salt = 872354;
+
+  const interestAfterOneDay =    "1000100005000166671"; // 1e18 * e^(0.0001) rounded-up
+  const interestAfterFiveDays =  "1000500125020835938"; // 1e18 * e^(0.0005) rounded-up
+  const interestAfterFiftyDays = "1005012520859401064"; // 1e18 * e^(0.005) rounded-up
 
   // ============ Helper Functions ============
 
@@ -54,6 +58,7 @@ contract('PositionGetters', (accounts) => {
       isCalled,
       isClosed,
       balance,
+      totalRepaid
     ] = await Promise.all([
       dydxMargin.getPosition.call(positionId),
       dydxMargin.getPositionLender.call(positionId),
@@ -72,6 +77,7 @@ contract('PositionGetters', (accounts) => {
       dydxMargin.isPositionCalled.call(positionId),
       dydxMargin.isPositionClosed.call(positionId),
       dydxMargin.getPositionBalance.call(positionId),
+      dydxMargin.getTotalOwedTokenRepaidToLender.call(positionId)
     ]);
 
     let [
@@ -145,6 +151,7 @@ contract('PositionGetters', (accounts) => {
       owedAmount,
       owedAmountAtTime,
       amountForIncreaseAtTime,
+      totalRepaid
     }
   }
 
@@ -153,12 +160,10 @@ contract('PositionGetters', (accounts) => {
   before('get global contracts', async () => {
     [
       dydxMargin,
-      heldToken,
-      owedToken
+      heldToken
     ] = await Promise.all([
       Margin.deployed(),
-      HeldToken.deployed(),
-      OwedToken.deployed()
+      HeldToken.deployed()
     ]);
   });
 
@@ -189,9 +194,11 @@ contract('PositionGetters', (accounts) => {
       expect(position.isCalled).to.be.false;
       expect(position.isClosed).to.be.false;
       expect(position.balance).to.be.bignumber.equal(0);
+      expect(position.totalRepaid).to.be.bignumber.equal(0);
     });
 
     it('check values for newly opened position', async () => {
+      await wait(1);
       const position = await getGetters(positionId);
       expect(position.lender).to.equal(openTx.loanOffering.owner);
       expect(position.owner).to.equal(openTx.owner);
@@ -210,19 +217,20 @@ contract('PositionGetters', (accounts) => {
       expect(position.contains).to.be.true;
       expect(position.isCalled).to.be.false;
       expect(position.isClosed).to.be.false;
+      expect(position.totalRepaid).to.be.bignumber.equal(0);
 
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
       expect(position.balance).to.be.bignumber.equal(expectedHeldTokenBalance);
-      //TODO
-      /*
-      expect(position.timeUntilIncrease).to.be.bignumber.equal();
-      expect(position.owedAmount).to.be.bignumber.equal();
-      expect(position.owedAmountAtTime).to.be.bignumber.equal();
-      expect(position.amountForIncreaseAtTime).to.be.bignumber.equal();
-      */
+      expectWithinError(position.timeUntilIncrease, 86400, 1);
+      expect(position.owedAmount).to.be.bignumber.equal(interestAfterOneDay);
+
+      const halfPInterestAfterFiveDays = new BigNumber(interestAfterFiveDays).div(2);
+      expect(position.owedAmountAtTime).to.be.bignumber.equal(halfPInterestAfterFiveDays)
+      expect(position.amountForIncreaseAtTime).to.be.bignumber.equal(halfPInterestAfterFiveDays);
     });
 
     it('check values for closed position', async () => {
+      await wait(1);
       await doClosePosition(
         accounts,
         openTx,
@@ -245,6 +253,7 @@ contract('PositionGetters', (accounts) => {
       expect(position.isCalled).to.be.false;
       expect(position.isClosed).to.be.true;
       expect(position.balance).to.be.bignumber.equal(0);
+      expect(position.totalRepaid).to.be.bignumber.gte(interestAfterOneDay);
     });
 
     it('check values for lender and owner', async () => {
@@ -259,8 +268,8 @@ contract('PositionGetters', (accounts) => {
 
     it('check values for principal and balance', async () => {
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
-      const principal1 = await dydxMargin.getPositionPrincipal(positionId);
-      const balance1 = await dydxMargin.getPositionBalance(expectedHeldTokenBalance);
+      const principal1 = await dydxMargin.getPositionPrincipal.call(positionId);
+      const balance1 = await dydxMargin.getPositionBalance.call(positionId);
       expect(principal1).to.be.bignumber.equal(openTx.principal);
       expect(balance1).to.be.bignumber.equal(expectedHeldTokenBalance);
 
@@ -270,8 +279,8 @@ contract('PositionGetters', (accounts) => {
         openTx.principal.div(2)
       );
 
-      const principal2 = await dydxMargin.getPositionPrincipal(positionId);
-      const balance2 = await dydxMargin.getPositionBalance(expectedHeldTokenBalance);
+      const principal2 = await dydxMargin.getPositionPrincipal.call(positionId);
+      const balance2 = await dydxMargin.getPositionBalance.call(positionId);
       expect(principal2).to.be.bignumber.equal(openTx.principal.div(2));
       expect(balance2).to.be.bignumber.equal(expectedHeldTokenBalance.div(2));
 
@@ -284,8 +293,8 @@ contract('PositionGetters', (accounts) => {
       );
       await callIncreasePosition(dydxMargin, increasePosTx);
 
-      const principal3 = await dydxMargin.getPositionPrincipal(positionId);
-      const balance3 = await dydxMargin.getPositionBalance(expectedHeldTokenBalance);
+      const principal3 = await dydxMargin.getPositionPrincipal.call(positionId);
+      const balance3 = await dydxMargin.getPositionBalance.call(positionId);
       expect(principal3).to.be.bignumber.equal(openTx.principal.times(3).div(2));
       expect(balance3).to.be.bignumber.equal(expectedHeldTokenBalance.times(3).div(2));
     });
@@ -321,19 +330,182 @@ contract('PositionGetters', (accounts) => {
     });
 
     it('check values for timeUntilIncrease', async () => {
-      //TODO
+      const position = await getGetters(positionId);
+      const oneHour = 60 * 60;
+      const oneDay = oneHour * 24;
+      expect(position.interestPeriod).to.be.bignumber.equal(oneDay);
+
+      await wait(1);
+      const t1 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expectWithinError(t1, oneDay, 1);
+
+      await wait(oneDay);
+      const t2 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expectWithinError(t2, t1, 1);
+
+      await wait(oneHour);
+      const t3 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expectWithinError(t3, t2 - oneHour, 1);
+
+      await wait(oneHour);
+      const t4 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expectWithinError(t4, t3 - oneHour, 1);
+
+      await wait(oneDay);
+      const t5 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expectWithinError(t5, t4, 1);
     });
 
     it('check values for owedAmount', async () => {
-      //TODO
+      const position = await getGetters(positionId);
+      const oneHour = 60 * 60;
+      const oneDay = oneHour * 24;
+      expect(position.interestPeriod).to.be.bignumber.equal(oneDay);
+
+      // ensure no interest works
+      /*
+      // Unable to test without time increasing
+      const owedAmount1 = await dydxMargin.getPositionOwedAmount.call(positionId);
+      expect(owedAmount1).to.be.bignumber.equal(openTx.principal);
+      */
+
+      // ensure interest accrued works
+      await wait(oneDay / 2);
+      const owedAmount2 = await dydxMargin.getPositionOwedAmount.call(positionId);
+      expectWithinError(owedAmount2, interestAfterOneDay, 100);
+
+      // ensure interest accrued works again
+      await wait(oneDay * 49);
+      const owedAmount3 = await dydxMargin.getPositionOwedAmount.call(positionId);
+      const exp2 = Math.exp(position.interestRate.div("1e8").mul(50).div(365));
+      expectWithinError(owedAmount3, openTx.principal.mul(exp2.toString()), 100);
     });
 
     it('check values for owedAmountAtTime', async () => {
-      //TODO
+      const position = await getGetters(positionId);
+      const oneHour = 60 * 60;
+      const oneDay = oneHour * 24;
+      expect(position.interestPeriod).to.be.bignumber.equal(oneDay);
+      const futureTime = position.startTimestamp.plus(oneDay * 50);
+
+      // ensure negative time doesn't work
+      await expectThrow(
+        dydxMargin.getPositionOwedAmountAtTime.call(
+          positionId,
+          openTx.principal,
+          position.startTimestamp.minus(oneDay)
+        )
+      );
+
+      // ensure no interest works
+      const owedAmount1 = await dydxMargin.getPositionOwedAmountAtTime.call(
+        positionId,
+        openTx.principal,
+        position.startTimestamp
+      );
+      expect(owedAmount1).to.be.bignumber.equal(openTx.principal);
+
+      // ensure interest accrued works
+      const owedAmount2 = await dydxMargin.getPositionOwedAmountAtTime.call(
+        positionId,
+        openTx.principal,
+        futureTime
+      );
+      const exp = Math.exp(position.interestRate.div("1e8").mul(50).div(365));
+      expectWithinError(owedAmount2, openTx.principal.mul(exp.toString()), 100);
+
+      // ensure different principal amount work
+      const owedAmount3 = await dydxMargin.getPositionOwedAmountAtTime.call(
+        positionId,
+        openTx.principal.div(2),
+        futureTime
+      );
+      expectWithinError(owedAmount3, owedAmount2.div(2), 1);
+
+      // ensure different principal amount work (too much principal)
+      const owedAmount4 = await dydxMargin.getPositionOwedAmountAtTime.call(
+        positionId,
+        openTx.principal.mul(2),
+        futureTime
+      );
+      expectWithinError(owedAmount4, owedAmount2.mul(2), 1);
     });
 
     it('check values for amountForIncreaseAtTime', async () => {
-      //TODO
+      const position = await getGetters(positionId);
+      const oneHour = 60 * 60;
+      const oneDay = oneHour * 24;
+      expect(position.interestPeriod).to.be.bignumber.equal(oneDay);
+      const futureTime = position.startTimestamp.plus(oneDay * 50);
+
+      // ensure negative time doesn't work
+      await expectThrow(
+        dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+          positionId,
+          openTx.principal,
+          position.startTimestamp.minus(oneDay)
+        )
+      );
+
+      // ensure no interest works
+      const owedAmount1 = await dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+        positionId,
+        openTx.principal,
+        position.startTimestamp.plus(2) // ensure it rounds down to startTimestamp
+      );
+      expect(owedAmount1).to.be.bignumber.equal(openTx.principal);
+
+      // ensure interest accrued works
+      const owedAmount2 = await dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+        positionId,
+        openTx.principal,
+        futureTime
+      );
+      expectWithinError(owedAmount2, interestAfterFiftyDays, 100);
+
+      // ensure different principal amount work
+      const owedAmount3 = await dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+        positionId,
+        openTx.principal.div(2),
+        futureTime
+      );
+      expectWithinError(owedAmount3, owedAmount2.div(2), 1);
+
+      // ensure different principal amount work (more than original)
+      const owedAmount4 = await dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+        positionId,
+        openTx.principal.mul(2),
+        futureTime
+      );
+      expectWithinError(owedAmount4, owedAmount2.mul(2), 1);
+    });
+
+    it.only('check values for totalRepaid', async () => {
+      const oneHour = 60 * 60;
+      const oneDay = oneHour * 24;
+      await wait(oneDay * 4.5);
+
+      await doClosePosition(
+        accounts,
+        openTx,
+        openTx.principal.div(2)
+      );
+
+      const position1 = await getGetters(positionId);
+      expect(position1.totalRepaid).to.be.bignumber.equal(
+        new BigNumber(interestAfterFiveDays).div(2)
+      );
+
+      await doClosePosition(
+        accounts,
+        openTx,
+        openTx.principal.div(2)
+      );
+
+      const position2 = await getGetters(positionId, true);
+      expect(position2.totalRepaid).to.be.bignumber.equal(
+        new BigNumber(interestAfterFiveDays)
+      );
     });
   });
 });

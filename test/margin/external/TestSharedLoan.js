@@ -15,7 +15,7 @@ const { transact } = require('../../helpers/ContractHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
-const { getPartialAmount } = require('../../helpers/MathHelper');
+const { getPartialAmount, expectWithinError } = require('../../helpers/MathHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
   doOpenPosition,
@@ -99,13 +99,6 @@ contract('SharedLoan', function(accounts) {
       addedPrincipal,
       { from: adder }
     );
-  }
-
-  function expectWithinError(numA, numB, error) {
-    numA = new BigNumber(numA);
-    numB = new BigNumber(numB);
-    expect(numA).to.be.bignumber.lte(numB.plus(error));
-    expect(numB).to.be.bignumber.lte(numA.plus(error));
   }
 
   // ============ Before ============
