@@ -722,7 +722,7 @@ async function callCancelLoanOffer(
 async function callApproveLoanOffering(
   dydxMargin,
   loanOffering,
-  from = null
+  from
 ) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
@@ -732,7 +732,7 @@ async function callApproveLoanOffering(
     addresses,
     values256,
     values32,
-    { from: from || loanOffering.payer }
+    { from: from }
   );
 
   const approved = await dydxMargin.isLoanApproved.call(loanOffering.loanHash);
