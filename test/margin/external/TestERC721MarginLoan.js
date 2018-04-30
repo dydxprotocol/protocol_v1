@@ -299,10 +299,10 @@ describe('ERC721MarginLoan', () => {
       ] = await Promise.all([
         loanContract.ownerOf.call(uint256(openTx1.id)),
         loanContract.ownerOf.call(uint256(openTx2.id)),
-        loanContract.owedTokenAddress.call(uint256(openTx1.id)),
-        loanContract.owedTokenAddress.call(uint256(openTx2.id)),
-        loanContract.owedTokensRepaidSinceLastWithdraw.call(uint256(openTx1.id)),
-        loanContract.owedTokensRepaidSinceLastWithdraw.call(uint256(openTx2.id)),
+        loanContract.owedTokenAddress.call(openTx1.id),
+        loanContract.owedTokenAddress.call(openTx2.id),
+        loanContract.owedTokensRepaidSinceLastWithdraw.call(openTx1.id),
+        loanContract.owedTokensRepaidSinceLastWithdraw.call(openTx2.id),
         dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx2.id)
       ]);
 
