@@ -193,7 +193,7 @@ library LoanImpl {
             values32
         );
 
-        require(loanOffering.payer == msg.sender);
+        require(loanOffering.signer == msg.sender);
         require(loanOffering.expirationTimestamp > block.timestamp);
 
         if (state.approvedLoans[loanOffering.loanHash]) {
