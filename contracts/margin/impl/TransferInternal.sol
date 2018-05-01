@@ -1,7 +1,7 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
+import { AddressUtils } from "openzeppelin-solidity/contracts/AddressUtils.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { PositionOwner } from "../interfaces/PositionOwner.sol";
 

@@ -2,7 +2,7 @@ version: 2
 jobs:
   checkout_and_install:
     docker:
-      - image: circleci/node:8.6.0
+      - image: circleci/node:9.11.1
     working_directory: ~/protocol
     steps:
       - checkout
@@ -21,7 +21,7 @@ jobs:
             - ~/protocol
   build:
     docker:
-      - image: circleci/node:8.6.0
+      - image: circleci/node:9.11.1
     working_directory: ~/protocol
     steps:
       - restore_cache:
@@ -37,7 +37,7 @@ jobs:
             - ~/protocol
   lint:
     docker:
-      - image: circleci/node:8.6.0
+      - image: circleci/node:9.11.1
     working_directory: ~/protocol
     steps:
       - restore_cache:
@@ -49,7 +49,7 @@ jobs:
           command: npm run lint && npm run dydxlint # && npm run solint
   test:
     docker:
-      - image: circleci/node:8.6.0
+      - image: circleci/node:9.11.1
     working_directory: ~/protocol
     steps:
       - restore_cache:
@@ -61,7 +61,7 @@ jobs:
           command: npm test
   coverage:
     docker:
-      - image: circleci/node:8.6.0
+      - image: circleci/node:9.11.1
     working_directory: ~/protocol
     steps:
       - restore_cache:

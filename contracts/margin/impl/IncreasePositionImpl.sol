@@ -1,8 +1,8 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { AddressUtils } from "openzeppelin-solidity/contracts/AddressUtils.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { OpenPositionShared } from "./OpenPositionShared.sol";

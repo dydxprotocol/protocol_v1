@@ -1,7 +1,7 @@
 {
-  "name": "dydx-contracts",
+  "name": "dydx_margin_protocol",
   "version": "1.0.0",
-  "description": "Ethereum Smart Contracts for dYdX",
+  "description": "Ethereum Smart Contracts for dYdX Margin Trading Protocol",
   "main": "truffle.js",
   "directories": {
     "test": "test"
@@ -21,18 +21,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AntonioJuliano/dydx-contracts.git"
+    "url": "git+https://github.com/dydxexchange/protocol.git"
   },
   "keywords": [
     "dydx",
-    "ethereum"
+    "ethereum",
+    "solidity"
   ],
-  "author": "Antonio Juliano",
+  "author": "dYdX Trading Inc.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/AntonioJuliano/dydx-contracts/issues"
+    "url": "https://github.com/dydxexchange/protocol/issues"
   },
-  "homepage": "https://github.com/AntonioJuliano/dydx-contracts#readme",
+  "homepage": "https://github.com/dydxexchange/protocol#readme",
   "devDependencies": {
     "babel-eslint": "^8.2.3",
     "babel-polyfill": "^6.26.0",
@@ -53,9 +54,9 @@
     "bignumber.js": "^4.1.0",
     "es6-promisify": "^5.0.0",
     "ethereumjs-util": "^5.1.5",
-    "npm": "^5.8.0",
+    "npm": "^6.0.0",
     "request-promise-native": "^1.0.5",
     "web3": "1.0.0-beta.34",
-    "zeppelin-solidity": "^1.8.0"
+    "openzeppelin-solidity": "1.9.0"
   }
 }

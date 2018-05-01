@@ -1,7 +1,7 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 
 /**
