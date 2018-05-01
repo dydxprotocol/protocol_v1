@@ -7,6 +7,7 @@ const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const SharedLoanCreator = artifacts.require("SharedLoanCreator");
+const ERC20LongCreator = artifacts.require("ERC20LongCreator");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
@@ -125,11 +126,18 @@ async function deployMarginContracts(deployer) {
     )
   ]);
 
-  await deployer.deploy(
-    ERC20ShortCreator,
-    Margin.address,
-    [DutchAuctionCloser.address]
-  );
+  await Promise.all([
+    deployer.deploy(
+      ERC20ShortCreator,
+      Margin.address,
+      [DutchAuctionCloser.address]
+    ),
+    deployer.deploy(
+      ERC20LongCreator,
+      Margin.address,
+      [DutchAuctionCloser.address]
+    )
+  ]);
 
   await deployer.deploy(
     SharedLoanCreator,

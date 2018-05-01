@@ -23,9 +23,9 @@ const {
 const { transact } = require('../../helpers/ContractHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
-  getERC20ShortConstants,
+  getERC20PositionConstants,
   TOKENIZED_POSITION_STATE
-} = require('./ERC20ShortHelper');
+} = require('./ERC20PositionHelper');
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
@@ -175,7 +175,7 @@ contract('ERC20Short', function(accounts) {
     it('sets constants correctly', async () => {
       for (let type in POSITIONS) {
         const position = POSITIONS[type];
-        const tsc = await getERC20ShortConstants(position.TOKEN_CONTRACT);
+        const tsc = await getERC20PositionConstants(position.TOKEN_CONTRACT);
         expect(tsc.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
         expect(tsc.POSITION_ID).to.equal(position.ID);
         expect(tsc.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.UNINITIALIZED);
@@ -205,13 +205,13 @@ contract('ERC20Short', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
 
-        const tsc1 = await getERC20ShortConstants(POSITION.TOKEN_CONTRACT);
+        const tsc1 = await getERC20PositionConstants(POSITION.TOKEN_CONTRACT);
 
         await CONTRACTS.DYDX_MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.trader });
 
         const [tsc2, position] = await Promise.all([
-          getERC20ShortConstants(POSITION.TOKEN_CONTRACT),
+          getERC20PositionConstants(POSITION.TOKEN_CONTRACT),
           getPosition(CONTRACTS.DYDX_MARGIN, POSITION.ID)
         ]);
 
