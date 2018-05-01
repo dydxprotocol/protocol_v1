@@ -17,7 +17,6 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
  *
  * dYdX ExchangeWrapper to interface with 0x Version 1
  */
-/* solium-disable-next-line */
 contract ZeroExExchangeWrapper is
     HasNoEther,
     HasNoContracts,

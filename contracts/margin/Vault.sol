@@ -18,7 +18,6 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  * Vault only supports ERC20 tokens, and will not accept any tokens that require
  * a tokenFallback or equivalent function (See ERC223, ERC777, etc.)
  */
- /* solium-disable-next-line */
 contract Vault is
     StaticAccessControlled,
     HasNoEther,

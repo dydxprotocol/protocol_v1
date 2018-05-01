@@ -178,13 +178,17 @@ library ClosePositionShared {
         view
         returns (CloseTx memory)
     {
-        uint256 startingHeldTokenBalance = Vault(state.VAULT).balances(positionId, position.heldToken);
+        uint256 startingHeldTokenBalance = Vault(state.VAULT).balances(
+            positionId,
+            position.heldToken
+        );
         uint256 availableHeldToken = MathHelpers.getPartialAmount(
             closeAmount,
             position.principal,
             startingHeldTokenBalance
         );
         uint256 owedTokenOwed = 0;
+
         if (!isLiquidation) {
             owedTokenOwed = MarginCommon.calculateOwedAmount(
                 position,

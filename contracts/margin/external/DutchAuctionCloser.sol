@@ -19,7 +19,6 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * Contract for allowing anyone to close a called-in position by using a Dutch auction mechanism to
  * give a fair price to the position owner. Price paid to the owner decreases linearly over time.
  */
- /* solium-disable-next-line */
 contract DutchAuctionCloser is
     OnlyMargin,
     PayoutRecipient

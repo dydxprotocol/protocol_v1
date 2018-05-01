@@ -13,7 +13,6 @@ import { PositionOwner } from "../../interfaces/PositionOwner.sol";
  *
  * Contains common code for ERC20ShortCreator and ERC20LongCreator
  */
- /* solium-disable-next-line */
 contract ERC20PositionCreator is
     ReentrancyGuard,
     NoOwner,

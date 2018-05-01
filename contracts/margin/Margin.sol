@@ -27,7 +27,6 @@ import { TransferImpl } from "./impl/TransferImpl.sol";
  *
  * This contract is used to facilitate margin trading as per the dYdX protocol
  */
- /* solium-disable-next-line */
 contract Margin is
     NoOwner,
     ReentrancyGuard,

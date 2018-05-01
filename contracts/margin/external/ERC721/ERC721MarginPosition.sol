@@ -18,7 +18,6 @@ import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
  * token allows the holder to close the position. Functionality is added to let users approve
  * other addresses to close their positions for them.
  */
- /* solium-disable-next-line */
 contract ERC721MarginPosition is
     ReentrancyGuard,
     ERC721Token,
