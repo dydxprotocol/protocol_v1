@@ -141,9 +141,9 @@ contract SharedLoan is
         nonReentrant
         returns (address)
     {
-        // require uninitialized so that this cannot receive ownership from more than 1 loan
-        require(state == State.UNINITIALIZED);
+        // This contract cannot receive ownership from more than 1 loan
         require(POSITION_ID == positionId);
+        assert(state == State.UNINITIALIZED);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
@@ -184,7 +184,8 @@ contract SharedLoan is
         nonReentrant
         returns (bool)
     {
-        require(positionId == POSITION_ID);
+        assert(state == State.OPEN);
+        assert(POSITION_ID == positionId);
 
         balances[from] = balances[from].add(principalAdded);
         totalPrincipal = totalPrincipal.add(principalAdded);

@@ -224,6 +224,16 @@ contract('SharedLoan', function(accounts) {
         )
       );
     });
+
+    it('fails for incorrect ID', async () => {
+      SHARED_LOAN.CONTRACT = await SharedLoan.new(
+        BYTES32.TEST[0], // wrong ID
+        dydxMargin.address,
+        SHARED_LOAN.INITIAL_LENDER,
+        SHARED_LOAN.TRUSTED_MARGIN_CALLERS
+      );
+      await expectThrow(transferLoanToSharedLoan());
+    });
   });
 
   // ============ marginLoanIncreased ============
@@ -645,6 +655,12 @@ contract('SharedLoan', function(accounts) {
       }
     });
 
+    it('#withdraw and #withdrawMultiple fail for UNINITIALIZED position', async () => {
+      await setUpSharedLoan();
+      await expectThrow(SHARED_LOAN.CONTRACT.withdraw(accountA));
+      await expectThrow(SHARED_LOAN.CONTRACT.withdrawMultiple([accountA]));
+    });
+
     it('#withdrawMultiple succeeds for zero accounts', async () => {
       const arg = [];
       await callWithdrawMultiple(arg);
@@ -666,7 +682,7 @@ contract('SharedLoan', function(accounts) {
     });
 
     it('#withdrawMultiple succeeds for multiple accounts', async () => {
-      const arg = [accountC, accountB];
+      const arg = [accountC, accountB, ADDRESSES.TEST[0]];
       await callWithdrawMultiple(arg);
       await closeAmount(closer, principalShare);
       await callWithdrawMultiple(arg);
@@ -676,7 +692,7 @@ contract('SharedLoan', function(accounts) {
     });
 
     it('#withdrawMultiple succeeds when passed the same account multiple times', async () => {
-      const arg = [accountB, accountA, accountB, accountB];
+      const arg = [accountB, accountA, accountB, accountB, ADDRESSES.TEST[0]];
       await callWithdrawMultiple(arg);
       await closeAmount(closer, principalShare);
       await callWithdrawMultiple(arg);
