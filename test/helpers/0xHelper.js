@@ -33,9 +33,7 @@ async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
     takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(19.123475)
   };
 
-  const signature = await signOrder(order);
-
-  order.ecSignature = signature;
+  order.ecSignature = await signOrder(order);
 
   return order;
 }
@@ -55,16 +53,14 @@ async function createSignedBuyOrder(accounts, _salt = DEFAULT_SALT) {
 
     // heldToken
     makerTokenAddress: HeldToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(15),
+    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(30),
 
     // owedToken
     takerTokenAddress: OwedToken.address,
-    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(5),
+    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(10),
   };
 
-  const signature = await signOrder(order);
-
-  order.ecSignature = signature;
+  order.ecSignature = await signOrder(order);
 
   return order;
 }

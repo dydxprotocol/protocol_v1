@@ -16,7 +16,7 @@ const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
-const { createSignedBuyOrder } = require('./0xHelper');
+const { createSignedBuyOrder, createSignedSellOrder } = require('./0xHelper');
 const { transact } = require('./ContractHelper');
 const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
@@ -81,7 +81,7 @@ function getMinimumDeposit(openTx) {
 }
 
 async function callOpenPosition(dydxMargin, tx) {
-  const loanNumber = await dydxMargin.loanNumbers.call(tx.loanOffering.loanHash);
+  const loanNumber = await dydxMargin.getLoanNumber.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
     tx.loanOffering.loanHash,
     loanNumber
@@ -435,6 +435,22 @@ async function doOpenPosition(
   return OpenTx;
 }
 
+async function doClosePosition(
+  accounts,
+  openTx,
+  closeAmount,
+  salt = DEFAULT_SALT,
+  optionalArgs = {}
+) {
+  const [sellOrder, dydxMargin] = await Promise.all([
+    createSignedSellOrder(accounts, salt),
+    Margin.deployed()
+  ]);
+  await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+  let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount, optionalArgs);
+  return closeTx;
+}
+
 async function callClosePosition(
   dydxMargin,
   OpenTx,
@@ -693,7 +709,7 @@ async function callCancelLoanOffer(
 ) {
   const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
 
-  const canceledAmount1 = await dydxMargin.loanCancels.call(loanOffering.loanHash);
+  const canceledAmount1 = await dydxMargin.getLoanCanceledAmount.call(loanOffering.loanHash);
   const tx = await dydxMargin.cancelLoanOffering(
     addresses,
     values256,
@@ -701,7 +717,7 @@ async function callCancelLoanOffer(
     cancelAmount,
     { from: from || loanOffering.payer }
   );
-  const canceledAmount2 = await dydxMargin.loanCancels.call(loanOffering.loanHash);
+  const canceledAmount2 = await dydxMargin.getLoanCanceledAmount.call(loanOffering.loanHash);
 
   const expectedCanceledAmount = BigNumber.min(
     canceledAmount1.plus(cancelAmount),
@@ -934,6 +950,26 @@ async function getOwedAmountForTime(
   return owedAmount;
 }
 
+function getTokenAmountsFromOpen(openTx) {
+  let soldAmount = openTx.principal;
+  if (!openTx.depositInHeldToken) {
+    soldAmount = soldAmount.plus(openTx.depositAmount)
+  }
+  const expectedHeldTokenFromSell = soldAmount
+    .div(openTx.buyOrder.takerTokenAmount)
+    .times(openTx.buyOrder.makerTokenAmount);
+
+  const expectedHeldTokenBalance = openTx.depositInHeldToken ?
+    expectedHeldTokenFromSell.plus(openTx.depositAmount)
+    : expectedHeldTokenFromSell;
+
+  return {
+    soldAmount,
+    expectedHeldTokenFromSell,
+    expectedHeldTokenBalance
+  };
+}
+
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
   await Promise.all([
     token.issueTo(account, amount),
@@ -947,6 +983,7 @@ module.exports = {
   issueTokensAndSetAllowances,
   callOpenPosition,
   doOpenPosition,
+  doClosePosition,
   issueTokensAndSetAllowancesForClose,
   callCancelLoanOffer,
   callClosePosition,
@@ -958,5 +995,6 @@ module.exports = {
   callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee,
-  callIncreasePosition
+  callIncreasePosition,
+  getTokenAmountsFromOpen
 };

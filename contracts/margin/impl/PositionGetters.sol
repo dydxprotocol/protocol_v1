@@ -181,6 +181,8 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
+        require(timestamp >= position.startTimestamp);
+
         return MarginCommon.calculateOwedAmount(
             position,
             principalToClose,
@@ -208,6 +210,8 @@ contract PositionGetters is MarginStorage {
     {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
+
+        require(timestamp >= position.startTimestamp);
 
         return MarginCommon.calculateLenderAmountForIncreasePosition(
             position,

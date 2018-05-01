@@ -136,7 +136,7 @@ describe('#openPosition', () => {
 
     contract('Margin', accounts => {
       async function getLoanFill(dydxMargin, openTx) {
-        const result = await dydxMargin.loanFills.call(openTx.loanOffering.loanHash);
+        const result = await dydxMargin.getLoanFilledAmount.call(openTx.loanOffering.loanHash);
         return result;
       }
       it('fails if loan offer already filled', async () => {
