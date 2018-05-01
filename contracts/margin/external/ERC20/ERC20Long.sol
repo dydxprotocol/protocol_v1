@@ -58,22 +58,41 @@ contract ERC20Long is ERC20Position {
         return positionBalance.sub(totalSupply_);
     }
 
-    function getTokenAmountOnClose(
-        bytes32 positionId,
-        uint256 principalAdded
+    function getCloseAmounts(
+        uint256 requestedCloseAmount,
+        uint256 balance,
+        uint256 positionPrincipal
     )
         internal
         view
-        returns (uint256)
+        returns (
+            uint256,
+            uint256
+        )
     {
-        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
-        uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
-
-        return MathHelpers.getPartialAmount(
-            principalAdded,
+        uint256 requestedTokenAmount = MathHelpers.getPartialAmount(
+            requestedCloseAmount,
             positionPrincipal,
-            positionBalance
+            totalSupply_
         );
+
+        if (requestedTokenAmount <= balance) {
+            return (requestedTokenAmount, requestedCloseAmount);
+        }
+
+        uint256 maxAllowedAmount = MathHelpers.getPartialAmount(
+            balance,
+            totalSupply_,
+            positionPrincipal
+        );
+
+        uint256 tokenAmount = MathHelpers.getPartialAmount(
+            maxAllowedAmount,
+            positionPrincipal,
+            totalSupply_
+        );
+
+        return (tokenAmount, maxAllowedAmount);
     }
 
     function getNameIntro()

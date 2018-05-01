@@ -55,8 +55,7 @@ contract ERC20Position is
      */
     event ClosedByTrustedParty(
         address closer,
-        address payoutRecipient,
-        uint256 closeAmount
+        address payoutRecipient
     );
 
     /**
@@ -233,61 +232,23 @@ contract ERC20Position is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        uint256 requestedTokenAmount = getTokenAmountOnClose(
-            positionId,
-            requestedAmount
-        );
+        uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
 
-        assert(requestedTokenAmount <= totalSupply_);
+        assert(requestedAmount <= positionPrincipal);
 
-        uint256 allowedCloseAmount;
-
-        // Tokens are not burned when a trusted recipient is used, but we require the position to be
-        // completely closed. All token holders are then entitled to the heldTokens in the contract
-        if (requestedTokenAmount == totalSupply_ && TRUSTED_RECIPIENTS[payoutRecipient]) {
-            allowedCloseAmount = requestedAmount;
-            emit ClosedByTrustedParty(closer, payoutRecipient, requestedTokenAmount);
-            state = State.CLOSED;
-            emit CompletelyClosed();
-        } else {
-            // For non-approved closers or recipients, we check token balances for closer.
-            // payoutRecipient can be whatever the token holder wants.
-            uint256 balance = balances[closer];
-            uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
-            uint256 effectivePrincipal = MathHelpers.getPartialAmount(
-                balance,
-                totalSupply_,
-                positionPrincipal
+        if (positionPrincipal == requestedAmount && TRUSTED_RECIPIENTS[payoutRecipient]) {
+            return closeByTrustedParty(
+                closer,
+                payoutRecipient,
+                requestedAmount
             );
-
-            if (requestedAmount >= effectivePrincipal) {
-                delete balances[closer];
-                totalSupply_ = totalSupply_.sub(balance)
-                allowedCloseAmount = effectivePrincipal;
-            } else {
-
-            }
-            uint256 tokenAmount = Math.min256(requestedTokenAmount, balance);
-            require(tokenAmount > 0);
-            balances[closer] = balance.sub(tokenAmount);
-            totalSupply_ = totalSupply_.sub(tokenAmount);
-
-            // TODO make sure this is right (w/ rounding error)
-            allowedCloseAmount = MathHelpers.getPartialAmount(
-                    tokenAmount,
-                    requestedTokenAmount,
-                    requestedAmount
-                );
-
-            emit TokensRedeemedForClose(closer, tokenAmount);
-
-            if (totalSupply_ == 0) {
-                state = State.CLOSED;
-                emit CompletelyClosed();
-            }
         }
 
-        return allowedCloseAmount;
+        return close(
+            closer,
+            requestedAmount,
+            positionPrincipal
+        );
     }
 
     // ============ Public State Changing Functions ============
@@ -446,6 +407,61 @@ contract ERC20Position is
         }
     }
 
+    /**
+     * Tokens are not burned when a trusted recipient is used, but we require the position to be
+     * completely closed. All token holders are then entitled to the heldTokens in the contract
+     */
+    function closeByTrustedParty(
+        address closer,
+        address payoutRecipient,
+        uint256 requestedAmount
+    )
+        internal
+        returns (uint256)
+    {
+        emit ClosedByTrustedParty(closer, payoutRecipient);
+        state = State.CLOSED;
+        emit CompletelyClosed();
+
+        return requestedAmount;
+    }
+
+    function close(
+        address closer,
+        uint256 requestedAmount,
+        uint256 positionPrincipal
+    )
+        internal
+        returns (uint256)
+    {
+        uint256 balance = balances[closer];
+        uint256 tokenAmount;
+        uint256 allowedAmount;
+
+        (tokenAmount, allowedAmount) = getCloseAmounts(
+            requestedAmount,
+            balance,
+            positionPrincipal
+        );
+
+        require(tokenAmount > 0 && allowedAmount > 0);
+
+        assert(tokenAmount <= balance);
+        assert(allowedAmount <= requestedAmount);
+
+        balances[closer] = balance.sub(tokenAmount);
+        totalSupply_ = totalSupply_.sub(tokenAmount);
+
+        emit TokensRedeemedForClose(closer, tokenAmount);
+
+        if (totalSupply_ == 0) {
+            state = State.CLOSED;
+            emit CompletelyClosed();
+        }
+
+        return allowedAmount;
+    }
+
     // ============ Internal Abstract Functions ============
 
     function getTokenAmountOnAdd(
@@ -456,13 +472,17 @@ contract ERC20Position is
         view
         returns (uint256);
 
-    function getTokenAmountOnClose(
-        bytes32 positionId,
-        uint256 principalAdded
+    function getCloseAmounts(
+        uint256 requestedCloseAmount,
+        uint256 balance,
+        uint256 positionPrincipal
     )
         internal
         view
-        returns (uint256);
+        returns (
+            uint256 /* tokenAmount */,
+            uint256 /* allowedAmount */
+        );
 
     function getNameIntro()
         internal
