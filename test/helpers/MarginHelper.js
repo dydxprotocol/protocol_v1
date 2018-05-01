@@ -465,15 +465,9 @@ async function callClosePosition(
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
-  const {
-    startAmount,
-    startHeldToken,
-    startTimestamp,
-    startTotalOwedTokenRepaid,
-    startLenderOwedToken,
-    owedToken,
-    positionLender
-  } = await getPreCloseVariables(dydxMargin, OpenTx.id);
+  const addresses = await getAddresses(dydxMargin, OpenTx.id);
+
+  const start = await getStartVariables(addresses, OpenTx.id);
 
   const tx = await transact(
     dydxMargin.closePosition,
@@ -487,20 +481,14 @@ async function callClosePosition(
   );
 
   await expectCloseLog(
-    dydxMargin,
+    addresses,
+    start,
     {
       OpenTx,
       sellOrder,
       closer,
       payoutInHeldToken,
       recipient,
-      startAmount,
-      startHeldToken,
-      startTimestamp,
-      startTotalOwedTokenRepaid,
-      startLenderOwedToken,
-      positionLender,
-      owedToken,
       tx
     }
   );
@@ -512,21 +500,17 @@ async function callClosePositionDirectly(
   dydxMargin,
   OpenTx,
   closeAmount,
-  from = null,
-  recipient = null
+  {
+    from = null,
+    recipient = null
+  } = {}
 ) {
   const closer = from || OpenTx.trader;
   recipient = recipient || closer;
 
-  const {
-    startAmount,
-    startHeldToken,
-    startTimestamp,
-    startTotalOwedTokenRepaid,
-    startLenderOwedToken,
-    owedToken,
-    positionLender,
-  } = await getPreCloseVariables(dydxMargin, OpenTx.id);
+  const addresses = await getAddresses(dydxMargin, OpenTx.id);
+
+  const start = await getStartVariables(addresses, OpenTx.id);
 
   const tx = await transact(
     dydxMargin.closePositionDirectly,
@@ -537,19 +521,13 @@ async function callClosePositionDirectly(
   );
 
   await expectCloseLog(
-    dydxMargin,
+    addresses,
+    start,
     {
       OpenTx,
       closer,
       payoutInHeldToken: true,
       recipient,
-      startAmount,
-      startHeldToken,
-      startTimestamp,
-      startTotalOwedTokenRepaid,
-      startLenderOwedToken,
-      owedToken,
-      positionLender,
       tx
     }
   );
@@ -557,54 +535,63 @@ async function callClosePositionDirectly(
   return tx;
 }
 
-async function getPreCloseVariables(dydxMargin, positionId) {
+async function getAddresses(dydxMargin, positionId) {
   const [
+    heldToken,
     owedToken,
-    positionLender
+    lender
   ] = await Promise.all([
+    HeldToken.deployed(),
     OwedToken.deployed(),
     dydxMargin.getPositionLender.call(positionId)
   ]);
+  return {
+    dydxMargin,
+    heldToken,
+    owedToken,
+    lender,
+  };
+}
+
+async function getStartVariables(addresses, positionId) {
   const [
-    startAmount,
-    startHeldToken,
-    startTimestamp,
-    startTotalOwedTokenRepaid,
-    startLenderOwedToken
+    principal,
+    balance,
+    timestamp,
+    totalOwedTokenRepaid,
+    lenderOwedToken
   ] = await Promise.all([
-    dydxMargin.getPositionPrincipal.call(positionId),
-    dydxMargin.getPositionBalance.call(positionId),
-    dydxMargin.getPositionStartTimestamp.call(positionId),
-    dydxMargin.getTotalOwedTokenRepaidToLender.call(positionId),
-    owedToken.balanceOf.call(positionLender)
+    addresses.dydxMargin.getPositionPrincipal.call(positionId),
+    addresses.dydxMargin.getPositionBalance.call(positionId),
+    addresses.dydxMargin.getPositionStartTimestamp.call(positionId),
+    addresses.dydxMargin.getTotalOwedTokenRepaidToLender.call(positionId),
+    addresses.owedToken.balanceOf.call(addresses.lender)
   ]);
   return {
-    startAmount,
-    startHeldToken,
-    startTimestamp,
-    startTotalOwedTokenRepaid,
-    startLenderOwedToken,
-    owedToken,
-    positionLender
+    principal,
+    balance,
+    timestamp,
+    totalOwedTokenRepaid,
+    lenderOwedToken,
   }
 }
 
-async function expectCloseLog(dydxMargin, params) {
+async function expectCloseLog(addresses, start, params) {
   const [
     endAmount,
     endTimestamp,
     endTotalOwedTokenRepaid,
-    endLenderOwedToken
+    endLenderOwedToken,
   ] = await Promise.all([
-    dydxMargin.getPositionPrincipal.call(params.OpenTx.id),
+    addresses.dydxMargin.getPositionPrincipal.call(params.OpenTx.id),
     getBlockTimestamp(params.tx.receipt.blockNumber),
-    dydxMargin.getTotalOwedTokenRepaidToLender.call(params.OpenTx.id),
-    params.owedToken.balanceOf.call(params.positionLender)
+    addresses.dydxMargin.getTotalOwedTokenRepaidToLender.call(params.OpenTx.id),
+    addresses.owedToken.balanceOf.call(addresses.lender),
   ]);
-  const actualCloseAmount = params.startAmount.minus(endAmount);
+  const actualCloseAmount = start.principal.minus(endAmount);
 
   const owed = await getOwedAmountForTime(
-    new BigNumber(endTimestamp).minus(params.startTimestamp),
+    new BigNumber(endTimestamp).minus(start.timestamp),
     params.OpenTx.loanOffering.rates.interestPeriod,
     params.OpenTx.loanOffering.rates.interestRate,
     actualCloseAmount,
@@ -613,8 +600,8 @@ async function expectCloseLog(dydxMargin, params) {
 
   const availableHeldToken = getPartialAmount(
     actualCloseAmount,
-    params.startAmount,
-    params.startHeldToken
+    start.principal,
+    start.balance
   );
 
   let buybackCostInHeldToken = 0;
@@ -650,9 +637,9 @@ async function expectCloseLog(dydxMargin, params) {
   expect(
     owedTokenPaidToLender
   ).to.be.bignumber.equal(
-    endTotalOwedTokenRepaid.minus(params.startTotalOwedTokenRepaid)
+    endTotalOwedTokenRepaid.minus(start.totalOwedTokenRepaid)
   ).to.be.bignumber.equal(
-    endLenderOwedToken.minus(params.startLenderOwedToken)
+    endLenderOwedToken.minus(start.lenderOwedToken)
   );
 
   expectLog(params.tx.logs[0], 'PositionClosed', {
@@ -660,12 +647,16 @@ async function expectCloseLog(dydxMargin, params) {
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
-    remainingAmount: params.startAmount.minus(actualCloseAmount),
+    remainingAmount: start.principal.minus(actualCloseAmount),
     owedTokenPaidToLender,
     payoutAmount,
     buybackCostInHeldToken,
     payoutInHeldToken: params.payoutInHeldToken
   });
+
+  expect(params.tx.result[0]).to.be.bignumber.equal(actualCloseAmount);
+  expect(params.tx.result[1]).to.be.bignumber.equal(payoutAmount);
+  expect(params.tx.result[2]).to.be.bignumber.equal(owedTokenPaidToLender);
 }
 
 async function callLiquidatePosition(

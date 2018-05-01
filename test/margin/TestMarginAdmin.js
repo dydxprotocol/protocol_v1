@@ -289,25 +289,25 @@ describe('MarginAdmin', () => {
     }
 
     contract('Margin', accounts => {
-      it('Allows #closePosition while OPERATIONAL', async () => {
+      it('Allows #closePositionDirectly while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closePosition while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
+      it('Allows #closePositionDirectly while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closePosition while CLOSE_ONLY', async () => {
+      it('Allows #closePositionDirectly while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
       });
     });
 
     contract('Margin', accounts => {
-      it('Allows #closePosition while CLOSE_DIRECTLY_ONLY', async () => {
+      it('Allows #closePositionDirectly while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY);
       });
     });

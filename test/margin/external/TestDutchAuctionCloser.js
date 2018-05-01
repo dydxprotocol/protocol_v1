@@ -98,8 +98,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       ));
     });
 
@@ -110,8 +112,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       ));
     });
 
@@ -122,8 +126,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         OpenTx.principal.div(2),
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       ));
     });
 
@@ -139,8 +145,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         closeAmount,
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       );
       const owedAmount1 = await getOwedAmount(OpenTx, closeTx1, closeAmount);
 
@@ -149,8 +157,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         closeAmount,
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       );
       const owedAmount2 = await getOwedAmount(OpenTx, closeTx2, closeAmount);
 
@@ -159,8 +169,10 @@ contract('DutchAuctionCloser', function(accounts) {
         dydxMargin,
         OpenTx,
         closeAmount,
-        dutchBidder,
-        DutchAuctionCloser.address
+        {
+          from: dutchBidder,
+          recipient: DutchAuctionCloser.address
+        }
       ));
 
       const [
