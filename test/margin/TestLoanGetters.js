@@ -140,7 +140,7 @@ contract('LoanGetters', (accounts) => {
       approved = await dydxMargin.isLoanApproved.call(loanHash);
       expect(approved).to.be.false;
 
-      await callApproveLoanOffering(dydxMargin, loanOffering);
+      await callApproveLoanOffering(dydxMargin, loanOffering, loanOffering.signer);
 
       approved = await dydxMargin.isLoanApproved.call(loanHash);
       expect(approved).to.be.true;
