@@ -2,16 +2,12 @@
 
 const expect = require('chai').expect;
 
-const TokenA = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
-const {
-  doOpenPosition,
-  getPosition
-} = require('../helpers/MarginHelper');
+const { doOpenPosition } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
