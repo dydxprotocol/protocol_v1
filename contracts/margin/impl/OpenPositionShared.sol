@@ -124,10 +124,6 @@ library OpenPositionShared {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        // Disallow zero address owners
-        require(transaction.owner != address(0));
-        require(transaction.loanOffering.owner != address(0));
-
         // The interest rounding period cannot be longer than max duration
         require(
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration
@@ -245,19 +241,23 @@ library OpenPositionShared {
             transaction.loanOffering.rates.takerFee
         );
 
-        proxy.transferTokens(
-            transaction.loanOffering.lenderFeeToken,
-            transaction.loanOffering.payer,
-            transaction.loanOffering.feeRecipient,
-            lenderFee
-        );
+        if (lenderFee > 0) {
+            proxy.transferTokens(
+                transaction.loanOffering.lenderFeeToken,
+                transaction.loanOffering.payer,
+                transaction.loanOffering.feeRecipient,
+                lenderFee
+            );
+        }
 
-        proxy.transferTokens(
-            transaction.loanOffering.takerFeeToken,
-            msg.sender,
-            transaction.loanOffering.feeRecipient,
-            takerFee
-        );
+        if (takerFee > 0) {
+            proxy.transferTokens(
+                transaction.loanOffering.takerFeeToken,
+                msg.sender,
+                transaction.loanOffering.feeRecipient,
+                takerFee
+            );
+        }
     }
 
     function executeSell(
