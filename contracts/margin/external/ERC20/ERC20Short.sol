@@ -1,6 +1,7 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
@@ -13,6 +14,9 @@ import { Margin } from "../../Margin.sol";
  * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
  * entitled to some amount of heldTokens after settlement.
+ *
+ * The total supply of short tokens is always exactly equal to the amount of principal in
+ * the backing position
  */
 contract ERC20Short is ERC20Position {
     constructor(
@@ -46,7 +50,7 @@ contract ERC20Short is ERC20Position {
 
     // ============ Internal Functions ============
 
-    function getAddedTokenAmount(
+    function getTokenAmountOnAdd(
         bytes32 /* positionId */,
         uint256 principalAdded
     )
@@ -55,6 +59,25 @@ contract ERC20Short is ERC20Position {
         returns (uint256)
     {
         return principalAdded;
+    }
+
+    function getCloseAmounts(
+        uint256 requestedCloseAmount,
+        uint256 balance,
+        uint256 positionPrincipal
+    )
+        internal
+        view
+        returns (
+            uint256 /* tokenAmount */,
+            uint256 /* allowedCloseAmount */
+        )
+    {
+        assert(positionPrincipal == totalSupply_);
+
+        uint256 amount = Math.min256(balance, requestedCloseAmount);
+
+        return (amount, amount);
     }
 
     function getNameIntro()
