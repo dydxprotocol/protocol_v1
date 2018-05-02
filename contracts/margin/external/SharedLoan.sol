@@ -184,7 +184,7 @@ contract SharedLoan is
         nonReentrant
         returns (bool)
     {
-        require(positionId == POSITION_ID);
+        assert(positionId == POSITION_ID);
 
         balances[from] = balances[from].add(principalAdded);
         totalPrincipal = totalPrincipal.add(principalAdded);

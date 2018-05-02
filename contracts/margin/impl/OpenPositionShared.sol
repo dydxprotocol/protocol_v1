@@ -245,23 +245,19 @@ library OpenPositionShared {
             transaction.loanOffering.rates.takerFee
         );
 
-        if (lenderFee > 0) {
-            proxy.transferTokens(
-                transaction.loanOffering.lenderFeeToken,
-                transaction.loanOffering.payer,
-                transaction.loanOffering.feeRecipient,
-                lenderFee
-            );
-        }
+        proxy.transferTokens(
+            transaction.loanOffering.lenderFeeToken,
+            transaction.loanOffering.payer,
+            transaction.loanOffering.feeRecipient,
+            lenderFee
+        );
 
-        if (takerFee > 0) {
-            proxy.transferTokens(
-                transaction.loanOffering.takerFeeToken,
-                msg.sender,
-                transaction.loanOffering.feeRecipient,
-                takerFee
-            );
-        }
+        proxy.transferTokens(
+            transaction.loanOffering.takerFeeToken,
+            msg.sender,
+            transaction.loanOffering.feeRecipient,
+            takerFee
+        );
     }
 
     function executeSell(

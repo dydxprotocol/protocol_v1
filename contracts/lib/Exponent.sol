@@ -98,7 +98,7 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
-        require(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
+        assert(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
         assert(X.num < X.den);
         // will also throw if precomputePrecision is larger than the array length in getDenominator
 
