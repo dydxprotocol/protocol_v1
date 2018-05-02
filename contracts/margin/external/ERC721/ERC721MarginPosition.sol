@@ -164,8 +164,18 @@ contract ERC721MarginPosition is
         external
         nonReentrant
     {
-        require(!Margin(DYDX_MARGIN).containsPosition(positionId));
-        _burn(ownerOf(uint256(positionId)), uint256(positionId));
+        burnTokenSafeInternal(positionId);
+    }
+
+    function burnTokenSafeMultiple(
+        bytes32[] positionIds
+    )
+        external
+        nonReentrant
+    {
+        for (uint256 i = 0; i < positionIds.length; i++) {
+            burnTokenSafeInternal(positionId);
+        }
     }
 
     // ============ OnlyMargin Functions ============
@@ -268,5 +278,16 @@ contract ERC721MarginPosition is
         returns (address)
     {
         return ownerOf(uint256(positionId));
+    }
+
+    // ============ Internal Functions ============
+
+    function burnTokenSafeInternal(
+        bytes32 positionId
+    )
+        internal
+    {
+        require(!Margin(DYDX_MARGIN).containsPosition(positionId));
+        _burn(ownerOf(uint256(positionId)), uint256(positionId));
     }
 }
