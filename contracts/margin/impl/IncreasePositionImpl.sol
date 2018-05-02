@@ -299,7 +299,7 @@ library IncreasePositionImpl {
             );
         }
 
-        // Unless the loan offering's lender is the owner of the loan position and is not a smart
+        // Unless the loan offering's payer is the owner of the loan position and is not a smart
         // contract, call out to the owner of the loan position to ensure they consent
         // to value being added
         if (loanPayer != lender || AddressUtils.isContract(lender)) {
