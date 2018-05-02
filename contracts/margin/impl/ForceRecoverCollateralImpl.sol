@@ -53,16 +53,13 @@ library ForceRecoverCollateralImpl {
             )
         );
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
-                    msg.sender,
-                    positionId,
-                    collateralRecipient
-                )
-            );
-        }
+        // Ensure lender consent
+        forceRecoverCollateralOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId,
+            collateralRecipient
+        );
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
@@ -89,5 +86,37 @@ library ForceRecoverCollateralImpl {
         );
 
         return heldTokenRecovered;
+    }
+
+    // ============ Internal Helper Functions ============
+
+    function forceRecoverCollateralOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        bytes32 positionId,
+        address collateralRecipient
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            ForceRecoverCollateralDelegator(contractAddr).forceRecoverCollateralOnBehalfOf(
+                who,
+                positionId,
+                collateralRecipient
+            );
+
+        if (newContractAddr != contractAddr) {
+            forceRecoverCollateralOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                positionId,
+                collateralRecipient
+            );
+        }
     }
 }

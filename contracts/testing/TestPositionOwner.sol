@@ -56,10 +56,15 @@ contract TestPositionOwner is
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
         valueAdded[positionId][from] = valueAdded[positionId][from].add(amount);
-        return TO_RETURN_ON_ADD;
+
+        if (TO_RETURN_ON_ADD) {
+            return address(this);
+        }
+
+        revert();
     }
 
     function closeOnBehalfOf(
@@ -70,8 +75,8 @@ contract TestPositionOwner is
     )
         external
         onlyMargin
-        returns (uint256)
+        returns (address, uint256)
     {
-        return requestedAmount;
+        return (address(this), requestedAmount);
     }
 }

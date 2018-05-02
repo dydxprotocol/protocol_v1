@@ -231,19 +231,19 @@ contract ERC721MarginLoan is
      *  param  from            Address that added the value to the position
      *  param  positionId      Unique ID of the position
      *  param  principalAdded  Principal amount added to position
-     * @return                 False
+     * @return                 This address to accept, a different address to ask that contract
      */
     function marginLoanIncreased(
-        address, /* from */
-        bytes32, /* positionId */
+        address from,
+        bytes32 positionId,
         uint256  /* principalAdded */
     )
         external
         /* pure */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        return false;
+        return ownerOf(uint256(positionId));
     }
 
     /**
@@ -252,8 +252,7 @@ contract ERC721MarginLoan is
      * @param  who            Address attempting to initiate the loan call
      * @param  positionId     Unique ID of the position
      *  param  depositAmount  (unused)
-     * @return                True to consent to the loan being called if the initiator is a trusted
-     *                        loan caller or the owner of the loan
+     * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
         address who,
@@ -263,10 +262,15 @@ contract ERC721MarginLoan is
         external
         /* view */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
         address owner = ownerOf(uint256(positionId));
-        return (who == owner) || approvedCallers[owner][who];
+
+        if (approvedCallers[owner][who]) {
+            return address(this);
+        }
+
+        return owner;
     }
 
     /**
@@ -274,8 +278,7 @@ contract ERC721MarginLoan is
      *
      * @param  who         Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
-     * @return             True to consent to the loan call being canceled if the initiator is a
-     *                     trusted loan caller or the owner of the loan
+     * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
         address who,
@@ -284,10 +287,15 @@ contract ERC721MarginLoan is
         external
         /* view */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
         address owner = ownerOf(uint256(positionId));
-        return (who == owner) || approvedCallers[owner][who];
+
+        if (approvedCallers[owner][who]) {
+            return address(this);
+        }
+
+        return owner;
     }
 
     /**
@@ -297,7 +305,7 @@ contract ERC721MarginLoan is
      *  param  (unused)
      * @param  positionId           Unique ID of the position
      * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      True if forceRecoverCollateral() is permitted
+     * @return                      This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
         address /* who */,
@@ -307,9 +315,9 @@ contract ERC721MarginLoan is
         external
         /* view */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        return ownerOf(uint256(positionId)) == collateralRecipient;
+        return ownerOf(uint256(positionId));
     }
 
     // ============ Helper Functions ============

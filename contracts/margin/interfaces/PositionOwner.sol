@@ -44,8 +44,7 @@ contract PositionOwner {
      * @param  from            Address initiating the addition of funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount of principal to be added to the position
-     * @return                 True if the contract consents to additional value being added,
-     *                         false otherwise
+     * @return                 This address to accept, a different address to ask that contract
      */
     function marginPositionIncreased(
         address from,
@@ -54,5 +53,5 @@ contract PositionOwner {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

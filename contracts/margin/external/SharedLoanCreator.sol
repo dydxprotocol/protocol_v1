@@ -86,9 +86,9 @@ contract SharedLoanCreator is
     )
         external
         onlyMargin
-        returns (bool)
+        returns (address)
     {
         // This should never happen
-        assert(false);
+        revert();
     }
 }

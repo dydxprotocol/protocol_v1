@@ -41,10 +41,15 @@ contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
         uint256 amount = (IS_DEGENERATE ? requestedAmount + 1 : requestedAmount);
-        return who == CLOSER ? amount : 0;
+
+        if (who == CLOSER) {
+            return (address(this), amount);
+        }
+
+        revert();
     }
 
     function marginPositionIncreased(
@@ -54,8 +59,8 @@ contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
-        return false;
+        revert();
     }
 }

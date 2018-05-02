@@ -51,9 +51,14 @@ contract TestLoanOwner is OnlyMargin, LoanOwner {
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
         valueAdded[positionId][from] = valueAdded[positionId][from].add(principalAdded);
-        return TO_RETURN_ON_ADD;
+        
+        if (TO_RETURN_ON_ADD) {
+            return address(this);
+        }
+
+        revert();
     }
 }

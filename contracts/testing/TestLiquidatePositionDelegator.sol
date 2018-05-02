@@ -38,9 +38,13 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
-        return who == CLOSER ? requestedAmount : 0;
+        if (who == CLOSER) {
+            return (address(this), requestedAmount);
+        }
+
+        revert();
     }
 
     function marginLoanIncreased(
@@ -50,8 +54,8 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
-        return false;
+        revert();
     }
 }

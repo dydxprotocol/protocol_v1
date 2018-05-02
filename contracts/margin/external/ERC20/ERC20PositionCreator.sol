@@ -80,10 +80,10 @@ contract ERC20PositionCreator is
     )
         external
         onlyMargin
-        returns (bool)
+        returns (address)
     {
         // This should never happen
-        assert(false);
+        revert();
     }
 
     // ============ Internal Abstract Functions ============

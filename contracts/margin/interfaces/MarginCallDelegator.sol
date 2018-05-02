@@ -27,7 +27,7 @@ contract MarginCallDelegator is LoanOwner {
      * @param  who            Address of the caller of the marginCall function
      * @param  positionId     Unique ID of the position
      * @param  depositAmount  Amount of heldToken deposit that will be required to cancel the call
-     * @return                True if "who" is allowed to margin-call the position, false otherwise
+     * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
         address who,
@@ -36,7 +36,7 @@ contract MarginCallDelegator is LoanOwner {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 
     /**
      * Function a contract must implement in order to let other addresses call cancelMarginCall().
@@ -46,7 +46,7 @@ contract MarginCallDelegator is LoanOwner {
      *
      * @param  who         Address of the caller of the cancelMarginCall function
      * @param  positionId  Unique ID of the position
-     * @return             True if "who" is allowed to cancel the margin-call, false otherwise
+     * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
         address who,
@@ -54,5 +54,5 @@ contract MarginCallDelegator is LoanOwner {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

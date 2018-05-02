@@ -226,29 +226,27 @@ library ClosePositionShared {
     {
         uint256 newAmount = Math.min256(requestedAmount, position.principal);
 
-        // If not the owner, requires owner to approve msg.sender
-        if (position.owner != msg.sender) {
-            uint256 allowedCloseAmount =
-                ClosePositionDelegator(position.owner).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    positionId,
-                    newAmount
-                );
-            require(allowedCloseAmount <= newAmount);
-            newAmount = allowedCloseAmount;
-        }
+        // Ensure owner consent
+        uint256 allowedCloseAmount = closeOnBehalfOfRecurse(
+            position.owner,
+            msg.sender,
+            payoutRecipient,
+            positionId,
+            newAmount
+        );
+        assert(allowedCloseAmount <= newAmount);
+        newAmount = allowedCloseAmount;
 
-        // If not the lender, requires lender to approve msg.sender
-        if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLiquidationAmount =
-                LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    positionId,
-                    newAmount
-                );
-            require(allowedLiquidationAmount <= newAmount);
+        // Ensure lender consent
+        if (requireLenderApproval) {
+            uint256 allowedLiquidationAmount = liquidatePositionOnBehalfOfRecurse(
+                position.lender,
+                msg.sender,
+                payoutRecipient,
+                positionId,
+                newAmount
+            );
+            assert(allowedLiquidationAmount <= newAmount);
             newAmount = allowedLiquidationAmount;
         }
 
@@ -256,5 +254,84 @@ library ClosePositionShared {
         assert(newAmount <= position.principal);
         assert(newAmount <= requestedAmount);
         return newAmount;
+    }
+
+    function closeOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        address payoutRecipient,
+        bytes32 positionId,
+        uint256 closeAmount
+    )
+        internal
+        returns (uint256)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return closeAmount;
+        }
+
+        address newContractAddr;
+        uint256 newCloseAmount;
+        (newContractAddr, newCloseAmount) = ClosePositionDelegator(contractAddr).closeOnBehalfOf(
+            who,
+            payoutRecipient,
+            positionId,
+            closeAmount
+        );
+
+        require(newCloseAmount <= closeAmount);
+
+        if (newContractAddr != contractAddr) {
+            closeOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                payoutRecipient,
+                positionId,
+                newCloseAmount
+            );
+        }
+
+        return newCloseAmount;
+    }
+
+    function liquidatePositionOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        address payoutRecipient,
+        bytes32 positionId,
+        uint256 liquidateAmount
+    )
+        internal
+        returns (uint256)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return liquidateAmount;
+        }
+
+        address newContractAddr;
+        uint256 newLiquidateAmount;
+        (newContractAddr, newLiquidateAmount) =
+            LiquidatePositionDelegator(contractAddr).liquidateOnBehalfOf(
+                who,
+                payoutRecipient,
+                positionId,
+                liquidateAmount
+            );
+
+        require(newLiquidateAmount <= liquidateAmount);
+
+        if (newContractAddr != contractAddr) {
+            liquidatePositionOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                payoutRecipient,
+                positionId,
+                newLiquidateAmount
+            );
+        }
+
+        return newLiquidateAmount;
     }
 }

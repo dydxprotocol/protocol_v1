@@ -21,15 +21,18 @@ contract LiquidatePositionDelegator is LoanOwner {
     /**
      * Function a contract must implement in order to let other addresses call liquidate().
      *
-     * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
-     * entire transaction or that the specified amount of the position was successfully closed.
+     * NOTE: If returning a non-zero uint256, this contract must assume that Margin will either
+     * revert the entire transaction or that the specified amount of the position was successfully
+     * liquidated.
      *
      * @param  liquidator       Address of the caller of the liquidatePosition() function
      * @param  payoutRecipient  Address of the recipient of tokens paid out from liquidation
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Requested principal amount of the loan to liquidate
-     * @return                  The amount the user is allowed to liquidate for the specified loan.
-     *                          Must be a positive integer less than requestedAmount to not throw.
+     * @return                  Values corresponding to:
+     *                          [address] = This address to accept, a different address to ask that
+     *                                      contract.
+     *                          [uint256] = The maximum amount that this contract is allowing.
      */
     function liquidateOnBehalfOf(
         address liquidator,
@@ -39,5 +42,5 @@ contract LiquidatePositionDelegator is LoanOwner {
     )
         external
         /* onlyMargin */
-        returns (uint256);
+        returns (address, uint256);
 }

@@ -21,9 +21,13 @@ contract TestSmartContractLender is LoanOfferingVerifier {
         bytes32
     )
         external
-        returns (bool)
+        returns (address)
     {
-        return SHOULD_ALLOW;
+        if (SHOULD_ALLOW) {
+            return address(this);
+        }
+
+        revert();
     }
 
     function allow(
