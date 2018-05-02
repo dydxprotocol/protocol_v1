@@ -81,12 +81,6 @@ contract MarginAdmin is Ownable {
     }
 
     modifier closePositionDirectlyStateControl() {
-        require(
-            operationState == OperationState.OPERATIONAL
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
-            || operationState == OperationState.CLOSE_ONLY
-            || operationState == OperationState.CLOSE_DIRECTLY_ONLY
-        );
         _;
     }
 

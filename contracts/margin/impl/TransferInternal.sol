@@ -67,7 +67,8 @@ library TransferInternal {
             }
         }
 
-        require (newOwner != address(0));
+        require(newOwner != address(0));
+
         return newOwner;
     }
 
@@ -102,7 +103,8 @@ library TransferInternal {
             }
         }
 
-        require (newOwner != address(0));
+        require(newOwner != address(0));
+
         return newOwner;
     }
 }

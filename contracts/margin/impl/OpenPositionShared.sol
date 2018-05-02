@@ -124,16 +124,13 @@ library OpenPositionShared {
             uint256(uint32(block.timestamp)) == block.timestamp
         );
 
-        // Disallow zero address owners
-        require(transaction.owner != address(0));
-        require(transaction.loanOffering.owner != address(0));
-
         // The interest rounding period cannot be longer than max duration
         require(
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration
         );
 
         // The minimum heldToken is validated after executing the sell
+        // Position and loan ownership is validated in TransferInternal
     }
 
     function isValidSignature(
