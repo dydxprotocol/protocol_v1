@@ -130,6 +130,7 @@ library OpenPositionShared {
         );
 
         // The minimum heldToken is validated after executing the sell
+        // Position and loan ownership is validated in TransferInternal
     }
 
     function isValidSignature(
