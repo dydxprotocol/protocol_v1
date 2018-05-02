@@ -361,6 +361,11 @@ contract('PositionGetters', (accounts) => {
       await wait(oneDay);
       const t5 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
       expectWithinError(t5, t4, standardTimeError);
+
+      // test after maxDuration has passed
+      await wait(openTx.loanOffering.maxDuration);
+      const t6 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
+      expect(t6).to.be.bignumber.equal(0);
     });
 
     it('check values for owedAmount', async () => {
