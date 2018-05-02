@@ -17,7 +17,6 @@ import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
  * new SharedLoan, with the initial allocation going to the address that transferred the
  * loan originally to the SharedLoanCreator.
  */
-/* solium-disable-next-line */
 contract SharedLoanCreator is
     ReentrancyGuard,
     NoOwner,

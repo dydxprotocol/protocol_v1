@@ -6,6 +6,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { Margin } from "../../Margin.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
+/* solium-disable-next-line max-len*/
 import { ForceRecoverCollateralDelegator } from "../../interfaces/ForceRecoverCollateralDelegator.sol";
 import { LoanOwner } from "../../interfaces/LoanOwner.sol";
 import { MarginCallDelegator } from "../../interfaces/MarginCallDelegator.sol";
@@ -21,7 +22,6 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
  * is added to let users approve other addresses margin-call positions for them. Allows any position
  * to be force-recovered by anyone as long as the payout goes to the owner of the token.
  */
- /* solium-disable-next-line */
 contract ERC721MarginLoan is
     ReentrancyGuard,
     ERC721Token,

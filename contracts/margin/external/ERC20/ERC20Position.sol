@@ -22,7 +22,6 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  *
  * Shared code for ERC20Short and ERC20Long
  */
- /* solium-disable-next-line */
 contract ERC20Position is
     ReentrancyGuard,
     StandardToken,

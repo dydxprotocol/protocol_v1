@@ -21,7 +21,6 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
  * position, and will all be paid out proportional to ownership when the loan is repaid. Ownership
  * is non-transferrable
  */
-/* solium-disable-next-line */
 contract SharedLoan is
     ReentrancyGuard,
     OnlyMargin,
