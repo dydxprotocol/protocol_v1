@@ -14,6 +14,9 @@ import { MathHelpers } from "../../../lib/MathHelpers.sol";
  * Contract used to tokenize leveraged long positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the position, or be
  * entitled to some amount of heldTokens after settlement.
+ *
+ * The total supply of leveraged long tokens is always exactly equal to the number of heldTokens
+ * held in collateral in the backing position
  */
 contract ERC20Long is ERC20Position {
     constructor(
@@ -58,6 +61,14 @@ contract ERC20Long is ERC20Position {
         return positionBalance.sub(totalSupply_);
     }
 
+    /**
+     * The amount of long tokens burned on a close is always exactly equal to the amount of
+     * heldTokens used for the close in the backing position
+     *
+     * NOTE: It's possible that it is impossible for a token holder to close his entire token
+     *       balance. If the principal of the backing position is less than the supply of long
+     *       tokens it is not possible to express every token amount in a principal amount.
+     */
     function getCloseAmounts(
         uint256 requestedCloseAmount,
         uint256 balance,
@@ -66,8 +77,8 @@ contract ERC20Long is ERC20Position {
         internal
         view
         returns (
-            uint256,
-            uint256
+            uint256 /* tokenAmount */,
+            uint256 /* allowedCloseAmount */
         )
     {
         uint256 requestedTokenAmount = MathHelpers.getPartialAmount(
@@ -80,19 +91,21 @@ contract ERC20Long is ERC20Position {
             return (requestedTokenAmount, requestedCloseAmount);
         }
 
-        uint256 maxAllowedAmount = MathHelpers.getPartialAmount(
+        // The maximum amount of principal able to be closed without using more heldTokens
+        // than balance
+        uint256 maxAllowedCloseAmount = MathHelpers.getPartialAmount(
             balance,
             totalSupply_,
             positionPrincipal
         );
 
         uint256 tokenAmount = MathHelpers.getPartialAmount(
-            maxAllowedAmount,
+            maxAllowedCloseAmount,
             positionPrincipal,
             totalSupply_
         );
 
-        return (tokenAmount, maxAllowedAmount);
+        return (tokenAmount, maxAllowedCloseAmount);
     }
 
     function getNameIntro()

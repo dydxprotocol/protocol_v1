@@ -14,6 +14,9 @@ import { Margin } from "../../Margin.sol";
  * Contract used to tokenize short positions and allow them to be used as ERC20-compliant
  * tokens. Holding the tokens allows the holder to close a piece of the short position, or be
  * entitled to some amount of heldTokens after settlement.
+ *
+ * The total supply of short tokens is always exactly equal to the amount of principal in
+ * the backing position
  */
 contract ERC20Short is ERC20Position {
     constructor(
@@ -66,8 +69,8 @@ contract ERC20Short is ERC20Position {
         internal
         view
         returns (
-            uint256,
-            uint256
+            uint256 /* tokenAmount */,
+            uint256 /* allowedCloseAmount */
         )
     {
         assert(positionPrincipal == totalSupply_);

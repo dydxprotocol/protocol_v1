@@ -436,18 +436,18 @@ contract ERC20Position is
     {
         uint256 balance = balances[closer];
         uint256 tokenAmount;
-        uint256 allowedAmount;
+        uint256 allowedCloseAmount;
 
-        (tokenAmount, allowedAmount) = getCloseAmounts(
+        (tokenAmount, allowedCloseAmount) = getCloseAmounts(
             requestedAmount,
             balance,
             positionPrincipal
         );
 
-        require(tokenAmount > 0 && allowedAmount > 0);
+        require(tokenAmount > 0 && allowedCloseAmount > 0);
 
         assert(tokenAmount <= balance);
-        assert(allowedAmount <= requestedAmount);
+        assert(allowedCloseAmount <= requestedAmount);
 
         balances[closer] = balance.sub(tokenAmount);
         totalSupply_ = totalSupply_.sub(tokenAmount);
@@ -459,7 +459,7 @@ contract ERC20Position is
             emit CompletelyClosed();
         }
 
-        return allowedAmount;
+        return allowedCloseAmount;
     }
 
     // ============ Internal Abstract Functions ============
@@ -481,7 +481,7 @@ contract ERC20Position is
         view
         returns (
             uint256 /* tokenAmount */,
-            uint256 /* allowedAmount */
+            uint256 /* allowedCloseAmount */
         );
 
     function getNameIntro()
