@@ -107,7 +107,7 @@ library OpenPositionShared {
             || state.approvedLoans[transaction.loanOffering.loanHash]
         );
 
-        // Validate the position amount is <= than max and >= min
+        // Validate the amount is <= than max and >= min
         require(
             transaction.principal.add(
                 MarginCommon.getUnavailableLoanOfferingAmountImpl(
@@ -117,7 +117,12 @@ library OpenPositionShared {
             ) <= transaction.loanOffering.rates.maxAmount
         );
         require(transaction.principal >= transaction.loanOffering.rates.minAmount);
+
+        // Validate loan offering is not expired
         require(transaction.loanOffering.expirationTimestamp > block.timestamp);
+
+        // Disallow loan offerings with 0 maxDuration
+        require(transaction.loanOffering.maxDuration > 0);
 
         // Check no casting errors
         require(

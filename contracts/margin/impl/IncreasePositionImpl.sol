@@ -108,6 +108,12 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
+        // Disallow adding 0 principal
+        require(principalToAdd > 0);
+
+        // Disallow additions after maximum duration
+        require(block.timestamp < uint256(position.startTimestamp).add(position.maxDuration));
+
         uint256 heldTokenAmount = getPositionMinimumHeldToken(
             positionId,
             state,

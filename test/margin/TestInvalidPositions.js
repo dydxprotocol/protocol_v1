@@ -139,6 +139,19 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
+      it('fails if the loan offer has 0 maxDuration', async () => {
+        const OpenTx = await createOpenTx(accounts);
+
+        await issueTokensAndSetAllowances(OpenTx);
+        OpenTx.loanOffering.maxDuration = 0;
+        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+        const dydxMargin = await Margin.deployed();
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+      });
+    });
+
+    contract('Margin', accounts => {
       async function getLoanFill(dydxMargin, openTx) {
         const result = await dydxMargin.getLoanFilledAmount.call(openTx.loanOffering.loanHash);
         return result;

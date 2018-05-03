@@ -220,6 +220,34 @@ describe('#increasePosition', () => {
     });
   });
 
+  contract('Margin', function(accounts) {
+    it('does not allow a loan offering with smaller callTimeLimit to be used', async () => {
+      const {
+        increasePosTx,
+        dydxMargin,
+      } = await setup(accounts);
+
+      increasePosTx.loanOffering.callTimeLimit = increasePosTx.loanOffering.callTimeLimit - 1;
+      increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
+
+      await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
+    });
+  });
+
+  contract('Margin', function(accounts) {
+    it('does not allow additions after maximum duration', async () => {
+      const {
+        OpenTx,
+        increasePosTx,
+        dydxMargin,
+      } = await setup(accounts);
+
+      await wait(OpenTx.loanOffering.maxDuration + 1);
+
+      await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
+    });
+  });
+
   async function getBalances(tx, owedToken, heldToken, feeToken, dydxMargin) {
     const [
       traderOwedToken,
@@ -469,51 +497,16 @@ describe('#increasePosition', () => {
 describe('#increasePositionDirectly', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
-      const [
-        OpenTx,
+      const {
         dydxMargin,
+        OpenTx,
+        addAmount,
+        adder,
+        startingBalance,
         heldToken,
         testPositionOwner,
         testLoanOwner
-      ] = await Promise.all([
-        createOpenTx(accounts),
-        Margin.deployed(),
-        HeldToken.deployed(),
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
-        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
-      ]);
-
-      OpenTx.owner = testPositionOwner.address;
-      OpenTx.loanOffering.owner = testLoanOwner.address;
-      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
-
-      await issueTokensAndSetAllowances(OpenTx);
-      const response = await callOpenPosition(dydxMargin, OpenTx);
-      OpenTx.id = response.id;
-
-      const [ownsPosition, ownsLoan, startingBalance] = await Promise.all([
-        testPositionOwner.hasReceived.call(OpenTx.id, OpenTx.trader),
-        testLoanOwner.hasReceived.call(OpenTx.id, OpenTx.loanOffering.payer),
-        dydxMargin.getPositionBalance.call(OpenTx.id),
-      ]);
-
-      expect(ownsPosition).to.be.true;
-      expect(ownsLoan).to.be.true;
-
-      const addAmount = OpenTx.principal.div(2);
-      const adder = accounts[8];
-      const heldTokenAmount = getPartialAmount(
-        addAmount,
-        OpenTx.principal,
-        startingBalance,
-        true
-      );
-
-      await issueTokenToAccountInAmountAndApproveProxy(
-        heldToken,
-        adder,
-        heldTokenAmount
-      );
+      } = await setup(accounts);
 
       const tx = await dydxMargin.increasePositionDirectly(
         OpenTx.id,
@@ -551,4 +544,98 @@ describe('#increasePositionDirectly', () => {
       expect(adderLoanValueAdded).to.be.bignumber.eq(addAmount);
     });
   });
+
+  contract('Margin', function(accounts) {
+    it('disallows increasing by 0', async () => {
+      const {
+        dydxMargin,
+        OpenTx,
+        adder
+      } = await setup(accounts);
+
+      await expectThrow(dydxMargin.increasePositionDirectly(
+        OpenTx.id,
+        0,
+        { from: adder }
+      ));
+    });
+  });
+
+  contract('Margin', function(accounts) {
+    it('does not allow increasing after maximum duration', async () => {
+      const {
+        dydxMargin,
+        OpenTx,
+        adder,
+        addAmount
+      } = await setup(accounts);
+
+      await wait(OpenTx.loanOffering.maxDuration + 1);
+
+      await expectThrow(dydxMargin.increasePositionDirectly(
+        OpenTx.id,
+        addAmount,
+        { from: adder }
+      ));
+    });
+  });
+
+  async function setup(accounts) {
+    const [
+      OpenTx,
+      dydxMargin,
+      heldToken,
+      testPositionOwner,
+      testLoanOwner
+    ] = await Promise.all([
+      createOpenTx(accounts),
+      Margin.deployed(),
+      HeldToken.deployed(),
+      TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+      TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
+    ]);
+
+    OpenTx.owner = testPositionOwner.address;
+    OpenTx.loanOffering.owner = testLoanOwner.address;
+    OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+    await issueTokensAndSetAllowances(OpenTx);
+    const response = await callOpenPosition(dydxMargin, OpenTx);
+    OpenTx.id = response.id;
+
+    const [ownsPosition, ownsLoan, startingBalance] = await Promise.all([
+      testPositionOwner.hasReceived.call(OpenTx.id, OpenTx.trader),
+      testLoanOwner.hasReceived.call(OpenTx.id, OpenTx.loanOffering.payer),
+      dydxMargin.getPositionBalance.call(OpenTx.id),
+    ]);
+
+    expect(ownsPosition).to.be.true;
+    expect(ownsLoan).to.be.true;
+
+    const addAmount = OpenTx.principal.div(2);
+    const adder = accounts[8];
+    const heldTokenAmount = getPartialAmount(
+      addAmount,
+      OpenTx.principal,
+      startingBalance,
+      true
+    );
+
+    await issueTokenToAccountInAmountAndApproveProxy(
+      heldToken,
+      adder,
+      heldTokenAmount
+    );
+
+    return {
+      dydxMargin,
+      OpenTx,
+      addAmount,
+      adder,
+      startingBalance,
+      heldToken,
+      testPositionOwner,
+      testLoanOwner
+    };
+  }
 });
