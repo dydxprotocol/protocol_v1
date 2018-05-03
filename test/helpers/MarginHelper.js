@@ -22,6 +22,7 @@ const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
+const { issueAndSetAllowance } = require('./TokenHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -350,65 +351,61 @@ async function issueTokensAndSetAllowances(tx) {
   const depositToken = tx.depositInHeldToken ? heldToken : owedToken;
 
   await Promise.all([
-    owedToken.issueTo(
+    // Loan Payer Owed Token
+    issueAndSetAllowance(
+      owedToken,
       tx.loanOffering.payer,
-      tx.loanOffering.rates.maxAmount
-    ),
-    depositToken.issueTo(
-      tx.trader,
-      tx.depositAmount
-    ),
-    heldToken.issueTo(
-      tx.buyOrder.maker,
-      tx.buyOrder.makerTokenAmount
-    ),
-    feeToken.issueTo(
-      tx.buyOrder.maker,
-      tx.buyOrder.makerFee
-    ),
-    feeToken.issueTo(
-      tx.loanOffering.payer,
-      tx.loanOffering.rates.lenderFee
-    ),
-    feeToken.issueTo(
-      tx.trader,
-      tx.loanOffering.rates.takerFee.plus(tx.buyOrder.takerFee)
-    ),
-    owedToken.approve(
-      ProxyContract.address,
       tx.loanOffering.rates.maxAmount,
-      { from: tx.loanOffering.payer }
+      ProxyContract.address
     ),
-    depositToken.approve(
-      ProxyContract.address,
+
+    // Trader Deposit
+    issueAndSetAllowance(
+      depositToken,
+      tx.trader,
       tx.depositAmount,
-      { from: tx.trader }
+      ProxyContract.address
     ),
-    heldToken.approve(
-      ZeroExProxy.address,
+
+    // Buy Order Maker Held Token
+    issueAndSetAllowance(
+      heldToken,
+      tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount,
-      { from: tx.buyOrder.maker }
+      ZeroExProxy.address
     ),
-    feeToken.approve(
-      ZeroExProxy.address,
+
+    // Buy Order Maker Fee
+    issueAndSetAllowance(
+      feeToken,
+      tx.buyOrder.maker,
       tx.buyOrder.makerFee,
-      { from: tx.buyOrder.maker }
+      ZeroExProxy.address
     ),
-    feeToken.approve(
-      ProxyContract.address,
+
+    // Loan Payer Fee
+    issueAndSetAllowance(
+      feeToken,
+      tx.loanOffering.payer,
       tx.loanOffering.rates.lenderFee,
-      { from: tx.loanOffering.payer }
+      ProxyContract.address
     ),
-    feeToken.approve(
-      ProxyContract.address,
+
+    // Trader Loan Fee
+    issueAndSetAllowance(
+      feeToken,
+      tx.trader,
       tx.loanOffering.rates.takerFee,
-      { from: tx.trader }
+      ProxyContract.address
     ),
-    feeToken.approve(
-      ZeroExExchangeWrapper.address,
+
+    // Trader Buy Order Fee
+    issueAndSetAllowance(
+      feeToken,
+      tx.trader,
       tx.buyOrder.takerFee,
-      { from: tx.trader }
-    )
+      ZeroExExchangeWrapper.address
+    ),
   ]);
 }
 
@@ -796,32 +793,28 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
   ]);
 
   await Promise.all([
-    owedToken.issueTo(
+    // Sell Order Owed Token
+    issueAndSetAllowance(
+      owedToken,
       sellOrder.maker,
-      sellOrder.makerTokenAmount
-    ),
-    feeToken.issueTo(
-      OpenTx.trader,
-      sellOrder.takerFee
-    ),
-    feeToken.issueTo(
-      sellOrder.maker,
-      sellOrder.makerFee
-    ),
-    owedToken.approve(
-      ZeroExProxy.address,
       sellOrder.makerTokenAmount,
-      { from: sellOrder.maker }
+      ZeroExProxy.address
     ),
-    feeToken.approve(
-      ZeroExProxy.address,
-      sellOrder.makerFee,
-      { from: sellOrder.maker }
-    ),
-    feeToken.approve(
-      ZeroExExchangeWrapper.address,
+
+    // Trader Sell Order Taker Fee
+    issueAndSetAllowance(
+      feeToken,
+      OpenTx.trader,
       sellOrder.takerFee,
-      { from: OpenTx.trader }
+      ZeroExExchangeWrapper.address
+    ),
+
+    // Sell Order Maker Fee
+    issueAndSetAllowance(
+      feeToken,
+      sellOrder.maker,
+      sellOrder.makerFee,
+      ZeroExProxy.address
     )
   ]);
 }
@@ -894,17 +887,12 @@ async function issueForDirectClose(OpenTx) {
   const maxInterestFee = await getMaxInterestFee(OpenTx);
   const maxOwedTokenOwed = OpenTx.principal.plus(maxInterestFee);
 
-  await Promise.all([
-    owedToken.issueTo(
-      OpenTx.trader,
-      maxOwedTokenOwed
-    ),
-    owedToken.approve(
-      ProxyContract.address,
-      maxOwedTokenOwed,
-      { from: OpenTx.trader }
-    )
-  ]);
+  await issueAndSetAllowance(
+    owedToken,
+    OpenTx.trader,
+    maxOwedTokenOwed,
+    ProxyContract.address
+  );
 }
 
 async function getMaxInterestFee(OpenTx) {
@@ -962,10 +950,12 @@ function getTokenAmountsFromOpen(openTx) {
 }
 
 async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount) {
-  await Promise.all([
-    token.issueTo(account, amount),
-    token.approve(ProxyContract.address, amount, { from: account })
-  ]);
+  await issueAndSetAllowance(
+    token,
+    account,
+    amount,
+    ProxyContract.address
+  );
 }
 
 module.exports = {

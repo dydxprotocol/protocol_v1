@@ -20,6 +20,7 @@ const {
   getMaxInterestFee,
   callClosePositionDirectly
 } = require('../../helpers/MarginHelper');
+const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 
 contract('ERC721MarginPosition', function(accounts) {
   let dydxMargin, erc721Contract, owedToken;
@@ -198,8 +199,12 @@ contract('ERC721MarginPosition', function(accounts) {
     async function initOwedToken(account) {
       const maxInterest = await getMaxInterestFee(OpenTx);
       const amount = OpenTx.principal.plus(maxInterest);
-      await owedToken.issueTo(account, amount);
-      await owedToken.approve(ProxyContract.address, amount, { from: account });
+      await issueAndSetAllowance(
+        owedToken,
+        account,
+        amount,
+        ProxyContract.address
+      );
     }
 
     beforeEach('sets up position', async () => {
