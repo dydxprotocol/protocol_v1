@@ -240,7 +240,7 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails if interest period id over maximum duration', async () => {
+      it('fails if interest period is over maximum duration', async () => {
         const OpenTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(OpenTx);
