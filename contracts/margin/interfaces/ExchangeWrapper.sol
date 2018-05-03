@@ -19,6 +19,8 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
+import { OnlyMargin } from "./OnlyMargin.sol";
+
 
 /**
  * @title ExchangeWrapper
@@ -30,7 +32,19 @@ pragma experimental "v0.5.0";
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract ExchangeWrapper {
+contract ExchangeWrapper is OnlyMargin {
+
+    constructor(
+        address margin,
+        address dydxProxy
+    )
+        public
+        OnlyMargin(margin)
+    {
+        DYDX_PROXY = dydxProxy;
+    }
+
+    address public DYDX_PROXY;
 
     /**
      * Exchange some amount of takerToken for makerToken.

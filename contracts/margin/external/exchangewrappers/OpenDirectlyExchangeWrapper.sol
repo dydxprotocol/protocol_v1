@@ -6,7 +6,6 @@ import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContr
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
-import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 
 
 /**
@@ -19,37 +18,27 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 contract OpenDirectlyExchangeWrapper is
     HasNoEther,
     HasNoContracts,
-    OnlyMargin,
     ExchangeWrapper
 {
     using SafeMath for uint256;
-
-    struct StartingBalances {
-        uint256 takerTokenBalance;
-        uint256 makerTokenBalance;
-        uint256 takerFeeTokenBalance;
-    }
-
-    address public DYDX_PROXY;
 
     constructor(
         address margin,
         address dydxProxy
     )
         public
-        OnlyMargin(margin)
+        ExchangeWrapper(margin, dydxProxy)
     {
-        DYDX_PROXY = dydxProxy;
     }
 
     // ============ Margin-Only Functions ============
 
     function exchange(
-        address makerToken,
+        address, /* makerToken */
         address takerToken,
         address tradeOriginator,
         uint256 requestedFillAmount,
-        bytes orderData
+        bytes /* orderData */
     )
         external
         onlyMargin
@@ -67,14 +56,18 @@ contract OpenDirectlyExchangeWrapper is
         address, /* makerToken */
         address, /* takerToken */
         address, /* tradeOriginator */
-        uint256, /* desiredMakerToken */
+        uint256 desiredMakerToken,
         bytes /* orderData */
     )
         external
         onlyMargin
         returns (uint256)
     {
-        revert();
+        if (desiredMakerToken != 0) {
+            revert();
+        }
+
+        return 0;
     }
 
     // ============ Public Constant Functions ============
@@ -95,13 +88,17 @@ contract OpenDirectlyExchangeWrapper is
     function getTakerTokenPrice(
         address, /* makerToken */
         address, /* takerToken */
-        uint256, /* desiredMakerToken */
+        uint256 desiredMakerToken,
         bytes /* orderData */
     )
         external
         view
         returns (uint256)
     {
-        revert();
+        if (desiredMakerToken != 0) {
+            revert();
+        }
+
+        return 0;
     }
 }
