@@ -127,9 +127,9 @@ contract SharedLoan is
      * This function initializes this contract and returns this address to indicate to Margin
      * that it is willing to take ownership of the loan.
      *
-     *  param  (unused)
+     *  param  from        (unused)
      * @param  positionId  Unique ID of the position
-     * @return            This address on success, throw otherwise
+     * @return             This address on success, throw otherwise
      */
     function receiveLoanOwnership(
         address /* from */,
@@ -168,13 +168,13 @@ contract SharedLoan is
      * Called by Margin when additional value is added onto the position this contract
      * is lending for. Balance is added to the address that loaned the additional tokens.
      *
-     * @param  from            Address that loaned the additional tokens
+     * @param  payer           Address that loaned the additional tokens
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
      * @return                 This address to accept, a different address to ask that contract
      */
     function marginLoanIncreased(
-        address from,
+        address payer,
         bytes32 positionId,
         uint256 principalAdded
     )
@@ -186,11 +186,11 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        balances[from] = balances[from].add(principalAdded);
+        balances[payer] = balances[payer].add(principalAdded);
         totalPrincipal = totalPrincipal.add(principalAdded);
 
         emit BalanceAdded(
-            from,
+            payer,
             principalAdded
         );
 
@@ -200,13 +200,13 @@ contract SharedLoan is
     /**
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
-     * @param  who         Address attempting to initiate the loan call
-     * @param  positionId  Unique ID of the position
-     *  param  (unused)
-     * @return             This address to accept, a different address to ask that contract
+     * @param  caller         Address attempting to initiate the loan call
+     * @param  positionId     Unique ID of the position
+     *  param  depositAmount  (unused)
+     * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
-        address who,
+        address caller,
         bytes32 positionId,
         uint256 /* depositAmount */
     )
@@ -218,23 +218,21 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        if (TRUSTED_MARGIN_CALLERS[who]) {
-            return address(this);
-        }
+        require(TRUSTED_MARGIN_CALLERS[caller]);
 
-        revert();
+        return address(this);
     }
 
     /**
      * Called by Margin when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
-     * @param  who         Address attempting to initiate the loan call cancel
+     * @param  canceler    Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
      * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
-        address who,
+        address canceler,
         bytes32 positionId
     )
         external
@@ -245,11 +243,9 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        if (TRUSTED_MARGIN_CALLERS[who]) {
-            return address(this);
-        }
+        require(TRUSTED_MARGIN_CALLERS[canceler]);
 
-        revert();
+        return address(this);
     }
 
     /**
@@ -257,15 +253,15 @@ contract SharedLoan is
      * this contract owns. This contract will receive funds on a force recover. This contract
      * always consents to anyone initiating a force recover
      *
-     *  param  (unused)
-     * @param  positionId           Unique ID of the position
-     * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      This address to accept, a different address to ask that contract
+     *  param  recoverer   (unused)
+     * @param  positionId  Unique ID of the position
+     * @param  recipient   Address to send the recovered tokens to
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address /* who */,
+        address /* recoverer */,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         external
         onlyMargin
@@ -275,7 +271,7 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        require(collateralRecipient == address(this));
+        require(recipient == address(this));
 
         state = State.CLOSED;
 

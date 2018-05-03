@@ -42,11 +42,9 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
         external
         returns (address)
     {
-        if (who == CALLER) {
-            return address(this);
-        }
+        require(who == CALLER);
 
-        revert();
+        return address(this);
     }
 
     function cancelMarginCallOnBehalfOf(
@@ -57,11 +55,9 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
         external
         returns (address)
     {
-        if (who == CANCELLER) {
-            return address(this);
-        }
+        require(who == CANCELLER);
 
-        revert();
+        return address(this);
     }
 
     function marginLoanIncreased(
@@ -73,6 +69,6 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
         external
         returns (address)
     {
-        revert();
+        require(false);
     }
 }

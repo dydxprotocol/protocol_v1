@@ -234,7 +234,6 @@ library ClosePositionShared {
             positionId,
             newAmount
         );
-        assert(allowedCloseAmount <= newAmount);
         newAmount = allowedCloseAmount;
 
         // Ensure lender consent
@@ -246,19 +245,19 @@ library ClosePositionShared {
                 positionId,
                 newAmount
             );
-            assert(allowedLiquidationAmount <= newAmount);
             newAmount = allowedLiquidationAmount;
         }
 
-        require(newAmount > 0);
+        assert(newAmount > 0);
         assert(newAmount <= position.principal);
         assert(newAmount <= requestedAmount);
+
         return newAmount;
     }
 
     function closeOnBehalfOfRecurse(
         address contractAddr,
-        address who,
+        address closer,
         address payoutRecipient,
         bytes32 positionId,
         uint256 closeAmount
@@ -267,25 +266,26 @@ library ClosePositionShared {
         returns (uint256)
     {
         // no need to ask for permission
-        if (who == contractAddr) {
+        if (closer == contractAddr) {
             return closeAmount;
         }
 
         address newContractAddr;
         uint256 newCloseAmount;
         (newContractAddr, newCloseAmount) = ClosePositionDelegator(contractAddr).closeOnBehalfOf(
-            who,
+            closer,
             payoutRecipient,
             positionId,
             closeAmount
         );
 
         require(newCloseAmount <= closeAmount);
+        require(newCloseAmount > 0);
 
         if (newContractAddr != contractAddr) {
             closeOnBehalfOfRecurse(
                 newContractAddr,
-                who,
+                closer,
                 payoutRecipient,
                 positionId,
                 newCloseAmount
@@ -297,7 +297,7 @@ library ClosePositionShared {
 
     function liquidatePositionOnBehalfOfRecurse(
         address contractAddr,
-        address who,
+        address liquidator,
         address payoutRecipient,
         bytes32 positionId,
         uint256 liquidateAmount
@@ -306,7 +306,7 @@ library ClosePositionShared {
         returns (uint256)
     {
         // no need to ask for permission
-        if (who == contractAddr) {
+        if (liquidator == contractAddr) {
             return liquidateAmount;
         }
 
@@ -314,18 +314,19 @@ library ClosePositionShared {
         uint256 newLiquidateAmount;
         (newContractAddr, newLiquidateAmount) =
             LiquidatePositionDelegator(contractAddr).liquidateOnBehalfOf(
-                who,
+                liquidator,
                 payoutRecipient,
                 positionId,
                 liquidateAmount
             );
 
         require(newLiquidateAmount <= liquidateAmount);
+        require(newLiquidateAmount > 0);
 
         if (newContractAddr != contractAddr) {
             liquidatePositionOnBehalfOfRecurse(
                 newContractAddr,
-                who,
+                liquidator,
                 payoutRecipient,
                 positionId,
                 newLiquidateAmount

@@ -89,6 +89,6 @@ contract SharedLoanCreator is
         returns (address)
     {
         // This should never happen
-        revert();
+        assert(false);
     }
 }

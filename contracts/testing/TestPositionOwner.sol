@@ -50,7 +50,7 @@ contract TestPositionOwner is
     }
 
     function marginPositionIncreased(
-        address from,
+        address trader,
         bytes32 positionId,
         uint256 amount
     )
@@ -58,13 +58,11 @@ contract TestPositionOwner is
         external
         returns (address)
     {
-        valueAdded[positionId][from] = valueAdded[positionId][from].add(amount);
+        valueAdded[positionId][trader] = valueAdded[positionId][trader].add(amount);
 
-        if (TO_RETURN_ON_ADD) {
-            return address(this);
-        }
+        require(TO_RETURN_ON_ADD);
 
-        revert();
+        return address(this);
     }
 
     function closeOnBehalfOf(

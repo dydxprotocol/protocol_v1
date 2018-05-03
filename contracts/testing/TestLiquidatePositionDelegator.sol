@@ -31,7 +31,7 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
     }
 
     function liquidateOnBehalfOf(
-        address who,
+        address liquidator,
         address,
         bytes32,
         uint256 requestedAmount
@@ -40,11 +40,9 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
         external
         returns (address, uint256)
     {
-        if (who == CLOSER) {
-            return (address(this), requestedAmount);
-        }
+        require(liquidator == CLOSER);
 
-        revert();
+        return (address(this), requestedAmount);
     }
 
     function marginLoanIncreased(
@@ -56,6 +54,6 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
         external
         returns (address)
     {
-        revert();
+        require(false);
     }
 }

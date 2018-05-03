@@ -226,36 +226,42 @@ contract ERC721MarginLoan is
     }
 
     /**
-     * Called by Margin when additional value is added onto a position. Rejects this addition.
+     * Called by Margin when additional value is added onto a position. Defer approval to
+     * the token holder.
      *
-     *  param  from            Address that added the value to the position
-     *  param  positionId      Unique ID of the position
-     *  param  principalAdded  Principal amount added to position
+     *  param  from            (unused)
+     * @param  positionId      Unique ID of the position
+     *  param  principalAdded  (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
     function marginLoanIncreased(
-        address from,
+        address /* payer */,
         bytes32 positionId,
-        uint256  /* principalAdded */
+        uint256 /* principalAdded */
     )
         external
         /* pure */
         onlyMargin
         returns (address)
     {
-        return ownerOf(uint256(positionId));
+        address owner = ownerOf(uint256(positionId));
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to margin-call a loan
+     * Called by Margin when another address attempts to margin-call a loan. Defer approval to the
+     * token holder.
      *
-     * @param  who            Address attempting to initiate the loan call
+     * @param  caller         Address attempting to initiate the loan call
      * @param  positionId     Unique ID of the position
      *  param  depositAmount  (unused)
      * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
-        address who,
+        address caller,
         bytes32 positionId,
         uint256 /* depositAmount */
     )
@@ -266,22 +272,25 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOf(uint256(positionId));
 
-        if (approvedCallers[owner][who]) {
+        if (approvedCallers[owner][caller]) {
             return address(this);
         }
+
+        require(owner != address(this));
 
         return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to cancel a margin call for a loan
+     * Called by Margin when another address attempts to cancel a margin call for a loan. Defer
+     * approval to the token holder.
      *
-     * @param  who         Address attempting to initiate the loan call cancel
+     * @param  canceler    Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
      * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
-        address who,
+        address canceler,
         bytes32 positionId
     )
         external
@@ -291,33 +300,39 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOf(uint256(positionId));
 
-        if (approvedCallers[owner][who]) {
+        if (approvedCallers[owner][canceler]) {
             return address(this);
         }
+
+        require(owner != address(this));
 
         return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to force recover the loan. Allow anyone to
-     * force recover the loan as long as the payout goes to the token owner.
+     * Called by Margin when another address attempts to force recover the loan. Defer approval to
+     * the token holder.
      *
-     *  param  (unused)
-     * @param  positionId           Unique ID of the position
-     * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      This address to accept, a different address to ask that contract
+     *  param  recoverer   (unused)
+     * @param  positionId  Unique ID of the position
+     *  param  recipient   (unused)
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address /* who */,
+        address /* recoverer */,
         bytes32 positionId,
-        address collateralRecipient
+        address /* recipient */
     )
         external
         /* view */
         onlyMargin
         returns (address)
     {
-        return ownerOf(uint256(positionId));
+        address owner = ownerOf(uint256(positionId));
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     // ============ Helper Functions ============

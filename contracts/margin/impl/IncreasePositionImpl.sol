@@ -305,19 +305,19 @@ library IncreasePositionImpl {
 
     function marginPositionIncreasedRecurse(
         address contractAddr,
-        address who,
+        address trader,
         bytes32 positionId,
         uint256 principalAdded
     )
         internal
     {
         // no need to ask for permission
-        if (who == contractAddr) {
+        if (trader == contractAddr) {
             return;
         }
 
         address newContractAddr = PositionOwner(contractAddr).marginPositionIncreased(
-            who,
+            trader,
             positionId,
             principalAdded
         );
@@ -326,7 +326,7 @@ library IncreasePositionImpl {
         if (newContractAddr != contractAddr) {
             marginPositionIncreasedRecurse(
                 newContractAddr,
-                who,
+                trader,
                 positionId,
                 principalAdded
             );
@@ -335,19 +335,19 @@ library IncreasePositionImpl {
 
     function marginLoanIncreasedRecurse(
         address contractAddr,
-        address who,
+        address payer,
         bytes32 positionId,
         uint256 principalAdded
     )
         internal
     {
         // no need to ask for permission
-        if (who == contractAddr) {
+        if (payer == contractAddr) {
             return;
         }
 
         address newContractAddr = LoanOwner(contractAddr).marginLoanIncreased(
-            who,
+            payer,
             positionId,
             principalAdded
         );
@@ -356,7 +356,7 @@ library IncreasePositionImpl {
         if (newContractAddr != contractAddr) {
             marginPositionIncreasedRecurse(
                 newContractAddr,
-                who,
+                payer,
                 positionId,
                 principalAdded
             );

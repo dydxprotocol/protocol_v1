@@ -27,7 +27,7 @@ contract ERC20ShortCreator is ERC20PositionCreator {
     // ============ Internal Functions ============
 
     function createTokenContract(
-        address from,
+        address creator,
         bytes32 positionId
     )
         internal
@@ -36,7 +36,7 @@ contract ERC20ShortCreator is ERC20PositionCreator {
         return new ERC20Short(
             positionId,
             DYDX_MARGIN,
-            from,
+            creator,
             TRUSTED_RECIPIENTS
         );
     }

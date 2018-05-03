@@ -205,15 +205,15 @@ contract ERC721MarginPosition is
 
     /**
      * Called by Margin when additional value is added onto the position this contract
-     * owns. Only allows token owner to add value.
+     * owns. Defer approval to the token holder.
      *
-     * @param  from            Address that added the value to the position
+     *  param  from            (unused)
      * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
     function marginPositionIncreased(
-        address from,
+        address /* trader */,
         bytes32 positionId,
         uint256 /* principalAdded */
     )
@@ -222,7 +222,11 @@ contract ERC721MarginPosition is
         nonReentrant
         returns (address)
     {
-        return ownerOf(uint256(positionId));
+        address owner = ownerOf(uint256(positionId));
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
@@ -237,9 +241,8 @@ contract ERC721MarginPosition is
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount of the position being closed
      * @return                  Values corresponding to:
-     *                          [address] = This address to accept, a different address to ask that
-     *                                      contract.
-     *                          [uint256] = The maximum amount that this contract is allowing.
+     *                          1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,

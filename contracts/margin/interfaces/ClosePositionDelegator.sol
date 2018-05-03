@@ -30,9 +30,8 @@ contract ClosePositionDelegator is PositionOwner {
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Requested principal amount of the position to close
      * @return                  Values corresponding to:
-     *                          [address] = This address to accept, a different address to ask that
-     *                                      contract.
-     *                          [uint256] = The maximum amount that this contract is allowing.
+     *                          1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,

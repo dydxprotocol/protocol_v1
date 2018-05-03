@@ -83,13 +83,13 @@ contract ERC20PositionCreator is
         returns (address)
     {
         // This should never happen
-        revert();
+        assert(false);
     }
 
     // ============ Internal Abstract Functions ============
 
     function createTokenContract(
-        address from,
+        address creator,
         bytes32 positionId
     )
         internal

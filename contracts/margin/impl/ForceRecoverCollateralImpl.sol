@@ -24,7 +24,7 @@ library ForceRecoverCollateralImpl {
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
-        address indexed collateralRecipient,
+        address indexed recipient,
         uint256 amount
     );
 
@@ -33,7 +33,7 @@ library ForceRecoverCollateralImpl {
     function forceRecoverCollateralImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         public
         returns (uint256)
@@ -58,7 +58,7 @@ library ForceRecoverCollateralImpl {
             position.lender,
             msg.sender,
             positionId,
-            collateralRecipient
+            recipient
         );
 
         // Send the tokens
@@ -67,7 +67,7 @@ library ForceRecoverCollateralImpl {
         vault.transferFromVault(
             positionId,
             position.heldToken,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 
@@ -81,7 +81,7 @@ library ForceRecoverCollateralImpl {
         // Log an event
         emit CollateralForceRecovered(
             positionId,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 
@@ -92,30 +92,30 @@ library ForceRecoverCollateralImpl {
 
     function forceRecoverCollateralOnBehalfOfRecurse(
         address contractAddr,
-        address who,
+        address recoverer,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         internal
     {
         // no need to ask for permission
-        if (who == contractAddr) {
+        if (recoverer == contractAddr) {
             return;
         }
 
         address newContractAddr =
             ForceRecoverCollateralDelegator(contractAddr).forceRecoverCollateralOnBehalfOf(
-                who,
+                recoverer,
                 positionId,
-                collateralRecipient
+                recipient
             );
 
         if (newContractAddr != contractAddr) {
             forceRecoverCollateralOnBehalfOfRecurse(
                 newContractAddr,
-                who,
+                recoverer,
                 positionId,
-                collateralRecipient
+                recipient
             );
         }
     }
