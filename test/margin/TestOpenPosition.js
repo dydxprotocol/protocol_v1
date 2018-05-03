@@ -16,7 +16,7 @@ const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
-const { ADDRESSES } = require('../helpers/Constants');
+const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const web3Instance = new Web3(web3.currentProvider);
@@ -232,6 +232,55 @@ describe('#openPosition', () => {
       await checkSuccess(dydxMargin, OpenTx);
     });
   });
+
+  contract('Margin', function(accounts) {
+    it('does not transfer fees if fee address is 0', async () => {
+      const OpenTx = await createOpenTx(accounts);
+      const dydxMargin = await Margin.deployed();
+
+      OpenTx.loanOffering.feeRecipient = ADDRESSES.ZERO;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+      await issueTokensAndSetAllowances(OpenTx);
+
+      await callOpenPosition(dydxMargin, OpenTx);
+
+      await checkSuccess(dydxMargin, OpenTx);
+    });
+  });
+
+  contract('Margin', function(accounts) {
+    it('works with 0 fees', async () => {
+      const OpenTx = await createOpenTx(accounts);
+      const dydxMargin = await Margin.deployed();
+
+      OpenTx.loanOffering.rates.lenderFee = BIGNUMBERS.ZERO;
+      OpenTx.loanOffering.rates.takerFee = BIGNUMBERS.ZERO;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+      await issueTokensAndSetAllowances(OpenTx);
+
+      await callOpenPosition(dydxMargin, OpenTx);
+
+      await checkSuccess(dydxMargin, OpenTx);
+    });
+  });
+
+  contract('Margin', function(accounts) {
+    it('allows a specified taker to take the loan', async () => {
+      const OpenTx = await createOpenTx(accounts);
+      const dydxMargin = await Margin.deployed();
+
+      OpenTx.loanOffering.taker = OpenTx.trader;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+      await issueTokensAndSetAllowances(OpenTx);
+
+      await callOpenPosition(dydxMargin, OpenTx);
+
+      await checkSuccess(dydxMargin, OpenTx);
+    });
+  });
 });
 
 async function checkSuccess(dydxMargin, OpenTx) {
@@ -289,6 +338,11 @@ async function checkSuccess(dydxMargin, OpenTx) {
 
   expect(balance).to.be.bignumber.equal(expectedHeldTokenBalance);
 
+  const lenderFee = OpenTx.loanOffering.feeRecipient === ADDRESSES.ZERO ?
+    0 : OpenTx.loanOffering.rates.lenderFee;
+  const loanTakerFee = OpenTx.loanOffering.feeRecipient === ADDRESSES.ZERO ?
+    0 : OpenTx.loanOffering.rates.takerFee;
+
   const [
     owedToken,
     heldToken,
@@ -341,7 +395,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
         getPartialAmount(
           OpenTx.principal,
           OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.loanOffering.rates.lenderFee
+          lenderFee
         )
       )
   );
@@ -363,7 +417,7 @@ async function checkSuccess(dydxMargin, OpenTx) {
         getPartialAmount(
           OpenTx.principal,
           OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.loanOffering.rates.takerFee
+          loanTakerFee
         )
       )
       .minus(

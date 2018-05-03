@@ -5,6 +5,10 @@ const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
+const OwedToken = artifacts.require("TokenB");
+const FeeToken = artifacts.require("TokenC");
+const TestSmartContractLender = artifacts.require("TestSmartContractLender");
+const ProxyContract = artifacts.require("Proxy");
 const {
   createOpenTx,
   issueTokensAndSetAllowances,
@@ -28,7 +32,7 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { BIGNUMBERS } = require('../helpers/Constants');
+const { BIGNUMBERS, ADDRESSES } = require('../helpers/Constants');
 
 describe('#openPosition', () => {
   describe('Validations', () => {
@@ -202,6 +206,109 @@ describe('#openPosition', () => {
         );
 
         const dydxMargin = await Margin.deployed();
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('fails if position owner is 0', async () => {
+        const OpenTx = await createOpenTx(accounts);
+
+        await issueTokensAndSetAllowances(OpenTx);
+
+        const dydxMargin = await Margin.deployed();
+
+        OpenTx.owner = ADDRESSES.ZERO;
+
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('fails if loan owner is 0', async () => {
+        const OpenTx = await createOpenTx(accounts);
+
+        await issueTokensAndSetAllowances(OpenTx);
+
+        const dydxMargin = await Margin.deployed();
+
+        OpenTx.loanOffering.owner = ADDRESSES.ZERO;
+        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('fails if interest period is over maximum duration', async () => {
+        const OpenTx = await createOpenTx(accounts);
+
+        await issueTokensAndSetAllowances(OpenTx);
+
+        const dydxMargin = await Margin.deployed();
+
+        OpenTx.loanOffering.rates.interestPeriod = new BigNumber(
+          OpenTx.loanOffering.maxDuration + 1
+        );
+        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+      });
+    });
+
+    contract('Margin', function(accounts) {
+      it('allows smart contracts to be lenders', async () => {
+        const OpenTx = await createOpenTx(accounts);
+        const [
+          dydxMargin,
+          feeToken,
+          owedToken,
+          testSmartContractLender
+        ] = await Promise.all([
+          Margin.deployed(),
+          FeeToken.deployed(),
+          OwedToken.deployed(),
+          TestSmartContractLender.new(false)
+        ]);
+
+        await issueTokensAndSetAllowances(OpenTx);
+
+        const [
+          lenderFeeTokenBalance,
+          lenderOwedTokenBalance
+        ] = await Promise.all([
+          feeToken.balanceOf.call(OpenTx.loanOffering.payer),
+          owedToken.balanceOf.call(OpenTx.loanOffering.payer)
+        ]);
+        await Promise.all([
+          feeToken.transfer(
+            testSmartContractLender.address,
+            lenderFeeTokenBalance,
+            { from: OpenTx.loanOffering.payer }
+          ),
+          owedToken.transfer(
+            testSmartContractLender.address,
+            lenderOwedTokenBalance,
+            { from: OpenTx.loanOffering.payer }
+          )
+        ]);
+        await Promise.all([
+          testSmartContractLender.allow(
+            feeToken.address,
+            ProxyContract.address,
+            lenderFeeTokenBalance
+          ),
+          testSmartContractLender.allow(
+            owedToken.address,
+            ProxyContract.address,
+            lenderOwedTokenBalance
+          )
+        ]);
+
+        OpenTx.loanOffering.signer = OpenTx.loanOffering.payer;
+        OpenTx.loanOffering.payer = testSmartContractLender.address;
+        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
         await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
     });
