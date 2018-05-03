@@ -80,7 +80,7 @@ contract SharedLoanCreator is
     }
 
     /**
-     * This contract should not loans, but if it does, then disallow a loan increase by reverting.
+     * This contract should not be used to provide logic for approving loan increases.
      */
     function marginLoanIncreased(
         address,

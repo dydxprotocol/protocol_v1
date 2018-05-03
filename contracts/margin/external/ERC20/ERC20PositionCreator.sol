@@ -74,8 +74,7 @@ contract ERC20PositionCreator is
     }
 
     /**
-     * This contract should not control positions, but if it does, then disallow a position increase
-     * by reverting.
+     * This contract should not be used to provide logic for approving position increases.
      */
     function marginPositionIncreased(
         address,
