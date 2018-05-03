@@ -38,21 +38,20 @@ contract PositionOwner {
      * Function a contract must implement in order to allow additional value to be added onto
      * an owned position. Margin will call this on the owner of a positio during increasePosition().
      *
-     * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the position size was successfully increased.
+     * NOTE: If this function doesn't throw/revert, this contract must assume that Margin will
+     * either revert the entire transaction or that the position size was successfully increased.
      *
-     * @param  from            Address initiating the addition of funds to the position
+     * @param  trader          Address initiating the addition of funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount of principal to be added to the position
-     * @return                 True if the contract consents to additional value being added,
-     *                         false otherwise
+     * @return                 This address to accept, a different address to ask that contract
      */
     function marginPositionIncreased(
-        address from,
+        address trader,
         bytes32 positionId,
         uint256 principalAdded
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

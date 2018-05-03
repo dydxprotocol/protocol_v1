@@ -73,6 +73,9 @@ contract ERC20PositionCreator is
         return tokenAddress;
     }
 
+    /**
+     * This contract should not be used to provide logic for approving position increases.
+     */
     function marginPositionIncreased(
         address,
         bytes32,
@@ -80,16 +83,15 @@ contract ERC20PositionCreator is
     )
         external
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        // This should never happen
-        assert(false);
+        revert();
     }
 
     // ============ Internal Abstract Functions ============
 
     function createTokenContract(
-        address from,
+        address creator,
         bytes32 positionId
     )
         internal

@@ -1,7 +1,6 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
@@ -293,28 +292,79 @@ library IncreasePositionImpl {
         address owner = position.owner;
         address lender = position.lender;
 
-        // Unless msg.sender is the position owner and is not a smart contract, call out
-        // to the owner to ensure they consent to value being added
-        if (msg.sender != owner || AddressUtils.isContract(owner)) {
-            require(
-                PositionOwner(owner).marginPositionIncreased(
-                    msg.sender,
-                    positionId,
-                    principalAdded
-                )
-            );
+        // Ensure owner consent
+        marginPositionIncreasedRecurse(
+            owner,
+            msg.sender,
+            positionId,
+            principalAdded
+        );
+
+        // Ensure lender consent
+        marginLoanIncreasedRecurse(
+            lender,
+            loanPayer,
+            positionId,
+            principalAdded
+        );
+    }
+
+    function marginPositionIncreasedRecurse(
+        address contractAddr,
+        address trader,
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (trader == contractAddr) {
+            return;
         }
 
-        // Unless the loan offering's payer is the owner of the loan position and is not a smart
-        // contract, call out to the owner of the loan position to ensure they consent
-        // to value being added
-        if (loanPayer != lender || AddressUtils.isContract(lender)) {
-            require(
-                LoanOwner(lender).marginLoanIncreased(
-                    loanPayer,
-                    positionId,
-                    principalAdded
-                )
+        address newContractAddr = PositionOwner(contractAddr).marginPositionIncreased(
+            trader,
+            positionId,
+            principalAdded
+        );
+
+        // if not equal, recurse
+        if (newContractAddr != contractAddr) {
+            marginPositionIncreasedRecurse(
+                newContractAddr,
+                trader,
+                positionId,
+                principalAdded
+            );
+        }
+    }
+
+    function marginLoanIncreasedRecurse(
+        address contractAddr,
+        address payer,
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (payer == contractAddr) {
+            return;
+        }
+
+        address newContractAddr = LoanOwner(contractAddr).marginLoanIncreased(
+            payer,
+            positionId,
+            principalAdded
+        );
+
+        // if not equal, recurse
+        if (newContractAddr != contractAddr) {
+            marginPositionIncreasedRecurse(
+                newContractAddr,
+                payer,
+                positionId,
+                principalAdded
             );
         }
     }

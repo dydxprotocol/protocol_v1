@@ -76,21 +76,18 @@ library LoanImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                MarginCallDelegator(position.lender).marginCallOnBehalfOf(
-                    msg.sender,
-                    positionId,
-                    requiredDeposit
-                )
-            );
-        }
-
         // Ensure the loan has not already been called
         require(position.callTimestamp == 0);
         require(
             uint256(uint32(block.timestamp)) == block.timestamp
+        );
+
+        // Ensure lender consent
+        marginCallOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId,
+            requiredDeposit
         );
 
         position.callTimestamp = uint32(block.timestamp);
@@ -113,15 +110,12 @@ library LoanImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                MarginCallDelegator(position.lender).cancelMarginCallOnBehalfOf(
-                    msg.sender,
-                    positionId
-                )
-            );
-        }
+        // Ensure lender consent
+        cancelMarginCallOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId
+        );
 
         // Ensure the loan has been called
         require(position.callTimestamp > 0);
@@ -207,6 +201,65 @@ library LoanImpl {
             loanOffering.payer,
             loanOffering.feeRecipient
         );
+    }
+
+    // ============ Internal Helper Functions ============
+
+    function marginCallOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        bytes32 positionId,
+        uint256 requiredDeposit
+    )
+        internal
+        returns (bool)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return;
+        }
+
+        address newContractAddr = MarginCallDelegator(contractAddr).marginCallOnBehalfOf(
+            msg.sender,
+            positionId,
+            requiredDeposit
+        );
+
+        if (newContractAddr != contractAddr) {
+            marginCallOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                positionId,
+                requiredDeposit
+            );
+        }
+    }
+
+    function cancelMarginCallOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        bytes32 positionId
+    )
+        internal
+        returns (bool)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return;
+        }
+
+        address newContractAddr = MarginCallDelegator(contractAddr).cancelMarginCallOnBehalfOf(
+            msg.sender,
+            positionId
+        );
+
+        if (newContractAddr != contractAddr) {
+            cancelMarginCallOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                positionId
+            );
+        }
     }
 
     // ============ Parsing Functions ============

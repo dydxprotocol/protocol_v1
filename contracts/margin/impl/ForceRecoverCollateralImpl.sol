@@ -24,7 +24,7 @@ library ForceRecoverCollateralImpl {
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
-        address indexed collateralRecipient,
+        address indexed recipient,
         uint256 amount
     );
 
@@ -33,7 +33,7 @@ library ForceRecoverCollateralImpl {
     function forceRecoverCollateralImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         public
         returns (uint256)
@@ -53,16 +53,13 @@ library ForceRecoverCollateralImpl {
             )
         );
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
-                    msg.sender,
-                    positionId,
-                    collateralRecipient
-                )
-            );
-        }
+        // Ensure lender consent
+        forceRecoverCollateralOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId,
+            recipient
+        );
 
         // Send the tokens
         Vault vault = Vault(state.VAULT);
@@ -70,7 +67,7 @@ library ForceRecoverCollateralImpl {
         vault.transferFromVault(
             positionId,
             position.heldToken,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 
@@ -84,10 +81,42 @@ library ForceRecoverCollateralImpl {
         // Log an event
         emit CollateralForceRecovered(
             positionId,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 
         return heldTokenRecovered;
+    }
+
+    // ============ Internal Helper Functions ============
+
+    function forceRecoverCollateralOnBehalfOfRecurse(
+        address contractAddr,
+        address recoverer,
+        bytes32 positionId,
+        address recipient
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (recoverer == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            ForceRecoverCollateralDelegator(contractAddr).forceRecoverCollateralOnBehalfOf(
+                recoverer,
+                positionId,
+                recipient
+            );
+
+        if (newContractAddr != contractAddr) {
+            forceRecoverCollateralOnBehalfOfRecurse(
+                newContractAddr,
+                recoverer,
+                positionId,
+                recipient
+            );
+        }
     }
 }

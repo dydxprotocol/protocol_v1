@@ -79,6 +79,9 @@ contract SharedLoanCreator is
         return sharedLoanAddress;
     }
 
+    /**
+     * This contract should not be used to provide logic for approving loan increases.
+     */
     function marginLoanIncreased(
         address,
         bytes32,
@@ -86,9 +89,8 @@ contract SharedLoanCreator is
     )
         external
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        // This should never happen
-        assert(false);
+        revert();
     }
 }

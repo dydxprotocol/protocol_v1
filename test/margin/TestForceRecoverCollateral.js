@@ -24,11 +24,11 @@ describe('#forceRecoverCollateral', () => {
       await wait(OpenTx.loanOffering.callTimeLimit);
 
       const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-      const collateralRecipient = accounts[9];
+      const recipient = accounts[9];
 
       const tx = await dydxMargin.forceRecoverCollateral(
         OpenTx.id,
-        collateralRecipient,
+        recipient,
         { from: OpenTx.loanOffering.owner }
       );
 
@@ -51,7 +51,7 @@ describe('#forceRecoverCollateral', () => {
         heldToken.balanceOf.call(vault.address),
         dydxMargin.containsPosition.call(OpenTx.id),
         dydxMargin.isPositionClosed.call(OpenTx.id),
-        heldToken.balanceOf.call(collateralRecipient)
+        heldToken.balanceOf.call(recipient)
       ]);
 
       expect(vaultOwedTokenBalance).to.be.bignumber.equal(0);
@@ -64,7 +64,7 @@ describe('#forceRecoverCollateral', () => {
 
       expectLog(tx.logs[0], 'CollateralForceRecovered', {
         positionId: OpenTx.id,
-        collateralRecipient: collateralRecipient,
+        recipient: recipient,
         amount: heldTokenBalance
       });
     });
@@ -99,7 +99,7 @@ describe('#forceRecoverCollateral', () => {
       expect(badRecoverer).to.not.equal(recoverer);
       expect(badRecipient).to.not.equal(recipient);
 
-      // FRCD that allows only a certain collateralRecipient
+      // FRCD that allows only a certain recipient
       const testFRCD = await TestForceRecoverCollateralDelegator.new(
         Margin.address,
         recoverer,
