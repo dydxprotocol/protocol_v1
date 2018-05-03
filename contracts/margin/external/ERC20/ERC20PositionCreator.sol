@@ -73,6 +73,10 @@ contract ERC20PositionCreator is
         return tokenAddress;
     }
 
+    /**
+     * This contract should not control positions, but if it does, then disallow a position increase
+     * by reverting.
+     */
     function marginPositionIncreased(
         address,
         bytes32,
@@ -82,8 +86,7 @@ contract ERC20PositionCreator is
         onlyMargin
         returns (address)
     {
-        // This should never happen
-        assert(false);
+        revert();
     }
 
     // ============ Internal Abstract Functions ============

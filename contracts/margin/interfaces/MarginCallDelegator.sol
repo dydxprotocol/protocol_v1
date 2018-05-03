@@ -41,7 +41,7 @@ contract MarginCallDelegator is LoanOwner {
     /**
      * Function a contract must implement in order to let other addresses call cancelMarginCall().
      *
-     * NOTE: If this functino doesn't throw/revert, this contract must assume that Margin will
+     * NOTE: If this function doesn't throw/revert, this contract must assume that Margin will
      * either revert the entire transaction or that the loan call was successfully canceled.
      *
      * @param  canceler    Address of the caller of the cancelMarginCall function

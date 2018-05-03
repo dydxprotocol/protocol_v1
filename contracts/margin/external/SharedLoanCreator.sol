@@ -79,6 +79,9 @@ contract SharedLoanCreator is
         return sharedLoanAddress;
     }
 
+    /**
+     * This contract should not loans, but if it does, then disallow a loan increase by reverting.
+     */
     function marginLoanIncreased(
         address,
         bytes32,
@@ -88,7 +91,6 @@ contract SharedLoanCreator is
         onlyMargin
         returns (address)
     {
-        // This should never happen
-        assert(false);
+        revert();
     }
 }

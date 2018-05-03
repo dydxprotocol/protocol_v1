@@ -37,8 +37,8 @@ contract LoanOwner {
      * Function a contract must implement in order to allow additional value to be added onto
      * an owned loan. Margin will call this on the owner of a loan during increasePosition().
      *
-     * NOTE: If tis function doesn't throw/revert, this contract must assume that Margin will either
-     * revert the entire transaction or that the loan size was successfully increased.
+     * NOTE: If this function doesn't throw/revert, this contract must assume that Margin will
+     * either revert the entire transaction or that the loan size was successfully increased.
      *
      * @param  payer           Lender adding additional funds to the position
      * @param  positionId      Unique ID of the position
