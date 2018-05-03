@@ -273,15 +273,11 @@ library IncreasePositionImpl {
         uint256 heldTokenBalance = Vault(state.VAULT).balances(
             positionId, position.heldToken);
 
-        uint256 positionMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
+        return MathHelpers.getPartialAmountRoundedUp(
             principalAdded,
             position.principal,
             heldTokenBalance
         );
-
-        require(positionMinimumHeldToken > 0);
-
-        return positionMinimumHeldToken;
     }
 
     function updateState(
