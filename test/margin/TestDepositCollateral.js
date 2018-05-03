@@ -16,6 +16,7 @@ const {
   doOpenPositionAndCall,
   getPosition
 } = require('../helpers/MarginHelper');
+const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 describe('#deposit', () => {
   contract('Margin', function(accounts) {
@@ -133,8 +134,13 @@ async function doDepositCollateral({
   ]);
 
   const initialBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
-  await heldToken.issue(amount, { from });
-  await heldToken.approve(ProxyContract.address, amount, { from });
+
+  await issueAndSetAllowance(
+    heldToken,
+    from,
+    amount,
+    ProxyContract.address
+  );
 
   const tx = await dydxMargin.depositCollateral(
     OpenTx.id,

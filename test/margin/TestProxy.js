@@ -10,6 +10,7 @@ const TestToken = artifacts.require("TestToken");
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
+const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 contract('Proxy', function(accounts) {
   const gracePeriod = new BigNumber('1234567');
@@ -36,8 +37,12 @@ contract('Proxy', function(accounts) {
     const holder1 = accounts[4];
     const recipient = accounts[5];
     it('only allows transfer authorized address to call', async () => {
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
+      await issueAndSetAllowance(
+        tokenA,
+        holder1,
+        num1,
+        contract.address
+      );
       await contract.grantAccess(accounts[1]);
 
       // A random address should not be able to call
@@ -89,8 +94,12 @@ contract('Proxy', function(accounts) {
 
     it('sends tokens on sufficient balance/allowance when authorized', async () => {
       await contract.grantAccess(accounts[2]);
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(contract.address, num1, { from: holder1 });
+      await issueAndSetAllowance(
+        tokenA,
+        holder1,
+        num1,
+        contract.address
+      );
       await contract.transferTokens(
         tokenA.address, holder1, recipient, num1, { from: accounts[2] });
 
@@ -123,8 +132,12 @@ contract('Proxy', function(accounts) {
       account = accounts[5];
       await expectAvailable(BIGNUMBERS.ZERO);
 
-      await tokenA.issue(num2, { from: account });
-      await tokenA.approve(contract.address, num2, { from: account });
+      await issueAndSetAllowance(
+        tokenA,
+        account,
+        num2,
+        contract.address
+      );
 
       await expectAvailable(num2);
     });
@@ -133,8 +146,12 @@ contract('Proxy', function(accounts) {
       account = accounts[6];
       await expectAvailable(BIGNUMBERS.ZERO);
 
-      await tokenA.issue(BIGNUMBERS.ZERO, { from: account });
-      await tokenA.approve(contract.address, BIGNUMBERS.ZERO, { from: account });
+      await issueAndSetAllowance(
+        tokenA,
+        account,
+        BIGNUMBERS.ZERO,
+        contract.address
+      );
 
       await expectAvailable(BIGNUMBERS.ZERO);
     });

@@ -1,20 +1,15 @@
-/*global artifacts*/
-
-const Token = artifacts.require("TokenA");
-
-async function issue(address, amount) {
-  const token = await Token.deployed();
-
-  await token.issueTo(address, amount);
-}
-
-async function approve(from, who, amount) {
-  const token = await Token.deployed();
-
-  await token.approve(who, amount, { from });
+async function issueAndSetAllowance(
+  token,
+  account,
+  amount,
+  allowed
+) {
+  await Promise.all([
+    token.issueTo(account, amount),
+    token.approve(allowed, amount, { from: account })
+  ]);
 }
 
 module.exports = {
-  issue,
-  approve
+  issueAndSetAllowance
 };

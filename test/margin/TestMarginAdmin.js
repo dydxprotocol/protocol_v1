@@ -21,6 +21,7 @@ const {
 const {
   createSignedSellOrder
 } = require('../helpers/0xHelper');
+const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 const OperationState = {
   OPERATIONAL: 0,
@@ -138,8 +139,13 @@ describe('MarginAdmin', () => {
         ]);
         const OpenTx = await doOpenPosition(accounts);
         const amount = new BigNumber(1000);
-        await heldToken.issue(amount, { from: OpenTx.trader });
-        await heldToken.approve(ProxyContract.address, amount, { from: OpenTx.trader });
+
+        await issueAndSetAllowance(
+          heldToken,
+          OpenTx.trader,
+          amount,
+          ProxyContract.address
+        );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(dydxMargin.depositCollateral(

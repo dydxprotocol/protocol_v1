@@ -11,6 +11,7 @@ const { expectThrow, expectAssertFailure } = require('../helpers/ExpectHelper');
 const {
   validateStaticAccessControlledConstants
 } = require('../helpers/AccessControlledHelper');
+const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 contract('Vault', function(accounts) {
   const gracePeriod = new BigNumber('1234567');
@@ -72,9 +73,15 @@ contract('Vault', function(accounts) {
     }
 
     it('successfully transfers tokens into vault', async () => {
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(proxy.address, num1, { from: holder1 });
-      await vault.grantAccess(accounts[1]);
+      await Promise.all([
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1,
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
+      ]);
 
       await vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] });
 
@@ -85,9 +92,15 @@ contract('Vault', function(accounts) {
     });
 
     it('successfully transfers into different vaults', async () => {
-      await tokenA.issue(num1.times(3), { from: holder1 });
-      await tokenA.approve(proxy.address, num1.times(3), { from: holder1 });
-      await vault.grantAccess(accounts[1]);
+      await Promise.all([
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1.times(3),
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
+      ]);
 
       await Promise.all([
         vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
@@ -109,14 +122,20 @@ contract('Vault', function(accounts) {
 
     it('successfully accounts for different tokens', async () => {
       await Promise.all([
-        tokenA.issue(num1, { from: holder1 }),
-        tokenB.issue(num1.times(2), { from: holder1 })
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1,
+          proxy.address
+        ),
+        issueAndSetAllowance(
+          tokenB,
+          holder1,
+          num1.times(2),
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
       ]);
-      await Promise.all([
-        tokenA.approve(proxy.address, num1, { from: holder1 }),
-        tokenB.approve(proxy.address, num1.times(2), { from: holder1 }),
-      ]);
-      await vault.grantAccess(accounts[1]);
 
       await Promise.all([
         vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
@@ -154,9 +173,16 @@ contract('Vault', function(accounts) {
     });
 
     it('does not allow unauthorized addresses to call', async () => {
-      await tokenA.issue(num1.times(3), { from: holder1 });
-      await tokenA.approve(proxy.address, num1.times(3), { from: holder1 });
-      await vault.grantAccess(accounts[1]);
+      await Promise.all([
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1.times(3),
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
+      ]);
+
       await expectThrow(
         vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[2] })
       );
@@ -221,12 +247,18 @@ contract('Vault', function(accounts) {
     }
 
     beforeEach('place funds in vault', async () => {
-      // holder1 has tokens and allows the proxy to access them
-      await tokenA.issue(num1, { from: holder1 });
-      await tokenA.approve(proxy.address, num1, { from: holder1 });
+      await Promise.all([
+        // holder1 has tokens and allows the proxy to access them
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1,
+          proxy.address
+        ),
+        // account[1] acts as dYdX contract and puts the funds in the vault
+        vault.grantAccess(accounts[1])
+      ]);
 
-      // account[1] acts as dYdX contract and puts the funds in the vault
-      await vault.grantAccess(accounts[1]);
       await vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] });
 
       await checkBalances();
@@ -258,6 +290,7 @@ contract('Vault', function(accounts) {
     it('Does not send tokens if vault does not have sufficient accounting', async () => {
       // issue extra tokens and secretly send to vault without using the normal proxy channel
       const extraAccount = accounts[9];
+
       await tokenA.issue(num1, { from: extraAccount }); //issue extra tokens
       tokenA.transfer(vault.address, num1, { from: extraAccount });
 
