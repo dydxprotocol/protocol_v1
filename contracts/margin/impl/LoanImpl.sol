@@ -6,6 +6,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
+import { TimestampHelper } from "../lib/TimestampHelper.sol";
 
 
 /**
@@ -83,17 +84,17 @@ library LoanImpl {
                     msg.sender,
                     positionId,
                     requiredDeposit
-                )
+                ),
+                "LoanImpl#marginCallImpl: Lender does not consent to margin-call"
             );
         }
 
-        // Ensure the loan has not already been called
-        require(position.callTimestamp == 0);
         require(
-            uint256(uint32(block.timestamp)) == block.timestamp
+            position.callTimestamp == 0,
+            "LoanImpl#marginCallImpl: The position has already been margin-called"
         );
 
-        position.callTimestamp = uint32(block.timestamp);
+        position.callTimestamp = TimestampHelper.getBlockTimestamp32();
         position.requiredDeposit = requiredDeposit;
 
         emit MarginCallInitiated(
@@ -119,12 +120,15 @@ library LoanImpl {
                 MarginCallDelegator(position.lender).cancelMarginCallOnBehalfOf(
                     msg.sender,
                     positionId
-                )
+                ),
+                "LoanImpl#cancelMarginCallImpl: Lender does not consent"
             );
         }
 
-        // Ensure the loan has been called
-        require(position.callTimestamp > 0);
+        require(
+            position.callTimestamp > 0,
+            "LoanImpl#cancelMarginCallImpl: Position has not been margin-called"
+        );
 
         state.positions[positionId].callTimestamp = 0;
         state.positions[positionId].requiredDeposit = 0;
@@ -153,8 +157,14 @@ library LoanImpl {
             values32
         );
 
-        require(msg.sender == loanOffering.payer || msg.sender == loanOffering.signer);
-        require(loanOffering.expirationTimestamp > block.timestamp);
+        require(
+            msg.sender == loanOffering.payer || msg.sender == loanOffering.signer,
+            "LoanImpl#cancelLoanOfferingImpl: Only loan offering payer or signer can cancel"
+        );
+        require(
+            loanOffering.expirationTimestamp > block.timestamp,
+            "LoanImpl#cancelLoanOfferingImpl: Loan offering has already expired"
+        );
 
         uint256 remainingAmount = loanOffering.rates.maxAmount.sub(
             MarginCommon.getUnavailableLoanOfferingAmountImpl(state, loanOffering.loanHash)
@@ -193,8 +203,14 @@ library LoanImpl {
             values32
         );
 
-        require(loanOffering.signer == msg.sender);
-        require(loanOffering.expirationTimestamp > block.timestamp);
+        require(
+            loanOffering.signer == msg.sender,
+            "LoanImpl#approveLoanOfferingImpl: Only loan offering signer can approve"
+        );
+        require(
+            loanOffering.expirationTimestamp > block.timestamp,
+            "LoanImpl#approveLoanOfferingImpl: Loan offering is already expired"
+        );
 
         if (state.approvedLoans[loanOffering.loanHash]) {
             return;

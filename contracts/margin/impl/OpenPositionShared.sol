@@ -93,18 +93,24 @@ library OpenPositionShared {
         internal
         view
     {
-        // Disallow positions with zero amount
-        require(transaction.principal > 0);
+        require(
+            transaction.principal > 0,
+            "OpenPositionShared#validateOpenTx: Positions with 0 principal are not allowed"
+        );
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
-            require(msg.sender == transaction.loanOffering.taker);
+            require(
+                msg.sender == transaction.loanOffering.taker,
+                "OpenPositionShared#validateOpenTx: Invalid loan offering taker"
+            );
         }
 
         // Require the order to either have a valid signature or be pre-approved on-chain
         require(
             isValidSignature(transaction.loanOffering)
-            || state.approvedLoans[transaction.loanOffering.loanHash]
+            || state.approvedLoans[transaction.loanOffering.loanHash],
+            "OpenPositionShared#validateOpenTx: Invalid loan offering signature"
         );
 
         // Validate the amount is <= than max and >= min
@@ -114,7 +120,8 @@ library OpenPositionShared {
                     state,
                     transaction.loanOffering.loanHash
                 )
-            ) <= transaction.loanOffering.rates.maxAmount
+            ) <= transaction.loanOffering.rates.maxAmount,
+            "OpenPositionShared#validateOpenTx: "
         );
         require(transaction.principal >= transaction.loanOffering.rates.minAmount);
 
@@ -123,11 +130,6 @@ library OpenPositionShared {
 
         // Disallow loan offerings with 0 maxDuration
         require(transaction.loanOffering.maxDuration > 0);
-
-        // Check no casting errors
-        require(
-            uint256(uint32(block.timestamp)) == block.timestamp
-        );
 
         // The interest rounding period cannot be longer than max duration
         require(

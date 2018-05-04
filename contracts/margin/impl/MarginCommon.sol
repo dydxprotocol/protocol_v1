@@ -245,8 +245,10 @@ library MarginCommon {
     {
         Position storage position = state.positions[positionId];
 
-        // This checks that the position exists
-        require(position.startTimestamp != 0);
+        require(
+            position.startTimestamp != 0,
+            "MarginCommon#getPositionFromStorage: The position does not exist"
+        );
 
         return position;
     }

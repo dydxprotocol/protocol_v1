@@ -8,6 +8,7 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { PositionOwner } from "../interfaces/PositionOwner.sol";
+import { TimestampHelper } from "../lib/TimestampHelper.sol";
 
 
 /**
@@ -157,7 +158,7 @@ library OpenPositionImpl {
         state.positions[positionId].heldToken = transaction.loanOffering.heldToken;
         state.positions[positionId].principal = transaction.principal;
         state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.positions[positionId].startTimestamp = uint32(block.timestamp);
+        state.positions[positionId].startTimestamp = TimestampHelper.getBlockTimestamp32();
         state.positions[positionId].maxDuration = transaction.loanOffering.maxDuration;
         state.positions[positionId].interestRate = transaction.loanOffering.rates.interestRate;
         state.positions[positionId].interestPeriod = transaction.loanOffering.rates.interestPeriod;

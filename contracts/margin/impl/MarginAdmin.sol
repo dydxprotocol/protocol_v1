@@ -59,14 +59,18 @@ contract MarginAdmin is Ownable {
     // ============ Modifiers ============
 
     modifier onlyWhileOperational() {
-        require(operationState == OperationState.OPERATIONAL);
+        require(
+            operationState == OperationState.OPERATIONAL,
+            "MarginAdmin#onlyWhileOperational: Can only call while operational"
+        );
         _;
     }
 
     modifier cancelLoanOfferingStateControl() {
         require(
             operationState == OperationState.OPERATIONAL
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
+            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY,
+            "MarginAdmin#cancelLoanOfferingStateControl: Invalid operation state"
         );
         _;
     }
@@ -75,7 +79,8 @@ contract MarginAdmin is Ownable {
         require(
             operationState == OperationState.OPERATIONAL
             || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
-            || operationState == OperationState.CLOSE_ONLY
+            || operationState == OperationState.CLOSE_ONLY,
+            "MarginAdmin#closePositionStateControl: Invalid operation state"
         );
         _;
     }
