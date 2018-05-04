@@ -15,7 +15,11 @@ contract ZeroExOwnable {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "ZeroExOwnable#onlyOwner: Invalid Owner");
+        require(
+            msg.sender == owner,
+            "ZeroExOwnable#onlyOwner: Invalid Owner"
+        );
+
         _;
     }
 

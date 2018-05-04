@@ -261,7 +261,7 @@ library ClosePositionShared {
                 );
             require(
                 allowedLenderAmount <= newAmount,
-                "ClosePositionShared#getApprovedAmount: Invalid liquidateOnBehalfOf amount"
+                "ClosePositionShared#getApprovedAmount: Invalid closeLoanOnBehalfOf amount"
             );
             newAmount = allowedLenderAmount;
         }
