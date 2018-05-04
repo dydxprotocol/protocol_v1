@@ -18,15 +18,18 @@ library LiquidatePositionImpl {
     // ============ Events ============
 
     /**
-     * A position was liquidated
+     * A position was closed or partially closed
      */
-    event PositionLiquidated(
+    event PositionClosed(
         bytes32 indexed positionId,
-        address indexed liquidator,
+        address indexed closer,
         address indexed payoutRecipient,
-        uint256 liquidatedAmount,
+        uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 heldTokenPayout
+        uint256 owedTokenPaidToLender,
+        uint256 payoutAmount,
+        uint256 buybackCostInHeldToken,
+        bool payoutInHeldToken
     );
 
     // ============ Public Implementation Functions ============
@@ -74,14 +77,16 @@ library LiquidatePositionImpl {
     )
         internal
     {
-        emit PositionLiquidated(
+        emit PositionClosed(
             transaction.positionId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,
             transaction.originalPrincipal.sub(transaction.closeAmount),
-            transaction.availableHeldToken
+            0,
+            transaction.availableHeldToken,
+            0,
+            true
         );
     }
-
 }

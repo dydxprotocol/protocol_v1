@@ -681,13 +681,16 @@ async function callLiquidatePosition(
 
   const actualLiquidateAmount = startAmount.minus(endAmount);
 
-  expectLog(tx.logs[0], 'PositionLiquidated', {
+  expectLog(tx.logs[0], 'PositionClosed', {
     positionId: OpenTx.id,
-    liquidator: from,
+    closer: from,
     payoutRecipient: payoutRecipient,
-    liquidatedAmount: actualLiquidateAmount,
+    closeAmount: actualLiquidateAmount,
     remainingAmount: startAmount.minus(actualLiquidateAmount),
-    heldTokenPayout: getPartialAmount(actualLiquidateAmount, startAmount, startHeldToken)
+    owedTokenPaidToLender: 0,
+    payoutAmount: getPartialAmount(actualLiquidateAmount, startAmount, startHeldToken),
+    buybackCostInHeldToken: 0,
+    payoutInHeldToken: true
   });
 
   return tx;
