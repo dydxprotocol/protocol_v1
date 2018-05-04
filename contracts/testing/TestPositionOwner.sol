@@ -16,6 +16,7 @@ contract TestPositionOwner is
 
     address public TO_RETURN;
     bool public TO_RETURN_ON_ADD;
+    uint256 public TO_RETURN_ON_CLOSE;
 
     mapping(bytes32 => mapping(address => bool)) public hasReceived;
     mapping(bytes32 => mapping(address => uint256)) public valueAdded;
@@ -23,7 +24,8 @@ contract TestPositionOwner is
     constructor(
         address margin,
         address toReturn,
-        bool toReturnOnAdd
+        bool toReturnOnAdd,
+        uint256 toReturnOnCloseOnBehalfOf
     )
         public
         OnlyMargin(margin)
@@ -35,6 +37,7 @@ contract TestPositionOwner is
         }
 
         TO_RETURN_ON_ADD = toReturnOnAdd;
+        TO_RETURN_ON_CLOSE = toReturnOnCloseOnBehalfOf;
     }
 
     function receivePositionOwnership(
@@ -66,12 +69,12 @@ contract TestPositionOwner is
         address,
         address,
         bytes32,
-        uint256 requestedAmount
+        uint256
     )
         external
         onlyMargin
         returns (uint256)
     {
-        return requestedAmount;
+        return TO_RETURN_ON_CLOSE;
     }
 }

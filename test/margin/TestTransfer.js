@@ -111,7 +111,8 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
-        false);
+        false,
+        0);
 
       const tx = await transferPosition(
         openTx,
@@ -125,7 +126,8 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         ADDRESSES.ZERO,
-        false);
+        false,
+        0);
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
     });
@@ -134,7 +136,8 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         owner,
-        false);
+        false,
+        0);
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
     });

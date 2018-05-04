@@ -136,7 +136,12 @@ describe('#openPosition', () => {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const dydxMargin = await Margin.deployed();
       const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
-      const testPositionOwner = await TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, false);
+      const testPositionOwner = await TestPositionOwner.new(
+        Margin.address,
+        ADDRESSES.ZERO,
+        false,
+        0
+      );
 
       const OpenTx1 = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(OpenTx1);
@@ -204,7 +209,8 @@ describe('#openPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
-        false);
+        false,
+        0);
       const OpenTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(OpenTx);
       OpenTx.owner = testPositionOwner.address;

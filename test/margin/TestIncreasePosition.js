@@ -104,7 +104,7 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
         TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
       ]);
 
@@ -149,7 +149,7 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
         TestLoanOwner.new(Margin.address, ADDRESSES.ONE, false),
       ]);
 
@@ -171,7 +171,7 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, false),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, false, 0),
         TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
       ]);
 

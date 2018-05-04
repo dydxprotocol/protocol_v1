@@ -119,7 +119,7 @@ describe('#increasePositionDirectly', () => {
       createOpenTx(accounts),
       Margin.deployed(),
       HeldToken.deployed(),
-      TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true),
+      TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
       TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
     ]);
 
