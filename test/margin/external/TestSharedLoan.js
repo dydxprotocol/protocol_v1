@@ -23,7 +23,7 @@ const {
 } = require('../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
-contract('SharedLoan', function(accounts) {
+contract('SharedLoan', accounts => {
 
   // ============ Constants ============
 
@@ -73,7 +73,7 @@ contract('SharedLoan', function(accounts) {
       dydxMargin.address,
       ADDRESSES.ONE,
       true,
-      0
+      1
     );
     await dydxMargin.transferPosition(
       SHARED_LOAN.ID,

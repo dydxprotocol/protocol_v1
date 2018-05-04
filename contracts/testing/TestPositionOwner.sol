@@ -69,12 +69,16 @@ contract TestPositionOwner is
         address,
         address,
         bytes32,
-        uint256
+        uint256 closeAmount
     )
         external
         onlyMargin
         returns (uint256)
     {
+        if (TO_RETURN_ON_CLOSE == 1) {
+            return closeAmount;
+        }
+
         return TO_RETURN_ON_CLOSE;
     }
 }
