@@ -9,8 +9,8 @@ import { MarginState } from "./MarginState.sol";
 import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { CloseLoanDelegator } from "../interfaces/CloseLoanDelegator.sol";
 import { ClosePositionDelegator } from "../interfaces/ClosePositionDelegator.sol";
-import { LiquidatePositionDelegator } from "../interfaces/LiquidatePositionDelegator.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 
 
@@ -18,7 +18,8 @@ import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
  * @title ClosePositionShared
  * @author dYdX
  *
- * This library contains shared functionality between ClosePositionImpl and LiquidatePositionImpl
+ * This library contains shared functionality between ClosePositionImpl and
+ * CloseWithoutCounterpartyImpl
  */
 library ClosePositionShared {
     using SafeMath for uint256;
@@ -132,7 +133,7 @@ library ClosePositionShared {
         address payoutRecipient,
         address exchangeWrapper,
         bool payoutInHeldToken,
-        bool isLiquidation
+        bool isWithoutCounterparty
     )
         internal
         returns (CloseTx memory)
@@ -149,7 +150,7 @@ library ClosePositionShared {
             positionId,
             requestedAmount,
             payoutRecipient,
-            isLiquidation
+            isWithoutCounterparty
         );
 
         return parseCloseTx(
@@ -160,7 +161,7 @@ library ClosePositionShared {
             payoutRecipient,
             exchangeWrapper,
             payoutInHeldToken,
-            isLiquidation
+            isWithoutCounterparty
         );
     }
 
@@ -172,7 +173,7 @@ library ClosePositionShared {
         address payoutRecipient,
         address exchangeWrapper,
         bool payoutInHeldToken,
-        bool isLiquidation
+        bool isWithoutCounterparty
     )
         internal
         view
@@ -189,7 +190,7 @@ library ClosePositionShared {
         );
         uint256 owedTokenOwed = 0;
 
-        if (!isLiquidation) {
+        if (!isWithoutCounterparty) {
             owedTokenOwed = MarginCommon.calculateOwedAmount(
                 position,
                 closeAmount,
@@ -228,28 +229,28 @@ library ClosePositionShared {
 
         // If not the owner, requires owner to approve msg.sender
         if (position.owner != msg.sender) {
-            uint256 allowedCloseAmount =
+            uint256 allowedOwnerAmount =
                 ClosePositionDelegator(position.owner).closeOnBehalfOf(
                     msg.sender,
                     payoutRecipient,
                     positionId,
                     newAmount
                 );
-            require(allowedCloseAmount <= newAmount);
-            newAmount = allowedCloseAmount;
+            require(allowedOwnerAmount <= newAmount);
+            newAmount = allowedOwnerAmount;
         }
 
         // If not the lender, requires lender to approve msg.sender
         if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLiquidationAmount =
-                LiquidatePositionDelegator(position.lender).liquidateOnBehalfOf(
+            uint256 allowedLenderAmount =
+                CloseLoanDelegator(position.lender).closeLoanOnBehalfOf(
                     msg.sender,
                     payoutRecipient,
                     positionId,
                     newAmount
                 );
-            require(allowedLiquidationAmount <= newAmount);
-            newAmount = allowedLiquidationAmount;
+            require(allowedLenderAmount <= newAmount);
+            newAmount = allowedLenderAmount;
         }
 
         require(newAmount > 0);

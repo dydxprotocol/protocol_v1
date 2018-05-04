@@ -7,34 +7,38 @@ import { MarginState } from "./MarginState.sol";
 
 
 /**
- * @title LiquidatePositionImpl
+ * @title CloseWithoutCounterpartyImpl
  * @author dYdX
  *
- * This library contains the implementation for the liquidate function of Margin
+ * This library contains the implementation for the closeWithoutCounterpartyImpl function of
+ * Margin
  */
-library LiquidatePositionImpl {
+library CloseWithoutCounterpartyImpl {
     using SafeMath for uint256;
 
     // ============ Events ============
 
     /**
-     * A position was liquidated
+     * A position was closed or partially closed
      */
-    event PositionLiquidated(
+    event PositionClosed(
         bytes32 indexed positionId,
-        address indexed liquidator,
+        address indexed closer,
         address indexed payoutRecipient,
-        uint256 liquidatedAmount,
+        uint256 closeAmount,
         uint256 remainingAmount,
-        uint256 heldTokenPayout
+        uint256 owedTokenPaidToLender,
+        uint256 payoutAmount,
+        uint256 buybackCostInHeldToken,
+        bool payoutInHeldToken
     );
 
     // ============ Public Implementation Functions ============
 
-    function liquidatePositionImpl(
+    function closeWithoutCounterpartyImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        uint256 requestedLiquidationAmount,
+        uint256 requestedCloseAmount,
         address payoutRecipient
     )
         public
@@ -43,7 +47,7 @@ library LiquidatePositionImpl {
         ClosePositionShared.CloseTx memory transaction = ClosePositionShared.createCloseTx(
             state,
             positionId,
-            requestedLiquidationAmount,
+            requestedCloseAmount,
             payoutRecipient,
             address(0),
             true,
@@ -59,7 +63,7 @@ library LiquidatePositionImpl {
 
         ClosePositionShared.closePositionStateUpdate(state, transaction);
 
-        logEventOnLiquidate(transaction);
+        logEventOnCloseWithoutCounterparty(transaction);
 
         return (
             transaction.closeAmount,
@@ -69,19 +73,21 @@ library LiquidatePositionImpl {
 
     // ============ Helper Functions ============
 
-    function logEventOnLiquidate(
+    function logEventOnCloseWithoutCounterparty(
         ClosePositionShared.CloseTx transaction
     )
         internal
     {
-        emit PositionLiquidated(
+        emit PositionClosed(
             transaction.positionId,
             msg.sender,
             transaction.payoutRecipient,
             transaction.closeAmount,
             transaction.originalPrincipal.sub(transaction.closeAmount),
-            transaction.availableHeldToken
+            0,
+            transaction.availableHeldToken,
+            0,
+            true
         );
     }
-
 }

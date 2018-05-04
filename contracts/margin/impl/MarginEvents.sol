@@ -68,18 +68,6 @@ contract MarginEvents {
     );
 
     /**
-     * A position was liquidated
-     */
-    event PositionLiquidated(
-        bytes32 indexed positionId,
-        address indexed liquidator,
-        address indexed payoutRecipient,
-        uint256 liquidatedAmount,
-        uint256 remainingAmount,
-        uint256 heldTokenPayout
-    );
-
-    /**
      * Collateral for a position was forcibly recovered
      */
     event CollateralForceRecovered(

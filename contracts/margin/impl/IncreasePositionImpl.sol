@@ -97,7 +97,7 @@ library IncreasePositionImpl {
         return transaction.lenderAmount;
     }
 
-    function increasePositionDirectlyImpl(
+    function incraseWithoutCounterpartyImpl(
         MarginState.State storage state,
         bytes32 positionId,
         uint256 principalToAdd
