@@ -5,34 +5,35 @@ import { LoanOwner } from "./LoanOwner.sol";
 
 
 /**
- * @title LiquidatePositionDelegator
+ * @title CloseLoanDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses liquidate a loan
- * owned by the smart contract.
+ * Interface that smart contracts must implement in order to let other addresses
+ * closePositionAndLoan for a loan owned by the smart contract.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract LiquidatePositionDelegator is LoanOwner {
+contract CloseLoanDelegator is LoanOwner{
 
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call liquidate().
+     * Function a contract must implement in order to let other addresses call
+     * closePositionAndLoan().
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the position was successfully closed.
      *
-     * @param  liquidator       Address of the caller of the liquidatePosition() function
-     * @param  payoutRecipient  Address of the recipient of tokens paid out from liquidation
+     * @param  closer           Address of the caller of the closePositionAndLoan() function
+     * @param  payoutRecipient  Address of the recipient of tokens paid out
      * @param  positionId       Unique ID of the position
-     * @param  requestedAmount  Requested principal amount of the loan to liquidate
-     * @return                  The amount the user is allowed to liquidate for the specified loan.
+     * @param  requestedAmount  Requested principal amount of the loan to close
+     * @return                  The amount the user is allowed to close for the specified loan.
      *                          Must be a positive integer less than requestedAmount to not throw.
      */
-    function liquidateOnBehalfOf(
-        address liquidator,
+    function closeLoanOnBehalfOf(
+        address closer,
         address payoutRecipient,
         bytes32 positionId,
         uint256 requestedAmount

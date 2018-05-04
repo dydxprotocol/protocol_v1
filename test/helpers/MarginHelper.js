@@ -656,10 +656,10 @@ async function expectCloseLog(addresses, start, params) {
   expect(params.tx.result[2]).to.be.bignumber.equal(owedTokenPaidToLender);
 }
 
-async function callLiquidatePosition(
+async function callClosePositionAndLoan(
   dydxMargin,
   OpenTx,
-  liquidateAmount,
+  closeAmount,
   from,
   payoutRecipient = null
 ) {
@@ -668,22 +668,25 @@ async function callLiquidatePosition(
 
   payoutRecipient = payoutRecipient || from
   const tx = await transact(
-    dydxMargin.liquidatePosition,
+    dydxMargin.closePositionAndLoan,
     OpenTx.id,
-    liquidateAmount,
+    closeAmount,
     payoutRecipient,
     { from }
   );
 
-  const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
+  const actualCloseAmount = BigNumber.min(startAmount, closeAmount);
 
-  expectLog(tx.logs[0], 'PositionLiquidated', {
+  expectLog(tx.logs[0], 'PositionClosed', {
     positionId: OpenTx.id,
-    liquidator: from,
+    closer: from,
     payoutRecipient: payoutRecipient,
-    liquidatedAmount: actualLiquidateAmount,
-    remainingAmount: startAmount.minus(actualLiquidateAmount),
-    heldTokenPayout: getPartialAmount(actualLiquidateAmount, startAmount, startHeldToken)
+    closeAmount: actualCloseAmount,
+    remainingAmount: startAmount.minus(actualCloseAmount),
+    owedTokenPaidToLender: 0,
+    payoutAmount: getPartialAmount(actualCloseAmount, startAmount, startHeldToken),
+    buybackCostInHeldToken: 0,
+    payoutInHeldToken: true
   });
 
   return tx;
@@ -969,7 +972,7 @@ module.exports = {
   callCancelLoanOffer,
   callClosePosition,
   callClosePositionDirectly,
-  callLiquidatePosition,
+  callClosePositionAndLoan,
   getPosition,
   doOpenPositionAndCall,
   issueForDirectClose,

@@ -9,7 +9,6 @@ import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { DepositCollateralImpl } from "./impl/DepositCollateralImpl.sol";
 import { ForceRecoverCollateralImpl } from "./impl/ForceRecoverCollateralImpl.sol";
 import { IncreasePositionImpl } from "./impl/IncreasePositionImpl.sol";
-import { LiquidatePositionImpl } from "./impl/LiquidatePositionImpl.sol";
 import { LoanGetters } from "./impl/LoanGetters.sol";
 import { LoanImpl } from "./impl/LoanImpl.sol";
 import { MarginAdmin } from "./impl/MarginAdmin.sol";
@@ -203,7 +202,7 @@ contract Margin is
      * @param  principalToAdd  Principal amount to add to the position
      * @return                 Amount of heldToken pulled from the msg.sender
      */
-    function increasePositionDirectly(
+    function increasePositionAndLoan(
         bytes32 positionId,
         uint256 principalToAdd
     )
@@ -212,7 +211,7 @@ contract Margin is
         nonReentrant
         returns (uint256)
     {
-        return IncreasePositionImpl.increasePositionDirectlyImpl(
+        return IncreasePositionImpl.increasePositionAndLoanImpl(
             state,
             positionId,
             principalToAdd
@@ -303,19 +302,19 @@ contract Margin is
      * Reduce the size of a position and withdraw a proportional amount of heldToken from the vault.
      * Must be approved by both the position owner and lender.
      *
-     * @param  positionId                  Unique ID for the position
-     * @param  requestedLiquidationAmount  Principal amount of the position to liquidate. The actual
-     *                                     amount liquidated is also bounded by:
-     *                                     1) The principal of the position
-     *                                     2) The amount allowed by the owner if closer != owner
-     *                                     2) The amount allowed by the lender if closer != lender
-     * @return                             Values corresponding to:
-     *                                     1) Principal amount of position liquidated
-     *                                     2) Amount of heldToken received by the msg.sender
+     * @param  positionId            Unique ID for the position
+     * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
+     *                               closed is also bounded by:
+     *                               1) The principal of the position
+     *                               2) The amount allowed by the owner if closer != owner
+     *                               2) The amount allowed by the lender if closer != lender
+     * @return                       Values corresponding to:
+     *                               1) Principal amount of position closed
+     *                               2) Amount of heldToken received by the msg.sender
      */
-    function liquidatePosition(
+    function closePositionAndLoan(
         bytes32 positionId,
-        uint256 requestedLiquidationAmount,
+        uint256 requestedCloseAmount,
         address payoutRecipient
     )
         external
@@ -323,10 +322,10 @@ contract Margin is
         nonReentrant
         returns (uint256, uint256)
     {
-        return LiquidatePositionImpl.liquidatePositionImpl(
+        return ClosePositionImpl.closePositionAndLoanImpl(
             state,
             positionId,
-            requestedLiquidationAmount,
+            requestedCloseAmount,
             payoutRecipient
         );
     }

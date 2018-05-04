@@ -82,7 +82,7 @@ contract('SharedLoan', function(accounts) {
     SHARED_LOAN.POSITION_OWNER = positionOwner.address;
   }
 
-  async function increasePositionDirectly(adder, addedPrincipal) {
+  async function increasePositionAndLoan(adder, addedPrincipal) {
     const [principal, amountHeld] = await Promise.all([
       dydxMargin.getPositionPrincipal(SHARED_LOAN.ID),
       dydxMargin.getPositionBalance(SHARED_LOAN.ID),
@@ -94,7 +94,7 @@ contract('SharedLoan', function(accounts) {
       true
     );
     await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
-    await dydxMargin.increasePositionDirectly(
+    await dydxMargin.increasePositionAndLoan(
       SHARED_LOAN.ID,
       addedPrincipal,
       { from: adder }
@@ -252,7 +252,7 @@ contract('SharedLoan', function(accounts) {
 
       const adder = accounts[8];
       const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
-      await increasePositionDirectly(adder, addedPrincipal);
+      await increasePositionAndLoan(adder, addedPrincipal);
 
       // get constants after increasing position
       const tsc2 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, adder);
@@ -576,8 +576,8 @@ contract('SharedLoan', function(accounts) {
 
       await transferLoanToSharedLoan();
       await transferPositionToTestPositionOwner();
-      await increasePositionDirectly(accountB, SHARED_LOAN.TX.principal);
-      await increasePositionDirectly(accountC, SHARED_LOAN.TX.principal);
+      await increasePositionAndLoan(accountB, SHARED_LOAN.TX.principal);
+      await increasePositionAndLoan(accountC, SHARED_LOAN.TX.principal);
 
       // Check balances
       await expectSharedLoanBalances([

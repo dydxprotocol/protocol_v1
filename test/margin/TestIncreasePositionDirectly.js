@@ -22,7 +22,7 @@ const {
   issueTokenToAccountInAmountAndApproveProxy,
 } = require('../helpers/MarginHelper');
 
-describe('#increasePositionDirectly', () => {
+describe('#increasePositionAndLoan', () => {
   contract('Margin', function(accounts) {
     it('succeeds on valid inputs', async () => {
       const {
@@ -36,13 +36,13 @@ describe('#increasePositionDirectly', () => {
         testLoanOwner
       } = await setup(accounts);
 
-      const tx = await dydxMargin.increasePositionDirectly(
+      const tx = await dydxMargin.increasePositionAndLoan(
         OpenTx.id,
         addAmount,
         { from: adder }
       );
 
-      console.log('\tMargin.increasePositionDirectly gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.increasePositionAndLoan gas used: ' + tx.receipt.gasUsed);
 
       const position = await getPosition(dydxMargin, OpenTx.id);
 
@@ -81,7 +81,7 @@ describe('#increasePositionDirectly', () => {
         adder
       } = await setup(accounts);
 
-      await expectThrow(dydxMargin.increasePositionDirectly(
+      await expectThrow(dydxMargin.increasePositionAndLoan(
         OpenTx.id,
         0,
         { from: adder }
@@ -100,7 +100,7 @@ describe('#increasePositionDirectly', () => {
 
       await wait(OpenTx.loanOffering.maxDuration + 1);
 
-      await expectThrow(dydxMargin.increasePositionDirectly(
+      await expectThrow(dydxMargin.increasePositionAndLoan(
         OpenTx.id,
         addAmount,
         { from: adder }
