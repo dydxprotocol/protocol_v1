@@ -22,6 +22,7 @@ import "./ZeroExProxy.sol";
 import "./base/ZeroExToken.sol";
 import "./base/ZeroExSafeMath.sol";
 
+
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
 contract ZeroExExchange is ZeroExSafeMath {
@@ -128,15 +129,24 @@ contract ZeroExExchange is ZeroExSafeMath {
             orderHash: getOrderHash(orderAddresses, orderValues)
         });
 
-        require(order.taker == address(0) || order.taker == msg.sender);
-        require(order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && fillTakerTokenAmount > 0);
-        require(isValidSignature(
-            order.maker,
-            order.orderHash,
-            v,
-            r,
-            s
-        ));
+        require(
+            order.taker == address(0) || order.taker == msg.sender,
+            "ZeroExExchange#fillOrder: Invalid Taker"
+        );
+        require(
+            order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && fillTakerTokenAmount > 0,
+            "ZeroExExchange#fillOrder: Zero Amount"
+        );
+        require(
+            isValidSignature(
+                order.maker,
+                order.orderHash,
+                v,
+                r,
+                s
+            ),
+            "ZeroExExchange#fillOrder: Invalid Signature"
+        );
 
         if (block.timestamp >= order.expirationTimestampInSec) {
             emit LogError(uint8(Errors.ORDER_EXPIRED), order.orderHash);
@@ -164,37 +174,49 @@ contract ZeroExExchange is ZeroExSafeMath {
         uint256 paidMakerFee;
         uint256 paidTakerFee;
         filled[order.orderHash] = safeAdd(filled[order.orderHash], filledTakerTokenAmount);
-        require(transferViaTokenTransferProxy(
-            order.makerToken,
-            order.maker,
-            msg.sender,
-            filledMakerTokenAmount
-        ));
-        require(transferViaTokenTransferProxy(
-            order.takerToken,
-            msg.sender,
-            order.maker,
-            filledTakerTokenAmount
-        ));
+        require(
+            transferViaTokenTransferProxy(
+                order.makerToken,
+                order.maker,
+                msg.sender,
+                filledMakerTokenAmount
+            ),
+            "ZeroExExchange#fillOrder: Failed to transfer maker tokens"
+        );
+        require(
+            transferViaTokenTransferProxy(
+                order.takerToken,
+                msg.sender,
+                order.maker,
+                filledTakerTokenAmount
+            ),
+            "ZeroExExchange#fillOrder: Failed to transfer taker tokens"
+        );
 
         if (order.feeRecipient != address(0)) {
             if (order.makerFee > 0) {
                 paidMakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerFee);
-                require(transferViaTokenTransferProxy(
-                    ZRX_TOKEN_CONTRACT,
-                    order.maker,
-                    order.feeRecipient,
-                    paidMakerFee
-                ));
+                require(
+                    transferViaTokenTransferProxy(
+                        ZRX_TOKEN_CONTRACT,
+                        order.maker,
+                        order.feeRecipient,
+                        paidMakerFee
+                    ),
+                    "ZeroExExchange#fillOrder: Failed to transfer maker fee"
+                );
             }
             if (order.takerFee > 0) {
                 paidTakerFee = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.takerFee);
-                require(transferViaTokenTransferProxy(
-                    ZRX_TOKEN_CONTRACT,
-                    msg.sender,
-                    order.feeRecipient,
-                    paidTakerFee
-                ));
+                require(
+                    transferViaTokenTransferProxy(
+                        ZRX_TOKEN_CONTRACT,
+                        msg.sender,
+                        order.feeRecipient,
+                        paidTakerFee
+                    ),
+                    "ZeroExExchange#fillOrder: Failed to transfer taker fee"
+                );
             }
         }
 

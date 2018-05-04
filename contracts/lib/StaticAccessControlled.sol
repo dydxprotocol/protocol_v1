@@ -40,7 +40,10 @@ contract StaticAccessControlled is AccessControlledBase, Ownable {
         external
         onlyOwner
     {
-        require(block.timestamp < GRACE_PERIOD_EXPIRATION);
+        require(
+            block.timestamp < GRACE_PERIOD_EXPIRATION,
+            "StaticAccessControlled#grantAccess: Cannot grant access after grace period"
+        );
 
         emit AccessGranted(who);
         authorized[who] = true;

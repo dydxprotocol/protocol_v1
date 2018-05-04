@@ -99,7 +99,10 @@ contract ERC721MarginPosition is
         nonReentrant
     {
         // cannot approve self since any address can already close its own positions
-        require(closer != msg.sender);
+        require(
+            closer != msg.sender,
+            "ERC721MarginPosition#approveCloser: Cannot approve self"
+        );
 
         if (approvedClosers[msg.sender][closer] != isApproved) {
             approvedClosers[msg.sender][closer] = isApproved;
@@ -145,7 +148,11 @@ contract ERC721MarginPosition is
     {
         uint256 tokenId = uint256(positionId);
         address owner = ownerOf(tokenId);
-        require(msg.sender == owner);
+        require(
+            msg.sender == owner,
+            "ERC721MarginPosition#untokenizePosition: Only token owner can call"
+        );
+
         _burn(owner, tokenId);
         Margin(DYDX_MARGIN).transferPosition(positionId, to);
 
@@ -287,7 +294,10 @@ contract ERC721MarginPosition is
     )
         internal
     {
-        require(Margin(DYDX_MARGIN).isPositionClosed(positionId));
+        require(
+            Margin(DYDX_MARGIN).isPositionClosed(positionId),
+            "ERC721MarginPosition#burnClosedTokenInternal: Position is not closed"
+        );
         _burn(ownerOf(uint256(positionId)), uint256(positionId));
     }
 }

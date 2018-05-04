@@ -49,7 +49,10 @@ library Exponent {
         pure
         returns (Fraction256.Fraction memory)
     {
-        require(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
+        require(
+            precomputePrecision <= MAX_PRECOMPUTE_PRECISION,
+            "Exponent#exp: Precompute precision over maximum"
+        );
 
         Fraction256.Fraction memory Xcopy = X.copy().bound();
         if (Xcopy.num == 0) { // e^0 = 1

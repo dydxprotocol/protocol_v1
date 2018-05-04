@@ -105,7 +105,10 @@ library ClosePositionImpl {
         uint256 lenderOwedToken = transaction.owedTokenOwed;
 
         if (transaction.exchangeWrapper == address(0)) {
-            require(transaction.payoutInHeldToken);
+            require(
+                transaction.payoutInHeldToken,
+                "ClosePositionImpl#returnOwedTokensToLender: Cannot payout in owedToken"
+            );
 
             // No buy order; send owedTokens directly from the closer to the lender
             Proxy(state.PROXY).transferTokens(
@@ -165,7 +168,10 @@ library ClosePositionImpl {
                 );
 
             // Require enough available heldToken to pay for the buyback
-            require(buybackCostInHeldToken <= transaction.availableHeldToken);
+            require(
+                buybackCostInHeldToken <= transaction.availableHeldToken,
+                "ClosePositionImpl#buyBackOwedToken: Not enough available heldToken"
+            );
         } else {
             buybackCostInHeldToken = transaction.availableHeldToken;
         }
@@ -187,7 +193,10 @@ library ClosePositionImpl {
             orderData
         );
 
-        require(receivedOwedToken >= transaction.owedTokenOwed);
+        require(
+            receivedOwedToken >= transaction.owedTokenOwed,
+            "ClosePositionImpl#buyBackOwedToken: Did not receive enough owedToken"
+        );
 
         return (buybackCostInHeldToken, receivedOwedToken);
     }

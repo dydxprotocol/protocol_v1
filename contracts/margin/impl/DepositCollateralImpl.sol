@@ -48,8 +48,14 @@ library DepositCollateralImpl {
     {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
-        require(depositAmount > 0);
-        require(msg.sender == position.owner);
+        require(
+            depositAmount > 0,
+            "DepositCollateralImpl#depositCollateralImpl: Deposit amount cannot be 0"
+        );
+        require(
+            msg.sender == position.owner,
+            "DepositCollateralImpl#depositCollateralImpl: Only position owner can deposit"
+        );
 
         Vault(state.VAULT).transferToVault(
             positionId,

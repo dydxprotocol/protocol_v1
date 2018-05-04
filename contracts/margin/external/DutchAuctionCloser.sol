@@ -65,8 +65,14 @@ contract DutchAuctionCloser is
         OnlyMargin(margin)
     {
         // these two requirements also require (_denominator > 0)
-        require(callTimeLimitNumerator <= callTimeLimitDenominator);
-        require(callTimeLimitNumerator > 0);
+        require(
+            callTimeLimitNumerator <= callTimeLimitDenominator,
+            "DutchAuctionCloser#constructor: Invalid callTimeLimit fraction"
+        );
+        require(
+            callTimeLimitNumerator > 0,
+            "DutchAuctionCloser#constructor: callTimeLimit fraction cannot be 0"
+        );
         CALL_TIMELIMIT_NUMERATOR = callTimeLimitNumerator;
         CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
     }
@@ -100,7 +106,10 @@ contract DutchAuctionCloser is
         onlyMargin
         returns (bool)
     {
-        require(payoutInHeldToken);
+        require(
+            payoutInHeldToken,
+            "DutchAuctionCloser#receiveClosePositionPayout: Cannot pay out in baseToken"
+        );
 
         uint256 auctionPrice = getAuctionPrice(
             positionId,
@@ -185,8 +194,14 @@ contract DutchAuctionCloser is
             auctionEndTimestamp = callTimestamp.add(callTimeLimit);
         }
 
-        require(block.timestamp >= auctionStartTimestamp);
-        require(block.timestamp <= auctionEndTimestamp);
+        require(
+            block.timestamp >= auctionStartTimestamp,
+            "DutchAuctionCloser#getAuctionTimeLimits: Auction has not started"
+        );
+        require(
+            block.timestamp <= auctionEndTimestamp,
+            "DutchAuctionCloser#getAuctionTimeLimits: Auction has ended"
+        );
 
         return (
             auctionStartTimestamp,

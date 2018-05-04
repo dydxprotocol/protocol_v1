@@ -142,8 +142,14 @@ contract ERC20Position is
         returns (address)
     {
         // require uninitialized so that this cannot receive ownership for more than one position
-        require(state == State.UNINITIALIZED);
-        require(POSITION_ID == positionId);
+        require(
+            state == State.UNINITIALIZED,
+            "ERC20Position#receivePositionOwnership: Already initialized"
+        );
+        require(
+            POSITION_ID == positionId,
+            "ERC20Position#receivePositionOwnership: Incorrect position"
+        );
 
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
@@ -264,7 +270,10 @@ contract ERC20Position is
         nonReentrant
     {
         setStateClosedIfClosed();
-        require(state == State.CLOSED);
+        require(
+            state == State.CLOSED,
+            "ERC20Position#withdrawMultiple: Position has not yet been closed"
+        );
 
         for (uint256 i = 0; i < who.length; i++) {
             withdrawImpl(who[i]);
@@ -297,7 +306,10 @@ contract ERC20Position is
         returns (uint256)
     {
         setStateClosedIfClosed();
-        require(state == State.CLOSED);
+        require(
+            state == State.CLOSED,
+            "ERC20Position#withdraw: Position has not yet been closed"
+        );
 
         return withdrawImpl(who);
     }
@@ -355,7 +367,10 @@ contract ERC20Position is
         view
         returns (address)
     {
-        require(positionId == POSITION_ID);
+        require(
+            positionId == POSITION_ID,
+            "ERC20Position#getPositionDeedHolder: Invalid position ID"
+        );
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }
@@ -443,7 +458,10 @@ contract ERC20Position is
             positionPrincipal
         );
 
-        require(tokenAmount > 0 && allowedCloseAmount > 0);
+        require(
+            tokenAmount > 0 && allowedCloseAmount > 0,
+            "ERC20Position#close: Cannot close 0 amount"
+        );
 
         assert(tokenAmount <= balance);
         assert(allowedCloseAmount <= requestedAmount);
