@@ -6,9 +6,9 @@ import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
+import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { PositionOwner } from "../interfaces/PositionOwner.sol";
-import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**
