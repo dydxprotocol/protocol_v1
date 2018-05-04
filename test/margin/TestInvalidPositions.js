@@ -17,7 +17,8 @@ const {
   doOpenPosition,
   getMinimumDeposit,
   issueTokensAndSetAllowancesForClose,
-  callClosePosition
+  callClosePosition,
+  issueForDirectClose
 } = require('../helpers/MarginHelper');
 const {
   signLoanOffering
@@ -553,7 +554,38 @@ describe('#closePosition', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal
+          )
+        );
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Disallows paying out in base token if no exchange wrapper', async() => {
+        const OpenTx = await doOpenPosition(accounts);
+        const [sellOrder, dydxMargin] = await Promise.all([
+          createSignedSellOrder(accounts),
+          Margin.deployed()
+        ]);
+
+        await issueForDirectClose(OpenTx);
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal,
+            {
+              payoutInHeldToken: false,
+              exchangeWrapper: ADDRESSES.ZERO
+            }
+          )
+        );
       });
     });
 

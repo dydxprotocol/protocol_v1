@@ -456,7 +456,8 @@ async function callClosePosition(
   {
     from,
     recipient,
-    payoutInHeldToken = true
+    payoutInHeldToken = true,
+    exchangeWrapper = ZeroExExchangeWrapper.address
   } = {}
 ) {
   const closer = from || OpenTx.trader;
@@ -471,7 +472,7 @@ async function callClosePosition(
     OpenTx.id,
     closeAmount,
     recipient,
-    ZeroExExchangeWrapper.address,
+    exchangeWrapper,
     payoutInHeldToken,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
