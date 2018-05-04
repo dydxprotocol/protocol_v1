@@ -6,7 +6,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
-import { TimestampHelper } from "../lib/TimestampHelper.sol";
+import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**

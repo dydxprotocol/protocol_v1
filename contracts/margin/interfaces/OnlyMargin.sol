@@ -30,7 +30,11 @@ contract OnlyMargin {
 
     modifier onlyMargin()
     {
-        require(msg.sender == DYDX_MARGIN);
+        require(
+            msg.sender == DYDX_MARGIN,
+            "OnlyMargin#onlyMargin: Only Margin can call"
+        );
+
         _;
     }
 }

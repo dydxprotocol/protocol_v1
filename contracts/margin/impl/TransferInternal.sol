@@ -67,7 +67,10 @@ library TransferInternal {
             }
         }
 
-        require(newOwner != address(0));
+        require(
+            newOwner != address(0),
+            "TransferInternal#grantLoanOwnership: New owner did not consent to owning loan"
+        );
 
         return newOwner;
     }
@@ -103,7 +106,10 @@ library TransferInternal {
             }
         }
 
-        require(newOwner != address(0));
+        require(
+            newOwner != address(0),
+            "TransferInternal#grantPositionOwnership: New owner did not consent to owning position"
+        );
 
         return newOwner;
     }

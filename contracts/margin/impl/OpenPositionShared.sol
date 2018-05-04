@@ -121,19 +121,26 @@ library OpenPositionShared {
                     transaction.loanOffering.loanHash
                 )
             ) <= transaction.loanOffering.rates.maxAmount,
-            "OpenPositionShared#validateOpenTx: "
+            "OpenPositionShared#validateOpenTx: Loan offering does not have enough available"
         );
-        require(transaction.principal >= transaction.loanOffering.rates.minAmount);
-
-        // Validate loan offering is not expired
-        require(transaction.loanOffering.expirationTimestamp > block.timestamp);
-
-        // Disallow loan offerings with 0 maxDuration
-        require(transaction.loanOffering.maxDuration > 0);
-
-        // The interest rounding period cannot be longer than max duration
         require(
-            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration
+            transaction.principal >= transaction.loanOffering.rates.minAmount,
+            "OpenPositionShared#validateOpenTx: Below loan offering minimum amount"
+        );
+
+        require(
+            transaction.loanOffering.expirationTimestamp > block.timestamp,
+            "OpenPositionShared#validateOpenTx: Loan offering is expired"
+        );
+
+        require(
+            transaction.loanOffering.maxDuration > 0,
+            "OpenPositionShared#validateOpenTx: Loan offering has 0 maximum duration"
+        );
+
+        require(
+            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
+            "OpenPositionShared#validateOpenTx: Loan offering interestPeriod > maxDuration"
         );
 
         // The minimum heldToken is validated after executing the sell
@@ -178,7 +185,8 @@ library OpenPositionShared {
                     getLoanOfferingValues256(transaction),
                     getLoanOfferingValues32(transaction),
                     positionId
-                )
+                ),
+                "OpenPositionShared#getConsentIfSmartContractLender: Loan payer does not consent"
             );
         }
     }
@@ -323,7 +331,10 @@ library OpenPositionShared {
             transaction.loanOffering.rates.minHeldToken
         );
 
-        require(totalHeldTokenReceived >= loanOfferingMinimumHeldToken);
+        require(
+            totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
+            "OpenPositionShared#validateMinimumHeldToken: Loan offering minimum held token not met"
+        );
     }
 
     function getLoanOfferingAddresses(

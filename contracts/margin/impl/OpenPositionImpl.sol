@@ -8,7 +8,7 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { LoanOwner } from "../interfaces/LoanOwner.sol";
 import { PositionOwner } from "../interfaces/PositionOwner.sol";
-import { TimestampHelper } from "../lib/TimestampHelper.sol";
+import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**
