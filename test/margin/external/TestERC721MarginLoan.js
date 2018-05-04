@@ -353,7 +353,7 @@ describe('ERC721MarginLoan', () => {
       );
       await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
       await expectThrow(
-        dydxMargin.increasePositionDirectly(
+        dydxMargin.increasePositionAndLoan(
           openTx.id,
           addedPrincipal,
           { from: adder }

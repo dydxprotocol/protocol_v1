@@ -1,11 +1,11 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { LiquidatePositionDelegator } from "../margin/interfaces/LiquidatePositionDelegator.sol";
+import { CloseLoanDelegator } from "../margin/interfaces/CloseLoanDelegator.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegator {
+contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
 
     address public CLOSER;
 
@@ -30,7 +30,7 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
         return address(this);
     }
 
-    function liquidateOnBehalfOf(
+    function closeLoanOnBehalfOf(
         address who,
         address,
         bytes32,
