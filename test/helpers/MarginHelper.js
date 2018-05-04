@@ -663,10 +663,12 @@ async function callLiquidatePosition(
   from,
   payoutRecipient = null
 ) {
-  const startAmount = await dydxMargin.getPositionPrincipal.call(OpenTx.id);
-  const startHeldToken = await dydxMargin.getPositionBalance.call(OpenTx.id);
+  const [startAmount, startHeldToken] = await Promise.all([
+    dydxMargin.getPositionPrincipal.call(OpenTx.id),
+    dydxMargin.getPositionBalance.call(OpenTx.id)
+  ]);
 
-  payoutRecipient = payoutRecipient || from
+  payoutRecipient = payoutRecipient || from;
   const tx = await transact(
     dydxMargin.liquidatePosition,
     OpenTx.id,
@@ -675,7 +677,9 @@ async function callLiquidatePosition(
     { from }
   );
 
-  const actualLiquidateAmount = BigNumber.min(startAmount, liquidateAmount);
+  const endAmount = await dydxMargin.getPositionPrincipal.call(OpenTx.id);
+
+  const actualLiquidateAmount = startAmount.minus(endAmount);
 
   expectLog(tx.logs[0], 'PositionLiquidated', {
     positionId: OpenTx.id,

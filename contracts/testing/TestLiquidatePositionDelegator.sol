@@ -7,16 +7,16 @@ import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegator {
 
-    address public CLOSER;
+    uint256 public AMOUNT_TO_RETURN;
 
     constructor(
         address margin,
-        address closer
+        uint256 amountToReturn
     )
         public
         OnlyMargin(margin)
     {
-        CLOSER = closer;
+        AMOUNT_TO_RETURN = amountToReturn;
     }
 
     function receiveLoanOwnership(
@@ -31,16 +31,16 @@ contract TestLiquidatePositionDelegator is OnlyMargin, LiquidatePositionDelegato
     }
 
     function liquidateOnBehalfOf(
-        address who,
+        address,
         address,
         bytes32,
-        uint256 requestedAmount
+        uint256
     )
         onlyMargin
         external
         returns (uint256)
     {
-        return who == CLOSER ? requestedAmount : 0;
+        return AMOUNT_TO_RETURN;
     }
 
     function marginLoanIncreased(

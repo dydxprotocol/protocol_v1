@@ -38,7 +38,7 @@ contract('LoanGetters', (accounts) => {
     expect(canceledAmount).to.be.bignumber.equal(expectedCanceledAmount);
   }
 
-  before('get Margin', async() => {
+  before('get Margin', async () => {
     dydxMargin = await Margin.deployed();
   });
 
@@ -75,7 +75,7 @@ contract('LoanGetters', (accounts) => {
 contract('LoanGetters', (accounts) => {
   let dydxMargin, heldToken;
 
-  before('get Margin', async() => {
+  before('get Margin', async () => {
     [dydxMargin, heldToken] = await Promise.all([
       Margin.deployed(),
       HeldToken.deployed(),
