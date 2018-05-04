@@ -109,10 +109,16 @@ library IncreasePositionImpl {
             MarginCommon.getPositionFromStorage(state, positionId);
 
         // Disallow adding 0 principal
-        require(principalToAdd > 0);
+        require(
+            principalToAdd > 0,
+            "IncreasePositionImpl#incraseWithoutCounterpartyImpl: Cannot add 0 principal"
+        );
 
         // Disallow additions after maximum duration
-        require(block.timestamp < uint256(position.startTimestamp).add(position.maxDuration));
+        require(
+            block.timestamp < uint256(position.startTimestamp).add(position.maxDuration),
+            "IncreasePositionImpl#incraseWithoutCounterpartyImpl: Cannot increase after maxDuration"
+        );
 
         uint256 heldTokenAmount = getPositionMinimumHeldToken(
             positionId,
@@ -201,15 +207,23 @@ library IncreasePositionImpl {
         internal
         view
     {
-        require(position.callTimeLimit <= transaction.loanOffering.callTimeLimit);
+        require(
+            position.callTimeLimit <= transaction.loanOffering.callTimeLimit,
+            "IncreasePositionImpl#validate: Loan offering must have >= position callTimeLimit"
+        );
 
         // require the position to end no later than the loanOffering's maximum acceptable end time
         uint256 positionEndTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
-        require(positionEndTimestamp <= offeringEndTimestamp);
+        require(
+            positionEndTimestamp <= offeringEndTimestamp,
+            "IncreasePositionImpl#validate: Loan offering must have >= position end timestamp"
+        );
 
-        // Do not allow value to be added after the max duration
-        require(block.timestamp < positionEndTimestamp);
+        require(
+            block.timestamp < positionEndTimestamp,
+            "IncreasePositionImpl#validate: Cannot increase position after its maximum duration"
+        );
     }
 
     function setDepositAmount(
@@ -241,7 +255,10 @@ library IncreasePositionImpl {
                     orderData
                 );
 
-            require(heldTokenFromSell <= positionMinimumHeldToken);
+            require(
+                heldTokenFromSell <= positionMinimumHeldToken,
+                "IncreasePositionImpl#setDepositAmount: Buy order gives too much heldToken"
+            );
             transaction.depositAmount = positionMinimumHeldToken.sub(heldTokenFromSell);
         } else {
             uint256 owedTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
@@ -252,7 +269,10 @@ library IncreasePositionImpl {
                     orderData
                 );
 
-            require(transaction.lenderAmount <= owedTokenToSell);
+            require(
+                transaction.lenderAmount <= owedTokenToSell,
+                "IncreasePositionImpl#setDepositAmount: Cannot sell borrowed owedToken with order"
+            );
             transaction.depositAmount = owedTokenToSell.sub(transaction.lenderAmount);
             transaction.desiredTokenFromSell = positionMinimumHeldToken;
         }
@@ -301,7 +321,8 @@ library IncreasePositionImpl {
                     msg.sender,
                     positionId,
                     principalAdded
-                )
+                ),
+                "IncreasePositionImpl#updateState: Position owner does not consent to increase"
             );
         }
 
@@ -314,7 +335,8 @@ library IncreasePositionImpl {
                     loanPayer,
                     positionId,
                     principalAdded
-                )
+                ),
+                "IncreasePositionImpl#updateState: Lender does not consent to increase"
             );
         }
     }

@@ -24,10 +24,21 @@ library TransferImpl {
     )
         public
     {
-        require(MarginCommon.containsPositionImpl(state, positionId));
+        require(
+            MarginCommon.containsPositionImpl(state, positionId),
+            "TransferImpl#transferLoanImpl: Position does not exist"
+        );
+
         address originalLender = state.positions[positionId].lender;
-        require(msg.sender == originalLender);
-        require(newLender != originalLender);
+
+        require(
+            msg.sender == originalLender,
+            "TransferImpl#transferLoanImpl: Only lender can transfer ownership"
+        );
+        require(
+            newLender != originalLender,
+            "TransferImpl#transferLoanImpl: Cannot transfer ownership to self"
+        );
 
         // Doesn't change the state of positionId; figures out the final owner of loan.
         // That is, newLender may pass ownership to a different address.
@@ -36,7 +47,10 @@ library TransferImpl {
             originalLender,
             newLender);
 
-        require(finalLender != originalLender);
+        require(
+            finalLender != originalLender,
+            "TransferImpl#transferLoanImpl: Cannot ultimately transfer ownership to self"
+        );
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
         state.positions[positionId].lender = finalLender;
@@ -49,10 +63,21 @@ library TransferImpl {
     )
         public
     {
-        require(MarginCommon.containsPositionImpl(state, positionId));
+        require(
+            MarginCommon.containsPositionImpl(state, positionId),
+            "TransferImpl#transferPositionImpl: Position does not exist"
+        );
+
         address originalOwner = state.positions[positionId].owner;
-        require(msg.sender == originalOwner);
-        require(newOwner != originalOwner);
+
+        require(
+            msg.sender == originalOwner,
+            "TransferImpl#transferPositionImpl: Only position owner can transfer ownership"
+        );
+        require(
+            newOwner != originalOwner,
+            "TransferImpl#transferPositionImpl: Cannot transfer ownership to self"
+        );
 
         // Doesn't change the state of positionId; figures out the final owner of position.
         // That is, newOwner may pass ownership to a different address.
@@ -60,7 +85,11 @@ library TransferImpl {
             positionId,
             originalOwner,
             newOwner);
-        require(finalOwner != originalOwner);
+
+        require(
+            finalOwner != originalOwner,
+            "TransferImpl#transferPositionImpl: Cannot ultimately transfer ownership to self"
+        );
 
         // Set state only after resolving the new owner (to reduce the number of storage calls)
         state.positions[positionId].owner = finalOwner;

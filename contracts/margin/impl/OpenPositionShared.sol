@@ -93,18 +93,24 @@ library OpenPositionShared {
         internal
         view
     {
-        // Disallow positions with zero amount
-        require(transaction.principal > 0);
+        require(
+            transaction.principal > 0,
+            "OpenPositionShared#validateOpenTx: Positions with 0 principal are not allowed"
+        );
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
-            require(msg.sender == transaction.loanOffering.taker);
+            require(
+                msg.sender == transaction.loanOffering.taker,
+                "OpenPositionShared#validateOpenTx: Invalid loan offering taker"
+            );
         }
 
         // Require the order to either have a valid signature or be pre-approved on-chain
         require(
             isValidSignature(transaction.loanOffering)
-            || state.approvedLoans[transaction.loanOffering.loanHash]
+            || state.approvedLoans[transaction.loanOffering.loanHash],
+            "OpenPositionShared#validateOpenTx: Invalid loan offering signature"
         );
 
         // Validate the amount is <= than max and >= min
@@ -114,24 +120,27 @@ library OpenPositionShared {
                     state,
                     transaction.loanOffering.loanHash
                 )
-            ) <= transaction.loanOffering.rates.maxAmount
+            ) <= transaction.loanOffering.rates.maxAmount,
+            "OpenPositionShared#validateOpenTx: Loan offering does not have enough available"
         );
-        require(transaction.principal >= transaction.loanOffering.rates.minAmount);
-
-        // Validate loan offering is not expired
-        require(transaction.loanOffering.expirationTimestamp > block.timestamp);
-
-        // Disallow loan offerings with 0 maxDuration
-        require(transaction.loanOffering.maxDuration > 0);
-
-        // Check no casting errors
         require(
-            uint256(uint32(block.timestamp)) == block.timestamp
+            transaction.principal >= transaction.loanOffering.rates.minAmount,
+            "OpenPositionShared#validateOpenTx: Below loan offering minimum amount"
         );
 
-        // The interest rounding period cannot be longer than max duration
         require(
-            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration
+            transaction.loanOffering.expirationTimestamp > block.timestamp,
+            "OpenPositionShared#validateOpenTx: Loan offering is expired"
+        );
+
+        require(
+            transaction.loanOffering.maxDuration > 0,
+            "OpenPositionShared#validateOpenTx: Loan offering has 0 maximum duration"
+        );
+
+        require(
+            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
+            "OpenPositionShared#validateOpenTx: Loan offering interestPeriod > maxDuration"
         );
 
         // The minimum heldToken is validated after executing the sell
@@ -176,7 +185,8 @@ library OpenPositionShared {
                     getLoanOfferingValues256(transaction),
                     getLoanOfferingValues32(transaction),
                     positionId
-                )
+                ),
+                "OpenPositionShared#getConsentIfSmartContractLender: Loan payer does not consent"
             );
         }
     }
@@ -321,7 +331,10 @@ library OpenPositionShared {
             transaction.loanOffering.rates.minHeldToken
         );
 
-        require(totalHeldTokenReceived >= loanOfferingMinimumHeldToken);
+        require(
+            totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
+            "OpenPositionShared#validateMinimumHeldToken: Loan offering minimum held token not met"
+        );
     }
 
     function getLoanOfferingAddresses(

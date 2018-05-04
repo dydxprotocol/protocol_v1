@@ -107,7 +107,8 @@ library ClosePositionShared {
                     payout,
                     transaction.availableHeldToken,
                     transaction.payoutInHeldToken
-                )
+                ),
+                "ClosePositionShared#sendTokensToPayoutRecipient: Payout recipient does not consent"
             );
         }
 
@@ -139,8 +140,14 @@ library ClosePositionShared {
         returns (CloseTx memory)
     {
         // Validate
-        require(payoutRecipient != address(0));
-        require(requestedAmount > 0);
+        require(
+            payoutRecipient != address(0),
+            "ClosePositionShared#createCloseTx: Payout recipient cannot be 0"
+        );
+        require(
+            requestedAmount > 0,
+            "ClosePositionShared#createCloseTx: Requested close amount cannot be 0"
+        );
 
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
@@ -236,7 +243,10 @@ library ClosePositionShared {
                     positionId,
                     newAmount
                 );
-            require(allowedOwnerAmount <= newAmount);
+            require(
+                allowedOwnerAmount <= newAmount,
+                "ClosePositionShared#getApprovedAmount: Invalid closeOnBehalfOf amount"
+            );
             newAmount = allowedOwnerAmount;
         }
 
@@ -249,11 +259,17 @@ library ClosePositionShared {
                     positionId,
                     newAmount
                 );
-            require(allowedLenderAmount <= newAmount);
+            require(
+                allowedLenderAmount <= newAmount,
+                "ClosePositionShared#getApprovedAmount: Invalid liquidateOnBehalfOf amount"
+            );
             newAmount = allowedLenderAmount;
         }
 
-        require(newAmount > 0);
+        require(
+            newAmount > 0,
+            "ClosePositionShared#getApprovedAmount: 0 approved amount"
+        );
         assert(newAmount <= position.principal);
         assert(newAmount <= requestedAmount);
         return newAmount;

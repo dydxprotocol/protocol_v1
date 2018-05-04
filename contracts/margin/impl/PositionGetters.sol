@@ -181,7 +181,10 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        require(timestamp >= position.startTimestamp);
+        require(
+            timestamp >= position.startTimestamp,
+            "PositionGetters#getPositionOwedAmountAtTime: Requested time before position started"
+        );
 
         return MarginCommon.calculateOwedAmount(
             position,
@@ -211,7 +214,10 @@ contract PositionGetters is MarginStorage {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        require(timestamp >= position.startTimestamp);
+        require(
+            timestamp >= position.startTimestamp,
+            "PositionGetters#getLenderAmountForIncreasePositionAtTime: timestamp < position start"
+        );
 
         return MarginCommon.calculateLenderAmountForIncreasePosition(
             position,

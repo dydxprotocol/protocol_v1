@@ -41,7 +41,10 @@ library TokenInteract {
     )
         internal
     {
-        require(ERC20(token).approve(spender, value));
+        require(
+            ERC20(token).approve(spender, value),
+            "TokenInteract#approve: Approval failed"
+        );
     }
 
     function transfer(
@@ -59,7 +62,10 @@ library TokenInteract {
             return;
         }
 
-        require(ERC20(token).transfer(to, amount));
+        require(
+            ERC20(token).transfer(to, amount),
+            "TokenInteract#transfer: Transfer failed"
+        );
     }
 
     function transferFrom(
@@ -77,6 +83,9 @@ library TokenInteract {
             return;
         }
 
-        require(ERC20(token).transferFrom(from, to, amount));
+        require(
+            ERC20(token).transferFrom(from, to, amount),
+            "TokenInteract#transferFrom: Transfer failed"
+        );
     }
 }

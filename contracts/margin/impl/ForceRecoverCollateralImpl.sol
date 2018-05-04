@@ -50,7 +50,8 @@ library ForceRecoverCollateralImpl {
                 && block.timestamp >= uint256(position.callTimestamp).add(position.callTimeLimit)
             ) || (
                 block.timestamp >= uint256(position.startTimestamp).add(position.maxDuration)
-            )
+            ),
+            "ForceRecoverCollateralImpl#forceRecoverCollateralImpl: Cannot recover yet"
         );
 
         // If not the lender, requires the lender to approve msg.sender
@@ -60,7 +61,8 @@ library ForceRecoverCollateralImpl {
                     msg.sender,
                     positionId,
                     collateralRecipient
-                )
+                ),
+                "ForceRecoverCollateralImpl#forceRecoverCollateralImpl: Lender does not consent"
             );
         }
 

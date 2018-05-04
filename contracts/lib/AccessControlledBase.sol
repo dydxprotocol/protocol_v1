@@ -27,7 +27,10 @@ contract AccessControlledBase {
     // ============ Modifiers ============
 
     modifier requiresAuthorization() {
-        require(authorized[msg.sender]);
+        require(
+            authorized[msg.sender],
+            "AccessControlledBase#requiresAuthorization: Sender not authorized"
+        );
         _;
     }
 }

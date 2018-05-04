@@ -141,7 +141,10 @@ contract SharedLoan is
         returns (address)
     {
         // This contract cannot receive ownership from more than 1 loan
-        require(POSITION_ID == positionId);
+        require(
+            POSITION_ID == positionId,
+            "SharedLoan#receiveLoanOwnership: Invalid position ID"
+        );
         assert(state == State.UNINITIALIZED);
 
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
@@ -269,7 +272,10 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        require(collateralRecipient == address(this));
+        require(
+            collateralRecipient == address(this),
+            "SharedLoan#forceRecoverCollateralOnBehalfOf: Invalid collateral recipient"
+        );
 
         state = State.CLOSED;
 
@@ -289,7 +295,10 @@ contract SharedLoan is
         external
         nonReentrant
     {
-        require(state == State.OPEN || state == State.CLOSED);
+        require(
+            state == State.OPEN || state == State.CLOSED,
+            "SharedLoan#withdrawMultiple: Invalid state"
+        );
         updateStateOnClosed();
 
         for (uint256 i = 0; i < who.length; i++) {
@@ -314,7 +323,10 @@ contract SharedLoan is
         nonReentrant
         returns (uint256, uint256)
     {
-        require(state == State.OPEN || state == State.CLOSED);
+        require(
+            state == State.OPEN || state == State.CLOSED,
+            "SharedLoan#withdraw: Invalid state"
+        );
         updateStateOnClosed();
 
         return withdrawImpl(who);

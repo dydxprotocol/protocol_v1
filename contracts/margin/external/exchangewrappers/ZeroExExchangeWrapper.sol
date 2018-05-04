@@ -202,7 +202,10 @@ contract ZeroExExchangeWrapper is
     {
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
         assert(requestedFillAmount > 0);
-        require(requestedFillAmount <= order.takerTokenAmount);
+        require(
+            requestedFillAmount <= order.takerTokenAmount,
+            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
+        );
 
         transferTakerFee(
             order,
@@ -222,8 +225,6 @@ contract ZeroExExchangeWrapper is
             takerToken,
             requestedFillAmount
         );
-
-        require(filledTakerTokenAmount == requestedFillAmount);
 
         uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
             order.makerTokenAmount,
@@ -291,7 +292,10 @@ contract ZeroExExchangeWrapper is
             order.s
         );
 
-        require(filledTakerTokenAmount == requestedFillAmount);
+        require(
+            filledTakerTokenAmount == requestedFillAmount,
+            "ZeroExExchangeWrapper#doTrade: Could not fill requested amount"
+        );
 
         return filledTakerTokenAmount;
     }

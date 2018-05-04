@@ -112,7 +112,10 @@ contract ERC721MarginLoan is
         nonReentrant
     {
         // cannot approve self since any address can already close its own positions
-        require(caller != msg.sender);
+        require(
+            caller != msg.sender,
+            "ERC721MarginLoan#approveCaller: Cannot approve self"
+        );
 
         // do nothing if state does not need to change
         if (approvedCallers[msg.sender][caller] == isApproved) {
@@ -146,11 +149,17 @@ contract ERC721MarginLoan is
     {
         uint256 tokenId = uint256(positionId);
         address owner = ownerOf(tokenId);
-        require(msg.sender == owner);
+        require(
+            msg.sender == owner,
+            "ERC721MarginLoan#untokenizeLoan: Only token owner can call"
+        );
 
         // require no un-withdrawn owedToken
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
-        require(totalRepaid == owedTokensRepaidSinceLastWithdraw[positionId]);
+        require(
+            totalRepaid == owedTokensRepaidSinceLastWithdraw[positionId],
+            "ERC721MarginLoan#untokenizeLoan: All owedToken must be withdrawn before untokenization"
+        );
 
         burnPositionToken(owner, positionId);
         Margin(DYDX_MARGIN).transferLoan(positionId, to);
@@ -327,7 +336,10 @@ contract ERC721MarginLoan is
         returns (uint256)
     {
         address owner = ownerOf(uint256(positionId));
-        require(owner != address(0));
+        require(
+            owner != address(0),
+            "ERC721MarginLoan#withdrawImpl: Token does not exist"
+        );
 
         address owedToken = owedTokenAddress[positionId];
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
