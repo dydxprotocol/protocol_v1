@@ -118,7 +118,7 @@ library Exponent {
 
             // if Fraction > 1/d, subtract 1/d and multiply result by precomputed e^(1/d)
             if (d.mul(Xtemp.num) >= Xtemp.den) {
-                Xtemp.num = Xtemp.num.sub(Xtemp.den.div(d));
+                Xtemp = Xtemp.sub1Over(d);
                 result = result.mul(getPrecomputedEToTheHalfToThe(i));
             }
         }

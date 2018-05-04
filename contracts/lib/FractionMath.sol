@@ -9,11 +9,16 @@ import { Fraction256 } from "./Fraction256.sol";
  * @title FractionMath
  * @author dYdX
  *
- * This library contains safe math functions for manipulating fractions
+ * This library contains safe math functions for manipulating fractions. All math relies on the
+ * invariants in validate(). Namely that both numerator and denominator are 128 bits or fewer, and
+ * that the denominator is nonzero.
  */
 library FractionMath {
     using SafeMath for uint256;
 
+    /**
+     * Adds a to b
+     */
     function add(
         Fraction256.Fraction memory a,
         Fraction256.Fraction memory b
@@ -42,22 +47,35 @@ library FractionMath {
 
     }
 
-    function sub(
+    /**
+     * Subtracts 1/d from a.
+     */
+    function sub1Over(
         Fraction256.Fraction memory a,
-        Fraction256.Fraction memory b
+        uint256 d
     )
         internal
         pure
         returns (Fraction256.Fraction memory)
     {
+        if (a.den % d == 0) {
+            // do not bound; denominator is constant and numerator decreases
+            return Fraction256.Fraction({
+                num: a.num.sub(a.den.div(d)),
+                den: a.den
+            });
+        }
         return bound(
             Fraction256.Fraction({
-                num: (a.num.mul(b.den)).sub(b.num.mul(a.den)),
-                den: a.den.mul(b.den)
+                num: a.num.mul(d).sub(a.den),
+                den: a.den.mul(d)
             })
         );
     }
 
+    /**
+     * Divides a by d.
+     */
     function div(
         Fraction256.Fraction memory a,
         uint256 d
@@ -66,6 +84,13 @@ library FractionMath {
         pure
         returns (Fraction256.Fraction memory)
     {
+        if (a.num % d == 0) {
+            // do not bound; denominator is constant and numerator decreases
+            return Fraction256.Fraction({
+                num: a.num.div(d),
+                den: a.den
+            });
+        }
         return bound(
             Fraction256.Fraction({
                 num: a.num,
@@ -74,6 +99,9 @@ library FractionMath {
         );
     }
 
+    /**
+     * Multiplies a by b.
+     */
     function mul(
         Fraction256.Fraction memory a,
         Fraction256.Fraction memory b
@@ -86,22 +114,6 @@ library FractionMath {
             Fraction256.Fraction({
                 num: a.num.mul(b.num),
                 den: a.den.mul(b.den)
-            })
-        );
-    }
-
-    function mul(
-        Fraction256.Fraction memory a,
-        uint256 m
-    )
-        internal
-        pure
-        returns (Fraction256.Fraction memory)
-    {
-        return bound(
-            Fraction256.Fraction({
-                num: a.num.mul(m),
-                den: a.den
             })
         );
     }
