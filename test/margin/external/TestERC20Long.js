@@ -8,7 +8,7 @@ const Margin = artifacts.require("Margin");
 const ERC20Long = artifacts.require("ERC20Long");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
-const { ADDRESSES } = require('../../helpers/Constants');
+const { ADDRESSES, BYTES32 } = require('../../helpers/Constants');
 const {
   callClosePosition,
   callClosePositionDirectly,
@@ -31,7 +31,7 @@ const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Long', function(accounts) {
-  let owedToken, heldToken;
+  let dydxMargin, owedToken, heldToken;
 
   let POSITIONS = {
     FULL: {
@@ -54,15 +54,12 @@ contract('ERC20Long', function(accounts) {
     }
   };
 
-  let CONTRACTS = {
-    DYDX_MARGIN: null,
-  }
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
 
   before('Set up Proxy, Margin accounts', async () => {
     [
-      CONTRACTS.DYDX_MARGIN,
+      dydxMargin,
       owedToken,
       heldToken
     ] = await Promise.all([
@@ -75,8 +72,8 @@ contract('ERC20Long', function(accounts) {
   async function setUpPositions() {
     pepper++;
 
-    POSITIONS.FULL.SALT = 222 + pepper;
-    POSITIONS.PART.SALT = 333 + pepper;
+    POSITIONS.FULL.SALT = 123456 + pepper;
+    POSITIONS.PART.SALT = 654321 + pepper;
 
     POSITIONS.FULL.TX = await doOpenPosition(accounts.slice(1), POSITIONS.FULL.SALT);
     POSITIONS.PART.TX = await doOpenPosition(accounts.slice(2), POSITIONS.PART.SALT);
@@ -89,7 +86,7 @@ contract('ERC20Long', function(accounts) {
     POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(accounts, POSITIONS.PART.SALT);
     await issueTokensAndSetAllowancesForClose(POSITIONS.PART.TX, POSITIONS.PART.SELL_ORDER);
     await callClosePosition(
-      CONTRACTS.DYDX_MARGIN,
+      dydxMargin,
       POSITIONS.PART.TX,
       POSITIONS.PART.SELL_ORDER,
       POSITIONS.PART.TX.principal.div(2)
@@ -102,8 +99,8 @@ contract('ERC20Long', function(accounts) {
       POSITIONS.FULL.NUM_TOKENS,
       POSITIONS.PART.NUM_TOKENS
     ] = await Promise.all([
-      CONTRACTS.DYDX_MARGIN.getPositionBalance.call(POSITIONS.FULL.ID),
-      CONTRACTS.DYDX_MARGIN.getPositionBalance.call(POSITIONS.PART.ID)
+      dydxMargin.getPositionBalance.call(POSITIONS.FULL.ID),
+      dydxMargin.getPositionBalance.call(POSITIONS.PART.ID)
     ]);
   }
 
@@ -116,12 +113,12 @@ contract('ERC20Long', function(accounts) {
     ] = await Promise.all([
       ERC20Long.new(
         POSITIONS.FULL.ID,
-        CONTRACTS.DYDX_MARGIN.address,
+        dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.TRUSTED_RECIPIENTS),
       ERC20Long.new(
         POSITIONS.PART.ID,
-        CONTRACTS.DYDX_MARGIN.address,
+        dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.PART.TRUSTED_RECIPIENTS)
     ]);
@@ -129,12 +126,12 @@ contract('ERC20Long', function(accounts) {
 
   async function transferPositionsToTokens() {
     await Promise.all([
-      CONTRACTS.DYDX_MARGIN.transferPosition(
+      dydxMargin.transferPosition(
         POSITIONS.FULL.ID,
         POSITIONS.FULL.TOKEN_CONTRACT.address,
         { from: POSITIONS.FULL.TX.trader }
       ),
-      CONTRACTS.DYDX_MARGIN.transferPosition(
+      dydxMargin.transferPosition(
         POSITIONS.PART.ID,
         POSITIONS.PART.TOKEN_CONTRACT.address,
         { from: POSITIONS.PART.TX.trader }
@@ -169,12 +166,12 @@ contract('ERC20Long', function(accounts) {
   async function marginCallPositions() {
     const requiredDeposit = new BigNumber(10);
     await Promise.all([
-      CONTRACTS.DYDX_MARGIN.marginCall(
+      dydxMargin.marginCall(
         POSITIONS.FULL.ID,
         requiredDeposit,
         { from : POSITIONS.FULL.TX.loanOffering.payer }
       ),
-      CONTRACTS.DYDX_MARGIN.marginCall(
+      dydxMargin.marginCall(
         POSITIONS.PART.ID,
         requiredDeposit,
         { from : POSITIONS.PART.TX.loanOffering.payer }
@@ -192,7 +189,7 @@ contract('ERC20Long', function(accounts) {
       for (let type in POSITIONS) {
         const position = POSITIONS[type];
         const tsc = await getERC20PositionConstants(position.TOKEN_CONTRACT);
-        expect(tsc.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
+        expect(tsc.DYDX_MARGIN).to.equal(dydxMargin.address);
         expect(tsc.POSITION_ID).to.equal(position.ID);
         expect(tsc.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.UNINITIALIZED);
         expect(tsc.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
@@ -223,17 +220,17 @@ contract('ERC20Long', function(accounts) {
 
         const tsc1 = await getERC20PositionConstants(POSITION.TOKEN_CONTRACT);
 
-        await CONTRACTS.DYDX_MARGIN.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
+        await dydxMargin.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
           { from: POSITION.TX.trader });
 
         const [tsc2, position, positionBalance] = await Promise.all([
           getERC20PositionConstants(POSITION.TOKEN_CONTRACT),
-          getPosition(CONTRACTS.DYDX_MARGIN, POSITION.ID),
-          CONTRACTS.DYDX_MARGIN.getPositionBalance.call(POSITION.ID)
+          getPosition(dydxMargin, POSITION.ID),
+          dydxMargin.getPositionBalance.call(POSITION.ID)
         ]);
 
         // expect certain values
-        expect(tsc2.DYDX_MARGIN).to.equal(CONTRACTS.DYDX_MARGIN.address);
+        expect(tsc2.DYDX_MARGIN).to.equal(dydxMargin.address);
         expect(tsc2.POSITION_ID).to.equal(POSITION.ID);
         expect(tsc2.state).to.be.bignumber.equal(TOKENIZED_POSITION_STATE.OPEN);
         expect(tsc2.INITIAL_TOKEN_HOLDER).to.equal(INITIAL_TOKEN_HOLDER);
@@ -263,6 +260,20 @@ contract('ERC20Long', function(accounts) {
         );
       }
     });
+
+    it('fails for a second position', async () => {
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const openTx = await doOpenPosition(accounts, 888);
+        await expectThrow(
+          dydxMargin.transferPosition(
+            openTx.id,
+            POSITION.TOKEN_CONTRACT.address,
+            { from: openTx.trader }
+          )
+        );
+      }
+    });
   });
 
   describe('#closeOnBehalfOf', () => {
@@ -283,7 +294,7 @@ contract('ERC20Long', function(accounts) {
     });
   });
 
-  describe('#closeOnBehalfOf via #closePositiondirectly', () => {
+  describe('#closeOnBehalfOf via #closePositionDirectly', () => {
     beforeEach('set up positions and tokens', async () => {
       await setUpPositions();
       await setUpTokens();
@@ -301,7 +312,7 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         await expectThrow(
           callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
+            dydxMargin,
             POSITION.TX,
             POSITION.PRINCIPAL,
             { from: INITIAL_TOKEN_HOLDER })
@@ -323,7 +334,7 @@ contract('ERC20Long', function(accounts) {
 
         await expectThrow(
           callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
+            dydxMargin,
             POSITION.TX,
             POSITION.PRINCIPAL,
             { from: POSITION.TX.trader }
@@ -341,7 +352,7 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         await expectThrow(
           callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
+            dydxMargin,
             POSITION.TX,
             0,
             { from: POSITION.TX.trader }
@@ -358,7 +369,7 @@ contract('ERC20Long', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL.plus(1),
           { from: POSITION.TX.trader }
@@ -385,7 +396,7 @@ contract('ERC20Long', function(accounts) {
 
         // try to close with too-large amount, but it will get bounded by the number of tokens owned
         const tx = await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL
         );
@@ -402,7 +413,7 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         await expectThrow(
           callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
+            dydxMargin,
             POSITION.TX,
             POSITION.PRINCIPAL,
             { from: accounts[0] }
@@ -420,7 +431,7 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         // do it once to close it
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL,
           { from: POSITION.TX.trader }
@@ -429,11 +440,59 @@ contract('ERC20Long', function(accounts) {
         // try again
         await expectThrow(
           callClosePositionDirectly(
-            CONTRACTS.DYDX_MARGIN,
+            dydxMargin,
             POSITION.TX,
             POSITION.PRINCIPAL,
             { from: POSITION.TX.trader }
           )
+        );
+      }
+    });
+
+    it('succeeds for trusted recipient', async () => {
+      await transferPositionsToTokens();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
+      const rando = accounts[9];
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+
+        // fails for random recipient
+        await expectThrow(
+          callClosePositionDirectly(
+            dydxMargin,
+            POSITION.TX,
+            POSITION.PRINCIPAL,
+            {
+              from: rando,
+              recipient: rando
+            }
+          )
+        );
+
+        // fails for not full amount
+        await expectThrow(
+          callClosePositionDirectly(
+            dydxMargin,
+            POSITION.TX,
+            POSITION.PRINCIPAL.div(2),
+            {
+              from: rando,
+              recipient: POSITION.TRUSTED_RECIPIENTS[1]
+            }
+          )
+        );
+
+        // succeeds for full amount and trusted recipient
+        await callClosePositionDirectly(
+          dydxMargin,
+          POSITION.TX,
+          POSITION.PRINCIPAL,
+          {
+            from: rando,
+            recipient: POSITION.TRUSTED_RECIPIENTS[1]
+          }
         );
       }
     });
@@ -446,10 +505,85 @@ contract('ERC20Long', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL
         );
+      }
+    });
+  });
+
+  describe('#withdrawMultiple', () => {
+    beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
+      async () => {
+        await setUpPositions();
+        await setUpTokens();
+        await transferPositionsToTokens();
+        await returnTokenstoTrader();
+        await marginCallPositions();
+        await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
+      }
+    );
+
+    it('fails when position is still open', async () => {
+      // close position halfway and then try to withdraw
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const trader = POSITION.TX.trader;
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.withdrawMultiple(
+            [trader],
+            { from: trader }
+          )
+        );
+      }
+    });
+
+    it('succeeds for multiple accounts', async () => {
+      // close half, force recover, then some random person can't withdraw any funds
+      const heldTokenAmount = new BigNumber("1e18");
+      const rando = accounts[9];
+      const halfHolder = ADDRESSES.TEST[6];
+      const noHolder = ADDRESSES.TEST[7];
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const lender = POSITION.TX.loanOffering.payer;
+        const trader = POSITION.TX.trader;
+
+        await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
+        await POSITION.TOKEN_CONTRACT.transfer(
+          halfHolder,
+          POSITION.NUM_TOKENS.div(2),
+          { from: trader }
+        );
+
+        const [traderBefore, halfHolderBefore, noHolderBefore] = await Promise.all([
+          heldToken.balanceOf.call(trader),
+          heldToken.balanceOf.call(halfHolder),
+          heldToken.balanceOf.call(noHolder),
+        ]);
+
+        await POSITION.TOKEN_CONTRACT.withdrawMultiple(
+          [trader, noHolder, trader, halfHolder],
+          { from: rando }
+        );
+
+        const [traderAfter, halfHolderAfter, noHolderAfter] = await Promise.all([
+          heldToken.balanceOf.call(trader),
+          heldToken.balanceOf.call(halfHolder),
+          heldToken.balanceOf.call(noHolder),
+        ]);
+
+        expect(
+          traderAfter.minus(traderBefore)
+        ).to.be.bignumber.equal(
+          halfHolderAfter.minus(halfHolderBefore)
+        ).to.be.bignumber.equal(
+          heldTokenAmount.div(2)
+        );
+        expect(noHolderAfter.minus(noHolderBefore)).to.be.bignumber.equal(0);
       }
     });
   });
@@ -474,14 +608,35 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         const lender = POSITION.TX.loanOffering.payer;
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL.div(2)
         );
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
 
         expect(tx.result).to.be.bignumber.eq(0);
+      }
+    });
+
+    it('returns all HeldToken when user has all tokens', async () => {
+      // close half, force recover, then some random person can't withdraw any funds
+      const heldTokenAmount = new BigNumber("1e18");
+      const rando = accounts[9];
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const lender = POSITION.TX.loanOffering.payer;
+
+        await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
+        const tx = await transact(
+          POSITION.TOKEN_CONTRACT.withdraw,
+          POSITION.TX.trader,
+          { from: rando }
+        );
+
+        expect(tx.result).to.be.bignumber.eq(heldTokenAmount);
       }
     });
 
@@ -493,12 +648,12 @@ contract('ERC20Long', function(accounts) {
         const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL
         );
         await expectThrow(
-          CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender })
+          dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender })
         );
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
@@ -513,7 +668,7 @@ contract('ERC20Long', function(accounts) {
         const POSITION = POSITIONS[type];
         const trader = POSITION.TX.trader;
         await callClosePositionDirectly(
-          CONTRACTS.DYDX_MARGIN,
+          dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL.div(2)
         );
@@ -528,10 +683,29 @@ contract('ERC20Long', function(accounts) {
         const trader = POSITION.TX.trader;
         const lender = POSITION.TX.loanOffering.payer;
 
-        await CONTRACTS.DYDX_MARGIN.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
 
         const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
         expect(tx.result).to.be.bignumber.equal(0);
+      }
+    });
+  });
+
+  describe('#getPositionDeedHolder', () => {
+    it('successfully returns its own address for any valid position', async () => {
+      await setUpPositions();
+      await setUpTokens();
+      await transferPositionsToTokens();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const dh = await POSITION.TOKEN_CONTRACT.getPositionDeedHolder.call(POSITION.ID);
+        expect(dh).to.equal(POSITION.TOKEN_CONTRACT.address);
+
+        // fail for bad id
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.getPositionDeedHolder.call(BYTES32.TEST[0])
+        );
       }
     });
   });
@@ -556,7 +730,7 @@ contract('ERC20Long', function(accounts) {
       await setUpPositions();
       const tokenContract = await ERC20Long.new(
         POSITIONS.FULL.ID,
-        CONTRACTS.DYDX_MARGIN.address,
+        dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         []);
       await expectThrow(tokenContract.decimals.call());
