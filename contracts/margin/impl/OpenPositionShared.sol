@@ -93,6 +93,8 @@ library OpenPositionShared {
         internal
         view
     {
+        assert(transaction.lenderAmount >= transaction.principal);
+
         require(
             transaction.principal > 0,
             "OpenPositionShared#validateOpenTx: Positions with 0 principal are not allowed"
@@ -115,7 +117,7 @@ library OpenPositionShared {
 
         // Validate the amount is <= than max and >= min
         require(
-            transaction.principal.add(
+            transaction.lenderAmount.add(
                 MarginCommon.getUnavailableLoanOfferingAmountImpl(
                     state,
                     transaction.loanOffering.loanHash
@@ -124,7 +126,7 @@ library OpenPositionShared {
             "OpenPositionShared#validateOpenTx: Loan offering does not have enough available"
         );
         require(
-            transaction.principal >= transaction.loanOffering.rates.minAmount,
+            transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
             "OpenPositionShared#validateOpenTx: Below loan offering minimum amount"
         );
 
