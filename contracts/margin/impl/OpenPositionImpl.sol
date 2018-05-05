@@ -27,7 +27,7 @@ library OpenPositionImpl {
      */
     event PositionOpened(
         bytes32 indexed positionId,
-        address indexed trander,
+        address indexed trader,
         address indexed lender,
         bytes32 loanHash,
         address owedToken,
