@@ -12,8 +12,11 @@ const { ADDRESSES, BYTES32 } = require('../../helpers/Constants');
 const {
   callClosePosition,
   callClosePositionDirectly,
+  callIncreasePosition,
+  createOpenTx,
   doOpenPosition,
   getPosition,
+  issueTokensAndSetAllowances,
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee
@@ -23,6 +26,7 @@ const {
 } = require('../../helpers/0xHelper');
 const { transact } = require('../../helpers/ContractHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
+const { signLoanOffering } = require('../../helpers/LoanHelper');
 const {
   getERC20PositionConstants,
   TOKENIZED_POSITION_STATE
@@ -509,6 +513,50 @@ contract('ERC20Long', function(accounts) {
           POSITION.TX,
           POSITION.PRINCIPAL
         );
+      }
+    });
+  });
+
+  describe('#marginPositionIncreased', () => {
+    beforeEach('Set up all tokenized positions',
+      async () => {
+        await setUpPositions();
+        await setUpTokens();
+        await transferPositionsToTokens();
+      }
+    );
+
+    it('succeeds', async () => {
+      let pepper = 0;
+      let tempAccounts = accounts;
+      const divNumber = 2;
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        tempAccounts = tempAccounts.slice(1);
+        let incrTx = await createOpenTx(tempAccounts, 99999 + pepper);
+        incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+        incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
+        incrTx.owner = POSITION.TOKEN_CONTRACT.address;
+        await issueTokensAndSetAllowances(incrTx);
+        incrTx.id = POSITION.TX.id;
+        incrTx.principal = POSITION.PRINCIPAL.div(divNumber);
+        await issueTokenToAccountInAmountAndApproveProxy(
+          heldToken,
+          incrTx.trader,
+          incrTx.depositAmount.times(4)
+        );
+        await callIncreasePosition(dydxMargin, incrTx);
+
+        const [traderBalance, ITHBalance, totalBalance] = await Promise.all([
+          POSITION.TOKEN_CONTRACT.balanceOf.call(incrTx.trader),
+          POSITION.TOKEN_CONTRACT.balanceOf.call(INITIAL_TOKEN_HOLDER),
+          POSITION.TOKEN_CONTRACT.totalSupply.call()
+        ]);
+
+        expect(traderBalance).to.be.bignumber.equal(POSITION.NUM_TOKENS.div(divNumber).ceil());
+        expect(ITHBalance).to.be.bignumber.equal(POSITION.NUM_TOKENS);
+        expect(totalBalance).to.be.bignumber.equal(traderBalance.plus(ITHBalance));
       }
     });
   });
