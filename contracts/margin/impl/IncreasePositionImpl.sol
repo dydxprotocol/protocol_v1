@@ -183,7 +183,6 @@ library IncreasePositionImpl {
         uint256 heldTokenFromSell;
         uint256 totalHeldTokenReceived;
 
-
         (
             heldTokenFromSell,
             totalHeldTokenReceived
