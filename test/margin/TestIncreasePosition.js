@@ -4,6 +4,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
+const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -338,6 +339,32 @@ describe('#increasePosition', () => {
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
     });
   });
+
+  contract('Margin', function(accounts) {
+    it('Does not allow more owedToken to be borrowed from the lender than maxAmount', async () => {
+      const {
+        increasePosTx,
+        dydxMargin,
+        heldToken
+      } = await setup(accounts);
+
+      await issueAndSetAllowance(
+        heldToken,
+        increasePosTx.buyOrder.maker,
+        increasePosTx.buyOrder.makerTokenAmount,
+        ZeroExProxy.address
+      );
+
+      increasePosTx.loanOffering.rates.maxAmount = new BigNumber(increasePosTx.principal);
+      increasePosTx.loanOffering.rates.lenderFee = new BigNumber(0);
+      increasePosTx.loanOffering.rates.takerFee = new BigNumber(0);
+      increasePosTx.loanOffering.rates.minAmount = new BigNumber(1);
+      increasePosTx.loanOffering.rates.minHeldToken = new BigNumber(1);
+      increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
+
+      await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
+    });
+  });
 });
 
 async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } = {}) {
@@ -356,7 +383,7 @@ async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } 
     increasePosTx
   ] = await Promise.all([
     createOpenTx(accounts),
-    createOpenTx(accounts, salt++, depositInHeldToken)
+    createOpenTx(accounts, ++salt, depositInHeldToken)
   ]);
 
   if (loanOwner) {
