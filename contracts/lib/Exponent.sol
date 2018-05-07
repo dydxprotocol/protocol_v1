@@ -2,7 +2,7 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Fraction128 } from "./Fraction128.sol";
+import { Fraction } from "./Fraction.sol";
 import { FractionMath } from "./FractionMath.sol";
 
 
@@ -14,7 +14,7 @@ import { FractionMath } from "./FractionMath.sol";
  */
 library Exponent {
     using SafeMath for uint256;
-    using FractionMath for Fraction128.Fraction;
+    using FractionMath for Fraction.Fraction128;
 
     // ============ Constants ============
 
@@ -41,20 +41,20 @@ library Exponent {
      * @return                      e^X
      */
     function exp(
-        Fraction128.Fraction memory X,
+        Fraction.Fraction128 memory X,
         uint256 precomputePrecision,
         uint256 maclaurinPrecision
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         require(
             precomputePrecision <= MAX_PRECOMPUTE_PRECISION,
             "Exponent#exp: Precompute precision over maximum"
         );
 
-        Fraction128.Fraction memory Xcopy = X.copy();
+        Fraction.Fraction128 memory Xcopy = X.copy();
         if (Xcopy.num == 0) { // e^0 = 1
             return ONE();
         }
@@ -68,7 +68,7 @@ library Exponent {
         }
 
         // get e^integerX
-        Fraction128.Fraction memory expOfInt =
+        Fraction.Fraction128 memory expOfInt =
             getPrecomputedEToThe(integerX % NUM_PRECOMPUTED_INTEGERS);
         while (integerX > NUM_PRECOMPUTED_INTEGERS) {
             expOfInt = expOfInt.mul(getPrecomputedEToThe(NUM_PRECOMPUTED_INTEGERS));
@@ -76,7 +76,7 @@ library Exponent {
         }
 
         // multiply e^integerX by e^decimalX
-        Fraction128.Fraction memory decimalX = Fraction128.Fraction({
+        Fraction.Fraction128 memory decimalX = Fraction.Fraction128({
             num: Xcopy.num % Xcopy.den,
             den: Xcopy.den
         });
@@ -93,24 +93,24 @@ library Exponent {
      * @return                      e^X
      */
     function expHybrid(
-        Fraction128.Fraction memory X,
+        Fraction.Fraction128 memory X,
         uint256 precomputePrecision,
         uint256 maclaurinPrecision
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         assert(precomputePrecision <= MAX_PRECOMPUTE_PRECISION);
         assert(X.num < X.den);
         // will also throw if precomputePrecision is larger than the array length in getDenominator
 
-        Fraction128.Fraction memory Xtemp = X.copy();
+        Fraction.Fraction128 memory Xtemp = X.copy();
         if (Xtemp.num == 0) { // e^0 = 1
             return ONE();
         }
 
-        Fraction128.Fraction memory result = ONE();
+        Fraction.Fraction128 memory result = ONE();
 
         uint256 d = 1; // 2^i
         for (uint256 i = 1; i <= precomputePrecision; i++) {
@@ -136,20 +136,20 @@ library Exponent {
      * @return             e^X
      */
     function expMaclaurin(
-        Fraction128.Fraction memory X,
+        Fraction.Fraction128 memory X,
         uint256 precision
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
-        Fraction128.Fraction memory Xcopy = X.copy();
+        Fraction.Fraction128 memory Xcopy = X.copy();
         if (Xcopy.num == 0) { // e^0 = 1
             return ONE();
         }
 
-        Fraction128.Fraction memory result = ONE();
-        Fraction128.Fraction memory Xtemp = ONE();
+        Fraction.Fraction128 memory result = ONE();
+        Fraction.Fraction128 memory Xtemp = ONE();
         for (uint256 i = 1; i <= precision; i++) {
             Xtemp = Xtemp.mul(Xcopy.div(uint128(i)));
             result = result.add(Xtemp);
@@ -162,9 +162,9 @@ library Exponent {
     function ONE()
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
-        return Fraction128.Fraction({ num: 1, den: 1 });
+        return Fraction.Fraction128({ num: 1, den: 1 });
     }
 
     /**
@@ -175,7 +175,7 @@ library Exponent {
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         uint128 denominator = [
             125182886983370532117250726298150828301,
@@ -212,7 +212,7 @@ library Exponent {
             340282366762482138471739420386372790954,
             340282366841710300958333641874363209044
         ][x];
-        return Fraction128.Fraction({
+        return Fraction.Fraction128({
             num: MAX_NUMERATOR,
             den: denominator
         });
@@ -226,7 +226,7 @@ library Exponent {
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         uint128 denominator = [
             340282366920938463463374607431768211455,
@@ -263,7 +263,7 @@ library Exponent {
             11714142585413118080082437,
             4309392228124372433711936
         ][x];
-        return Fraction128.Fraction({
+        return Fraction.Fraction128({
             num: MAX_NUMERATOR,
             den: denominator
         });

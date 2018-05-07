@@ -3,7 +3,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Exponent } from "../../lib/Exponent.sol";
-import { Fraction128 } from "../../lib/Fraction128.sol";
+import { Fraction } from "../../lib/Fraction.sol";
 import { FractionMath } from "../../lib/FractionMath.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
@@ -17,7 +17,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  */
 library InterestImpl {
     using SafeMath for uint256;
-    using FractionMath for Fraction128.Fraction;
+    using FractionMath for Fraction.Fraction128;
 
     // ============ Constants ============
 
@@ -52,12 +52,12 @@ library InterestImpl {
         // interestRate and secondsOfInterest should both be uint32
         assert(num < 2**128);
 
-        Fraction128.Fraction memory rt = Fraction128.Fraction({
+        Fraction.Fraction128 memory rt = Fraction.Fraction128({
             num: uint128(num),
             den: (10**8) * (1 years)
         });
 
-        Fraction128.Fraction memory percent = Exponent.exp(
+        Fraction.Fraction128 memory percent = Exponent.exp(
             rt,
             DEFAULT_PRECOMPUTE_PRECISION,
             DEFAULT_MACLAURIN_PRECISION
@@ -77,7 +77,7 @@ library InterestImpl {
      */
     function safeMultiplyUint256ByFraction(
         uint256 n,
-        Fraction128.Fraction memory f
+        Fraction.Fraction128 memory f
     )
         internal
         pure

@@ -2,7 +2,7 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { Fraction128 } from "./Fraction128.sol";
+import { Fraction } from "./Fraction.sol";
 
 
 /**
@@ -19,12 +19,12 @@ library FractionMath {
      * Adds a to b
      */
     function add(
-        Fraction128.Fraction memory a,
-        Fraction128.Fraction memory b
+        Fraction.Fraction128 memory a,
+        Fraction.Fraction128 memory b
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         uint256 left = a.num.mul(b.den);
         uint256 right = b.num.mul(a.den);
@@ -44,16 +44,16 @@ library FractionMath {
      * Subtracts 1/(2^d) from a.
      */
     function sub1Over(
-        Fraction128.Fraction memory a,
+        Fraction.Fraction128 memory a,
         uint128 d
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         if (a.den % d == 0) {
             return bound(
-                uint256(a.num).sub(a.den.div(d)),
+                a.num.sub(a.den.div(d)),
                 a.den
             );
         }
@@ -67,12 +67,12 @@ library FractionMath {
      * Divides a by d.
      */
     function div(
-        Fraction128.Fraction memory a,
+        Fraction.Fraction128 memory a,
         uint128 d
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         if (a.num % d == 0) {
             return bound(
@@ -90,12 +90,12 @@ library FractionMath {
      * Multiplies a by b.
      */
     function mul(
-        Fraction128.Fraction memory a,
-        Fraction128.Fraction memory b
+        Fraction.Fraction128 memory a,
+        Fraction.Fraction128 memory b
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         return bound(
             a.num.mul(b.num),
@@ -113,7 +113,7 @@ library FractionMath {
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         uint256 max = num > den ? num : den;
         uint256 diff = (max >> 127);
@@ -124,14 +124,14 @@ library FractionMath {
 
         assert(den > 0 && den < 2**128 && num < 2**128);
 
-        return Fraction128.Fraction({
+        return Fraction.Fraction128({
             num: uint128(num),
             den: uint128(den)
         });
     }
 
     function validate(
-        Fraction128.Fraction memory a
+        Fraction.Fraction128 memory a
     )
         internal
         pure
@@ -140,13 +140,13 @@ library FractionMath {
     }
 
     function copy(
-        Fraction128.Fraction memory a
+        Fraction.Fraction128 memory a
     )
         internal
         pure
-        returns (Fraction128.Fraction memory)
+        returns (Fraction.Fraction128 memory)
     {
         assert(a.den != 0);
-        return Fraction128.Fraction({ num: a.num, den: a.den });
+        return Fraction.Fraction128({ num: a.num, den: a.den });
     }
 }

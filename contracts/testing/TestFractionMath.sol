@@ -1,12 +1,12 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { Fraction128 } from "../lib/Fraction128.sol";
+import { Fraction } from "../lib/Fraction.sol";
 import { FractionMath } from "../lib/FractionMath.sol";
 
 
 contract TestFractionMath {
-    using FractionMath for Fraction128.Fraction;
+    using FractionMath for Fraction.Fraction128;
 
     function add(
         uint128 a,
@@ -18,9 +18,9 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
-        Fraction128.Fraction memory q = Fraction128.Fraction({num: c, den: d});
-        Fraction128.Fraction memory r = p.add(q);
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
+        Fraction.Fraction128 memory q = Fraction.Fraction128({num: c, den: d});
+        Fraction.Fraction128 memory r = p.add(q);
         return (r.num, r.den);
     }
 
@@ -33,8 +33,8 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
-        Fraction128.Fraction memory r = p.sub1Over(d);
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
+        Fraction.Fraction128 memory r = p.sub1Over(d);
         return (r.num, r.den);
     }
 
@@ -47,8 +47,8 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
-        Fraction128.Fraction memory r = p.div(d);
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
+        Fraction.Fraction128 memory r = p.div(d);
         return (r.num, r.den);
     }
 
@@ -62,9 +62,9 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
-        Fraction128.Fraction memory q = Fraction128.Fraction({num: c, den: d});
-        Fraction128.Fraction memory r = p.mul(q);
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
+        Fraction.Fraction128 memory q = Fraction.Fraction128({num: c, den: d});
+        Fraction.Fraction128 memory r = p.mul(q);
         return (r.num, r.den);
     }
 
@@ -76,7 +76,7 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory r = FractionMath.bound(a, b);
+        Fraction.Fraction128 memory r = FractionMath.bound(a, b);
         return (r.num, r.den);
     }
 
@@ -87,7 +87,7 @@ contract TestFractionMath {
         external
         pure
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
         p.validate();
     }
 
@@ -99,8 +99,8 @@ contract TestFractionMath {
         pure
         returns (uint128, uint128)
     {
-        Fraction128.Fraction memory p = Fraction128.Fraction({num: a, den: b});
-        Fraction128.Fraction memory r = p.copy();
+        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
+        Fraction.Fraction128 memory r = p.copy();
         return (r.num, r.den);
     }
 }
