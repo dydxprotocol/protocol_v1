@@ -16,7 +16,7 @@ const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
-const { createSignedBuyOrder, createSignedSellOrder } = require('./0xHelper');
+const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
 const { transact } = require('./ContractHelper');
 const { expectLog } = require('./EventHelper');
 const { createLoanOffering } = require('./LoanHelper');
@@ -28,14 +28,22 @@ const web3Instance = new Web3(web3.currentProvider);
 
 BigNumber.config({ DECIMAL_PLACES: 80 });
 
-async function createOpenTx(accounts, _salt = DEFAULT_SALT, depositInHeldToken = true) {
+async function createOpenTx(
+  accounts,
+  {
+    salt = DEFAULT_SALT,
+    depositInHeldToken = true,
+    positionOwner,
+    interestPeriod
+  } = {}
+) {
   const [loanOffering, buyOrder] = await Promise.all([
-    createLoanOffering(accounts, _salt),
-    createSignedBuyOrder(accounts, _salt)
+    createLoanOffering(accounts, { salt, interestPeriod }),
+    createSignedBuyOrder(accounts, { salt })
   ]);
 
   const tx = {
-    owner: accounts[0],
+    owner: positionOwner || accounts[0],
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
     principal: BIGNUMBERS.BASE_AMOUNT,
@@ -411,19 +419,18 @@ async function issueTokensAndSetAllowances(tx) {
 
 async function doOpenPosition(
   accounts,
-  _salt = DEFAULT_SALT,
-  positionOwner = null
+  {
+    salt = DEFAULT_SALT,
+    positionOwner,
+    interestPeriod
+  } = {}
 ) {
   const [OpenTx, dydxMargin] = await Promise.all([
-    createOpenTx(accounts, _salt),
+    createOpenTx(accounts, { salt, positionOwner, interestPeriod }),
     Margin.deployed()
   ]);
 
   await issueTokensAndSetAllowances(OpenTx);
-
-  if (positionOwner) {
-    OpenTx.owner = positionOwner;
-  }
 
   const response = await callOpenPosition(dydxMargin, OpenTx);
 
@@ -436,15 +443,17 @@ async function doClosePosition(
   accounts,
   openTx,
   closeAmount,
-  salt = DEFAULT_SALT,
-  optionalArgs = {}
+  {
+    salt = DEFAULT_SALT,
+    callCloseArgs = {}
+  } = {}
 ) {
   const [sellOrder, dydxMargin] = await Promise.all([
-    createSignedSellOrder(accounts, salt),
+    createSignedSellOrder(accounts, { salt }),
     Margin.deployed()
   ]);
   await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
-  let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount, optionalArgs);
+  let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount, callCloseArgs);
   return closeTx;
 }
 
@@ -456,7 +465,8 @@ async function callClosePosition(
   {
     from,
     recipient,
-    payoutInHeldToken = true
+    payoutInHeldToken = true,
+    exchangeWrapper = ZeroExExchangeWrapper.address
   } = {}
 ) {
   const closer = from || OpenTx.trader;
@@ -471,7 +481,7 @@ async function callClosePosition(
     OpenTx.id,
     closeAmount,
     recipient,
-    ZeroExExchangeWrapper.address,
+    exchangeWrapper,
     payoutInHeldToken,
     zeroExOrderToBytes(sellOrder),
     { from: closer }
@@ -720,12 +730,19 @@ async function callCancelLoanOffer(
   );
   expect(canceledAmount2).to.be.bignumber.equal(expectedCanceledAmount);
 
-  expectLog(tx.logs[0], 'LoanOfferingCanceled', {
-    loanHash: loanOffering.loanHash,
-    lender: loanOffering.payer,
-    feeRecipient: loanOffering.feeRecipient,
-    cancelAmount: canceledAmount2.minus(canceledAmount1)
-  });
+  if (
+    !canceledAmount1.equals(loanOffering.rates.maxAmount)
+    && !(new BigNumber(cancelAmount).equals(0))
+  ) {
+    expectLog(tx.logs[0], 'LoanOfferingCanceled', {
+      loanHash: loanOffering.loanHash,
+      lender: loanOffering.payer,
+      feeRecipient: loanOffering.feeRecipient,
+      cancelAmount: canceledAmount2.minus(canceledAmount1)
+    });
+  } else {
+    expect(tx.logs.length).to.eq(0);
+  }
 
   return tx;
 }
@@ -866,8 +883,10 @@ async function getPosition(dydxMargin, id) {
 
 async function doOpenPositionAndCall(
   accounts,
-  _salt = DEFAULT_SALT,
-  _requiredDeposit = new BigNumber(10)
+  {
+    requiredDeposit = new BigNumber(10),
+    salt = DEFAULT_SALT,
+  } = {}
 ) {
   const [dydxMargin, vault, owedToken] = await Promise.all([
     Margin.deployed(),
@@ -875,11 +894,11 @@ async function doOpenPositionAndCall(
     OwedToken.deployed()
   ]);
 
-  const OpenTx = await doOpenPosition(accounts, _salt);
+  const OpenTx = await doOpenPosition(accounts, { salt });
 
   const callTx = await dydxMargin.marginCall(
     OpenTx.id,
-    _requiredDeposit,
+    requiredDeposit,
     { from: OpenTx.loanOffering.payer }
   );
 

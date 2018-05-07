@@ -23,7 +23,7 @@ const {
 } = require('../../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../../helpers/0xHelper');
+} = require('../../helpers/ZeroExHelper');
 const { transact } = require('../../helpers/ContractHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
@@ -79,15 +79,18 @@ contract('ERC20Long', function(accounts) {
     POSITIONS.FULL.SALT = 123456 + pepper;
     POSITIONS.PART.SALT = 654321 + pepper;
 
-    POSITIONS.FULL.TX = await doOpenPosition(accounts.slice(1), POSITIONS.FULL.SALT);
-    POSITIONS.PART.TX = await doOpenPosition(accounts.slice(2), POSITIONS.PART.SALT);
+    POSITIONS.FULL.TX = await doOpenPosition(accounts.slice(1), { salt: POSITIONS.FULL.SALT });
+    POSITIONS.PART.TX = await doOpenPosition(accounts.slice(2), { salt: POSITIONS.PART.SALT });
 
     expect(POSITIONS.FULL.TX.trader).to.be.not.equal(POSITIONS.PART.TX.trader);
 
     POSITIONS.FULL.ID = POSITIONS.FULL.TX.id;
     POSITIONS.PART.ID = POSITIONS.PART.TX.id;
 
-    POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(accounts, POSITIONS.PART.SALT);
+    POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(
+      accounts,
+      { salt: POSITIONS.PART.SALT }
+    );
     await issueTokensAndSetAllowancesForClose(POSITIONS.PART.TX, POSITIONS.PART.SELL_ORDER);
     await callClosePosition(
       dydxMargin,
@@ -268,7 +271,7 @@ contract('ERC20Long', function(accounts) {
     it('fails for a second position', async () => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const openTx = await doOpenPosition(accounts, 888);
+        const openTx = await doOpenPosition(accounts, { salt: 888 });
         await expectThrow(
           dydxMargin.transferPosition(
             openTx.id,
@@ -534,7 +537,7 @@ contract('ERC20Long', function(accounts) {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         tempAccounts = tempAccounts.slice(1);
-        let incrTx = await createOpenTx(tempAccounts, 99999 + pepper);
+        let incrTx = await createOpenTx(tempAccounts, { salt: 99999 + pepper });
         incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
         incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
         incrTx.owner = POSITION.TOKEN_CONTRACT.address;

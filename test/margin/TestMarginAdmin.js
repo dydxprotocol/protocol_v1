@@ -20,7 +20,7 @@ const {
 } = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../helpers/ZeroExHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 const OperationState = {

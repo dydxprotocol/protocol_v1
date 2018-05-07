@@ -11,7 +11,7 @@ const Margin = artifacts.require("Margin");
 const { BIGNUMBERS } = require('../../helpers/Constants');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
-const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const {
   callOpenPosition,
@@ -87,14 +87,14 @@ contract('SharedLoanCreator', function(accounts) {
 
   describe('#receiveLoanOwnership', () => {
     it('fails for arbitrary caller', async () => {
-      const openTx = await doOpenPosition(accounts, salt);
+      const openTx = await doOpenPosition(accounts, { salt });
       await expectThrow(
         sharedLoanCreatorContract.receiveLoanOwnership(accounts[0], openTx.id)
       );
     });
 
     it('succeeds for new position', async () => {
-      const openTx = await createOpenTx(accounts, salt++);
+      const openTx = await createOpenTx(accounts, { salt: salt++ });
       openTx.loanOffering.owner = sharedLoanCreatorContract.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await issueTokensAndSetAllowances(openTx);
@@ -107,9 +107,9 @@ contract('SharedLoanCreator', function(accounts) {
     });
 
     it('succeeds for half-closed position', async () => {
-      const openTx = await doOpenPosition(accounts, salt++);
+      const openTx = await doOpenPosition(accounts, { salt: salt++ });
       // close half the position
-      const sellOrder = await createSignedSellOrder(accounts, salt++);
+      const sellOrder = await createSignedSellOrder(accounts, { salt: salt++ });
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       await callClosePosition(
         dydxMargin,

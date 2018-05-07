@@ -65,7 +65,13 @@ contract('DutchAuctionCloser', function(accounts) {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
-      OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
+      OpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
       await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, true);
       await dydxMargin.marginCall(
         OpenTx.id,

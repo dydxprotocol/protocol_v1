@@ -17,7 +17,8 @@ const {
   doOpenPosition,
   getMinimumDeposit,
   issueTokensAndSetAllowancesForClose,
-  callClosePosition
+  callClosePosition,
+  issueForDirectClose
 } = require('../helpers/MarginHelper');
 const {
   signLoanOffering
@@ -28,7 +29,7 @@ const {
 const {
   createSignedSellOrder,
   signOrder
-} = require('../helpers/0xHelper');
+} = require('../helpers/ZeroExHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -553,7 +554,38 @@ describe('#closePosition', () => {
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal
+          )
+        );
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Disallows paying out in base token if no exchange wrapper', async() => {
+        const OpenTx = await doOpenPosition(accounts);
+        const [sellOrder, dydxMargin] = await Promise.all([
+          createSignedSellOrder(accounts),
+          Margin.deployed()
+        ]);
+
+        await issueForDirectClose(OpenTx);
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal,
+            {
+              payoutInHeldToken: false,
+              exchangeWrapper: ADDRESSES.ZERO
+            }
+          )
+        );
       });
     });
 
@@ -573,6 +605,31 @@ describe('#closePosition', () => {
             sellOrder,
             OpenTx.principal,
             { recipient: ADDRESSES.ZERO }
+          )
+        );
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Fails if paying out in owedToken and cannot pay back lender', async () => {
+        const OpenTx = await doOpenPosition(accounts);
+        const [sellOrder, dydxMargin] = await Promise.all([
+          createSignedSellOrder(accounts),
+          Margin.deployed()
+        ]);
+
+        sellOrder.makerTokenAmount = new BigNumber(1);
+        sellOrder.ecSignature = await signOrder(sellOrder);
+
+        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal,
+            { payoutInHeldToken: false }
           )
         );
       });

@@ -13,14 +13,19 @@ const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
+async function createSignedSellOrder(
+  accounts,
+  {
+    salt = DEFAULT_SALT
+  } = {}
+) {
   let order = {
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
     maker: accounts[5],
     makerFee: BIGNUMBERS.BASE_AMOUNT.times(0.01),
-    salt: new BigNumber(_salt),
+    salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BIGNUMBERS.BASE_AMOUNT.times(0.1),
 
@@ -38,14 +43,19 @@ async function createSignedSellOrder(accounts, _salt = DEFAULT_SALT) {
   return order;
 }
 
-async function createSignedBuyOrder(accounts, _salt = DEFAULT_SALT) {
+async function createSignedBuyOrder(
+  accounts,
+  {
+    salt = DEFAULT_SALT
+  } = {}
+) {
   let order = {
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
     makerFee: BIGNUMBERS.BASE_AMOUNT.times(.02),
-    salt: new BigNumber(_salt),
+    salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BIGNUMBERS.BASE_AMOUNT.times(.1),
     makerFeeTokenAddress: FeeToken.address,

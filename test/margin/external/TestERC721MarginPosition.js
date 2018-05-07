@@ -11,7 +11,7 @@ const OwedToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 const { uint256 } = require('../../helpers/MathHelper');
 const {
   doOpenPosition,
@@ -53,16 +53,22 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds for new position', async () => {
-      const OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
+      const OpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
       const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(accounts[0]);
     });
 
     it('succeeds for half-closed position', async () => {
-      const OpenTx = await doOpenPosition(accounts, salt++);
+      const OpenTx = await doOpenPosition(accounts, { salt: salt++ });
 
       // close half the position
-      const sellOrder = await createSignedSellOrder(accounts, salt++);
+      const sellOrder = await createSignedSellOrder(accounts, { salt: salt++ });
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
       await callClosePosition(
         dydxMargin,
@@ -84,7 +90,13 @@ contract('ERC721MarginPosition', function(accounts) {
     });
 
     it('succeeds for owned position', async () => {
-      const OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
+      const OpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
       const deedHolder = await erc721Contract.getPositionDeedHolder.call(OpenTx.id);
       expect(deedHolder).to.equal(accounts[0]);
     });
@@ -167,7 +179,13 @@ contract('ERC721MarginPosition', function(accounts) {
     let OpenTx;
 
     beforeEach('sets up position', async () => {
-      OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
+      OpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
       const owner = await erc721Contract.ownerOf.call(uint256(OpenTx.id));
       expect(owner).to.equal(trader);
     });
@@ -208,7 +226,13 @@ contract('ERC721MarginPosition', function(accounts) {
     }
 
     beforeEach('sets up position', async () => {
-      OpenTx = await doOpenPosition(accounts, salt++, ERC721MarginPosition.address);
+      OpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
       await erc721Contract.approveCloser(approvedCloser, true, { from: OpenTx.trader });
       await erc721Contract.approveRecipient(approvedRecipient, true, { from: OpenTx.trader });
     });

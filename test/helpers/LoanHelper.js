@@ -12,7 +12,13 @@ const ethUtil = require('ethereumjs-util');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
+async function createLoanOffering(
+  accounts,
+  {
+    salt = DEFAULT_SALT,
+    interestPeriod
+  } = {}
+) {
   let loanOffering = {
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
@@ -30,12 +36,12 @@ async function createLoanOffering(accounts, _salt = DEFAULT_SALT) {
       lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
       takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
       interestRate:       new BigNumber('365e4'), // 3.65% nominal per year
-      interestPeriod:     BIGNUMBERS.ONE_DAY_IN_SECONDS
+      interestPeriod:     interestPeriod || BIGNUMBERS.ONE_DAY_IN_SECONDS
     },
     expirationTimestamp:  1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS.toNumber(),
-    salt: _salt
+    salt: salt
   };
 
   loanOffering.signature = await signLoanOffering(loanOffering);

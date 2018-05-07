@@ -16,7 +16,7 @@ const {
 } = require('../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../helpers/0xHelper');
+} = require('../helpers/ZeroExHelper');
 const {
   checkSuccess,
   checkSuccessCloseDirectly,
@@ -189,7 +189,7 @@ describe('#closePosition', () => {
           false,
           closeAmount
         );
-        const OpenTx = await doOpenPosition(accounts, 2, owner.address);
+        const OpenTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
         const [startingBalances,] = await Promise.all([
@@ -223,7 +223,7 @@ describe('#closePosition', () => {
           false,
           closeAmount.div(2)
         );
-        const OpenTx = await doOpenPosition(accounts, 2, owner.address);
+        const OpenTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
         const [startingBalances,] = await Promise.all([
@@ -257,7 +257,7 @@ describe('#closePosition', () => {
           false,
           0
         );
-        const OpenTx = await doOpenPosition(accounts, 2, owner.address);
+        const OpenTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
         await wait(OpenTx.loanOffering.rates.interestPeriod.plus(1).toNumber());
@@ -279,7 +279,7 @@ describe('#closePosition', () => {
           false,
           closeAmount.times(2)
         );
-        const OpenTx = await doOpenPosition(accounts, 2, owner.address);
+        const OpenTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
         await wait(OpenTx.loanOffering.rates.interestPeriod.plus(1).toNumber());

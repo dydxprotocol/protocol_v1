@@ -87,7 +87,7 @@ contract('LoanGetters', (accounts) => {
       let lup;
       let openTx = await createOpenTx(accounts);
       const loanHash = openTx.loanOffering.loanHash;
-      let incrTx = await createOpenTx(accounts, 9999);
+      let incrTx = await createOpenTx(accounts, { salt: 9999 });
       openTx.principal = openTx.principal.div(4);
       incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);

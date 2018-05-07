@@ -18,7 +18,7 @@ const {
   issueTokensAndSetAllowancesForClose,
   callClosePosition
 } = require('../../helpers/MarginHelper');
-const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 
 const CREATORS = { ERC20ShortCreator, ERC20LongCreator };
 
@@ -103,17 +103,23 @@ contract('ERC20PositionCreator', function(accounts) {
 
     it('succeeds for new position', async () => {
       for (let creator in CREATORS) {
-        const openTx = await doOpenPosition(accounts, salt++, CREATORS[creator].address);
+        const openTx = await doOpenPosition(
+          accounts,
+          {
+            salt: salt++,
+            positionOwner: CREATORS[creator].address
+          }
+        );
         await checkSuccess(openTx, creator);
       }
     });
 
     it('succeeds for half-closed position', async () => {
       for (let creator in CREATORS) {
-        const openTx = await doOpenPosition(accounts, salt++);
+        const openTx = await doOpenPosition(accounts, { salt: salt++ });
 
         // close half the position
-        const sellOrder = await createSignedSellOrder(accounts, salt++);
+        const sellOrder = await createSignedSellOrder(accounts, { salt: salt++ });
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         await callClosePosition(
           dydxMargin,
