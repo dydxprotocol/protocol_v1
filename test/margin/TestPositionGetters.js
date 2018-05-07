@@ -535,7 +535,7 @@ contract('PositionGetters', (accounts) => {
         accounts,
         {
           salt: ++salt,
-          interestPeriod: 0
+          interestPeriod: new BigNumber(0)
         }
       );
 
