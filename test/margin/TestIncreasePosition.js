@@ -20,7 +20,7 @@ const { getOwedAmount } = require('../helpers/ClosePositionHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { signOrder } = require('../helpers/0xHelper');
+const { signOrder } = require('../helpers/ZeroExHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 const {
@@ -383,7 +383,7 @@ async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } 
     increasePosTx
   ] = await Promise.all([
     createOpenTx(accounts),
-    createOpenTx(accounts, ++salt, depositInHeldToken)
+    createOpenTx(accounts, { salt: ++salt, depositInHeldToken })
   ]);
 
   if (loanOwner) {

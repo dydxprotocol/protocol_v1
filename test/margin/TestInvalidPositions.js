@@ -29,7 +29,7 @@ const {
 const {
   createSignedSellOrder,
   signOrder
-} = require('../helpers/0xHelper');
+} = require('../helpers/ZeroExHelper');
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -605,6 +605,31 @@ describe('#closePosition', () => {
             sellOrder,
             OpenTx.principal,
             { recipient: ADDRESSES.ZERO }
+          )
+        );
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Fails if paying out in owedToken and cannot pay back lender', async () => {
+        const OpenTx = await doOpenPosition(accounts);
+        const [sellOrder, dydxMargin] = await Promise.all([
+          createSignedSellOrder(accounts),
+          Margin.deployed()
+        ]);
+
+        sellOrder.makerTokenAmount = new BigNumber(1);
+        sellOrder.ecSignature = await signOrder(sellOrder);
+
+        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+
+        await expectThrow(
+          callClosePosition(
+            dydxMargin,
+            OpenTx,
+            sellOrder,
+            OpenTx.principal,
+            { payoutInHeldToken: false }
           )
         );
       });

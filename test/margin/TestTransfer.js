@@ -61,7 +61,7 @@ describe('#transferPosition', () => {
 
     beforeEach('set up a position', async () => {
       dydxMargin = await Margin.deployed();
-      openTx = await doOpenPosition(accounts, salt++);
+      openTx = await doOpenPosition(accounts, { salt: salt++ });
       owner = await dydxMargin.getPositionOwner.call(openTx.id);
       expect(owner).to.not.equal(toAddress);
     });
@@ -213,7 +213,7 @@ describe('#transferLoan', () => {
 
     beforeEach('set up a position', async () => {
       dydxMargin = await Margin.deployed();
-      openTx = await doOpenPosition(accounts, salt++);
+      openTx = await doOpenPosition(accounts, { salt: salt++ });
       lender = await dydxMargin.getPositionLender.call(openTx.id);
       expect(lender).to.not.equal(toAddress);
     });

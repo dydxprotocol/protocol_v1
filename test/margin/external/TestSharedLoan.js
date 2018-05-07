@@ -43,7 +43,7 @@ contract('SharedLoan', accounts => {
   // ============ Helper Functions ============
 
   async function setUpPosition() {
-    const openTx = await doOpenPosition(accounts, salt++);
+    const openTx = await doOpenPosition(accounts, { salt: salt++ });
     SHARED_LOAN.ID = openTx.id;
     SHARED_LOAN.TX = openTx;
     SHARED_LOAN.INITIAL_LENDER = accounts[9];

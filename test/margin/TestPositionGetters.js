@@ -33,8 +33,8 @@ contract('PositionGetters', (accounts) => {
   let openTx;
   let salt = 872354;
 
-  const interestAfterOneDay =    "1000100005000166671"; // 1e18 * e^(0.0001) rounded-up
-  const interestAfterFiveDays =  "1000500125020835938"; // 1e18 * e^(0.0005) rounded-up
+  const interestAfterOneDay    = "1000100005000166671"; // 1e18 * e^(0.0001) rounded-up
+  const interestAfterFiveDays  = "1000500125020835938"; // 1e18 * e^(0.0005) rounded-up
   const interestAfterFiftyDays = "1005012520859401064"; // 1e18 * e^(0.005) rounded-up
 
   // ============ Helper Functions ============
@@ -171,13 +171,13 @@ contract('PositionGetters', (accounts) => {
   });
 
   beforeEach('create position', async () => {
-    openTx = await doOpenPosition(accounts, salt++);
+    openTx = await doOpenPosition(accounts, { salt: salt++ });
     positionId = openTx.id;
   });
 
   // ============ Tests ============
 
-  describe('#function', function() {
+  describe('#function', () => {
 
     it('check values for non-existent position', async () => {
       const position = await getGetters(BYTES32.TEST[0], true);
@@ -288,7 +288,7 @@ contract('PositionGetters', (accounts) => {
       const expectedHeldTokenBalance2 = getPartialAmount(expectedHeldTokenBalance, 2, 1, true);
       expect(balance2).to.be.bignumber.equal(expectedHeldTokenBalance2);
 
-      const increasePosTx = await createOpenTx(accounts, salt++);
+      const increasePosTx = await createOpenTx(accounts, { salt: salt++ });
       increasePosTx.id = openTx.id;
       increasePosTx.loanOffering.rates.minHeldToken = new BigNumber(0);
       increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
@@ -518,6 +518,34 @@ contract('PositionGetters', (accounts) => {
       expect(position2.totalRepaid).to.be.bignumber.equal(
         new BigNumber(interestAfterFiveDays)
       );
+    });
+  });
+
+  describe('#getTimeUntilInterestIncrease', () => {
+    it('works with an interestPeriod of 0 or 1', async () => {
+      // Cannot currently open positions in parallel
+      const onePeriodOpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: ++salt,
+          interestPeriod: 1
+        }
+      );
+      const zeroPeriodOpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: ++salt,
+          interestPeriod: 0
+        }
+      );
+
+      const [timeUntilOneIncrease, timeUntilZeroIncrease] = await Promise.all([
+        dydxMargin.getTimeUntilInterestIncrease.call(onePeriodOpenTx.id),
+        dydxMargin.getTimeUntilInterestIncrease.call(zeroPeriodOpenTx.id),
+      ]);
+
+      expect(timeUntilOneIncrease).to.be.bignumber.eq(1);
+      expect(timeUntilZeroIncrease).to.be.bignumber.eq(1);
     });
   });
 });

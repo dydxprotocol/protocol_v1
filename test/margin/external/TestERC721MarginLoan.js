@@ -12,7 +12,7 @@ const OwedToken = artifacts.require("TokenB");
 
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../helpers/0xHelper');
+const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 const { getPartialAmount, uint256 } = require('../../helpers/MathHelper');
 const { transact } = require('../../helpers/ContractHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
@@ -54,7 +54,7 @@ describe('ERC721MarginLoan', () => {
   }
 
   async function setUpLoan(accounts, payer = null) {
-    openTx = await createOpenTx(accounts, salt++);
+    openTx = await createOpenTx(accounts, { salt: salt++ });
     if (payer) {
       openTx.loanOffering.payer = payer;
       openTx.loanOffering.signer = payer;
@@ -256,8 +256,8 @@ describe('ERC721MarginLoan', () => {
     });
 
     it('succeeds', async () => {
-      const openTx1 = await doOpenPosition(accounts, salt++);
-      const openTx2 = await doOpenPosition(accounts, salt++);
+      const openTx1 = await doOpenPosition(accounts, { salt: salt++ });
+      const openTx2 = await doOpenPosition(accounts, { salt: salt++ });
 
       // expect no erc721 tokens yet
       await expectNoToken(openTx1.id);
@@ -574,7 +574,7 @@ describe('ERC721MarginLoan', () => {
       openTx1 = await setUpLoan(accounts, lender1);
 
       // set up (half-closed) position 2
-      openTx2 = await doOpenPosition(accounts, salt++);
+      openTx2 = await doOpenPosition(accounts, { salt: salt++ });
       await expectNoToken(openTx2.id);
       await closePosition(openTx2, openTx2.principal.div(2));
 

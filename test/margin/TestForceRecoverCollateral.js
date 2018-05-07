@@ -88,7 +88,7 @@ describe('#forceRecoverCollateral', () => {
 
     async function testFRCD(recoverer, recipient) {
       const { dydxMargin, vault, owedToken, OpenTx } =
-        await doOpenPositionAndCall(accounts, salt++);
+        await doOpenPositionAndCall(accounts, { salt: salt++ });
 
       await wait(OpenTx.loanOffering.callTimeLimit);
 
