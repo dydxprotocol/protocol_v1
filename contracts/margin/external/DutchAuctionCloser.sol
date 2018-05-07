@@ -180,9 +180,11 @@ contract DutchAuctionCloser is
         uint256 auctionLength = MathHelpers.getPartialAmount(
             CALL_TIMELIMIT_NUMERATOR,
             CALL_TIMELIMIT_DENOMINATOR,
-            callTimeLimit);
+            callTimeLimit
+        );
+        assert(auctionLength < callTimeLimit);
 
-        if (callTimestamp == 0 || callTimestamp > maxTimestamp.sub(callTimeLimit)) {
+        if (callTimestamp == 0 || callTimestamp.add(callTimeLimit) > maxTimestamp) {
             // auction time determined by maxTimestamp
             auctionStartTimestamp = Math.max256(
                 uint256(position.startTimestamp),
