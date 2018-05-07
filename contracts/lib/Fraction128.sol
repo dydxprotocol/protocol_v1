@@ -3,15 +3,15 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title Fraction256
+ * @title Fraction128
  * @author dYdX
  *
  * This library contains an implementation for a fraction whose numerator and denominator can each
- * be stored within 256 bits.
+ * be stored within 128 bits.
  */
-library Fraction256 {
+library Fraction128 {
     struct Fraction {
-        uint256 num;
-        uint256 den;
+        uint128 num;
+        uint128 den;
     }
 }
