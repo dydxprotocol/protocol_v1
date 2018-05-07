@@ -22,7 +22,7 @@ describe('#approveLoanOffering', () => {
     return loanOffering;
   }
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     before('get dydxMargin', async () => {
       dydxMargin = await Margin.deployed();
       defaultSigner = accounts[1];

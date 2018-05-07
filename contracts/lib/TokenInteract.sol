@@ -37,12 +37,12 @@ library TokenInteract {
     function approve(
         address token,
         address spender,
-        uint256 value
+        uint256 amount
     )
         internal
     {
         require(
-            ERC20(token).approve(spender, value),
+            ERC20(token).approve(spender, amount),
             "TokenInteract#approve: Approval failed"
         );
     }

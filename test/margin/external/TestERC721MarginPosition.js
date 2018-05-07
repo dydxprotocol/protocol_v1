@@ -22,7 +22,7 @@ const {
 } = require('../../helpers/MarginHelper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 
-contract('ERC721MarginPosition', function(accounts) {
+contract('ERC721MarginPosition', accounts => {
   let dydxMargin, erc721Contract, owedToken;
   let salt = 1111;
 

@@ -99,7 +99,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ Constructor ============
 
-  contract('Constructor', function(accounts) {
+  contract('Constructor', accounts => {
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -138,7 +138,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ approveCaller ============
 
-  contract('#approveCaller', function(accounts) {
+  contract('#approveCaller', accounts => {
     const sender = accounts[6];
     const helper = accounts[7];
     const eventName = 'MarginCallerApproval';
@@ -209,7 +209,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ untokenizeLoan ============
 
-  contract('#untokenizeLoan', function(accounts) {
+  contract('#untokenizeLoan', accounts => {
     const receiver = accounts[9];
     const lender = accounts[1];
 
@@ -250,7 +250,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ receiveLoanOwnership ============
 
-  contract('#receiveLoanOwnership', function(accounts) {
+  contract('#receiveLoanOwnership', accounts => {
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -329,7 +329,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ marginLoanIncreased ============
 
-  contract('#marginLoanIncreased', function(accounts) {
+  contract('#marginLoanIncreased', accounts => {
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -377,7 +377,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ marginCallOnBehalfOf ============
 
-  contract('#marginCallOnBehalfOf', function(accounts) {
+  contract('#marginCallOnBehalfOf', accounts => {
     const caller = accounts[9];
     const rando = accounts[8];
 
@@ -413,7 +413,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ cancelMarginCallOnBehalfOf ============
 
-  contract('#cancelMarginCallOnBehalfOf', function(accounts) {
+  contract('#cancelMarginCallOnBehalfOf', accounts => {
     const caller = accounts[9];
     const rando = accounts[8];
 
@@ -454,7 +454,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ forceRecoverCollateralOnBehalfOf ============
 
-  contract('#forceRecoverCollateralOnBehalfOf', function(accounts) {
+  contract('#forceRecoverCollateralOnBehalfOf', accounts => {
     const recoverer = accounts[9];
     const rando = accounts[8];
 
@@ -508,7 +508,7 @@ describe('ERC721MarginLoan', () => {
 
   // ============ withdraw ============
 
-  contract('#withdraw and #withdrawMultiple', function(accounts) {
+  contract('#withdraw and #withdrawMultiple', accounts => {
     const lender1 = accounts[8];
     const lender2 = accounts[9];
     let openTx1, openTx2;

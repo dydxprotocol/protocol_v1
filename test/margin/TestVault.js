@@ -13,7 +13,7 @@ const {
 } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
-contract('Vault', function(accounts) {
+contract('Vault', accounts => {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
   let proxy, vault, tokenA, tokenB;

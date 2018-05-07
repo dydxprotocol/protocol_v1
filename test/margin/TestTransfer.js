@@ -56,7 +56,7 @@ describe('#transferPosition', () => {
     return tx;
   }
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     const toAddress = accounts[9];
 
     beforeEach('set up a position', async () => {
@@ -208,7 +208,7 @@ describe('#transferLoan', () => {
     return tx;
   }
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     const toAddress = accounts[9];
 
     beforeEach('set up a position', async () => {

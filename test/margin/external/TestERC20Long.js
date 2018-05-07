@@ -34,7 +34,7 @@ const {
 const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 
-contract('ERC20Long', function(accounts) {
+contract('ERC20Long', accounts => {
   let dydxMargin, owedToken, heldToken;
 
   let POSITIONS = {

@@ -12,7 +12,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
-contract('Proxy', function(accounts) {
+contract('Proxy', accounts => {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
   let contract, tokenA, tokenB;

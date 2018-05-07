@@ -35,7 +35,7 @@ const {
 let salt = DEFAULT_SALT + 1;
 
 describe('#increasePosition', () => {
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const {
         OpenTx,
@@ -62,7 +62,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds when depositing in owedToken', async () => {
       const {
         OpenTx,
@@ -85,7 +85,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails when loanOffering.minHeldToken is too high', async () => {
       const {
         OpenTx,
@@ -99,7 +99,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds when positions are owned by contracts', async () => {
       const [
         testPositionOwner,
@@ -144,7 +144,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails when loan owner smart contract does not consent', async () => {
       const [
         testPositionOwner,
@@ -166,7 +166,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails when position owner smart contract does not consent', async () => {
       const [
         testPositionOwner,
@@ -188,7 +188,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows a loan offering with longer maxDuration to be used', async () => {
       const {
         OpenTx,
@@ -214,7 +214,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow a loan offering with smaller maxDuration to be used', async () => {
       const {
         increasePosTx,
@@ -228,7 +228,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows a loan offering with longer callTimeLimit to be used', async () => {
       const {
         OpenTx,
@@ -254,7 +254,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow a loan offering with smaller callTimeLimit to be used', async () => {
       const {
         increasePosTx,
@@ -268,7 +268,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow a loan offering with smaller callTimeLimit to be used', async () => {
       const {
         increasePosTx,
@@ -282,7 +282,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow additions after maximum duration', async () => {
       const {
         OpenTx,
@@ -296,7 +296,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow buy orders with too high price', async () => {
       const {
         increasePosTx,
@@ -318,7 +318,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('disallows buy orders with too high price when depositing in owed token', async () => {
       const {
         increasePosTx,
@@ -340,7 +340,7 @@ describe('#increasePosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('Does not allow more owedToken to be borrowed from the lender than maxAmount', async () => {
       const {
         increasePosTx,

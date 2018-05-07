@@ -22,7 +22,7 @@ const {
   callClosePosition
 } = require('../../helpers/MarginHelper');
 
-contract('SharedLoanCreator', function(accounts) {
+contract('SharedLoanCreator', accounts => {
 
   // ============ Constants ============
 

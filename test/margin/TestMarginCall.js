@@ -59,7 +59,7 @@ describe('#marginCall', () => {
     return tx;
   }
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('sets callTimestamp and requiredDeposit on the position', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
@@ -70,7 +70,7 @@ describe('#marginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('prevents unauthorized accounts from calling', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
@@ -87,7 +87,7 @@ describe('#marginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
@@ -120,7 +120,7 @@ describe('#marginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails if the loan has already been called', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
@@ -169,7 +169,7 @@ describe('#cancelMarginCall', () => {
     return tx;
   }
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('unsets callTimestamp and requiredDeposit on the position', async () => {
       dydxMargin = await Margin.deployed();
       const { OpenTx } = await doOpenPositionAndCall(accounts);
@@ -180,7 +180,7 @@ describe('#cancelMarginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('prevents unauthorized accounts from cancelling', async () => {
       dydxMargin = await Margin.deployed();
       const { OpenTx, callTx } = await doOpenPositionAndCall(accounts);
@@ -198,7 +198,7 @@ describe('#cancelMarginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails if the loan has not been called', async () => {
       dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);
@@ -210,7 +210,7 @@ describe('#cancelMarginCall', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const { OpenTx } = await doOpenPositionAndCall(accounts);

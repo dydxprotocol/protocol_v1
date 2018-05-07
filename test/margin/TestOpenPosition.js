@@ -33,7 +33,7 @@ const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
 
 describe('#openPosition', () => {
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
@@ -48,7 +48,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds when deposit is paid in owedToken', async () => {
       const OpenTx = await createOpenTx(accounts, { depositInHeldToken: false });
       const dydxMargin = await Margin.deployed();
@@ -66,7 +66,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows smart contracts to be lenders', async () => {
       const OpenTx = await createOpenTx(accounts);
       const [
@@ -132,7 +132,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('doesnt allow ownership to be assigned to contracts without proper interface', async () => {
       const dydxMargin = await Margin.deployed();
       const testLoanOwner = await TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false);
@@ -157,7 +157,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('properly assigns owner for lender and owner for accounts', async () => {
       const dydxMargin = await Margin.deployed();
       const OpenTx = await createOpenTx(accounts);
@@ -170,7 +170,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('properly assigns owner for lender and owner for contracts', async () => {
       const dydxMargin = await Margin.deployed();
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
@@ -191,7 +191,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('properly assigns owner for lender and owner for chaining', async () => {
       const dydxMargin = await Margin.deployed();
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
@@ -221,7 +221,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds with on-chain approved loan offerings', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
@@ -239,7 +239,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not transfer fees if fee address is 0', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
@@ -255,7 +255,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('works with 0 fees', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
@@ -272,7 +272,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows a specified taker to take the loan', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();

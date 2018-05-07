@@ -19,7 +19,7 @@ const {
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
 describe('#deposit', () => {
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('deposits additional funds into the position', async () => {
 
       const OpenTx = await doOpenPosition(accounts);
@@ -40,7 +40,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('doesnt allow anyone but position owner to deposit', async () => {
       const OpenTx = await doOpenPosition(accounts);
       await expectThrow(
@@ -52,7 +52,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails for invalid positionId', async () => {
       const OpenTx = await doOpenPosition(accounts);
 
@@ -66,7 +66,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('fails on zero-amount deposit', async () => {
       const OpenTx = await doOpenPosition(accounts);
 
@@ -80,7 +80,7 @@ describe('#deposit', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows deposit in increments', async () => {
       const dydxMargin = await Margin.deployed();
       const { OpenTx } = await doOpenPositionAndCall(accounts);
