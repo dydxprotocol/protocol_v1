@@ -22,7 +22,7 @@ const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 
 const CREATORS = { ERC20ShortCreator, ERC20LongCreator };
 
-contract('ERC20PositionCreator', function(accounts) {
+contract('ERC20PositionCreator', accounts => {
   let dydxMargin;
   let salt = 112345;
 

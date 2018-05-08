@@ -23,7 +23,7 @@ const {
 } = require('../helpers/MarginHelper');
 
 describe('#incraseWithoutCounterparty', () => {
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const {
         dydxMargin,
@@ -73,7 +73,7 @@ describe('#incraseWithoutCounterparty', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('disallows increasing by 0', async () => {
       const {
         dydxMargin,
@@ -89,7 +89,7 @@ describe('#incraseWithoutCounterparty', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow increasing after maximum duration', async () => {
       const {
         dydxMargin,

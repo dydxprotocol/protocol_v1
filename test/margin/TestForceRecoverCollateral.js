@@ -18,7 +18,7 @@ const { expectLog } = require('../helpers/EventHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 
 describe('#forceRecoverCollateral', () => {
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('allows funds to be recovered by the lender', async () => {
       const { dydxMargin, vault, owedToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
@@ -70,7 +70,7 @@ describe('#forceRecoverCollateral', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('only allows lender to call', async () => {
       const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
@@ -83,7 +83,7 @@ describe('#forceRecoverCollateral', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     let salt = 9999;
 
     async function testFRCD(recoverer, recipient) {
@@ -169,7 +169,7 @@ describe('#forceRecoverCollateral', () => {
     });
   });
 
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow before call time limit elapsed', async () => {
       const { dydxMargin, OpenTx } = await doOpenPositionAndCall(accounts);
       await expectThrow(dydxMargin.forceRecoverCollateral(
@@ -179,7 +179,7 @@ describe('#forceRecoverCollateral', () => {
       ));
     });
   });
-  contract('Margin', function(accounts) {
+  contract('Margin', accounts => {
     it('does not allow if not called or not reached maximumDuration+callTimeLimit', async () => {
       const dydxMargin = await Margin.deployed();
       const OpenTx = await doOpenPosition(accounts);

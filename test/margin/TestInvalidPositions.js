@@ -270,7 +270,7 @@ describe('#openPosition', () => {
       });
     });
 
-    contract('Margin', function(accounts) {
+    contract('Margin', accounts => {
       it('allows smart contracts to be lenders', async () => {
         const OpenTx = await createOpenTx(accounts);
         const [

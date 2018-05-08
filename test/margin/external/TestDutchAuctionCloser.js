@@ -24,7 +24,7 @@ const { wait } = require('@digix/tempo')(web3);
 const ONE = new BigNumber(1);
 const TWO = new BigNumber(2);
 
-contract('DutchAuctionCloser', function(accounts) {
+contract('DutchAuctionCloser', accounts => {
   let dydxMargin, VaultContract, ERC721MarginPositionContract;
   let OwedTokenContract, HeldTokenContract;
   let OpenTx;
