@@ -7,7 +7,7 @@ chai.use(require('chai-bignumber')());
 const TestFractionMath = artifacts.require("TestFractionMath");
 const { BIGNUMBERS } = require('../helpers/Constants');
 
-contract('InterestHelper', function(_accounts) {
+contract('FractionMath', function(_accounts) {
   let contract;
 
   before('', async () => {
