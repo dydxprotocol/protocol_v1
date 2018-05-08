@@ -191,11 +191,13 @@ contract('DutchAuctionCloser', accounts => {
           accounts,
           openTx,
           closeAmount,
-          99999, //salt
           {
-            from: dutchBidder,
-            recipient: DutchAuctionCloser.address,
-            payoutInHeldToken: false
+            salt: 99999,
+            callCloseArgs: {
+              from: dutchBidder,
+              recipient: DutchAuctionCloser.address,
+              payoutInHeldToken: false
+            }
           }
         )
       );
