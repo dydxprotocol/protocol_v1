@@ -83,7 +83,7 @@ contract('SharedLoan', accounts => {
     SHARED_LOAN.POSITION_OWNER = positionOwner.address;
   }
 
-  async function incraseWithoutCounterparty(adder, addedPrincipal) {
+  async function increaseWithoutCounterparty(adder, addedPrincipal) {
     const [principal, amountHeld] = await Promise.all([
       dydxMargin.getPositionPrincipal(SHARED_LOAN.ID),
       dydxMargin.getPositionBalance(SHARED_LOAN.ID),
@@ -95,7 +95,7 @@ contract('SharedLoan', accounts => {
       true
     );
     await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
-    await dydxMargin.incraseWithoutCounterparty(
+    await dydxMargin.increaseWithoutCounterparty(
       SHARED_LOAN.ID,
       addedPrincipal,
       { from: adder }
@@ -253,7 +253,7 @@ contract('SharedLoan', accounts => {
 
       const adder = accounts[8];
       const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
-      await incraseWithoutCounterparty(adder, addedPrincipal);
+      await increaseWithoutCounterparty(adder, addedPrincipal);
 
       // get constants after increasing position
       const tsc2 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, adder);
@@ -577,8 +577,8 @@ contract('SharedLoan', accounts => {
 
       await transferLoanToSharedLoan();
       await transferPositionToTestPositionOwner();
-      await incraseWithoutCounterparty(accountB, SHARED_LOAN.TX.principal);
-      await incraseWithoutCounterparty(accountC, SHARED_LOAN.TX.principal);
+      await increaseWithoutCounterparty(accountB, SHARED_LOAN.TX.principal);
+      await increaseWithoutCounterparty(accountC, SHARED_LOAN.TX.principal);
 
       // Check balances
       await expectSharedLoanBalances([

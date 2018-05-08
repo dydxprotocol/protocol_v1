@@ -97,7 +97,7 @@ library IncreasePositionImpl {
         return transaction.lenderAmount;
     }
 
-    function incraseWithoutCounterpartyImpl(
+    function increaseWithoutCounterpartyImpl(
         MarginState.State storage state,
         bytes32 positionId,
         uint256 principalToAdd
@@ -111,13 +111,13 @@ library IncreasePositionImpl {
         // Disallow adding 0 principal
         require(
             principalToAdd > 0,
-            "IncreasePositionImpl#incraseWithoutCounterpartyImpl: Cannot add 0 principal"
+            "IncreasePositionImpl#increaseWithoutCounterpartyImpl: Cannot add 0 principal"
         );
 
         // Disallow additions after maximum duration
         require(
             block.timestamp < uint256(position.startTimestamp).add(position.maxDuration),
-            "IncreasePositionImpl#incraseWithoutCounterpartyImpl: Cannot increase after maxDuration"
+            "IncreasePositionImpl#increaseWithoutCounterpartyImpl: Cannot increase after maxDuration"
         );
 
         uint256 heldTokenAmount = getPositionMinimumHeldToken(

@@ -22,7 +22,7 @@ const {
   issueTokenToAccountInAmountAndApproveProxy,
 } = require('../helpers/MarginHelper');
 
-describe('#incraseWithoutCounterparty', () => {
+describe('#increaseWithoutCounterparty', () => {
   contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const {
@@ -36,13 +36,13 @@ describe('#incraseWithoutCounterparty', () => {
         testLoanOwner
       } = await setup(accounts);
 
-      const tx = await dydxMargin.incraseWithoutCounterparty(
+      const tx = await dydxMargin.increaseWithoutCounterparty(
         OpenTx.id,
         addAmount,
         { from: adder }
       );
 
-      console.log('\tMargin.incraseWithoutCounterparty gas used: ' + tx.receipt.gasUsed);
+      console.log('\tMargin.increaseWithoutCounterparty gas used: ' + tx.receipt.gasUsed);
 
       const position = await getPosition(dydxMargin, OpenTx.id);
 
@@ -81,7 +81,7 @@ describe('#incraseWithoutCounterparty', () => {
         adder
       } = await setup(accounts);
 
-      await expectThrow(dydxMargin.incraseWithoutCounterparty(
+      await expectThrow(dydxMargin.increaseWithoutCounterparty(
         OpenTx.id,
         0,
         { from: adder }
@@ -100,7 +100,7 @@ describe('#incraseWithoutCounterparty', () => {
 
       await wait(OpenTx.loanOffering.maxDuration + 1);
 
-      await expectThrow(dydxMargin.incraseWithoutCounterparty(
+      await expectThrow(dydxMargin.increaseWithoutCounterparty(
         OpenTx.id,
         addAmount,
         { from: adder }

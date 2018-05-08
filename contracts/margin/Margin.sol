@@ -203,7 +203,7 @@ contract Margin is
      * @param  principalToAdd  Principal amount to add to the position
      * @return                 Amount of heldToken pulled from the msg.sender
      */
-    function incraseWithoutCounterparty(
+    function increaseWithoutCounterparty(
         bytes32 positionId,
         uint256 principalToAdd
     )
@@ -212,7 +212,7 @@ contract Margin is
         nonReentrant
         returns (uint256)
     {
-        return IncreasePositionImpl.incraseWithoutCounterpartyImpl(
+        return IncreasePositionImpl.increaseWithoutCounterpartyImpl(
             state,
             positionId,
             principalToAdd
