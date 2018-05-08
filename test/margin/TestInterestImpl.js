@@ -76,6 +76,14 @@ contract('InterestHelper', function(_accounts) {
       expect(result).to.be.bignumber.equal('214643579785917'); // 1 * E^(368/365)
     });
 
+    it('calculates primes correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('100000037'), // total
+        new BigNumber('100000007'), // annual percent
+        new BigNumber('30000001')); // time
+      expect(result).to.be.bignumber.equal('258905833'); // Calculated using WolframAlpha
+    });
+
     it('calculates tokenAmount > 2**128 correctly', async () => {
       const result = await contract.getCompoundedInterest.call(
         new BigNumber('1e40'), // total
