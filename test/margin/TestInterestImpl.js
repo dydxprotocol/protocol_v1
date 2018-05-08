@@ -85,6 +85,16 @@ contract('InterestHelper', function(_accounts) {
         .to.be.bignumber.equal('1000411043359288829'); // 1e18 * E^(5% * 3/365)
     });
 
+    it('calculates tokenAmount ~ 2**128 correctly', async () => {
+      const twoTo128 = new BigNumber('340282366920938463463374607431768211456');
+      const result = await contract.getCompoundedInterest.call(
+        twoTo128, // total
+        new BigNumber('5e6'), // annual percent
+        BIGNUMBERS.ONE_DAY_IN_SECONDS.times(3)); // time
+      expect(result.times('1e18').dividedBy(twoTo128).toFixed(0, BigNumber.ROUND_CEIL))
+        .to.be.bignumber.equal('1000411043359288829'); // 1e18 * E^(5% * 3/365)
+    });
+
     it('calculates tokenAmount > 2**255 correctly', async () => {
       const result = await contract.getCompoundedInterest.call(
         new BigNumber('1e77'), // total
