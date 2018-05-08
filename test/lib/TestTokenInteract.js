@@ -38,7 +38,7 @@ contract('TokenInteract', accounts => {
 
   describe('#allowance', () => {
     it("gets the holder's token allowance", async () => {
-      await token.approve(spender, amount);
+      await token.approve(spender, amount, { from: holder1 });
 
       const allowance = await tokenInteract.allowance.call(token.address, holder1, spender);
 
