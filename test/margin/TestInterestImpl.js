@@ -52,6 +52,14 @@ contract('InterestHelper', function(_accounts) {
       expect(result).to.be.bignumber.equal('2718281828459045236'); // 1e18 * E^(100%)
     });
 
+    it('calculates just below 100% correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('1e18'), // total
+        new BigNumber('99999999'), // annual percent
+        BIGNUMBERS.ONE_YEAR_IN_SECONDS); // time
+      expect(result).to.be.bignumber.equal('2718281801276227087'); // Calculated using WolframAlpha
+    });
+
     it('calculates < 100% correctly', async () => {
       const result = await contract.getCompoundedInterest.call(
         new BigNumber('1e18'), // total
