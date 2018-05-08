@@ -116,13 +116,14 @@ library FractionMath {
         returns (Fraction.Fraction128 memory)
     {
         uint256 max = num > den ? num : den;
-        uint256 diff = (max >> 127);
-        if (diff > 1) {
-            num /= diff;
-            den /= diff;
+        uint256 first128Bits = (max >> 128);
+        if (first128Bits != 0) {
+            first128Bits += 1;
+            num /= first128Bits;
+            den /= first128Bits;
         }
 
-        assert(den > 0 && den < 2**128 && num < 2**128);
+        assert(den != 0 && den < 2**128 && num < 2**128);
 
         return Fraction.Fraction128({
             num: uint128(num),
@@ -136,7 +137,7 @@ library FractionMath {
         internal
         pure
     {
-        assert(a.den > 0);
+        assert(a.den != 0);
     }
 
     function copy(
@@ -146,7 +147,7 @@ library FractionMath {
         pure
         returns (Fraction.Fraction128 memory)
     {
-        assert(a.den != 0);
+        validate(a);
         return Fraction.Fraction128({ num: a.num, den: a.den });
     }
 }
