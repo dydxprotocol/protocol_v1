@@ -92,6 +92,15 @@ contract('InterestHelper', function(_accounts) {
       expect(result).to.be.bignumber.equal('258905833'); // Calculated using WolframAlpha
     });
 
+    it('calculates tokenAmount > 2**128 correctly for no interest', async () => {
+      const lentAmount = new BigNumber('1e50');
+      const result = await contract.getCompoundedInterest.call(
+        lentAmount,
+        new BigNumber('0'), // annual percent
+        new BigNumber('0')); // time
+      expect(result).to.be.bignumber.equal(lentAmount);
+    });
+
     it('calculates tokenAmount > 2**128 correctly', async () => {
       const result = await contract.getCompoundedInterest.call(
         new BigNumber('1e40'), // total

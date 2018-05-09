@@ -89,7 +89,7 @@ library InterestImpl {
         // uncommon scenario, requires n >= 2**128. calculates term1 = term1 * f
         if (term1 > 0) {
             term1 = term1.mul(f.num);
-            uint numBits = MathHelpers.getNumBits(term1);
+            uint256 numBits = MathHelpers.getNumBits(term1);
 
             // reduce rounding error by shifting all the way to the left before dividing
             term1 = MathHelpers.divisionRoundedUp(
