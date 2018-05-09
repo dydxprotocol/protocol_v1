@@ -339,7 +339,7 @@ describe('ERC721MarginLoan', () => {
     });
 
     it('fails always', async () => {
-      const adder = accounts[8];
+      const adder = openTx.owner;
       const addedPrincipal = openTx.principal.div(2);
       const [principal, amountHeld] = await Promise.all([
         dydxMargin.getPositionPrincipal(openTx.id),
@@ -652,6 +652,10 @@ describe('ERC721MarginLoan', () => {
       // #2 is closed now so it doesn't exist.
       await expectThrow(loanContract.withdraw(openTx2.id));
       await expectThrow(loanContract.ownerOf.call(uint256(openTx2.id)));
+    });
+
+    it('#withdraw fails for invalid ID', async () => {
+      await expectThrow(loanContract.withdraw(BYTES32.TEST[5]));
     });
 
     it('#withdrawMultiple succeeds for empty array', async () => {
