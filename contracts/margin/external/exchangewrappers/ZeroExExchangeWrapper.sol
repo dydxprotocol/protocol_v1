@@ -25,6 +25,8 @@ contract ZeroExExchangeWrapper is
 {
     using SafeMath for uint256;
 
+    // ============ Structs ============
+
     struct Order {
         address maker;
         address taker;
@@ -40,16 +42,14 @@ contract ZeroExExchangeWrapper is
         bytes32 s;
     }
 
-    struct StartingBalances {
-        uint256 takerTokenBalance;
-        uint256 makerTokenBalance;
-        uint256 takerFeeTokenBalance;
-    }
+    // ============ State Variables ============
 
     address public DYDX_PROXY;
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_PROXY;
     address public ZRX;
+
+    // ============ Constructor ============
 
     constructor(
         address margin,
@@ -95,7 +95,7 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
-        TokenInteract.approve(
+        ensureAllowance(
             makerToken,
             DYDX_PROXY,
             receivedMakerTokenAmount
@@ -139,7 +139,7 @@ contract ZeroExExchangeWrapper is
          * not be worth the extra gas cost to send this extra token back to anyone.
          */
 
-        TokenInteract.approve(
+        ensureAllowance(
             makerToken,
             DYDX_PROXY,
             desiredMakerToken
@@ -213,7 +213,7 @@ contract ZeroExExchangeWrapper is
             requestedFillAmount
         );
 
-        TokenInteract.approve(
+        ensureAllowance(
             takerToken,
             ZERO_EX_PROXY,
             requestedFillAmount
@@ -298,6 +298,24 @@ contract ZeroExExchangeWrapper is
         );
 
         return filledTakerTokenAmount;
+    }
+
+    function ensureAllowance(
+        address token,
+        address spender,
+        uint256 requiredAmount
+    )
+        internal
+    {
+        if (TokenInteract.allowance(token, address(this), spender) >= requiredAmount) {
+            return;
+        }
+
+        TokenInteract.approve(
+            token,
+            spender,
+            MathHelpers.maxUint256()
+        );
     }
 
     // ============ Parsing Functions ============
