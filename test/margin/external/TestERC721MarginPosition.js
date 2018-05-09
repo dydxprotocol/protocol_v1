@@ -276,6 +276,84 @@ contract('ERC721MarginPosition', accounts => {
     });
   });
 
+  // ============ burnClosedToken & burnClosedTokenMultiple  ============
+
+  describe('#burnClosedToken & #burnClosedTokenMultiple', () => {
+    let openTx;
+    let positionIds = [];
+    const numPositions = 2;
+
+    async function initOwedToken(account) {
+      const maxInterest = await getMaxInterestFee(openTx);
+      const amount = openTx.principal.plus(maxInterest);
+      await issueAndSetAllowance(
+        owedToken,
+        account,
+        amount,
+        ProxyContract.address
+      );
+    }
+
+    beforeEach('sets up position and closes it', async () => {
+      positionIds = [];
+      for (let i = 0; i < numPositions; i++) {
+        openTx = await doOpenPosition(
+          accounts,
+          {
+            salt: salt++,
+            positionOwner: ERC721MarginPosition.address
+          }
+        );
+        await initOwedToken(openTx.trader);
+        await callClosePositionDirectly(
+          dydxMargin,
+          openTx,
+          openTx.principal,
+          {
+            from: openTx.trader,
+            recipient: openTx.trader
+          }
+        );
+        positionIds.push(openTx.id);
+      }
+    });
+
+    it('burnClosedToken succeeds for closed positions', async () => {
+      await Promise.all([
+        erc721Contract.burnClosedToken(positionIds[0]),
+        erc721Contract.burnClosedToken(positionIds[1]),
+      ])
+    });
+
+    it('burnClosedToken fails for unclosed positions', async () => {
+      await expectThrow(
+        erc721Contract.burnClosedToken(BYTES32.TEST[5])
+      );
+    });
+
+    it('burnClosedTokenMultiple succeeds for closed positions', async () => {
+      await erc721Contract.burnClosedTokenMultiple(
+        [positionIds[1], positionIds[0]]
+      );
+    });
+
+    it('burnClosedTokenMultiple fails for unclosed positions', async () => {
+      await expectThrow(
+        erc721Contract.burnClosedTokenMultiple(
+          [BYTES32.TEST[5], positionIds[1]]
+        )
+      );
+    });
+
+    it('burnClosedTokenMultiple fails for repeated positions', async () => {
+      await expectThrow(
+        erc721Contract.burnClosedTokenMultiple(
+          [positionIds[1], positionIds[1]]
+        )
+      );
+    });
+  });
+
   // ============ closeOnBehalfOf ============
 
   describe('#closeOnBehalfOf', () => {
