@@ -5,17 +5,17 @@ import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 
 
 contract TestStaticAccessControlled is StaticAccessControlled {
-    uint public num;
+    uint256 public num;
 
     constructor(
-        uint _gracePeriod
+        uint256 _gracePeriod
     )
         StaticAccessControlled(_gracePeriod)
         public
     {}
 
     function setNum(
-        uint to
+        uint256 to
     )
         requiresAuthorization
         external
