@@ -52,6 +52,14 @@ contract('InterestHelper', function(_accounts) {
       expect(result).to.be.bignumber.equal('2718281828459045236'); // 1e18 * E^(100%)
     });
 
+    it('calculates just below 100% correctly', async () => {
+      const result = await contract.getCompoundedInterest.call(
+        new BigNumber('1e18'), // total
+        new BigNumber('99999999'), // annual percent
+        BIGNUMBERS.ONE_YEAR_IN_SECONDS); // time
+      expect(result).to.be.bignumber.equal('2718281801276227087'); // Calculated using WolframAlpha
+    });
+
     it('calculates < 100% correctly', async () => {
       const result = await contract.getCompoundedInterest.call(
         new BigNumber('1e18'), // total
@@ -82,6 +90,15 @@ contract('InterestHelper', function(_accounts) {
         new BigNumber('100000007'), // annual percent
         new BigNumber('30000001')); // time
       expect(result).to.be.bignumber.equal('258905833'); // Calculated using WolframAlpha
+    });
+
+    it('calculates tokenAmount > 2**128 correctly for no interest', async () => {
+      const lentAmount = new BigNumber('1e50');
+      const result = await contract.getCompoundedInterest.call(
+        lentAmount,
+        new BigNumber('0'), // annual percent
+        new BigNumber('0')); // time
+      expect(result).to.be.bignumber.equal(lentAmount);
     });
 
     it('calculates tokenAmount > 2**128 correctly', async () => {
