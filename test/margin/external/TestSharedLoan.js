@@ -619,8 +619,8 @@ contract('SharedLoan', accounts => {
 
       // expect owedToken received to be exactly equal
       expect(runningTallyA.owedToken)
-        .to.be.bignumber.equal(runningTallyA.owedToken)
-        .to.be.bignumber.equal(runningTallyA.owedToken);
+        .to.be.bignumber.equal(runningTallyB.owedToken)
+        .to.be.bignumber.equal(runningTallyC.owedToken);
 
       // expect heldToken received to be within 1 of each other
       expectWithinError(runningTallyA.heldToken, runningTallyB.heldToken, 1);
@@ -654,6 +654,31 @@ contract('SharedLoan', accounts => {
         expect(remainingC.owedGotten).to.be.bignumber.equal(0);
         expect(remainingC.heldGotten).to.be.bignumber.equal(0);
       }
+    });
+
+    it('#withdraw succeeds for closed position', async () => {
+      let runningTallyA = {heldToken: 0, owedToken: 0};
+      let runningTallyB = {heldToken: 0, owedToken: 0};
+      let runningTallyC = {heldToken: 0, owedToken: 0};
+
+      // fully close position
+      await closeAmount(closer, principalShare.times(3));
+
+      // withdraw accountA
+      runningTallyA = await withdrawAccount(accountA, runningTallyA);
+      runningTallyB = await withdrawAccount(accountB, runningTallyB);
+      runningTallyC = await withdrawAccount(accountC, runningTallyC);
+
+      // expect owedToken received to be exactly equal
+      expect(runningTallyA.owedToken)
+        .to.be.bignumber.equal(runningTallyB.owedToken)
+        .to.be.bignumber.equal(runningTallyC.owedToken);
+
+      // expect heldToken received to be zero
+      expect(runningTallyA.heldToken)
+        .to.be.bignumber.equal(runningTallyB.heldToken)
+        .to.be.bignumber.equal(runningTallyC.heldToken)
+        .to.be.bignumber.equal(0);
     });
 
     it('#withdraw and #withdrawMultiple fail for UNINITIALIZED position', async () => {
