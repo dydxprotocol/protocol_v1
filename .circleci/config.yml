@@ -6,19 +6,20 @@ jobs:
     working_directory: ~/protocol
     steps:
       - checkout
-      # - restore_cache:
-      #     key: dependency-cache-{{ checksum "package-lock.json" }}
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - dependency-cache-{{ .Branch }}-
+            - dependency-cache-
       - run:
           name: Install Dependencies
           command: npm install --quiet
-      # - save_cache:
-      #     key: dependency-cache-{{ checksum "package-lock.json" }}
-      #     paths:
-      #       - node_modules
+      - save_cache:
+          key: dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
       - save_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
   build:
     docker:
       - image: circleci/node:9.11.1
@@ -26,15 +27,11 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
       - run:
           name: Compile contracts
           command: npm run compile -- --all
       - save_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
   lint:
     docker:
       - image: circleci/node:9.11.1
@@ -42,8 +39,6 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
       - run:
           name: Lint
           command: npm run lint && npm run dydxlint && npm run solint
@@ -54,8 +49,6 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
       - run:
           name: Test
           command: npm test
@@ -66,8 +59,6 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
-          paths:
-            - ~/protocol
       - run:
           name: Coverage
           command: npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
