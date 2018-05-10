@@ -231,7 +231,7 @@ contract('ERC20Short', accounts => {
         const tsc1 = await getERC20PositionConstants(POSITION.TOKEN_CONTRACT);
 
         await dydxMargin.transferPosition(POSITION.ID, POSITION.TOKEN_CONTRACT.address,
-          { from: POSITION.TX.trader });
+          { from: POSITION.TX.owner });
 
         const [tsc2, position] = await Promise.all([
           getERC20PositionConstants(POSITION.TOKEN_CONTRACT),
@@ -273,14 +273,21 @@ contract('ERC20Short', accounts => {
     it('fails for a second position', async () => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        const openTx = await doOpenPosition(accounts, { salt: 888 });
-        await expectThrow(
-          dydxMargin.transferPosition(
-            openTx.id,
-            POSITION.TOKEN_CONTRACT.address,
-            { from: openTx.trader }
-          )
+
+        // transfer first position
+        await dydxMargin.transferPosition(
+          POSITION.ID,
+          POSITION.TOKEN_CONTRACT.address,
+          { from: POSITION.TX.owner }
         );
+
+        // transfer second position
+        const openTx = await doOpenPosition(accounts, { salt: 888 });
+        await expectThrow(dydxMargin.transferPosition(
+          openTx.id,
+          POSITION.TOKEN_CONTRACT.address,
+          { from: openTx.owner }
+        ));
       }
     });
   });
