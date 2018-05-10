@@ -177,7 +177,7 @@ contract('PositionGetters', (accounts) => {
 
   // ============ Tests ============
 
-  describe('#basic getters', () => {
+  describe('basic getters', () => {
 
     it('check values for non-existent position', async () => {
       const position = await getGetters(BYTES32.TEST[0], true);
