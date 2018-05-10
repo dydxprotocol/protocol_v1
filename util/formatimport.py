@@ -84,7 +84,7 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     if blankLine not in allLines:
         print "Unlikely to be a proper file-level comment in " + fileName
         everythingOkay = False
-    if solidityLine != allLines[0]:
+    if solidityLine not in allLines:
         print "Unlikely to be using solidity version " + solidityVersion + " in " + fileName
         everythingOkay = False
 
