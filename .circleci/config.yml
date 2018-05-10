@@ -6,15 +6,15 @@ jobs:
     working_directory: ~/protocol
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
+      # - restore_cache:
+      #     key: dependency-cache-{{ checksum "package-lock.json" }}
       - run:
           name: Install Dependencies
-          command: npm install -g npm@6.0.0 && npm install --quiet
-      - save_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
-          paths:
-            - node_modules
+          command: npm install --quiet
+      # - save_cache:
+      #     key: dependency-cache-{{ checksum "package-lock.json" }}
+      #     paths:
+      #       - node_modules
       - save_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
           paths:
