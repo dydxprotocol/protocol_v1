@@ -177,7 +177,7 @@ contract('PositionGetters', (accounts) => {
 
   // ============ Tests ============
 
-  describe('#function', () => {
+  describe('basic getters', () => {
 
     it('check values for non-existent position', async () => {
       const position = await getGetters(BYTES32.TEST[0], true);
@@ -258,7 +258,9 @@ contract('PositionGetters', (accounts) => {
       expect(position.balance).to.be.bignumber.equal(0);
       expect(position.totalRepaid).to.be.bignumber.gte(interestAfterOneDay);
     });
+  });
 
+  describe('#getPositionLender and #getPositionOwner', () => {
     it('check values for lender and owner', async () => {
       const newOwner = ADDRESSES.TEST[1];
       const newLender = ADDRESSES.TEST[2];
@@ -268,7 +270,9 @@ contract('PositionGetters', (accounts) => {
       expect(position.lender).to.equal(newLender);
       expect(position.owner).to.equal(newOwner);
     });
+  });
 
+  describe('#getPositionPrincipal and #getPositionBalance', () => {
     it('check values for principal and balance', async () => {
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
       const principal1 = await dydxMargin.getPositionPrincipal.call(positionId);
@@ -305,7 +309,9 @@ contract('PositionGetters', (accounts) => {
       const expectedHeldTokenBalance3 = getPartialAmount(expectedHeldTokenBalance2, 1, 3, true);
       expect(balance3).to.be.bignumber.equal(expectedHeldTokenBalance3);
     });
+  });
 
+  describe('#isPositionCalled, #getPositionCallTimestamp, and #getPositionRequiredDeposit', () => {
     it('check values for isCalled and callTimestamp and requiredDeposit', async () => {
       const before = await getGetters(positionId);
       expect(before.isCalled).to.be.false;
@@ -335,7 +341,9 @@ contract('PositionGetters', (accounts) => {
       expect(final.callTimestamp).to.be.bignumber.equal(0);
       expect(final.requiredDeposit).to.be.bignumber.equal(0);
     });
+  });
 
+  describe('#getTimeUntilInterestIncrease', () => {
     it('check values for timeUntilIncrease', async () => {
       const position = await getGetters(positionId);
       const oneHour = 60 * 60;
@@ -367,7 +375,9 @@ contract('PositionGetters', (accounts) => {
       const t6 = await dydxMargin.getTimeUntilInterestIncrease.call(positionId);
       expect(t6).to.be.bignumber.equal(0);
     });
+  });
 
+  describe('#getPositionOwedAmount', () => {
     it('check values for owedAmount', async () => {
       const position = await getGetters(positionId);
       const oneHour = 60 * 60;
@@ -392,7 +402,9 @@ contract('PositionGetters', (accounts) => {
       const exp2 = Math.exp(position.interestRate.div("1e8").mul(50).div(365));
       expectWithinError(owedAmount3, openTx.principal.mul(exp2.toString()), 100);
     });
+  });
 
+  describe('#getPositionOwedAmountAtTime', () => {
     it('check values for owedAmountAtTime', async () => {
       const position = await getGetters(positionId);
       const oneHour = 60 * 60;
@@ -442,7 +454,9 @@ contract('PositionGetters', (accounts) => {
       );
       expectWithinError(owedAmount4, owedAmount2.mul(2), 1);
     });
+  });
 
+  describe('#getLenderAmountForIncreasePositionAtTime', () => {
     it('check values for amountForIncreaseAtTime', async () => {
       const position = await getGetters(positionId);
       const oneHour = 60 * 60;
@@ -492,6 +506,46 @@ contract('PositionGetters', (accounts) => {
       expectWithinError(owedAmount4, owedAmount2.mul(2), 1);
     });
 
+    it('works for interestPeriod of 1 or 0 ', async () => {
+      const onePeriodOpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: ++salt,
+          interestPeriod: 1
+        }
+      );
+      const zeroPeriodOpenTx = await doOpenPosition(
+        accounts,
+        {
+          salt: ++salt,
+          interestPeriod: new BigNumber(0)
+        }
+      );
+
+      const [position0, position1] = await Promise.all([
+        getGetters(zeroPeriodOpenTx.id),
+        getGetters(onePeriodOpenTx.id)
+      ]);
+
+      const [amount0, amount1] = await Promise.all([
+        dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+          zeroPeriodOpenTx.id,
+          zeroPeriodOpenTx.principal,
+          position0.startTimestamp
+        ),
+        dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
+          onePeriodOpenTx.id,
+          onePeriodOpenTx.principal,
+          position1.startTimestamp
+        ),
+      ]);
+      expect(amount0).to.be.bignumber.equal(zeroPeriodOpenTx.principal);
+      expect(amount1).to.be.bignumber.equal(onePeriodOpenTx.principal);
+
+    });
+  });
+
+  describe('#getTotalOwedTokenRepaidToLender', () => {
     it('check values for totalRepaid', async () => {
       const oneHour = 60 * 60;
       const oneDay = oneHour * 24;

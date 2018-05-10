@@ -140,21 +140,33 @@ contract('ERC721MarginPosition', accounts => {
     });
 
     it('fails for non-deedHolder', async () => {
-      await issueTokenToAccountInAmountAndApproveProxy(heldToken, openTx.trader, heldTokenAmount);
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
+        openTx.loanOffering.owner,
+        heldTokenAmount
+      );
 
       await expectThrow(
         dydxMargin.increaseWithoutCounterparty(
           openTx.id,
           addedPrincipal,
-          { from: openTx.trader }
+          { from: openTx.loanOffering.owner }
         )
       );
     });
 
     it('succeeds for owner', async () => {
-      await dydxMargin.transferLoan(openTx.id, openTx.trader, { from: openTx.loanOffering.owner });
+      await dydxMargin.transferLoan(
+        openTx.id,
+        openTx.trader,
+        { from: openTx.loanOffering.owner }
+      );
 
-      await issueTokenToAccountInAmountAndApproveProxy(heldToken, openTx.trader, heldTokenAmount);
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
+        openTx.trader,
+        heldTokenAmount
+      );
 
       await dydxMargin.increaseWithoutCounterparty(
         openTx.id,

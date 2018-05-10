@@ -77,7 +77,11 @@ contract('DutchAuctionCloser', accounts => {
           positionOwner: ERC721MarginPosition.address
         }
       );
-      await ERC721MarginPositionContract.approveRecipient(DutchAuctionCloser.address, true);
+      await ERC721MarginPositionContract.approveRecipient(
+        DutchAuctionCloser.address,
+        true,
+        { from: openTx.trader }
+      );
       await dydxMargin.marginCall(
         openTx.id,
         0, /*requiredDeposit*/
@@ -182,10 +186,12 @@ contract('DutchAuctionCloser', accounts => {
     });
 
     it('fails for payout in owedToken', async () => {
-      await wait(callTimeLimit * 3 / 4);
+      await wait(callTimeLimit - 60);
       const closeAmount = openTx.principal.div(2);
 
-      // closing half is fine
+      // closing half is fine (set trader to bidder temporarily for doClosePosition)
+      const trader = openTx.trader;
+      openTx.trader = dutchBidder;
       await expectThrow(
         doClosePosition(
           accounts,
@@ -201,6 +207,7 @@ contract('DutchAuctionCloser', accounts => {
           }
         )
       );
+      openTx.trader = trader;
     });
 
     it('succeeds for unclosed position', async () => {
