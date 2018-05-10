@@ -1,10 +1,13 @@
 {
   "name": "dydx-contracts",
   "version": "1.0.0",
-  "description": "Ethereum Smart Contracts for dYdX",
+  "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
   "main": "truffle.js",
   "directories": {
-    "test": "test"
+    "contracts": "contracts",
+    "migrations": "migrations",
+    "test": "test",
+    "util": "util"
   },
   "scripts": {
     "test": "truffle test",
@@ -21,18 +24,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AntonioJuliano/dydx-contracts.git"
+    "url": "https://github.com/dydxexchange/protocol"
   },
   "keywords": [
     "dydx",
     "ethereum"
   ],
-  "author": "Antonio Juliano",
-  "license": "ISC",
+  "author": "dYdX Trading Inc.",
+  "license": "Apache License, Version 2.0",
   "bugs": {
-    "url": "https://github.com/AntonioJuliano/dydx-contracts/issues"
+    "url": "https://github.com/dydxexchange/protocol/issues"
   },
-  "homepage": "https://github.com/AntonioJuliano/dydx-contracts#readme",
+  "homepage": "https://github.com/dydxexchange/protocol#readme",
   "devDependencies": {
     "babel-eslint": "^8.2.3",
     "babel-polyfill": "^6.26.0",
@@ -40,20 +43,20 @@
     "babel-register": "^6.26.0",
     "chai": "^4.1.2",
     "chai-bignumber": "^2.0.2",
-    "coveralls": "^3.0.0",
+    "coveralls": "^3.0.1",
     "eslint": "^4.19.1",
     "ganache-cli": "^6.1.0",
     "solidity-coverage": "0.5.0",
     "solium": "1.1.7",
-    "truffle": "4.1.7"
+    "truffle": "4.1.8"
   },
   "dependencies": {
-    "0x.js": "^0.19.0",
+    "0x.js": "^0.37.2",
     "@digix/tempo": "^0.2.0",
     "bignumber.js": "^4.1.0",
     "es6-promisify": "^5.0.0",
-    "ethereumjs-util": "^5.1.5",
-    "npm": "^5.8.0",
+    "ethereumjs-util": "^5.2.0",
+    "npm": "^6.0.0",
     "request-promise-native": "^1.0.5",
     "web3": "1.0.0-beta.34",
     "zeppelin-solidity": "1.9.0"
