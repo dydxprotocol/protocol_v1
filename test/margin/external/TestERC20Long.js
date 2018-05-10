@@ -100,7 +100,7 @@ contract('ERC20Long', accounts => {
     );
 
     POSITIONS.FULL.PRINCIPAL = POSITIONS.FULL.TX.principal;
-    POSITIONS.PART.PRINCIPAL = POSITIONS.PART.TX.principal.div(2);
+    POSITIONS.PART.PRINCIPAL = POSITIONS.PART.TX.principal.div(2).floor();
 
     [
       POSITIONS.FULL.NUM_TOKENS,
@@ -401,10 +401,13 @@ contract('ERC20Long', accounts => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
 
+        const givenTokens = POSITION.NUM_TOKENS.div(2).floor();
+        const remainingTokens = POSITION.NUM_TOKENS.minus(givenTokens);
+
         // give away half of the tokens
         await POSITION.TOKEN_CONTRACT.transfer(
           rando,
-          POSITION.NUM_TOKENS.div(2),
+          givenTokens,
           { from: POSITION.TX.trader }
         );
 
@@ -414,7 +417,9 @@ contract('ERC20Long', accounts => {
           POSITION.TX,
           POSITION.PRINCIPAL
         );
-        expect(tx.result[0] /* amountClosed */).to.be.bignumber.equal(POSITION.PRINCIPAL.div(2));
+
+        // expect heldTokenPayout to equal the number of tokens remaining
+        expect(tx.result[1]).to.be.bignumber.equal(remainingTokens);
       }
     });
 

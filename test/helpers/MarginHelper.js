@@ -13,7 +13,7 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const { DEFAULT_SALT } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
@@ -46,7 +46,7 @@ async function createOpenTx(
     owner: positionOwner || accounts[0],
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
-    principal: BIGNUMBERS.BASE_AMOUNT,
+    principal: new BigNumber('1098765932109876544'),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: accounts[0],
@@ -166,9 +166,11 @@ async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
   if (!tx.depositInHeldToken) {
     soldAmount = soldAmount.plus(tx.depositAmount)
   }
-  const expectedHeldTokenFromSell = soldAmount
-    .div(tx.buyOrder.takerTokenAmount)
-    .times(tx.buyOrder.makerTokenAmount);
+  const expectedHeldTokenFromSell = getPartialAmount(
+    soldAmount,
+    tx.buyOrder.takerTokenAmount,
+    tx.buyOrder.makerTokenAmount
+  );
 
   expectLog(response.logs[0], 'PositionOpened', {
     positionId: positionId,
@@ -960,9 +962,11 @@ function getTokenAmountsFromOpen(openTx) {
   if (!openTx.depositInHeldToken) {
     soldAmount = soldAmount.plus(openTx.depositAmount)
   }
-  const expectedHeldTokenFromSell = soldAmount
-    .div(openTx.buyOrder.takerTokenAmount)
-    .times(openTx.buyOrder.makerTokenAmount);
+  const expectedHeldTokenFromSell = getPartialAmount(
+    soldAmount,
+    openTx.buyOrder.takerTokenAmount,
+    openTx.buyOrder.makerTokenAmount
+  );
 
   const expectedHeldTokenBalance = openTx.depositInHeldToken ?
     expectedHeldTokenFromSell.plus(openTx.depositAmount)

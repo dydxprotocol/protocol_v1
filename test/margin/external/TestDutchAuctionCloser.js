@@ -152,7 +152,7 @@ contract('DutchAuctionCloser', accounts => {
       await dydxMargin.cancelMarginCall(openTx.id, { from: openTx.loanOffering.owner });
       await wait(openTx.loanOffering.maxDuration - callTimeLimit / 2);
 
-      const closeAmount = openTx.principal.div(2);
+      const closeAmount = openTx.principal.div(2).floor();
 
       // closing half is fine
       await callClosePositionDirectly(
@@ -171,7 +171,7 @@ contract('DutchAuctionCloser', accounts => {
       await wait(openTx.loanOffering.maxDuration - callTimeLimit / 2);
       await dydxMargin.marginCall(openTx.id, 0, { from: openTx.loanOffering.owner });
 
-      const closeAmount = openTx.principal.div(2);
+      const closeAmount = openTx.principal.div(2).floor();
 
       // closing half is fine
       await callClosePositionDirectly(
@@ -187,7 +187,7 @@ contract('DutchAuctionCloser', accounts => {
 
     it('fails for payout in owedToken', async () => {
       await wait(callTimeLimit - 60);
-      const closeAmount = openTx.principal.div(2);
+      const closeAmount = openTx.principal.div(2).floor();
 
       // closing half is fine (set trader to bidder temporarily for doClosePosition)
       const trader = openTx.trader;
@@ -224,7 +224,7 @@ contract('DutchAuctionCloser', accounts => {
       ]);
 
       const heldTokenVault = await VaultContract.balances.call(openTx.id, HeldToken.address);
-      const closeAmount = openTx.principal.div(2);
+      const closeAmount = openTx.principal.div(2).floor();
 
       // closing half is fine
       const closeTx1 = await callClosePositionDirectly(

@@ -9,9 +9,11 @@ const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
-const { BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const { DEFAULT_SALT } = require('./Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
+
+const BASE_AMOUNT = new BigNumber('1098623452345987123')
 
 async function createSignedSellOrder(
   accounts,
@@ -24,18 +26,18 @@ async function createSignedSellOrder(
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
     maker: accounts[5],
-    makerFee: BIGNUMBERS.BASE_AMOUNT.times(0.01),
+    makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BIGNUMBERS.BASE_AMOUNT.times(0.1),
+    takerFee: BASE_AMOUNT.times(0.109128341).floor(),
 
     // owedToken
     makerTokenAddress: OwedToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(6.382472),
+    makerTokenAmount: BASE_AMOUNT.times(6.382472).floor(),
 
     // heldToken
     takerTokenAddress: HeldToken.address,
-    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(19.123475)
+    takerTokenAmount: BASE_AMOUNT.times(19.123475).floor()
   };
 
   order.ecSignature = await signOrder(order);
@@ -54,20 +56,20 @@ async function createSignedBuyOrder(
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
-    makerFee: BIGNUMBERS.BASE_AMOUNT.times(.02),
+    makerFee: BASE_AMOUNT.times(.02012398).floor(),
     salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BIGNUMBERS.BASE_AMOUNT.times(.1),
+    takerFee: BASE_AMOUNT.times(.1019238).floor(),
     makerFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
 
     // heldToken
     makerTokenAddress: HeldToken.address,
-    makerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(30),
+    makerTokenAmount: BASE_AMOUNT.times(30.091234687).floor(),
 
     // owedToken
     takerTokenAddress: OwedToken.address,
-    takerTokenAmount: BIGNUMBERS.BASE_AMOUNT.times(10),
+    takerTokenAmount: BASE_AMOUNT.times(10.092138781).floor(),
   };
 
   order.ecSignature = await signOrder(order);

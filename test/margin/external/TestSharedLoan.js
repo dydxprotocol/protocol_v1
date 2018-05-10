@@ -252,7 +252,7 @@ contract('SharedLoan', accounts => {
       const tsc1 = await getSharedLoanConstants(SHARED_LOAN.CONTRACT, SHARED_LOAN.INITIAL_LENDER);
 
       const adder = accounts[8];
-      const addedPrincipal = SHARED_LOAN.TX.principal.div(2);
+      const addedPrincipal = SHARED_LOAN.TX.principal.div(2).floor();
       await increaseWithoutCounterparty(adder, addedPrincipal);
 
       // get constants after increasing position

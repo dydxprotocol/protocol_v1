@@ -47,7 +47,7 @@ contract('LoanGetters', (accounts) => {
       const ca1 = new BigNumber("1e17");
       const ca2 = new BigNumber("1e16");
       let openTx = await createOpenTx(accounts);
-      openTx.principal = openTx.principal.div(2);
+      openTx.principal = openTx.principal.div(2).floor();
 
       await expectLoanAmounts(openTx.loanOffering.loanHash, 0, 0);
 

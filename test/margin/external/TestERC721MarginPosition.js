@@ -82,7 +82,7 @@ contract('ERC721MarginPosition', accounts => {
         dydxMargin,
         openTx,
         sellOrder,
-        openTx.principal.div(2));
+        openTx.principal.div(2).floor());
 
       // transfer position to ERC20ShortCreator
       await dydxMargin.transferPosition(openTx.id, erc721Contract.address);
@@ -126,7 +126,7 @@ contract('ERC721MarginPosition', accounts => {
           positionOwner: ERC721MarginPosition.address
         }
       );
-      addedPrincipal = openTx.principal.div(2);
+      addedPrincipal = openTx.principal.div(2).floor();
       const [principal, amountHeld] = await Promise.all([
         dydxMargin.getPositionPrincipal(openTx.id),
         dydxMargin.getPositionBalance(openTx.id),

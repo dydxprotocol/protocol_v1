@@ -30,12 +30,12 @@ async function createLoanOffering(
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
     rates: {
-      maxAmount:          BIGNUMBERS.BASE_AMOUNT.times(3),
-      minAmount:          BIGNUMBERS.BASE_AMOUNT.times(.1),
-      minHeldToken:       BIGNUMBERS.BASE_AMOUNT.times(11),
-      lenderFee:          BIGNUMBERS.BASE_AMOUNT.times(.01),
-      takerFee:           BIGNUMBERS.BASE_AMOUNT.times(.02),
-      interestRate:       new BigNumber('365e4'), // 3.65% nominal per year
+      maxAmount:          new BigNumber('3098765432109876541'),
+      minAmount:          new BigNumber('123456789012345789'),
+      minHeldToken:       new BigNumber('11098765432109871111'),
+      lenderFee:          new BigNumber('11098765432109871'),
+      takerFee:           new BigNumber('21098765432109871'),
+      interestRate:       new BigNumber('3650101'), // ~3.65% nominal per year
       interestPeriod:     interestPeriod || BIGNUMBERS.ONE_DAY_IN_SECONDS
     },
     expirationTimestamp:  1000000000000, // 31.69 millennia from 1970

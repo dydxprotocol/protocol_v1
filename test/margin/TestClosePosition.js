@@ -38,7 +38,7 @@ describe('#closePosition', () => {
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
       // Close half the position at a time
-      const closeAmount = OpenTx.principal.div(2);
+      const closeAmount = OpenTx.principal.div(2).floor();
 
       let [startingBalances,] = await Promise.all([
         getBalances(dydxMargin, OpenTx, sellOrder),
@@ -72,7 +72,7 @@ describe('#closePosition', () => {
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
 
       // Close half the position at a time
-      const closeAmount = OpenTx.principal.div(2);
+      const closeAmount = OpenTx.principal.div(2).floor();
 
       let [startingBalances,] = await Promise.all([
         getBalances(dydxMargin, OpenTx, sellOrder),
@@ -131,7 +131,7 @@ describe('#closePosition', () => {
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-      const closeAmount = OpenTx.principal.div(2);
+      const closeAmount = OpenTx.principal.div(2).floor();
 
       await expectThrow(
         callClosePosition(
@@ -299,7 +299,7 @@ describe('#closePositionDirectly', () => {
       await issueForDirectClose(OpenTx);
 
       const dydxMargin = await Margin.deployed();
-      const closeAmount = OpenTx.principal.div(2);
+      const closeAmount = OpenTx.principal.div(2).floor();
 
       let [startingBalances,] = await Promise.all([
         getBalances(dydxMargin, OpenTx),

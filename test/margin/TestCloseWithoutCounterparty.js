@@ -61,7 +61,12 @@ describe('#CloseWithoutCounterparty', () => {
       // It should give the correct amount of the heldToken balance
       const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
       expect(lenderHeldTokenAfter).to.be.bignumber.equal(
-        multiplyByClosePercent(heldTokenBalance));
+        getPartialAmount(
+          principal,
+          totalSupply,
+          heldTokenBalance
+        )
+      );
     });
   });
 
@@ -91,7 +96,12 @@ describe('#CloseWithoutCounterparty', () => {
 
         const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
         expect(lenderHeldTokenAfter).to.be.bignumber.equal(
-          multiplyByClosePercent(heldTokenBalance));
+          getPartialAmount(
+            principal,
+            totalSupply,
+            heldTokenBalance
+          )
+        );
       });
     });
 
@@ -101,10 +111,11 @@ describe('#CloseWithoutCounterparty', () => {
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
+        const allowedCloseAmount = multiplyByClosePercent(totalSupply, 1, 7)
         const closeLoanDelegator =
           await TestCloseLoanDelegator.new(
             dydxMargin.address,
-            multiplyByClosePercent(totalSupply, 1, 7)
+            allowedCloseAmount
           );
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
@@ -124,7 +135,11 @@ describe('#CloseWithoutCounterparty', () => {
         const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
 
         expect(lenderHeldTokenAfter).to.be.bignumber.equal(
-          multiplyByClosePercent(heldTokenBalance, 1, 7)
+          getPartialAmount(
+            allowedCloseAmount,
+            totalSupply,
+            heldTokenBalance
+          )
         );
       });
     });
