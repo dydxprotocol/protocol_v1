@@ -20,6 +20,8 @@ jobs:
             - node_modules
       - save_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
   build:
     docker:
       - image: circleci/node:9.11.1
@@ -32,6 +34,8 @@ jobs:
           command: npm run compile -- --all
       - save_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
   lint:
     docker:
       - image: circleci/node:9.11.1
