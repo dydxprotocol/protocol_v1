@@ -618,7 +618,7 @@ describe('#closePosition', () => {
           Margin.deployed()
         ]);
 
-        sellOrder.makerTokenAmount = new BigNumber(1);
+        sellOrder.makerTokenAmount = new BigNumber(100000);
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
