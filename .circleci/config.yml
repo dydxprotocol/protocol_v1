@@ -65,7 +65,7 @@ jobs:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Coverage
-          command: npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
+          command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
 workflows:
   version: 2
   build_and_test:
