@@ -112,7 +112,7 @@ describe('#cancelLoanOffering', () => {
         getNewLoanOffering(accounts)
       ]);
 
-      const cancelAmount = loanOffering.rates.maxAmount.div(4);
+      const cancelAmount = loanOffering.rates.maxAmount.div(4).floor();
 
       const tx = await callCancelLoanOffer(
         dydxMargin,

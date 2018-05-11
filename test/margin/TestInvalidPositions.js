@@ -33,7 +33,7 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { BIGNUMBERS, ADDRESSES } = require('../helpers/Constants');
+const { ADDRESSES } = require('../helpers/Constants');
 
 describe('#openPosition', () => {
   describe('Validations', () => {
@@ -105,7 +105,7 @@ describe('#openPosition', () => {
 
         await issueTokensAndSetAllowances(OpenTx);
 
-        OpenTx.loanOffering.rates.minHeldToken = BIGNUMBERS.BASE_AMOUNT.times(100);
+        OpenTx.loanOffering.rates.minHeldToken = OpenTx.loanOffering.rates.minHeldToken.times(17);
         OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
@@ -160,7 +160,7 @@ describe('#openPosition', () => {
       it('fails if loan offer already filled', async () => {
         const OpenTx = await createOpenTx(accounts);
 
-        const halfLoanAmount = OpenTx.loanOffering.rates.maxAmount.div(2);
+        const halfLoanAmount = OpenTx.loanOffering.rates.maxAmount.div(2).floor();
         OpenTx.principal = halfLoanAmount;
         OpenTx.depositAmount = getMinimumDeposit(OpenTx);
 

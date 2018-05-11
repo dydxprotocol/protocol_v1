@@ -115,7 +115,7 @@ contract('SharedLoanCreator', accounts => {
         dydxMargin,
         openTx,
         sellOrder,
-        openTx.principal.div(2));
+        openTx.principal.div(2).floor());
 
       // transfer loan to SharedLoanCreator
       await dydxMargin.transferLoan(
@@ -126,7 +126,7 @@ contract('SharedLoanCreator', accounts => {
 
       const sharedLoanAddress = await dydxMargin.getPositionLender.call(openTx.id);
       const sharedLoanContract = await SharedLoan.at(sharedLoanAddress);
-      await checkSuccess(openTx, sharedLoanContract, openTx.principal.div(2));
+      await checkSuccess(openTx, sharedLoanContract, openTx.principal.div(2).floor());
     });
   });
 });

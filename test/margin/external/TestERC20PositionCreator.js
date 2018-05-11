@@ -125,7 +125,7 @@ contract('ERC20PositionCreator', accounts => {
           dydxMargin,
           openTx,
           sellOrder,
-          openTx.principal.div(2));
+          openTx.principal.div(2).floor());
 
         // transfer position to ERC20PositionCreator
         await dydxMargin.transferPosition(openTx.id, CREATORS[creator].address);

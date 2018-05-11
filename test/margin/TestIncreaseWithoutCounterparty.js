@@ -140,7 +140,7 @@ describe('#increaseWithoutCounterparty', () => {
     expect(ownsPosition).to.be.true;
     expect(ownsLoan).to.be.true;
 
-    const addAmount = OpenTx.principal.div(2);
+    const addAmount = OpenTx.principal.div(2).floor();
     const adder = accounts[8];
     const heldTokenAmount = getPartialAmount(
       addAmount,

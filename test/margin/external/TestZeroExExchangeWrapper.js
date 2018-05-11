@@ -18,6 +18,8 @@ const { getPartialAmount } = require('../../helpers/MathHelper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
 
+const baseAmount = new BigNumber('1e18');
+
 describe('ZeroExExchangeWrapper', () => {
   describe('Constructor', () => {
     contract('ZeroExExchangeWrapper', accounts => {
@@ -63,7 +65,7 @@ describe('ZeroExExchangeWrapper', () => {
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
-        const amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+        const amount = new BigNumber(baseAmount.times(2));
 
         const receivedMakerTokenAmount = await exchangeWrapper.getTradeMakerTokenAmount.call(
           order.makerTokenAddress,
@@ -91,7 +93,7 @@ describe('ZeroExExchangeWrapper', () => {
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
-        const amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+        const amount = new BigNumber(baseAmount.times(2));
 
         const requiredTakerTokenAmount = await exchangeWrapper.getTakerTokenPrice.call(
           order.makerTokenAddress,
@@ -124,7 +126,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         const order = await createSignedSellOrder(accounts);
 
-        const amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+        const amount = new BigNumber(baseAmount.times(2));
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
@@ -166,7 +168,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         const order = await createSignedSellOrder(accounts);
 
-        let amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+        let amount = new BigNumber(baseAmount.times(2));
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
@@ -195,7 +197,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(1.5));
+        amount = new BigNumber(baseAmount.times(1.5));
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
         startingBalances = await getBalances(
           order,
@@ -222,7 +224,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(1.2));
+        amount = new BigNumber(baseAmount.times(1.2));
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
         startingBalances = await getBalances(
           order,
@@ -265,7 +267,7 @@ describe('ZeroExExchangeWrapper', () => {
         order.feeRecipient = ADDRESSES.ZERO;
         order.ecSignature = await signOrder(order);
 
-        const amount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+        const amount = new BigNumber(baseAmount.times(2));
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
@@ -369,7 +371,7 @@ describe('ZeroExExchangeWrapper', () => {
 
           const order = await createSignedSellOrder(accounts);
 
-          const desiredAmount = new BigNumber(BIGNUMBERS.BASE_AMOUNT.times(2));
+          const desiredAmount = new BigNumber(baseAmount.times(2));
           const takerAmount = getPartialAmount(
             order.takerTokenAmount,
             order.makerTokenAmount,

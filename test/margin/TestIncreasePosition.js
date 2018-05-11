@@ -398,7 +398,7 @@ async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } 
 
   // Lower minHeldToken since more owedTokens are given than the increasePosTx.principal
   increasePosTx.loanOffering.rates.minHeldToken =
-    increasePosTx.loanOffering.rates.minHeldToken.div(2);
+    increasePosTx.loanOffering.rates.minHeldToken.div(2).floor();
   increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
 
   await issueTokensAndSetAllowances(OpenTx);
@@ -430,7 +430,7 @@ async function setup(accounts, { loanOwner, positionOwner, depositInHeldToken } 
     getBalances(increasePosTx, owedToken, heldToken, feeToken, dydxMargin),
   ]);
 
-  increasePosTx.principal = increasePosTx.principal.div(4);
+  increasePosTx.principal = increasePosTx.principal.div(4).floor();
   increasePosTx.id = OpenTx.id;
 
   // Wait until the next interest period

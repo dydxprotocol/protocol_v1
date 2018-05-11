@@ -241,7 +241,7 @@ describe('ERC721MarginLoan', () => {
     });
 
     it('fails for a non-wthdrawn position', async () => {
-      await closePosition(openTx, openTx.principal.div(2));
+      await closePosition(openTx, openTx.principal.div(2).floor());
       await expectThrow(
         loanContract.untokenizeLoan(openTx.id, receiver, { from: lender })
       );
@@ -340,7 +340,7 @@ describe('ERC721MarginLoan', () => {
 
     it('fails always', async () => {
       const adder = openTx.owner;
-      const addedPrincipal = openTx.principal.div(2);
+      const addedPrincipal = openTx.principal.div(2).floor();
       const [principal, amountHeld] = await Promise.all([
         dydxMargin.getPositionPrincipal(openTx.id),
         dydxMargin.getPositionBalance(openTx.id),
@@ -576,11 +576,11 @@ describe('ERC721MarginLoan', () => {
       // set up (half-closed) position 2
       openTx2 = await doOpenPosition(accounts, { salt: salt++ });
       await expectNoToken(openTx2.id);
-      await closePosition(openTx2, openTx2.principal.div(2));
+      await closePosition(openTx2, openTx2.principal.div(2).floor());
 
       // expect same size
       expect(openTx1.principal).is.bignumber.equal(openTx2.principal);
-      halfClose = openTx1.principal.div(2);
+      halfClose = openTx1.principal.div(2).floor();
 
       // transfer loans to erc721 contract
       await dydxMargin.transferLoan(
@@ -621,8 +621,8 @@ describe('ERC721MarginLoan', () => {
       ]);
 
       // Halfway close #1, completely close #2
-      await closePosition(openTx1, openTx1.principal.div(2));
-      await closePosition(openTx2, openTx2.principal.div(2));
+      await closePosition(openTx1, openTx1.principal.div(2).floor());
+      await closePosition(openTx2, openTx2.principal.div(2).floor());
       const [totalRepaid1After, totalRepaid2After, isClosed1, isClosed2] = await Promise.all([
         dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx1.id),
         dydxMargin.getTotalOwedTokenRepaidToLender.call(openTx2.id),

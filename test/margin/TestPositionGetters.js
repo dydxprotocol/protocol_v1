@@ -33,16 +33,18 @@ contract('PositionGetters', (accounts) => {
   let openTx;
   let salt = 872354;
 
-  const interestAfterOneDay    = "1000100005000166671"; // 1e18 * e^(0.0001) rounded-up
-  const interestAfterFiveDays  = "1000500125020835938"; // 1e18 * e^(0.0005) rounded-up
-  const interestAfterFiftyDays = "1005012520859401064"; // 1e18 * e^(0.005) rounded-up
 
   // ============ Helper Functions ============
+
+  function expectInterest(amount, interestRate, numDays, expected) {
+    const exp = Math.exp(interestRate.div("1e8").mul(numDays).div(365));
+    expectWithinError(expected, amount.mul(exp.toString()), 100);
+  }
 
   async function getGetters(positionId, throws = false) {
     const nowTimestamp = await getBlockTimestamp(openTx.response.receipt.blockNumber);
     const futureTimestamp = nowTimestamp + (60*60*24*5);
-    const halfPrincipal = openTx.principal.div(2);
+    const halfPrincipal = openTx.principal.div(2).floor();
     const [
       [addresses, values256, values32],
       lender,
@@ -225,11 +227,11 @@ contract('PositionGetters', (accounts) => {
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
       expect(position.balance).to.be.bignumber.equal(expectedHeldTokenBalance);
       expectWithinError(position.timeUntilIncrease, 86400, standardTimeError);
-      expect(position.owedAmount).to.be.bignumber.equal(interestAfterOneDay);
+      expectInterest(openTx.principal, position.interestRate, 1, position.owedAmount);
 
-      const halfPInterestAfterFiveDays = new BigNumber(interestAfterFiveDays).div(2);
-      expect(position.owedAmountAtTime).to.be.bignumber.equal(halfPInterestAfterFiveDays)
-      expect(position.amountForIncreaseAtTime).to.be.bignumber.equal(halfPInterestAfterFiveDays);
+      const halfPrincipal = openTx.principal.div(2).floor();
+      expectInterest(halfPrincipal, position.interestRate, 5, position.owedAmountAtTime);
+      expectInterest(halfPrincipal, position.interestRate, 5, position.amountForIncreaseAtTime);
     });
 
     it('check values for closed position', async () => {
@@ -256,7 +258,9 @@ contract('PositionGetters', (accounts) => {
       expect(position.isCalled).to.be.false;
       expect(position.isClosed).to.be.true;
       expect(position.balance).to.be.bignumber.equal(0);
-      expect(position.totalRepaid).to.be.bignumber.gte(interestAfterOneDay);
+      expectInterest(
+        openTx.principal, openTx.loanOffering.rates.interestRate, 1, position.totalRepaid
+      );
     });
   });
 
@@ -280,15 +284,16 @@ contract('PositionGetters', (accounts) => {
       expect(principal1).to.be.bignumber.equal(openTx.principal);
       expect(balance1).to.be.bignumber.equal(expectedHeldTokenBalance);
 
+      const closeAmount = openTx.principal.div(2).floor();
       await doClosePosition(
         accounts,
         openTx,
-        openTx.principal.div(2)
+        closeAmount
       );
 
       const principal2 = await dydxMargin.getPositionPrincipal.call(positionId);
       const balance2 = await dydxMargin.getPositionBalance.call(positionId);
-      expect(principal2).to.be.bignumber.equal(openTx.principal.div(2));
+      expect(principal2).to.be.bignumber.equal(principal1.minus(closeAmount));
       const expectedHeldTokenBalance2 = getPartialAmount(expectedHeldTokenBalance, 2, 1, true);
       expect(balance2).to.be.bignumber.equal(expectedHeldTokenBalance2);
 
@@ -394,7 +399,7 @@ contract('PositionGetters', (accounts) => {
       // ensure interest accrued works
       await wait(oneDay / 2);
       const owedAmount2 = await dydxMargin.getPositionOwedAmount.call(positionId);
-      expectWithinError(owedAmount2, interestAfterOneDay, 100);
+      expectInterest(openTx.principal, position.interestRate, 1, owedAmount2);
 
       // ensure interest accrued works again
       await wait(oneDay * 49);
@@ -487,7 +492,7 @@ contract('PositionGetters', (accounts) => {
         openTx.principal,
         futureTime
       );
-      expectWithinError(owedAmount2, interestAfterFiftyDays, 100);
+      expectInterest(openTx.principal, position.interestRate, 50, owedAmount2);
 
       // ensure different principal amount work
       const owedAmount3 = await dydxMargin.getLenderAmountForIncreasePositionAtTime.call(
@@ -551,27 +556,25 @@ contract('PositionGetters', (accounts) => {
       const oneDay = oneHour * 24;
       await wait(oneDay * 4.5);
 
+      const closeAmount1 = openTx.principal.div(2).floor();
       await doClosePosition(
         accounts,
         openTx,
-        openTx.principal.div(2)
+        closeAmount1
       );
 
       const position1 = await getGetters(positionId);
-      expect(position1.totalRepaid).to.be.bignumber.equal(
-        new BigNumber(interestAfterFiveDays).div(2)
-      );
+      expectInterest(closeAmount1, position1.interestRate, 5, position1.totalRepaid);
 
+      const closeAmount2 = openTx.principal.minus(closeAmount1);
       await doClosePosition(
         accounts,
         openTx,
-        openTx.principal.div(2)
+        closeAmount2
       );
 
       const position2 = await getGetters(positionId, true);
-      expect(position2.totalRepaid).to.be.bignumber.equal(
-        new BigNumber(interestAfterFiveDays)
-      );
+      expectInterest(openTx.principal, position1.interestRate, 5, position2.totalRepaid);
     });
   });
 
