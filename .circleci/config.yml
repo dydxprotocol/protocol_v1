@@ -1,13 +1,9 @@
 version: 2
-
-defaults:
-  docker:
-    - image: circleci/node:9.11.1
-  working_directory: ~/protocol
-
 jobs:
   checkout_and_install:
-    <<:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
     steps:
       - checkout
       - restore_cache:
@@ -27,7 +23,9 @@ jobs:
           paths:
             - ~/protocol
   build:
-    <<:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
@@ -39,7 +37,9 @@ jobs:
           paths:
             - ~/protocol
   lint:
-    <<:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
@@ -47,7 +47,9 @@ jobs:
           name: Lint
           command: npm run lint && npm run dydxlint && npm run solint
   test:
-    <<:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
@@ -55,24 +57,15 @@ jobs:
           name: Test
           command: npm test
   coverage:
-    <<:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
     steps:
       - restore_cache:
           key: protocol-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
-  publish:
-    <<:
-    steps:
-      - restore_cache:
-          key: protocol-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/protocol/.npmrc
-      - run:
-          name: Publish package
-          command: npm publish
 workflows:
   version: 2
   build_and_test:
@@ -90,9 +83,3 @@ workflows:
       - coverage:
           requires:
             - checkout_and_install
-      - publish:
-          requires:
-            - test
-          # branches:
-          #   only:
-          #     - master

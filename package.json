@@ -2,7 +2,7 @@
   "name": "@dydxprotocol/protocol",
   "version": "0.0.10",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
-  "main": "truffle.js",
+  "main": "index.js",
   "files": [
     "build/",
     "contracts/",
