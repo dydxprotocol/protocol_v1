@@ -88,7 +88,7 @@ library Exponent {
         // get e^integerX
         Fraction.Fraction128 memory expOfInt =
             getPrecomputedEToThe(integerX % NUM_PRECOMPUTED_INTEGERS);
-        while (integerX > NUM_PRECOMPUTED_INTEGERS) {
+        while (integerX >= NUM_PRECOMPUTED_INTEGERS) {
             expOfInt = expOfInt.mul(getPrecomputedEToThe(NUM_PRECOMPUTED_INTEGERS));
             integerX -= NUM_PRECOMPUTED_INTEGERS;
         }
