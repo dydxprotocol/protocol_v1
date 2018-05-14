@@ -53,6 +53,7 @@ function isDevNetwork(network) {
           || network === 'test'
           || network === 'develop'
           || network === 'dev'
+          || network === 'docker'
           || network === 'coverage';
 }
 
