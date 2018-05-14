@@ -1,8 +1,14 @@
 {
-  "name": "dydx-contracts",
-  "version": "1.0.0",
+  "name": "@dydxprotocol/protocol",
+  "version": "0.0.10",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
-  "main": "truffle.js",
+  "main": "index.js",
+  "files": [
+    "build/",
+    "contracts/",
+    "truffle.js",
+    ".babelrc"
+  ],
   "directories": {
     "contracts": "contracts",
     "migrations": "migrations",
@@ -31,34 +37,33 @@
     "ethereum"
   ],
   "author": "dYdX Trading Inc.",
-  "license": "Apache License, Version 2.0",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/dydxexchange/protocol/issues"
   },
   "homepage": "https://github.com/dydxexchange/protocol#readme",
+  "dependencies": {
+    "zeppelin-solidity": "1.9.0"
+  },
   "devDependencies": {
+    "@digix/tempo": "^0.2.0",
+    "0x.js": "^0.37.2",
     "babel-eslint": "^8.2.3",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
+    "bignumber.js": "^4.1.0",
     "chai": "^4.1.2",
     "chai-bignumber": "^2.0.2",
     "coveralls": "^3.0.1",
+    "es6-promisify": "^5.0.0",
     "eslint": "^4.19.1",
+    "ethereumjs-util": "^5.2.0",
     "ganache-cli": "^6.1.0",
+    "request-promise-native": "^1.0.5",
     "solidity-coverage": "0.5.0",
     "solium": "1.1.7",
-    "truffle": "4.1.8"
-  },
-  "dependencies": {
-    "0x.js": "^0.37.2",
-    "@digix/tempo": "^0.2.0",
-    "bignumber.js": "^4.1.0",
-    "es6-promisify": "^5.0.0",
-    "ethereumjs-util": "^5.2.0",
-    "npm": "^6.0.0",
-    "request-promise-native": "^1.0.5",
-    "web3": "1.0.0-beta.34",
-    "zeppelin-solidity": "1.9.0"
+    "truffle": "4.1.8",
+    "web3": "1.0.0-beta.34"
   }
 }
