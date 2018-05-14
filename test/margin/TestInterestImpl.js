@@ -9,6 +9,7 @@ const BigNumber = require('bignumber.js');
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { BIGNUMBERS } = require('../helpers/Constants');
+const { expectWithinError } = require('../helpers/MathHelper');
 
 contract('InterestHelper', function(_accounts) {
   let contract;
@@ -50,6 +51,21 @@ contract('InterestHelper', function(_accounts) {
         new BigNumber('10e6'), // annual percent
         BIGNUMBERS.ONE_YEAR_IN_SECONDS.times(10)); // time
       expect(result).to.be.bignumber.equal('2718281828459045236'); // 1e18 * E^(100%)
+    });
+
+    it('calculates e^X correctly for every integer', async () => {
+      const maxInt = 80;
+      const baseAmount = new BigNumber('1e18');
+      const hundredPercent = new BigNumber('100e6');
+      for (let i = 0; i <= maxInt; i++) {
+        let e = Math.exp(i).toString();
+        let result = await contract.getCompoundedInterest.call(
+          baseAmount,
+          hundredPercent,
+          BIGNUMBERS.ONE_YEAR_IN_SECONDS.times(i)
+        );
+        expectWithinError(result.div(baseAmount.times(e)), 1, '0.0001'); // within 0.01% error
+      }
     });
 
     it('calculates just below 100% correctly', async () => {

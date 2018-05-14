@@ -43,6 +43,10 @@ library InterestImpl {
 
     uint256 constant DEFAULT_MACLAURIN_PRECISION = 5;
 
+    uint256 constant MAXIMUM_EXPONENT = 80;
+
+    uint128 constant E_TO_MAXIUMUM_EXPONENT = 55406223843935100525711733958316613;
+
     // ============ Public Implementation Functions ============
 
     /**
@@ -65,26 +69,39 @@ library InterestImpl {
         pure
         returns (uint256)
     {
-        uint256 num = interestRate.mul(secondsOfInterest);
+        uint256 numerator = interestRate.mul(secondsOfInterest);
+        uint128 denominator = (10**8) * (1 years);
 
         // interestRate and secondsOfInterest should both be uint32
-        assert(num < 2**128);
+        assert(numerator < 2**128);
 
+        // fraction representing (Rate * Time)
         Fraction.Fraction128 memory rt = Fraction.Fraction128({
-            num: uint128(num),
-            den: (10**8) * (1 years)
+            num: uint128(numerator),
+            den: denominator
         });
 
-        Fraction.Fraction128 memory percent = Exponent.exp(
-            rt,
-            DEFAULT_PRECOMPUTE_PRECISION,
-            DEFAULT_MACLAURIN_PRECISION
-        );
+        // calculate e^(RT)
+        Fraction.Fraction128 memory eToRT;
+        if (numerator.div(denominator) >= MAXIMUM_EXPONENT) {
+            // degenerate case: cap calculation
+            eToRT = Fraction.Fraction128({
+                num: E_TO_MAXIUMUM_EXPONENT,
+                den: 1
+            });
+        } else {
+            // normal case: calculate e^(RT)
+            eToRT = Exponent.exp(
+                rt,
+                DEFAULT_PRECOMPUTE_PRECISION,
+                DEFAULT_MACLAURIN_PRECISION
+            );
+        }
 
         // e^X for positive X should be greater-than or equal to 1
-        assert(percent.num >= percent.den);
+        assert(eToRT.num >= eToRT.den);
 
-        return safeMultiplyUint256ByFraction(principal, percent);
+        return safeMultiplyUint256ByFraction(principal, eToRT);
     }
 
     // ============ Helper Functions ============
