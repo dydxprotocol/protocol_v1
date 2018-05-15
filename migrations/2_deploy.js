@@ -92,7 +92,7 @@ function get0xProxyAddress(network) {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
-  throw "0x Exchange Not Found";
+  throw "0x Proxy Not Found";
 }
 
 function getZRXAddress(network) {
@@ -102,7 +102,7 @@ function getZRXAddress(network) {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
   }
 
-  throw "0x Exchange Not Found";
+  throw "ZRX Not Found";
 }
 
 function getSharedLoanTrustedMarginCallers(network) {
