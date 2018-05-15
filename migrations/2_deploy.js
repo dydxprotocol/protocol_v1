@@ -75,7 +75,47 @@ function maybeDeploy0x(deployer, network) {
   return Promise.resolve(true);
 }
 
-async function deployMarginContracts(deployer) {
+function get0xExchangeAddress(network) {
+  if (isDevNetwork(network)) {
+    return ZeroExExchange.address;
+  } else if (network === 'kovan' ) {
+    return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
+  }
+
+  throw "0x Exchange Not Found";
+}
+
+function get0xProxyAddress(network) {
+  if (isDevNetwork(network)) {
+    return ZeroExProxy.address;
+  } else if (network === 'kovan' ) {
+    return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
+  }
+
+  throw "0x Exchange Not Found";
+}
+
+function getZRXAddress(network) {
+  if (isDevNetwork(network)) {
+    return FeeToken.address;
+  } else if (network === 'kovan' ) {
+    return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
+  }
+
+  throw "0x Exchange Not Found";
+}
+
+function getSharedLoanTrustedMarginCallers(network) {
+  if (isDevNetwork(network)) {
+    return [];
+  } else if (network === 'kovan' ) {
+    return ['0x008E81A8817e0f1820cE98c92C8c72be27443857'];
+  }
+
+  throw "Network Unsupported";
+}
+
+async function deployMarginContracts(deployer, network) {
   await Promise.all([
     deployer.deploy(ProxyContract, ONE_HOUR),
     deployer.deploy(InterestImpl),
@@ -128,9 +168,9 @@ async function deployMarginContracts(deployer) {
       ZeroExExchangeWrapper,
       Margin.address,
       ProxyContract.address,
-      ZeroExExchange.address, // TODO update these for prod
-      ZeroExProxy.address,
-      FeeToken.address
+      get0xExchangeAddress(network),
+      get0xProxyAddress(network),
+      getZRXAddress(network)
     ),
     deployer.deploy(
       ERC721MarginPosition,
@@ -160,7 +200,7 @@ async function deployMarginContracts(deployer) {
   await deployer.deploy(
     SharedLoanCreator,
     Margin.address,
-    [/* Trusted Margin Callers */] //TODO: add dYdX multisig address
+    getSharedLoanTrustedMarginCallers(network)
   );
 }
 
@@ -180,7 +220,7 @@ async function grantAccessToVault() {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
-  await deployMarginContracts(deployer);
+  await deployMarginContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault()
