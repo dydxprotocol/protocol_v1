@@ -354,10 +354,7 @@ contract ERC721MarginLoan is
         returns (uint256)
     {
         address owner = ownerOf(uint256(positionId));
-        require(
-            owner != address(0),
-            "ERC721MarginLoan#withdrawImpl: Token does not exist"
-        );
+        assert(owner != address(0)); // ownerOf() should have already required this
 
         address owedToken = owedTokenAddress[positionId];
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
