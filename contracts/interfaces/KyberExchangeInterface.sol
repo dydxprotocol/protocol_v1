@@ -13,7 +13,7 @@ import "../Kyber/FeeBurnerInterface.sol";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @title Kyber Network main contract
-contract KyberNetworkInterface is Withdrawable, Utils {
+contract KyberExchangeInterface is Withdrawable, Utils {
 
     uint public negligibleRateDiff = 10; // basic rate steps will be in 0.01%
     KyberReserveInterface[] public reserves;

@@ -24,9 +24,10 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC20 }    from "../../../Kyber/ERC20Interface.sol";
+import { EtherToken } from "../../../Kyber/WrappedEther.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { KyberNetworkInterface } from "../../../interfaces/KyberNetworkInterface.sol";
+import { KyberExchangeInterface } from "../../../interfaces/KyberExchangeInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
@@ -37,7 +38,7 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
  * @title KyberNetworkWrapper
  * @author dYdX
  *
- * dYdX ExchangeWrapper to interface with 0x Version 1
+ * dYdX ExchangeWrapper to interface with KyberNetwork 
  */
 contract KyberExchangeWrapper is
     HasNoEther,
@@ -47,23 +48,11 @@ contract KyberExchangeWrapper is
 {
     using SafeMath for uint256;
 
+
+
     // ============ Structs ============
 
-    //0x order
-    struct Order {
-        address maker;
-        address taker;
-        address feeRecipient;
-        uint256 makerTokenAmount;
-        uint256 takerTokenAmount;
-        uint256 makerFee;
-        uint256 takerFee;
-        uint256 expirationUnixTimestampSec;
-        uint256 salt;
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
-    }
+
     //KyberOrder
     /**
      * [DYDX_PROXY description]
@@ -119,6 +108,9 @@ contract KyberExchangeWrapper is
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
+     I need to find out a way to check whether or not either the maker
+     or taker token are actually wrapped ether
+
      */
     function exchange(
         address makerToken,
@@ -132,6 +124,8 @@ contract KyberExchangeWrapper is
         returns (uint256)
         {
           KyberOrder memory order = parseOrder(orderData);
+          //for now, it will return 0 if maker is WETH and 1 if taker is Whether
+          uint check =
 
           uint256 receivedMakerTokenAmount = exchangeImpl(
             order,
@@ -245,7 +239,7 @@ contract KyberExchangeWrapper is
       /**
        * they are difficult and want to convert to erc20 ....
        */
-      uint256 receivedMakerTokenAmount = KyberNetworkInterface(KYBER_NETWORK)
+      uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK)
                                             .trade(
                                               ERC20(takerToken),
                                               requestedFillAmount,
@@ -294,6 +288,18 @@ contract KyberExchangeWrapper is
         }
       return order;
     }
+
+
+    function checkForWrapped(
+      address makerToken,
+      address takerToken
+      )
+      internal
+      pure
+      returns (uint check)
+      {
+
+      }
 
 
 
