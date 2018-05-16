@@ -7,6 +7,9 @@
     "build/",
     "contracts/",
     "truffle.js",
+    "index.js",
+    "LICENSE",
+    "README.md",
     ".babelrc"
   ],
   "directories": {
