@@ -38,7 +38,7 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
  * @title KyberNetworkWrapper
  * @author dYdX
  *
- * dYdX ExchangeWrapper to interface with KyberNetwork 
+ * dYdX ExchangeWrapper to interface with KyberNetwork
  */
 contract KyberExchangeWrapper is
     HasNoEther,
@@ -69,8 +69,7 @@ contract KyberExchangeWrapper is
      */
     struct KyberOrder {
       uint srcAmount; //amount taker has to offer
-      address taker; //destAddress
-      uint maxDestAmount; //when using exchangeforAmount, otherwise max
+      uint maxDestAmount; //when using exchangeforAmount, if 0 then maxUint256
     }
 
     // ============ State Variables ============
@@ -124,8 +123,20 @@ contract KyberExchangeWrapper is
         returns (uint256)
         {
           KyberOrder memory order = parseOrder(orderData);
-          //for now, it will return 0 if maker is WETH and 1 if taker is Whether
-          uint check =
+          assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
+
+          //function will check for only ETH/Token pairs per Kyber spec
+          // 1 - takerToken is WETH
+          // 2 - makerToken is WETH
+          // 3 - neither are WETH
+          uint check = checkForWrapped(
+                        makerToken,
+                        takerToken,
+                        requestedFillAmount,
+                        tradeOriginator);
+          //if both are ERC20 then trade cannot be executed
+          require(check!=3);
+
 
           uint256 receivedMakerTokenAmount = exchangeImpl(
             order,
@@ -198,6 +209,26 @@ contract KyberExchangeWrapper is
 
 
     // =========== Internal Functions ============
+    function exchangeFromToken(
+          KyberOrder order,
+          address makerToken,
+          address takerToken,
+          address tradeOriginator,
+          uint256 requestedFillAmount
+          )
+          internal
+          returns (uint256);
+
+    function exchangeToToken(
+      KyberOrder order,
+      address makerToken,
+      address takerToken,
+      address tradeOriginator,
+      uint256 requestedFillAmount
+      )
+      internal
+      returns (uint256);
+
     function exchangeImpl(
       KyberOrder order,
       address makerToken,
@@ -221,6 +252,7 @@ contract KyberExchangeWrapper is
                                             order,
                                             makerToken,
                                             takerToken,
+                                            tradeOriginator,
                                             requestedFillAmount
                                                 );
          return receivedMakerTokenAmount;
@@ -231,6 +263,7 @@ contract KyberExchangeWrapper is
      KyberOrder order,
      address makerToken,
      address takerToken,
+     address tradeOriginator,
      uint256 requestedFillAmount
      )
      internal
@@ -244,7 +277,7 @@ contract KyberExchangeWrapper is
                                               ERC20(takerToken),
                                               requestedFillAmount,
                                               ERC20(makerToken),
-                                              order.taker,
+                                              tradeOriginator,
                                               MathHelpers.maxUint256(),
                                               1, //marketprice
                                               0 //because wallet is unknown
@@ -283,26 +316,41 @@ contract KyberExchangeWrapper is
        */
       assembly {
         mstore(order,            mload(add(orderData,32))) //srcAmount
-        mstore(add(order,32),    mload(add(orderData,64))) //destAddress
-        mstore(add(order,64),    mload(add(orderData,64))) //maxDestAmount
         }
       return order;
     }
 
 
+    /**
+     * [checkForWrapped description]
+     * @return uint
+                1 - takerToken is wrapped EtherToken
+                2 - makerToken is wrapped EtherToken
+                3 - both tokens are just ERC20s
+     */
     function checkForWrapped(
       address makerToken,
-      address takerToken
+      address takerToken,
+//this will be checked against the EtherToken contract for the balance
+      uint256 takerAmount,
+      address tradeOriginator
       )
       internal
-      pure
       returns (uint check)
       {
+        //turn takerToken into EtherToken
+        EtherToken tToken = EtherToken(takerToken);
+        if(tToken.balanceOf(tradeOriginator)>=takerAmount && tToken.balanceOf(tradeOriginator)>0) {
+          return 1;
+        }
+        // convert makerToken to EtherToken and then check if contract exists
+        EtherToken mToken = EtherToken(makerToken);
+        uint size;
+        assembly {
+          size := extcodesize(mToken)
+        }
+        if(size>0) return 2;
 
+        return 3;
       }
-
-
-
-
-
 }
