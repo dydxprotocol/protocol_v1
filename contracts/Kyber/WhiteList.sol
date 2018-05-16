@@ -14,7 +14,7 @@ contract WhiteList is WhiteListInterface, Withdrawable {
     uint constant public kgtHolderCategory = 2;
     ERC20 public kgtToken;
 
-    function WhiteList(address _admin, ERC20 _kgtToken) public {
+    constructor(address _admin, ERC20 _kgtToken) public {
         require(_admin != address(0));
         require(_kgtToken != address(0));
         kgtToken = _kgtToken;
@@ -30,21 +30,21 @@ contract WhiteList is WhiteListInterface, Withdrawable {
 
     function setUserCategory(address user, uint category) public onlyOperator {
         userCategory[user] = category;
-        UserCategorySet(user, category);
+        emit UserCategorySet(user, category);
     }
 
     event CategoryCapSet (uint category, uint sgdCap);
 
     function setCategoryCap(uint category, uint sgdCap) public onlyOperator {
         categoryCap[category] = sgdCap;
-        CategoryCapSet(category, sgdCap);
+        emit CategoryCapSet(category, sgdCap);
     }
 
     event SgdToWeiRateSet (uint rate);
 
     function setSgdToEthRate(uint _sgdToWeiRate) public onlyOperator {
         weiPerSgd = _sgdToWeiRate;
-        SgdToWeiRateSet(_sgdToWeiRate);
+        emit SgdToWeiRateSet(_sgdToWeiRate);
     }
 
     function getUserCategory (address user) public view returns(uint) {

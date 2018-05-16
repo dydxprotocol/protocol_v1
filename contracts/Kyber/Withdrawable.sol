@@ -21,7 +21,7 @@ contract Withdrawable is PermissionGroups {
      */
     function withdrawToken(ERC20 token, uint amount, address sendTo) external onlyAdmin {
         require(token.transfer(sendTo, amount));
-        TokenWithdraw(token, amount, sendTo);
+        emit TokenWithdraw(token, amount, sendTo);
     }
 
     event EtherWithdraw(uint amount, address sendTo);
@@ -31,6 +31,6 @@ contract Withdrawable is PermissionGroups {
      */
     function withdrawEther(uint amount, address sendTo) external onlyAdmin {
         sendTo.transfer(amount);
-        EtherWithdraw(amount, sendTo);
+        emit EtherWithdraw(amount, sendTo);
     }
 }

@@ -26,7 +26,7 @@ contract KyberNetwork is Withdrawable, Utils {
     mapping(bytes32=>uint) public info; // this is only a UI field for external app.
     mapping(address=>mapping(bytes32=>bool)) public perReserveListedPairs;
 
-    function KyberNetwork(address _admin) public {
+    constructor(address _admin) public {
         require(_admin != address(0));
         admin = _admin;
     }
@@ -34,9 +34,9 @@ contract KyberNetwork is Withdrawable, Utils {
     event EtherReceival(address indexed sender, uint amount);
 
     /* solhint-disable no-complex-fallback */
-    function() public payable {
+    function() external payable {
         require(isReserve[msg.sender]);
-        EtherReceival(msg.sender, msg.value);
+        emit EtherReceival(msg.sender, msg.value);
     }
     /* solhint-enable no-complex-fallback */
 
@@ -112,7 +112,7 @@ contract KyberNetwork is Withdrawable, Utils {
             require(!isReserve[reserve]);
             reserves.push(reserve);
             isReserve[reserve] = true;
-            AddReserveToNetwork(reserve, true);
+            emit AddReserveToNetwork(reserve, true);
         } else {
             isReserve[reserve] = false;
             // will have trouble if more than 50k reserves...
@@ -120,7 +120,7 @@ contract KyberNetwork is Withdrawable, Utils {
                 if (reserves[i] == reserve) {
                     reserves[i] = reserves[reserves.length - 1];
                     reserves.length--;
-                    AddReserveToNetwork(reserve, false);
+                    emit AddReserveToNetwork(reserve, false);
                     break;
                 }
             }
@@ -149,7 +149,7 @@ contract KyberNetwork is Withdrawable, Utils {
         setDecimals(src);
         setDecimals(dest);
 
-        ListReservePairs(reserve, src, dest, add);
+        emit ListReservePairs(reserve, src, dest, add);
     }
 
     function setParams(
@@ -223,7 +223,8 @@ contract KyberNetwork is Withdrawable, Utils {
         uint[] memory rates = new uint[](numReserves);
         uint[] memory reserveCandidates = new uint[](numReserves);
 
-        for (uint i = 0; i < numReserves; i++) {
+        uint i;
+        for (i = 0; i < numReserves; i++) {
             //list all reserves that have this token.
             if (!(perReserveListedPairs[reserves[i]])[keccak256(src, dest)]) continue;
 
@@ -247,7 +248,7 @@ contract KyberNetwork is Withdrawable, Utils {
 
             if (numRelevantReserves > 1) {
                 //when encountering small rate diff from bestRate. draw from relevant reserves
-                random = uint(block.blockhash(block.number-1)) % numRelevantReserves;
+                random = uint(blockhash(block.number-1)) % numRelevantReserves;
             }
 
             bestReserve = reserveCandidates[random];
@@ -328,7 +329,7 @@ contract KyberNetwork is Withdrawable, Utils {
 
         require(feeBurnerContract.handleFees(ethAmount, theReserve, walletId));
 
-        ExecuteTrade(msg.sender, src, dest, actualSrcAmount, actualDestAmount);
+        emit ExecuteTrade(msg.sender, src, dest, actualSrcAmount, actualDestAmount);
         return actualDestAmount;
     }
 

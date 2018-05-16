@@ -5,6 +5,6 @@ import "./ERC20Interface.sol";
 
 
 interface ExpectedRateInterface {
-    function getExpectedRate(ERC20 src, ERC20 dest, uint srcQty) public view
+    function getExpectedRate(ERC20 src, ERC20 dest, uint srcQty) external view
         returns (uint expectedRate, uint slippageRate);
 }

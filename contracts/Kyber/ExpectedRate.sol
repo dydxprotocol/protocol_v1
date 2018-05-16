@@ -13,7 +13,7 @@ contract ExpectedRate is Withdrawable, ExpectedRateInterface, Utils {
     uint public quantityFactor = 2;
     uint public minSlippageFactorInBps = 50;
 
-    function ExpectedRate(KyberNetwork _kyberNetwork, address _admin) public {
+    constructor(KyberNetwork _kyberNetwork, address _admin) public {
         require(_admin != address(0));
         require(_kyberNetwork != address(0));
         kyberNetwork = _kyberNetwork;
@@ -25,7 +25,7 @@ contract ExpectedRate is Withdrawable, ExpectedRateInterface, Utils {
     function setQuantityFactor(uint newFactor) public onlyOperator {
         require(newFactor <= 100);
 
-        QuantityFactorSet(quantityFactor, newFactor, msg.sender);
+        emit QuantityFactorSet(quantityFactor, newFactor, msg.sender);
         quantityFactor = newFactor;
     }
 
@@ -34,7 +34,7 @@ contract ExpectedRate is Withdrawable, ExpectedRateInterface, Utils {
     function setMinSlippageFactor(uint bps) public onlyOperator {
         require(minSlippageFactorInBps <= 100 * 100);
 
-        MinSlippageFactorSet(bps, minSlippageFactorInBps, msg.sender);
+        emit MinSlippageFactorSet(bps, minSlippageFactorInBps, msg.sender);
         minSlippageFactorInBps = bps;
     }
 
