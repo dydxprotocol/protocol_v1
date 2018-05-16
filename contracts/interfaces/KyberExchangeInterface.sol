@@ -57,7 +57,7 @@ contract KyberExchangeInterface is Withdrawable, Utils {
     /// @dev add or deletes a reserve to/from the network.
     /// @param reserve The reserve address.
     /// @param add If true, the add reserve. Otherwise delete reserve.
-    function addReserve(KyberReserveInterface reserve, bool add) public onlyAdmin;
+    function addReserve(KyberReserveInterface reserve, bool add) public /*onlyAdmin*/;
 
     /// @notice can be called only by admin
     /// @dev allow or prevent a specific reserve to trade a pair of tokens
@@ -65,7 +65,7 @@ contract KyberExchangeInterface is Withdrawable, Utils {
     /// @param src Src token
     /// @param dest Destination token
     /// @param add If true then enable trade, otherwise delist pair.
-    function listPairForReserve(address reserve, ERC20 src, ERC20 dest, bool add) public onlyAdmin;
+    function listPairForReserve(address reserve, ERC20 src, ERC20 dest, bool add) public /*onlyAdmin*/;
 
     function setParams(
         WhiteListInterface    _whiteList,
@@ -75,11 +75,11 @@ contract KyberExchangeInterface is Withdrawable, Utils {
         uint                  _negligibleRateDiff
     )
         public
-        onlyAdmin;
+        /*onlyAdmin*/;
 
-    function setEnable(bool _enable) public onlyAdmin;
+    function setEnable(bool _enable) public /*onlyAdmin*/;
 
-    function setInfo(bytes32 field, uint value) public onlyOperator;
+    function setInfo(bytes32 field, uint value) public /*onlyOperator*/;
 
     /// @dev returns number of reserves
     /// @return number of reserves
