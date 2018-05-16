@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/protocol",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
   "main": "index.js",
   "files": [
