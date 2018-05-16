@@ -117,7 +117,11 @@ contract('InterestHelper', function(_accounts) {
 
     it('calculates tokenAmount > 2**128 correctly for no interest', async () => {
       const lentAmount = new BigNumber('1e50');
-      const result = await contract.getCompoundedInterest.call(lentAmount, 0, 0);
+      const result = await contract.getCompoundedInterest.call(
+        lentAmount, // total
+        0, // annual interest
+        0 // time
+      );
       expect(result).to.be.bignumber.equal(lentAmount);
     });
 
