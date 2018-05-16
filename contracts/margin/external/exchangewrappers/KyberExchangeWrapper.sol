@@ -57,15 +57,6 @@ contract KyberExchangeWrapper is
     /**
      * [DYDX_PROXY description]
      * @type {[type]}
-     * function trade (
-        ERC20 source -- taker token
-        uint srcAmount -- amount to taker
-        ERC20 dest -- maker tokens
-        address destAddress -- destiantion of taker
-        uint maxDestAmount -- ONLY for exchangeforAmount, otherwise maxUint256
-        uint minConversionRate -- set to 1 for now (later when building out the interface)
-        address walletId -- set to 0 for now
-     )
      */
     struct Order {
       address walletId;
@@ -135,22 +126,20 @@ contract KyberExchangeWrapper is
           uint256 receivedMakerTokenAmount;
           // 1st scenario: takerToken is Eth, and should be sent appropriately
           if (takerToken == WRAPPED_ETH) {
-              receivedMakerTokenAmount = exchangeTakerWETH(
 
-                )
-
+              receivedMakerTokenAmount = exchangefromWETH(
+                    Order order,
+                    address makerToken,
+                    uint256 requestedFillAmount
+                );
           }
-
-
-
-
-          uint256 receivedMakerTokenAmount = exchangeImpl(
-            order,
-            makerToken,
-            takerToken,
-            tradeOriginator,
-            requestedFillAmount
-            );
+          if (makerToken == WRAPPED_ETH) {
+              receivedMakerTokenAmount = exchangeToWETH(
+                Order order,
+                address takerToken,
+                uint256 requestedFillAmount
+                )
+          }
           return receivedMakerTokenAmount;
         }
 
@@ -196,7 +185,26 @@ contract KyberExchangeWrapper is
     )
         external
         view
-        returns (uint256);
+        returns (uint256) {
+          Order memory order = parseData(orderData);
+          //before called, one of these token pairs needs to be WETH
+          require((makerToken!=takerToken)&&(makerToken==WRAPPED_ETH||takerToken==WRAPPED_ETH));
+          uint256 conversionRate;
+          if(makerToken==WRAPPED_ETH) {
+            conversionRate = getConversionRate(
+                               ETH_TOKEN_ADDRESS,
+                               takerToken,
+                               requestedFillAmount
+              );
+          } else if(takerToken==WRAPPED_ETH) {
+            conversionRate = getConversionRate(
+                              makerToken,
+                              ETH_TOKEN_ADDRESS,
+                              requestedFillAmount
+              );
+          }
+          return conversionRate;
+        }
 
     /**
      *this function will query the getExpectedRate() function from the KyberNetworkWrapper
@@ -212,84 +220,72 @@ contract KyberExchangeWrapper is
         external
         view
         returns (uint256);
+         {
+
+         }
+
+    /* function trade (
+           ERC20 source -- taker token
+           uint srcAmount -- amount to taker
+           ERC20 dest -- maker tokens
+           address destAddress -- destiantion of taker
+           uint maxDestAmount -- ONLY for exchangeforAmount, otherwise maxUint256
+           uint minConversionRate -- set to 1 for now (later when building out the interface)
+           address walletId -- set to 0 for now
+        ) */
 
 
     // =========== Internal Functions ============
-    function exchangeFromToken(
-          KyberOrder order,
-          address makerToken,
-          address takerToken,
-          address tradeOriginator,
-          uint256 requestedFillAmount
+    function exchangeFromWETH(
+              Order order,
+              address makerToken,
+              uint256 requestedFillAmount
           )
           internal
-          returns (uint256);
+          returns (uint256) {
+              //unwrap ETH
+              WETH9(WRAPPED_ETH).withdraw(requestedFillAmount);
+              //dummy check to see if it sent through
+              require(msg.value>0);
+              //send trade through
+              uint256 receivedMakerTokenAmount = KyberExchangeWrapper(KYBER_NETWORK).trade.value(msg.value)(
+                                                          ETH_TOKEN_ADDRESS,
+                                                          msg.value,
+                                                          makerToken,
+                                                          address(this),
+                                                          MathHelpers.maxUint256(),
+                                                          (order.minConversionRate ? order.minConversionRate : 1),
+                                                          order.walletId
+                                                          );
+            return receivedMakerTokenAmount;
+          }
 
-    function exchangeToToken(
-      Order order,
-      address makerToken,
-      address takerToken,
-      address tradeOriginator,
-      uint256 requestedFillAmount
+    function exchangeToWETH(
+        Order order,
+        address takerToken,
+        uint256 requestedFillAmount
       )
       internal
-      returns (uint256);
-
-    function exchangeImpl(
-      Order order,
-      address makerToken,
-      address takerToken,
-      address tradeOriginator,
-      uint256 requestedFillAmount
-      )
-      internal
-      returns (uint256)
-      {
-        /**
-         * for now, we are just going to fulfill the trade
-         * w/o checks
-         */
-       assert(requestedFillAmount>0);
-       require(
-         requestedFillAmount <= order.srcAmount,
-        "KyberNetworkWrapper#exchangeImpl: Requested fill amount larger than order size"
-         );
-        uint256 receivedMakerTokenAmount = doTrade(
-                                            order,
-                                            makerToken,
-                                            takerToken,
-                                            tradeOriginator,
-                                            requestedFillAmount
-                                                );
-         return receivedMakerTokenAmount;
-      }
-
-
-   function doTrade(
-     Order order,
-     address makerToken,
-     address takerToken,
-     address tradeOriginator,
-     uint256 requestedFillAmount
-     )
-     internal
-     returns (uint256)
-    {
-      /**
-       * they are difficult and want to convert to erc20 ....
-       */
-      uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK)
-                                            .trade(
-                                              ERC20(takerToken),
-                                              requestedFillAmount,
-                                              ERC20(makerToken),
-                                              tradeOriginator,
-                                              MathHelpers.maxUint256(),
-                                              1, //marketprice
-                                              0 //because wallet is unknown
-                                              );
+      returns (uint256) {
+        //received ETH in wei
+        uint receivedMakerTokenAmount = KyberExchangeWrapper(KYBER_NETWORK).trade(
+                                                    takerToken,
+                                                    requestedFillAmount,
+                                                    ETH_TOKEN_ADDRESS,
+                                                    address(this),
+                                                    MathHelpers.maxUint256(),
+                                                    (order.minConversionRate ? order.minConversionRate : 1),
+                                                    order.walletId
+                                                    );
+        //dummy check to see if eth was actually sent
+        require(msg.value>0);
+        WETH9(WRAPPED_ETH).deposit.value(msg.value);
         return receivedMakerTokenAmount;
-    }
+      }
+      /**
+       *
+       this function will call KyberNetwork's
+       */
 
     function getConversionRate(
       address makerToken,
@@ -297,7 +293,12 @@ contract KyberExchangeWrapper is
       uint256 requestedFillAmount
       )
       internal
-      returns (uint256) {
+      returns (uint) {
+        (uint expectedPrice,uint slippagePrice) = KyberExchangeWrapper(KYBER_NETWORK).getExpectedRate(
+                                                      takerToken,
+                                                      makerToken,
+                                                      requestedFillAmount);
+        return slippagePrice;
 
       }
 
