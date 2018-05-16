@@ -39,7 +39,7 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
  *
  * dYdX ExchangeWrapper to interface with 0x Version 1
  */
-contract KyberNetworkWrapper is
+contract KyberExchangeWrapper is
     HasNoEther,
     HasNoContracts,
     OnlyMargin,
@@ -251,7 +251,7 @@ contract KyberNetworkWrapper is
                                               requestedFillAmount,
                                               ERC20(makerToken),
                                               order.taker,
-                                              2**256-1,
+                                              MathHelpers.maxUint256(),
                                               1, //marketprice
                                               0 //because wallet is unknown
                                               );
