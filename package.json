@@ -66,10 +66,13 @@
     "request-promise-native": "^1.0.5",
     "solidity-coverage": "0.5.0",
 <<<<<<< HEAD
+<<<<<<< HEAD
     "solc": "^0.4.23",
 =======
     "solc":"^0.4.23",
 >>>>>>> solc package added
+=======
+>>>>>>> fix compile
     "solium": "1.1.7",
     "truffle": "4.1.8",
     "web3": "1.0.0-beta.34"

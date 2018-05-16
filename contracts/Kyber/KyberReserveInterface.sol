@@ -15,9 +15,9 @@ interface KyberReserveInterface {
         uint conversionRate,
         bool validate
     )
-        public
+        external
         payable
         returns(bool);
 
-    function getConversionRate(ERC20 src, ERC20 dest, uint srcQty, uint blockNumber) public view returns(uint);
+    function getConversionRate(ERC20 src, ERC20 dest, uint srcQty, uint blockNumber) external view returns(uint);
 }

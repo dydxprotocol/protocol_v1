@@ -8,8 +8,8 @@ import "./Utils.sol";
 
 
 interface BurnableToken {
-    function transferFrom(address _from, address _to, uint _value) public returns (bool);
-    function burnFrom(address _from, uint256 _value) public returns (bool);
+    function transferFrom(address _from, address _to, uint _value) external returns (bool);
+    function burnFrom(address _from, uint256 _value) external returns (bool);
 }
 
 
@@ -28,7 +28,7 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
     address public kyberNetwork;
     uint public kncPerETHRate = 300;
 
-    function FeeBurner(address _admin, BurnableToken kncToken, address _kyberNetwork) public {
+    constructor(address _admin, BurnableToken kncToken, address _kyberNetwork) public {
         require(_admin != address(0));
         require(kncToken != address(0));
         require(_kyberNetwork != address(0));
@@ -67,7 +67,7 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
     event AssignFeeToWallet(address reserve, address wallet, uint walletFee);
     event AssignBurnFees(address reserve, uint burnFee);
 
-    function handleFees(uint tradeWeiAmount, address reserve, address wallet) public returns(bool) {
+    function handleFees(uint tradeWeiAmount, address reserve, address wallet) external returns(bool) {
         require(msg.sender == kyberNetwork);
         require(tradeWeiAmount <= MAX_QTY);
         require(kncPerETHRate <= MAX_RATE);
@@ -81,11 +81,11 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
 
         if (walletFee > 0) {
             reserveFeeToWallet[reserve][wallet] += walletFee;
-            AssignFeeToWallet(reserve, wallet, walletFee);
+            emit AssignFeeToWallet(reserve, wallet, walletFee);
         }
 
         if (feeToBurn > 0) {
-            AssignBurnFees(reserve, feeToBurn);
+            emit AssignBurnFees(reserve, feeToBurn);
             reserveFeeToBurn[reserve] += feeToBurn;
         }
 
@@ -108,7 +108,7 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
             burnAmount -= taxToSend;
             if (taxToSend > 0) {
                 require (knc.transferFrom(reserveKNCWallet[reserve], taxWallet, taxToSend));
-                SendTaxFee(reserve, msg.sender, taxWallet, taxToSend);
+                emit SendTaxFee(reserve, msg.sender, taxWallet, taxToSend);
             }
         }
         require(knc.burnFrom(reserveKNCWallet[reserve], burnAmount - 1));
@@ -116,7 +116,7 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
         //update reserve "payments" so far
         feePayedPerReserve[reserve] += (taxToSend + burnAmount - 1);
 
-        BurnAssignedFees(reserve, msg.sender, (burnAmount - 1));
+        emit BurnAssignedFees(reserve, msg.sender, (burnAmount - 1));
     }
 
     event SendWalletFees(address indexed wallet, address reserve, address sender);
@@ -129,6 +129,6 @@ contract FeeBurner is Withdrawable, FeeBurnerInterface, Utils {
         require(knc.transferFrom(reserveKNCWallet[reserve], wallet, feeAmount - 1));
 
         feePayedPerReserve[reserve] += (feeAmount - 1);
-        SendWalletFees(wallet, reserve, msg.sender);
+        emit SendWalletFees(wallet, reserve, msg.sender);
     }
 }

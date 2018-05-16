@@ -12,7 +12,7 @@ interface ConversionRatesInterface {
         uint rateUpdateBlock,
         uint currentBlock
     )
-        public;
+        external;
 
-    function getRate(ERC20 token, uint currentBlockNumber, bool buy, uint qty) public view returns(uint);
+    function getRate(ERC20 token, uint currentBlockNumber, bool buy, uint qty) external view returns(uint);
 }

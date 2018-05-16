@@ -55,7 +55,7 @@ contract ConversionRates is ConversionRatesInterface, VolumeImbalanceRecorder, U
     int  constant internal MAX_BPS_ADJUSTMENT = 10 ** 11; // 1B %
     int  constant internal MIN_BPS_ADJUSTMENT = -100 * 100; // cannot go down by more than 100%
 
-    function ConversionRates(address _admin) public VolumeImbalanceRecorder(_admin)
+    constructor(address _admin) public VolumeImbalanceRecorder(_admin)
         { } // solhint-disable-line no-empty-blocks
 
     function addToken(ERC20 token) public onlyAdmin {
