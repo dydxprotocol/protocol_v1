@@ -86,7 +86,7 @@ contract KyberExchangeWrapper is
     {
         DYDX_PROXY = dydxProxy;
         KYBER_NETWORK = kyber_network;
-        WRAPPED_ETH = wrapped_eth
+        WRAPPED_ETH = wrapped_eth;
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
         // NOTE: this is *not* standard behavior for an ERC20, so do not rely on it for other tokens
@@ -257,7 +257,7 @@ contract KyberExchangeWrapper is
                                                           (order.minConversionRate ? order.minConversionRate : 1),
                                                           order.walletId
                                                           );
-            return receivedMakerTokenAmount;
+            return receivedMakerTokenAmount; 
           }
 
     function exchangeToWETH(
