@@ -32,10 +32,8 @@ library TimestampHelper {
         view
         returns (uint32)
     {
-        require(
-            uint256(uint32(block.timestamp)) == block.timestamp,
-            "TimestampHelper#getBlockTimestamp32: Block timestamp overflows a uint32"
-        );
+        // Should not still be in-use in the year 2106
+        assert(uint256(uint32(block.timestamp)) == block.timestamp);
 
         return uint32(block.timestamp);
     }
