@@ -1,6 +1,6 @@
 node_modules
 contracts/0x
 contracts/Kyber
-contracts/interfaces/ZeroExExchangeInterface.sol
+contracts/interfaces
 contracts/testing
 contracts/Migrations.sol
