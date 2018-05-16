@@ -132,17 +132,16 @@ contract KyberExchangeWrapper is
           assert(requestedFillAmount > 0);
           //check if maker or taker are wrapped eth (but they cant both be ;))
           require( (makerToken!=takerToken) && (makerToken==WRAPPED_ETH || takerToken==WRAPPED_ETH) )
-
+          uint256 receivedMakerTokenAmount;
           // 1st scenario: takerToken is Eth, and should be sent appropriately
           if (takerToken == WRAPPED_ETH) {
+              receivedMakerTokenAmount = exchangeTakerWETH(
+
+                )
 
           }
 
-          require(check!=3);
 
-          if(check == 1) {
-
-          }
 
 
           uint256 receivedMakerTokenAmount = exchangeImpl(
