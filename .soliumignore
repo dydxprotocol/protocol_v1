@@ -1,4 +1,10 @@
 node_modules
+<<<<<<< HEAD
 contracts/external
+=======
+contracts/0x
+contracts/Kyber
+contracts/interfaces/ZeroExExchangeInterface.sol
+>>>>>>> fix READMEs, solidity version
 contracts/testing
 contracts/Migrations.sol
