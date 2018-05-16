@@ -19,9 +19,11 @@ def hideAsserts(dir, filepath):
             spacesToAdd = len(builder) - len(builder.lstrip()) - 2;
             builder = ' ' * spacesToAdd + '/*' + builder.lstrip()
 
-        if (inAnAssert and line.rstrip().endswith(');')):
+        indexOfEnd = builder.find(');')
+        if (inAnAssert and indexOfEnd >= 0):
             inAnAssert = False
-            builder = builder + "*/"
+            loc = indexOfEnd + 2;
+            builder = builder[:loc] + '*/' + builder[loc:]
 
         builder += '\n'
         allLines.append(builder)
