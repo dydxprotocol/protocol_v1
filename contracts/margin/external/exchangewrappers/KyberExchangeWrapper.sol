@@ -20,10 +20,10 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ERC20 }    from "../../../Kyber/ERC20Interface.sol";
+import { ERC20 }    from "../../../exchange/kyber/ERC20Interface.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { KyberExchangeInterface } from "../../../interfaces/KyberExchangeInterface.sol";
+import { KyberExchangeInterface } from "../../../external/kyber/KyberExchangeInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
@@ -116,7 +116,6 @@ contract KyberExchangeWrapper is
           uint256 receivedMakerTokenAmount;
           // 1st scenario: takerToken is Eth, and should be sent appropriately
           if (takerToken == WRAPPED_ETH) {
-
               receivedMakerTokenAmount = exchangeFromWETH(
                      order,
                     makerToken,
