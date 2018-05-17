@@ -358,54 +358,54 @@ describe('ZeroExExchangeWrapper', () => {
         ));
       });
     });
+  });
 
-    describe('#exchangeForAmount', () => {
-      contract('ZeroExExchangeWrapper', accounts => {
-        it('successfully executes a trade for a specific amount', async () => {
-          const {
-            exchangeWrapper,
-            tradeOriginator,
-            dydxMargin,
-            dydxProxy
-          } = await setup(accounts);
+  describe('#exchangeForAmount', () => {
+    contract('ZeroExExchangeWrapper', accounts => {
+      it('successfully executes a trade for a specific amount', async () => {
+        const {
+          exchangeWrapper,
+          tradeOriginator,
+          dydxMargin,
+          dydxProxy
+        } = await setup(accounts);
 
-          const order = await createSignedSellOrder(accounts);
+        const order = await createSignedSellOrder(accounts);
 
-          const desiredAmount = new BigNumber(baseAmount.times(2));
-          const takerAmount = getPartialAmount(
-            order.takerTokenAmount,
-            order.makerTokenAmount,
-            desiredAmount,
-            true
-          );
+        const desiredAmount = new BigNumber(baseAmount.times(2));
+        const takerAmount = getPartialAmount(
+          order.takerTokenAmount,
+          order.makerTokenAmount,
+          desiredAmount,
+          true
+        );
 
-          await grantTokens(order, exchangeWrapper, tradeOriginator, takerAmount);
+        await grantTokens(order, exchangeWrapper, tradeOriginator, takerAmount);
 
-          const startingBalances = await getBalances(
-            order,
-            exchangeWrapper,
-            tradeOriginator,
-            dydxProxy
-          );
+        const startingBalances = await getBalances(
+          order,
+          exchangeWrapper,
+          tradeOriginator,
+          dydxProxy
+        );
 
-          await exchangeWrapper.exchangeForAmount(
-            order.makerTokenAddress,
-            order.takerTokenAddress,
-            tradeOriginator,
-            desiredAmount,
-            zeroExOrderToBytes(order),
-            { from: dydxMargin }
-          );
+        await exchangeWrapper.exchangeForAmount(
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          tradeOriginator,
+          desiredAmount,
+          zeroExOrderToBytes(order),
+          { from: dydxMargin }
+        );
 
-          await validateBalances(
-            startingBalances,
-            order,
-            exchangeWrapper,
-            tradeOriginator,
-            takerAmount,
-            dydxProxy
-          );
-        });
+        await validateBalances(
+          startingBalances,
+          order,
+          exchangeWrapper,
+          tradeOriginator,
+          takerAmount,
+          dydxProxy
+        );
       });
     });
   });

@@ -9,7 +9,7 @@ const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
-const { DEFAULT_SALT } = require('./Constants');
+const { DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -22,6 +22,7 @@ async function createSignedSellOrder(
   } = {}
 ) {
   let order = {
+    type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[6],
@@ -52,6 +53,7 @@ async function createSignedBuyOrder(
   } = {}
 ) {
   let order = {
+    type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
