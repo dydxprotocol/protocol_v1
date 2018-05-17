@@ -1,5 +1,4 @@
 node_modules
-contracts/0x
-contracts/interfaces/ZeroExExchangeInterface.sol
+contracts/external
 contracts/testing
 contracts/Migrations.sol
