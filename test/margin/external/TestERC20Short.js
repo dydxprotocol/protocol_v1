@@ -270,6 +270,27 @@ contract('ERC20Short', accounts => {
       }
     });
 
+    it('fails for a second position', async () => {
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+
+        // transfer first position
+        await dydxMargin.transferPosition(
+          POSITION.ID,
+          POSITION.TOKEN_CONTRACT.address,
+          { from: POSITION.TX.owner }
+        );
+
+        // transfer second position
+        const openTx = await doOpenPosition(accounts, { salt: 888 });
+        await expectThrow(dydxMargin.transferPosition(
+          openTx.id,
+          POSITION.TOKEN_CONTRACT.address,
+          { from: openTx.owner }
+        ));
+      }
+    });
+
     it('fails for a position with the wrong id', async () => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
