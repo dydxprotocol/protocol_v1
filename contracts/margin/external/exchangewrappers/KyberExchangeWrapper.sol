@@ -218,14 +218,14 @@ contract KyberExchangeWrapper is
           uint256 conversionRate;
           if(makerToken==WRAPPED_ETH) {
             conversionRate = getConversionRate(
-                               ETH_TOKEN_ADDRESS,
                                takerToken,
+                               ETH_TOKEN_ADDRESS,
                                requestedFillAmount
               );
           } else if(takerToken==WRAPPED_ETH) {
             conversionRate = getConversionRate(
-                              makerToken,
                               ETH_TOKEN_ADDRESS,
+                              makerToken,
                               requestedFillAmount
               );
           }
@@ -249,8 +249,22 @@ contract KyberExchangeWrapper is
          {
            //before called, one of these token pairs needs to be WETH
            require((makerToken!=takerToken)&&(makerToken==WRAPPED_ETH||takerToken==WRAPPED_ETH));
-
-
+           uint256 conversionRate;
+           if(makerToken==WRAPPED_ETH) {
+             conversionRate = getConversionRate(
+                                takerToken,
+                                ETH_TOKEN_ADDRESS,
+                                1
+               );
+           } else if(takerToken==WRAPPED_ETH) {
+             conversionRate = getConversionRate(
+                               ETH_TOKEN_ADDRESS,
+                               makerToken,
+                               1
+               );
+           }
+           uint256 takerTokenPrice = conversionRate.mul(desiredMakerToken);
+           return takerTokenPrice;
          }
 
     /* function trade (
@@ -318,7 +332,7 @@ contract KyberExchangeWrapper is
        * makerToken -- token to be received
        * takerToken -- token to be paid in
        * requestedFillAmount -- quantity to check the rate against
-       * @return rate -- 
+       * @return rate --
        */
     function getConversionRate(
       address makerToken,
