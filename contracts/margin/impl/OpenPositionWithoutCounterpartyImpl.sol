@@ -132,9 +132,30 @@ library OpenPositionWithoutCounterpartyImpl {
         internal
         view
     {
-        require(!MarginCommon.containsPositionImpl(state, positionId));
-        require(openTx.principal > 0);
-        require(openTx.owedToken != address(0));
+        require(
+            !MarginCommon.containsPositionImpl(state, positionId),
+            "OpenPositionWithoutCounterpartyImpl#validate: position ID already exists"
+        );
+
+        require(
+            openTx.principal > 0,
+            "OpenPositionWithoutCounterpartyImpl#validate: principal cannot be 0"
+        );
+
+        require(
+            openTx.owedToken != address(0),
+            "OpenPositionWithoutCounterpartyImpl#validate: owedToken cannot be 0"
+        );
+
+        require(
+            openTx.maxDuration > 0,
+            "OpenPositionWithoutCounterpartyImpl#validate: maxDuration cannot be 0"
+        );
+
+        require(
+            openTx.interestPeriod <= openTx.maxDuration,
+            "OpenPositionWithoutCounterpartyImpl#validate: interestPeriod cannot be 0"
+        );
     }
 
     function recordPositionOpened(
@@ -215,5 +236,7 @@ library OpenPositionWithoutCounterpartyImpl {
             interestRate: values32[2],
             interestPeriod: values32[3]
         });
+
+        return openTx;
     }
 }
