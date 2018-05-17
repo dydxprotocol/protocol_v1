@@ -1,14 +1,14 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import "../Kyber/ERC20Interface.sol";
-import "../Kyber/KyberReserveInterface.sol";
-import "../Kyber/Withdrawable.sol";
-import "../Kyber/Utils.sol";
-import "../Kyber/PermissionGroups.sol";
-import "../Kyber/WhiteListInterface.sol";
-import "../Kyber/ExpectedRateInterface.sol";
-import "../Kyber/FeeBurnerInterface.sol";
+import "./ERC20Interface.sol";
+import "./KyberReserveInterface.sol";
+import "./Withdrawable.sol";
+import "./Utils.sol";
+import "./PermissionGroups.sol";
+import "./WhiteListInterface.sol";
+import "./ExpectedRateInterface.sol";
+import "./FeeBurnerInterface.sol";
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
