@@ -358,7 +358,7 @@ contract KyberExchangeWrapper is
       )
       internal
       view
-      returns(uint256 conversionRate)
+      returns(uint256 conRate)
     {
         uint256 conversionRate;
         if (makerToken == WRAPPED_ETH) {
