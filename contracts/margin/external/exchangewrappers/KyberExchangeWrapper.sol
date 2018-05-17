@@ -15,9 +15,6 @@
     limitations under the License.
 
 */
-/**
- *
- */
 
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
@@ -51,12 +48,12 @@ contract KyberExchangeWrapper is
 
 
     // ============ Structs ============
-
-
-    //KyberOrder
     /**
-     * [DYDX_PROXY description]
-     * @type {[type]}
+     * walletId -- id of the service provider. if unsure, put 0
+     * srcAmount -- amount of tokens to convert. if ETH, needs to be equal to msg.value
+     * maxDestAmount -- maximum amount of tokens to convert, this value takes place of desiredMakerToken
+            when specified in exchangeForAmount()
+     * minConversionRate -- minimal conversion rate, if this value is 1, then it will set it at the marketPrice
      */
     struct Order {
       address walletId;
@@ -70,8 +67,6 @@ contract KyberExchangeWrapper is
     address public DYDX_PROXY;
     address public KYBER_NETWORK;
     address public WRAPPED_ETH;
-    /* address public ZERO_EX_PROXY;
-    address public ZRX; */
 
     // ============ Constructor ============
 
@@ -142,6 +137,11 @@ contract KyberExchangeWrapper is
                  false
                 );
           }
+          ensureAllowance(
+            makerToken,
+            DYDX_PROXY,
+            receivedMakerTokenAmount
+            );
           return receivedMakerTokenAmount;
         }
 
@@ -183,6 +183,11 @@ contract KyberExchangeWrapper is
                   true
                   );
             }
+            ensureAllowance(
+              makerToken,
+              DYDX_PROXY,
+              order.maxDestAmount
+              );
             return receivedMakerTokenAmount;
           }
 
@@ -309,10 +314,12 @@ contract KyberExchangeWrapper is
         return receivedMakerTokenAmount;
       }
       /**
-       *
-       this function will call KyberNetwork's
+       * [getConversionRate description]
+       * makerToken -- token to be received
+       * takerToken -- token to be paid in
+       * requestedFillAmount -- quantity to check the rate against
+       * @return rate -- 
        */
-
     function getConversionRate(
       address makerToken,
       address takerToken,
@@ -349,17 +356,11 @@ contract KyberExchangeWrapper is
             );
         }
 
-    /* struct KyberOrder {
-      uint srcAmount; //amount taker has to offer
-      address taker; //destAddress
-      uint maxDestAmount; //when using exchangeforAmount, otherwise max
-      struct Order {
-        address walletId;
-        uint srcAmount; //amount taker has to offer
-        uint maxDestAmount; //when using exchangeforAmount, if 0 then maxUint256
-        uint256 minConversionRate; //1 for market price if not given
-      }
-    } */
+  // ============ Parsing Functions ============
+
+    /**
+      * Accepts a byte array with each variable padded to 32 bytes
+      */
     function parseOrder(
       bytes orderData
       )
