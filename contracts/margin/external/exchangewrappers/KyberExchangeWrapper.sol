@@ -20,7 +20,7 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ERC20 }    from "../../../exchange/kyber/ERC20Interface.sol";
+import { ERC20 }    from "../../../external/kyber/ERC20Interface.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { KyberExchangeInterface } from "../../../external/kyber/KyberExchangeInterface.sol";
@@ -248,7 +248,7 @@ contract KyberExchangeWrapper is
         returns (uint256)
          {
            //before called, one of these token pairs needs to be WETH
-           require((makerTokenc != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+           require((makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
 
            uint256 conversionRate = getConversionRatePerToken(makerToken,takerToken);
 
@@ -356,6 +356,9 @@ contract KyberExchangeWrapper is
       address makerToken,
       address takerToken
       )
+      internal
+      view
+      returns(uint256 conversionRate)
     {
         uint256 conversionRate;
         if (makerToken == WRAPPED_ETH) {
