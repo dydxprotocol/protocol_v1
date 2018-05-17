@@ -28,7 +28,7 @@ import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
-import { WETH9 } from "../../../Kyber/WrappedEth.sol";
+import { WETH9 } from "../../../external/WETH9.sol";
 
 
 /**
