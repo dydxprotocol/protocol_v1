@@ -25,8 +25,6 @@ import { MarginState } from "./MarginState.sol";
 import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { TransferInternal } from "./TransferInternal.sol";
 import { TimestampHelper } from "../../lib/TimestampHelper.sol";
-import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/owner/PositionOwner.sol";
 
 
 /**

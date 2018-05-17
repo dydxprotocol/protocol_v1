@@ -1,3 +1,5 @@
+/*global artifacts*/
+
 /*
 
     Copyright 2018 dYdX Trading Inc.
@@ -15,8 +17,6 @@
     limitations under the License.
 
 */
-
-/*global artifacts*/
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
