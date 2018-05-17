@@ -90,7 +90,7 @@ contract('DutchAuctionCloser', accounts => {
       callTimeLimit = openTx.loanOffering.callTimeLimit;
 
       // grant tokens and set permissions for bidder
-      const numTokens = await OwedTokenContract.balanceOf(dutchBidder);
+      const numTokens = await OwedTokenContract.balanceOf.call(dutchBidder);
       const maxInterest = await getMaxInterestFee(openTx);
       const targetTokens = openTx.principal.plus(maxInterest);
 

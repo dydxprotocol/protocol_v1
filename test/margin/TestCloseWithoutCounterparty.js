@@ -46,7 +46,7 @@ describe('#CloseWithoutCounterparty', () => {
       await configurePosition(initialHolder, accounts);
 
       const heldToken = await ERC20.at(OpenTx.heldToken);
-      const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+      const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
       expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
       const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
@@ -55,11 +55,11 @@ describe('#CloseWithoutCounterparty', () => {
       await callCloseWithoutCounterparty(dydxMargin, OpenTx, principal, lender);
 
       // It should burn the tokens
-      const lenderAfter = await erc20Contract.balanceOf(lender);
+      const lenderAfter = await erc20Contract.balanceOf.call(lender);
       expect(lenderAfter.toNumber()).to.equal(0);
 
       // It should give the correct amount of the heldToken balance
-      const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
+      const lenderHeldTokenAfter = await heldToken.balanceOf.call(lender);
       expect(lenderHeldTokenAfter).to.be.bignumber.equal(
         getPartialAmount(
           principal,
@@ -83,7 +83,7 @@ describe('#CloseWithoutCounterparty', () => {
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 
         const heldToken = await ERC20.at(OpenTx.heldToken);
-        const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+        const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
         expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
         const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
@@ -91,10 +91,10 @@ describe('#CloseWithoutCounterparty', () => {
         // Receive heldTokens by burning tokens
         await callCloseWithoutCounterparty(dydxMargin, OpenTx, principal, lender);
 
-        const lenderAfter = await erc20Contract.balanceOf(lender);
+        const lenderAfter = await erc20Contract.balanceOf.call(lender);
         expect(lenderAfter.toNumber()).to.equal(0);
 
-        const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
+        const lenderHeldTokenAfter = await heldToken.balanceOf.call(lender);
         expect(lenderHeldTokenAfter).to.be.bignumber.equal(
           getPartialAmount(
             principal,
@@ -121,7 +121,7 @@ describe('#CloseWithoutCounterparty', () => {
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 
         const heldToken = await ERC20.at(OpenTx.heldToken);
-        const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+        const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
         expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
         const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
@@ -129,10 +129,10 @@ describe('#CloseWithoutCounterparty', () => {
         // Receive heldTokens by burning tokens
         await callCloseWithoutCounterparty(dydxMargin, OpenTx, principal, lender);
 
-        const lenderAfter = await erc20Contract.balanceOf(lender);
+        const lenderAfter = await erc20Contract.balanceOf.call(lender);
         expect(lenderAfter.toNumber()).to.equal(0);
 
-        const lenderHeldTokenAfter = await heldToken.balanceOf(lender);
+        const lenderHeldTokenAfter = await heldToken.balanceOf.call(lender);
 
         expect(lenderHeldTokenAfter).to.be.bignumber.equal(
           getPartialAmount(
@@ -159,7 +159,7 @@ describe('#CloseWithoutCounterparty', () => {
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 
         const heldToken = await ERC20.at(OpenTx.heldToken);
-        const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+        const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
         expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
         // Receive heldTokens by burning tokens
@@ -182,7 +182,7 @@ describe('#CloseWithoutCounterparty', () => {
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 
         const heldToken = await ERC20.at(OpenTx.heldToken);
-        const lenderHeldTokenBefore = await heldToken.balanceOf(lender);
+        const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
         expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
 
         // Receive heldTokens by burning tokens
