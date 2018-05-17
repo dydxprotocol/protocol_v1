@@ -34,6 +34,12 @@ import { OnlyMargin } from "./OnlyMargin.sol";
  */
 contract ExchangeWrapper is OnlyMargin {
 
+    // ============ Constants ============
+
+    address public DYDX_PROXY;
+
+    // ============ Constructor ============
+
     constructor(
         address margin,
         address dydxProxy
@@ -44,7 +50,7 @@ contract ExchangeWrapper is OnlyMargin {
         DYDX_PROXY = dydxProxy;
     }
 
-    address public DYDX_PROXY;
+    // ============ External Functions ============
 
     /**
      * Exchange some amount of takerToken for makerToken.

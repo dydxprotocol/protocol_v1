@@ -60,7 +60,6 @@ contract ZeroExExchangeWrapper is
 
     // ============ State Variables ============
 
-    address public DYDX_PROXY;
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_PROXY;
     address public ZRX;
