@@ -77,10 +77,13 @@ contract TestPositionOwner is
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
         valueAdded[positionId][trader] = valueAdded[positionId][trader].add(amount);
-        return TO_RETURN_ON_ADD;
+
+        require(TO_RETURN_ON_ADD);
+
+        return address(this);
     }
 
     function closeOnBehalfOf(
@@ -91,12 +94,12 @@ contract TestPositionOwner is
     )
         external
         onlyMargin
-        returns (uint256)
+        returns (address, uint256)
     {
         if (TO_RETURN_ON_CLOSE == 1) {
-            return closeAmount;
+            return (address(this), closeAmount);
         }
 
-        return TO_RETURN_ON_CLOSE;
+        return (address(this), TO_RETURN_ON_CLOSE);
     }
 }

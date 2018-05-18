@@ -44,14 +44,14 @@ contract ForceRecoverCollateralDelegator {
      * @param  who         Address of the caller of the forceRecoverCollateral() function
      * @param  positionId  Unique ID of the position
      * @param  recipient   Address to send the recovered tokens to
-     * @return             True if forceRecoverCollateral() is permitted
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address who,
+        address recoverer,
         bytes32 positionId,
         address recipient
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

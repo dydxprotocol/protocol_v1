@@ -50,7 +50,7 @@ contract TestSmartContractLender is LoanOfferingVerifier {
         uint256 amount
     )
         external
-        returns (bool)
+        returns (address)
     {
         return ERC20(token).approve(spender, amount);
     }

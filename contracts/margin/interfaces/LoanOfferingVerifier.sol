@@ -71,8 +71,7 @@ contract LoanOfferingVerifier {
      *  [3] = loan interest update period (in seconds)
      *
      * @param  positionId   Unique ID of the position
-     * @return              True if the contract consents to this loan, false if not.
-     *                      If false, the loan will not occur
+     * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(
         address[9] addresses,
@@ -82,5 +81,5 @@ contract LoanOfferingVerifier {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

@@ -53,17 +53,20 @@ contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
     }
 
     function closeOnBehalfOf(
-        address who,
+        address closer,
         address,
         bytes32,
         uint256 requestedAmount
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
         uint256 amount = (IS_DEGENERATE ? requestedAmount + 1 : requestedAmount);
-        return who == CLOSER ? amount : 0;
+
+        require(closer == CLOSER);
+
+        return (address(this), amount);
     }
 
     function marginPositionIncreased(
@@ -74,8 +77,8 @@ contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
         onlyMargin
         external
         view
-        returns (bool)
+        returns (address)
     {
-        return false;
+        revert();
     }
 }

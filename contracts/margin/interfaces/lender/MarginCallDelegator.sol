@@ -43,7 +43,7 @@ contract MarginCallDelegator {
      * @param  caller         Address of the caller of the marginCall function
      * @param  positionId     Unique ID of the position
      * @param  depositAmount  Amount of heldToken deposit that will be required to cancel the call
-     * @return                True if "who" is allowed to margin-call the position, false otherwise
+     * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
         address caller,
@@ -52,5 +52,5 @@ contract MarginCallDelegator {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

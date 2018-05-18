@@ -54,19 +54,21 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     }
 
     function forceRecoverCollateralOnBehalfOf(
-        address who,
+        address recoverer,
         bytes32,
         address recipient
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
-        bool recovererOkay = (who == RECOVERER);
+        bool recovererOkay = (recoverer == RECOVERER);
         bool recipientOkay = (COLLATERAL_RECIPIENT != address(0))
             && (recipient == COLLATERAL_RECIPIENT);
 
-        return recovererOkay || recipientOkay;
+        retuire(recovererOkay || recipientOkay);
+
+        retrun address(this);
     }
 
     function marginLoanIncreased(
@@ -77,8 +79,8 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
         onlyMargin
         external
         view
-        returns (bool)
+        returns (address)
     {
-        return false;
+        revert();
     }
 }

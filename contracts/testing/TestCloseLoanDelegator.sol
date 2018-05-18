@@ -57,9 +57,9 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
-        return AMOUNT_TO_RETURN;
+        return (address(this), AMOUNT_TO_RETURN);
     }
 
     function marginLoanIncreased(
@@ -70,8 +70,8 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
         onlyMargin
         external
         view
-        returns (bool)
+        returns (address)
     {
-        return false;
+        revert();
     }
 }

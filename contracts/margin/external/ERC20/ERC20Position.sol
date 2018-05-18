@@ -225,7 +225,7 @@ contract ERC20Position is
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         emit Transfer(address(0), trader, tokenAmount);
 
-        return true;
+        return address(this);
     }
 
     /**
@@ -239,7 +239,8 @@ contract ERC20Position is
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount (in principal) of the position being closed
-     * @return                  The amount the user is allowed to close for the specified position
+     * @return                  1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,
@@ -250,7 +251,7 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
-        returns (uint256)
+        returns (address, uint256)
     {
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
@@ -259,19 +260,24 @@ contract ERC20Position is
 
         assert(requestedAmount <= positionPrincipal);
 
+        uint256 allowedAmount;
         if (positionPrincipal == requestedAmount && TRUSTED_RECIPIENTS[payoutRecipient]) {
-            return closeByTrustedParty(
+            allowedAmount = closeByTrustedParty(
                 closer,
                 payoutRecipient,
                 requestedAmount
             );
+        } else {
+            allowedAmount = close(
+                closer,
+                requestedAmount,
+                positionPrincipal
+            );
         }
 
-        return close(
-            closer,
-            requestedAmount,
-            positionPrincipal
-        );
+        assert(allowedAmount > 0);
+
+        return (address(this), allowedAmount);
     }
 
     // ============ Public State Changing Functions ============

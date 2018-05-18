@@ -45,8 +45,8 @@ contract CloseLoanDelegator {
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Requested principal amount of the loan to close
-     * @return                  The amount the user is allowed to close for the specified loan.
-     *                          Must be a positive integer less than requestedAmount to not throw.
+     * @return                  1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeLoanOnBehalfOf(
         address closer,
@@ -56,5 +56,5 @@ contract CloseLoanDelegator {
     )
         external
         /* onlyMargin */
-        returns (uint256);
+        returns (address, uint256);
 }

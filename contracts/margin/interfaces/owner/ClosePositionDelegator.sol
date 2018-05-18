@@ -44,8 +44,8 @@ contract ClosePositionDelegator {
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Requested principal amount of the position to close
-     * @return                  The amount the user is allowed to close for the specified position.
-     *                          Must be a positive integer less than requestedAmount to not throw.
+     * @return                  1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,
@@ -55,5 +55,5 @@ contract ClosePositionDelegator {
     )
         external
         /* onlyMargin */
-        returns (uint256);
+        returns (address, uint256);
 }

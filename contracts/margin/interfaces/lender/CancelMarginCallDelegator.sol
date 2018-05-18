@@ -42,7 +42,7 @@ contract CancelMarginCallDelegator {
      *
      * @param  canceler    Address of the caller of the cancelMarginCall function
      * @param  positionId  Unique ID of the position
-     * @return             True if "who" is allowed to cancel the margin-call, false otherwise
+     * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
         address canceler,
@@ -50,5 +50,5 @@ contract CancelMarginCallDelegator {
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }
