@@ -232,13 +232,13 @@ contract ERC721MarginPosition is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Only allows token owner to add value.
      *
-     * @param  from            Address that added the value to the position
+     * @param  trader          Address that added the value to the position
      * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
      * @return                 True if the adder is the token owner, false otherwise
      */
     function marginPositionIncreased(
-        address from,
+        address trader,
         bytes32 positionId,
         uint256 /* principalAdded */
     )
@@ -247,7 +247,7 @@ contract ERC721MarginPosition is
         nonReentrant
         returns (bool)
     {
-        if (ownerOf(uint256(positionId)) == from) {
+        if (ownerOf(uint256(positionId)) == trader) {
             return true;
         }
 

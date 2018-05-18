@@ -60,14 +60,14 @@ contract LoanOwner {
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the loan size was successfully increased.
      *
-     * @param  from            Lender adding additional funds to the position
+     * @param  payer           Lender adding additional funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Principal amount to be added to the position
      * @return                 True if the contract consents to additional value being added,
      *                         false otherwise
      */
     function marginLoanIncreased(
-        address from,
+        address payer,
         bytes32 positionId,
         uint256 principalAdded
     )

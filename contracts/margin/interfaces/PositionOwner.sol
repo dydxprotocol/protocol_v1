@@ -59,14 +59,14 @@ contract PositionOwner {
      * NOTE: If returning true, this contract must assume that Margin will either revert the
      * entire transaction or that the position size was successfully increased.
      *
-     * @param  from            Address initiating the addition of funds to the position
+     * @param  trader          Address initiating the addition of funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount of principal to be added to the position
      * @return                 True if the contract consents to additional value being added,
      *                         false otherwise
      */
     function marginPositionIncreased(
-        address from,
+        address trader,
         bytes32 positionId,
         uint256 principalAdded
     )

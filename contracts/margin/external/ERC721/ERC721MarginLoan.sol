@@ -255,13 +255,13 @@ contract ERC721MarginLoan is
     /**
      * Called by Margin when additional value is added onto a position. Rejects this addition.
      *
-     *  param  from            Address that added the value to the position
+     *  param  payer           Address that added the value to the position
      *  param  positionId      Unique ID of the position
      *  param  principalAdded  Principal amount added to position
      * @return                 False
      */
     function marginLoanIncreased(
-        address, /* from */
+        address, /* payer */
         bytes32, /* positionId */
         uint256  /* principalAdded */
     )
@@ -276,14 +276,14 @@ contract ERC721MarginLoan is
     /**
      * Called by Margin when another address attempts to margin-call a loan
      *
-     * @param  who            Address attempting to initiate the loan call
+     * @param  caller         Address attempting to initiate the loan call
      * @param  positionId     Unique ID of the position
      *  param  depositAmount  (unused)
      * @return                True to consent to the loan being called if the initiator is a trusted
      *                        loan caller or the owner of the loan
      */
     function marginCallOnBehalfOf(
-        address who,
+        address caller,
         bytes32 positionId,
         uint256 /* depositAmount */
     )
@@ -293,19 +293,19 @@ contract ERC721MarginLoan is
         returns (bool)
     {
         address owner = ownerOf(uint256(positionId));
-        return (who == owner) || approvedCallers[owner][who];
+        return (caller == owner) || approvedCallers[owner][caller];
     }
 
     /**
      * Called by Margin when another address attempts to cancel a margin call for a loan
      *
-     * @param  who         Address attempting to initiate the loan call cancel
+     * @param  canceler    Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
      * @return             True to consent to the loan call being canceled if the initiator is a
      *                     trusted loan caller or the owner of the loan
      */
     function cancelMarginCallOnBehalfOf(
-        address who,
+        address canceler,
         bytes32 positionId
     )
         external
@@ -314,7 +314,7 @@ contract ERC721MarginLoan is
         returns (bool)
     {
         address owner = ownerOf(uint256(positionId));
-        return (who == owner) || approvedCallers[owner][who];
+        return (canceler == owner) || approvedCallers[owner][canceler];
     }
 
     /**
@@ -322,21 +322,21 @@ contract ERC721MarginLoan is
      * force recover the loan as long as the payout goes to the token owner.
      *
      *  param  (unused)
-     * @param  positionId           Unique ID of the position
-     * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      True if forceRecoverCollateral() is permitted
+     * @param  positionId  Unique ID of the position
+     * @param  recipient   Address to send the recovered tokens to
+     * @return             True if forceRecoverCollateral() is permitted
      */
     function forceRecoverCollateralOnBehalfOf(
         address /* who */,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         external
         /* view */
         onlyMargin
         returns (bool)
     {
-        return ownerOf(uint256(positionId)) == collateralRecipient;
+        return ownerOf(uint256(positionId)) == recipient;
     }
 
     // ============ Helper Functions ============
