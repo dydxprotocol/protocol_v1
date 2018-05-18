@@ -82,10 +82,3 @@ workflows:
       - test:
           requires:
             - build
-      - coverage:
-          requires:
-            - checkout_and_install
-          filters:
-            branches:
-              only:
-                - master
