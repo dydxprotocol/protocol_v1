@@ -14,6 +14,11 @@ const ERC721MarginPosition  = require('./build/contracts/ERC721MarginPosition.js
 const ZeroExExchangeWrapper = require('./build/contracts/ZeroExExchangeWrapper.json');
 const ERC20                 = require('./build/contracts/ERC20.json');
 
+//PR -- Implement Kyber Wrapper
+const KyberExchangeWrapper  = require('./build/contracts/KyberExchangeWrapper.json');
+const KyberNetworkSimple  = require('./build/contracts/KyberNetworkSimple.json');
+const WETH9  = require('./build/contracts/WETH9.json');
+
 module.exports = {
   Margin,
   Vault,
@@ -29,5 +34,8 @@ module.exports = {
   ERC721MarginLoan,
   ERC721MarginPosition,
   ZeroExExchangeWrapper,
-  ERC20
+  ERC20,
+  KyberExchangeWrapper,
+  KyberNetworkSimple,
+  WETH9
 }

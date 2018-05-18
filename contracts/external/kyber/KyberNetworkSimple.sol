@@ -14,7 +14,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 /// @title Kyber Network main contract
-contract KyberNetwork is Withdrawable, Utils {
+contract KyberNetworkSimple is Withdrawable, Utils {
   /**
    *
    */
@@ -24,12 +24,9 @@ contract KyberNetwork is Withdrawable, Utils {
     uint256 public CONRATE_FROM_ETH;
     address public ETH_TOKEN_ADDRESS = 0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee;
     address public TRADED_TOKEN;
-    constructor(address _admin, address traded_token, uint256 conrate_to_eth, uint256 conrate_from_eth) public {
-        require(_admin != address(0) && traded_token != address(0));
-        admin = _admin;
+    constructor( address traded_token) public {
+        require(traded_token != address(0));
         TRADED_TOKEN = traded_token;
-        CONRATE_TO_ETH = conrate_to_eth;
-        CONRATE_FROM_ETH = conrate_from_eth;
     }
 
     event EtherReceival(address indexed sender, uint amount);
@@ -41,7 +38,18 @@ contract KyberNetwork is Withdrawable, Utils {
     }
     /* solhint-enable no-complex-fallback */
 
+
     event ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount);
+
+    /**
+     * setConversionRates()
+      this function (for dev purposes lets me set the conversion rates to and from
+        ether for testing purposes)
+     */
+    function setConversionRates( uint256 conrate_to_eth, uint256 conrate_from_eth) public {
+      CONRATE_TO_ETH = conrate_to_eth;
+      CONRATE_FROM_ETH = conrate_from_eth;
+    }
 
     /// @notice use token address ETH_TOKEN_ADDRESS for ether
     /// @dev makes a trade between src and dest token and send dest token to destAddress

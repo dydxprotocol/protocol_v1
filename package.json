@@ -21,7 +21,7 @@
   "scripts": {
     "test": "truffle test",
     "compile": "truffle compile",
-    "migrate": "truffle migrate",
+    "migrate": "truffle migrate --network dev",
     "develop": "truffle develop",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
     "solint": "solium -d contracts/",

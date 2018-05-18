@@ -63,6 +63,7 @@ contract KyberExchangeWrapper is
 
     // ============ State Variables ============
     address public ETH_TOKEN_ADDRESS = 0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee;
+    address public DYDX_MARGIN;
     address public DYDX_PROXY;
     address public KYBER_NETWORK;
     address public WRAPPED_ETH;
@@ -78,6 +79,7 @@ contract KyberExchangeWrapper is
         public
         OnlyMargin(margin)
     {
+        DYDX_MARGIN = margin;
         DYDX_PROXY = dydxProxy;
         KYBER_NETWORK = kyber_network;
         WRAPPED_ETH = wrapped_eth;
@@ -117,11 +119,11 @@ contract KyberExchangeWrapper is
           // 1st scenario: takerToken is Eth, and should be sent appropriately
           if (takerToken == WRAPPED_ETH) {
               receivedMakerTokenAmount = exchangeFromWETH(
-                     order,
-                    makerToken,
-                     requestedFillAmount,
-                    false
-                );
+                  order,
+                  makerToken,
+                  requestedFillAmount,
+                  false
+              );
           }
           if (makerToken == WRAPPED_ETH) {
               receivedMakerTokenAmount = exchangeToWETH(
@@ -129,7 +131,7 @@ contract KyberExchangeWrapper is
                  takerToken,
                  requestedFillAmount,
                  false
-                );
+              );
           }
           ensureAllowance(
             makerToken,
@@ -137,7 +139,7 @@ contract KyberExchangeWrapper is
             receivedMakerTokenAmount
             );
           return receivedMakerTokenAmount;
-        }
+      }
 
     /**
         Exchange for amount has the same exact implementation as exchange,
@@ -158,6 +160,7 @@ contract KyberExchangeWrapper is
             Order memory order = parseOrder(orderData);
             //check if maker or taker are wrapped eth (but they cant both be ;))
             require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH) );
+
             uint256 receivedMakerTokenAmount;
             //getConversionRatePerToken
             uint256 conversionRate = getConversionRatePerToken(makerToken, takerToken);
