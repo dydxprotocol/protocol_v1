@@ -197,13 +197,13 @@ contract ERC20Position is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
-     * @param  from            Address that added the value to the position
+     * @param  trader            Address that added the value to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
      * @return                 True to indicate that this contract consents to value being added
      */
     function marginPositionIncreased(
-        address from,
+        address trader,
         bytes32 positionId,
         uint256 principalAdded
     )
@@ -219,11 +219,11 @@ contract ERC20Position is
             principalAdded
         );
 
-        balances[from] = balances[from].add(tokenAmount);
+        balances[trader] = balances[trader].add(tokenAmount);
         totalSupply_ = totalSupply_.add(tokenAmount);
 
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), from, tokenAmount);
+        emit Transfer(address(0), trader, tokenAmount);
 
         return true;
     }

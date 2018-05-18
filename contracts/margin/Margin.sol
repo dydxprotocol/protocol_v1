@@ -393,13 +393,13 @@ contract Margin is
      * the loan has expired or the loan has been margin-called for the duration of the callTimeLimit
      * but remains unclosed. Only callable with the approval of the position lender.
      *
-     * @param  positionId           Unique ID for the position
-     * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      Amount of heldToken recovered
+     * @param  positionId  Unique ID for the position
+     * @param  recipient   Address to send the recovered tokens to
+     * @return             Amount of heldToken recovered
      */
     function forceRecoverCollateral(
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         external
         nonReentrant
@@ -408,7 +408,7 @@ contract Margin is
         return ForceRecoverCollateralImpl.forceRecoverCollateralImpl(
             state,
             positionId,
-            collateralRecipient
+            recipient
         );
     }
 

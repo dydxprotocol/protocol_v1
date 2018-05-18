@@ -189,13 +189,13 @@ contract SharedLoan is
      * Called by Margin when additional value is added onto the position this contract
      * is lending for. Balance is added to the address that loaned the additional tokens.
      *
-     * @param  from            Address that loaned the additional tokens
+     * @param  payer           Address that loaned the additional tokens
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
      * @return                 True to indicate that this contract consents to value being added
      */
     function marginLoanIncreased(
-        address from,
+        address payer,
         bytes32 positionId,
         uint256 principalAdded
     )
@@ -207,11 +207,11 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        balances[from] = balances[from].add(principalAdded);
+        balances[payer] = balances[payer].add(principalAdded);
         totalPrincipal = totalPrincipal.add(principalAdded);
 
         emit BalanceAdded(
-            from,
+            payer,
             principalAdded
         );
 
@@ -221,14 +221,14 @@ contract SharedLoan is
     /**
      * Called by Margin when another address attempts to margin call the loan this contract owns
      *
-     * @param  who         Address attempting to initiate the loan call
+     * @param  caller      Address attempting to initiate the loan call
      * @param  positionId  Unique ID of the position
      *  param  (unused)
      * @return             True to consent to the loan being called if the initiator is a trusted
      *                     loan caller, false otherwise
      */
     function marginCallOnBehalfOf(
-        address who,
+        address caller,
         bytes32 positionId,
         uint256 /* depositAmount */
     )
@@ -240,20 +240,20 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        return TRUSTED_MARGIN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[caller];
     }
 
     /**
      * Called by Margin when another address attempts to cancel a margin call for the loan
      * this contract owns
      *
-     * @param  who         Address attempting to initiate the loan call cancel
+     * @param  canceler    Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
      * @return             True to consent to the loan call being canceled if the initiator is a
      *                     trusted loan caller, false otherwise
      */
     function cancelMarginCallOnBehalfOf(
-        address who,
+        address canceler,
         bytes32 positionId
     )
         external
@@ -264,7 +264,7 @@ contract SharedLoan is
         assert(state == State.OPEN);
         assert(POSITION_ID == positionId);
 
-        return TRUSTED_MARGIN_CALLERS[who];
+        return TRUSTED_MARGIN_CALLERS[canceler];
     }
 
     /**
@@ -273,14 +273,14 @@ contract SharedLoan is
      * always consents to anyone initiating a force recover
      *
      *  param  (unused)
-     * @param  positionId           Unique ID of the position
-     * @param  collateralRecipient  Address to send the recovered tokens to
-     * @return                      True if forceRecoverCollateral() is permitted
+     * @param  positionId  Unique ID of the position
+     * @param  recipient   Address to send the recovered tokens to
+     * @return             True if forceRecoverCollateral() is permitted
      */
     function forceRecoverCollateralOnBehalfOf(
         address /* who */,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         external
         onlyMargin
@@ -291,7 +291,7 @@ contract SharedLoan is
         assert(POSITION_ID == positionId);
 
         require(
-            collateralRecipient == address(this),
+            recipient == address(this),
             "SharedLoan#forceRecoverCollateralOnBehalfOf: Invalid collateral recipient"
         );
 

@@ -31,13 +31,13 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     constructor(
         address margin,
         address recoverer,
-        address collateralRecipient
+        address recipient
     )
         public
         OnlyMargin(margin)
     {
         RECOVERER = recoverer;
-        COLLATERAL_RECIPIENT = collateralRecipient;
+        COLLATERAL_RECIPIENT = recipient;
     }
 
     function receiveLoanOwnership(
@@ -54,7 +54,7 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     function forceRecoverCollateralOnBehalfOf(
         address who,
         bytes32,
-        address collateralRecipient
+        address recipient
     )
         onlyMargin
         external
@@ -62,7 +62,7 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     {
         bool recovererOkay = (who == RECOVERER);
         bool recipientOkay = (COLLATERAL_RECIPIENT != address(0))
-            && (collateralRecipient == COLLATERAL_RECIPIENT);
+            && (recipient == COLLATERAL_RECIPIENT);
 
         return recovererOkay || recipientOkay;
     }

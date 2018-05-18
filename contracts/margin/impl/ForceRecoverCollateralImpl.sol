@@ -42,7 +42,7 @@ library ForceRecoverCollateralImpl {
      */
     event CollateralForceRecovered(
         bytes32 indexed positionId,
-        address indexed collateralRecipient,
+        address indexed recipient,
         uint256 amount
     );
 
@@ -51,7 +51,7 @@ library ForceRecoverCollateralImpl {
     function forceRecoverCollateralImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        address collateralRecipient
+        address recipient
     )
         public
         returns (uint256)
@@ -78,7 +78,7 @@ library ForceRecoverCollateralImpl {
                 ForceRecoverCollateralDelegator(position.lender).forceRecoverCollateralOnBehalfOf(
                     msg.sender,
                     positionId,
-                    collateralRecipient
+                    recipient
                 ),
                 "ForceRecoverCollateralImpl#forceRecoverCollateralImpl: Lender does not consent"
             );
@@ -90,7 +90,7 @@ library ForceRecoverCollateralImpl {
         vault.transferFromVault(
             positionId,
             position.heldToken,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 
@@ -104,7 +104,7 @@ library ForceRecoverCollateralImpl {
         // Log an event
         emit CollateralForceRecovered(
             positionId,
-            collateralRecipient,
+            recipient,
             heldTokenRecovered
         );
 

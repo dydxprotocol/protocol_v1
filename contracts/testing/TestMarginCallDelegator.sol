@@ -52,7 +52,7 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
     }
 
     function marginCallOnBehalfOf(
-        address who,
+        address caller,
         bytes32,
         uint256
     )
@@ -60,18 +60,18 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
         external
         returns (bool)
     {
-        return who == CALLER;
+        return caller == CALLER;
     }
 
     function cancelMarginCallOnBehalfOf(
-        address who,
+        address canceler,
         bytes32
     )
         onlyMargin
         external
         returns (bool)
     {
-        return who == CANCELLER;
+        return canceler == CANCELLER;
     }
 
     function marginLoanIncreased(
