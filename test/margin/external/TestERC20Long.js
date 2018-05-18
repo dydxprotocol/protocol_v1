@@ -280,7 +280,7 @@ contract('ERC20Long', accounts => {
         );
 
         // transfer second position
-        const openTx = await doOpenPosition(accounts, { salt: 888 });
+        const openTx = await doOpenPosition(accounts, { salt: 887 });
         await expectThrow(dydxMargin.transferPosition(
           openTx.id,
           POSITION.TOKEN_CONTRACT.address,
