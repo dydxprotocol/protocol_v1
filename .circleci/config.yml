@@ -93,5 +93,7 @@ workflows:
           requires:
             - checkout_and_install
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^coverage/
