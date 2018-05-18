@@ -455,7 +455,6 @@ describe('ERC721MarginLoan', () => {
   // ============ forceRecoverCollateralOnBehalfOf ============
 
   contract('#forceRecoverCollateralOnBehalfOf', accounts => {
-    const recoverer = accounts[9];
     const rando = accounts[8];
 
     before('load contracts', async () => {
@@ -472,35 +471,35 @@ describe('ERC721MarginLoan', () => {
       await wait(openTx.loanOffering.callTimeLimit);
     });
 
-    it('succeeds for arbitrary caller if recipient is owner', async () => {
+    it('succeeds if caller is owner', async () => {
       const [heldToken1, heldTokenInVault] = await Promise.all([
-        heldToken.balanceOf.call(openTx.loanOffering.payer),
+        heldToken.balanceOf.call(rando),
         dydxMargin.getPositionBalance.call(openTx.id)
       ]);
 
       await dydxMargin.forceRecoverCollateral(
         openTx.id,
-        openTx.loanOffering.payer,
-        { from: recoverer }
+        rando,
+        { from: openTx.loanOffering.payer  }
       );
 
       // expect proper state of the position
       const [isClosed, isCalled, heldToken2] = await Promise.all([
         dydxMargin.isPositionClosed.call(openTx.id),
         dydxMargin.isPositionCalled.call(openTx.id),
-        heldToken.balanceOf.call(openTx.loanOffering.payer)
+        heldToken.balanceOf.call(rando)
       ]);
       expect(isClosed).to.be.true;
       expect(isCalled).to.be.false;
       expect(heldToken2).to.be.bignumber.equal(heldToken1.plus(heldTokenInVault));
     });
 
-    it('fails for arbitrary caller if recipient is NOT owner', async () => {
+    it('fails for arbitrary caller even if recipient is owner', async () => {
       await expectThrow(
         dydxMargin.forceRecoverCollateral(
           openTx.id,
-          rando,
-          { from: recoverer }
+          openTx.loanOffering.payer,
+          { from: rando }
         )
       );
     });
