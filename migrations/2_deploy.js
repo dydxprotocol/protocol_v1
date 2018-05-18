@@ -49,6 +49,11 @@ const FeeToken = artifacts.require("TokenC");
 const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 
+//KyberExchangeWrapper
+const KyberExchangeWrapper = artifacts.require("KyberExchangeWrapper");
+const KyberNetworkSimple = artifacts.require("KyberNetworkSimple");
+const WETH9 = artifacts.require("WETH9");
+
 function isDevNetwork(network) {
   return network === 'development'
           || network === 'test'
@@ -62,7 +67,8 @@ function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
     return deployer.deploy(TokenA)
       .then(() => deployer.deploy(TokenB))
-      .then(() => deployer.deploy(FeeToken));
+      .then(() => deployer.deploy(FeeToken))
+      .then(() => deployer.deploy(WETH9));
   }
   return Promise.resolve(true);
 }
@@ -105,6 +111,34 @@ function getZRXAddress(network) {
   }
 
   throw "ZRX Not Found";
+}
+
+function maybeDeployKyber(deployer,network) {
+  if (isDevNetwork(network)) {
+    return deployer.deploy(KyberNetworkSimple, TokenA.address)
+  }
+  return Promise.resolve(true);
+}
+
+
+//KyberDeployAddress Functions
+//this function will deploy KyberNetworkSimple or
+//at the kovan address
+function getKyberNetworkAddress(network) {
+  if (isDevNetwork(network)) {
+    return KyberNetworkSimple.address;
+  } else if (network === 'kovan' ) {
+    return '0x11542D7807DFb2B44937F756b9092c76e814F8eD';
+  }
+  throw "KyberNetwork not found";
+}
+
+function getWETHAddress(network) {
+  if (isDevNetwork(network)) {
+    return WETH9.address;
+  } else if (network === 'kovan') {
+    return '0xd0A1E359811322d97991E03f863a0C30C2cF029C';
+  }
 }
 
 function getSharedLoanTrustedMarginCallers(network) {
@@ -175,9 +209,17 @@ async function deployMarginContracts(deployer, network) {
       getZRXAddress(network)
     ),
     deployer.deploy(
+<<<<<<< HEAD
       OpenDirectlyExchangeWrapper,
       Margin.address,
       ProxyContract.address
+=======
+      KyberExchangeWrapper,
+      Margin.address,
+      ProxyContract.address,
+      getKyberNetworkAddress(network),
+      getWETHAddress(network)
+>>>>>>> added kyber migrations to 2_deploy.js
     ),
     deployer.deploy(
       ERC721MarginPosition,
@@ -227,6 +269,7 @@ async function grantAccessToVault() {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
+  await maybeDeployKyber(deployer, network);
   await deployMarginContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
@@ -234,6 +277,6 @@ async function doMigration(deployer, network) {
   ]);
 }
 
-module.exports = (deployer, network, _addresses) => {
+module.exports = (deployer, network) => {
   deployer.then(() => doMigration(deployer, network));
 };

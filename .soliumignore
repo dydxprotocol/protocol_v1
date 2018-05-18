@@ -1,4 +1,14 @@
 node_modules
+<<<<<<< HEAD
+<<<<<<< HEAD
 contracts/external
+=======
+contracts/0x
+contracts/Kyber
+=======
+contracts/external
+>>>>>>> linted ExchangeWrapper
+contracts/interfaces/ZeroExExchangeInterface.sol
+>>>>>>> fix READMEs, solidity version
 contracts/testing
 contracts/Migrations.sol
