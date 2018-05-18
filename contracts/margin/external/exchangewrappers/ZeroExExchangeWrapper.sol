@@ -215,7 +215,6 @@ contract ZeroExExchangeWrapper is
         returns (uint256)
     {
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-        assert(requestedFillAmount > 0);
         require(
             requestedFillAmount <= order.takerTokenAmount,
             "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
