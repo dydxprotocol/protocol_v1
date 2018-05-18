@@ -81,9 +81,10 @@ contract OpenDirectlyExchangeWrapper is
         onlyMargin
         returns (uint256)
     {
-        if (desiredMakerToken != 0) {
-            revert();
-        }
+        require(
+            desiredMakerToken == 0,
+            "OpenDirectlyExchangeWrapper#exchangeForAmount: DesiredMakerToken must be zero"
+        );
 
         return 0;
     }
@@ -113,9 +114,10 @@ contract OpenDirectlyExchangeWrapper is
         view
         returns (uint256)
     {
-        if (desiredMakerToken != 0) {
-            revert();
-        }
+        require(
+            desiredMakerToken == 0,
+            "OpenDirectlyExchangeWrapper#getTradeMakerTokenAmount: DesiredMakerToken must be zero"
+        );
 
         return 0;
     }
