@@ -225,15 +225,15 @@ contract KyberExchangeWrapper is
 
           if(makerToken == WRAPPED_ETH) {
             conversionRate = getConversionRate(
-                               takerToken,
-                               ETH_TOKEN_ADDRESS,
-                               requestedFillAmount
-                             );
-          } else if(takerToken == WRAPPED_ETH) {
+                takerToken,
+                ETH_TOKEN_ADDRESS,
+                requestedFillAmount
+              );
+          } else if (takerToken == WRAPPED_ETH) {
             conversionRate = getConversionRate(
-                              ETH_TOKEN_ADDRESS,
-                              makerToken,
-                              requestedFillAmount
+                ETH_TOKEN_ADDRESS,
+                makerToken,
+                requestedFillAmount
               );
           }
           return conversionRate;
@@ -275,21 +275,20 @@ contract KyberExchangeWrapper is
           internal
           returns (uint256)
     {
-              //unwrap Eth
-         WETH9(WRAPPED_ETH).withdraw(requestedFillAmount);
-            //dummy check to see if it sent through
-            require(address(this).balance >= requestedFillAmount);
-            //send trade through
-            uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade.value(msg.value)(
-               ERC20(ETH_TOKEN_ADDRESS),
-               address(this).balance,
-               ERC20(makerToken),
-               address(this),
-               (exactAmount ? requestedFillAmount : MathHelpers.maxUint256()),
-               order.minConversionRate,
-               order.walletId
-              );
-          return receivedMakerTokenAmount;
+        WETH9(WRAPPED_ETH).withdraw(requestedFillAmount);
+        //dummy check to see if it sent through
+        require(address(this).balance >= requestedFillAmount);
+        //send trade through
+        uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade.value(address(this).balance)(
+            ERC20(ETH_TOKEN_ADDRESS),
+            address(this).balance,
+            ERC20(makerToken),
+            address(this),
+            (exactAmount ? requestedFillAmount : MathHelpers.maxUint256()),
+            order.minConversionRate,
+            order.walletId
+            );
+        return receivedMakerTokenAmount;
       }
 
      function exchangeToWETH(
@@ -303,13 +302,13 @@ contract KyberExchangeWrapper is
     {
         //received ETH in wei
         uint receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade(
-          ERC20(takerToken),
-          requestedFillAmount,
-          ERC20(ETH_TOKEN_ADDRESS),
-          address(this),
-          (exactAmount ? requestedFillAmount : MathHelpers.maxUint256()),
-          order.minConversionRate,
-          order.walletId
+            ERC20(takerToken),
+            requestedFillAmount,
+            ERC20(ETH_TOKEN_ADDRESS),
+            address(this),
+            (exactAmount ? requestedFillAmount : MathHelpers.maxUint256()),
+            order.minConversionRate,
+            order.walletId
           );
         //dummy check to see if eth was actually sent
         require(address(this).balance >= receivedMakerTokenAmount);
@@ -339,9 +338,9 @@ contract KyberExchangeWrapper is
       {
         uint expectedPrice;
         (expectedPrice,) = KyberExchangeInterface(KYBER_NETWORK).getExpectedRate(
-                                  ERC20(takerToken),
-                                  ERC20(makerToken),
-                                  requestedFillAmount);
+                               ERC20(takerToken),
+                               ERC20(makerToken),
+                               requestedFillAmount);
         return expectedPrice;
       }
 
@@ -361,16 +360,16 @@ contract KyberExchangeWrapper is
     {
         uint256 conversionRate;
         if (makerToken == WRAPPED_ETH) {
-          conversionRate = getConversionRate(
-                            takerToken,
-                            ETH_TOKEN_ADDRESS,
-                            ONE_TOKEN
-            );
+            conversionRate = getConversionRate(
+                             takerToken,
+                             ETH_TOKEN_ADDRESS,
+                             ONE_TOKEN
+             );
         } else if (takerToken == WRAPPED_ETH) {
-          conversionRate = getConversionRate(
-                            ETH_TOKEN_ADDRESS,
-                            makerToken,
-                            ONE_TOKEN
+            conversionRate = getConversionRate(
+                             ETH_TOKEN_ADDRESS,
+                             makerToken,
+                             ONE_TOKEN
             );
         }
         return conversionRate;
@@ -388,9 +387,9 @@ contract KyberExchangeWrapper is
           }
 
           TokenInteract.approve(
-            token,
-            spender,
-            MathHelpers.maxUint256()
+              token,
+              spender,
+              MathHelpers.maxUint256()
           );
       }
 
