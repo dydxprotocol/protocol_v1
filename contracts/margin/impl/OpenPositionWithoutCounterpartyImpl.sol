@@ -154,7 +154,7 @@ library OpenPositionWithoutCounterpartyImpl {
 
         require(
             openTx.interestPeriod <= openTx.maxDuration,
-            "OpenPositionWithoutCounterpartyImpl#validate: interestPeriod cannot be 0"
+            "OpenPositionWithoutCounterpartyImpl#validate: interestPeriod must be <= maxDuration"
         );
     }
 
