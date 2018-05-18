@@ -13,7 +13,7 @@ const ProxyContract = artifacts.require("Proxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const { DEFAULT_SALT } = require('./Constants');
+const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
@@ -89,6 +89,22 @@ function getMinimumDeposit(openTx) {
   return minimumDeposit;
 }
 
+function orderToBytes(order) {
+  switch (order.type) {
+  case ORDER_TYPE.ZERO_EX: {
+    return zeroExOrderToBytes(order);
+  }
+  case ORDER_TYPE.KYBER: {
+    return null;
+  }
+  case ORDER_TYPE.DIRECT: {
+    return BYTES.EMPTY;
+  }
+  default:
+    return null;
+  }
+}
+
 async function callOpenPosition(dydxMargin, tx) {
   const loanNumber = await dydxMargin.getLoanNumber.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
@@ -139,7 +155,7 @@ async function callOpenPosition(dydxMargin, tx) {
     tx.loanOffering.signature.s,
   ];
 
-  const order = zeroExOrderToBytes(tx.buyOrder);
+  const order = orderToBytes(tx.buyOrder);
 
   let response = await dydxMargin.openPosition(
     addresses,
@@ -161,16 +177,32 @@ async function callOpenPosition(dydxMargin, tx) {
   return response;
 }
 
-async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
-  let soldAmount = tx.principal;
-  if (!tx.depositInHeldToken) {
-    soldAmount = soldAmount.plus(tx.depositAmount)
+function getExpectedHeldTokenFromSell(tx) {
+  switch (tx.buyOrder.type){
+  case ORDER_TYPE.ZERO_EX: {
+    let soldAmount = tx.principal;
+    if (!tx.depositInHeldToken) {
+      soldAmount = soldAmount.plus(tx.depositAmount)
+    }
+    return getPartialAmount(
+      soldAmount,
+      tx.buyOrder.takerTokenAmount,
+      tx.buyOrder.makerTokenAmount
+    );
   }
-  const expectedHeldTokenFromSell = getPartialAmount(
-    soldAmount,
-    tx.buyOrder.takerTokenAmount,
-    tx.buyOrder.makerTokenAmount
-  );
+  case ORDER_TYPE.KYBER: {
+    return null;
+  }
+  case ORDER_TYPE.DIRECT: {
+    return new BigNumber(0);
+  }
+  default:
+    return null;
+  }
+}
+
+async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
+  const expectedHeldTokenFromSell = getExpectedHeldTokenFromSell(tx);
 
   expectLog(response.logs[0], 'PositionOpened', {
     positionId: positionId,

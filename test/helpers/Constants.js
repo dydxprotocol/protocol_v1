@@ -5,6 +5,11 @@ const web3Instance = new Web3(web3.currentProvider);
 const BigNumber = require('bignumber.js');
 
 module.exports = {
+  ORDER_TYPE:{
+    ZERO_EX: "zeroEx",
+    KYBER: "kyber",
+    DIRECT: "openDirectly"
+  },
   addr1: '0xec37D2aFfb54cBFaE6f8e66E0161E1cfa4bBf471',
   addr2: '0xec37D2aFfb54cBFaE6f8e66E0161E1cfa4bBf472',
   ADDRESSES: {
@@ -46,6 +51,9 @@ module.exports = {
       web3Instance.utils.utf8ToHex("12345678123456781234567812345678"),
       web3Instance.utils.utf8ToHex("12345679123456791234567912345679"),
     ]
+  },
+  BYTES: {
+    EMPTY: web3Instance.utils.utf8ToHex(""),
   },
   DEFAULT_SALT: 425
 };

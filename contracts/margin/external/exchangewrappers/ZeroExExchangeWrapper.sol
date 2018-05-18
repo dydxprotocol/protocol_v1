@@ -26,7 +26,6 @@ import { ZeroExExchangeInterface } from "../../../external/0x/ZeroExExchangeInte
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
-import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 
 
 /**
@@ -38,7 +37,6 @@ import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 contract ZeroExExchangeWrapper is
     HasNoEther,
     HasNoContracts,
-    OnlyMargin,
     ExchangeWrapper
 {
     using SafeMath for uint256;
@@ -62,7 +60,6 @@ contract ZeroExExchangeWrapper is
 
     // ============ State Variables ============
 
-    address public DYDX_PROXY;
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_PROXY;
     address public ZRX;
@@ -77,9 +74,8 @@ contract ZeroExExchangeWrapper is
         address zrxToken
     )
         public
-        OnlyMargin(margin)
+        ExchangeWrapper(margin, dydxProxy)
     {
-        DYDX_PROXY = dydxProxy;
         ZERO_EX_EXCHANGE = zeroExExchange;
         ZERO_EX_PROXY = zeroExProxy;
         ZRX = zrxToken;

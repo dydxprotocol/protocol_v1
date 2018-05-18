@@ -18,6 +18,7 @@
 
 /*global artifacts*/
 
+const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const ProxyContract = artifacts.require("Proxy");
@@ -172,6 +173,11 @@ async function deployMarginContracts(deployer, network) {
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
       getZRXAddress(network)
+    ),
+    deployer.deploy(
+      OpenDirectlyExchangeWrapper,
+      Margin.address,
+      ProxyContract.address
     ),
     deployer.deploy(
       ERC721MarginPosition,
