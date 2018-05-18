@@ -50,6 +50,7 @@ jobs:
     docker:
       - image: circleci/node:9.11.1
     working_directory: ~/protocol
+    parallelism: 4
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
@@ -83,3 +84,7 @@ workflows:
       - coverage:
           requires:
             - checkout_and_install
+          filters:
+            branches:
+              only:
+                - master
