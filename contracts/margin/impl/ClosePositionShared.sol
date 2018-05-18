@@ -27,9 +27,9 @@ import { MarginState } from "./MarginState.sol";
 import { Proxy } from "../Proxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 import { CloseLoanDelegator } from "../interfaces/lender/CloseLoanDelegator.sol";
 import { ClosePositionDelegator } from "../interfaces/owner/ClosePositionDelegator.sol";
-import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
 
 
 /**
