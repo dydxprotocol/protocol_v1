@@ -19,7 +19,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-describe.only('#increasePosition', () => {
+describe('#increasePosition', () => {
   contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const [
