@@ -82,10 +82,18 @@ workflows:
       - test:
           requires:
             - build
-      - coverage:
+      - coverage_master:
           requires:
             - checkout_and_install
           filters:
             branches:
               only:
                 - master
+      - coverage_pro:
+          requires:
+            - checkout_and_install
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^coverage/
