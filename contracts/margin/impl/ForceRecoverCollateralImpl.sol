@@ -23,7 +23,8 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
-import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
+/* solium-disable-next-line max-len*/
+import { ForceRecoverCollateralDelegator } from "../interfaces/lender/ForceRecoverCollateralDelegator.sol";
 
 
 /**

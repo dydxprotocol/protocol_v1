@@ -28,7 +28,7 @@ import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { StringHelpers } from "../../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
-import { ClosePositionDelegator } from "../../interfaces/ClosePositionDelegator.sol";
+import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";

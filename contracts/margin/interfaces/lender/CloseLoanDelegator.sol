@@ -19,37 +19,36 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { PositionOwner } from "./PositionOwner.sol";
-
 
 /**
- * @title ClosePositionDelegator
+ * @title CloseLoanDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses close a position
- * owned by the smart contract, allowing more complex logic to control positions.
+ * Interface that smart contracts must implement in order to let other addresses close a loan
+ * owned by the smart contract.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract ClosePositionDelegator is PositionOwner {
+contract CloseLoanDelegator {
 
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call closePosition().
+     * Function a contract must implement in order to let other addresses call
+     * closeWithoutCounterparty().
      *
      * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
      * entire transaction or that the specified amount of the position was successfully closed.
      *
-     * @param  closer           Address of the caller of the closePosition() function
+     * @param  closer           Address of the caller of closeWithoutCounterparty()
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
-     * @param  requestedAmount  Requested principal amount of the position to close
-     * @return                  The amount the user is allowed to close for the specified position.
+     * @param  requestedAmount  Requested principal amount of the loan to close
+     * @return                  The amount the user is allowed to close for the specified loan.
      *                          Must be a positive integer less than requestedAmount to not throw.
      */
-    function closeOnBehalfOf(
+    function closeLoanOnBehalfOf(
         address closer,
         address payoutRecipient,
         bytes32 positionId,

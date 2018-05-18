@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
-import { PositionOwner } from "../../interfaces/PositionOwner.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 
 
 /**

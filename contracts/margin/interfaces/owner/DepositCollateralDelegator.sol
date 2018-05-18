@@ -19,41 +19,35 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { LoanOwner } from "./LoanOwner.sol";
-
 
 /**
- * @title ForceRecoverCollateralDelegator
+ * @title DepositCollateralDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses
- * forceRecoverCollateral() a loan owned by the smart contract.
+ * Interface that smart contracts must implement in order to let other addresses deposit heldTokens
+ * into a position owned by the smart contract.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract ForceRecoverCollateralDelegator is LoanOwner {
+contract DepositCollateralDelegator {
 
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call
-     * forceRecoverCollateral().
+     * Function a contract must implement in order to let other addresses call depositCollateral().
      *
-     * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan call was successfully canceled.
-     *
-     * @param  who         Address of the caller of the forceRecoverCollateral() function
+     * @param  depositor   Address of the caller of the depositCollateral() function
      * @param  positionId  Unique ID of the position
-     * @param  recipient   Address to send the recovered tokens to
-     * @return             True if forceRecoverCollateral() is permitted
+     * @param  amount      Requested deposit amount
+     * @return             This address to accept, a different address to ask that contract
      */
-    function forceRecoverCollateralOnBehalfOf(
-        address who,
+    function depositCollateralOnBehalfOf(
+        address depositor,
         bytes32 positionId,
-        address recipient
+        uint256 amount
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

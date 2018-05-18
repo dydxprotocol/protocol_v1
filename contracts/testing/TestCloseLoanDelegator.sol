@@ -19,7 +19,7 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { CloseLoanDelegator } from "../margin/interfaces/CloseLoanDelegator.sol";
+import { CloseLoanDelegator } from "../margin/interfaces/lender/CloseLoanDelegator.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
@@ -43,6 +43,7 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
     )
         onlyMargin
         external
+        view
         returns (address)
     {
         return address(this);
@@ -68,6 +69,7 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
     )
         onlyMargin
         external
+        view
         returns (bool)
     {
         return false;

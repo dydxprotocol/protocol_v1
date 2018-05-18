@@ -25,8 +25,9 @@ import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
 import { MarginCommon } from "../impl/MarginCommon.sol";
-import { ForceRecoverCollateralDelegator } from "../interfaces/ForceRecoverCollateralDelegator.sol";
-import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
+/* solium-disable-next-line max-len*/
+import { ForceRecoverCollateralDelegator } from "../interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { MarginCallDelegator } from "../interfaces/lender/MarginCallDelegator.sol";
 import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
