@@ -34,6 +34,7 @@ contract TestExponent {
         uint256 maclaurinPrecision
     )
         public
+        pure
         returns (uint256, uint256)
     {
         Fraction.Fraction128 memory percent = Exponent.exp(

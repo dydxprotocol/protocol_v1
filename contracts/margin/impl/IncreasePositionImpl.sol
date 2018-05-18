@@ -27,8 +27,8 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { LoanOwner } from "../interfaces/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/PositionOwner.sol";
+import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
+import { PositionOwner } from "../interfaces/owner/PositionOwner.sol";
 
 
 /**

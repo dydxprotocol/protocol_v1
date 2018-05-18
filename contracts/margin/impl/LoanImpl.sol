@@ -24,7 +24,8 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { TimestampHelper } from "../../lib/TimestampHelper.sol";
-import { MarginCallDelegator } from "../interfaces/MarginCallDelegator.sol";
+import { CancelMarginCallDelegator } from "../interfaces/lender/CancelMarginCallDelegator.sol";
+import { MarginCallDelegator } from "../interfaces/lender/MarginCallDelegator.sol";
 
 
 /**
@@ -135,7 +136,7 @@ library LoanImpl {
         // If not the lender, requires the lender to approve msg.sender
         if (msg.sender != position.lender) {
             require(
-                MarginCallDelegator(position.lender).cancelMarginCallOnBehalfOf(
+                CancelMarginCallDelegator(position.lender).cancelMarginCallOnBehalfOf(
                     msg.sender,
                     positionId
                 ),

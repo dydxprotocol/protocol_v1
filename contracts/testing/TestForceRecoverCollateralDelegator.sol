@@ -19,7 +19,8 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { ForceRecoverCollateralDelegator } from "../margin/interfaces/ForceRecoverCollateralDelegator.sol";
+/* solium-disable-next-line max-len*/
+import { ForceRecoverCollateralDelegator } from "../margin/interfaces/lender/ForceRecoverCollateralDelegator.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
@@ -46,6 +47,7 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     )
         onlyMargin
         external
+        view
         returns (address)
     {
         return address(this);
@@ -74,6 +76,7 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     )
         onlyMargin
         external
+        view
         returns (bool)
     {
         return false;

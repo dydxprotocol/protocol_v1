@@ -24,11 +24,11 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { Margin } from "../../Margin.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
-/* solium-disable-next-line max-len*/
-import { ForceRecoverCollateralDelegator } from "../../interfaces/ForceRecoverCollateralDelegator.sol";
-import { LoanOwner } from "../../interfaces/LoanOwner.sol";
-import { MarginCallDelegator } from "../../interfaces/MarginCallDelegator.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
+/* solium-disable-next-line max-len*/
+import { ForceRecoverCollateralDelegator } from "../../interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { LoanOwner } from "../../interfaces/lender/LoanOwner.sol";
+import { MarginCallDelegator } from "../../interfaces/lender/MarginCallDelegator.sol";
 
 
 /**
@@ -309,7 +309,7 @@ contract ERC721MarginLoan is
         bytes32 positionId
     )
         external
-        /* view */
+        view
         onlyMargin
         returns (bool)
     {

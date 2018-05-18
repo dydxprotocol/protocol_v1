@@ -20,8 +20,8 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { ClosePositionDelegator } from "../margin/interfaces/ClosePositionDelegator.sol";
-import { PositionOwner } from "../margin/interfaces/PositionOwner.sol";
+import { ClosePositionDelegator } from "../margin/interfaces/owner/ClosePositionDelegator.sol";
+import { PositionOwner } from "../margin/interfaces/owner/PositionOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 

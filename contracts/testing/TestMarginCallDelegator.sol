@@ -19,11 +19,12 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { MarginCallDelegator } from "../margin/interfaces/MarginCallDelegator.sol";
+import { MarginCallDelegator } from "../margin/interfaces/lender/MarginCallDelegator.sol";
+import { CancelMarginCallDelegator } from "../margin/interfaces/lender/CancelMarginCallDelegator.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
+contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMarginCallDelegator {
 
     address public CALLER;
     address public CANCELLER;
@@ -46,6 +47,7 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
     )
         onlyMargin
         external
+        view
         returns (address)
     {
         return address(this);
@@ -81,6 +83,7 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator {
     )
         onlyMargin
         external
+        view
         returns (bool)
     {
         return false;
