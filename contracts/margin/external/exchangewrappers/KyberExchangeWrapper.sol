@@ -44,8 +44,6 @@ contract KyberExchangeWrapper is
 {
     using SafeMath for uint256;
 
-
-
     // ============ Structs ============
 
     /**
@@ -93,7 +91,7 @@ contract KyberExchangeWrapper is
      * @param  tradeOriginator      The msg.sender of the first call into the dYdX contract
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken received
+     * @return receivedMakerToken   The amount of makerToken received
      */
     function exchange(
         address makerToken,
@@ -146,7 +144,7 @@ contract KyberExchangeWrapper is
      * @param  tradeOriginator -- originator of call to exchangeWrapper
      * @param  desiredMakerToken -- desired quantity of makerToken
      * @param  orderData -- params pertinent to trading on Kyber
-     * @return
+     * @return desiredToken
      */
     function exchangeForAmount(
         address makerToken,
@@ -160,7 +158,6 @@ contract KyberExchangeWrapper is
         returns (uint256)
      {
          Order memory order = parseOrder(orderData);
-
           // Either maker or taker token must be wrapped ETH
          require((makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
 
@@ -209,7 +206,7 @@ contract KyberExchangeWrapper is
      * @param  takerToken           Address of takerToken, the token to pay
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken that would be received as a result of
+     * @return  makerTokenAmount    The amount of makerToken that would be received as a result of
      *                              taking this trade
      */
     function getTradeMakerTokenAmount(
@@ -317,7 +314,7 @@ contract KyberExchangeWrapper is
         //dummy check to see if eth was actually sent
         require(address(this).balance >= receivedMakerTokenAmount);
 
-        WETH9(WRAPPED_ETH).deposit.value(msg.value);
+        WETH9(WRAPPED_ETH).deposit.value(receivedMakerTokenAmount);
 
         return receivedMakerTokenAmount;
       }
