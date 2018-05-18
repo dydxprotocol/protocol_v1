@@ -47,26 +47,24 @@ contract KyberExchangeWrapper is
 
 
     // ============ Structs ============
+
     /**
      * walletId -- id of the service provider. if unsure, put 0
-     * srcAmount -- amount of tokens to convert. if ETH, needs to be equal to msg.value
-     * maxDestAmount -- maximum amount of tokens to convert, this value takes place of desiredMakerToken
-            when specified in exchangeForAmount()
      * minConversionRate -- minimal conversion rate, if this value is 1, then it will set it at the marketPrice
      */
     struct Order {
       address walletId;
-      /* uint srcAmount; //amount taker has to offer
-      uint maxDestAmount; //when using exchangeforAmount, if 0 then maxUint256 */
       uint256 minConversionRate; //1 for market price if not given
     }
 
     // ============ State Variables ============
+
     address public ETH_TOKEN_ADDRESS = 0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee;
     address public DYDX_MARGIN;
     address public DYDX_PROXY;
     address public KYBER_NETWORK;
     address public WRAPPED_ETH;
+    uint256 public ONE_TOKEN = 1;
 
     // ============ Constructor ============
 
@@ -86,6 +84,7 @@ contract KyberExchangeWrapper is
     }
 
     // ============ Margin-Only Functions ============
+
     /**
      * Exchange some amount of takerToken for makerToken.
      *
@@ -95,9 +94,6 @@ contract KyberExchangeWrapper is
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
-     I need to find out a way to check whether or not either the maker
-     or taker token are actually wrapped ether
-
      */
     function exchange(
         address makerToken,
@@ -109,10 +105,10 @@ contract KyberExchangeWrapper is
         external
         onlyMargin
         returns (uint256)
-        {
+      {
           Order memory order = parseOrder(orderData);
+
           assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-          assert(requestedFillAmount > 0);
           //check if maker or taker are wrapped eth (but they cant both be ;))
           require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
           uint256 receivedMakerTokenAmount;
@@ -195,6 +191,7 @@ contract KyberExchangeWrapper is
           }
 
     // ============ Public Constant Functions ========
+
     /**
      * Get amount of makerToken that will be paid out by exchange for a given trade. Should match
      * the amount of makerToken returned by exchange
@@ -218,7 +215,9 @@ contract KyberExchangeWrapper is
       {
           //before called, one of these token pairs needs to be WETH
           require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+
           uint256 conversionRate;
+
           if(makerToken == WRAPPED_ETH) {
             conversionRate = getConversionRate(
                                takerToken,
@@ -259,16 +258,6 @@ contract KyberExchangeWrapper is
 
            return takerTokenPrice;
          }
-
-    /* function trade (
-           ERC20 source -- taker token
-           uint srcAmount -- amount to taker
-           ERC20 dest -- maker tokens
-           address destAddress -- destiantion of taker
-           uint maxDestAmount -- ONLY for exchangeforAmount, otherwise maxUint256
-           uint minConversionRate -- set to 1 for now (later when building out the interface)
-           address walletId -- set to 0 for now
-        ) */
 
 
     // =========== Internal Functions ============
@@ -328,9 +317,9 @@ contract KyberExchangeWrapper is
        * takerToken -- token to be paid in
        * requestedFillAmount -- quantity to check the rate against
        * @return rate -- this function will return the expectedPrice
-       if transfering to ETH, they will be expected to pay
-       expectedPrice/10**18 ETH, and at worst
-       slippagePrice/10**18 ETH, and this function returns the expectedPrice
+       * if transfering to ETH, they will be expected to pay
+       * expectedPrice/10**18 ETH, and at worst
+       * slippagePrice/10**18 ETH, and this function returns the expectedPrice
        */
      function getConversionRate(
       address makerToken,
@@ -351,10 +340,10 @@ contract KyberExchangeWrapper is
 
     /**
      * getConversionRatePerToken
-      returns the conversionRate for 1 token,
-      this is called for getTakerTokenPrice and exchangeForAmount
-
+     * returns the conversionRate for 1 token,
+     * this is called for getTakerTokenPrice and exchangeForAmount
      */
+
     function getConversionRatePerToken(
       address makerToken,
       address takerToken
@@ -367,14 +356,14 @@ contract KyberExchangeWrapper is
         if (makerToken == WRAPPED_ETH) {
           conversionRate = getConversionRate(
                             takerToken,
-                             ETH_TOKEN_ADDRESS,
-                             1
+                            ETH_TOKEN_ADDRESS,
+                            ONE_TOKEN
             );
         } else if (takerToken == WRAPPED_ETH) {
           conversionRate = getConversionRate(
                             ETH_TOKEN_ADDRESS,
                             makerToken,
-                            1
+                            ONE_TOKEN
             );
         }
         return conversionRate;
@@ -387,7 +376,7 @@ contract KyberExchangeWrapper is
       )
           internal
       {
-          if (TokenInteract.allowance(token,address(this),spender) >= requiredAmount) {
+          if (TokenInteract.allowance(token, address(this), spender) >= requiredAmount) {
             return;
           }
 
@@ -400,19 +389,12 @@ contract KyberExchangeWrapper is
 
   // ============ Parsing Functions ============
 
-    /**
-      * Accepts a byte array with each variable padded to 32 bytes
-      struct Order {
-        address walletId;
-        uint256 minConversionRate; //1 for market price if not given
-      }
-      */
-    function parseOrder(
+  function parseOrder(
       bytes orderData
       )
-    internal
-    pure
-    returns (Order memory)
+     internal
+     pure
+     returns (Order memory)
     {
       Order memory order;
       /**
