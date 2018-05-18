@@ -215,7 +215,6 @@ contract ZeroExExchangeWrapper is
         returns (uint256)
     {
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-        assert(requestedFillAmount > 0);
         require(
             requestedFillAmount <= order.takerTokenAmount,
             "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
@@ -350,7 +349,7 @@ contract ZeroExExchangeWrapper is
          * Total: 384 bytes
          * mstore stores 32 bytes at a time, so go in increments of 32 bytes
          *
-         * NOTE: The first 32 bytes in an array store the length, so we start reading from 32
+         * NOTE: The first 32 bytes in an array stores the length, so we start reading from 32
          */
         /* solium-disable-next-line */
         assembly {
