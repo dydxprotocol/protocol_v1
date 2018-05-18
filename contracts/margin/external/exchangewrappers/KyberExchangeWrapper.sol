@@ -106,41 +106,47 @@ contract KyberExchangeWrapper is
         onlyMargin
         returns (uint256)
       {
-          Order memory order = parseOrder(orderData);
+        Order memory order = parseOrder(orderData);
 
-          assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-          //check if maker or taker are wrapped eth (but they cant both be ;))
-          require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
-          uint256 receivedMakerTokenAmount;
-          // 1st scenario: takerToken is Eth, and should be sent appropriately
-          if (takerToken == WRAPPED_ETH) {
-              receivedMakerTokenAmount = exchangeFromWETH(
-                  order,
-                  makerToken,
-                  requestedFillAmount,
-                  false
-              );
-          }
-          if (makerToken == WRAPPED_ETH) {
+        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
+        // Either maker or taker token must be wrapped ETH
+        require((makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+        uint256 receivedMakerTokenAmount;
+        // 1st scenario: takerToken is Eth, and should be sent appropriately
+        if (takerToken == WRAPPED_ETH) {
+            receivedMakerTokenAmount = exchangeFromWETH(
+            order,
+            makerToken,
+            requestedFillAmount,
+            false
+            );
+        }
+        if (makerToken == WRAPPED_ETH) {
               receivedMakerTokenAmount = exchangeToWETH(
-                 order,
-                 takerToken,
-                 requestedFillAmount,
-                 false
-              );
+              order,
+              takerToken,
+              requestedFillAmount,
+              false
+            );
           }
-          ensureAllowance(
+        ensureAllowance(
             makerToken,
             DYDX_PROXY,
             receivedMakerTokenAmount
-            );
-          return receivedMakerTokenAmount;
+          );
+        return receivedMakerTokenAmount;
       }
 
     /**
-        Exchange for amount has the same exact implementation as exchange,
-        only that the maxDestAmount is not set as the Maximum integer but rather
-        the user given desiredAmount in the Order
+     * exchangeForAmount functions exactly like exchange
+     * except the parameter desiredMakerToken is used for the maxDestAmount
+     * in the `trade` function, rather than a max intege
+     * @param  makerToken -- token to be received by taker
+     * @param  takerToken -- token to pay the maker
+     * @param  tradeOriginator -- originator of call to exchangeWrapper
+     * @param  desiredMakerToken -- desired quantity of makerToken
+     * @param  orderData -- params pertinent to trading on Kyber
+     * @return
      */
     function exchangeForAmount(
         address makerToken,
@@ -150,45 +156,48 @@ contract KyberExchangeWrapper is
         bytes orderData
     )
         external
-        /* onlyMargin */
+        onlyMargin
         returns (uint256)
-          {
-            Order memory order = parseOrder(orderData);
-            //check if maker or taker are wrapped eth (but they cant both be ;))
-            require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH) );
+     {
+         Order memory order = parseOrder(orderData);
 
-            uint256 receivedMakerTokenAmount;
-            //getConversionRatePerToken
-            uint256 conversionRate = getConversionRatePerToken(makerToken, takerToken);
-            //multiply by desiredMakerToken to get requestedFillAmount
-            uint256 requestedFillAmount = conversionRate.mul(desiredMakerToken);
-            //
-            assert(TokenInteract.balanceOf(takerToken,address(this)) >= requestedFillAmount);
-            // 1st scenario: takerToken is Eth, and should be sent appropriately
-            if (takerToken == WRAPPED_ETH) {
-                  receivedMakerTokenAmount = exchangeFromWETH(
-                      order,
-                      makerToken,
-                      desiredMakerToken,
-                      true
-                  );
-            }
-            if (makerToken == WRAPPED_ETH) {
-                  receivedMakerTokenAmount = exchangeToWETH(
-                    order,
-                    takerToken,
-                    desiredMakerToken,
-                    true
-                    );
-            }
-            assert(receivedMakerTokenAmount >= desiredMakerToken);
-            ensureAllowance(
-              makerToken,
-              DYDX_PROXY,
-              desiredMakerToken
-              );
-            return receivedMakerTokenAmount;
-          }
+          // Either maker or taker token must be wrapped ETH
+         require((makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+
+         uint256 receivedMakerTokenAmount;
+         //getConversionRatePerToken
+         uint256 conversionRate = getConversionRatePerToken(makerToken, takerToken);
+         //multiply by desiredMakerToken to get requestedFillAmount
+         uint256 requestedFillAmount = conversionRate.mul(desiredMakerToken);
+         //
+         assert(TokenInteract.balanceOf(takerToken,address(this)) >= requestedFillAmount);
+         // 1st scenario: takerToken is Eth, and should be sent appropriately
+         if (takerToken == WRAPPED_ETH) {
+             receivedMakerTokenAmount = exchangeFromWETH(
+                 order,
+                 makerToken,
+                 desiredMakerToken,
+                 true
+             );
+         }
+         if (makerToken == WRAPPED_ETH) {
+             receivedMakerTokenAmount = exchangeToWETH(
+                 order,
+                 takerToken,
+                 desiredMakerToken,
+                 true
+             );
+         }
+         assert(receivedMakerTokenAmount >= desiredMakerToken);
+
+         ensureAllowance(
+             makerToken,
+             DYDX_PROXY,
+             desiredMakerToken
+         );
+
+        return receivedMakerTokenAmount;
+    }
 
     // ============ Public Constant Functions ========
 
@@ -213,8 +222,7 @@ contract KyberExchangeWrapper is
         view
         returns (uint256)
       {
-          //before called, one of these token pairs needs to be WETH
-          require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+          require((makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
 
           uint256 conversionRate;
 
@@ -223,7 +231,7 @@ contract KyberExchangeWrapper is
                                takerToken,
                                ETH_TOKEN_ADDRESS,
                                requestedFillAmount
-              );
+                             );
           } else if(takerToken == WRAPPED_ETH) {
             conversionRate = getConversionRate(
                               ETH_TOKEN_ADDRESS,
@@ -232,10 +240,10 @@ contract KyberExchangeWrapper is
               );
           }
           return conversionRate;
-        }
+      }
 
     /**
-     *this function will query the getExpectedRate() function from the KyberNetworkWrapper
+     * this function will query the getExpectedRate() function from the KyberNetworkWrapper
      * and return the slippagePrice, which is the worst case scenario for accuracy and ETH_TOKEN_ADDRESS
      * will multiply it by the desiredAmount
      */
@@ -248,16 +256,16 @@ contract KyberExchangeWrapper is
         external
         view
         returns (uint256)
-         {
-           //before called, one of these token pairs needs to be WETH
-           require((makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
+    {
+         //before called, one of these token pairs needs to be WETH
+         require((makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
 
-           uint256 conversionRate = getConversionRatePerToken(makerToken,takerToken);
+         uint256 conversionRate = getConversionRatePerToken(makerToken,takerToken);
 
-           uint256 takerTokenPrice = conversionRate.mul(desiredMakerToken);
+         uint256 takerTokenPrice = conversionRate.mul(desiredMakerToken);
 
-           return takerTokenPrice;
-         }
+         return takerTokenPrice;
+     }
 
 
     // =========== Internal Functions ============
@@ -268,13 +276,14 @@ contract KyberExchangeWrapper is
               bool exactAmount
           )
           internal
-          returns (uint256) {
-              //unwrap ETH
-              WETH9(WRAPPED_ETH).withdraw(requestedFillAmount);
-              //dummy check to see if it sent through
-              require(address(this).balance > 0 );
-              //send trade through
-              uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade.value(msg.value)(
+          returns (uint256)
+    {
+              //unwrap Eth
+         WETH9(WRAPPED_ETH).withdraw(requestedFillAmount);
+            //dummy check to see if it sent through
+            require(address(this).balance >= requestedFillAmount);
+            //send trade through
+            uint256 receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade.value(msg.value)(
                ERC20(ETH_TOKEN_ADDRESS),
                address(this).balance,
                ERC20(makerToken),
@@ -282,9 +291,9 @@ contract KyberExchangeWrapper is
                (exactAmount ? requestedFillAmount : MathHelpers.maxUint256()),
                order.minConversionRate,
                order.walletId
-                  );
-            return receivedMakerTokenAmount;
-          }
+              );
+          return receivedMakerTokenAmount;
+      }
 
      function exchangeToWETH(
             Order order,
@@ -293,9 +302,8 @@ contract KyberExchangeWrapper is
             bool exactAmount
       )
       internal
-      returns (uint256) {
-
-
+      returns (uint256)
+    {
         //received ETH in wei
         uint receivedMakerTokenAmount = KyberExchangeInterface(KYBER_NETWORK).trade(
           ERC20(takerToken),
@@ -307,10 +315,12 @@ contract KyberExchangeWrapper is
           order.walletId
           );
         //dummy check to see if eth was actually sent
-        require(address(this).balance > 0);
+        require(address(this).balance >= receivedMakerTokenAmount);
+
         WETH9(WRAPPED_ETH).deposit.value(msg.value);
+
         return receivedMakerTokenAmount;
-       }
+      }
       /**
        * [getConversionRate description]
        * makerToken -- token to be received
@@ -367,7 +377,7 @@ contract KyberExchangeWrapper is
             );
         }
         return conversionRate;
-      }
+    }
 
     function ensureAllowance(
         address token,
