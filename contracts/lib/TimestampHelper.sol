@@ -35,6 +35,8 @@ library TimestampHelper {
         // Should not still be in-use in the year 2106
         assert(uint256(uint32(block.timestamp)) == block.timestamp);
 
+        assert(block.timestamp > 0);
+
         return uint32(block.timestamp);
     }
 }

@@ -35,6 +35,8 @@ import { MarginEvents } from "./impl/MarginEvents.sol";
 import { MarginState } from "./impl/MarginState.sol";
 import { MarginStorage } from "./impl/MarginStorage.sol";
 import { OpenPositionImpl } from "./impl/OpenPositionImpl.sol";
+/* solium-disable-next-line max-len*/
+import { OpenPositionWithoutCounterpartyImpl } from "./impl/OpenPositionWithoutCounterpartyImpl.sol";
 import { PositionGetters } from "./impl/PositionGetters.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 
@@ -142,6 +144,50 @@ contract Margin is
             sigRS,
             depositInHeldToken,
             order
+        );
+    }
+
+    /**
+     * Open a margin position without a counterparty. The caller will serve as both the
+     * lender and the position owner
+     *
+     * @param  addresses    Addresses corresponding to:
+     *
+     *  [0]  = position owner
+     *  [1]  = owedToken
+     *  [2]  = heldToken
+     *  [3]  = loan owner
+     *
+     * @param  values256    Values corresponding to:
+     *
+     *  [0]  = principal
+     *  [1]  = deposit amount
+     *  [2]  = nonce (used to calculate positionId)
+     *
+     * @param  values32     Values corresponding to:
+     *
+     *  [0] = call time limit (in seconds)
+     *  [1] = maxDuration (in seconds)
+     *  [2] = interest rate (annual nominal percentage times 10**6)
+     *  [3] = interest update period (in seconds)
+     *
+     * @return              Unique ID for the new position
+     */
+    function openPositionWithoutCounterparty(
+        address[4] addresses,
+        uint256[3] values256,
+        uint32[4]  values32
+    )
+        external
+        onlyWhileOperational
+        nonReentrant
+        returns (bytes32)
+    {
+        return OpenPositionWithoutCounterpartyImpl.openPositionWithoutCounterpartyImpl(
+            state,
+            addresses,
+            values256,
+            values32
         );
     }
 
