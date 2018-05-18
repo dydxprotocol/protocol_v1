@@ -22,6 +22,7 @@
     "test": "truffle test",
     "compile": "truffle compile",
     "migrate": "truffle migrate --network dev",
+    "testKyber": "truffle test test/margin/external/TestKyberExchangeWrapper.js",
     "develop": "truffle develop",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
     "solint": "solium -d contracts/",
@@ -46,6 +47,7 @@
   },
   "homepage": "https://github.com/dydxexchange/protocol#readme",
   "dependencies": {
+    "websocket": "^1.0.26",
     "zeppelin-solidity": "1.9.0"
   },
   "devDependencies": {

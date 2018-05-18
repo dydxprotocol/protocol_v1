@@ -20,8 +20,8 @@ contract KyberNetworkSimple is Withdrawable, Utils {
    */
     using SafeMath for uint;
 
-    uint256 public CONRATE_TO_ETH;
-    uint256 public CONRATE_FROM_ETH;
+    uint256 public CONRATE_TO_ETH= 1;
+    uint256 public CONRATE_FROM_ETH = 1;
     address public ETH_TOKEN_ADDRESS = 0x00eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee;
     address public TRADED_TOKEN;
     constructor( address traded_token) public {
@@ -41,15 +41,14 @@ contract KyberNetworkSimple is Withdrawable, Utils {
 
     event ExecuteTrade(address indexed sender, ERC20 src, ERC20 dest, uint actualSrcAmount, uint actualDestAmount);
 
-    /**
-     * setConversionRates()
-      this function (for dev purposes lets me set the conversion rates to and from
-        ether for testing purposes)
-     */
-    function setConversionRates( uint256 conrate_to_eth, uint256 conrate_from_eth) public {
-      CONRATE_TO_ETH = conrate_to_eth;
-      CONRATE_FROM_ETH = conrate_from_eth;
+    function getBalance()
+      external
+      view
+     returns(uint256 balance)
+    {
+      return address(this).balance;
     }
+
 
     /// @notice use token address ETH_TOKEN_ADDRESS for ether
     /// @dev makes a trade between src and dest token and send dest token to destAddress

@@ -277,6 +277,6 @@ async function doMigration(deployer, network) {
   ]);
 }
 
-module.exports = (deployer, network, _addresses) => {
+module.exports = (deployer, network) => {
   deployer.then(() => doMigration(deployer, network));
 };
