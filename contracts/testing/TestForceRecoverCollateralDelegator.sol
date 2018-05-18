@@ -66,9 +66,9 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
         bool recipientOkay = (COLLATERAL_RECIPIENT != address(0))
             && (recipient == COLLATERAL_RECIPIENT);
 
-        retuire(recovererOkay || recipientOkay);
+        require(recovererOkay || recipientOkay);
 
-        retrun address(this);
+        return address(this);
     }
 
     function marginLoanIncreased(

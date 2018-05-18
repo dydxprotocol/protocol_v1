@@ -327,7 +327,7 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOf(uint256(positionId));
 
-        if (approvedCallers[owner][caller]) {
+        if (approvedCallers[owner][canceler]) {
             return address(this);
         }
 
@@ -342,7 +342,7 @@ contract ERC721MarginLoan is
      *
      *  param  recoverer   (unused)
      * @param  positionId  Unique ID of the position
-     * @param  recipient   (unused)
+     *  param  recipient   (unused)
      * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(

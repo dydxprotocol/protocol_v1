@@ -232,7 +232,7 @@ contract ERC721MarginPosition is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Defer approval to the token holder
      *
-     * @param  trader          (unused)
+     *  param  trader          (unused)
      * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
      * @return                 This address to accept, a different address to ask that contract

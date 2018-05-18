@@ -23,6 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
+import { DepositCollateralDelegator } from "../interfaces/owner/DepositCollateralDelegator.sol";
 
 
 /**
@@ -66,13 +67,18 @@ library DepositCollateralImpl {
     {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
+
         require(
             depositAmount > 0,
             "DepositCollateralImpl#depositCollateralImpl: Deposit amount cannot be 0"
         );
-        require(
-            msg.sender == position.owner,
-            "DepositCollateralImpl#depositCollateralImpl: Only position owner can deposit"
+
+        // Ensure owner consent
+        depositCollateralOnBehalfOfRecurse(
+            position.owner,
+            msg.sender,
+            positionId,
+            depositAmount
         );
 
         Vault(state.VAULT).transferToVault(
@@ -107,6 +113,39 @@ library DepositCollateralImpl {
                 position.lender,
                 msg.sender,
                 depositAmount
+            );
+        }
+    }
+
+    // ============ Internal Helper Functions ============
+
+    function depositCollateralOnBehalfOfRecurse(
+        address contractAddr,
+        address depositor,
+        bytes32 positionId,
+        uint256 amount
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (depositor == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            DepositCollateralDelegator(contractAddr).depositCollateralOnBehalfOf(
+                depositor,
+                positionId,
+                amount
+            );
+
+        // if not equal, recurse
+        if (newContractAddr != contractAddr) {
+            depositCollateralOnBehalfOfRecurse(
+                newContractAddr,
+                depositor,
+                positionId,
+                amount
             );
         }
     }

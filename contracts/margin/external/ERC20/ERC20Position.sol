@@ -197,10 +197,10 @@ contract ERC20Position is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
-     * @param  trader            Address that added the value to the position
+     * @param  trader          Address that added the value to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
-     * @return                 True to indicate that this contract consents to value being added
+     * @return                 This address on success, throw otherwise
      */
     function marginPositionIncreased(
         address trader,
@@ -210,7 +210,7 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        returns (address)
     {
         assert(positionId == POSITION_ID);
 

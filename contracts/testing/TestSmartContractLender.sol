@@ -39,9 +39,11 @@ contract TestSmartContractLender is LoanOfferingVerifier {
         bytes32
     )
         external
-        returns (bool)
+        returns (address)
     {
-        return SHOULD_ALLOW;
+        require(SHOULD_ALLOW);
+
+        return address(this);
     }
 
     function allow(
@@ -50,7 +52,7 @@ contract TestSmartContractLender is LoanOfferingVerifier {
         uint256 amount
     )
         external
-        returns (address)
+        returns (bool)
     {
         return ERC20(token).approve(spender, amount);
     }
