@@ -28,6 +28,7 @@ describe('KyberExchangeWrapper', () => {
         const {
           dydxMargin,
           dydxProxy,
+          kyberProxy,
           exchangeWrapper,
           WETHToken
         } = await setup(accounts);
@@ -58,19 +59,31 @@ describe('KyberExchangeWrapper', () => {
         const {
           exchangeWrapper
         } = await setup(accounts);
-        //get KyberNetwork
+        //get KyberNetwork, takerToken, WETH
         const KyberNetwork = await KyberNetworkSimple.deployed();
-        //add 50ETH to KyberNetwork
-        console.log(web3Instance);
-        await web3Instance.eth.sendTransaction({
-          to: KyberNetwork.address,
-          from: accounts[0],
-          value: baseAmount.times(50)
-        })
-        //get balance of Kyber
-        const KyberBalance = KyberNetwork.getBalance();
+        const takerToken = await TokenA.deployed();
+        const tokenAmount = 60;
+        //issue 60 tokens to the exchangeWrapper
+        issueAndSetAllowance(
+          takerToken,
+          exchangeWrapper,
+          tokenAmount,
 
-        expect(KyberBalance).to.eq(baseAmount.times(50));
+        )
+
+      //   //add 50ETH to KyberNetwork
+      //   await web3Instance.eth.sendTransaction({
+      //     to: KyberNetwork.address,
+      //     from: accounts[0],
+      //     value: baseAmount.times(50)
+      //   })
+      //
+      // //  console.log(KyberNetwork);
+      //   const KyberBalance = await KyberNetwork.getBalance.call();
+      //   //console.log(KyberBalance.toString(10))
+      //   //check if the contract has the 50 ether
+      //   expect(KyberBalance.toString(10)).to.eq(baseAmount.times(50).toString(10));
+      //   // mint 60 tokens for the exchanger
 
 
       });
@@ -407,6 +420,7 @@ async function setup(accounts) {
   const dydxMargin = accounts[1];
   const dydxProxy = accounts[2];
   const tradeOriginator = accounts[3];
+  const kyberProxy = accounts[4]
 
   const WETHToken = await WETH9.deployed();
   //Need to set the conversion rates on it to check if trade works
@@ -422,6 +436,7 @@ async function setup(accounts) {
     dydxMargin,
     dydxProxy,
     exchangeWrapper,
+    kyberProxy,
     KyberNetwork,
     WETHToken,
     tradeOriginator

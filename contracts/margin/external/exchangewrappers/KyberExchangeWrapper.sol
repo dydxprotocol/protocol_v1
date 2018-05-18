@@ -214,8 +214,8 @@ contract KyberExchangeWrapper is
     )
         external
         view
-        returns (uint256) {
-          
+        returns (uint256)
+      {
           //before called, one of these token pairs needs to be WETH
           require( (makerToken != takerToken) && (makerToken == WRAPPED_ETH || takerToken == WRAPPED_ETH));
           uint256 conversionRate;
