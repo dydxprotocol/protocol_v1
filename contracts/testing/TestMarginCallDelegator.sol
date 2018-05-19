@@ -21,10 +21,16 @@ pragma experimental "v0.5.0";
 
 import { MarginCallDelegator } from "../margin/interfaces/lender/MarginCallDelegator.sol";
 import { CancelMarginCallDelegator } from "../margin/interfaces/lender/CancelMarginCallDelegator.sol";
+import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMarginCallDelegator {
+contract TestMarginCallDelegator is
+    OnlyMargin,
+    LoanOwner,
+    MarginCallDelegator,
+    CancelMarginCallDelegator
+{
 
     address public CALLER;
     address public CANCELER;
@@ -47,7 +53,6 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMargi
     )
         onlyMargin
         external
-        view
         returns (address)
     {
         return address(this);
@@ -76,18 +81,5 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMargi
     {
         require(canceler == CANCELER);
         return address(this);
-    }
-
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        onlyMargin
-        external
-        view
-        returns (address)
-    {
-        revert();
     }
 }

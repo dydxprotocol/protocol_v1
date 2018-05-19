@@ -30,6 +30,8 @@ import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../../interfaces/owner/IncreasePositionDelegator.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";
 
@@ -44,6 +46,8 @@ contract ERC20Position is
     ReentrancyGuard,
     StandardToken,
     OnlyMargin,
+    PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator,
     PositionCustodian
 {
@@ -202,7 +206,7 @@ contract ERC20Position is
      * @param  principalAdded  Amount that was added to the position
      * @return                 This address on success, throw otherwise
      */
-    function marginPositionIncreased(
+    function increasePositionOnBehalfOf(
         address trader,
         bytes32 positionId,
         uint256 principalAdded

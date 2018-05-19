@@ -37,8 +37,8 @@ contract MarginCallDelegator {
     /**
      * Function a contract must implement in order to let other addresses call marginCall().
      *
-     * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan was successfully margin-called.
+     * NOTE: If not returning zero (or not reverting), this contract must assume that Margin will
+     * either revert the entire transaction or that the loan was successfully margin-called.
      *
      * @param  caller         Address of the caller of the marginCall function
      * @param  positionId     Unique ID of the position

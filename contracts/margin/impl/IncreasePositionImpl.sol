@@ -26,8 +26,8 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/owner/PositionOwner.sol";
+import { IncreaseLoanDelegator } from "../interfaces/lender/IncreaseLoanDelegator.sol";
+import { IncreasePositionDelegator } from "../interfaces/owner/IncreasePositionDelegator.sol";
 
 
 /**
@@ -331,7 +331,7 @@ library IncreasePositionImpl {
         address lender = position.lender;
 
         // Ensure owner consent
-        marginPositionIncreasedRecurse(
+        increasePositionOnBehalfOfRecurse(
             owner,
             msg.sender,
             positionId,
@@ -339,7 +339,7 @@ library IncreasePositionImpl {
         );
 
         // Ensure lender consent
-        marginLoanIncreasedRecurse(
+        increaseLoanOnBehalfOfRecurse(
             lender,
             loanPayer,
             positionId,
@@ -347,7 +347,7 @@ library IncreasePositionImpl {
         );
     }
 
-    function marginPositionIncreasedRecurse(
+    function increasePositionOnBehalfOfRecurse(
         address contractAddr,
         address trader,
         bytes32 positionId,
@@ -360,7 +360,9 @@ library IncreasePositionImpl {
             return;
         }
 
-        address newContractAddr = PositionOwner(contractAddr).marginPositionIncreased(
+        IncreasePositionDelegator ipd = IncreasePositionDelegator(contractAddr);
+        address newContractAddr =
+        ipd.increasePositionOnBehalfOf(
             trader,
             positionId,
             principalAdded
@@ -368,7 +370,7 @@ library IncreasePositionImpl {
 
         // if not equal, recurse
         if (newContractAddr != contractAddr) {
-            marginPositionIncreasedRecurse(
+            increasePositionOnBehalfOfRecurse(
                 newContractAddr,
                 trader,
                 positionId,
@@ -377,7 +379,7 @@ library IncreasePositionImpl {
         }
     }
 
-    function marginLoanIncreasedRecurse(
+    function increaseLoanOnBehalfOfRecurse(
         address contractAddr,
         address payer,
         bytes32 positionId,
@@ -390,7 +392,8 @@ library IncreasePositionImpl {
             return;
         }
 
-        address newContractAddr = LoanOwner(contractAddr).marginLoanIncreased(
+        IncreaseLoanDelegator ild = IncreaseLoanDelegator(contractAddr);
+        address newContractAddr = ild.increaseLoanOnBehalfOf(
             payer,
             positionId,
             principalAdded
@@ -398,7 +401,7 @@ library IncreasePositionImpl {
 
         // if not equal, recurse
         if (newContractAddr != contractAddr) {
-            marginPositionIncreasedRecurse(
+            increasePositionOnBehalfOfRecurse(
                 newContractAddr,
                 payer,
                 positionId,

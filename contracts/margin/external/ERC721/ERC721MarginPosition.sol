@@ -25,6 +25,8 @@ import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Toke
 import { Margin } from "../../Margin.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../../interfaces/owner/IncreasePositionDelegator.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 
 
@@ -40,6 +42,8 @@ contract ERC721MarginPosition is
     ReentrancyGuard,
     ERC721Token,
     OnlyMargin,
+    PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator,
     PositionCustodian
 {
@@ -237,7 +241,7 @@ contract ERC721MarginPosition is
      *  param  principalAdded  (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
-    function marginPositionIncreased(
+    function increasePositionOnBehalfOf(
         address /* trader */,
         bytes32 positionId,
         uint256 /* principalAdded */

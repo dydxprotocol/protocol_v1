@@ -21,32 +21,34 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title CancelMarginCallDelegator
+ * @title IncreaseLoanDelegator
  * @author dYdX
  *
- * Interface that smart contracts must implement in order to let other addresses cancel a
- * margin-call for a loan owned by the smart contract.
+ * Interface that smart contracts must implement in order to own loans on behalf of other accounts.
  *
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract CancelMarginCallDelegator {
+contract IncreaseLoanDelegator {
 
     // ============ Public Interface functions ============
 
     /**
-     * Function a contract must implement in order to let other addresses call cancelMarginCall().
+     * Function a contract must implement in order to allow additional value to be added onto
+     * an owned loan. Margin will call this on the owner of a loan during increasePosition().
      *
      * NOTE: If not returning zero (or not reverting), this contract must assume that Margin will
-     * either revert the entire transaction or that the margin-call was successfully canceled.
+     * either revert the entire transaction or that the loan size was successfully increased.
      *
-     * @param  canceler    Address of the caller of the cancelMarginCall function
-     * @param  positionId  Unique ID of the position
-     * @return             This address to accept, a different address to ask that contract
+     * @param  payer           Lender adding additional funds to the position
+     * @param  positionId      Unique ID of the position
+     * @param  principalAdded  Principal amount to be added to the position
+     * @return                 This address to accept, a different address to ask that contract
      */
-    function cancelMarginCallOnBehalfOf(
-        address canceler,
-        bytes32 positionId
+    function increaseLoanOnBehalfOf(
+        address payer,
+        bytes32 positionId,
+        uint256 principalAdded
     )
         external
         /* onlyMargin */

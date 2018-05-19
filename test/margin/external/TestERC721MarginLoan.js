@@ -327,9 +327,9 @@ describe('ERC721MarginLoan', () => {
     });
   });
 
-  // ============ marginLoanIncreased ============
+  // ============ increaseLoanOnBehalfOf ============
 
-  contract('#marginLoanIncreased', accounts => {
+  contract('#increaseLoanOnBehalfOf', accounts => {
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -365,7 +365,7 @@ describe('ERC721MarginLoan', () => {
       const lender = accounts[1];
       const increaseAmount = new BigNumber('1e18');
       await expectThrow(
-        loanContract.marginLoanIncreased(
+        loanContract.increaseLoanOnBehalfOf(
           lender,
           openTx.id,
           increaseAmount,

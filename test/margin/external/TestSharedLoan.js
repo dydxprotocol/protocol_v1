@@ -237,9 +237,9 @@ contract('SharedLoan', accounts => {
     });
   });
 
-  // ============ marginLoanIncreased ============
+  // ============ increaseLoanOnBehalfOf ============
 
-  describe('#marginLoanIncreased', () => {
+  describe('#increaseLoanOnBehalfOf', () => {
     beforeEach('transferPostion to one that will allow marginPostionIncreased', async () => {
       await setUpPosition();
       await setUpSharedLoan();
@@ -279,7 +279,7 @@ contract('SharedLoan', accounts => {
     it('fails for msg.sender != Margin', async () => {
       const increaseAmount = new BigNumber('1e18');
       await expectThrow(
-        SHARED_LOAN.CONTRACT.marginLoanIncreased(
+        SHARED_LOAN.CONTRACT.increaseLoanOnBehalfOf(
           SHARED_LOAN.INITIAL_LENDER,
           SHARED_LOAN.ID,
           increaseAmount,

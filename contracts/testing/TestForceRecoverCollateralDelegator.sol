@@ -21,10 +21,15 @@ pragma experimental "v0.5.0";
 
 /* solium-disable-next-line max-len*/
 import { ForceRecoverCollateralDelegator } from "../margin/interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollateralDelegator {
+contract TestForceRecoverCollateralDelegator is
+    OnlyMargin,
+    LoanOwner,
+    ForceRecoverCollateralDelegator
+{
 
     address public RECOVERER;
     address public COLLATERAL_RECIPIENT;
@@ -47,7 +52,6 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
     )
         onlyMargin
         external
-        view
         returns (address)
     {
         return address(this);
@@ -69,18 +73,5 @@ contract TestForceRecoverCollateralDelegator is OnlyMargin, ForceRecoverCollater
         require(recovererOkay || recipientOkay);
 
         return address(this);
-    }
-
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        onlyMargin
-        external
-        view
-        returns (address)
-    {
-        revert();
     }
 }

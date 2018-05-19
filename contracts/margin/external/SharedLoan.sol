@@ -28,6 +28,8 @@ import { MarginCommon } from "../impl/MarginCommon.sol";
 import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 /* solium-disable-next-line max-len*/
 import { ForceRecoverCollateralDelegator } from "../interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { IncreaseLoanDelegator } from "../interfaces/lender/IncreaseLoanDelegator.sol";
+import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
 import { MarginCallDelegator } from "../interfaces/lender/MarginCallDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
@@ -43,6 +45,8 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 contract SharedLoan is
     ReentrancyGuard,
     OnlyMargin,
+    LoanOwner,
+    IncreaseLoanDelegator,
     MarginCallDelegator,
     ForceRecoverCollateralDelegator
 {
@@ -195,7 +199,7 @@ contract SharedLoan is
      * @param  principalAdded  Amount that was added to the position
      * @return                 This address to accept, a different address to ask that contract
      */
-    function marginLoanIncreased(
+    function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
         uint256 principalAdded

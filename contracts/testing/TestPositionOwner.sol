@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ClosePositionDelegator } from "../margin/interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../margin/interfaces/owner/IncreasePositionDelegator.sol";
 import { PositionOwner } from "../margin/interfaces/owner/PositionOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
@@ -28,6 +29,7 @@ import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 contract TestPositionOwner is
     OnlyMargin,
     PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator
 {
     using SafeMath for uint256;
@@ -70,7 +72,7 @@ contract TestPositionOwner is
         return TO_RETURN;
     }
 
-    function marginPositionIncreased(
+    function increasePositionOnBehalfOf(
         address trader,
         bytes32 positionId,
         uint256 amount

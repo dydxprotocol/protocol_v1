@@ -37,8 +37,9 @@ contract ClosePositionDelegator {
     /**
      * Function a contract must implement in order to let other addresses call closePosition().
      *
-     * NOTE: If returning non-zero, this contract must assume that Margin will either revert the
-     * entire transaction or that the specified amount of the position was successfully closed.
+     * NOTE: If not returning zero (or not reverting), this contract must assume that Margin will
+     * either revert the entire transaction or that (at-most) the specified amount of the position
+     * was successfully closed.
      *
      * @param  closer           Address of the caller of the closePosition() function
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing

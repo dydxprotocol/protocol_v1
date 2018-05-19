@@ -544,7 +544,7 @@ contract('ERC20Long', accounts => {
     });
   });
 
-  describe('#marginPositionIncreased', () => {
+  describe('#increasePositionOnBehalfOf', () => {
     beforeEach('Set up all tokenized positions',
       async () => {
         await setUpPositions();

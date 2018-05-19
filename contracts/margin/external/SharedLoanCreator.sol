@@ -96,19 +96,4 @@ contract SharedLoanCreator is
 
         return sharedLoanAddress;
     }
-
-    /**
-     * This contract should not be used to provide logic for approving loan increases.
-     */
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        external
-        onlyMargin
-        returns (address)
-    {
-        assert(false);
-    }
 }
