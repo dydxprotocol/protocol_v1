@@ -77,7 +77,7 @@ contract ERC721MarginLoan is
      */
     event ManagerApproval(
         address indexed lender,
-        address indexed caller,
+        address indexed manager,
         bool isApproved
     );
 
