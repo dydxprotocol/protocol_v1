@@ -143,6 +143,12 @@ library OpenPositionShared {
             ) <= transaction.loanOffering.rates.maxAmount,
             "OpenPositionShared#validateOpenTx: Loan offering does not have enough available"
         );
+
+        require(
+            transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
+            "OpenPositionShared#validateOpenTx: owedToken cannot be equal to heldToken"
+        );
+
         require(
             transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
             "OpenPositionShared#validateOpenTx: Below loan offering minimum amount"
