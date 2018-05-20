@@ -1,4 +1,4 @@
-/*global artifacts, web3, contract, describe, it, before, beforeEach*/
+approveManager/*global artifacts, web3, contract, describe, it, before, beforeEach*/
 
 const chai = require('chai');
 const expect = chai.expect;
@@ -136,12 +136,12 @@ describe('ERC721MarginLoan', () => {
     });
   });
 
-  // ============ approveCaller ============
+  // ============ approveManager ============
 
-  contract('#approveCaller', accounts => {
+  contract('#approveManager', accounts => {
     const sender = accounts[6];
     const helper = accounts[7];
-    const eventName = 'MarginCallerApproval';
+    const eventName = 'ManagerApproval';
     const approvedEventTrue = {
       lender: sender,
       caller: helper,
@@ -161,19 +161,19 @@ describe('ERC721MarginLoan', () => {
       await setUpLoan(accounts);
 
       // reset approval to false
-      await loanContract.approveCaller(helper, false, { from: sender });
+      await loanContract.approveManager(helper, false, { from: sender });
     });
 
     it('succeeds in approving', async () => {
-      const tx = await loanContract.approveCaller(helper, true, { from: sender });
+      const tx = await loanContract.approveManager(helper, true, { from: sender });
       const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx.logs[0], eventName, approvedEventTrue);
     });
 
     it('succeeds in revoking approval', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, false, { from: sender });
       const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
@@ -181,8 +181,8 @@ describe('ERC721MarginLoan', () => {
     });
 
     it('succeeds when true => true', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, true, { from: sender });
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, true, { from: sender });
       const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
@@ -190,9 +190,9 @@ describe('ERC721MarginLoan', () => {
     });
 
     it('succeeds when false => false', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
-      const tx3 = await loanContract.approveCaller(helper, false, { from: sender });
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, false, { from: sender });
+      const tx3 = await loanContract.approveManager(helper, false, { from: sender });
       const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
@@ -202,7 +202,7 @@ describe('ERC721MarginLoan', () => {
 
     it('throws when address approves itself', async () => {
       await expectThrow(
-        loanContract.approveCaller(helper, true, { from: helper })
+        loanContract.approveManager(helper, true, { from: helper })
       );
     });
   });
@@ -387,7 +387,7 @@ describe('ERC721MarginLoan', () => {
 
     beforeEach('set up loan', async () => {
       await setUpLoan(accounts);
-      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
+      await loanContract.approveManager(caller, true, { from: openTx.loanOffering.payer });
     });
 
     it('fails if not authorized', async () => {
@@ -423,7 +423,7 @@ describe('ERC721MarginLoan', () => {
 
     beforeEach('set up loan and margin-call', async () => {
       await setUpLoan(accounts);
-      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
+      await loanContract.approveManager(caller, true, { from: openTx.loanOffering.payer });
       await dydxMargin.marginCall(
         openTx.id,
         BIGNUMBERS.ZERO,
