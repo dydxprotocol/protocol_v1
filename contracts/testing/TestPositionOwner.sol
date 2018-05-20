@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ClosePositionDelegator } from "../margin/interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../margin/interfaces/owner/IncreasePositionDelegator.sol";
 import { PositionOwner } from "../margin/interfaces/owner/PositionOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
@@ -28,6 +29,7 @@ import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 contract TestPositionOwner is
     OnlyMargin,
     PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator
 {
     using SafeMath for uint256;
@@ -70,17 +72,20 @@ contract TestPositionOwner is
         return TO_RETURN;
     }
 
-    function marginPositionIncreased(
+    function increasePositionOnBehalfOf(
         address trader,
         bytes32 positionId,
         uint256 amount
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
         valueAdded[positionId][trader] = valueAdded[positionId][trader].add(amount);
-        return TO_RETURN_ON_ADD;
+
+        require(TO_RETURN_ON_ADD);
+
+        return address(this);
     }
 
     function closeOnBehalfOf(
@@ -91,12 +96,12 @@ contract TestPositionOwner is
     )
         external
         onlyMargin
-        returns (uint256)
+        returns (address, uint256)
     {
         if (TO_RETURN_ON_CLOSE == 1) {
-            return closeAmount;
+            return (address(this), closeAmount);
         }
 
-        return TO_RETURN_ON_CLOSE;
+        return (address(this), TO_RETURN_ON_CLOSE);
     }
 }

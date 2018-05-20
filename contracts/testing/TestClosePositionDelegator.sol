@@ -20,10 +20,15 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { ClosePositionDelegator } from "../margin/interfaces/owner/ClosePositionDelegator.sol";
+import { PositionOwner } from "../margin/interfaces/owner/PositionOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
+contract TestClosePositionDelegator is
+    OnlyMargin,
+    PositionOwner,
+    ClosePositionDelegator
+{
 
     address public CLOSER;
     bool public IS_DEGENERATE; // if true, returns more than requestedAmount;
@@ -46,36 +51,25 @@ contract TestClosePositionDelegator is OnlyMargin, ClosePositionDelegator {
     )
         onlyMargin
         external
-        view
         returns (address)
     {
         return address(this);
     }
 
     function closeOnBehalfOf(
-        address who,
+        address closer,
         address,
         bytes32,
         uint256 requestedAmount
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
         uint256 amount = (IS_DEGENERATE ? requestedAmount + 1 : requestedAmount);
-        return who == CLOSER ? amount : 0;
-    }
 
-    function marginPositionIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        onlyMargin
-        external
-        view
-        returns (bool)
-    {
-        return false;
+        require(closer == CLOSER);
+
+        return (address(this), amount);
     }
 }

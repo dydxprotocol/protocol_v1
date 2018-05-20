@@ -20,11 +20,16 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { IncreaseLoanDelegator } from "../margin/interfaces/lender/IncreaseLoanDelegator.sol";
 import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestLoanOwner is OnlyMargin, LoanOwner {
+contract TestLoanOwner is
+    OnlyMargin,
+    LoanOwner,
+    IncreaseLoanDelegator
+{
     using SafeMath for uint256;
 
     address public TO_RETURN;
@@ -62,16 +67,19 @@ contract TestLoanOwner is OnlyMargin, LoanOwner {
         return TO_RETURN;
     }
 
-    function marginLoanIncreased(
+    function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
         uint256 principalAdded
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
         valueAdded[positionId][payer] = valueAdded[positionId][payer].add(principalAdded);
-        return TO_RETURN_ON_ADD;
+
+        require(TO_RETURN_ON_ADD);
+
+        return address(this);
     }
 }

@@ -96,17 +96,4 @@ contract SharedLoanCreator is
 
         return sharedLoanAddress;
     }
-
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        external
-        onlyMargin
-        returns (bool)
-    {
-        // This should never happen
-        assert(false);
-    }
 }

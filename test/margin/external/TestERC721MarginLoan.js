@@ -115,7 +115,7 @@ describe('ERC721MarginLoan', () => {
         loanSymbol
       ] = await Promise.all([
         loanContract.DYDX_MARGIN.call(),
-        loanContract.approvedCallers.call(accounts[0], accounts[1]),
+        loanContract.approvedManagers.call(accounts[0], accounts[1]),
         loanContract.owedTokensRepaidSinceLastWithdraw.call(BYTES32.TEST[0]),
         loanContract.owedTokenAddress.call(BYTES32.TEST[0]),
         loanContract.name.call(),
@@ -136,20 +136,20 @@ describe('ERC721MarginLoan', () => {
     });
   });
 
-  // ============ approveCaller ============
+  // ============ approveManager ============
 
-  contract('#approveCaller', accounts => {
+  contract('#approveManager', accounts => {
     const sender = accounts[6];
     const helper = accounts[7];
-    const eventName = 'MarginCallerApproval';
+    const eventName = 'ManagerApproval';
     const approvedEventTrue = {
       lender: sender,
-      caller: helper,
+      manager: helper,
       isApproved: true
     };
     const approvedEventFalse = {
       lender: sender,
-      caller: helper,
+      manager: helper,
       isApproved: false
     };
 
@@ -161,39 +161,39 @@ describe('ERC721MarginLoan', () => {
       await setUpLoan(accounts);
 
       // reset approval to false
-      await loanContract.approveCaller(helper, false, { from: sender });
+      await loanContract.approveManager(helper, false, { from: sender });
     });
 
     it('succeeds in approving', async () => {
-      const tx = await loanContract.approveCaller(helper, true, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const tx = await loanContract.approveManager(helper, true, { from: sender });
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx.logs[0], eventName, approvedEventTrue);
     });
 
     it('succeeds in revoking approval', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, false, { from: sender });
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expectLog(tx2.logs[0], eventName, approvedEventFalse);
     });
 
     it('succeeds when true => true', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, true, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, true, { from: sender });
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expect(tx2.logs.length === 0);
     });
 
     it('succeeds when false => false', async () => {
-      const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
-      const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
-      const tx3 = await loanContract.approveCaller(helper, false, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const tx1 = await loanContract.approveManager(helper, true, { from: sender });
+      const tx2 = await loanContract.approveManager(helper, false, { from: sender });
+      const tx3 = await loanContract.approveManager(helper, false, { from: sender });
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expectLog(tx2.logs[0], eventName, approvedEventFalse);
@@ -202,7 +202,7 @@ describe('ERC721MarginLoan', () => {
 
     it('throws when address approves itself', async () => {
       await expectThrow(
-        loanContract.approveCaller(helper, true, { from: helper })
+        loanContract.approveManager(helper, true, { from: helper })
       );
     });
   });
@@ -327,9 +327,9 @@ describe('ERC721MarginLoan', () => {
     });
   });
 
-  // ============ marginLoanIncreased ============
+  // ============ increaseLoanOnBehalfOf ============
 
-  contract('#marginLoanIncreased', accounts => {
+  contract('#increaseLoanOnBehalfOf', accounts => {
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -365,7 +365,7 @@ describe('ERC721MarginLoan', () => {
       const lender = accounts[1];
       const increaseAmount = new BigNumber('1e18');
       await expectThrow(
-        loanContract.marginLoanIncreased(
+        loanContract.increaseLoanOnBehalfOf(
           lender,
           openTx.id,
           increaseAmount,
@@ -378,7 +378,7 @@ describe('ERC721MarginLoan', () => {
   // ============ marginCallOnBehalfOf ============
 
   contract('#marginCallOnBehalfOf', accounts => {
-    const caller = accounts[9];
+    const manager = accounts[9];
     const rando = accounts[8];
 
     before('load contracts', async () => {
@@ -387,7 +387,7 @@ describe('ERC721MarginLoan', () => {
 
     beforeEach('set up loan', async () => {
       await setUpLoan(accounts);
-      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
+      await loanContract.approveManager(manager, true, { from: openTx.loanOffering.payer });
     });
 
     it('fails if not authorized', async () => {
@@ -404,7 +404,7 @@ describe('ERC721MarginLoan', () => {
       await dydxMargin.marginCall(
         openTx.id,
         BIGNUMBERS.ZERO,
-        { from: caller }
+        { from: manager }
       );
       const isCalled = await dydxMargin.isPositionCalled.call(openTx.id);
       expect(isCalled).to.be.true;
@@ -414,7 +414,7 @@ describe('ERC721MarginLoan', () => {
   // ============ cancelMarginCallOnBehalfOf ============
 
   contract('#cancelMarginCallOnBehalfOf', accounts => {
-    const caller = accounts[9];
+    const manager = accounts[9];
     const rando = accounts[8];
 
     before('load contracts', async () => {
@@ -423,7 +423,7 @@ describe('ERC721MarginLoan', () => {
 
     beforeEach('set up loan and margin-call', async () => {
       await setUpLoan(accounts);
-      await loanContract.approveCaller(caller, true, { from: openTx.loanOffering.payer });
+      await loanContract.approveManager(manager, true, { from: openTx.loanOffering.payer });
       await dydxMargin.marginCall(
         openTx.id,
         BIGNUMBERS.ZERO,
@@ -445,7 +445,7 @@ describe('ERC721MarginLoan', () => {
     it('succeeds if authorized', async () => {
       await dydxMargin.cancelMarginCall(
         openTx.id,
-        { from: caller }
+        { from: manager }
       );
       const isCalled = await dydxMargin.isPositionCalled.call(openTx.id);
       expect(isCalled).to.be.false;
@@ -455,7 +455,6 @@ describe('ERC721MarginLoan', () => {
   // ============ forceRecoverCollateralOnBehalfOf ============
 
   contract('#forceRecoverCollateralOnBehalfOf', accounts => {
-    const recoverer = accounts[9];
     const rando = accounts[8];
 
     before('load contracts', async () => {
@@ -472,36 +471,69 @@ describe('ERC721MarginLoan', () => {
       await wait(openTx.loanOffering.callTimeLimit);
     });
 
-    it('succeeds for arbitrary caller if recipient is owner', async () => {
+    it('succeeds if caller is owner', async () => {
       const [heldToken1, heldTokenInVault] = await Promise.all([
-        heldToken.balanceOf.call(openTx.loanOffering.payer),
+        heldToken.balanceOf.call(rando),
         dydxMargin.getPositionBalance.call(openTx.id)
       ]);
 
       await dydxMargin.forceRecoverCollateral(
         openTx.id,
-        openTx.loanOffering.payer,
-        { from: recoverer }
+        rando,
+        { from: openTx.loanOffering.payer  }
       );
 
       // expect proper state of the position
       const [isClosed, isCalled, heldToken2] = await Promise.all([
         dydxMargin.isPositionClosed.call(openTx.id),
         dydxMargin.isPositionCalled.call(openTx.id),
-        heldToken.balanceOf.call(openTx.loanOffering.payer)
+        heldToken.balanceOf.call(rando)
       ]);
       expect(isClosed).to.be.true;
       expect(isCalled).to.be.false;
       expect(heldToken2).to.be.bignumber.equal(heldToken1.plus(heldTokenInVault));
     });
 
-    it('fails for arbitrary caller if recipient is NOT owner', async () => {
+    it('fails for arbitrary caller even if recipient is owner', async () => {
+      await expectThrow(
+        dydxMargin.forceRecoverCollateral(
+          openTx.id,
+          openTx.loanOffering.payer,
+          { from: rando }
+        )
+      );
+    });
+
+    it('fails for manager and arbitrary recipient', async () => {
+      const manager = accounts[9];
+      const rando = accounts[8];
+      await loanContract.approveManager(manager, true, { from: openTx.loanOffering.payer });
+
       await expectThrow(
         dydxMargin.forceRecoverCollateral(
           openTx.id,
           rando,
-          { from: recoverer }
+          { from: manager }
         )
+      );
+
+      await expectThrow(
+        dydxMargin.forceRecoverCollateral(
+          openTx.id,
+          manager,
+          { from: manager }
+        )
+      );
+    });
+
+    it('succeeds for manager if recipient is owner', async () => {
+      const manager = accounts[9];
+      await loanContract.approveManager(manager, true, { from: openTx.loanOffering.payer });
+
+      await dydxMargin.forceRecoverCollateral(
+        openTx.id,
+        openTx.loanOffering.payer,
+        { from: manager }
       );
     });
   });

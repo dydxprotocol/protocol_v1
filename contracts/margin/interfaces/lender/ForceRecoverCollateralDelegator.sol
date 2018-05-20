@@ -38,20 +38,20 @@ contract ForceRecoverCollateralDelegator {
      * Function a contract must implement in order to let other addresses call
      * forceRecoverCollateral().
      *
-     * NOTE: If returning true, this contract must assume that Margin will either revert the
-     * entire transaction or that the loan call was successfully canceled.
+     * NOTE: If not returning zero address (or not reverting), this contract must assume that Margin
+     * will either revert the entire transaction or that the collateral was forcibly recovered.
      *
-     * @param  who         Address of the caller of the forceRecoverCollateral() function
+     * @param  recoverer   Address of the caller of the forceRecoverCollateral() function
      * @param  positionId  Unique ID of the position
      * @param  recipient   Address to send the recovered tokens to
-     * @return             True if forceRecoverCollateral() is permitted
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address who,
+        address recoverer,
         bytes32 positionId,
         address recipient
     )
         external
         /* onlyMargin */
-        returns (bool);
+        returns (address);
 }

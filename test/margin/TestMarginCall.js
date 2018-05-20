@@ -214,11 +214,11 @@ describe('#cancelMarginCall', () => {
     it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const { OpenTx } = await doOpenPositionAndCall(accounts);
-      const canceller = accounts[9];
+      const canceler = accounts[9];
       const loanCaller = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        canceller);
+        canceler);
       await dydxMargin.transferLoan(
         OpenTx.id,
         loanCaller.address,
@@ -234,7 +234,7 @@ describe('#cancelMarginCall', () => {
       position = await getPosition(dydxMargin, OpenTx.id);
       expect(position.callTimestamp).to.be.bignumber.not.equal(0);
 
-      await cancelMarginCall(OpenTx, canceller);
+      await cancelMarginCall(OpenTx, canceler);
     });
   });
 });

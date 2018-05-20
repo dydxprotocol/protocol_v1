@@ -19,7 +19,6 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
@@ -27,8 +26,8 @@ import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
-import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
-import { PositionOwner } from "../interfaces/owner/PositionOwner.sol";
+import { IncreaseLoanDelegator } from "../interfaces/lender/IncreaseLoanDelegator.sol";
+import { IncreasePositionDelegator } from "../interfaces/owner/IncreasePositionDelegator.sol";
 
 
 /**
@@ -331,30 +330,81 @@ library IncreasePositionImpl {
         address owner = position.owner;
         address lender = position.lender;
 
-        // Unless msg.sender is the position owner and is not a smart contract, call out
-        // to the owner to ensure they consent to value being added
-        if (msg.sender != owner || AddressUtils.isContract(owner)) {
-            require(
-                PositionOwner(owner).marginPositionIncreased(
-                    msg.sender,
-                    positionId,
-                    principalAdded
-                ),
-                "IncreasePositionImpl#updateState: Position owner does not consent to increase"
-            );
+        // Ensure owner consent
+        increasePositionOnBehalfOfRecurse(
+            owner,
+            msg.sender,
+            positionId,
+            principalAdded
+        );
+
+        // Ensure lender consent
+        increaseLoanOnBehalfOfRecurse(
+            lender,
+            loanPayer,
+            positionId,
+            principalAdded
+        );
+    }
+
+    function increasePositionOnBehalfOfRecurse(
+        address contractAddr,
+        address trader,
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (trader == contractAddr) {
+            return;
         }
 
-        // Unless the loan offering's payer is the owner of the loan position and is not a smart
-        // contract, call out to the owner of the loan position to ensure they consent
-        // to value being added
-        if (loanPayer != lender || AddressUtils.isContract(lender)) {
-            require(
-                LoanOwner(lender).marginLoanIncreased(
-                    loanPayer,
-                    positionId,
-                    principalAdded
-                ),
-                "IncreasePositionImpl#updateState: Lender does not consent to increase"
+        address newContractAddr =
+            IncreasePositionDelegator(contractAddr).increasePositionOnBehalfOf(
+                trader,
+                positionId,
+                principalAdded
+            );
+
+        // if not equal, recurse
+        if (newContractAddr != contractAddr) {
+            increasePositionOnBehalfOfRecurse(
+                newContractAddr,
+                trader,
+                positionId,
+                principalAdded
+            );
+        }
+    }
+
+    function increaseLoanOnBehalfOfRecurse(
+        address contractAddr,
+        address payer,
+        bytes32 positionId,
+        uint256 principalAdded
+    )
+        internal
+    {
+        // no need to ask for permission
+        if (payer == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            IncreaseLoanDelegator(contractAddr).increaseLoanOnBehalfOf(
+                payer,
+                positionId,
+                principalAdded
+            );
+
+        // if not equal, recurse
+        if (newContractAddr != contractAddr) {
+            increasePositionOnBehalfOfRecurse(
+                newContractAddr,
+                payer,
+                positionId,
+                principalAdded
             );
         }
     }

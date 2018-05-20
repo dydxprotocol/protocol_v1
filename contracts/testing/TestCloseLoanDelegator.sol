@@ -20,10 +20,15 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { CloseLoanDelegator } from "../margin/interfaces/lender/CloseLoanDelegator.sol";
+import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
+contract TestCloseLoanDelegator is
+    OnlyMargin,
+    LoanOwner,
+    CloseLoanDelegator
+{
 
     uint256 public AMOUNT_TO_RETURN;
 
@@ -43,7 +48,6 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
     )
         onlyMargin
         external
-        view
         returns (address)
     {
         return address(this);
@@ -57,21 +61,8 @@ contract TestCloseLoanDelegator is OnlyMargin, CloseLoanDelegator {
     )
         onlyMargin
         external
-        returns (uint256)
+        returns (address, uint256)
     {
-        return AMOUNT_TO_RETURN;
-    }
-
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        onlyMargin
-        external
-        view
-        returns (bool)
-    {
-        return false;
+        return (address(this), AMOUNT_TO_RETURN);
     }
 }

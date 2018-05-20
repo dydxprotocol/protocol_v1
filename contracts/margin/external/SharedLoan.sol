@@ -28,6 +28,8 @@ import { MarginCommon } from "../impl/MarginCommon.sol";
 import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
 /* solium-disable-next-line max-len*/
 import { ForceRecoverCollateralDelegator } from "../interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { IncreaseLoanDelegator } from "../interfaces/lender/IncreaseLoanDelegator.sol";
+import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
 import { MarginCallDelegator } from "../interfaces/lender/MarginCallDelegator.sol";
 import { MarginHelper } from "./lib/MarginHelper.sol";
 
@@ -43,6 +45,8 @@ import { MarginHelper } from "./lib/MarginHelper.sol";
 contract SharedLoan is
     ReentrancyGuard,
     OnlyMargin,
+    LoanOwner,
+    IncreaseLoanDelegator,
     MarginCallDelegator,
     ForceRecoverCollateralDelegator
 {
@@ -119,6 +123,24 @@ contract SharedLoan is
     // Amount of owedToken each lender has withdrawn before the loan was fully repaid
     mapping (address => uint256) public owedTokenWithdrawnEarly;
 
+    // ============ Modifiers ============
+
+    modifier onlyPosition(bytes32 positionId) {
+        require(
+            POSITION_ID == positionId,
+            "SharedLoan#onlyPosition: Incorrect position"
+        );
+        _;
+    }
+
+    modifier onlyState(State specificState) {
+        require(
+            state == specificState,
+            "SharedLoan#onlyState: Incorrect State"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor(
@@ -146,9 +168,9 @@ contract SharedLoan is
      * This function initializes this contract and returns this address to indicate to Margin
      * that it is willing to take ownership of the loan.
      *
-     *  param  (unused)
+     *  param  from        (unused)
      * @param  positionId  Unique ID of the position
-     * @return            This address on success, throw otherwise
+     * @return             This address on success, throw otherwise
      */
     function receiveLoanOwnership(
         address /* from */,
@@ -157,15 +179,10 @@ contract SharedLoan is
         external
         onlyMargin
         nonReentrant
+        onlyState(State.UNINITIALIZED)
+        onlyPosition(positionId)
         returns (address)
     {
-        // This contract cannot receive ownership from more than 1 loan
-        require(
-            POSITION_ID == positionId,
-            "SharedLoan#receiveLoanOwnership: Invalid position ID"
-        );
-        assert(state == State.UNINITIALIZED);
-
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
 
@@ -193,9 +210,9 @@ contract SharedLoan is
      * @param  payer           Address that loaned the additional tokens
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
-     * @return                 True to indicate that this contract consents to value being added
+     * @return                 This address to accept, a different address to ask that contract
      */
-    function marginLoanIncreased(
+    function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
         uint256 principalAdded
@@ -203,11 +220,10 @@ contract SharedLoan is
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
-
         balances[payer] = balances[payer].add(principalAdded);
         totalPrincipal = totalPrincipal.add(principalAdded);
 
@@ -216,7 +232,7 @@ contract SharedLoan is
             principalAdded
         );
 
-        return true;
+        return address(this);
     }
 
     /**
@@ -225,8 +241,7 @@ contract SharedLoan is
      * @param  caller      Address attempting to initiate the loan call
      * @param  positionId  Unique ID of the position
      *  param  (unused)
-     * @return             True to consent to the loan being called if the initiator is a trusted
-     *                     loan caller, false otherwise
+     * @return             This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
         address caller,
@@ -236,12 +251,13 @@ contract SharedLoan is
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
+        require(TRUSTED_MARGIN_CALLERS[caller]);
 
-        return TRUSTED_MARGIN_CALLERS[caller];
+        return address(this);
     }
 
     /**
@@ -260,12 +276,13 @@ contract SharedLoan is
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
+        require(TRUSTED_MARGIN_CALLERS[canceler]);
 
-        return TRUSTED_MARGIN_CALLERS[canceler];
+        return address(this);
     }
 
     /**
@@ -273,24 +290,23 @@ contract SharedLoan is
      * this contract owns. This contract will receive funds on a force recover. This contract
      * always consents to anyone initiating a force recover
      *
-     *  param  (unused)
+     *  param  recoverer   (unused)
      * @param  positionId  Unique ID of the position
      * @param  recipient   Address to send the recovered tokens to
-     * @return             True if forceRecoverCollateral() is permitted
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address /* who */,
+        address /* recoverer */,
         bytes32 positionId,
         address recipient
     )
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
-
         require(
             recipient == address(this),
             "SharedLoan#forceRecoverCollateralOnBehalfOf: Invalid collateral recipient"
@@ -298,7 +314,7 @@ contract SharedLoan is
 
         state = State.CLOSED;
 
-        return true;
+        return address(this);
     }
 
     // ============ Public State Changing Functions ============

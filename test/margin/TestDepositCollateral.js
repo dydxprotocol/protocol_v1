@@ -8,13 +8,15 @@ const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require('TokenA');
 const ProxyContract = artifacts.require('Proxy');
+const TestDepositCollateralDelegator = artifacts.require('TestDepositCollateralDelegator');
 const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
 const {
   doOpenPosition,
   doOpenPositionAndCall,
-  getPosition
+  getPosition,
+  issueTokenToAccountInAmountAndApproveProxy
 } = require('../helpers/MarginHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
@@ -77,6 +79,52 @@ describe('#deposit', () => {
           amount: 0
         })
       );
+    });
+  });
+
+  contract('Margin', accounts => {
+    it('allows depositCollateralOnBehalfOf', async () => {
+      const depositor = accounts[9];
+      const rando = accounts[8];
+      const depositAmount = new BigNumber('1e18');
+
+      const dydxMargin = await Margin.deployed();
+      const heldToken = await HeldToken.deployed();
+
+      // set up position
+      const delegatorContract = await TestDepositCollateralDelegator.new(
+        dydxMargin.address,
+        depositor
+      );
+      const openTx = await doOpenPosition(accounts);
+      await dydxMargin.transferPosition(
+        openTx.id,
+        delegatorContract.address,
+        { from: openTx.owner }
+      );
+
+      // fails for non-approved depositor
+      await issueTokenToAccountInAmountAndApproveProxy(heldToken, rando, depositAmount);
+      await expectThrow(
+        dydxMargin.depositCollateral(
+          openTx.id,
+          depositAmount,
+          { from: rando }
+        )
+      );
+
+      const balance1 = await dydxMargin.getPositionBalance.call(openTx.id);
+
+      // succeeds for approved depositor
+      await issueTokenToAccountInAmountAndApproveProxy(heldToken, depositor, depositAmount);
+      await dydxMargin.depositCollateral(
+        openTx.id,
+        depositAmount,
+        { from: depositor }
+      );
+
+      const balance2 = await dydxMargin.getPositionBalance.call(openTx.id);
+      expect(balance2.minus(balance1)).to.be.bignumber.equal(depositAmount);
     });
   });
 

@@ -205,14 +205,39 @@ library OpenPositionShared {
     {
         // If the signer != payer, assume payer is a smart contract and ask it for consent
         if (transaction.loanOffering.signer != transaction.loanOffering.payer) {
-            require(
-                LoanOfferingVerifier(transaction.loanOffering.payer).verifyLoanOffering(
-                    getLoanOfferingAddresses(transaction),
-                    getLoanOfferingValues256(transaction),
-                    getLoanOfferingValues32(transaction),
-                    positionId
-                ),
-                "OpenPositionShared#getConsentIfSmartContractLender: Loan payer does not consent"
+            verifyLoanOfferingRecurse(
+                transaction.loanOffering.payer,
+                getLoanOfferingAddresses(transaction),
+                getLoanOfferingValues256(transaction),
+                getLoanOfferingValues32(transaction),
+                positionId
+            );
+        }
+    }
+
+    function verifyLoanOfferingRecurse(
+        address contractAddr,
+        address[9] addresses,
+        uint256[7] values256,
+        uint32[4] values32,
+        bytes32 positionId
+    )
+        internal
+    {
+        address newContractAddr = LoanOfferingVerifier(contractAddr).verifyLoanOffering(
+            addresses,
+            values256,
+            values32,
+            positionId
+        );
+
+        if (newContractAddr != contractAddr) {
+            verifyLoanOfferingRecurse(
+                newContractAddr,
+                addresses,
+                values256,
+                values32,
+                positionId
             );
         }
     }

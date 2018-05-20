@@ -25,6 +25,8 @@ import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Toke
 import { Margin } from "../../Margin.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../../interfaces/owner/IncreasePositionDelegator.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 
 
@@ -40,6 +42,8 @@ contract ERC721MarginPosition is
     ReentrancyGuard,
     ERC721Token,
     OnlyMargin,
+    PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator,
     PositionCustodian
 {
@@ -230,28 +234,28 @@ contract ERC721MarginPosition is
 
     /**
      * Called by Margin when additional value is added onto the position this contract
-     * owns. Only allows token owner to add value.
+     * owns. Defer approval to the token holder
      *
-     * @param  trader          Address that added the value to the position
+     *  param  trader          (unused)
      * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
-     * @return                 True if the adder is the token owner, false otherwise
+     * @return                 This address to accept, a different address to ask that contract
      */
-    function marginPositionIncreased(
-        address trader,
+    function increasePositionOnBehalfOf(
+        address /* trader */,
         bytes32 positionId,
         uint256 /* principalAdded */
     )
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        returns (address)
     {
-        if (ownerOf(uint256(positionId)) == trader) {
-            return true;
-        }
+        address owner = ownerOfPosition(positionId);
 
-        return false;
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
@@ -265,7 +269,8 @@ contract ERC721MarginPosition is
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount of the position being closed
-     * @return                  The amount the user is allowed to close for the specified position
+     * @return                  1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,
@@ -276,21 +281,20 @@ contract ERC721MarginPosition is
         external
         onlyMargin
         nonReentrant
-        returns (uint256)
+        returns (address, uint256)
     {
         // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder
         // must return the owner of the position after it has been closed in the current transaction
 
-        address owner = ownerOf(uint256(positionId));
-        if (
-            (closer == owner)
-            || approvedClosers[owner][closer]
-            || approvedRecipients[owner][payoutRecipient]
-        ) {
-            return requestedAmount;
+        address owner = ownerOfPosition(positionId);
+
+        require(owner != address(this));
+
+        if (approvedClosers[owner][closer] || approvedRecipients[owner][payoutRecipient]) {
+            return (address(this), requestedAmount);
         }
 
-        return 0;
+        return (owner, requestedAmount);
     }
 
     // ============ PositionCustodian Functions ============
@@ -302,10 +306,10 @@ contract ERC721MarginPosition is
         view
         returns (address)
     {
-        return ownerOf(uint256(positionId));
+        return ownerOfPosition(positionId);
     }
 
-    // ============ Internal Functions ============
+    // ============ Internal Helper Functions ============
 
     function burnClosedTokenInternal(
         bytes32 positionId
@@ -316,6 +320,21 @@ contract ERC721MarginPosition is
             Margin(DYDX_MARGIN).isPositionClosed(positionId),
             "ERC721MarginPosition#burnClosedTokenInternal: Position is not closed"
         );
-        _burn(ownerOf(uint256(positionId)), uint256(positionId));
+        _burn(ownerOfPosition(positionId), uint256(positionId));
+    }
+
+    function ownerOfPosition(
+        bytes32 positionId
+    )
+        internal
+        view
+        returns (address)
+    {
+        address owner = ownerOf(uint256(positionId));
+
+        // ownerOf() should have already required this
+        assert(owner != address(0));
+
+        return owner;
     }
 }

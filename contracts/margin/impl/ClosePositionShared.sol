@@ -252,44 +252,125 @@ library ClosePositionShared {
     {
         uint256 newAmount = Math.min256(requestedAmount, position.principal);
 
-        // If not the owner, requires owner to approve msg.sender
-        if (position.owner != msg.sender) {
-            uint256 allowedOwnerAmount =
-                ClosePositionDelegator(position.owner).closeOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    positionId,
-                    newAmount
-                );
-            require(
-                allowedOwnerAmount <= newAmount,
-                "ClosePositionShared#getApprovedAmount: Invalid closeOnBehalfOf amount"
-            );
-            newAmount = allowedOwnerAmount;
-        }
+        // Ensure owner consent
+        uint256 allowedOwnerAmount = closePositionOnBehalfOfRecurse(
+            position.owner,
+            msg.sender,
+            payoutRecipient,
+            positionId,
+            newAmount
+        );
+        newAmount = allowedOwnerAmount;
 
-        // If not the lender, requires lender to approve msg.sender
-        if (requireLenderApproval && position.lender != msg.sender) {
-            uint256 allowedLenderAmount =
-                CloseLoanDelegator(position.lender).closeLoanOnBehalfOf(
-                    msg.sender,
-                    payoutRecipient,
-                    positionId,
-                    newAmount
-                );
-            require(
-                allowedLenderAmount <= newAmount,
-                "ClosePositionShared#getApprovedAmount: Invalid closeLoanOnBehalfOf amount"
+        // Ensure lender consent
+        if (requireLenderApproval) {
+            uint256 allowedLenderAmount = closeLoanOnBehalfOfRecurse(
+                position.lender,
+                msg.sender,
+                payoutRecipient,
+                positionId,
+                newAmount
             );
             newAmount = allowedLenderAmount;
         }
 
-        require(
-            newAmount > 0,
-            "ClosePositionShared#getApprovedAmount: 0 approved amount"
-        );
+        assert(newAmount > 0);
         assert(newAmount <= position.principal);
         assert(newAmount <= requestedAmount);
+
         return newAmount;
+    }
+
+    function closePositionOnBehalfOfRecurse(
+        address contractAddr,
+        address closer,
+        address payoutRecipient,
+        bytes32 positionId,
+        uint256 closeAmount
+    )
+        internal
+        returns (uint256)
+    {
+        // no need to ask for permission
+        if (closer == contractAddr) {
+            return closeAmount;
+        }
+
+        address newContractAddr;
+        uint256 newCloseAmount;
+        (newContractAddr, newCloseAmount) = ClosePositionDelegator(contractAddr).closeOnBehalfOf(
+            closer,
+            payoutRecipient,
+            positionId,
+            closeAmount
+        );
+
+        require(
+            newCloseAmount <= closeAmount,
+            "ClosePositionShared#closePositionRecurse: newCloseAmount is greater than closeAmount"
+        );
+        require(
+            newCloseAmount > 0,
+            "ClosePositionShared#closePositionRecurse: newCloseAmount is zero"
+        );
+
+        if (newContractAddr != contractAddr) {
+            closePositionOnBehalfOfRecurse(
+                newContractAddr,
+                closer,
+                payoutRecipient,
+                positionId,
+                newCloseAmount
+            );
+        }
+
+        return newCloseAmount;
+    }
+
+    function closeLoanOnBehalfOfRecurse(
+        address contractAddr,
+        address closer,
+        address payoutRecipient,
+        bytes32 positionId,
+        uint256 closeAmount
+    )
+        internal
+        returns (uint256)
+    {
+        // no need to ask for permission
+        if (closer == contractAddr) {
+            return closeAmount;
+        }
+
+        address newContractAddr;
+        uint256 newCloseAmount;
+        (newContractAddr, newCloseAmount) =
+            CloseLoanDelegator(contractAddr).closeLoanOnBehalfOf(
+                closer,
+                payoutRecipient,
+                positionId,
+                closeAmount
+            );
+
+        require(
+            newCloseAmount <= closeAmount,
+            "ClosePositionShared#closeLoanRecurse: newCloseAmount is greater than closeAmount"
+        );
+        require(
+            newCloseAmount > 0,
+            "ClosePositionShared#closeLoanRecurse: newCloseAmount is zero"
+        );
+
+        if (newContractAddr != contractAddr) {
+            closeLoanOnBehalfOfRecurse(
+                newContractAddr,
+                closer,
+                payoutRecipient,
+                positionId,
+                newCloseAmount
+            );
+        }
+
+        return newCloseAmount;
     }
 }

@@ -21,24 +21,30 @@ pragma experimental "v0.5.0";
 
 import { MarginCallDelegator } from "../margin/interfaces/lender/MarginCallDelegator.sol";
 import { CancelMarginCallDelegator } from "../margin/interfaces/lender/CancelMarginCallDelegator.sol";
+import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMarginCallDelegator {
+contract TestMarginCallDelegator is
+    OnlyMargin,
+    LoanOwner,
+    MarginCallDelegator,
+    CancelMarginCallDelegator
+{
 
     address public CALLER;
-    address public CANCELLER;
+    address public CANCELER;
 
     constructor(
         address margin,
         address caller,
-        address canceller
+        address canceler
     )
         public
         OnlyMargin(margin)
     {
         CALLER = caller;
-        CANCELLER = canceller;
+        CANCELER = canceler;
     }
 
     function receiveLoanOwnership(
@@ -47,7 +53,6 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMargi
     )
         onlyMargin
         external
-        view
         returns (address)
     {
         return address(this);
@@ -60,9 +65,10 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMargi
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
-        return caller == CALLER;
+        require(caller == CALLER);
+        return address(this);
     }
 
     function cancelMarginCallOnBehalfOf(
@@ -71,21 +77,9 @@ contract TestMarginCallDelegator is OnlyMargin, MarginCallDelegator, CancelMargi
     )
         onlyMargin
         external
-        returns (bool)
+        returns (address)
     {
-        return canceler == CANCELLER;
-    }
-
-    function marginLoanIncreased(
-        address,
-        bytes32,
-        uint256
-    )
-        onlyMargin
-        external
-        view
-        returns (bool)
-    {
-        return false;
+        require(canceler == CANCELER);
+        return address(this);
     }
 }

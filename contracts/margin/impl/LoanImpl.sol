@@ -96,21 +96,17 @@ library LoanImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                MarginCallDelegator(position.lender).marginCallOnBehalfOf(
-                    msg.sender,
-                    positionId,
-                    requiredDeposit
-                ),
-                "LoanImpl#marginCallImpl: Lender does not consent to margin-call"
-            );
-        }
-
         require(
             position.callTimestamp == 0,
             "LoanImpl#marginCallImpl: The position has already been margin-called"
+        );
+
+        // Ensure lender consent
+        marginCallOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId,
+            requiredDeposit
         );
 
         position.callTimestamp = TimestampHelper.getBlockTimestamp32();
@@ -133,20 +129,16 @@ library LoanImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        // If not the lender, requires the lender to approve msg.sender
-        if (msg.sender != position.lender) {
-            require(
-                CancelMarginCallDelegator(position.lender).cancelMarginCallOnBehalfOf(
-                    msg.sender,
-                    positionId
-                ),
-                "LoanImpl#cancelMarginCallImpl: Lender does not consent"
-            );
-        }
-
         require(
             position.callTimestamp > 0,
             "LoanImpl#cancelMarginCallImpl: Position has not been margin-called"
+        );
+
+        // Ensure lender consent
+        cancelMarginCallOnBehalfOfRecurse(
+            position.lender,
+            msg.sender,
+            positionId
         );
 
         state.positions[positionId].callTimestamp = 0;
@@ -242,6 +234,67 @@ library LoanImpl {
             loanOffering.payer,
             loanOffering.feeRecipient
         );
+    }
+
+    // ============ Internal Helper Functions ============
+
+    function marginCallOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        bytes32 positionId,
+        uint256 requiredDeposit
+    )
+        internal
+        returns (bool)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            MarginCallDelegator(contractAddr).marginCallOnBehalfOf(
+                msg.sender,
+                positionId,
+                requiredDeposit
+            );
+
+        if (newContractAddr != contractAddr) {
+            marginCallOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                positionId,
+                requiredDeposit
+            );
+        }
+    }
+
+    function cancelMarginCallOnBehalfOfRecurse(
+        address contractAddr,
+        address who,
+        bytes32 positionId
+    )
+        internal
+        returns (bool)
+    {
+        // no need to ask for permission
+        if (who == contractAddr) {
+            return;
+        }
+
+        address newContractAddr =
+            CancelMarginCallDelegator(contractAddr).cancelMarginCallOnBehalfOf(
+                msg.sender,
+                positionId
+            );
+
+        if (newContractAddr != contractAddr) {
+            cancelMarginCallOnBehalfOfRecurse(
+                newContractAddr,
+                who,
+                positionId
+            );
+        }
     }
 
     // ============ Parsing Functions ============

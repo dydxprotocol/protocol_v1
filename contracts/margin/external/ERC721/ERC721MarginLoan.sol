@@ -27,6 +27,7 @@ import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 /* solium-disable-next-line max-len*/
 import { ForceRecoverCollateralDelegator } from "../../interfaces/lender/ForceRecoverCollateralDelegator.sol";
+import { IncreaseLoanDelegator } from "../../interfaces/lender/IncreaseLoanDelegator.sol";
 import { LoanOwner } from "../../interfaces/lender/LoanOwner.sol";
 import { MarginCallDelegator } from "../../interfaces/lender/MarginCallDelegator.sol";
 
@@ -45,6 +46,7 @@ contract ERC721MarginLoan is
     ERC721Token,
     OnlyMargin,
     LoanOwner,
+    IncreaseLoanDelegator,
     MarginCallDelegator,
     ForceRecoverCollateralDelegator
 {
@@ -71,11 +73,11 @@ contract ERC721MarginLoan is
     );
 
     /**
-     * Margin-calling approval was granted or revoked.
+     * Manager approval was granted or revoked.
      */
-    event MarginCallerApproval(
+    event ManagerApproval(
         address indexed lender,
-        address indexed caller,
+        address indexed manager,
         bool isApproved
     );
 
@@ -92,8 +94,9 @@ contract ERC721MarginLoan is
 
     // ============ State Variables ============
 
-    // Mapping from an address to other addresses that are approved to be margin-callers
-    mapping (address => mapping (address => bool)) public approvedCallers;
+    // Mapping from an address to other addresses that are approved to manage loans (including
+    // margin-calling and force-recovering).
+    mapping (address => mapping (address => bool)) public approvedManagers;
 
     // Mapping from a positionId to the total number of owedToken ever repaid to the lender for the
     // position. Updated only upon acquiring the loan or upon withdrawing owedToken from this
@@ -117,13 +120,13 @@ contract ERC721MarginLoan is
     // ============ Token-Holder functions ============
 
     /**
-     * Approves an address to margin-call any of the positions owned by the sender.
+     * Approves an address to manager loans owned by the sender.
      *
-     * @param  caller      Address of the margin-caller
-     * @param  isApproved  True if approving the caller, false if revoking approval
+     * @param  manager     Address of the manager
+     * @param  isApproved  True if approving the manager, false if revoking approval
      */
-    function approveCaller(
-        address caller,
+    function approveManager(
+        address manager,
         bool isApproved
     )
         external
@@ -131,20 +134,20 @@ contract ERC721MarginLoan is
     {
         // cannot approve self since any address can already close its own positions
         require(
-            caller != msg.sender,
-            "ERC721MarginLoan#approveCaller: Cannot approve self"
+            manager != msg.sender,
+            "ERC721MarginLoan#approveManager: Cannot approve self"
         );
 
         // do nothing if state does not need to change
-        if (approvedCallers[msg.sender][caller] == isApproved) {
+        if (approvedManagers[msg.sender][manager] == isApproved) {
             return;
         }
 
-        approvedCallers[msg.sender][caller] = isApproved;
+        approvedManagers[msg.sender][manager] = isApproved;
 
-        emit MarginCallerApproval(
+        emit ManagerApproval(
             msg.sender,
-            caller,
+            manager,
             isApproved
         );
     }
@@ -253,34 +256,39 @@ contract ERC721MarginLoan is
     }
 
     /**
-     * Called by Margin when additional value is added onto a position. Rejects this addition.
+     * Called by Margin when additional value is added onto a position. Defer approval to the
+     * token-holder.
      *
-     *  param  payer           Address that added the value to the position
-     *  param  positionId      Unique ID of the position
-     *  param  principalAdded  Principal amount added to position
-     * @return                 False
+     *  param  payer           (unused)
+     * @param  positionId      Unique ID of the position
+     *  param  principalAdded  (unused)
+     * @return                 This address to accept, a different address to ask that contract
      */
-    function marginLoanIncreased(
+    function increaseLoanOnBehalfOf(
         address, /* payer */
-        bytes32, /* positionId */
+        bytes32 positionId,
         uint256  /* principalAdded */
     )
         external
         /* pure */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        return false;
+        address owner = ownerOfPosition(positionId);
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to margin-call a loan
+     * Called by Margin when another address attempts to margin-call a loan. Defer approval to the
+     * token-holder.
      *
      * @param  caller         Address attempting to initiate the loan call
      * @param  positionId     Unique ID of the position
      *  param  depositAmount  (unused)
-     * @return                True to consent to the loan being called if the initiator is a trusted
-     *                        loan caller or the owner of the loan
+     * @return                This address to accept, a different address to ask that contract
      */
     function marginCallOnBehalfOf(
         address caller,
@@ -290,19 +298,26 @@ contract ERC721MarginLoan is
         external
         /* view */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
-        return (caller == owner) || approvedCallers[owner][caller];
+        address owner = ownerOfPosition(positionId);
+
+        if (approvedManagers[owner][caller]) {
+            return address(this);
+        }
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to cancel a margin call for a loan
+     * Called by Margin when another address attempts to cancel a margin-call for a loan. Defer
+     * approval to the token-holder.
      *
      * @param  canceler    Address attempting to initiate the loan call cancel
      * @param  positionId  Unique ID of the position
-     * @return             True to consent to the loan call being canceled if the initiator is a
-     *                     trusted loan caller or the owner of the loan
+     * @return             This address to accept, a different address to ask that contract
      */
     function cancelMarginCallOnBehalfOf(
         address canceler,
@@ -311,35 +326,50 @@ contract ERC721MarginLoan is
         external
         view
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
-        return (canceler == owner) || approvedCallers[owner][canceler];
+        address owner = ownerOfPosition(positionId);
+
+        if (approvedManagers[owner][canceler]) {
+            return address(this);
+        }
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     /**
-     * Called by Margin when another address attempts to force recover the loan. Allow anyone to
-     * force recover the loan as long as the payout goes to the token owner.
+     * Called by Margin when another address attempts to force recover the loan. Defer approval to
+     * the token-holder.
      *
-     *  param  (unused)
+     * @param  recoverer   Address of the caller of the forceRecoverCollateral() function
      * @param  positionId  Unique ID of the position
      * @param  recipient   Address to send the recovered tokens to
-     * @return             True if forceRecoverCollateral() is permitted
+     * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address /* who */,
+        address recoverer,
         bytes32 positionId,
         address recipient
     )
         external
         /* view */
         onlyMargin
-        returns (bool)
+        returns (address)
     {
-        return ownerOf(uint256(positionId)) == recipient;
+        address owner = ownerOfPosition(positionId);
+
+        if (approvedManagers[owner][recoverer] && recipient == owner) {
+            return address(this);
+        }
+
+        require(owner != address(this));
+
+        return owner;
     }
 
-    // ============ Helper Functions ============
+    // ============ Internal Helper Functions ============
 
     /**
      * Implementation of withdrawing owedToken for a particular positionId
@@ -353,8 +383,7 @@ contract ERC721MarginLoan is
         internal
         returns (uint256)
     {
-        address owner = ownerOf(uint256(positionId));
-        assert(owner != address(0)); // ownerOf() should have already required this
+        address owner = ownerOfPosition(positionId);
 
         address owedToken = owedTokenAddress[positionId];
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
@@ -404,5 +433,20 @@ contract ERC721MarginLoan is
 
         // requires that owner actually is the owner of the token
         _burn(owner, tokenId);
+    }
+
+    function ownerOfPosition(
+        bytes32 positionId
+    )
+        internal
+        view
+        returns (address)
+    {
+        address owner = ownerOf(uint256(positionId));
+
+        // ownerOf() should have already required this
+        assert(owner != address(0));
+
+        return owner;
     }
 }

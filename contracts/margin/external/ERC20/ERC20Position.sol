@@ -30,6 +30,8 @@ import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
+import { IncreasePositionDelegator } from "../../interfaces/owner/IncreasePositionDelegator.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";
 
@@ -44,6 +46,8 @@ contract ERC20Position is
     ReentrancyGuard,
     StandardToken,
     OnlyMargin,
+    PositionOwner,
+    IncreasePositionDelegator,
     ClosePositionDelegator,
     PositionCustodian
 {
@@ -117,6 +121,24 @@ contract ERC20Position is
     // Symbol to be ERC20 compliant with frontends
     string public symbol;
 
+    // ============ Modifiers ============
+
+    modifier onlyPosition(bytes32 positionId) {
+        require(
+            POSITION_ID == positionId,
+            "ERC20Position#onlyPosition: Incorrect position"
+        );
+        _;
+    }
+
+    modifier onlyState(State specificState) {
+        require(
+            state == specificState,
+            "ERC20Position#onlyState: Incorrect State"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor(
@@ -157,18 +179,10 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
+        onlyState(State.UNINITIALIZED)
+        onlyPosition(positionId)
         returns (address)
     {
-        // require uninitialized so that this cannot receive ownership for more than one position
-        require(
-            state == State.UNINITIALIZED,
-            "ERC20Position#receivePositionOwnership: Already initialized"
-        );
-        require(
-            POSITION_ID == positionId,
-            "ERC20Position#receivePositionOwnership: Incorrect position"
-        );
-
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
 
@@ -197,12 +211,12 @@ contract ERC20Position is
      * Called by Margin when additional value is added onto the position this contract
      * owns. Tokens are minted and assigned to the address that added the value.
      *
-     * @param  trader            Address that added the value to the position
+     * @param  trader          Address that added the value to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
-     * @return                 True to indicate that this contract consents to value being added
+     * @return                 This address on success, throw otherwise
      */
-    function marginPositionIncreased(
+    function increasePositionOnBehalfOf(
         address trader,
         bytes32 positionId,
         uint256 principalAdded
@@ -210,10 +224,10 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
-        returns (bool)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address)
     {
-        assert(positionId == POSITION_ID);
-
         uint256 tokenAmount = getTokenAmountOnAdd(
             positionId,
             principalAdded
@@ -225,7 +239,7 @@ contract ERC20Position is
         // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
         emit Transfer(address(0), trader, tokenAmount);
 
-        return true;
+        return address(this);
     }
 
     /**
@@ -239,7 +253,8 @@ contract ERC20Position is
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
      * @param  positionId       Unique ID of the position
      * @param  requestedAmount  Amount (in principal) of the position being closed
-     * @return                  The amount the user is allowed to close for the specified position
+     * @return                  1) This address to accept, a different address to ask that contract
+     *                          2) The maximum amount that this contract is allowing
      */
     function closeOnBehalfOf(
         address closer,
@@ -250,28 +265,32 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
-        returns (uint256)
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
+        returns (address, uint256)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
-
         uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
 
         assert(requestedAmount <= positionPrincipal);
 
+        uint256 allowedAmount;
         if (positionPrincipal == requestedAmount && TRUSTED_RECIPIENTS[payoutRecipient]) {
-            return closeByTrustedParty(
+            allowedAmount = closeByTrustedParty(
                 closer,
                 payoutRecipient,
                 requestedAmount
             );
+        } else {
+            allowedAmount = close(
+                closer,
+                requestedAmount,
+                positionPrincipal
+            );
         }
 
-        return close(
-            closer,
-            requestedAmount,
-            positionPrincipal
-        );
+        assert(allowedAmount > 0);
+
+        return (address(this), allowedAmount);
     }
 
     // ============ Public State Changing Functions ============
@@ -383,12 +402,9 @@ contract ERC20Position is
     )
         external
         view
+        onlyPosition(positionId)
         returns (address)
     {
-        require(
-            positionId == POSITION_ID,
-            "ERC20Position#getPositionDeedHolder: Invalid position ID"
-        );
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }

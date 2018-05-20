@@ -19,34 +19,30 @@
 pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
-/* solium-disable-next-line max-len*/
-import { ForceRecoverCollateralDelegator } from "../margin/interfaces/lender/ForceRecoverCollateralDelegator.sol";
-import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
+import { DepositCollateralDelegator } from "../margin/interfaces/owner/DepositCollateralDelegator.sol";
+import { PositionOwner } from "../margin/interfaces/owner/PositionOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";
 
 
-contract TestForceRecoverCollateralDelegator is
+contract TestDepositCollateralDelegator is
     OnlyMargin,
-    LoanOwner,
-    ForceRecoverCollateralDelegator
+    PositionOwner,
+    DepositCollateralDelegator
 {
 
-    address public RECOVERER;
-    address public COLLATERAL_RECIPIENT;
+    address public DEPOSITOR;
 
     constructor(
         address margin,
-        address recoverer,
-        address recipient
+        address depositor
     )
         public
         OnlyMargin(margin)
     {
-        RECOVERER = recoverer;
-        COLLATERAL_RECIPIENT = recipient;
+        DEPOSITOR = depositor;
     }
 
-    function receiveLoanOwnership(
+    function receivePositionOwnership(
         address,
         bytes32
     )
@@ -57,20 +53,16 @@ contract TestForceRecoverCollateralDelegator is
         return address(this);
     }
 
-    function forceRecoverCollateralOnBehalfOf(
-        address recoverer,
+    function depositCollateralOnBehalfOf(
+        address depositor,
         bytes32,
-        address recipient
+        uint256
     )
         onlyMargin
         external
         returns (address)
     {
-        bool recovererOkay = (recoverer == RECOVERER);
-        bool recipientOkay = (COLLATERAL_RECIPIENT != address(0))
-            && (recipient == COLLATERAL_RECIPIENT);
-
-        require(recovererOkay || recipientOkay);
+        require(depositor == DEPOSITOR);
 
         return address(this);
     }
