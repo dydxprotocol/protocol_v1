@@ -343,15 +343,15 @@ contract ERC721MarginLoan is
      * Called by Margin when another address attempts to force recover the loan. Defer approval to
      * the token-holder.
      *
-     *  param  recoverer   (unused)
+     * @param  recoverer   Address of the caller of the forceRecoverCollateral() function
      * @param  positionId  Unique ID of the position
-     *  param  recipient   (unused)
+     * @param  recipient   Address to send the recovered tokens to
      * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
         address recoverer,
         bytes32 positionId,
-        address /* recipient */
+        address recipient
     )
         external
         /* view */
@@ -360,7 +360,7 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOfPosition(positionId);
 
-        if (approvedManagers[owner][recoverer]) {
+        if (approvedManagers[owner][recoverer] && recipient == owner);
             return address(this);
         }
 
