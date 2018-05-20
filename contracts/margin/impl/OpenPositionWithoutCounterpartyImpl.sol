@@ -148,6 +148,11 @@ library OpenPositionWithoutCounterpartyImpl {
         );
 
         require(
+            openTx.owedToken != openTx.heldToken,
+            "OpenPositionWithoutCounterpartyImpl#validate: owedToken cannot be equal to heldToken"
+        );
+
+        require(
             openTx.maxDuration > 0,
             "OpenPositionWithoutCounterpartyImpl#validate: maxDuration cannot be 0"
         );

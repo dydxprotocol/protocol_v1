@@ -122,6 +122,22 @@ describe('#increasePosition', () => {
     });
 
     contract('Margin', accounts => {
+      it('Fails if owedToken is equal to heldToken', async () => {
+        const [
+          openTx,
+          dydxMargin
+        ] = await Promise.all([
+          setup(accounts),
+          Margin.deployed()
+        ]);
+
+        openTx.owedToken = openTx.heldToken;
+
+        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+      });
+    });
+
+    contract('Margin', accounts => {
       it('Fails if maxDuration is 0', async () => {
         const [
           openTx,
