@@ -1,12 +1,13 @@
 <p align="center"><img src="https://dydx.exchange/images/logo.png" width="256" /></p>
 
 <p align="center">
-  <a href="https://circleci.com/gh/dydxexchange/protocol">
-    <img src="https://circleci.com/gh/dydxexchange/protocol/tree/master.svg?style=svg&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9" />
+  <a href="https://circleci.com/gh/dydxprotocol/protocol">
+    <img src="https://circleci.com/gh/dydxprotocol/protocol/tree/master.svg?style=svg&circle-token=5f772dae891383f1bda6e3d8745f9bbefaf1d0d9" />
   </a>
-  <a href='https://coveralls.io/github/dydxexchange/protocol?branch=master'>
-    <img src='https://coveralls.io/repos/github/dydxexchange/protocol/badge.svg?branch=master&amp;t=JIClRe' alt='Coverage Status' />
+  <a href='https://coveralls.io/github/dydxprotocol/protocol'>
+    <img src='https://coveralls.io/repos/github/dydxprotocol/protocol/badge.svg?t=vK9nv8' alt='Coverage Status' />
   </a>
+
 </p>
 
 Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protocol
