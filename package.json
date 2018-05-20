@@ -33,7 +33,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dydxexchange/protocol"
+    "url": "https://github.com/dydxprotocol/protocol"
   },
   "keywords": [
     "dydx",
@@ -42,9 +42,9 @@
   "author": "dYdX Trading Inc.",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/dydxexchange/protocol/issues"
+    "url": "https://github.com/dydxprotocol/protocol/issues"
   },
-  "homepage": "https://github.com/dydxexchange/protocol#readme",
+  "homepage": "https://github.com/dydxprotocol/protocol#readme",
   "dependencies": {
     "zeppelin-solidity": "1.9.0"
   },
