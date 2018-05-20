@@ -256,6 +256,22 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', accounts => {
+    it('fails if owedToken equals heldToken', async () => {
+      const OpenTx = await createOpenTx(accounts);
+      const dydxMargin = await Margin.deployed();
+
+      OpenTx.loanOffering.owedToken = OpenTx.loanOffering.heldToken;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+      await issueTokensAndSetAllowances(OpenTx);
+
+      await expectThrow(
+        callOpenPosition(dydxMargin, OpenTx)
+      );
+    });
+  });
+
+  contract('Margin', accounts => {
     it('works with 0 fees', async () => {
       const OpenTx = await createOpenTx(accounts);
       const dydxMargin = await Margin.deployed();
