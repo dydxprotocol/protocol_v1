@@ -360,7 +360,7 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOfPosition(positionId);
 
-        if (approvedManagers[owner][recoverer] && recipient == owner);
+        if (approvedManagers[owner][recoverer] && recipient == owner) {
             return address(this);
         }
 
