@@ -73,9 +73,9 @@ contract ERC721MarginLoan is
     );
 
     /**
-     * Margin-calling approval was granted or revoked.
+     * Manager approval was granted or revoked.
      */
-    event MarginCallerApproval(
+    event ManagerApproval(
         address indexed lender,
         address indexed caller,
         bool isApproved
@@ -94,8 +94,9 @@ contract ERC721MarginLoan is
 
     // ============ State Variables ============
 
-    // Mapping from an address to other addresses that are approved to be margin-callers
-    mapping (address => mapping (address => bool)) public approvedCallers;
+    // Mapping from an address to other addresses that are approved to manage loans (including
+    // margin-calling and force-recovering).
+    mapping (address => mapping (address => bool)) public approvedManagers;
 
     // Mapping from a positionId to the total number of owedToken ever repaid to the lender for the
     // position. Updated only upon acquiring the loan or upon withdrawing owedToken from this
@@ -119,13 +120,13 @@ contract ERC721MarginLoan is
     // ============ Token-Holder functions ============
 
     /**
-     * Approves an address to margin-call any of the positions owned by the sender.
+     * Approves an address to manager loans owned by the sender.
      *
-     * @param  caller      Address of the margin-caller
-     * @param  isApproved  True if approving the caller, false if revoking approval
+     * @param  manager     Address of the manager
+     * @param  isApproved  True if approving the manager, false if revoking approval
      */
-    function approveCaller(
-        address caller,
+    function approveManager(
+        address manager,
         bool isApproved
     )
         external
@@ -133,20 +134,20 @@ contract ERC721MarginLoan is
     {
         // cannot approve self since any address can already close its own positions
         require(
-            caller != msg.sender,
-            "ERC721MarginLoan#approveCaller: Cannot approve self"
+            manager != msg.sender,
+            "ERC721MarginLoan#approveManager: Cannot approve self"
         );
 
         // do nothing if state does not need to change
-        if (approvedCallers[msg.sender][caller] == isApproved) {
+        if (approvedManagers[msg.sender][manager] == isApproved) {
             return;
         }
 
-        approvedCallers[msg.sender][caller] = isApproved;
+        approvedManagers[msg.sender][manager] = isApproved;
 
-        emit MarginCallerApproval(
+        emit ManagerApproval(
             msg.sender,
-            caller,
+            manager,
             isApproved
         );
     }
@@ -259,7 +260,7 @@ contract ERC721MarginLoan is
      * token-holder.
      *
      *  param  payer           (unused)
-     *  param  positionId      Unique ID of the position
+     * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
@@ -273,7 +274,7 @@ contract ERC721MarginLoan is
         onlyMargin
         returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
 
         require(owner != address(this));
 
@@ -299,9 +300,9 @@ contract ERC721MarginLoan is
         onlyMargin
         returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
 
-        if (approvedCallers[owner][caller]) {
+        if (approvedManagers[owner][caller]) {
             return address(this);
         }
 
@@ -327,9 +328,9 @@ contract ERC721MarginLoan is
         onlyMargin
         returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
 
-        if (approvedCallers[owner][canceler]) {
+        if (approvedManagers[owner][canceler]) {
             return address(this);
         }
 
@@ -348,7 +349,7 @@ contract ERC721MarginLoan is
      * @return             This address to accept, a different address to ask that contract
      */
     function forceRecoverCollateralOnBehalfOf(
-        address /* recoverer */,
+        address recoverer,
         bytes32 positionId,
         address /* recipient */
     )
@@ -357,14 +358,18 @@ contract ERC721MarginLoan is
         onlyMargin
         returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
+
+        if (approvedManagers[owner][recoverer]) {
+            return address(this);
+        }
 
         require(owner != address(this));
 
         return owner;
     }
 
-    // ============ Helper Functions ============
+    // ============ Internal Helper Functions ============
 
     /**
      * Implementation of withdrawing owedToken for a particular positionId
@@ -378,8 +383,7 @@ contract ERC721MarginLoan is
         internal
         returns (uint256)
     {
-        address owner = ownerOf(uint256(positionId));
-        assert(owner != address(0)); // ownerOf() should have already required this
+        address owner = ownerOfPosition(positionId);
 
         address owedToken = owedTokenAddress[positionId];
         uint256 totalRepaid = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(positionId);
@@ -429,5 +433,20 @@ contract ERC721MarginLoan is
 
         // requires that owner actually is the owner of the token
         _burn(owner, tokenId);
+    }
+
+    function ownerOfPosition(
+        bytes32 positionId
+    )
+        internal
+        view
+        returns (address)
+    {
+        address owner = ownerOf(uint256(positionId));
+
+        // ownerOf() should have already required this
+        assert(owner != address(0));
+
+        return owner;
     }
 }

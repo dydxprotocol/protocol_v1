@@ -251,7 +251,7 @@ contract ERC721MarginPosition is
         nonReentrant
         returns (address)
     {
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
 
         require(owner != address(this));
 
@@ -286,7 +286,7 @@ contract ERC721MarginPosition is
         // Cannot burn the token since the position hasn't been closed yet and getPositionDeedHolder
         // must return the owner of the position after it has been closed in the current transaction
 
-        address owner = ownerOf(uint256(positionId));
+        address owner = ownerOfPosition(positionId);
 
         require(owner != address(this));
 
@@ -306,10 +306,10 @@ contract ERC721MarginPosition is
         view
         returns (address)
     {
-        return ownerOf(uint256(positionId));
+        return ownerOfPosition(positionId);
     }
 
-    // ============ Internal Functions ============
+    // ============ Internal Helper Functions ============
 
     function burnClosedTokenInternal(
         bytes32 positionId
@@ -320,6 +320,21 @@ contract ERC721MarginPosition is
             Margin(DYDX_MARGIN).isPositionClosed(positionId),
             "ERC721MarginPosition#burnClosedTokenInternal: Position is not closed"
         );
-        _burn(ownerOf(uint256(positionId)), uint256(positionId));
+        _burn(ownerOfPosition(positionId), uint256(positionId));
+    }
+
+    function ownerOfPosition(
+        bytes32 positionId
+    )
+        internal
+        view
+        returns (address)
+    {
+        address owner = ownerOf(uint256(positionId));
+
+        // ownerOf() should have already required this
+        assert(owner != address(0));
+
+        return owner;
     }
 }

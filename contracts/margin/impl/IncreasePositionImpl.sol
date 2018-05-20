@@ -360,13 +360,12 @@ library IncreasePositionImpl {
             return;
         }
 
-        IncreasePositionDelegator ipd = IncreasePositionDelegator(contractAddr);
         address newContractAddr =
-        ipd.increasePositionOnBehalfOf(
-            trader,
-            positionId,
-            principalAdded
-        );
+            IncreasePositionDelegator(contractAddr).increasePositionOnBehalfOf(
+                trader,
+                positionId,
+                principalAdded
+            );
 
         // if not equal, recurse
         if (newContractAddr != contractAddr) {
@@ -392,12 +391,12 @@ library IncreasePositionImpl {
             return;
         }
 
-        IncreaseLoanDelegator ild = IncreaseLoanDelegator(contractAddr);
-        address newContractAddr = ild.increaseLoanOnBehalfOf(
-            payer,
-            positionId,
-            principalAdded
-        );
+        address newContractAddr =
+            IncreaseLoanDelegator(contractAddr).increaseLoanOnBehalfOf(
+                payer,
+                positionId,
+                principalAdded
+            );
 
         // if not equal, recurse
         if (newContractAddr != contractAddr) {

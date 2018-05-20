@@ -115,7 +115,7 @@ describe('ERC721MarginLoan', () => {
         loanSymbol
       ] = await Promise.all([
         loanContract.DYDX_MARGIN.call(),
-        loanContract.approvedCallers.call(accounts[0], accounts[1]),
+        loanContract.approvedManagers.call(accounts[0], accounts[1]),
         loanContract.owedTokensRepaidSinceLastWithdraw.call(BYTES32.TEST[0]),
         loanContract.owedTokenAddress.call(BYTES32.TEST[0]),
         loanContract.name.call(),
@@ -166,7 +166,7 @@ describe('ERC721MarginLoan', () => {
 
     it('succeeds in approving', async () => {
       const tx = await loanContract.approveCaller(helper, true, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx.logs[0], eventName, approvedEventTrue);
     });
@@ -174,7 +174,7 @@ describe('ERC721MarginLoan', () => {
     it('succeeds in revoking approval', async () => {
       const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
       const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expectLog(tx2.logs[0], eventName, approvedEventFalse);
@@ -183,7 +183,7 @@ describe('ERC721MarginLoan', () => {
     it('succeeds when true => true', async () => {
       const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
       const tx2 = await loanContract.approveCaller(helper, true, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.true;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expect(tx2.logs.length === 0);
@@ -193,7 +193,7 @@ describe('ERC721MarginLoan', () => {
       const tx1 = await loanContract.approveCaller(helper, true, { from: sender });
       const tx2 = await loanContract.approveCaller(helper, false, { from: sender });
       const tx3 = await loanContract.approveCaller(helper, false, { from: sender });
-      const approved = await loanContract.approvedCallers.call(sender, helper);
+      const approved = await loanContract.approvedManagers.call(sender, helper);
       expect(approved).to.be.false;
       expectLog(tx1.logs[0], eventName, approvedEventTrue);
       expectLog(tx2.logs[0], eventName, approvedEventFalse);
