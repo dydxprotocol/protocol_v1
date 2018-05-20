@@ -121,6 +121,24 @@ contract ERC20Position is
     // Symbol to be ERC20 compliant with frontends
     string public symbol;
 
+    // ============ Modifiers ============
+
+    modifier onlyPosition(bytes32 positionId) {
+        require(
+            POSITION_ID == positionId,
+            "ERC20Position#onlyPosition: Incorrect position"
+        );
+        _;
+    }
+
+    modifier onlyState(State specificState) {
+        require(
+            state == specificState,
+            "ERC20Position#onlyState: Incorrect State"
+        );
+        _;
+    }
+
     // ============ Constructor ============
 
     constructor(
@@ -161,18 +179,10 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
+        onlyState(State.UNINITIALIZED)
+        onlyPosition(positionId)
         returns (address)
     {
-        // require uninitialized so that this cannot receive ownership for more than one position
-        require(
-            state == State.UNINITIALIZED,
-            "ERC20Position#receivePositionOwnership: Already initialized"
-        );
-        require(
-            POSITION_ID == positionId,
-            "ERC20Position#receivePositionOwnership: Incorrect position"
-        );
-
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
 
@@ -214,10 +224,10 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
         returns (address)
     {
-        assert(positionId == POSITION_ID);
-
         uint256 tokenAmount = getTokenAmountOnAdd(
             positionId,
             principalAdded
@@ -255,11 +265,10 @@ contract ERC20Position is
         external
         onlyMargin
         nonReentrant
+        onlyState(State.OPEN)
+        onlyPosition(positionId)
         returns (address, uint256)
     {
-        assert(state == State.OPEN);
-        assert(POSITION_ID == positionId);
-
         uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
 
         assert(requestedAmount <= positionPrincipal);
@@ -393,12 +402,9 @@ contract ERC20Position is
     )
         external
         view
+        onlyPosition(positionId)
         returns (address)
     {
-        require(
-            positionId == POSITION_ID,
-            "ERC20Position#getPositionDeedHolder: Invalid position ID"
-        );
         // Claim ownership of deed and allow token holders to withdraw funds from this contract
         return address(this);
     }
