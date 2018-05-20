@@ -14,7 +14,7 @@ Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protoco
 
 [Whitepaper](https://whitepaper.dydx.exchange)
 
-[Short & Leveraged Long Whitepaper](https://margintokens.dydx.exchange)
+[Short & Leveraged Long Tokens Whitepaper](https://margintokens.dydx.exchange)
 
 ### Development
 
