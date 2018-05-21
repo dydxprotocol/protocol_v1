@@ -43,7 +43,7 @@ def main():
     for dir,_,_ in os.walk(dir_path+"/contracts"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
 
-    whitelistedFiles = ['FractionMath.sol']
+    whitelistedFiles = ['FractionMath.sol', 'MathHelpers.sol']
     files = [x for x in files if not any(white in x for white in whitelistedFiles)]
 
     numHidden = 0

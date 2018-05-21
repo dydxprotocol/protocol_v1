@@ -46,16 +46,4 @@ contract TestInterestImpl {
             secondsOfInterest
         );
     }
-
-    function getNumBits(
-        uint256 n
-    )
-        public
-        returns (uint256)
-    {
-        if (false) {
-            test = 1;
-        }
-        return MathHelpers.getNumBits(n);
-    }
 }

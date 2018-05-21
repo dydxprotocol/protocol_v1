@@ -14,25 +14,6 @@ const { expectWithinError } = require('../helpers/MathHelper');
 contract('InterestHelper', function(_accounts) {
   let contract;
 
-  describe('#getNumBits', () => {
-    before('', async () => {
-      await TestInterestImpl.link('InterestImpl', InterestImpl.address);
-      contract = await TestInterestImpl.new();
-    });
-
-    it('works for 0 through 256', async () => {
-      let result = await contract.getNumBits.call(BIGNUMBERS.ZERO);
-      expect(result).to.be.bignumber.equal(0);
-
-      let n = new BigNumber(1);
-      for(let i = 0; i < 256; i++) {
-        let result = await contract.getNumBits.call(n);
-        expect(result).to.be.bignumber.equal(i + 1);
-        n = n.times(2);
-      }
-    });
-  });
-
   describe('#getCompoundedInterest', () => {
     before('', async () => {
       await TestInterestImpl.link('InterestImpl', InterestImpl.address);
