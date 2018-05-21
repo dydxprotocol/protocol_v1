@@ -3,6 +3,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
+const BigNumber = require('bignumber.js');
 
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const Margin = artifacts.require("Margin");
@@ -173,6 +174,57 @@ contract('ERC721MarginPosition', accounts => {
         addedPrincipal,
         { from: openTx.trader }
       )
+    });
+  });
+
+  // ============ depositOnBehalfOf ============
+
+  describe('#depositOnBehalfOf', () => {
+    let openTx;
+
+    beforeEach('set up position', async () => {
+      openTx = await doOpenPosition(
+        accounts,
+        {
+          salt: salt++,
+          positionOwner: ERC721MarginPosition.address
+        }
+      );
+    });
+
+    it('fails for non-owner', async () => {
+      const heldTokenAmount = new BigNumber('1e18');
+      const rando = accounts[8];
+
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
+        rando,
+        heldTokenAmount
+      );
+
+      await expectThrow(
+        dydxMargin.depositCollateral(
+          openTx.id,
+          heldTokenAmount,
+          { from: rando }
+        )
+      );
+    });
+
+    it('succeeds for owner', async () => {
+      const heldTokenAmount = new BigNumber('1e18');
+
+      await issueTokenToAccountInAmountAndApproveProxy(
+        heldToken,
+        openTx.trader,
+        heldTokenAmount
+      );
+
+      await dydxMargin.depositCollateral(
+        openTx.id,
+        heldTokenAmount,
+        { from: openTx.trader }
+      );
     });
   });
 

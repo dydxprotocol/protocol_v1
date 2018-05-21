@@ -25,6 +25,7 @@ import { ERC721Token } from "zeppelin-solidity/contracts/token/ERC721/ERC721Toke
 import { Margin } from "../../Margin.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
+import { DepositCollateralDelegator } from "../../interfaces/owner/DepositCollateralDelegator.sol";
 import { IncreasePositionDelegator } from "../../interfaces/owner/IncreasePositionDelegator.sol";
 import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
@@ -45,6 +46,7 @@ contract ERC721MarginPosition is
     PositionOwner,
     IncreasePositionDelegator,
     ClosePositionDelegator,
+    DepositCollateralDelegator,
     PositionCustodian
 {
     using SafeMath for uint256;
@@ -261,9 +263,7 @@ contract ERC721MarginPosition is
     /**
      * Called by Margin when an owner of this token is attempting to close some of the
      * position. Implementation is required per PositionOwner contract in order to be used by
-     * Margin to approve closing parts of a position. If true is returned, this contract
-     * must assume that Margin will either revert the entire transaction or that the specified
-     * amount of the position was successfully closed.
+     * Margin to approve closing parts of a position.
      *
      * @param  closer           Address of the caller of the close function
      * @param  payoutRecipient  Address of the recipient of tokens paid out from closing
@@ -295,6 +295,31 @@ contract ERC721MarginPosition is
         }
 
         return (owner, requestedAmount);
+    }
+
+    /**
+     * Function a contract must implement in order to let other addresses call depositCollateral().
+     *
+     * @param  depositor   Address of the caller of the depositCollateral() function
+     * @param  positionId  Unique ID of the position
+     * @param  amount      Requested deposit amount
+     * @return             This address to accept, a different address to ask that contract
+     */
+    function depositCollateralOnBehalfOf(
+        address depositor,
+        bytes32 positionId,
+        uint256 amount
+    )
+        external
+        onlyMargin
+        nonReentrant
+        returns (address)
+    {
+        address owner = ownerOfPosition(positionId);
+
+        require(owner != address(this));
+
+        return owner;
     }
 
     // ============ PositionCustodian Functions ============

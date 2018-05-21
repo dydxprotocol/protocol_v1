@@ -282,7 +282,7 @@ describe('#openPosition', () => {
           Margin.deployed(),
           FeeToken.deployed(),
           OwedToken.deployed(),
-          TestSmartContractLender.new(false)
+          TestSmartContractLender.new(false, ADDRESSES.ZERO)
         ]);
 
         await issueTokensAndSetAllowances(OpenTx);

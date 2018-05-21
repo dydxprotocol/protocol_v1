@@ -72,13 +72,49 @@ describe('#CloseWithoutCounterparty', () => {
 
   describe('#closeLoanOnBehalfOf', () => {
     contract('Margin', accounts => {
-      it('allows closeWithoutCounterparty if the lender is a smart contract', async () => {
+      it('allows if the lender is a smart contract that returns its own address', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
         const closeLoanDelegator =
           await TestCloseLoanDelegator.new(dydxMargin.address, principal);
+        // Transfer the loan to the CloseLoanDelegator
+        await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
+
+        const heldToken = await ERC20.at(OpenTx.heldToken);
+        const lenderHeldTokenBefore = await heldToken.balanceOf.call(lender);
+        expect(lenderHeldTokenBefore.toNumber()).to.equal(0);
+
+        const heldTokenBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+
+        // Receive heldTokens by burning tokens
+        await callCloseWithoutCounterparty(dydxMargin, OpenTx, principal, lender);
+
+        const lenderAfter = await erc20Contract.balanceOf.call(lender);
+        expect(lenderAfter.toNumber()).to.equal(0);
+
+        const lenderHeldTokenAfter = await heldToken.balanceOf.call(lender);
+        expect(lenderHeldTokenAfter).to.be.bignumber.equal(
+          getPartialAmount(
+            principal,
+            totalSupply,
+            heldTokenBalance
+          )
+        );
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('allows if the lender is a smart contract that returns a different address', async () => {
+        const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
+        await configurePosition(initialHolder, accounts);
+
+        // Create a new loan owner smart contract that implements CloseLoanDelegator
+        const closeLoanDelegator =
+          await TestCloseLoanDelegator.new(dydxMargin.address, principal);
+        await closeLoanDelegator.setAddressToReturn(lender);
+
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 
@@ -117,6 +153,7 @@ describe('#CloseWithoutCounterparty', () => {
             dydxMargin.address,
             allowedCloseAmount
           );
+
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(OpenTx.id, closeLoanDelegator.address, { from: lender });
 

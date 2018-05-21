@@ -78,7 +78,74 @@ describe('#openPosition', () => {
         Margin.deployed(),
         FeeToken.deployed(),
         OwedToken.deployed(),
-        TestSmartContractLender.new(true)
+        TestSmartContractLender.new(true, ADDRESSES.ZERO)
+      ]);
+
+      await issueTokensAndSetAllowances(OpenTx);
+
+      const [
+        lenderFeeTokenBalance,
+        lenderOwedTokenBalance
+      ] = await Promise.all([
+        feeToken.balanceOf.call(OpenTx.loanOffering.payer),
+        owedToken.balanceOf.call(OpenTx.loanOffering.payer)
+      ]);
+      await Promise.all([
+        feeToken.transfer(
+          testSmartContractLender.address,
+          lenderFeeTokenBalance,
+          { from: OpenTx.loanOffering.payer }
+        ),
+        owedToken.transfer(
+          testSmartContractLender.address,
+          lenderOwedTokenBalance,
+          { from: OpenTx.loanOffering.payer }
+        )
+      ]);
+      await Promise.all([
+        testSmartContractLender.allow(
+          feeToken.address,
+          ProxyContract.address,
+          lenderFeeTokenBalance
+        ),
+        testSmartContractLender.allow(
+          owedToken.address,
+          ProxyContract.address,
+          lenderOwedTokenBalance
+        )
+      ]);
+      const testMarginCallDelegator = await TestMarginCallDelegator.new(
+        Margin.address,
+        ADDRESSES.ZERO,
+        ADDRESSES.ZERO);
+
+      OpenTx.loanOffering.signer = OpenTx.loanOffering.payer;
+      OpenTx.loanOffering.payer = testSmartContractLender.address;
+      OpenTx.loanOffering.owner = testMarginCallDelegator.address;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+
+      const tx = await callOpenPosition(dydxMargin, OpenTx);
+
+      console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
+
+      await checkSuccess(dydxMargin, OpenTx);
+    });
+  });
+
+  contract('Margin', accounts => {
+    it('allows smart contracts to specify other addresses', async () => {
+      const OpenTx = await createOpenTx(accounts);
+      const testSmartContractLender2 = await TestSmartContractLender.new(true, ADDRESSES.ZERO);
+      const [
+        dydxMargin,
+        feeToken,
+        owedToken,
+        testSmartContractLender
+      ] = await Promise.all([
+        Margin.deployed(),
+        FeeToken.deployed(),
+        OwedToken.deployed(),
+        TestSmartContractLender.new(true, testSmartContractLender2.address)
       ]);
 
       await issueTokensAndSetAllowances(OpenTx);
