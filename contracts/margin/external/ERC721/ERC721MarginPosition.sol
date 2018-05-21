@@ -253,11 +253,7 @@ contract ERC721MarginPosition is
         nonReentrant
         returns (address)
     {
-        address owner = ownerOfPosition(positionId);
-
-        require(owner != address(this));
-
-        return owner;
+        return ownerOfPosition(positionId);
     }
 
     /**
@@ -288,8 +284,6 @@ contract ERC721MarginPosition is
 
         address owner = ownerOfPosition(positionId);
 
-        require(owner != address(this));
-
         if (approvedClosers[owner][closer] || approvedRecipients[owner][payoutRecipient]) {
             return (address(this), requestedAmount);
         }
@@ -300,26 +294,22 @@ contract ERC721MarginPosition is
     /**
      * Function a contract must implement in order to let other addresses call depositCollateral().
      *
-     * @param  depositor   Address of the caller of the depositCollateral() function
+     *  param  depositor   (unused)
      * @param  positionId  Unique ID of the position
-     * @param  amount      Requested deposit amount
+     *  param  amount      (unused)
      * @return             This address to accept, a different address to ask that contract
      */
     function depositCollateralOnBehalfOf(
-        address depositor,
+        address /* depositor */,
         bytes32 positionId,
-        uint256 amount
+        uint256 /* amount */
     )
         external
         onlyMargin
         nonReentrant
         returns (address)
     {
-        address owner = ownerOfPosition(positionId);
-
-        require(owner != address(this));
-
-        return owner;
+        return ownerOfPosition(positionId);
     }
 
     // ============ PositionCustodian Functions ============
@@ -359,6 +349,9 @@ contract ERC721MarginPosition is
 
         // ownerOf() should have already required this
         assert(owner != address(0));
+
+        // this contract should not own tokens
+        require(owner != address(this));
 
         return owner;
     }
