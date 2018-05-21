@@ -276,8 +276,6 @@ contract ERC721MarginLoan is
     {
         address owner = ownerOfPosition(positionId);
 
-        require(owner != address(this));
-
         return owner;
     }
 
@@ -306,8 +304,6 @@ contract ERC721MarginLoan is
             return address(this);
         }
 
-        require(owner != address(this));
-
         return owner;
     }
 
@@ -333,8 +329,6 @@ contract ERC721MarginLoan is
         if (approvedManagers[owner][canceler]) {
             return address(this);
         }
-
-        require(owner != address(this));
 
         return owner;
     }
@@ -363,8 +357,6 @@ contract ERC721MarginLoan is
         if (approvedManagers[owner][recoverer] && recipient == owner) {
             return address(this);
         }
-
-        require(owner != address(this));
 
         return owner;
     }
@@ -446,6 +438,9 @@ contract ERC721MarginLoan is
 
         // ownerOf() should have already required this
         assert(owner != address(0));
+
+        // this contract should not own tokens
+        require(owner != address(this));
 
         return owner;
     }

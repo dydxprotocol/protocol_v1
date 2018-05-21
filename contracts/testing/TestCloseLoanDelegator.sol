@@ -29,7 +29,7 @@ contract TestCloseLoanDelegator is
     LoanOwner,
     CloseLoanDelegator
 {
-
+    address public ADDRESS_TO_RETURN;
     uint256 public AMOUNT_TO_RETURN;
 
     constructor(
@@ -40,6 +40,15 @@ contract TestCloseLoanDelegator is
         OnlyMargin(margin)
     {
         AMOUNT_TO_RETURN = amountToReturn;
+        ADDRESS_TO_RETURN = address(this);
+    }
+
+    function setAddressToReturn(
+        address newAddress
+    )
+        external
+    {
+        ADDRESS_TO_RETURN = newAddress;
     }
 
     function receiveLoanOwnership(
@@ -63,6 +72,6 @@ contract TestCloseLoanDelegator is
         external
         returns (address, uint256)
     {
-        return (address(this), AMOUNT_TO_RETURN);
+        return (ADDRESS_TO_RETURN, AMOUNT_TO_RETURN);
     }
 }

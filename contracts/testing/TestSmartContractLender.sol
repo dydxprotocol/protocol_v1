@@ -25,11 +25,14 @@ import { LoanOfferingVerifier } from "../margin/interfaces/LoanOfferingVerifier.
 
 contract TestSmartContractLender is LoanOfferingVerifier {
     bool SHOULD_ALLOW;
+    address TO_RETURN;
 
     constructor(
-        bool shouldAllow
+        bool shouldAllow,
+        address toReturn
     ) public {
         SHOULD_ALLOW = shouldAllow;
+        TO_RETURN = toReturn;
     }
 
     function verifyLoanOffering(
@@ -43,7 +46,7 @@ contract TestSmartContractLender is LoanOfferingVerifier {
     {
         require(SHOULD_ALLOW);
 
-        return address(this);
+        return (TO_RETURN == address(0)) ? address(this) : TO_RETURN;
     }
 
     function allow(
