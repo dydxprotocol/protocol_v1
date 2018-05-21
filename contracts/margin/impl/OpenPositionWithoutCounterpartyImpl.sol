@@ -38,13 +38,13 @@ library OpenPositionWithoutCounterpartyImpl {
     // ============ Structs ============
 
     struct OpenWithoutCounterpartyTx {
+        bytes32 positionId;
         address positionOwner;
         address owedToken;
         address heldToken;
         address loanOwner;
         uint256 principal;
         uint256 deposit;
-        uint256 nonce;
         uint32 callTimeLimit;
         uint32 maxDuration;
         uint32 interestRate;
@@ -90,51 +90,42 @@ library OpenPositionWithoutCounterpartyImpl {
             values32
         );
 
-        bytes32 positionId = keccak256(
-            msg.sender,
-            openTx.nonce
-        );
-
         validate(
             state,
-            openTx,
-            positionId
+            openTx
         );
 
         Vault(state.VAULT).transferToVault(
-            positionId,
+            openTx.positionId,
             openTx.heldToken,
             msg.sender,
             openTx.deposit
         );
 
         recordPositionOpened(
-            openTx,
-            positionId
+            openTx
         );
 
         updateState(
             state,
-            openTx,
-            positionId
+            openTx
         );
 
-        return positionId;
+        return openTx.positionId;
     }
 
     // ============ Internal Functions ============
 
     function validate(
         MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
+        OpenWithoutCounterpartyTx memory openTx
     )
         internal
         view
     {
         require(
-            !MarginCommon.containsPositionImpl(state, positionId),
-            "OpenPositionWithoutCounterpartyImpl#validate: position ID already exists"
+            !MarginCommon.containsPositionImpl(state, openTx.positionId),
+            "OpenPositionWithoutCounterpartyImpl#validate: positionId already exists"
         );
 
         require(
@@ -164,13 +155,12 @@ library OpenPositionWithoutCounterpartyImpl {
     }
 
     function recordPositionOpened(
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
+        OpenWithoutCounterpartyTx memory openTx
     )
         internal
     {
         emit PositionOpened(
-            positionId,
+            openTx.positionId,
             msg.sender,
             msg.sender,
             bytes32(0),
@@ -189,11 +179,12 @@ library OpenPositionWithoutCounterpartyImpl {
 
     function updateState(
         MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
+        OpenWithoutCounterpartyTx memory openTx
     )
         internal
     {
+        bytes32 positionId = openTx.positionId;
+
         state.positions[positionId].owedToken = openTx.owedToken;
         state.positions[positionId].heldToken = openTx.heldToken;
         state.positions[positionId].principal = openTx.principal;
@@ -225,17 +216,20 @@ library OpenPositionWithoutCounterpartyImpl {
         uint32[4]  values32
     )
         internal
-        pure
+        view
         returns (OpenWithoutCounterpartyTx memory)
     {
         OpenWithoutCounterpartyTx memory openTx = OpenWithoutCounterpartyTx({
+            positionId: keccak256(
+                msg.sender,
+                values256[2] // nonce
+            ),
             positionOwner: addresses[0],
             owedToken: addresses[1],
             heldToken: addresses[2],
             loanOwner: addresses[3],
             principal: values256[0],
             deposit: values256[1],
-            nonce: values256[2],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             interestRate: values32[2],

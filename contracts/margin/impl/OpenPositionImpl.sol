@@ -63,7 +63,7 @@ library OpenPositionImpl {
     function openPositionImpl(
         MarginState.State storage state,
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -82,20 +82,21 @@ library OpenPositionImpl {
             depositInHeldToken
         );
 
-        bytes32 positionId = getNextpositionId(state, transaction.loanOffering.loanHash);
+        require(
+            !MarginCommon.containsPositionImpl(state, transaction.positionId),
+            "OpenPositionImpl#openPositionImpl: positionId already exists"
+        );
 
         uint256 heldTokenFromSell;
 
         (heldTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
-            positionId,
             orderData
         );
 
         // Comes before updateState() so that PositionOpened event is before Transferred events
         recordPositionOpened(
-            positionId,
             msg.sender,
             transaction,
             heldTokenFromSell
@@ -103,36 +104,15 @@ library OpenPositionImpl {
 
         updateState(
             state,
-            positionId,
             transaction
         );
 
-        return positionId;
+        return transaction.positionId;
     }
 
     // ============ Helper Functions ============
 
-    function getNextpositionId(
-        MarginState.State storage state,
-        bytes32 loanHash
-    )
-        internal
-        view
-        returns (bytes32)
-    {
-        bytes32 positionId = keccak256(
-            loanHash,
-            state.loanNumbers[loanHash]
-        );
-
-        // Make this positionId doesn't already exist
-        assert(!MarginCommon.containsPositionImpl(state, positionId));
-
-        return positionId;
-    }
-
     function recordPositionOpened(
-        bytes32 positionId,
         address trader,
         OpenPositionShared.OpenTx transaction,
         uint256 heldTokenReceived
@@ -140,7 +120,7 @@ library OpenPositionImpl {
         internal
     {
         emit PositionOpened(
-            positionId,
+            transaction.positionId,
             trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
@@ -159,16 +139,12 @@ library OpenPositionImpl {
 
     function updateState(
         MarginState.State storage state,
-        bytes32 positionId,
         OpenPositionShared.OpenTx transaction
     )
         internal
     {
+        bytes32 positionId = transaction.positionId;
         assert(!MarginCommon.containsPositionImpl(state, positionId));
-
-        // Update global amounts for the loan
-        state.loanNumbers[transaction.loanOffering.loanHash] =
-            state.loanNumbers[transaction.loanOffering.loanHash].add(1);
 
         state.positions[positionId].owedToken = transaction.loanOffering.owedToken;
         state.positions[positionId].heldToken = transaction.loanOffering.heldToken;
@@ -197,7 +173,7 @@ library OpenPositionImpl {
 
     function parseOpenTx(
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -208,6 +184,10 @@ library OpenPositionImpl {
         returns (OpenPositionShared.OpenTx memory)
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
+            positionId: keccak256(
+                msg.sender,
+                values256[9] // nonce
+            ),
             owner: addresses[0],
             principal: values256[7],
             lenderAmount: values256[7],
@@ -229,7 +209,7 @@ library OpenPositionImpl {
 
     function parseLoanOffering(
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS
@@ -263,7 +243,7 @@ library OpenPositionImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32
     )
         internal

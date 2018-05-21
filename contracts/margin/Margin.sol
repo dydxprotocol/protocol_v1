@@ -105,6 +105,7 @@ contract Margin is
      *  [6]  = loan salt
      *  [7]  = position amount of principal
      *  [8]  = deposit amount
+     *  [9]  = nonce (used to calculate positionId)
      *
      * @param  values32            Values corresponding to:
      *
@@ -123,7 +124,7 @@ contract Margin is
      */
     function openPosition(
         address[11] addresses,
-        uint256[9]  values256,
+        uint256[10] values256,
         uint32[4]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,

@@ -41,6 +41,7 @@ library OpenPositionShared {
     // ============ Structs ============
 
     struct OpenTx {
+        bytes32 positionId;
         address owner;
         uint256 principal;
         uint256 lenderAmount;
@@ -56,7 +57,6 @@ library OpenPositionShared {
     function openPositionInternalPreStateUpdate(
         MarginState.State storage state,
         OpenTx memory transaction,
-        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -67,12 +67,12 @@ library OpenPositionShared {
             transaction
         );
 
-        getConsentIfSmartContractLender(transaction, positionId);
+        getConsentIfSmartContractLender(transaction, transaction.positionId);
 
         pullOwedTokensFromLender(state, transaction);
 
         // Pull deposit from the msg.sender
-        uint256 heldTokenFromDeposit = transferDeposit(state, transaction, positionId);
+        uint256 heldTokenFromDeposit = transferDeposit(state, transaction, transaction.positionId);
 
         uint256 sellAmount = transaction.depositInHeldToken ? transaction.lenderAmount
             : transaction.lenderAmount.add(transaction.depositAmount);
@@ -81,7 +81,7 @@ library OpenPositionShared {
             state,
             transaction,
             orderData,
-            positionId,
+            transaction.positionId,
             sellAmount
         );
 

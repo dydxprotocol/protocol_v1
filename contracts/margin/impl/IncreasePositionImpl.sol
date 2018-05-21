@@ -80,6 +80,7 @@ library IncreasePositionImpl {
 
         OpenPositionShared.OpenTx memory transaction = parseIncreasePositionTx(
             position,
+            positionId,
             addresses,
             values256,
             values32,
@@ -92,13 +93,12 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            positionId,
             orderData
         );
 
         updateState(
             position,
-            positionId,
+            transaction.positionId,
             transaction.principal,
             transaction.loanOffering.payer
         );
@@ -106,7 +106,6 @@ library IncreasePositionImpl {
         // LOG EVENT
         recordPositionIncreased(
             transaction,
-            positionId,
             position,
             heldTokenFromSell
         );
@@ -182,7 +181,6 @@ library IncreasePositionImpl {
         MarginState.State storage state,
         OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
-        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -193,7 +191,6 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            positionId,
             orderData
         );
 
@@ -206,7 +203,6 @@ library IncreasePositionImpl {
         ) = OpenPositionShared.openPositionInternalPreStateUpdate(
             state,
             transaction,
-            positionId,
             orderData
         );
 
@@ -247,7 +243,6 @@ library IncreasePositionImpl {
         MarginState.State storage state,
         OpenPositionShared.OpenTx transaction,
         MarginCommon.Position storage position,
-        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -257,7 +252,7 @@ library IncreasePositionImpl {
         // Amount of heldToken we need to add to the position to maintain the position's ratio
         // of heldToken to owedToken
         uint256 positionMinimumHeldToken = getPositionMinimumHeldToken(
-            positionId,
+            transaction.positionId,
             state,
             transaction.principal,
             position
@@ -411,14 +406,13 @@ library IncreasePositionImpl {
 
     function recordPositionIncreased(
         OpenPositionShared.OpenTx transaction,
-        bytes32 positionId,
         MarginCommon.Position storage position,
         uint256 heldTokenFromSell
     )
         internal
     {
         emit PositionIncreased(
-            positionId,
+            transaction.positionId,
             msg.sender,
             transaction.loanOffering.payer,
             position.owner,
@@ -437,6 +431,7 @@ library IncreasePositionImpl {
 
     function parseIncreasePositionTx(
         MarginCommon.Position storage position,
+        bytes32 positionId,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -449,6 +444,7 @@ library IncreasePositionImpl {
         returns (OpenPositionShared.OpenTx memory)
     {
         OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
+            positionId: positionId,
             owner: position.owner,
             principal: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
