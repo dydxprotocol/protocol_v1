@@ -1,6 +1,17 @@
 require("babel-register");
 require('babel-polyfill');
 
+let mocha = {
+  useColors: true
+};
+
+if (process.env.CIRCLE_SHA1) {
+  mocha = {
+    reporter: 'mocha-junit-reporter',
+    mochaFile: './junit/test-results.xml'
+  };
+}
+
 module.exports = {
   networks: {
     kovan: {
@@ -27,9 +38,7 @@ module.exports = {
       port: 8545,
     }
   },
-  mocha: {
-    useColors: true,
-  },
+  mocha,
   solc: {
     optimizer: {
       enabled: true,
