@@ -330,6 +330,41 @@ describe('ERC721MarginLoan', () => {
   // ============ increaseLoanOnBehalfOf ============
 
   contract('#increaseLoanOnBehalfOf', accounts => {
+    let heldTokenAmount, addedPrincipal;
+
+    async function setupIncreaseLoanOnBehalfOf(adder) {
+      const [principal, balance] = await Promise.all([
+        dydxMargin.getPositionPrincipal(openTx.id),
+        dydxMargin.getPositionBalance(openTx.id),
+      ]);
+      addedPrincipal = openTx.principal.div(2).floor();
+      heldTokenAmount = getPartialAmount(
+        addedPrincipal,
+        principal,
+        balance,
+        true
+      );
+      await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
+    }
+
+    async function doIncrease(adder, throws) {
+      if (throws) {
+        await expectThrow(
+          dydxMargin.increaseWithoutCounterparty(
+            openTx.id,
+            addedPrincipal,
+            { from: adder }
+          )
+        );
+      } else {
+        await dydxMargin.increaseWithoutCounterparty(
+          openTx.id,
+          addedPrincipal,
+          { from: adder }
+        );
+      }
+    }
+
     before('load contracts', async () => {
       await loadContracts(accounts);
     });
@@ -338,27 +373,20 @@ describe('ERC721MarginLoan', () => {
       await setUpLoan(accounts);
     });
 
-    it('fails always', async () => {
+    it('fails for non-owner', async () => {
       const adder = openTx.owner;
-      const addedPrincipal = openTx.principal.div(2).floor();
-      const [principal, amountHeld] = await Promise.all([
-        dydxMargin.getPositionPrincipal(openTx.id),
-        dydxMargin.getPositionBalance(openTx.id),
+      await setupIncreaseLoanOnBehalfOf(adder);
+      await doIncrease(adder, true);
+    });
+
+    it('fails if owner is ERC721 contract', async () => {
+      const adder = openTx.loanOffering.payer;
+      await setupIncreaseLoanOnBehalfOf(adder);
+      await Promise.all([
+        dydxMargin.transferPosition(openTx.id, adder, { from: openTx.owner }),
+        loanContract.transferFrom(adder, loanContract.address, uint256(openTx.id), { from: adder })
       ]);
-      const heldTokenAmount = getPartialAmount(
-        addedPrincipal,
-        principal,
-        amountHeld,
-        true
-      );
-      await issueTokenToAccountInAmountAndApproveProxy(heldToken, adder, heldTokenAmount);
-      await expectThrow(
-        dydxMargin.increaseWithoutCounterparty(
-          openTx.id,
-          addedPrincipal,
-          { from: adder }
-        )
-      );
+      await doIncrease(adder, true);
     });
 
     it('fails for msg.sender != Margin', async () => {
@@ -372,6 +400,26 @@ describe('ERC721MarginLoan', () => {
           { from: lender }
         )
       );
+    });
+
+    it('succeeds for owner', async () => {
+      const adder = openTx.loanOffering.payer;
+
+      const [principal, balance] = await Promise.all([
+        dydxMargin.getPositionPrincipal(openTx.id),
+        dydxMargin.getPositionBalance(openTx.id),
+      ]);
+
+      await setupIncreaseLoanOnBehalfOf(adder);
+      await dydxMargin.transferPosition(openTx.id, adder, { from: openTx.owner });
+      await doIncrease(adder, false);
+
+      const [finalBalance, finalPrincipal] = await Promise.all([
+        dydxMargin.getPositionBalance.call(openTx.id),
+        dydxMargin.getPositionPrincipal.call(openTx.id),
+      ]);
+      expect(finalPrincipal).to.be.bignumber.eq(principal.plus(addedPrincipal));
+      expect(finalBalance).to.be.bignumber.eq(balance.plus(heldTokenAmount));
     });
   });
 
