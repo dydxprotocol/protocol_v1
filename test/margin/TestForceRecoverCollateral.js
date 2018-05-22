@@ -19,7 +19,7 @@ const { ADDRESSES } = require('../helpers/Constants');
 
 describe('#forceRecoverCollateral', () => {
   contract('Margin', accounts => {
-    it.only('allows funds to be recovered by the lender', async () => {
+    it('allows funds to be recovered by the lender', async () => {
       const { dydxMargin, vault, owedToken, OpenTx } = await doOpenPositionAndCall(accounts);
       await wait(OpenTx.loanOffering.callTimeLimit);
 
