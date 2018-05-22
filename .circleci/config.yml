@@ -93,3 +93,4 @@ workflows:
             branches:
               only:
                 - master
+                - /.*coverage/

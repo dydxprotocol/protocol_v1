@@ -242,12 +242,13 @@ describe('#openPosition', () => {
       await issueTokensAndSetAllowances(OpenTx1);
       await callOpenPosition(dydxMargin, OpenTx1, collisionCheck);
 
+      // using the same nonce again should fail
       await issueTokensAndSetAllowances(OpenTx2);
       await expectThrow(
         callOpenPosition(dydxMargin, OpenTx2, collisionCheck)
       );
 
-      await issueTokensAndSetAllowances(OpenTx3);
+      // prove that it still works for a different nonce
       await callOpenPosition(dydxMargin, OpenTx3, collisionCheck);
     });
   });
@@ -256,7 +257,7 @@ describe('#openPosition', () => {
     it('doesnt allow the same nonce to be used twice, even if the first was closed', async () => {
       const dydxMargin = await Margin.deployed();
       const collisionCheck = false;
-      const [OpenTx1, OpenTx2, OpenTx3] = await Promise.all([
+      let [OpenTx1, OpenTx2, OpenTx3] = await Promise.all([
         createOpenTx(accounts),
         createOpenTx(accounts),
         createOpenTx(accounts),
@@ -267,17 +268,19 @@ describe('#openPosition', () => {
       OpenTx3.nonce = 2;
 
       await issueTokensAndSetAllowances(OpenTx1);
-      await callOpenPosition(dydxMargin, OpenTx1, collisionCheck);
-      await doClosePosition(accounts, OpenTx1, OpenTx1.principal);
+      const response = await callOpenPosition(dydxMargin, OpenTx1, collisionCheck);
+      OpenTx1.id = response.id;
+      await doClosePosition(accounts, OpenTx1,  OpenTx1.principal);
       const closed = await dydxMargin.isPositionClosed.call(OpenTx1.id);
       expect(closed).to.be.true;
 
+      // using the same nonce again should fail
       await issueTokensAndSetAllowances(OpenTx2);
       await expectThrow(
         callOpenPosition(dydxMargin, OpenTx2, collisionCheck)
       );
 
-      await issueTokensAndSetAllowances(OpenTx3);
+      // prove that it still works for a different nonce
       await callOpenPosition(dydxMargin, OpenTx3, collisionCheck);
     });
   });
