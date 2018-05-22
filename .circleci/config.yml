@@ -54,14 +54,14 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-      - run: mkdir ~/junit
+      - run: mkdir ~/protocol/junit
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "test/**/*.js" | circleci tests split --split-by=filesize) && npm test -- ${TESTFILES}
       - store_test_results:
-          path: ~/junit
+          path: ~/protocol/junit
       - store_artifacts:
-          path: ~/junit
+          path: ~/protocol/junit
   coverage:
     docker:
       - image: circleci/node:9.11.1
