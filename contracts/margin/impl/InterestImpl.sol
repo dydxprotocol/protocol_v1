@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -70,7 +70,7 @@ library InterestImpl {
         returns (uint256)
     {
         uint256 numerator = interestRate.mul(secondsOfInterest);
-        uint128 denominator = (10**8) * (1 years);
+        uint128 denominator = (10**8) * (365 * 1 days);
 
         // interestRate and secondsOfInterest should both be uint32
         assert(numerator < 2**128);
