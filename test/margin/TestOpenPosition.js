@@ -58,7 +58,7 @@ describe('#openPosition', () => {
       const tx = await callOpenPosition(dydxMargin, OpenTx);
 
       console.log(
-        '\tMargin.short (owedToken deposit / 0x Exchange Contract) gas used: '
+        '\tMargin.openPosition (owedToken deposit / 0x Exchange Contract) gas used: '
         + tx.receipt.gasUsed
       );
 
