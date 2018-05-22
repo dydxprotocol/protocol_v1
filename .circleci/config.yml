@@ -54,7 +54,6 @@ jobs:
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-      - run: mkdir ~/protocol/junit
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "test/**/*.js" | circleci tests split --split-by=filesize) && npm test -- ${TESTFILES}

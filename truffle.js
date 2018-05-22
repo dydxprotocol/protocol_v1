@@ -8,7 +8,9 @@ let mocha = {
 if (process.env.CIRCLE_SHA1) {
   mocha = {
     reporter: 'mocha-junit-reporter',
-    mochaFile: './junit/test-results.xml'
+    reporterOptions: {
+      mochaFile: './junit/test-results.xml'
+    }
   };
 }
 
