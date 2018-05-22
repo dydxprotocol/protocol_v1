@@ -20,9 +20,9 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { UseLoanOfferingShared } from "./UseLoanOfferingShared.sol";
 
 
 /**
@@ -71,7 +71,7 @@ library OpenPositionImpl {
         public
         returns (bytes32)
     {
-        UseLoanOfferingShared.UseLoanOfferingTx memory transaction = parseOpenTx(
+        BorrowShared.Tx memory transaction = parseOpenTx(
             addresses,
             values256,
             values32,
@@ -87,7 +87,7 @@ library OpenPositionImpl {
 
         uint256 heldTokenFromSell;
 
-        (heldTokenFromSell,) = UseLoanOfferingShared.useLoanOfferingInternal(
+        (heldTokenFromSell,) = BorrowShared.useLoanOfferingInternal(
             state,
             transaction,
             orderData
@@ -112,7 +112,7 @@ library OpenPositionImpl {
 
     function doStoreNewPosition(
         MarginState.State storage state,
-        UseLoanOfferingShared.UseLoanOfferingTx memory transaction
+        BorrowShared.Tx memory transaction
     )
         internal
     {
@@ -139,7 +139,7 @@ library OpenPositionImpl {
 
     function recordPositionOpened(
         address trader,
-        UseLoanOfferingShared.UseLoanOfferingTx transaction,
+        BorrowShared.Tx transaction,
         uint256 heldTokenReceived
     )
         internal
@@ -174,26 +174,25 @@ library OpenPositionImpl {
     )
         internal
         view
-        returns (UseLoanOfferingShared.UseLoanOfferingTx memory)
+        returns (BorrowShared.Tx memory)
     {
-        UseLoanOfferingShared.UseLoanOfferingTx memory transaction =
-            UseLoanOfferingShared.UseLoanOfferingTx({
-                positionId: MarginCommon.getPositionIdFromNonce(values256[9]),
-                owner: addresses[0],
-                principal: values256[7],
-                lenderAmount: values256[7],
-                depositAmount: values256[8],
-                loanOffering: parseLoanOffering(
-                    addresses,
-                    values256,
-                    values32,
-                    sigV,
-                    sigRS
-                ),
-                exchangeWrapper: addresses[10],
-                depositInHeldToken: depositInHeldToken,
-                desiredTokenFromSell: 0
-            });
+        BorrowShared.Tx memory transaction = BorrowShared.Tx({
+            positionId: MarginCommon.getPositionIdFromNonce(values256[9]),
+            owner: addresses[0],
+            principal: values256[7],
+            lenderAmount: values256[7],
+            depositAmount: values256[8],
+            loanOffering: parseLoanOffering(
+                addresses,
+                values256,
+                values32,
+                sigV,
+                sigRS
+            ),
+            exchangeWrapper: addresses[10],
+            depositInHeldToken: depositInHeldToken,
+            desiredTokenFromSell: 0
+        });
 
         return transaction;
     }

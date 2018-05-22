@@ -35,7 +35,7 @@ library OpenWithoutCounterpartyImpl {
 
     // ============ Structs ============
 
-    struct OpenWithoutCounterpartyTx {
+    struct Tx {
         bytes32 positionId;
         address positionOwner;
         address owedToken;
@@ -82,7 +82,7 @@ library OpenWithoutCounterpartyImpl {
         public
         returns (bytes32)
     {
-        OpenWithoutCounterpartyTx memory openTx = parseOpenWithoutCounterpartyTx(
+        Tx memory openTx = parseTx(
             addresses,
             values256,
             values32
@@ -116,7 +116,7 @@ library OpenWithoutCounterpartyImpl {
 
     function doStoreNewPosition(
         MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx
+        Tx memory openTx
     )
         internal
     {
@@ -143,7 +143,7 @@ library OpenWithoutCounterpartyImpl {
 
     function validate(
         MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx
+        Tx memory openTx
     )
         internal
         view
@@ -190,7 +190,7 @@ library OpenWithoutCounterpartyImpl {
     }
 
     function recordPositionOpened(
-        OpenWithoutCounterpartyTx memory openTx
+        Tx memory openTx
     )
         internal
     {
@@ -214,16 +214,16 @@ library OpenWithoutCounterpartyImpl {
 
     // ============ Parsing Functions ============
 
-    function parseOpenWithoutCounterpartyTx(
+    function parseTx(
         address[4] addresses,
         uint256[3] values256,
         uint32[4]  values32
     )
         internal
         view
-        returns (OpenWithoutCounterpartyTx memory)
+        returns (Tx memory)
     {
-        OpenWithoutCounterpartyTx memory openTx = OpenWithoutCounterpartyTx({
+        Tx memory openTx = Tx({
             positionId: MarginCommon.getPositionIdFromNonce(values256[2]),
             positionOwner: addresses[0],
             owedToken: addresses[1],

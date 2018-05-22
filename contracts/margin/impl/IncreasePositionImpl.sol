@@ -20,9 +20,9 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { UseLoanOfferingShared } from "./UseLoanOfferingShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
@@ -78,7 +78,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        UseLoanOfferingShared.UseLoanOfferingTx memory transaction = parseIncreasePositionTx(
+        BorrowShared.Tx memory transaction = parseIncreasePositionTx(
             position,
             positionId,
             addresses,
@@ -179,7 +179,7 @@ library IncreasePositionImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        UseLoanOfferingShared.UseLoanOfferingTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
         bytes orderData
     )
@@ -200,7 +200,7 @@ library IncreasePositionImpl {
         (
             heldTokenFromSell,
             totalHeldTokenReceived
-        ) = UseLoanOfferingShared.useLoanOfferingInternal(
+        ) = BorrowShared.useLoanOfferingInternal(
             state,
             transaction,
             orderData
@@ -214,7 +214,7 @@ library IncreasePositionImpl {
     }
 
     function validate(
-        UseLoanOfferingShared.UseLoanOfferingTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position
     )
         internal
@@ -241,7 +241,7 @@ library IncreasePositionImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        UseLoanOfferingShared.UseLoanOfferingTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
         bytes orderData
     )
@@ -405,7 +405,7 @@ library IncreasePositionImpl {
     }
 
     function recordPositionIncreased(
-        UseLoanOfferingShared.UseLoanOfferingTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
         uint256 heldTokenFromSell
     )
@@ -441,31 +441,30 @@ library IncreasePositionImpl {
     )
         internal
         view
-        returns (UseLoanOfferingShared.UseLoanOfferingTx memory)
+        returns (BorrowShared.Tx memory)
     {
-        UseLoanOfferingShared.UseLoanOfferingTx memory transaction =
-            UseLoanOfferingShared.UseLoanOfferingTx({
-                positionId: positionId,
-                owner: position.owner,
-                principal: values256[7],
-                lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
-                    position,
-                    values256[7],
-                    block.timestamp
-                ),
-                depositAmount: 0,
-                loanOffering: parseLoanOfferingFromIncreasePositionTx(
-                    position,
-                    addresses,
-                    values256,
-                    values32,
-                    sigV,
-                    sigRS
-                ),
-                exchangeWrapper: addresses[6],
-                depositInHeldToken: depositInHeldToken,
-                desiredTokenFromSell: 0
-            });
+        BorrowShared.Tx memory transaction = BorrowShared.Tx({
+            positionId: positionId,
+            owner: position.owner,
+            principal: values256[7],
+            lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
+                position,
+                values256[7],
+                block.timestamp
+            ),
+            depositAmount: 0,
+            loanOffering: parseLoanOfferingFromIncreasePositionTx(
+                position,
+                addresses,
+                values256,
+                values32,
+                sigV,
+                sigRS
+            ),
+            exchangeWrapper: addresses[6],
+            depositInHeldToken: depositInHeldToken,
+            desiredTokenFromSell: 0
+        });
 
         return transaction;
     }

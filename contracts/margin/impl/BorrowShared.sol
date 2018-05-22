@@ -30,18 +30,18 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**
- * @title UseLoanOfferingShared
+ * @title BorrowShared
  * @author dYdX
  *
  * This library contains shared functionality between OpenPositionImpl and IncreasePositionImpl.
  * Both use a Loan Offering and a DEX Order to open or increase a position.
  */
-library UseLoanOfferingShared {
+library BorrowShared {
     using SafeMath for uint256;
 
     // ============ Structs ============
 
-    struct UseLoanOfferingTx {
+    struct Tx {
         bytes32 positionId;
         address owner;
         uint256 principal;
@@ -57,7 +57,7 @@ library UseLoanOfferingShared {
 
     function useLoanOfferingInternal(
         MarginState.State storage state,
-        UseLoanOfferingTx memory transaction,
+        Tx memory transaction,
         bytes orderData
     )
         internal
@@ -107,7 +107,7 @@ library UseLoanOfferingShared {
 
     function validateTx(
         MarginState.State storage state,
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
         view
@@ -116,14 +116,14 @@ library UseLoanOfferingShared {
 
         require(
             transaction.principal > 0,
-            "UseLoanOfferingShared#validateTx: Positions with 0 principal are not allowed"
+            "BorrowShared#validateTx: Positions with 0 principal are not allowed"
         );
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
             require(
                 msg.sender == transaction.loanOffering.taker,
-                "UseLoanOfferingShared#validateTx: Invalid loan offering taker"
+                "BorrowShared#validateTx: Invalid loan offering taker"
             );
         }
 
@@ -131,7 +131,7 @@ library UseLoanOfferingShared {
         require(
             isValidSignature(transaction.loanOffering)
             || state.approvedLoans[transaction.loanOffering.loanHash],
-            "UseLoanOfferingShared#validateTx: Invalid loan offering signature"
+            "BorrowShared#validateTx: Invalid loan offering signature"
         );
 
         // Validate the amount is <= than max and >= min
@@ -141,42 +141,42 @@ library UseLoanOfferingShared {
         );
         require(
             transaction.lenderAmount.add(unavailable) <= transaction.loanOffering.rates.maxAmount,
-            "UseLoanOfferingShared#validateTx: Loan offering does not have enough available"
+            "BorrowShared#validateTx: Loan offering does not have enough available"
         );
 
         require(
             transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
-            "UseLoanOfferingShared#validateTx: owedToken cannot be equal to heldToken"
+            "BorrowShared#validateTx: owedToken cannot be equal to heldToken"
         );
 
         require(
             transaction.owner != address(0),
-            "UseLoanOfferingShared#validateTx: Position owner cannot be 0"
+            "BorrowShared#validateTx: Position owner cannot be 0"
         );
 
         require(
             transaction.loanOffering.owner != address(0),
-            "UseLoanOfferingShared#validateTx: Loan owner cannot be 0"
+            "BorrowShared#validateTx: Loan owner cannot be 0"
         );
 
         require(
             transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
-            "UseLoanOfferingShared#validateTx: Below loan offering minimum amount"
+            "BorrowShared#validateTx: Below loan offering minimum amount"
         );
 
         require(
             transaction.loanOffering.expirationTimestamp > block.timestamp,
-            "UseLoanOfferingShared#validateTx: Loan offering is expired"
+            "BorrowShared#validateTx: Loan offering is expired"
         );
 
         require(
             transaction.loanOffering.maxDuration > 0,
-            "UseLoanOfferingShared#validateTx: Loan offering has 0 maximum duration"
+            "BorrowShared#validateTx: Loan offering has 0 maximum duration"
         );
 
         require(
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
-            "UseLoanOfferingShared#validateTx: Loan offering interestPeriod > maxDuration"
+            "BorrowShared#validateTx: Loan offering interestPeriod > maxDuration"
         );
 
         // The minimum heldToken is validated after executing the sell
@@ -208,7 +208,7 @@ library UseLoanOfferingShared {
     }
 
     function getConsentIfSmartContractLender(
-        UseLoanOfferingTx transaction,
+        Tx transaction,
         bytes32 positionId
     )
         internal
@@ -254,7 +254,7 @@ library UseLoanOfferingShared {
 
     function pullOwedTokensFromLender(
         MarginState.State storage state,
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
     {
@@ -269,7 +269,7 @@ library UseLoanOfferingShared {
 
     function transferDeposit(
         MarginState.State storage state,
-        UseLoanOfferingTx transaction,
+        Tx transaction,
         bytes32 positionId
     )
         internal
@@ -296,7 +296,7 @@ library UseLoanOfferingShared {
 
     function transferLoanFees(
         MarginState.State storage state,
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
     {
@@ -339,7 +339,7 @@ library UseLoanOfferingShared {
 
     function executeSell(
         MarginState.State storage state,
-        UseLoanOfferingTx transaction,
+        Tx transaction,
         bytes orderData,
         bytes32 positionId,
         uint256 sellAmount
@@ -380,7 +380,7 @@ library UseLoanOfferingShared {
     }
 
     function validateMinimumHeldToken(
-        UseLoanOfferingTx transaction,
+        Tx transaction,
         uint256 totalHeldTokenReceived
     )
         internal
@@ -394,12 +394,12 @@ library UseLoanOfferingShared {
 
         require(
             totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
-            "UseLoanOfferingShared#validateMinimumHeldToken: Loan offering minimum held token not met"
+            "BorrowShared#validateMinimumHeldToken: Loan offering minimum held token not met"
         );
     }
 
     function getLoanOfferingAddresses(
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
         pure
@@ -419,7 +419,7 @@ library UseLoanOfferingShared {
     }
 
     function getLoanOfferingValues256(
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
         pure
@@ -437,7 +437,7 @@ library UseLoanOfferingShared {
     }
 
     function getLoanOfferingValues32(
-        UseLoanOfferingTx transaction
+        Tx transaction
     )
         internal
         pure
