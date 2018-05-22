@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
@@ -481,10 +481,11 @@ contract ERC20Position is
         returns (uint256)
     {
         uint256 balance = balances[closer];
-        uint256 tokenAmount;
-        uint256 allowedCloseAmount;
 
-        (tokenAmount, allowedCloseAmount) = getCloseAmounts(
+        (
+            uint256 tokenAmount,
+            uint256 allowedCloseAmount
+        ) = getCloseAmounts(
             requestedAmount,
             balance,
             positionPrincipal

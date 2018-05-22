@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { Margin } from "../../Margin.sol";
@@ -38,14 +38,10 @@ library MarginHelper {
         view
         returns (MarginCommon.Position memory)
     {
-        address[4] memory addresses;
-        uint256[2] memory values256;
-        uint32[6] memory values32;
-
         (
-            addresses,
-            values256,
-            values32
+            address[4] memory addresses,
+            uint256[2] memory values256,
+            uint32[6]  memory values32
         ) = Margin(DYDX_MARGIN).getPosition(positionId);
 
         return MarginCommon.Position({

@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
@@ -296,9 +296,10 @@ library ClosePositionShared {
             return closeAmount;
         }
 
-        address newContractAddr;
-        uint256 newCloseAmount;
-        (newContractAddr, newCloseAmount) = ClosePositionDelegator(contractAddr).closeOnBehalfOf(
+        (
+            address newContractAddr,
+            uint256 newCloseAmount
+        ) = ClosePositionDelegator(contractAddr).closeOnBehalfOf(
             closer,
             payoutRecipient,
             positionId,
@@ -342,10 +343,10 @@ library ClosePositionShared {
             return closeAmount;
         }
 
-        address newContractAddr;
-        uint256 newCloseAmount;
-        (newContractAddr, newCloseAmount) =
-            CloseLoanDelegator(contractAddr).closeLoanOnBehalfOf(
+        (
+            address newContractAddr,
+            uint256 newCloseAmount
+        ) = CloseLoanDelegator(contractAddr).closeLoanOnBehalfOf(
                 closer,
                 payoutRecipient,
                 positionId,

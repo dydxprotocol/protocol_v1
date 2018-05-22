@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -198,7 +198,7 @@ library BorrowShared {
         }
 
         address recoveredSigner = ecrecover(
-            keccak256("\x19Ethereum Signed Message:\n32", loanOffering.loanHash),
+            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", loanOffering.loanHash)),
             loanOffering.signature.v,
             loanOffering.signature.r,
             loanOffering.signature.s

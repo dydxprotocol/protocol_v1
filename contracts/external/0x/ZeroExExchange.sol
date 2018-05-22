@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 
 import "./ZeroExProxy.sol";
 import "./base/ZeroExToken.sol";
@@ -230,7 +230,7 @@ contract ZeroExExchange is ZeroExSafeMath {
             filledTakerTokenAmount,
             paidMakerFee,
             paidTakerFee,
-            keccak256(order.makerToken, order.takerToken),
+            keccak256(abi.encodePacked(order.makerToken, order.takerToken)),
             order.orderHash
         );
         return filledTakerTokenAmount;
@@ -286,7 +286,7 @@ contract ZeroExExchange is ZeroExSafeMath {
             order.takerToken,
             getPartialAmount(cancelledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount),
             cancelledTakerTokenAmount,
-            keccak256(order.makerToken, order.takerToken),
+            keccak256(abi.encodePacked(order.makerToken, order.takerToken)),
             order.orderHash
         );
         return cancelledTakerTokenAmount;
@@ -452,18 +452,20 @@ contract ZeroExExchange is ZeroExSafeMath {
         returns (bytes32)
     {
         return keccak256(
-            address(this),
-            orderAddresses[0], // maker
-            orderAddresses[1], // taker
-            orderAddresses[2], // makerToken
-            orderAddresses[3], // takerToken
-            orderAddresses[4], // feeRecipient
-            orderValues[0],    // makerTokenAmount
-            orderValues[1],    // takerTokenAmount
-            orderValues[2],    // makerFee
-            orderValues[3],    // takerFee
-            orderValues[4],    // expirationTimestampInSec
-            orderValues[5]     // salt
+            abi.encodePacked(
+                address(this),
+                orderAddresses[0], // maker
+                orderAddresses[1], // taker
+                orderAddresses[2], // makerToken
+                orderAddresses[3], // takerToken
+                orderAddresses[4], // feeRecipient
+                orderValues[0],    // makerTokenAmount
+                orderValues[1],    // takerTokenAmount
+                orderValues[2],    // makerFee
+                orderValues[3],    // takerFee
+                orderValues[4],    // expirationTimestampInSec
+                orderValues[5]     // salt
+            )
         );
     }
 
@@ -485,7 +487,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         returns (bool)
     {
         return signer == ecrecover(
-            keccak256("\x19Ethereum Signed Message:\n32", hash),
+            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash)),
             v,
             r,
             s

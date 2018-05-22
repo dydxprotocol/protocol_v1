@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
@@ -140,7 +140,7 @@ library MarginCommon {
         view
         returns (bytes32)
     {
-        return keccak256(msg.sender, nonce);
+        return keccak256(abi.encodePacked(msg.sender, nonce));
     }
 
     function getUnavailableLoanOfferingAmountImpl(
@@ -260,17 +260,19 @@ library MarginCommon {
         returns (bytes32)
     {
         return keccak256(
-            address(this),
-            loanOffering.owedToken,
-            loanOffering.heldToken,
-            loanOffering.payer,
-            loanOffering.signer,
-            loanOffering.owner,
-            loanOffering.taker,
-            loanOffering.feeRecipient,
-            loanOffering.lenderFeeToken,
-            loanOffering.takerFeeToken,
-            getValuesHash(loanOffering)
+            abi.encodePacked(
+                address(this),
+                loanOffering.owedToken,
+                loanOffering.heldToken,
+                loanOffering.payer,
+                loanOffering.signer,
+                loanOffering.owner,
+                loanOffering.taker,
+                loanOffering.feeRecipient,
+                loanOffering.lenderFeeToken,
+                loanOffering.takerFeeToken,
+                getValuesHash(loanOffering)
+            )
         );
     }
 
@@ -282,17 +284,19 @@ library MarginCommon {
         returns (bytes32)
     {
         return keccak256(
-            loanOffering.rates.maxAmount,
-            loanOffering.rates.minAmount,
-            loanOffering.rates.minHeldToken,
-            loanOffering.rates.lenderFee,
-            loanOffering.rates.takerFee,
-            loanOffering.expirationTimestamp,
-            loanOffering.salt,
-            loanOffering.callTimeLimit,
-            loanOffering.maxDuration,
-            loanOffering.rates.interestRate,
-            loanOffering.rates.interestPeriod
+            abi.encodePacked(
+                loanOffering.rates.maxAmount,
+                loanOffering.rates.minAmount,
+                loanOffering.rates.minHeldToken,
+                loanOffering.rates.lenderFee,
+                loanOffering.rates.takerFee,
+                loanOffering.expirationTimestamp,
+                loanOffering.salt,
+                loanOffering.callTimeLimit,
+                loanOffering.maxDuration,
+                loanOffering.rates.interestRate,
+                loanOffering.rates.interestPeriod
+            )
         );
     }
 

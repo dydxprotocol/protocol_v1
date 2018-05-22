@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -85,9 +85,7 @@ library OpenPositionImpl {
             "OpenPositionImpl#openPositionImpl: positionId already exists"
         );
 
-        uint256 heldTokenFromSell;
-
-        (heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
+        (uint256 heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
             orderData

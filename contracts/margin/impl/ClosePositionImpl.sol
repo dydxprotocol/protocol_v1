@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.4.23;
+pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
@@ -77,10 +77,10 @@ library ClosePositionImpl {
             false
         );
 
-        uint256 buybackCostInHeldToken;
-        uint256 receivedOwedToken;
-
-        (buybackCostInHeldToken, receivedOwedToken) = returnOwedTokensToLender(
+        (
+            uint256 buybackCostInHeldToken,
+            uint256 receivedOwedToken
+        ) = returnOwedTokensToLender(
             state,
             transaction,
             orderData
