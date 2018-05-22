@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { OpenPositionShared } from "./OpenPositionShared.sol";
+import { UseLoanOfferingShared } from "./UseLoanOfferingShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
@@ -78,7 +78,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        OpenPositionShared.OpenTx memory transaction = parseIncreasePositionTx(
+        UseLoanOfferingShared.UseLoanOfferingTx memory transaction = parseIncreasePositionTx(
             position,
             positionId,
             addresses,
@@ -179,7 +179,7 @@ library IncreasePositionImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        OpenPositionShared.OpenTx transaction,
+        UseLoanOfferingShared.UseLoanOfferingTx transaction,
         MarginCommon.Position storage position,
         bytes orderData
     )
@@ -200,7 +200,7 @@ library IncreasePositionImpl {
         (
             heldTokenFromSell,
             totalHeldTokenReceived
-        ) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        ) = UseLoanOfferingShared.useLoanOfferingInternal(
             state,
             transaction,
             orderData
@@ -214,7 +214,7 @@ library IncreasePositionImpl {
     }
 
     function validate(
-        OpenPositionShared.OpenTx transaction,
+        UseLoanOfferingShared.UseLoanOfferingTx transaction,
         MarginCommon.Position storage position
     )
         internal
@@ -241,7 +241,7 @@ library IncreasePositionImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        OpenPositionShared.OpenTx transaction,
+        UseLoanOfferingShared.UseLoanOfferingTx transaction,
         MarginCommon.Position storage position,
         bytes orderData
     )
@@ -269,7 +269,7 @@ library IncreasePositionImpl {
 
             require(
                 heldTokenFromSell <= positionMinimumHeldToken,
-                "IncreasePositionImpl#setDepositAmount: Buy order gives too much heldToken"
+                "IncreasePositionImpl#setDepositAmount: DEX Order gives too much heldToken"
             );
             transaction.depositAmount = positionMinimumHeldToken.sub(heldTokenFromSell);
         } else {
@@ -405,7 +405,7 @@ library IncreasePositionImpl {
     }
 
     function recordPositionIncreased(
-        OpenPositionShared.OpenTx transaction,
+        UseLoanOfferingShared.UseLoanOfferingTx transaction,
         MarginCommon.Position storage position,
         uint256 heldTokenFromSell
     )
@@ -441,30 +441,31 @@ library IncreasePositionImpl {
     )
         internal
         view
-        returns (OpenPositionShared.OpenTx memory)
+        returns (UseLoanOfferingShared.UseLoanOfferingTx memory)
     {
-        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
-            positionId: positionId,
-            owner: position.owner,
-            principal: values256[7],
-            lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
-                position,
-                values256[7],
-                block.timestamp
-            ),
-            depositAmount: 0,
-            loanOffering: parseLoanOfferingFromIncreasePositionTx(
-                position,
-                addresses,
-                values256,
-                values32,
-                sigV,
-                sigRS
-            ),
-            exchangeWrapper: addresses[6],
-            depositInHeldToken: depositInHeldToken,
-            desiredTokenFromSell: 0
-        });
+        UseLoanOfferingShared.UseLoanOfferingTx memory transaction =
+            UseLoanOfferingShared.UseLoanOfferingTx({
+                positionId: positionId,
+                owner: position.owner,
+                principal: values256[7],
+                lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
+                    position,
+                    values256[7],
+                    block.timestamp
+                ),
+                depositAmount: 0,
+                loanOffering: parseLoanOfferingFromIncreasePositionTx(
+                    position,
+                    addresses,
+                    values256,
+                    values32,
+                    sigV,
+                    sigRS
+                ),
+                exchangeWrapper: addresses[6],
+                depositInHeldToken: depositInHeldToken,
+                desiredTokenFromSell: 0
+            });
 
         return transaction;
     }

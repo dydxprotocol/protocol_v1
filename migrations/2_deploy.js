@@ -31,8 +31,8 @@ const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const OpenPositionImpl = artifacts.require("OpenPositionImpl");
-const OpenPositionWithoutCounterpartyImpl = artifacts.require(
-  "OpenPositionWithoutCounterpartyImpl"
+const OpenWithoutCounterpartyImpl = artifacts.require(
+  "OpenWithoutCounterpartyImpl"
 );
 const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
 const ClosePositionImpl = artifacts.require("ClosePositionImpl");
@@ -129,7 +129,7 @@ async function deployMarginContracts(deployer, network) {
     deployer.deploy(DepositCollateralImpl),
     deployer.deploy(TransferImpl),
     deployer.deploy(OpenPositionImpl),
-    deployer.deploy(OpenPositionWithoutCounterpartyImpl),
+    deployer.deploy(OpenWithoutCounterpartyImpl),
   ]);
 
   await Promise.all([
@@ -155,7 +155,7 @@ async function deployMarginContracts(deployer, network) {
     Margin.link('DepositCollateralImpl', DepositCollateralImpl.address),
     Margin.link('TransferImpl', TransferImpl.address),
     Margin.link('IncreasePositionImpl', IncreasePositionImpl.address),
-    Margin.link('OpenPositionWithoutCounterpartyImpl', OpenPositionWithoutCounterpartyImpl.address),
+    Margin.link('OpenWithoutCounterpartyImpl', OpenWithoutCounterpartyImpl.address),
   ]);
 
   await deployer.deploy(

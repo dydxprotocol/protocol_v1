@@ -30,17 +30,18 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
 
 /**
- * @title OpenPositionShared
+ * @title UseLoanOfferingShared
  * @author dYdX
  *
- * This library contains shared functionality between OpenPositionImpl and IncreasePositionImpl
+ * This library contains shared functionality between OpenPositionImpl and IncreasePositionImpl.
+ * Both use a Loan Offering and a DEX Order to open or increase a position.
  */
-library OpenPositionShared {
+library UseLoanOfferingShared {
     using SafeMath for uint256;
 
     // ============ Structs ============
 
-    struct OpenTx {
+    struct UseLoanOfferingTx {
         bytes32 positionId;
         address owner;
         uint256 principal;
@@ -54,15 +55,15 @@ library OpenPositionShared {
 
     // ============ Internal Implementation Functions ============
 
-    function openPositionInternalPreStateUpdate(
+    function useLoanOfferingInternal(
         MarginState.State storage state,
-        OpenTx memory transaction,
+        UseLoanOfferingTx memory transaction,
         bytes orderData
     )
         internal
         returns (uint256, uint256)
     {
-        validateOpenTx(
+        validateTx(
             state,
             transaction
         );
@@ -104,9 +105,9 @@ library OpenPositionShared {
         );
     }
 
-    function validateOpenTx(
+    function validateTx(
         MarginState.State storage state,
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
         view
@@ -115,14 +116,14 @@ library OpenPositionShared {
 
         require(
             transaction.principal > 0,
-            "OpenPositionShared#validateOpenTx: Positions with 0 principal are not allowed"
+            "UseLoanOfferingShared#validateTx: Positions with 0 principal are not allowed"
         );
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
             require(
                 msg.sender == transaction.loanOffering.taker,
-                "OpenPositionShared#validateOpenTx: Invalid loan offering taker"
+                "UseLoanOfferingShared#validateTx: Invalid loan offering taker"
             );
         }
 
@@ -130,43 +131,52 @@ library OpenPositionShared {
         require(
             isValidSignature(transaction.loanOffering)
             || state.approvedLoans[transaction.loanOffering.loanHash],
-            "OpenPositionShared#validateOpenTx: Invalid loan offering signature"
+            "UseLoanOfferingShared#validateTx: Invalid loan offering signature"
         );
 
         // Validate the amount is <= than max and >= min
+        uint256 unavailable = MarginCommon.getUnavailableLoanOfferingAmountImpl(
+            state,
+            transaction.loanOffering.loanHash
+        );
         require(
-            transaction.lenderAmount.add(
-                MarginCommon.getUnavailableLoanOfferingAmountImpl(
-                    state,
-                    transaction.loanOffering.loanHash
-                )
-            ) <= transaction.loanOffering.rates.maxAmount,
-            "OpenPositionShared#validateOpenTx: Loan offering does not have enough available"
+            transaction.lenderAmount.add(unavailable) <= transaction.loanOffering.rates.maxAmount,
+            "UseLoanOfferingShared#validateTx: Loan offering does not have enough available"
         );
 
         require(
             transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
-            "OpenPositionShared#validateOpenTx: owedToken cannot be equal to heldToken"
+            "UseLoanOfferingShared#validateTx: owedToken cannot be equal to heldToken"
+        );
+
+        require(
+            transaction.owner != address(0),
+            "UseLoanOfferingShared#validateTx: Position owner cannot be 0"
+        );
+
+        require(
+            transaction.loanOffering.owner != address(0),
+            "UseLoanOfferingShared#validateTx: Loan owner cannot be 0"
         );
 
         require(
             transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
-            "OpenPositionShared#validateOpenTx: Below loan offering minimum amount"
+            "UseLoanOfferingShared#validateTx: Below loan offering minimum amount"
         );
 
         require(
             transaction.loanOffering.expirationTimestamp > block.timestamp,
-            "OpenPositionShared#validateOpenTx: Loan offering is expired"
+            "UseLoanOfferingShared#validateTx: Loan offering is expired"
         );
 
         require(
             transaction.loanOffering.maxDuration > 0,
-            "OpenPositionShared#validateOpenTx: Loan offering has 0 maximum duration"
+            "UseLoanOfferingShared#validateTx: Loan offering has 0 maximum duration"
         );
 
         require(
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
-            "OpenPositionShared#validateOpenTx: Loan offering interestPeriod > maxDuration"
+            "UseLoanOfferingShared#validateTx: Loan offering interestPeriod > maxDuration"
         );
 
         // The minimum heldToken is validated after executing the sell
@@ -198,7 +208,7 @@ library OpenPositionShared {
     }
 
     function getConsentIfSmartContractLender(
-        OpenTx transaction,
+        UseLoanOfferingTx transaction,
         bytes32 positionId
     )
         internal
@@ -244,7 +254,7 @@ library OpenPositionShared {
 
     function pullOwedTokensFromLender(
         MarginState.State storage state,
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
     {
@@ -259,7 +269,7 @@ library OpenPositionShared {
 
     function transferDeposit(
         MarginState.State storage state,
-        OpenTx transaction,
+        UseLoanOfferingTx transaction,
         bytes32 positionId
     )
         internal
@@ -286,7 +296,7 @@ library OpenPositionShared {
 
     function transferLoanFees(
         MarginState.State storage state,
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
     {
@@ -329,7 +339,7 @@ library OpenPositionShared {
 
     function executeSell(
         MarginState.State storage state,
-        OpenTx transaction,
+        UseLoanOfferingTx transaction,
         bytes orderData,
         bytes32 positionId,
         uint256 sellAmount
@@ -370,7 +380,7 @@ library OpenPositionShared {
     }
 
     function validateMinimumHeldToken(
-        OpenTx transaction,
+        UseLoanOfferingTx transaction,
         uint256 totalHeldTokenReceived
     )
         internal
@@ -384,12 +394,12 @@ library OpenPositionShared {
 
         require(
             totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
-            "OpenPositionShared#validateMinimumHeldToken: Loan offering minimum held token not met"
+            "UseLoanOfferingShared#validateMinimumHeldToken: Loan offering minimum held token not met"
         );
     }
 
     function getLoanOfferingAddresses(
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
         pure
@@ -409,7 +419,7 @@ library OpenPositionShared {
     }
 
     function getLoanOfferingValues256(
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
         pure
@@ -427,7 +437,7 @@ library OpenPositionShared {
     }
 
     function getLoanOfferingValues32(
-        OpenTx transaction
+        UseLoanOfferingTx transaction
     )
         internal
         pure
