@@ -5,7 +5,7 @@ let mocha = {
   useColors: true
 };
 
-if (process.env.CIRCLE_SHA1) {
+if (process.env.TRUFFLE_REPORTER) {
   mocha = {
     reporter: 'mocha-junit-reporter',
     reporterOptions: {
