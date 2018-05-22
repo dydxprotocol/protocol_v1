@@ -87,7 +87,7 @@ library OpenPositionImpl {
 
         uint256 heldTokenFromSell;
 
-        (heldTokenFromSell,) = BorrowShared.useLoanOfferingInternal(
+        (heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
             orderData

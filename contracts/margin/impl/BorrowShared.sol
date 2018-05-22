@@ -55,7 +55,7 @@ library BorrowShared {
 
     // ============ Internal Implementation Functions ============
 
-    function useLoanOfferingInternal(
+    function doBorrowAndSell(
         MarginState.State storage state,
         Tx memory transaction,
         bytes orderData
@@ -145,6 +145,11 @@ library BorrowShared {
         );
 
         require(
+            transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
+            "BorrowShared#validateTx: Lender amount is below loan offering minimum amount"
+        );
+
+        require(
             transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
             "BorrowShared#validateTx: owedToken cannot be equal to heldToken"
         );
@@ -157,11 +162,6 @@ library BorrowShared {
         require(
             transaction.loanOffering.owner != address(0),
             "BorrowShared#validateTx: Loan owner cannot be 0"
-        );
-
-        require(
-            transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
-            "BorrowShared#validateTx: Below loan offering minimum amount"
         );
 
         require(

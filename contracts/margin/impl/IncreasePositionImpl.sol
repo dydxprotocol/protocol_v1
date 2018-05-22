@@ -200,7 +200,7 @@ library IncreasePositionImpl {
         (
             heldTokenFromSell,
             totalHeldTokenReceived
-        ) = BorrowShared.useLoanOfferingInternal(
+        ) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
             orderData
