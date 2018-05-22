@@ -164,9 +164,10 @@ contract DutchAuctionCloser is
         view
         returns (uint256)
     {
-        uint256 auctionStartTimestamp;
-        uint256 auctionEndTimestamp;
-        (auctionStartTimestamp, auctionEndTimestamp) = getAuctionTimeLimits(positionId);
+        (
+            uint256 auctionStartTimestamp,
+            uint256 auctionEndTimestamp
+        ) = getAuctionTimeLimits(positionId);
 
         // linearly decreases from maximum amount to zero over the course of the auction
         return MathHelpers.getPartialAmount(

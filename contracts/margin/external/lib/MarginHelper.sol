@@ -38,14 +38,10 @@ library MarginHelper {
         view
         returns (MarginCommon.Position memory)
     {
-        address[4] memory addresses;
-        uint256[2] memory values256;
-        uint32[6] memory values32;
-
         (
-            addresses,
-            values256,
-            values32
+            address[4] memory addresses,
+            uint256[2] memory values256,
+            uint32[6]  memory values32
         ) = Margin(DYDX_MARGIN).getPosition(positionId);
 
         return MarginCommon.Position({

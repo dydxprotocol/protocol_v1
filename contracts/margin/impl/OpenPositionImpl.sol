@@ -85,9 +85,7 @@ library OpenPositionImpl {
             "OpenPositionImpl#openPositionImpl: positionId already exists"
         );
 
-        uint256 heldTokenFromSell;
-
-        (heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
+        (uint256 heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
             orderData

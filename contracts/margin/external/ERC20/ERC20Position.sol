@@ -481,10 +481,11 @@ contract ERC20Position is
         returns (uint256)
     {
         uint256 balance = balances[closer];
-        uint256 tokenAmount;
-        uint256 allowedCloseAmount;
 
-        (tokenAmount, allowedCloseAmount) = getCloseAmounts(
+        (
+            uint256 tokenAmount,
+            uint256 allowedCloseAmount
+        ) = getCloseAmounts(
             requestedAmount,
             balance,
             positionPrincipal

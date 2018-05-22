@@ -77,10 +77,10 @@ library ClosePositionImpl {
             false
         );
 
-        uint256 buybackCostInHeldToken;
-        uint256 receivedOwedToken;
-
-        (buybackCostInHeldToken, receivedOwedToken) = returnOwedTokensToLender(
+        (
+            uint256 buybackCostInHeldToken,
+            uint256 receivedOwedToken
+        ) = returnOwedTokensToLender(
             state,
             transaction,
             orderData

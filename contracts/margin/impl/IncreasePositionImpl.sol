@@ -187,6 +187,7 @@ library IncreasePositionImpl {
         returns (uint256 /* heldTokenFromSell */)
     {
         validate(transaction, position);
+
         uint256 positionMinimumHeldToken = setDepositAmount(
             state,
             transaction,
@@ -194,12 +195,9 @@ library IncreasePositionImpl {
             orderData
         );
 
-        uint256 heldTokenFromSell;
-        uint256 totalHeldTokenReceived;
-
         (
-            heldTokenFromSell,
-            totalHeldTokenReceived
+            uint256 heldTokenFromSell,
+            uint256 totalHeldTokenReceived
         ) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
