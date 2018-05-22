@@ -235,6 +235,14 @@ contract('SharedLoan', accounts => {
       );
       await expectThrow(transferLoanToSharedLoan());
     });
+
+    it('fails for second position', async () => {
+      await transferLoanToSharedLoan();
+      await setUpPosition();
+      await expectThrow(
+        transferLoanToSharedLoan()
+      );
+    });
   });
 
   // ============ increaseLoanOnBehalfOf ============

@@ -25,6 +25,7 @@ const {
   createOpenTx,
   issueTokensAndSetAllowances,
   callOpenPosition,
+  doClosePosition,
   getPosition,
   callApproveLoanOffering,
   getTokenAmountsFromOpen
@@ -225,6 +226,88 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', accounts => {
+    it('doesnt allow the same nonce to be used twice', async () => {
+      const dydxMargin = await Margin.deployed();
+      const collisionCheck = false;
+      const [OpenTx1, OpenTx2, OpenTx3] = await Promise.all([
+        createOpenTx(accounts),
+        createOpenTx(accounts),
+        createOpenTx(accounts),
+      ]);
+
+      OpenTx1.nonce = 1;
+      OpenTx2.nonce = 1;
+      OpenTx3.nonce = 2;
+
+      await issueTokensAndSetAllowances(OpenTx1);
+      await callOpenPosition(dydxMargin, OpenTx1, collisionCheck);
+
+      await issueTokensAndSetAllowances(OpenTx2);
+      await expectThrow(
+        callOpenPosition(dydxMargin, OpenTx2, collisionCheck)
+      );
+
+      await issueTokensAndSetAllowances(OpenTx3);
+      await callOpenPosition(dydxMargin, OpenTx3, collisionCheck);
+    });
+  });
+
+  contract('Margin', accounts => {
+    it('doesnt allow the same nonce to be used twice, even if the first was closed', async () => {
+      const dydxMargin = await Margin.deployed();
+      const collisionCheck = false;
+      const [OpenTx1, OpenTx2, OpenTx3] = await Promise.all([
+        createOpenTx(accounts),
+        createOpenTx(accounts),
+        createOpenTx(accounts),
+      ]);
+
+      OpenTx1.nonce = 1;
+      OpenTx2.nonce = 1;
+      OpenTx3.nonce = 2;
+
+      await issueTokensAndSetAllowances(OpenTx1);
+      await callOpenPosition(dydxMargin, OpenTx1, collisionCheck);
+      await doClosePosition(accounts, OpenTx1, OpenTx1.principal);
+      const closed = await dydxMargin.isPositionClosed.call(OpenTx1.id);
+      expect(closed).to.be.true;
+
+      await issueTokensAndSetAllowances(OpenTx2);
+      await expectThrow(
+        callOpenPosition(dydxMargin, OpenTx2, collisionCheck)
+      );
+
+      await issueTokensAndSetAllowances(OpenTx3);
+      await callOpenPosition(dydxMargin, OpenTx3, collisionCheck);
+    });
+  });
+
+  contract('Margin', accounts => {
+    it('doesnt allow position owner to be zero', async () => {
+      const dydxMargin = await Margin.deployed();
+      const OpenTx = await createOpenTx(accounts);
+      await issueTokensAndSetAllowances(OpenTx);
+      OpenTx.owner = ADDRESSES.ZERO;
+      await expectThrow(
+        callOpenPosition(dydxMargin, OpenTx)
+      );
+    });
+  });
+
+  contract('Margin', accounts => {
+    it('doesnt allow loan owner to be zero', async () => {
+      const dydxMargin = await Margin.deployed();
+      const OpenTx = await createOpenTx(accounts);
+      await issueTokensAndSetAllowances(OpenTx);
+      OpenTx.loanOffering.owner = ADDRESSES.ZERO;
+      OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+      await expectThrow(
+        callOpenPosition(dydxMargin, OpenTx)
+      );
+    });
+  });
+
+  contract('Margin', accounts => {
     it('properly assigns owner for lender and owner for accounts', async () => {
       const dydxMargin = await Margin.deployed();
       const OpenTx = await createOpenTx(accounts);
@@ -391,31 +474,19 @@ async function checkSuccess(dydxMargin, OpenTx) {
   expect(position.callTimestamp).to.be.bignumber.equal(0);
   expect(position.maxDuration).to.be.bignumber.equal(OpenTx.loanOffering.maxDuration);
 
-  // if atomic owner is specified, then expect it
-  if (OpenTx.owner === ADDRESSES.ZERO) {
-    expect(position.owner).to.equal(OpenTx.trader);
-  } else {
-    let toReturn = null;
-    try {
-      toReturn = await TestPositionOwner.at(OpenTx.owner).TO_RETURN.call();
-    } catch(e) {
-      toReturn = null;
-    }
-    expect(position.owner).to.equal(toReturn ? toReturn : OpenTx.owner);
+  let toReturn = null;
+  try {
+    toReturn = await TestPositionOwner.at(OpenTx.owner).TO_RETURN.call();
+  } catch(e) {
+    toReturn = null;
   }
-
-  // if atomic owner is specified, then expect it
-  if (OpenTx.loanOffering.owner === ADDRESSES.ZERO) {
-    expect(position.lender).to.equal(OpenTx.loanOffering.payer);
-  } else {
-    let toReturn = null;
-    try {
-      toReturn = await TestLoanOwner.at(OpenTx.loanOffering.owner).TO_RETURN.call();
-    } catch(e) {
-      toReturn = null;
-    }
-    expect(position.lender).to.equal(toReturn ? toReturn : OpenTx.loanOffering.owner);
+  expect(position.owner).to.equal(toReturn || OpenTx.owner);
+  try {
+    toReturn = await TestLoanOwner.at(OpenTx.loanOffering.owner).TO_RETURN.call();
+  } catch(e) {
+    toReturn = null;
   }
+  expect(position.lender).to.equal(toReturn || OpenTx.loanOffering.owner);
 
   const balance = await dydxMargin.getPositionBalance.call(positionId);
 

@@ -90,6 +90,38 @@ describe('#openWithoutCounterparty', () => {
     });
 
     contract('Margin', accounts => {
+      it('Fails if loan owner is 0', async () => {
+        const [
+          openTx,
+          dydxMargin
+        ] = await Promise.all([
+          setup(accounts),
+          Margin.deployed()
+        ]);
+
+        openTx.loanOwner = ADDRESSES.ZERO;
+
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Fails if position owner is 0', async () => {
+        const [
+          openTx,
+          dydxMargin
+        ] = await Promise.all([
+          setup(accounts),
+          Margin.deployed()
+        ]);
+
+        openTx.positionOwner = ADDRESSES.ZERO;
+
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
+      });
+    });
+
+    contract('Margin', accounts => {
       it('Fails if principal is 0', async () => {
         const [
           openTx,
