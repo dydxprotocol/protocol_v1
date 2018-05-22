@@ -20,9 +20,9 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { OpenPositionShared } from "./OpenPositionShared.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
@@ -78,8 +78,9 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
-        OpenPositionShared.OpenTx memory transaction = parseIncreasePositionTx(
+        BorrowShared.Tx memory transaction = parseIncreasePositionTx(
             position,
+            positionId,
             addresses,
             values256,
             values32,
@@ -92,13 +93,12 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            positionId,
             orderData
         );
 
         updateState(
             position,
-            positionId,
+            transaction.positionId,
             transaction.principal,
             transaction.loanOffering.payer
         );
@@ -106,7 +106,6 @@ library IncreasePositionImpl {
         // LOG EVENT
         recordPositionIncreased(
             transaction,
-            positionId,
             position,
             heldTokenFromSell
         );
@@ -180,9 +179,8 @@ library IncreasePositionImpl {
 
     function preStateUpdate(
         MarginState.State storage state,
-        OpenPositionShared.OpenTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
-        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -193,7 +191,6 @@ library IncreasePositionImpl {
             state,
             transaction,
             position,
-            positionId,
             orderData
         );
 
@@ -203,10 +200,9 @@ library IncreasePositionImpl {
         (
             heldTokenFromSell,
             totalHeldTokenReceived
-        ) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        ) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
-            positionId,
             orderData
         );
 
@@ -218,7 +214,7 @@ library IncreasePositionImpl {
     }
 
     function validate(
-        OpenPositionShared.OpenTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position
     )
         internal
@@ -245,9 +241,8 @@ library IncreasePositionImpl {
 
     function setDepositAmount(
         MarginState.State storage state,
-        OpenPositionShared.OpenTx transaction,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
-        bytes32 positionId,
         bytes orderData
     )
         internal
@@ -257,7 +252,7 @@ library IncreasePositionImpl {
         // Amount of heldToken we need to add to the position to maintain the position's ratio
         // of heldToken to owedToken
         uint256 positionMinimumHeldToken = getPositionMinimumHeldToken(
-            positionId,
+            transaction.positionId,
             state,
             transaction.principal,
             position
@@ -274,7 +269,7 @@ library IncreasePositionImpl {
 
             require(
                 heldTokenFromSell <= positionMinimumHeldToken,
-                "IncreasePositionImpl#setDepositAmount: Buy order gives too much heldToken"
+                "IncreasePositionImpl#setDepositAmount: DEX Order gives too much heldToken"
             );
             transaction.depositAmount = positionMinimumHeldToken.sub(heldTokenFromSell);
         } else {
@@ -410,15 +405,14 @@ library IncreasePositionImpl {
     }
 
     function recordPositionIncreased(
-        OpenPositionShared.OpenTx transaction,
-        bytes32 positionId,
+        BorrowShared.Tx transaction,
         MarginCommon.Position storage position,
         uint256 heldTokenFromSell
     )
         internal
     {
         emit PositionIncreased(
-            positionId,
+            transaction.positionId,
             msg.sender,
             transaction.loanOffering.payer,
             position.owner,
@@ -437,6 +431,7 @@ library IncreasePositionImpl {
 
     function parseIncreasePositionTx(
         MarginCommon.Position storage position,
+        bytes32 positionId,
         address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
@@ -446,9 +441,10 @@ library IncreasePositionImpl {
     )
         internal
         view
-        returns (OpenPositionShared.OpenTx memory)
+        returns (BorrowShared.Tx memory)
     {
-        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
+        BorrowShared.Tx memory transaction = BorrowShared.Tx({
+            positionId: positionId,
             owner: position.owner,
             principal: values256[7],
             lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(

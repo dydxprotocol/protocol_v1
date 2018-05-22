@@ -23,7 +23,9 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { InterestImpl } from "./InterestImpl.sol";
 import { MarginState } from "./MarginState.sol";
+import { TransferInternal } from "./TransferInternal.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**
@@ -88,6 +90,58 @@ library MarginCommon {
     }
 
     // ============ Internal Implementation Functions ============
+
+    function storeNewPosition(
+        MarginState.State storage state,
+        bytes32 positionId,
+        Position memory position,
+        address loanPayer
+    )
+        internal
+    {
+        assert(!positionHasExisted(state, positionId));
+        assert(position.owedToken != address(0));
+        assert(position.heldToken != address(0));
+        assert(position.owedToken != position.heldToken);
+        assert(position.owner != address(0));
+        assert(position.lender != address(0));
+        assert(position.maxDuration != 0);
+        assert(position.callTimeLimit != 0);
+        assert(position.interestPeriod <= position.maxDuration);
+        assert(position.callTimestamp == 0);
+        assert(position.requiredDeposit == 0);
+
+        state.positions[positionId].owedToken = position.owedToken;
+        state.positions[positionId].heldToken = position.heldToken;
+        state.positions[positionId].principal = position.principal;
+        state.positions[positionId].callTimeLimit = position.callTimeLimit;
+        state.positions[positionId].startTimestamp = TimestampHelper.getBlockTimestamp32();
+        state.positions[positionId].maxDuration = position.maxDuration;
+        state.positions[positionId].interestRate = position.interestRate;
+        state.positions[positionId].interestPeriod = position.interestPeriod;
+
+        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
+            positionId,
+            (position.lender != loanPayer) ? loanPayer : address(0),
+            position.lender
+        );
+
+        state.positions[positionId].owner = TransferInternal.grantPositionOwnership(
+            positionId,
+            (position.owner != msg.sender) ? msg.sender : address(0),
+            position.owner
+        );
+    }
+
+    function getPositionIdFromNonce(
+        uint256 nonce
+    )
+        internal
+        view
+        returns (bytes32)
+    {
+        return keccak256(msg.sender, nonce);
+    }
 
     function getUnavailableLoanOfferingAmountImpl(
         MarginState.State storage state,
@@ -251,6 +305,17 @@ library MarginCommon {
         returns (bool)
     {
         return state.positions[positionId].startTimestamp != 0;
+    }
+
+    function positionHasExisted(
+        MarginState.State storage state,
+        bytes32 positionId
+    )
+        internal
+        view
+        returns (bool)
+    {
+        return containsPositionImpl(state, positionId) || state.closedPositions[positionId];
     }
 
     function getPositionFromStorage(

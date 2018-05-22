@@ -128,7 +128,7 @@ library ClosePositionImpl {
                 "ClosePositionImpl#returnOwedTokensToLender: Cannot payout in owedToken"
             );
 
-            // No buy order; send owedTokens directly from the closer to the lender
+            // No DEX Order; send owedTokens directly from the closer to the lender
             Proxy(state.PROXY).transferTokens(
                 transaction.owedToken,
                 msg.sender,
@@ -136,7 +136,7 @@ library ClosePositionImpl {
                 lenderOwedToken
             );
         } else {
-            // Buy back owedTokens using buy order and send to lender
+            // Buy back owedTokens using DEX Order and send to lender
             (buybackCostInHeldToken, receivedOwedToken) = buyBackOwedToken(
                 state,
                 transaction,

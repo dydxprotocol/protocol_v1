@@ -20,11 +20,9 @@ pragma solidity 0.4.23;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { OpenPositionShared } from "./OpenPositionShared.sol";
-import { TransferInternal } from "./TransferInternal.sol";
-import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**
@@ -63,7 +61,7 @@ library OpenPositionImpl {
     function openPositionImpl(
         MarginState.State storage state,
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -73,7 +71,7 @@ library OpenPositionImpl {
         public
         returns (bytes32)
     {
-        OpenPositionShared.OpenTx memory transaction = parseOpenTx(
+        BorrowShared.Tx memory transaction = parseOpenTx(
             addresses,
             values256,
             values32,
@@ -82,65 +80,72 @@ library OpenPositionImpl {
             depositInHeldToken
         );
 
-        bytes32 positionId = getNextpositionId(state, transaction.loanOffering.loanHash);
+        require(
+            !MarginCommon.positionHasExisted(state, transaction.positionId),
+            "OpenPositionImpl#openPositionImpl: positionId already exists"
+        );
 
         uint256 heldTokenFromSell;
 
-        (heldTokenFromSell,) = OpenPositionShared.openPositionInternalPreStateUpdate(
+        (heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
             state,
             transaction,
-            positionId,
             orderData
         );
 
-        // Comes before updateState() so that PositionOpened event is before Transferred events
+        // Before doStoreNewPosition() so that PositionOpened event is before Transferred events
         recordPositionOpened(
-            positionId,
             msg.sender,
             transaction,
             heldTokenFromSell
         );
 
-        updateState(
+        doStoreNewPosition(
             state,
-            positionId,
             transaction
         );
 
-        return positionId;
+        return transaction.positionId;
     }
 
     // ============ Helper Functions ============
 
-    function getNextpositionId(
+    function doStoreNewPosition(
         MarginState.State storage state,
-        bytes32 loanHash
+        BorrowShared.Tx memory transaction
     )
         internal
-        view
-        returns (bytes32)
     {
-        bytes32 positionId = keccak256(
-            loanHash,
-            state.loanNumbers[loanHash]
+        MarginCommon.storeNewPosition(
+            state,
+            transaction.positionId,
+            MarginCommon.Position({
+                owedToken: transaction.loanOffering.owedToken,
+                heldToken: transaction.loanOffering.heldToken,
+                lender: transaction.loanOffering.owner,
+                owner: transaction.owner,
+                principal: transaction.principal,
+                requiredDeposit: 0,
+                callTimeLimit: transaction.loanOffering.callTimeLimit,
+                startTimestamp: 0,
+                callTimestamp: 0,
+                maxDuration: transaction.loanOffering.maxDuration,
+                interestRate: transaction.loanOffering.rates.interestRate,
+                interestPeriod: transaction.loanOffering.rates.interestPeriod
+            }),
+            transaction.loanOffering.payer
         );
-
-        // Make this positionId doesn't already exist
-        assert(!MarginCommon.containsPositionImpl(state, positionId));
-
-        return positionId;
     }
 
     function recordPositionOpened(
-        bytes32 positionId,
         address trader,
-        OpenPositionShared.OpenTx transaction,
+        BorrowShared.Tx transaction,
         uint256 heldTokenReceived
     )
         internal
     {
         emit PositionOpened(
-            positionId,
+            transaction.positionId,
             trader,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
@@ -157,47 +162,11 @@ library OpenPositionImpl {
         );
     }
 
-    function updateState(
-        MarginState.State storage state,
-        bytes32 positionId,
-        OpenPositionShared.OpenTx transaction
-    )
-        internal
-    {
-        assert(!MarginCommon.containsPositionImpl(state, positionId));
-
-        // Update global amounts for the loan
-        state.loanNumbers[transaction.loanOffering.loanHash] =
-            state.loanNumbers[transaction.loanOffering.loanHash].add(1);
-
-        state.positions[positionId].owedToken = transaction.loanOffering.owedToken;
-        state.positions[positionId].heldToken = transaction.loanOffering.heldToken;
-        state.positions[positionId].principal = transaction.principal;
-        state.positions[positionId].callTimeLimit = transaction.loanOffering.callTimeLimit;
-        state.positions[positionId].startTimestamp = TimestampHelper.getBlockTimestamp32();
-        state.positions[positionId].maxDuration = transaction.loanOffering.maxDuration;
-        state.positions[positionId].interestRate = transaction.loanOffering.rates.interestRate;
-        state.positions[positionId].interestPeriod = transaction.loanOffering.rates.interestPeriod;
-
-        bool newLender = transaction.loanOffering.owner != transaction.loanOffering.payer;
-        bool newOwner = transaction.owner != msg.sender;
-
-        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
-            positionId,
-            newLender ? transaction.loanOffering.payer : address(0),
-            transaction.loanOffering.owner);
-
-        state.positions[positionId].owner = TransferInternal.grantPositionOwnership(
-            positionId,
-            newOwner ? msg.sender : address(0),
-            transaction.owner);
-    }
-
     // ============ Parsing Functions ============
 
     function parseOpenTx(
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS,
@@ -205,9 +174,10 @@ library OpenPositionImpl {
     )
         internal
         view
-        returns (OpenPositionShared.OpenTx memory)
+        returns (BorrowShared.Tx memory)
     {
-        OpenPositionShared.OpenTx memory transaction = OpenPositionShared.OpenTx({
+        BorrowShared.Tx memory transaction = BorrowShared.Tx({
+            positionId: MarginCommon.getPositionIdFromNonce(values256[9]),
             owner: addresses[0],
             principal: values256[7],
             lenderAmount: values256[7],
@@ -229,7 +199,7 @@ library OpenPositionImpl {
 
     function parseLoanOffering(
         address[11] addresses,
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
         bytes32[2] sigRS
@@ -263,7 +233,7 @@ library OpenPositionImpl {
     }
 
     function parseLoanOfferRates(
-        uint256[9] values256,
+        uint256[10] values256,
         uint32[4] values32
     )
         internal

@@ -37,20 +37,16 @@ library MarginState {
         address PROXY;
 
         // Mapping from loanHash -> amount, which stores the amount of a loan which has
-        // already been filled
+        // already been filled.
         mapping (bytes32 => uint256) loanFills;
 
         // Mapping from loanHash -> amount, which stores the amount of a loan which has
-        // already been canceled
+        // already been canceled.
         mapping (bytes32 => uint256) loanCancels;
-
-        // Mapping from loanHash -> number, which stores the number of unique positions taken out
-        // for a given loan
-        mapping (bytes32 => uint256) loanNumbers;
 
         // Mapping from loanHash -> bool, which stores whether the order has been pre-approved
         // on-chain by the lender. This will typically be used to allow smart contracts to make
-        // on-chain loan offerings
+        // on-chain loan offerings.
         mapping (bytes32 => bool) approvedLoans;
 
         // Mapping from positionId -> Position, which stores all the open margin positions.

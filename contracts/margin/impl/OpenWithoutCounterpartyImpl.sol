@@ -21,30 +21,28 @@ pragma experimental "v0.5.0";
 
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { TransferInternal } from "./TransferInternal.sol";
 import { Vault } from "../Vault.sol";
-import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
 
 /**
- * @title OpenPositionWithoutCounterpartyImpl
+ * @title OpenWithoutCounterpartyImpl
  * @author dYdX
  *
- * This library contains the implementation for the openPositionWithoutCounterparty
+ * This library contains the implementation for the openWithoutCounterparty
  * function of Margin
  */
-library OpenPositionWithoutCounterpartyImpl {
+library OpenWithoutCounterpartyImpl {
 
     // ============ Structs ============
 
-    struct OpenWithoutCounterpartyTx {
+    struct Tx {
+        bytes32 positionId;
         address positionOwner;
         address owedToken;
         address heldToken;
         address loanOwner;
         uint256 principal;
         uint256 deposit;
-        uint256 nonce;
         uint32 callTimeLimit;
         uint32 maxDuration;
         uint32 interestRate;
@@ -75,7 +73,7 @@ library OpenPositionWithoutCounterpartyImpl {
 
     // ============ Public Implementation Functions ============
 
-    function openPositionWithoutCounterpartyImpl(
+    function openWithoutCounterpartyImpl(
         MarginState.State storage state,
         address[4] addresses,
         uint256[3] values256,
@@ -84,93 +82,120 @@ library OpenPositionWithoutCounterpartyImpl {
         public
         returns (bytes32)
     {
-        OpenWithoutCounterpartyTx memory openTx = parseOpenWithoutCounterpartyTx(
+        Tx memory openTx = parseTx(
             addresses,
             values256,
             values32
         );
 
-        bytes32 positionId = keccak256(
-            msg.sender,
-            openTx.nonce
-        );
-
         validate(
             state,
-            openTx,
-            positionId
+            openTx
         );
 
         Vault(state.VAULT).transferToVault(
-            positionId,
+            openTx.positionId,
             openTx.heldToken,
             msg.sender,
             openTx.deposit
         );
 
         recordPositionOpened(
-            openTx,
-            positionId
+            openTx
         );
 
-        updateState(
+        doStoreNewPosition(
             state,
-            openTx,
-            positionId
+            openTx
         );
 
-        return positionId;
+        return openTx.positionId;
     }
 
     // ============ Internal Functions ============
 
+    function doStoreNewPosition(
+        MarginState.State storage state,
+        Tx memory openTx
+    )
+        internal
+    {
+        MarginCommon.storeNewPosition(
+            state,
+            openTx.positionId,
+            MarginCommon.Position({
+                owedToken: openTx.owedToken,
+                heldToken: openTx.heldToken,
+                lender: openTx.loanOwner,
+                owner: openTx.positionOwner,
+                principal: openTx.principal,
+                requiredDeposit: 0,
+                callTimeLimit: openTx.callTimeLimit,
+                startTimestamp: 0,
+                callTimestamp: 0,
+                maxDuration: openTx.maxDuration,
+                interestRate: openTx.interestRate,
+                interestPeriod: openTx.interestPeriod
+            }),
+            msg.sender
+        );
+    }
+
     function validate(
         MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
+        Tx memory openTx
     )
         internal
         view
     {
         require(
-            !MarginCommon.containsPositionImpl(state, positionId),
-            "OpenPositionWithoutCounterpartyImpl#validate: position ID already exists"
+            !MarginCommon.positionHasExisted(state, openTx.positionId),
+            "openWithoutCounterpartyImpl#validate: positionId already exists"
         );
 
         require(
             openTx.principal > 0,
-            "OpenPositionWithoutCounterpartyImpl#validate: principal cannot be 0"
+            "openWithoutCounterpartyImpl#validate: principal cannot be 0"
         );
 
         require(
             openTx.owedToken != address(0),
-            "OpenPositionWithoutCounterpartyImpl#validate: owedToken cannot be 0"
+            "openWithoutCounterpartyImpl#validate: owedToken cannot be 0"
         );
 
         require(
             openTx.owedToken != openTx.heldToken,
-            "OpenPositionWithoutCounterpartyImpl#validate: owedToken cannot be equal to heldToken"
+            "openWithoutCounterpartyImpl#validate: owedToken cannot be equal to heldToken"
+        );
+
+        require(
+            openTx.positionOwner != address(0),
+            "openWithoutCounterpartyImpl#validate: positionOwner cannot be 0"
+        );
+
+        require(
+            openTx.loanOwner != address(0),
+            "openWithoutCounterpartyImpl#validate: loanOwner cannot be 0"
         );
 
         require(
             openTx.maxDuration > 0,
-            "OpenPositionWithoutCounterpartyImpl#validate: maxDuration cannot be 0"
+            "openWithoutCounterpartyImpl#validate: maxDuration cannot be 0"
         );
 
         require(
             openTx.interestPeriod <= openTx.maxDuration,
-            "OpenPositionWithoutCounterpartyImpl#validate: interestPeriod must be <= maxDuration"
+            "openWithoutCounterpartyImpl#validate: interestPeriod must be <= maxDuration"
         );
     }
 
     function recordPositionOpened(
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
+        Tx memory openTx
     )
         internal
     {
         emit PositionOpened(
-            positionId,
+            openTx.positionId,
             msg.sender,
             msg.sender,
             bytes32(0),
@@ -187,55 +212,25 @@ library OpenPositionWithoutCounterpartyImpl {
         );
     }
 
-    function updateState(
-        MarginState.State storage state,
-        OpenWithoutCounterpartyTx memory openTx,
-        bytes32 positionId
-    )
-        internal
-    {
-        state.positions[positionId].owedToken = openTx.owedToken;
-        state.positions[positionId].heldToken = openTx.heldToken;
-        state.positions[positionId].principal = openTx.principal;
-        state.positions[positionId].callTimeLimit = openTx.callTimeLimit;
-        state.positions[positionId].startTimestamp = TimestampHelper.getBlockTimestamp32();
-        state.positions[positionId].maxDuration = openTx.maxDuration;
-        state.positions[positionId].interestRate = openTx.interestRate;
-        state.positions[positionId].interestPeriod = openTx.interestPeriod;
-
-        bool newLender = openTx.loanOwner != msg.sender;
-        bool newOwner = openTx.positionOwner != msg.sender;
-
-        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
-            positionId,
-            newLender ? msg.sender : address(0),
-            openTx.loanOwner);
-
-        state.positions[positionId].owner = TransferInternal.grantPositionOwnership(
-            positionId,
-            newOwner ? msg.sender : address(0),
-            openTx.positionOwner);
-    }
-
     // ============ Parsing Functions ============
 
-    function parseOpenWithoutCounterpartyTx(
+    function parseTx(
         address[4] addresses,
         uint256[3] values256,
         uint32[4]  values32
     )
         internal
-        pure
-        returns (OpenWithoutCounterpartyTx memory)
+        view
+        returns (Tx memory)
     {
-        OpenWithoutCounterpartyTx memory openTx = OpenWithoutCounterpartyTx({
+        Tx memory openTx = Tx({
+            positionId: MarginCommon.getPositionIdFromNonce(values256[2]),
             positionOwner: addresses[0],
             owedToken: addresses[1],
             heldToken: addresses[2],
             loanOwner: addresses[3],
             principal: values256[0],
             deposit: values256[1],
-            nonce: values256[2],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             interestRate: values32[2],

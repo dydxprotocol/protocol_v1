@@ -35,8 +35,7 @@ import { MarginEvents } from "./impl/MarginEvents.sol";
 import { MarginState } from "./impl/MarginState.sol";
 import { MarginStorage } from "./impl/MarginStorage.sol";
 import { OpenPositionImpl } from "./impl/OpenPositionImpl.sol";
-/* solium-disable-next-line max-len*/
-import { OpenPositionWithoutCounterpartyImpl } from "./impl/OpenPositionWithoutCounterpartyImpl.sol";
+import { OpenWithoutCounterpartyImpl } from "./impl/OpenWithoutCounterpartyImpl.sol";
 import { PositionGetters } from "./impl/PositionGetters.sol";
 import { TransferImpl } from "./impl/TransferImpl.sol";
 
@@ -78,7 +77,7 @@ contract Margin is
 
     /**
      * Open a margin position. Called by the margin trader who must provide both a
-     * signed loan offering as well as a buy order with which to sell the owedToken.
+     * signed loan offering as well as a DEX Order with which to sell the owedToken.
      *
      * @param  addresses           Addresses corresponding to:
      *
@@ -105,6 +104,7 @@ contract Margin is
      *  [6]  = loan salt
      *  [7]  = position amount of principal
      *  [8]  = deposit amount
+     *  [9]  = nonce (used to calculate positionId)
      *
      * @param  values32            Values corresponding to:
      *
@@ -123,7 +123,7 @@ contract Margin is
      */
     function openPosition(
         address[11] addresses,
-        uint256[9]  values256,
+        uint256[10] values256,
         uint32[4]   values32,
         uint8       sigV,
         bytes32[2]  sigRS,
@@ -173,7 +173,7 @@ contract Margin is
      *
      * @return              Unique ID for the new position
      */
-    function openPositionWithoutCounterparty(
+    function openWithoutCounterparty(
         address[4] addresses,
         uint256[3] values256,
         uint32[4]  values32
@@ -183,7 +183,7 @@ contract Margin is
         nonReentrant
         returns (bytes32)
     {
-        return OpenPositionWithoutCounterpartyImpl.openPositionWithoutCounterpartyImpl(
+        return OpenWithoutCounterpartyImpl.openWithoutCounterpartyImpl(
             state,
             addresses,
             values256,

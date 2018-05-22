@@ -6,18 +6,15 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const HeldToken = artifacts.require("TokenA");
 const { BYTES32 } = require('../helpers/Constants');
 const {
   createOpenTx,
   callApproveLoanOffering,
   callOpenPosition,
-  callIncreasePosition,
   callCancelLoanOffer,
-  issueTokenToAccountInAmountAndApproveProxy,
   issueTokensAndSetAllowances
 } = require('../helpers/MarginHelper');
-const { createLoanOffering, signLoanOffering } = require('../helpers/LoanHelper');
+const { createLoanOffering } = require('../helpers/LoanHelper');
 
 contract('LoanGetters', (accounts) => {
   let dydxMargin;
@@ -62,64 +59,13 @@ contract('LoanGetters', (accounts) => {
       await expectLoanAmounts(openTx.loanOffering.loanHash, openTx.principal, ca1.plus(ca2));
 
       await issueTokensAndSetAllowances(openTx);
+      openTx.nonce = 2;
       await callOpenPosition(dydxMargin, openTx);
       await expectLoanAmounts(
         openTx.loanOffering.loanHash,
         openTx.principal.times(2),
         ca1.plus(ca2)
       );
-    });
-  });
-});
-
-contract('LoanGetters', (accounts) => {
-  let dydxMargin, heldToken;
-
-  before('get Margin', async () => {
-    [dydxMargin, heldToken] = await Promise.all([
-      Margin.deployed(),
-      HeldToken.deployed(),
-    ]);
-  });
-
-  describe('#getLoanNumber', () => {
-    it('succeeds', async () => {
-      let lup;
-      let openTx = await createOpenTx(accounts);
-      const loanHash = openTx.loanOffering.loanHash;
-      let incrTx = await createOpenTx(accounts, { salt: 9999 });
-      openTx.principal = openTx.principal.div(4);
-      incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
-      incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
-
-      // expect 0 to start
-      lup = await dydxMargin.getLoanNumber.call(loanHash);
-      expect(lup).to.be.bignumber.equal(0);
-
-      // expect 1 after opening once
-      await issueTokensAndSetAllowances(openTx);
-      const openTxResult = await callOpenPosition(dydxMargin, openTx);
-      lup = await dydxMargin.getLoanNumber.call(loanHash);
-      expect(lup).to.be.bignumber.equal(1);
-
-      // expect 1 for original loanOffering, expect 0 for loanOffering used to increase
-      incrTx.id = openTxResult.id;
-      await issueTokenToAccountInAmountAndApproveProxy(
-        heldToken,
-        incrTx.trader,
-        incrTx.depositAmount.times(4)
-      );
-      await callIncreasePosition(dydxMargin, incrTx);
-      lup = await dydxMargin.getLoanNumber.call(loanHash);
-      expect(lup).to.be.bignumber.equal(1);
-      lup = await dydxMargin.getLoanNumber.call(incrTx.loanOffering.loanHash);
-      expect(lup).to.be.bignumber.equal(0);
-
-      // expect 2 after opening a second time
-      await issueTokensAndSetAllowances(openTx);
-      await callOpenPosition(dydxMargin, openTx);
-      lup = await dydxMargin.getLoanNumber.call(loanHash);
-      expect(lup).to.be.bignumber.equal(2);
     });
   });
 });

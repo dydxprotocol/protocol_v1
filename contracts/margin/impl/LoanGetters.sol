@@ -84,22 +84,6 @@ contract LoanGetters is MarginStorage {
     }
 
     /**
-     * Gets the number of unique positions that have been opened using this loan.
-     *
-     * @param  loanHash  Unique hash of the loan offering
-     * @return           The total number of new positions that have been opened using this loan.
-     */
-    function getLoanNumber(
-        bytes32 loanHash
-    )
-        external
-        view
-        returns (uint256)
-    {
-        return state.loanNumbers[loanHash];
-    }
-
-    /**
      * Gets if a loan offering has been approved in an on-chain transaction.
      *
      * @param  loanHash  Unique hash of the loan offering

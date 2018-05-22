@@ -19,7 +19,7 @@ const { expectThrow } = require('../helpers/ExpectHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-describe('#increasePosition', () => {
+describe('#openWithoutCounterparty', () => {
   contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const [
@@ -32,10 +32,10 @@ describe('#increasePosition', () => {
 
       const startingBalances = await getBalances(openTx);
 
-      const tx = await callOpenPositionWithoutCounterparty(dydxMargin, openTx);
+      const tx = await callOpenWithoutCounterparty(dydxMargin, openTx);
 
       console.log(
-        '\tMargin.openPositionWithoutCounterparty gas used: '
+        '\tMargin.openWithoutCounterparty gas used: '
         + tx.receipt.gasUsed
       );
 
@@ -53,12 +53,12 @@ describe('#increasePosition', () => {
         Margin.deployed()
       ]);
 
-      await callOpenPositionWithoutCounterparty(dydxMargin, openTx);
+      await callOpenWithoutCounterparty(dydxMargin, openTx);
 
       const openTx2 = await setup(accounts);
       openTx2.nonce = openTx2.nonce.plus(1);
       const startingBalances = await getBalances(openTx);
-      const tx = await callOpenPositionWithoutCounterparty(dydxMargin, openTx2);
+      const tx = await callOpenWithoutCounterparty(dydxMargin, openTx2);
 
       await validate(dydxMargin, openTx, tx, startingBalances);
     });
@@ -75,12 +75,12 @@ describe('#increasePosition', () => {
           Margin.deployed()
         ]);
 
-        await callOpenPositionWithoutCounterparty(dydxMargin, openTx);
+        await callOpenWithoutCounterparty(dydxMargin, openTx);
 
         const openTx2 = await setup(accounts);
 
         await expectThrow(
-          callOpenPositionWithoutCounterparty(
+          callOpenWithoutCounterparty(
             dydxMargin,
             openTx2,
             { shouldContain: true }
@@ -101,7 +101,7 @@ describe('#increasePosition', () => {
 
         openTx.principal = BIGNUMBERS.ZERO;
 
-        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
       });
     });
 
@@ -117,7 +117,7 @@ describe('#increasePosition', () => {
 
         openTx.owedToken = ADDRESSES.ZERO;
 
-        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
       });
     });
 
@@ -133,7 +133,7 @@ describe('#increasePosition', () => {
 
         openTx.owedToken = openTx.heldToken;
 
-        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
       });
     });
 
@@ -149,7 +149,7 @@ describe('#increasePosition', () => {
 
         openTx.maxDuration = BIGNUMBERS.ZERO;
 
-        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
       });
     });
 
@@ -165,7 +165,7 @@ describe('#increasePosition', () => {
 
         openTx.interestPeriod = openTx.maxDuration.plus(1);
 
-        await expectThrow(callOpenPositionWithoutCounterparty(dydxMargin, openTx));
+        await expectThrow(callOpenWithoutCounterparty(dydxMargin, openTx));
       });
     });
   });
@@ -211,7 +211,7 @@ async function setup(accounts) {
   };
 }
 
-async function callOpenPositionWithoutCounterparty(
+async function callOpenWithoutCounterparty(
   dydxMargin,
   openTx,
   { shouldContain = false} = {}
@@ -228,7 +228,7 @@ async function callOpenPositionWithoutCounterparty(
     expect(contains).to.be.false;
   }
 
-  const response = await dydxMargin.openPositionWithoutCounterparty(
+  const response = await dydxMargin.openWithoutCounterparty(
     [
       openTx.positionOwner,
       openTx.owedToken,

@@ -52,6 +52,7 @@ async function createOpenTx(
     trader: accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address,
     depositInHeldToken: depositInHeldToken,
+    nonce: Math.floor(Math.random() * 12983748912748)
   };
   tx.depositAmount = getMinimumDeposit(tx);
 
@@ -106,10 +107,9 @@ function orderToBytes(order) {
 }
 
 async function callOpenPosition(dydxMargin, tx) {
-  const loanNumber = await dydxMargin.getLoanNumber.call(tx.loanOffering.loanHash);
   const positionId = web3Instance.utils.soliditySha3(
-    tx.loanOffering.loanHash,
-    loanNumber
+    tx.trader,
+    tx.nonce
   );
 
   let contains = await dydxMargin.containsPosition.call(positionId);
@@ -138,7 +138,8 @@ async function callOpenPosition(dydxMargin, tx) {
     tx.loanOffering.expirationTimestamp,
     tx.loanOffering.salt,
     tx.principal,
-    tx.depositAmount
+    tx.depositAmount,
+    tx.nonce
   ];
 
   const values32 = [

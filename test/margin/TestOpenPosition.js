@@ -374,8 +374,8 @@ describe('#openPosition', () => {
 
 async function checkSuccess(dydxMargin, OpenTx) {
   const positionId = web3Instance.utils.soliditySha3(
-    OpenTx.loanOffering.loanHash,
-    0
+    OpenTx.trader,
+    OpenTx.nonce
   );
 
   const contains = await dydxMargin.containsPosition.call(positionId);

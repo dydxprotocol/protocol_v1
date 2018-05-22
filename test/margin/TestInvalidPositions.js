@@ -170,6 +170,7 @@ describe('#openPosition', () => {
         expect(fill0).to.be.bignumber.equal(0);
 
         // first call should succeed for 1/2
+        OpenTx.nonce = 1;
         await issueTokensAndSetAllowances(OpenTx);
         await callOpenPosition(dydxMargin, OpenTx);
 
@@ -177,6 +178,7 @@ describe('#openPosition', () => {
         expect(fill1).to.be.bignumber.equal(halfLoanAmount);
 
         // second call should succeed for 1/2
+        OpenTx.nonce = 2;
         await issueTokensAndSetAllowances(OpenTx);
         await callOpenPosition(dydxMargin, OpenTx);
 
@@ -184,6 +186,7 @@ describe('#openPosition', () => {
         expect(fill2).to.be.bignumber.equal(halfLoanAmount.times(2));
 
         // third call should fail
+        OpenTx.nonce = 3;
         await issueTokensAndSetAllowances(OpenTx);
         await expectThrow(callOpenPosition(dydxMargin, OpenTx));
       });
