@@ -141,7 +141,7 @@ library FractionMath {
             den /= first128Bits;
         }
 
-        assert(den != 0 && den < 2**128 && num < 2**128);
+        assert(den != 0 && den < 2**128 && num < 2**128); // unit-tested
 
         return Fraction.Fraction128({
             num: uint128(num),
@@ -155,7 +155,7 @@ library FractionMath {
         internal
         pure
     {
-        assert(a.den != 0);
+        assert(a.den != 0); // unit-tested
     }
 
     function copy(
