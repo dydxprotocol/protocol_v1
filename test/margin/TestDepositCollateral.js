@@ -43,7 +43,7 @@ describe('#deposit', () => {
   });
 
   contract('Margin', accounts => {
-    it('doesnt allow anyone but position owner to deposit', async () => {
+    it('does not allow anyone but position owner to deposit', async () => {
       const OpenTx = await doOpenPosition(accounts);
       await expectThrow(
         doDepositCollateral({
