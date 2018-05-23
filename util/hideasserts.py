@@ -13,7 +13,7 @@ def hideAsserts(dir, filepath):
     # parse entire file
     for line in open(filepath, 'r').readlines():
         builder = line.rstrip();
-        if (line.lstrip().startswith('assert(')):
+        if (line.lstrip().startswith('assert(') and ('unit-tested' not in line)):
             inAnAssert = True
             numAssertsChanged += 1
             spacesToAdd = len(builder) - len(builder.lstrip()) - 2;
@@ -42,9 +42,6 @@ def main():
 
     for dir,_,_ in os.walk(dir_path+"/contracts"):
         files.extend(glob.glob(os.path.join(dir,pattern)))
-
-    whitelistedFiles = ['FractionMath.sol', 'MathHelpers.sol']
-    files = [x for x in files if not any(white in x for white in whitelistedFiles)]
 
     numHidden = 0
     for file in files:

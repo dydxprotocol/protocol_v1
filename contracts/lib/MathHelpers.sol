@@ -86,7 +86,7 @@ library MathHelpers {
         pure
         returns (uint256)
     {
-        assert(denominator != 0);
+        assert(denominator != 0); // unit-tested
         if (numerator == 0) {
             return 0;
         }
