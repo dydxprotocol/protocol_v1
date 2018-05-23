@@ -19,6 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
@@ -352,6 +353,10 @@ library IncreasePositionImpl {
     )
         internal
     {
+        if (trader == contractAddr && !AddressUtils.isContract(contractAddr)) {
+            return;
+        }
+
         address newContractAddr =
             IncreasePositionDelegator(contractAddr).increasePositionOnBehalfOf(
                 trader,
@@ -359,15 +364,16 @@ library IncreasePositionImpl {
                 principalAdded
             );
 
-        // if not equal, (and not trader), recurse
-        if ((newContractAddr != contractAddr) && (trader != newContractAddr)) {
-            increasePositionOnBehalfOfRecurse(
-                newContractAddr,
-                trader,
-                positionId,
-                principalAdded
-            );
+        if (contractAddr == newContractAddr) {
+            return;
         }
+
+        increasePositionOnBehalfOfRecurse(
+            newContractAddr,
+            trader,
+            positionId,
+            principalAdded
+        );
     }
 
     function increaseLoanOnBehalfOfRecurse(
@@ -379,6 +385,10 @@ library IncreasePositionImpl {
     )
         internal
     {
+        if (payer == contractAddr && !AddressUtils.isContract(contractAddr)) {
+            return;
+        }
+
         address newContractAddr =
             IncreaseLoanDelegator(contractAddr).increaseLoanOnBehalfOf(
                 payer,
@@ -387,16 +397,17 @@ library IncreasePositionImpl {
                 amountLent
             );
 
-        // if not equal, (and not payer), recurse
-        if ((newContractAddr != contractAddr) && (payer != newContractAddr)) {
-            increaseLoanOnBehalfOfRecurse(
-                newContractAddr,
-                payer,
-                positionId,
-                principalAdded,
-                amountLent
-            );
+        if (contractAddr == newContractAddr) {
+            return;
         }
+
+        increaseLoanOnBehalfOfRecurse(
+            newContractAddr,
+            payer,
+            positionId,
+            principalAdded,
+            amountLent
+        );
     }
 
     function recordPositionIncreased(
