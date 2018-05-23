@@ -34,7 +34,8 @@ async function createOpenTx(
     salt = DEFAULT_SALT,
     depositInHeldToken = true,
     positionOwner,
-    interestPeriod
+    interestPeriod,
+    nonce
   } = {}
 ) {
   const [loanOffering, buyOrder] = await Promise.all([
@@ -52,7 +53,7 @@ async function createOpenTx(
     trader: accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address,
     depositInHeldToken: depositInHeldToken,
-    nonce: Math.floor(Math.random() * 12983748912748)
+    nonce: nonce || Math.floor(Math.random() * 12983748912748)
   };
   tx.depositAmount = getMinimumDeposit(tx);
 
@@ -106,14 +107,26 @@ function orderToBytes(order) {
   }
 }
 
-async function callOpenPosition(dydxMargin, tx) {
+async function callOpenPosition(
+  dydxMargin,
+  tx,
+  {
+    collisionCheck = true
+  } = {}
+) {
   const positionId = web3Instance.utils.soliditySha3(
     tx.trader,
     tx.nonce
   );
 
-  let contains = await dydxMargin.containsPosition.call(positionId);
-  expect(contains).to.be.false;
+  if (collisionCheck) {
+    let [contains, contained] = await Promise.all([
+      dydxMargin.containsPosition.call(positionId),
+      dydxMargin.isPositionClosed.call(positionId)
+    ]);
+    expect(contains).to.be.false;
+    expect(contained).to.be.false;
+  }
 
   const addresses = [
     tx.owner,
@@ -169,7 +182,7 @@ async function callOpenPosition(dydxMargin, tx) {
     { from: tx.trader }
   );
 
-  contains = await dydxMargin.containsPosition.call(positionId);
+  const contains = await dydxMargin.containsPosition.call(positionId);
   expect(contains).to.be.true;
 
   await expectLogOpenPosition(dydxMargin, positionId, tx, response);

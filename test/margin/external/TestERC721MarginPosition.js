@@ -462,6 +462,22 @@ contract('ERC721MarginPosition', accounts => {
       );
     });
 
+    it('fails for token owned by ERC721MarginPosition contract', async () => {
+      await initOwedToken(openTx.trader);
+      await erc721Contract.transferFrom(openTx.trader, erc721Contract.address, uint256(openTx.id));
+      await expectThrow(
+        callClosePositionDirectly(
+          dydxMargin,
+          openTx,
+          openTx.principal,
+          {
+            from: openTx.trader,
+            recipient: unapprovedAcct
+          }
+        )
+      );
+    });
+
     it('succeeds for approved recipients', async () => {
       await initOwedToken(unapprovedAcct);
       await callClosePositionDirectly(
