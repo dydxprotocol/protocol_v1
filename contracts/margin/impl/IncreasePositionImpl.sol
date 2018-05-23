@@ -353,6 +353,7 @@ library IncreasePositionImpl {
     )
         internal
     {
+        // Assume owner approval if not a smart contract and they increased their own position
         if (trader == contractAddr && !AddressUtils.isContract(contractAddr)) {
             return;
         }
@@ -364,16 +365,14 @@ library IncreasePositionImpl {
                 principalAdded
             );
 
-        if (contractAddr == newContractAddr) {
-            return;
+        if (newContractAddr != contractAddr) {
+            increasePositionOnBehalfOfRecurse(
+                newContractAddr,
+                trader,
+                positionId,
+                principalAdded
+            );
         }
-
-        increasePositionOnBehalfOfRecurse(
-            newContractAddr,
-            trader,
-            positionId,
-            principalAdded
-        );
     }
 
     function increaseLoanOnBehalfOfRecurse(
@@ -385,6 +384,7 @@ library IncreasePositionImpl {
     )
         internal
     {
+        // Assume lender approval if not a smart contract and they increased their own loan
         if (payer == contractAddr && !AddressUtils.isContract(contractAddr)) {
             return;
         }
@@ -397,17 +397,15 @@ library IncreasePositionImpl {
                 amountLent
             );
 
-        if (contractAddr == newContractAddr) {
-            return;
+        if (newContractAddr != contractAddr) {
+            increaseLoanOnBehalfOfRecurse(
+                newContractAddr,
+                payer,
+                positionId,
+                principalAdded,
+                amountLent
+            );
         }
-
-        increaseLoanOnBehalfOfRecurse(
-            newContractAddr,
-            payer,
-            positionId,
-            principalAdded,
-            amountLent
-        );
     }
 
     function recordPositionIncreased(
