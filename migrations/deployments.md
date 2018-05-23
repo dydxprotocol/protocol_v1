@@ -1,25 +1,25 @@
-## Kovan Deployment - 5/14/18:
+## Kovan Deployment - 5/22/18:
 
 ### Main
-- Margin:                          0xb5246a0aa895b471b8b13dce294df7fdff5f569d
-- Proxy:                           0x57f0a74c183d59b35e6c8d4a70f2fb9ff163760e
-- Vault:                           0x3258398b9da0b6bd254e64c7e2a12af75e9bb86e
+- Margin:                          0x874aa80493fbbe1d6b9ed2c92874f3ff00ba53f0
+- Proxy:                           0x1ff95a36d5dab129428d6f38fbcda162be6a2964
+- Vault:                           0x8c6013b2b84f21b8c0500e553f7f0e51221e5d9f
 
 ### Second Layer
-- DutchAuctionCloser:              0x6b9c3a8bd66fec9ee64077a13f55bff9c794701e
-- ERC721MarginPosition:            0x5fcc8a5f938d5f142266fa552f2a922e5569e4c2
-- ZeroExExchangeWrapper:           0x07e676bff7a4ed4cbca31b6d85797eb8e21fa215
-- ERC20ShortCreator:               0xabd5d7a28763984d1950e7a2245efaf158badab6
-- ERC20LongCreator:                0x0b97502ac2e6511238a15b010c35903c409c9b9d
-- SharedLoanCreator:               0xc9273b7d9a13b111967ea79ec391e593a89d340b
+- DutchAuctionCloser:              0x53a1e0fb1083c6096a3f89384f6411bac77e3029
+- ERC721MarginPosition:            0xf531ce8dc0ea17a445ac161121fdcefcc5699ac9
+- ZeroExExchangeWrapper:           0xa3ee452eccf565b725dbfea7674bde2cb944b84a
+- ERC20ShortCreator:               0xf0b50623e834858e17173d39824d543c6f93135a
+- ERC20LongCreator:                0xe8cfe95d8f306189dafa36e3a6dcd3e241286338
+- SharedLoanCreator:               0xa0be299ff84068c174a3a1fd957a0c0abab03f72
 
 ### Impl
-- TransferImpl:                    0x3aee0fa838e36dafc425ceb9cf96afe0a01a620c
-- LoanImpl:                        0xa2e4f28ff75e9eebc4b947c3f9642be3011e9c25
-- InterestImpl:                    0xa5441bbdde2c56d5a25a8074dabdfd75d4aeccbd
-- ForceRecoverCollateralImpl:      0x0ced0a462d48e5aab04062dc6a170d86ed09f336
-- OpenPositionImpl:                0xf418c6b536a90306fe6a6b54c34714f03335c76e
-- DepositCollateralImpl:           0x09e913376a36493ba5cd017585eee600bd241d54
-- ClosePositionImpl:               0x1f876e0c351020230b8c9a91015b7b0722787bd9
-- CloseWithoutCounterpartyImpl:    0x16c333c0ce50254b5ea5f2c1e522d3e0da8e441f
-- IncreasePositionImpl:            0x5c11dc18a4e1fb9181004a0edb7effa144cde6cd
+- TransferImpl:                    0x65547fb0c2c69dd24aea8ff97d6ec42a68b31fa9
+- LoanImpl:                        0x97c0aae5e57f5d7fae3387a31996b6b666088bc3
+- InterestImpl:                    0xca55dc6627313ec5e3ff8eaae5a2b57ac3e686a9
+- ForceRecoverCollateralImpl:      0xe4b7c15212a2e50b6e8bd5f4a31dc33b118533c5
+- OpenPositionImpl:                0x53c23b4a7c30f976214d87917e51b94548ae9142
+- DepositCollateralImpl:           0xa241e6f1baded18f8b9260a8e001033e59d45d2c
+- ClosePositionImpl:               0x73f61047254062a5f2909721992ad4a828e0e77f
+- CloseWithoutCounterpartyImpl:    0x6dc6d60220ea4d0fc5a20d592a0f22374fb4ff3c
+- IncreasePositionImpl:            0xf1a245686edd2b258053b3ddca0d8138dd09682b
