@@ -100,6 +100,7 @@ library IncreasePositionImpl {
             position,
             transaction.positionId,
             transaction.principal,
+            transaction.lenderAmount,
             transaction.loanOffering.payer
         );
 
@@ -154,6 +155,7 @@ library IncreasePositionImpl {
             position,
             positionId,
             principalToAdd,
+            0, // lent amount
             msg.sender
         );
 
@@ -314,6 +316,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position,
         bytes32 positionId,
         uint256 principalAdded,
+        uint256 owedTokenLent,
         address loanPayer
     )
         internal
@@ -336,7 +339,8 @@ library IncreasePositionImpl {
             lender,
             loanPayer,
             positionId,
-            principalAdded
+            principalAdded,
+            owedTokenLent
         );
     }
 
@@ -348,11 +352,6 @@ library IncreasePositionImpl {
     )
         internal
     {
-        // no need to ask for permission
-        if (trader == contractAddr) {
-            return;
-        }
-
         address newContractAddr =
             IncreasePositionDelegator(contractAddr).increasePositionOnBehalfOf(
                 trader,
@@ -360,8 +359,8 @@ library IncreasePositionImpl {
                 principalAdded
             );
 
-        // if not equal, recurse
-        if (newContractAddr != contractAddr) {
+        // if not equal, (and not trader), recurse
+        if ((newContractAddr != contractAddr) && (trader != newContractAddr)) {
             increasePositionOnBehalfOfRecurse(
                 newContractAddr,
                 trader,
@@ -375,29 +374,27 @@ library IncreasePositionImpl {
         address contractAddr,
         address payer,
         bytes32 positionId,
-        uint256 principalAdded
+        uint256 principalAdded,
+        uint256 amountLent
     )
         internal
     {
-        // no need to ask for permission
-        if (payer == contractAddr) {
-            return;
-        }
-
         address newContractAddr =
             IncreaseLoanDelegator(contractAddr).increaseLoanOnBehalfOf(
                 payer,
                 positionId,
-                principalAdded
+                principalAdded,
+                amountLent
             );
 
-        // if not equal, recurse
-        if (newContractAddr != contractAddr) {
-            increasePositionOnBehalfOfRecurse(
+        // if not equal, (and not payer), recurse
+        if ((newContractAddr != contractAddr) && (payer != newContractAddr)) {
+            increaseLoanOnBehalfOfRecurse(
                 newContractAddr,
                 payer,
                 positionId,
-                principalAdded
+                principalAdded,
+                amountLent
             );
         }
     }

@@ -262,12 +262,14 @@ contract ERC721MarginLoan is
      *  param  payer           (unused)
      * @param  positionId      Unique ID of the position
      *  param  principalAdded  (unused)
+     *  param  lentAmount      (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
     function increaseLoanOnBehalfOf(
-        address, /* payer */
+        address /* payer */,
         bytes32 positionId,
-        uint256  /* principalAdded */
+        uint256 /* principalAdded */,
+        uint256 /* lentAmount */
     )
         external
         /* pure */

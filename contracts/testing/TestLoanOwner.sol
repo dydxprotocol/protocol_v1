@@ -70,7 +70,8 @@ contract TestLoanOwner is
     function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
-        uint256 principalAdded
+        uint256 principalAdded,
+        uint256 /* lentAmount */
     )
         onlyMargin
         external
