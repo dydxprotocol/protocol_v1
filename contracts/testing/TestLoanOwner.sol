@@ -33,7 +33,7 @@ contract TestLoanOwner is
     using SafeMath for uint256;
 
     address public TO_RETURN;
-    bool public TO_RETURN_ON_ADD;
+    address public TO_RETURN_ON_ADD;
 
     mapping(bytes32 => mapping(address => bool)) public hasReceived;
     mapping(bytes32 => mapping(address => uint256)) public valueAdded;
@@ -41,17 +41,12 @@ contract TestLoanOwner is
     constructor(
         address margin,
         address toReturn,
-        bool toReturnOnAdd
+        address toReturnOnAdd
     )
         public
         OnlyMargin(margin)
     {
-        if (toReturn == address(1)) {
-            TO_RETURN = address(this);
-        } else {
-            TO_RETURN = toReturn;
-        }
-
+        TO_RETURN = toReturn;
         TO_RETURN_ON_ADD = toReturnOnAdd;
     }
 
@@ -64,7 +59,7 @@ contract TestLoanOwner is
         returns (address)
     {
         hasReceived[positionId][from] = true;
-        return TO_RETURN;
+        return (TO_RETURN == address(1)) ? address(this) : TO_RETURN;
     }
 
     function increaseLoanOnBehalfOf(
@@ -79,8 +74,24 @@ contract TestLoanOwner is
     {
         valueAdded[positionId][payer] = valueAdded[positionId][payer].add(principalAdded);
 
-        require(TO_RETURN_ON_ADD);
+        return (TO_RETURN_ON_ADD == address(1)) ? address(this) : TO_RETURN_ON_ADD;
+    }
 
-        return address(this);
+    // ============ External Setter Functions ============
+
+    function setToReturn(
+        address newAddress
+    )
+        external
+    {
+        TO_RETURN = newAddress;
+    }
+
+    function setToReturnOnAdd(
+        address newAddress
+    )
+        external
+    {
+        TO_RETURN_ON_ADD = newAddress;
     }
 }

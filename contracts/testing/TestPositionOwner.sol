@@ -35,7 +35,7 @@ contract TestPositionOwner is
     using SafeMath for uint256;
 
     address public TO_RETURN;
-    bool public TO_RETURN_ON_ADD;
+    address public TO_RETURN_ON_ADD;
     uint256 public TO_RETURN_ON_CLOSE;
 
     mapping(bytes32 => mapping(address => bool)) public hasReceived;
@@ -44,18 +44,13 @@ contract TestPositionOwner is
     constructor(
         address margin,
         address toReturn,
-        bool toReturnOnAdd,
+        address toReturnOnAdd,
         uint256 toReturnOnCloseOnBehalfOf
     )
         public
         OnlyMargin(margin)
     {
-        if (toReturn == address(1)) {
-            TO_RETURN = address(this);
-        } else {
-            TO_RETURN = toReturn;
-        }
-
+        TO_RETURN = toReturn;
         TO_RETURN_ON_ADD = toReturnOnAdd;
         TO_RETURN_ON_CLOSE = toReturnOnCloseOnBehalfOf;
     }
@@ -69,7 +64,8 @@ contract TestPositionOwner is
         returns (address)
     {
         hasReceived[positionId][from] = true;
-        return TO_RETURN;
+
+        return (TO_RETURN == address(1)) ? address(this) : TO_RETURN;
     }
 
     function increasePositionOnBehalfOf(
@@ -83,9 +79,7 @@ contract TestPositionOwner is
     {
         valueAdded[positionId][trader] = valueAdded[positionId][trader].add(amount);
 
-        require(TO_RETURN_ON_ADD);
-
-        return address(this);
+        return (TO_RETURN_ON_ADD == address(1)) ? address(this) : TO_RETURN_ON_ADD;
     }
 
     function closeOnBehalfOf(
@@ -103,5 +97,23 @@ contract TestPositionOwner is
         }
 
         return (address(this), TO_RETURN_ON_CLOSE);
+    }
+
+    // ============ External Setter Functions ============
+
+    function setToReturn(
+        address newAddress
+    )
+        external
+    {
+        TO_RETURN = newAddress;
+    }
+
+    function setToReturnOnAdd(
+        address newAddress
+    )
+        external
+    {
+        TO_RETURN_ON_ADD = newAddress;
     }
 }

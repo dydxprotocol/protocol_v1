@@ -105,8 +105,8 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
-        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE, 0),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE),
       ]);
 
       const {
@@ -144,14 +144,84 @@ describe('#increasePosition', () => {
     });
   });
 
+
+  contract('Margin', accounts => {
+    it('succeeds through layers of contracts', async () => {
+      const [
+        testPositionOwner1,
+        testPositionOwner2,
+        testLoanOwner1,
+        testLoanOwner2
+      ] = await Promise.all([
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO, 0),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO, 0),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO),
+      ]);
+
+      const {
+        openTx,
+        increasePosTx,
+        dydxMargin,
+        startingBalance,
+        startingBalances
+      } = await setup(
+        accounts,
+        { positionOwner: testPositionOwner1.address, loanOwner: testLoanOwner1.address }
+      );
+
+      // fail once
+      await expectThrow(
+        callIncreasePosition(dydxMargin, increasePosTx)
+      );
+
+      // set permissions
+      await Promise.all([
+        testPositionOwner1.setToReturnOnAdd(testPositionOwner2.address),
+        testPositionOwner2.setToReturnOnAdd(increasePosTx.trader),
+        testLoanOwner1.setToReturnOnAdd(testLoanOwner2.address),
+        testLoanOwner2.setToReturnOnAdd(increasePosTx.loanOffering.payer),
+      ]);
+
+      // succeed as it chains through
+      const tx = await callIncreasePosition(dydxMargin, increasePosTx);
+
+      const [
+        positionPrincipalAdded1,
+        positionPrincipalAdded2,
+        loanValueAdded1,
+        loanValueAdded2
+      ] = await Promise.all([
+        testPositionOwner1.valueAdded.call(openTx.id, increasePosTx.trader),
+        testPositionOwner2.valueAdded.call(openTx.id, increasePosTx.trader),
+        testLoanOwner1.valueAdded.call(openTx.id, increasePosTx.loanOffering.payer),
+        testLoanOwner2.valueAdded.call(openTx.id, increasePosTx.loanOffering.payer),
+      ]);
+
+      expect(positionPrincipalAdded1).to.be.bignumber.eq(increasePosTx.principal);
+      expect(positionPrincipalAdded2).to.be.bignumber.eq(increasePosTx.principal);
+      expect(loanValueAdded1).to.be.bignumber.eq(increasePosTx.principal);
+      expect(loanValueAdded2).to.be.bignumber.eq(increasePosTx.principal);
+
+      await validate({
+        dydxMargin,
+        openTx,
+        increasePosTx,
+        tx,
+        startingBalance,
+        startingBalances
+      });
+    });
+  });
+
   contract('Margin', accounts => {
     it('fails when loan owner smart contract does not consent', async () => {
       const [
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
-        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, false),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE, 0),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO),
       ]);
 
       const {
@@ -161,7 +231,6 @@ describe('#increasePosition', () => {
         accounts,
         { positionOwner: testPositionOwner.address, loanOwner: testLoanOwner.address }
       );
-
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
     });
   });
@@ -172,8 +241,8 @@ describe('#increasePosition', () => {
         testPositionOwner,
         testLoanOwner
       ] = await Promise.all([
-        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, false, 0),
-        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ZERO, 0),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE),
       ]);
 
       const {
@@ -183,7 +252,6 @@ describe('#increasePosition', () => {
         accounts,
         { positionOwner: testPositionOwner.address, loanOwner: testLoanOwner.address }
       );
-
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
     });
   });

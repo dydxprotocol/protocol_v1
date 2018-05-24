@@ -186,7 +186,7 @@ describe('#closePosition', () => {
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
-          false,
+          ADDRESSES.ZERO,
           closeAmount
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
@@ -220,7 +220,7 @@ describe('#closePosition', () => {
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
-          false,
+          ADDRESSES.ZERO,
           closeAmount.div(2)
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
@@ -254,7 +254,7 @@ describe('#closePosition', () => {
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
-          false,
+          ADDRESSES.ZERO,
           0
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
@@ -276,7 +276,7 @@ describe('#closePosition', () => {
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
-          false,
+          ADDRESSES.ZERO,
           closeAmount.times(2)
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });

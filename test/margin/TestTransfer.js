@@ -111,7 +111,7 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
-        false,
+        ADDRESSES.ZERO,
         0);
 
       const tx = await transferPosition(
@@ -126,7 +126,7 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         ADDRESSES.ZERO,
-        false,
+        ADDRESSES.ZERO,
         0);
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
@@ -136,7 +136,7 @@ describe('#transferPosition', () => {
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         owner,
-        false,
+        ADDRESSES.ZERO,
         0);
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
@@ -260,7 +260,8 @@ describe('#transferLoan', () => {
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         testMarginCallDelegator.address,
-        false);
+        ADDRESSES.ZERO
+      );
 
       const tx = await transferLoan(
         openTx,
@@ -274,7 +275,8 @@ describe('#transferLoan', () => {
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        false);
+        ADDRESSES.ZERO
+      );
 
       await transferLoan_THROW(openTx, testLoanOwner.address, lender);
     });
@@ -283,7 +285,8 @@ describe('#transferLoan', () => {
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         lender,
-        false);
+        ADDRESSES.ZERO
+      );
 
       await transferLoan_THROW(openTx, testLoanOwner.address, lender);
     });

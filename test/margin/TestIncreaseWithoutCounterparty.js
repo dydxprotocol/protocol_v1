@@ -119,8 +119,8 @@ describe('#increaseWithoutCounterparty', () => {
       createOpenTx(accounts),
       Margin.deployed(),
       HeldToken.deployed(),
-      TestPositionOwner.new(Margin.address, ADDRESSES.ONE, true, 0),
-      TestLoanOwner.new(Margin.address, ADDRESSES.ONE, true),
+      TestPositionOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE, 0),
+      TestLoanOwner.new(Margin.address, ADDRESSES.ONE, ADDRESSES.ONE),
     ]);
 
     openTx.owner = testPositionOwner.address;
