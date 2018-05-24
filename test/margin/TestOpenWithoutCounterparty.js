@@ -14,8 +14,11 @@ const Vault = artifacts.require("Vault");
 const { ADDRESSES, BYTES32, BIGNUMBERS } = require('../helpers/Constants');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 const { expectLog } = require('../helpers/EventHelper');
-const { getPosition } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
+const {
+  getPosition,
+  issueTokenToAccountInAmountAndApproveProxy
+} = require('../helpers/MarginHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -77,8 +80,8 @@ describe('#openWithoutCounterparty', () => {
 
         await callOpenWithoutCounterparty(dydxMargin, openTx);
 
+        // doesn't work for same nonce
         const openTx2 = await setup(accounts);
-
         await expectThrow(
           callOpenWithoutCounterparty(
             dydxMargin,
@@ -86,6 +89,57 @@ describe('#openWithoutCounterparty', () => {
             { shouldContain: true }
           )
         );
+
+        // works with different nonce
+        openTx2.nonce = openTx2.nonce.plus(1)
+        await callOpenWithoutCounterparty(dydxMargin, openTx2);
+      });
+    });
+
+    contract('Margin', accounts => {
+      it('Fails if positionId already existed, but was closed', async () => {
+        const [
+          openTx,
+          dydxMargin,
+          owedToken
+        ] = await Promise.all([
+          setup(accounts),
+          Margin.deployed(),
+          OwedToken.deployed()
+        ]);
+
+        // open first position
+        const tx = await callOpenWithoutCounterparty(dydxMargin, openTx);
+        openTx.id = tx.id;
+
+        // close position
+        await issueTokenToAccountInAmountAndApproveProxy(
+          owedToken,
+          openTx.positionOwner,
+          openTx.principal.times(2)
+        );
+        await dydxMargin.closePositionDirectly(
+          openTx.id,
+          openTx.principal,
+          openTx.positionOwner,
+          { from: openTx.positionOwner }
+        );
+        const closed = await dydxMargin.isPositionClosed.call(openTx.id);
+        expect(closed).to.be.true;
+
+        // doesn't work for same nonce
+        const openTx2 = await setup(accounts);
+        await expectThrow(
+          callOpenWithoutCounterparty(
+            dydxMargin,
+            openTx2,
+            { shouldContain: true }
+          )
+        );
+
+        // works with different nonce
+        openTx2.nonce = openTx2.nonce.plus(1)
+        await callOpenWithoutCounterparty(dydxMargin, openTx2);
       });
     });
 
