@@ -44,7 +44,7 @@ def lintImports(dir, filepath):
             l[5][1] == '.',
             os.path.dirname(l[5]),
             os.path.basename(l[5])
-    )
+        )
     )
 
     if sortedImportLines != ogImportLines:
@@ -94,12 +94,13 @@ def lintCommentHeader(dir, filepath, solidityVersion):
 def main():
     files = []
     start_dir = os.getcwd()
-    pattern   = "*.sol"
+    pattern = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    contracts_path = dir_path + "/contracts"
 
-    for dir,_,_ in os.walk(dir_path+"/contracts"):
-        files.extend(glob.glob(os.path.join(dir,pattern)))
+    for dir, _, _ in os.walk(contracts_path):
+        files.extend(glob.glob(os.path.join(dir, pattern)))
 
     whitelistedFiles = open(dir_path + "/.soliumignore", 'r').readlines()
     whitelistedFiles = [x.strip() for x in whitelistedFiles]
@@ -109,10 +110,10 @@ def main():
     everythingOkay = True
     for file in files:
         everythingOkay &= lintImports(dir_path, file)
-        everythingOkay &= lintCommentHeader(dir_path, file,"0.4.24")
+        everythingOkay &= lintCommentHeader(dir_path, file, "0.4.24")
 
     if everythingOkay:
-        print "No 'import' issues found."
+        print "No contract linting issues found."
 
     sys.exit(0 if everythingOkay else 1)
 
