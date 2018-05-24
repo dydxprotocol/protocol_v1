@@ -473,18 +473,18 @@ async function doOpenPosition(
     interestPeriod
   } = {}
 ) {
-  const [OpenTx, dydxMargin] = await Promise.all([
+  const [openTx, dydxMargin] = await Promise.all([
     createOpenTx(accounts, { salt, positionOwner, interestPeriod }),
     Margin.deployed()
   ]);
 
-  await issueTokensAndSetAllowances(OpenTx);
+  await issueTokensAndSetAllowances(openTx);
 
-  const response = await callOpenPosition(dydxMargin, OpenTx);
+  const response = await callOpenPosition(dydxMargin, openTx);
 
-  OpenTx.id = response.id;
-  OpenTx.response = response;
-  return OpenTx;
+  openTx.id = response.id;
+  openTx.response = response;
+  return openTx;
 }
 
 async function doClosePosition(
@@ -507,7 +507,7 @@ async function doClosePosition(
 
 async function callClosePosition(
   dydxMargin,
-  OpenTx,
+  openTx,
   sellOrder,
   closeAmount,
   {
@@ -517,16 +517,16 @@ async function callClosePosition(
     exchangeWrapper = ZeroExExchangeWrapper.address
   } = {}
 ) {
-  const closer = from || OpenTx.trader;
+  const closer = from || openTx.trader;
   recipient = recipient || closer;
 
-  const addresses = await getAddresses(dydxMargin, OpenTx.id);
+  const addresses = await getAddresses(dydxMargin, openTx.id);
 
-  const start = await getStartVariables(addresses, OpenTx.id);
+  const start = await getStartVariables(addresses, openTx.id);
 
   const tx = await transact(
     dydxMargin.closePosition,
-    OpenTx.id,
+    openTx.id,
     closeAmount,
     recipient,
     exchangeWrapper,
@@ -539,7 +539,7 @@ async function callClosePosition(
     addresses,
     start,
     {
-      OpenTx,
+      openTx,
       sellOrder,
       closer,
       payoutInHeldToken,
@@ -553,23 +553,23 @@ async function callClosePosition(
 
 async function callClosePositionDirectly(
   dydxMargin,
-  OpenTx,
+  openTx,
   closeAmount,
   {
     from = null,
     recipient = null
   } = {}
 ) {
-  const closer = from || OpenTx.trader;
+  const closer = from || openTx.trader;
   recipient = recipient || closer;
 
-  const addresses = await getAddresses(dydxMargin, OpenTx.id);
+  const addresses = await getAddresses(dydxMargin, openTx.id);
 
-  const start = await getStartVariables(addresses, OpenTx.id);
+  const start = await getStartVariables(addresses, openTx.id);
 
   const tx = await transact(
     dydxMargin.closePositionDirectly,
-    OpenTx.id,
+    openTx.id,
     closeAmount,
     recipient,
     { from: closer }
@@ -579,7 +579,7 @@ async function callClosePositionDirectly(
     addresses,
     start,
     {
-      OpenTx,
+      openTx,
       closer,
       payoutInHeldToken: true,
       recipient,
@@ -638,17 +638,17 @@ async function expectCloseLog(addresses, start, params) {
     endTotalOwedTokenRepaid,
     endLenderOwedToken,
   ] = await Promise.all([
-    addresses.dydxMargin.getPositionPrincipal.call(params.OpenTx.id),
+    addresses.dydxMargin.getPositionPrincipal.call(params.openTx.id),
     getBlockTimestamp(params.tx.receipt.blockNumber),
-    addresses.dydxMargin.getTotalOwedTokenRepaidToLender.call(params.OpenTx.id),
+    addresses.dydxMargin.getTotalOwedTokenRepaidToLender.call(params.openTx.id),
     addresses.owedToken.balanceOf.call(addresses.lender),
   ]);
   const actualCloseAmount = start.principal.minus(endAmount);
 
   const owed = await getOwedAmountForTime(
     new BigNumber(endTimestamp).minus(start.timestamp),
-    params.OpenTx.loanOffering.rates.interestPeriod,
-    params.OpenTx.loanOffering.rates.interestRate,
+    params.openTx.loanOffering.rates.interestPeriod,
+    params.openTx.loanOffering.rates.interestRate,
     actualCloseAmount,
     true
   );
@@ -698,7 +698,7 @@ async function expectCloseLog(addresses, start, params) {
   );
 
   expectLog(params.tx.logs[0], 'PositionClosed', {
-    positionId: params.OpenTx.id,
+    positionId: params.openTx.id,
     closer: params.closer,
     payoutRecipient: params.recipient,
     closeAmount: actualCloseAmount,
@@ -716,31 +716,31 @@ async function expectCloseLog(addresses, start, params) {
 
 async function callCloseWithoutCounterparty(
   dydxMargin,
-  OpenTx,
+  openTx,
   closeAmount,
   from,
   payoutRecipient = null
 ) {
   const [startAmount, startHeldToken] = await Promise.all([
-    dydxMargin.getPositionPrincipal.call(OpenTx.id),
-    dydxMargin.getPositionBalance.call(OpenTx.id)
+    dydxMargin.getPositionPrincipal.call(openTx.id),
+    dydxMargin.getPositionBalance.call(openTx.id)
   ]);
 
   payoutRecipient = payoutRecipient || from;
   const tx = await transact(
     dydxMargin.closeWithoutCounterparty,
-    OpenTx.id,
+    openTx.id,
     closeAmount,
     payoutRecipient,
     { from }
   );
 
-  const endAmount = await dydxMargin.getPositionPrincipal.call(OpenTx.id);
+  const endAmount = await dydxMargin.getPositionPrincipal.call(openTx.id);
 
   const actualCloseAmount = startAmount.minus(endAmount);
 
   expectLog(tx.logs[0], 'PositionClosed', {
-    positionId: OpenTx.id,
+    positionId: openTx.id,
     closer: from,
     payoutRecipient: payoutRecipient,
     closeAmount: actualCloseAmount,
@@ -858,7 +858,7 @@ function formatLoanOffering(loanOffering) {
   return { addresses, values256, values32 };
 }
 
-async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
+async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
   const [owedToken, feeToken] = await Promise.all([
     OwedToken.deployed(),
     FeeToken.deployed(),
@@ -876,7 +876,7 @@ async function issueTokensAndSetAllowancesForClose(OpenTx, sellOrder) {
     // Trader Sell Order Taker Fee
     issueAndSetAllowance(
       feeToken,
-      OpenTx.trader,
+      openTx.trader,
       sellOrder.takerFee,
       ZeroExExchangeWrapper.address
     ),
@@ -942,41 +942,41 @@ async function doOpenPositionAndCall(
     OwedToken.deployed()
   ]);
 
-  const OpenTx = await doOpenPosition(accounts, { salt });
+  const openTx = await doOpenPosition(accounts, { salt });
 
   const callTx = await dydxMargin.marginCall(
-    OpenTx.id,
+    openTx.id,
     requiredDeposit,
-    { from: OpenTx.loanOffering.payer }
+    { from: openTx.loanOffering.payer }
   );
 
-  return { dydxMargin, vault, owedToken, OpenTx, callTx };
+  return { dydxMargin, vault, owedToken, openTx, callTx };
 }
 
-async function issueForDirectClose(OpenTx) {
+async function issueForDirectClose(openTx) {
   const owedToken = await OwedToken.deployed();
 
   // Issue to the trader the maximum amount of owedToken they could have to pay
 
-  const maxInterestFee = await getMaxInterestFee(OpenTx);
-  const maxOwedTokenOwed = OpenTx.principal.plus(maxInterestFee);
+  const maxInterestFee = await getMaxInterestFee(openTx);
+  const maxOwedTokenOwed = openTx.principal.plus(maxInterestFee);
 
   await issueAndSetAllowance(
     owedToken,
-    OpenTx.trader,
+    openTx.trader,
     maxOwedTokenOwed,
     ProxyContract.address
   );
 }
 
-async function getMaxInterestFee(OpenTx) {
+async function getMaxInterestFee(openTx) {
   await TestInterestImpl.link('InterestImpl', InterestImpl.address);
   const interestCalc = await TestInterestImpl.new();
 
   const interest = await interestCalc.getCompoundedInterest.call(
-    OpenTx.principal,
-    OpenTx.loanOffering.rates.interestRate,
-    OpenTx.loanOffering.maxDuration
+    openTx.principal,
+    openTx.loanOffering.rates.interestRate,
+    openTx.loanOffering.maxDuration
   );
   return interest;
 }
