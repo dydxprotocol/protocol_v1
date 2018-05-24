@@ -27,7 +27,7 @@ module.exports = {
 
 async function checkSuccess(
   dydxMargin,
-  OpenTx,
+  openTx,
   closeTx,
   sellOrder,
   closeAmount,
@@ -40,10 +40,10 @@ async function checkSuccess(
     exists,
     isClosed
   ] = await Promise.all([
-    getOwedAmount(OpenTx, closeTx, closeAmount),
-    getBalances(dydxMargin, OpenTx, sellOrder),
-    dydxMargin.containsPosition.call(OpenTx.id),
-    dydxMargin.isPositionClosed.call(OpenTx.id)
+    getOwedAmount(openTx, closeTx, closeAmount),
+    getBalances(dydxMargin, openTx, sellOrder),
+    dydxMargin.containsPosition.call(openTx.id),
+    dydxMargin.isPositionClosed.call(openTx.id)
   ]);
 
   const expectedUsedHeldToken = getPartialAmount(
@@ -225,9 +225,9 @@ function checkMakerBalances(
   );
 }
 
-async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = true) {
-  let positionLifetime = await getPositionLifetime(OpenTx, closeTx);
-  let interestPeriod = OpenTx.loanOffering.rates.interestPeriod;
+async function getOwedAmount(openTx, closeTx, closeAmount, roundUpToPeriod = true) {
+  let positionLifetime = await getPositionLifetime(openTx, closeTx);
+  let interestPeriod = openTx.loanOffering.rates.interestPeriod;
   if (interestPeriod.gt(1)) {
     positionLifetime = getPartialAmount(
       positionLifetime, interestPeriod, 1, roundUpToPeriod).times(interestPeriod);
@@ -238,13 +238,13 @@ async function getOwedAmount(OpenTx, closeTx, closeAmount, roundUpToPeriod = tru
 
   const getOwedAmount = await interestCalc.getCompoundedInterest.call(
     closeAmount,
-    OpenTx.loanOffering.rates.interestRate,
+    openTx.loanOffering.rates.interestRate,
     positionLifetime
   );
   return getOwedAmount;
 }
 
-async function getBalances(dydxMargin, OpenTx, sellOrder) {
+async function getBalances(dydxMargin, openTx, sellOrder) {
   const [
     owedToken,
     heldToken,
@@ -290,20 +290,20 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
     positionBalance,
     positionPrincipal
   ] = await Promise.all([
-    heldToken.balanceOf.call(OpenTx.trader),
-    owedToken.balanceOf.call(OpenTx.trader),
+    heldToken.balanceOf.call(openTx.trader),
+    owedToken.balanceOf.call(openTx.trader),
 
-    heldToken.balanceOf.call(OpenTx.loanOffering.payer),
-    owedToken.balanceOf.call(OpenTx.loanOffering.payer),
+    heldToken.balanceOf.call(openTx.loanOffering.payer),
+    owedToken.balanceOf.call(openTx.loanOffering.payer),
 
-    feeToken.balanceOf.call(OpenTx.trader),
+    feeToken.balanceOf.call(openTx.trader),
 
     feeToken.balanceOf.call(Vault.address),
     heldToken.balanceOf.call(Vault.address),
     owedToken.balanceOf.call(Vault.address),
 
-    dydxMargin.getPositionBalance.call(OpenTx.id),
-    dydxMargin.getPositionPrincipal.call(OpenTx.id),
+    dydxMargin.getPositionBalance.call(openTx.id),
+    dydxMargin.getPositionPrincipal.call(openTx.id),
   ]);
 
   return {
@@ -331,7 +331,7 @@ async function getBalances(dydxMargin, OpenTx, sellOrder) {
 
 async function checkSuccessCloseDirectly(
   dydxMargin,
-  OpenTx,
+  openTx,
   closeTx,
   closeAmount,
   startingBalances
@@ -340,8 +340,8 @@ async function checkSuccessCloseDirectly(
     balances,
     owedTokenOwedToLender
   ] = await Promise.all([
-    getBalances(dydxMargin, OpenTx),
-    getOwedAmount(OpenTx, closeTx, closeAmount)
+    getBalances(dydxMargin, openTx),
+    getOwedAmount(openTx, closeTx, closeAmount)
   ]);
 
   const expectedUsedHeldToken = getPartialAmount(
@@ -362,12 +362,12 @@ async function checkSuccessCloseDirectly(
   );
 }
 
-async function getPositionLifetime(OpenTx, tx) {
+async function getPositionLifetime(openTx, tx) {
   const [positionTimestamp, positionClosedTimestamp] = await Promise.all([
-    getBlockTimestamp(OpenTx.response.receipt.blockNumber),
+    getBlockTimestamp(openTx.response.receipt.blockNumber),
     getBlockTimestamp(tx.receipt.blockNumber)
   ]);
-  const maxDuration = OpenTx.loanOffering.maxDuration;
+  const maxDuration = openTx.loanOffering.maxDuration;
   let duration = positionClosedTimestamp - positionTimestamp;
   if (duration > maxDuration) {
     duration = maxDuration;

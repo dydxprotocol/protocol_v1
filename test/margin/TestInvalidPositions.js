@@ -39,116 +39,116 @@ describe('#openPosition', () => {
   describe('Validations', () => {
     contract('Margin', accounts => {
       it('fails on invalid order signature', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.buyOrder.ecSignature.v = '0x01';
+        await issueTokensAndSetAllowances(openTx);
+        openTx.buyOrder.ecSignature.v = '0x01';
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on invalid loan offer signature', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.signature.v = '0x01';
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.signature.v = '0x01';
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if position principal is 0', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.principal = new BigNumber(0);
+        await issueTokensAndSetAllowances(openTx);
+        openTx.principal = new BigNumber(0);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on invalid loan offer taker', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.taker = OpenTx.buyOrder.maker;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.taker = openTx.buyOrder.maker;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on too high amount', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
-        OpenTx.principal = OpenTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
+        openTx.principal = openTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on too low heldToken amount', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
-        OpenTx.loanOffering.rates.minHeldToken = OpenTx.loanOffering.rates.minHeldToken.times(17);
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        openTx.loanOffering.rates.minHeldToken = openTx.loanOffering.rates.minHeldToken.times(17);
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on too low position principal', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
-        OpenTx.principal = OpenTx.loanOffering.rates.minAmount.minus(1);
+        openTx.principal = openTx.loanOffering.rates.minAmount.minus(1);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if the loan offer is expired', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.expirationTimestamp = 100;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.expirationTimestamp = 100;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if the loan offer has 0 maxDuration', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.maxDuration = 0;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.maxDuration = 0;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
@@ -158,124 +158,124 @@ describe('#openPosition', () => {
         return result;
       }
       it('fails if loan offer already filled', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const halfLoanAmount = OpenTx.loanOffering.rates.maxAmount.div(2).floor();
-        OpenTx.principal = halfLoanAmount;
-        OpenTx.depositAmount = getMinimumDeposit(OpenTx);
+        const halfLoanAmount = openTx.loanOffering.rates.maxAmount.div(2).floor();
+        openTx.principal = halfLoanAmount;
+        openTx.depositAmount = getMinimumDeposit(openTx);
 
         const dydxMargin = await Margin.deployed();
 
-        const fill0 = await getLoanFill(dydxMargin, OpenTx);
+        const fill0 = await getLoanFill(dydxMargin, openTx);
         expect(fill0).to.be.bignumber.equal(0);
 
         // first call should succeed for 1/2
-        OpenTx.nonce = 1;
-        await issueTokensAndSetAllowances(OpenTx);
-        await callOpenPosition(dydxMargin, OpenTx);
+        openTx.nonce = 1;
+        await issueTokensAndSetAllowances(openTx);
+        await callOpenPosition(dydxMargin, openTx);
 
-        const fill1 = await getLoanFill(dydxMargin, OpenTx);
+        const fill1 = await getLoanFill(dydxMargin, openTx);
         expect(fill1).to.be.bignumber.equal(halfLoanAmount);
 
         // second call should succeed for 1/2
-        OpenTx.nonce = 2;
-        await issueTokensAndSetAllowances(OpenTx);
-        await callOpenPosition(dydxMargin, OpenTx);
+        openTx.nonce = 2;
+        await issueTokensAndSetAllowances(openTx);
+        await callOpenPosition(dydxMargin, openTx);
 
-        const fill2 = await getLoanFill(dydxMargin, OpenTx);
+        const fill2 = await getLoanFill(dydxMargin, openTx);
         expect(fill2).to.be.bignumber.equal(halfLoanAmount.times(2));
 
         // third call should fail
-        OpenTx.nonce = 3;
-        await issueTokensAndSetAllowances(OpenTx);
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        openTx.nonce = 3;
+        await issueTokensAndSetAllowances(openTx);
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if loan offer canceled', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
         const dydxMargin = await Margin.deployed();
 
         await callCancelLoanOffer(
           dydxMargin,
-          OpenTx.loanOffering,
-          OpenTx.loanOffering.rates.maxAmount
+          openTx.loanOffering,
+          openTx.loanOffering.rates.maxAmount
         );
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if buy order canceled', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
         const exchange = await ZeroExExchange.deployed();
 
         await callCancelOrder(
           exchange,
-          OpenTx.buyOrder,
-          OpenTx.buyOrder.makerTokenAmount
+          openTx.buyOrder,
+          openTx.buyOrder.makerTokenAmount
         );
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if position owner is 0', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
         const dydxMargin = await Margin.deployed();
 
-        OpenTx.owner = ADDRESSES.ZERO;
+        openTx.owner = ADDRESSES.ZERO;
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if loan owner is 0', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
         const dydxMargin = await Margin.deployed();
 
-        OpenTx.loanOffering.owner = ADDRESSES.ZERO;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        openTx.loanOffering.owner = ADDRESSES.ZERO;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails if interest period is over maximum duration', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
         const dydxMargin = await Margin.deployed();
 
-        OpenTx.loanOffering.rates.interestPeriod = new BigNumber(
-          OpenTx.loanOffering.maxDuration + 1
+        openTx.loanOffering.rates.interestPeriod = new BigNumber(
+          openTx.loanOffering.maxDuration + 1
         );
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('allows smart contracts to be lenders', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
         const [
           dydxMargin,
           feeToken,
@@ -288,25 +288,25 @@ describe('#openPosition', () => {
           TestSmartContractLender.new(false, ADDRESSES.ZERO)
         ]);
 
-        await issueTokensAndSetAllowances(OpenTx);
+        await issueTokensAndSetAllowances(openTx);
 
         const [
           lenderFeeTokenBalance,
           lenderOwedTokenBalance
         ] = await Promise.all([
-          feeToken.balanceOf.call(OpenTx.loanOffering.payer),
-          owedToken.balanceOf.call(OpenTx.loanOffering.payer)
+          feeToken.balanceOf.call(openTx.loanOffering.payer),
+          owedToken.balanceOf.call(openTx.loanOffering.payer)
         ]);
         await Promise.all([
           feeToken.transfer(
             testSmartContractLender.address,
             lenderFeeTokenBalance,
-            { from: OpenTx.loanOffering.payer }
+            { from: openTx.loanOffering.payer }
           ),
           owedToken.transfer(
             testSmartContractLender.address,
             lenderOwedTokenBalance,
-            { from: OpenTx.loanOffering.payer }
+            { from: openTx.loanOffering.payer }
           )
         ]);
         await Promise.all([
@@ -322,11 +322,11 @@ describe('#openPosition', () => {
           )
         ]);
 
-        OpenTx.loanOffering.signer = OpenTx.loanOffering.payer;
-        OpenTx.loanOffering.payer = testSmartContractLender.address;
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        openTx.loanOffering.signer = openTx.loanOffering.payer;
+        openTx.loanOffering.payer = testSmartContractLender.address;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
   });
@@ -334,108 +334,108 @@ describe('#openPosition', () => {
   describe('Balances', () => {
     contract('Margin', accounts => {
       it('fails on insufficient trader balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.depositAmount;
-        OpenTx.depositAmount = OpenTx.depositAmount.minus(new BigNumber(1));
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.depositAmount = storedAmount;
+        const storedAmount = openTx.depositAmount;
+        openTx.depositAmount = openTx.depositAmount.minus(new BigNumber(1));
+        await issueTokensAndSetAllowances(openTx);
+        openTx.depositAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on insufficient lender balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.loanOffering.rates.maxAmount;
-        OpenTx.loanOffering.rates.maxAmount = OpenTx.principal.minus(new BigNumber(1));
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.depositAmount = storedAmount;
+        const storedAmount = openTx.loanOffering.rates.maxAmount;
+        openTx.loanOffering.rates.maxAmount = openTx.principal.minus(new BigNumber(1));
+        await issueTokensAndSetAllowances(openTx);
+        openTx.depositAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on insufficient buyer balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.buyOrder.makerTokenAmount;
-        OpenTx.buyOrder.makerTokenAmount = getPartialAmount(
-          OpenTx.buyOrder.makerTokenAmount,
-          OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.principal
+        const storedAmount = openTx.buyOrder.makerTokenAmount;
+        openTx.buyOrder.makerTokenAmount = getPartialAmount(
+          openTx.buyOrder.makerTokenAmount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.principal
         ).minus(new BigNumber(1));
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.buyOrder.makerTokenAmount = storedAmount;
+        await issueTokensAndSetAllowances(openTx);
+        openTx.buyOrder.makerTokenAmount = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on insufficient buyer fee balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.buyOrder.makerFee;
-        OpenTx.buyOrder.makerFee = getPartialAmount(
-          OpenTx.buyOrder.makerFee,
-          OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.principal
+        const storedAmount = openTx.buyOrder.makerFee;
+        openTx.buyOrder.makerFee = getPartialAmount(
+          openTx.buyOrder.makerFee,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.principal
         ).minus(new BigNumber(1));
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.buyOrder.makerFee = storedAmount;
+        await issueTokensAndSetAllowances(openTx);
+        openTx.buyOrder.makerFee = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on insufficient lender fee balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.loanOffering.rates.lenderFee;
-        OpenTx.loanOffering.rates.lenderFee = getPartialAmount(
-          OpenTx.loanOffering.rates.lenderFee,
-          OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.principal
+        const storedAmount = openTx.loanOffering.rates.lenderFee;
+        openTx.loanOffering.rates.lenderFee = getPartialAmount(
+          openTx.loanOffering.rates.lenderFee,
+          openTx.loanOffering.rates.maxAmount,
+          openTx.principal
         ).minus(new BigNumber(1));
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.rates.lenderFee = storedAmount;
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.rates.lenderFee = storedAmount;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
 
     contract('Margin', accounts => {
       it('fails on insufficient trader fee balance', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
 
-        const storedAmount = OpenTx.loanOffering.rates.takerFee;
-        const storedAmount2 = OpenTx.buyOrder.takerFee;
-        OpenTx.loanOffering.rates.takerFee = getPartialAmount(
-          OpenTx.loanOffering.rates.takerFee,
-          OpenTx.loanOffering.rates.maxAmount,
-          OpenTx.principal
+        const storedAmount = openTx.loanOffering.rates.takerFee;
+        const storedAmount2 = openTx.buyOrder.takerFee;
+        openTx.loanOffering.rates.takerFee = getPartialAmount(
+          openTx.loanOffering.rates.takerFee,
+          openTx.loanOffering.rates.maxAmount,
+          openTx.principal
         ).minus(new BigNumber(1));
-        OpenTx.buyOrder.takerFee = getPartialAmount(
-          OpenTx.buyOrder.takerFee,
-          OpenTx.buyOrder.takerTokenAmount,
-          OpenTx.principal
+        openTx.buyOrder.takerFee = getPartialAmount(
+          openTx.buyOrder.takerFee,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.principal
         );
-        await issueTokensAndSetAllowances(OpenTx);
-        OpenTx.loanOffering.rates.takerFee = storedAmount;
-        OpenTx.buyOrder.takerFee = storedAmount2;
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.rates.takerFee = storedAmount;
+        openTx.buyOrder.takerFee = storedAmount2;
 
         const dydxMargin = await Margin.deployed();
-        await expectThrow(callOpenPosition(dydxMargin, OpenTx));
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
     });
   });
@@ -445,29 +445,29 @@ describe('#closePosition', () => {
   describe('Access', () => {
     contract('Margin', accounts => {
       it('Does not allow lender to close', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        OpenTx.trader = OpenTx.loanOffering.payer;
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        openTx.trader = openTx.loanOffering.payer;
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Does not allow external address to close', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        OpenTx.trader = accounts[7];
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        openTx.trader = accounts[7];
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
   });
@@ -475,64 +475,64 @@ describe('#closePosition', () => {
   describe('Validations', () => {
     contract('Margin', accounts => {
       it('Enforces that the position exists', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        OpenTx.id = "0x123";
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        openTx.id = "0x123";
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Only allows position to be entirely closed once', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
         // First should succeed
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal);
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Fails if interest fee cannot be paid', async () => {
-        const OpenTx = await createOpenTx(accounts);
+        const openTx = await createOpenTx(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
         // Set the interest fee super high so it can't be paid
-        OpenTx.loanOffering.rates.interestRate = new BigNumber('4000e6');
-        OpenTx.loanOffering.signature = await signLoanOffering(OpenTx.loanOffering);
+        openTx.loanOffering.rates.interestRate = new BigNumber('4000e6');
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
-        await issueTokensAndSetAllowances(OpenTx);
-        const tx = await callOpenPosition(dydxMargin, OpenTx);
+        await issueTokensAndSetAllowances(openTx);
+        const tx = await callOpenPosition(dydxMargin, openTx);
 
-        OpenTx.id = tx.id;
-        OpenTx.response = tx;
+        openTx.id = tx.id;
+        openTx.response = tx;
 
         // Wait for interest fee to accrue
-        await wait(OpenTx.loanOffering.maxDuration);
+        await wait(openTx.loanOffering.maxDuration);
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Fails on invalid order signature', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -540,29 +540,29 @@ describe('#closePosition', () => {
 
         sellOrder.ecSignature.r = "0x123";
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Fails if sell order is not large enough', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        sellOrder.makerTokenAmount = OpenTx.principal.minus(new BigNumber(1));
+        sellOrder.makerTokenAmount = openTx.principal.minus(new BigNumber(1));
         sellOrder.ecSignature = await signOrder(sellOrder);
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         await expectThrow(
           callClosePosition(
             dydxMargin,
-            OpenTx,
+            openTx,
             sellOrder,
-            OpenTx.principal
+            openTx.principal
           )
         );
       });
@@ -570,19 +570,19 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('Disallows paying out in base token if no exchange wrapper', async() => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        await issueForDirectClose(OpenTx);
+        await issueForDirectClose(openTx);
         await expectThrow(
           callClosePosition(
             dydxMargin,
-            OpenTx,
+            openTx,
             sellOrder,
-            OpenTx.principal,
+            openTx.principal,
             {
               payoutInHeldToken: false,
               exchangeWrapper: ADDRESSES.ZERO
@@ -594,19 +594,19 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('Fails if payout recipient is 0', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
         ]);
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         await expectThrow(
           callClosePosition(
             dydxMargin,
-            OpenTx,
+            openTx,
             sellOrder,
-            OpenTx.principal,
+            openTx.principal,
             { recipient: ADDRESSES.ZERO }
           )
         );
@@ -615,7 +615,7 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('Fails if paying out in owedToken and cannot pay back lender', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -624,14 +624,14 @@ describe('#closePosition', () => {
         sellOrder.makerTokenAmount = new BigNumber(100000);
         sellOrder.ecSignature = await signOrder(sellOrder);
 
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
         await expectThrow(
           callClosePosition(
             dydxMargin,
-            OpenTx,
+            openTx,
             sellOrder,
-            OpenTx.principal,
+            openTx.principal,
             { payoutInHeldToken: false }
           )
         );
@@ -642,7 +642,7 @@ describe('#closePosition', () => {
   describe('Balances', () => {
     contract('Margin', accounts => {
       it('Fails on insufficient sell order balance/allowance', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -650,15 +650,15 @@ describe('#closePosition', () => {
 
         const amountSave = sellOrder.makerTokenAmount;
         sellOrder.makerTokenAmount = new BigNumber(0);
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Fails on insufficient sell order fee token balance/allowance', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -666,15 +666,15 @@ describe('#closePosition', () => {
 
         const amountSave = sellOrder.makerFee;
         sellOrder.makerFee = new BigNumber(0);
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.makerFee = amountSave;
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
 
     contract('Margin', accounts => {
       it('Fails on insufficient trader fee token balance/allowance', async () => {
-        const OpenTx = await doOpenPosition(accounts);
+        const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -682,9 +682,9 @@ describe('#closePosition', () => {
 
         const amountSave = sellOrder.takerFee;
         sellOrder.takerFee = new BigNumber(0);
-        await issueTokensAndSetAllowancesForClose(OpenTx, sellOrder);
+        await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.takerFee = amountSave;
-        await expectThrow(callClosePosition(dydxMargin, OpenTx, sellOrder, OpenTx.principal));
+        await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
       });
     });
   });

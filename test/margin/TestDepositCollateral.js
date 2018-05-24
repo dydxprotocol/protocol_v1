@@ -24,31 +24,31 @@ describe('#deposit', () => {
   contract('Margin', accounts => {
     it('deposits additional funds into the position', async () => {
 
-      const OpenTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
       const amount = new BigNumber(1000);
 
       const tx = await doDepositCollateral({
-        from: OpenTx.trader,
-        OpenTx,
+        from: openTx.trader,
+        openTx,
         printGas: true,
         amount: amount
       });
 
       expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
-        positionId: OpenTx.id,
+        positionId: openTx.id,
         amount: amount,
-        depositor: OpenTx.trader
+        depositor: openTx.trader
       });
     });
   });
 
   contract('Margin', accounts => {
     it('does not allow anyone but position owner to deposit', async () => {
-      const OpenTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
       await expectThrow(
         doDepositCollateral({
           from: accounts[9],
-          OpenTx,
+          openTx,
         })
       );
     });
@@ -56,12 +56,12 @@ describe('#deposit', () => {
 
   contract('Margin', accounts => {
     it('fails for invalid positionId', async () => {
-      const OpenTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
 
       await expectThrow(
         doDepositCollateral({
-          from: OpenTx.trader,
-          OpenTx: { id: BYTES32.BAD_ID },
+          from: openTx.trader,
+          openTx: { id: BYTES32.BAD_ID },
           amount: 0
         })
       );
@@ -70,12 +70,12 @@ describe('#deposit', () => {
 
   contract('Margin', accounts => {
     it('fails on zero-amount deposit', async () => {
-      const OpenTx = await doOpenPosition(accounts);
+      const openTx = await doOpenPosition(accounts);
 
       await expectThrow(
         doDepositCollateral({
-          from: OpenTx.trader,
-          OpenTx,
+          from: openTx.trader,
+          openTx,
           amount: 0
         })
       );
@@ -131,17 +131,17 @@ describe('#deposit', () => {
   contract('Margin', accounts => {
     it('allows deposit in increments', async () => {
       const dydxMargin = await Margin.deployed();
-      const { OpenTx } = await doOpenPositionAndCall(accounts);
+      const { openTx } = await doOpenPositionAndCall(accounts);
 
-      let { requiredDeposit } = await getPosition(dydxMargin, OpenTx.id);
+      let { requiredDeposit } = await getPosition(dydxMargin, openTx.id);
 
       await doDepositCollateral({
-        from: OpenTx.trader,
-        OpenTx,
+        from: openTx.trader,
+        openTx,
         amount: requiredDeposit.minus(5)
       });
 
-      let position = await getPosition(dydxMargin, OpenTx.id);
+      let position = await getPosition(dydxMargin, openTx.id);
       requiredDeposit = position.requiredDeposit;
       let callTimestamp = position.callTimestamp;
       expect(requiredDeposit).to.be.bignumber.eq(5);
@@ -149,19 +149,19 @@ describe('#deposit', () => {
 
       const amount2 = 5;
       const tx2 = await doDepositCollateral({
-        from: OpenTx.trader,
-        OpenTx,
+        from: openTx.trader,
+        openTx,
         amount: amount2
       });
 
       expectLog(tx2.logs[1], 'MarginCallCanceled', {
-        positionId: OpenTx.id,
-        lender: OpenTx.loanOffering.owner,
-        owner: OpenTx.trader,
+        positionId: openTx.id,
+        lender: openTx.loanOffering.owner,
+        owner: openTx.trader,
         depositAmount: amount2
       });
 
-      position = await getPosition(dydxMargin, OpenTx.id);
+      position = await getPosition(dydxMargin, openTx.id);
       requiredDeposit = position.requiredDeposit;
       callTimestamp = position.callTimestamp;
       expect(requiredDeposit).to.be.bignumber.eq(0);
@@ -172,7 +172,7 @@ describe('#deposit', () => {
 
 async function doDepositCollateral({
   from,
-  OpenTx,
+  openTx,
   printGas = false,
   amount = new BigNumber(1000)
 }) {
@@ -181,7 +181,7 @@ async function doDepositCollateral({
     HeldToken.deployed()
   ]);
 
-  const initialBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+  const initialBalance = await dydxMargin.getPositionBalance.call(openTx.id);
 
   await issueAndSetAllowance(
     heldToken,
@@ -191,7 +191,7 @@ async function doDepositCollateral({
   );
 
   const tx = await dydxMargin.depositCollateral(
-    OpenTx.id,
+    openTx.id,
     amount,
     { from }
   );
@@ -200,12 +200,12 @@ async function doDepositCollateral({
     console.log('\tMargin.depositCollateral gas used: ' + tx.receipt.gasUsed);
   }
 
-  const newBalance = await dydxMargin.getPositionBalance.call(OpenTx.id);
+  const newBalance = await dydxMargin.getPositionBalance.call(openTx.id);
 
   expect(newBalance).to.be.bignumber.equal(initialBalance.plus(amount));
 
   expectLog(tx.logs[0], 'AdditionalCollateralDeposited', {
-    positionId: OpenTx.id,
+    positionId: openTx.id,
     amount: amount,
     depositor: from
   });
