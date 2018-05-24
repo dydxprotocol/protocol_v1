@@ -209,8 +209,8 @@ describe('#openPosition', () => {
         openTx2
       ] = await Promise.all([
         Margin.deployed(),
-        TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, false),
-        TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, false, 0),
+        TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, ADDRESSES.ZERO),
+        TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, ADDRESSES.ZERO, 0),
         createOpenTx(accounts),
         createOpenTx(accounts)
       ]);
@@ -374,7 +374,7 @@ describe('#openPosition', () => {
       const testLoanOwner = await TestLoanOwner.new(
         Margin.address,
         testMarginCallDelegator.address,
-        false);
+        ADDRESSES.ZERO);
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,

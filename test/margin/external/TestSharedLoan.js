@@ -72,7 +72,7 @@ contract('SharedLoan', accounts => {
     const positionOwner = await TestPositionOwner.new(
       dydxMargin.address,
       ADDRESSES.ONE,
-      true,
+      ADDRESSES.ONE,
       1
     );
     await dydxMargin.transferPosition(
