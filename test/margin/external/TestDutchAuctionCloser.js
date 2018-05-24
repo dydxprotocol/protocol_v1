@@ -84,7 +84,7 @@ contract('DutchAuctionCloser', accounts => {
       );
       await dydxMargin.marginCall(
         openTx.id,
-        0, /*requiredDeposit*/
+        0 /*requiredDeposit*/,
         { from: openTx.loanOffering.owner }
       );
       callTimeLimit = openTx.loanOffering.callTimeLimit;

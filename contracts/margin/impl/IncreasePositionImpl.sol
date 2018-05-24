@@ -19,6 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
@@ -100,6 +101,7 @@ library IncreasePositionImpl {
             position,
             transaction.positionId,
             transaction.principal,
+            transaction.lenderAmount,
             transaction.loanOffering.payer
         );
 
@@ -154,6 +156,7 @@ library IncreasePositionImpl {
             position,
             positionId,
             principalToAdd,
+            0, // lent amount
             msg.sender
         );
 
@@ -314,6 +317,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position,
         bytes32 positionId,
         uint256 principalAdded,
+        uint256 owedTokenLent,
         address loanPayer
     )
         internal
@@ -336,7 +340,8 @@ library IncreasePositionImpl {
             lender,
             loanPayer,
             positionId,
-            principalAdded
+            principalAdded,
+            owedTokenLent
         );
     }
 
@@ -348,8 +353,8 @@ library IncreasePositionImpl {
     )
         internal
     {
-        // no need to ask for permission
-        if (trader == contractAddr) {
+        // Assume owner approval if not a smart contract and they increased their own position
+        if (trader == contractAddr && !AddressUtils.isContract(contractAddr)) {
             return;
         }
 
@@ -360,7 +365,6 @@ library IncreasePositionImpl {
                 principalAdded
             );
 
-        // if not equal, recurse
         if (newContractAddr != contractAddr) {
             increasePositionOnBehalfOfRecurse(
                 newContractAddr,
@@ -375,12 +379,13 @@ library IncreasePositionImpl {
         address contractAddr,
         address payer,
         bytes32 positionId,
-        uint256 principalAdded
+        uint256 principalAdded,
+        uint256 amountLent
     )
         internal
     {
-        // no need to ask for permission
-        if (payer == contractAddr) {
+        // Assume lender approval if not a smart contract and they increased their own loan
+        if (payer == contractAddr && !AddressUtils.isContract(contractAddr)) {
             return;
         }
 
@@ -388,16 +393,17 @@ library IncreasePositionImpl {
             IncreaseLoanDelegator(contractAddr).increaseLoanOnBehalfOf(
                 payer,
                 positionId,
-                principalAdded
+                principalAdded,
+                amountLent
             );
 
-        // if not equal, recurse
         if (newContractAddr != contractAddr) {
-            increasePositionOnBehalfOfRecurse(
+            increaseLoanOnBehalfOfRecurse(
                 newContractAddr,
                 payer,
                 positionId,
-                principalAdded
+                principalAdded,
+                amountLent
             );
         }
     }

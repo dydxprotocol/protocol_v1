@@ -291,6 +291,7 @@ contract('SharedLoan', accounts => {
           SHARED_LOAN.INITIAL_LENDER,
           SHARED_LOAN.ID,
           increaseAmount,
+          increaseAmount,
           { from: SHARED_LOAN.INITIAL_LENDER}
         )
       );

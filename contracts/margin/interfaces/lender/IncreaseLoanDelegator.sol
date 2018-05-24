@@ -43,12 +43,15 @@ contract IncreaseLoanDelegator {
      * @param  payer           Lender adding additional funds to the position
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Principal amount to be added to the position
+     * @param  lentAmount      Amount of owedToken lent by the lender (principal plus interest, or
+     *                         zero if increaseWithoutCounterparty() is used).
      * @return                 This address to accept, a different address to ask that contract
      */
     function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
-        uint256 principalAdded
+        uint256 principalAdded,
+        uint256 lentAmount
     )
         external
         /* onlyMargin */

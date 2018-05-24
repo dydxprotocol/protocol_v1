@@ -52,7 +52,7 @@ contract OpenDirectlyExchangeWrapper is
     // ============ Margin-Only Functions ============
 
     function exchange(
-        address, /* makerToken */
+        address /* makerToken */,
         address takerToken,
         address tradeOriginator,
         uint256 requestedFillAmount,
@@ -71,9 +71,9 @@ contract OpenDirectlyExchangeWrapper is
     }
 
     function exchangeForAmount(
-        address, /* makerToken */
-        address, /* takerToken */
-        address, /* tradeOriginator */
+        address /* makerToken */,
+        address /* takerToken */,
+        address /* tradeOriginator */,
         uint256 desiredMakerToken,
         bytes /* orderData */
     )
@@ -92,9 +92,9 @@ contract OpenDirectlyExchangeWrapper is
     // ============ Public Constant Functions ============
 
     function getTradeMakerTokenAmount(
-        address, /* makerToken */
-        address, /* takerToken */
-        uint256, /* requestedFillAmount */
+        address /* makerToken */,
+        address /* takerToken */,
+        uint256 /* requestedFillAmount */,
         bytes /* orderData */
     )
         external
@@ -105,8 +105,8 @@ contract OpenDirectlyExchangeWrapper is
     }
 
     function getTakerTokenPrice(
-        address, /* makerToken */
-        address, /* takerToken */
+        address /* makerToken */,
+        address /* takerToken */,
         uint256 desiredMakerToken,
         bytes /* orderData */
     )

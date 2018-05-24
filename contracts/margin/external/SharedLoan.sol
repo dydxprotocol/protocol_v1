@@ -210,12 +210,14 @@ contract SharedLoan is
      * @param  payer           Address that loaned the additional tokens
      * @param  positionId      Unique ID of the position
      * @param  principalAdded  Amount that was added to the position
+     *  param  lentAmount      (unused)
      * @return                 This address to accept, a different address to ask that contract
      */
     function increaseLoanOnBehalfOf(
         address payer,
         bytes32 positionId,
-        uint256 principalAdded
+        uint256 principalAdded,
+        uint256 /* lentAmount */
     )
         external
         onlyMargin

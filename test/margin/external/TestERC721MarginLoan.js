@@ -397,6 +397,7 @@ describe('ERC721MarginLoan', () => {
           lender,
           openTx.id,
           increaseAmount,
+          increaseAmount,
           { from: lender }
         )
       );
