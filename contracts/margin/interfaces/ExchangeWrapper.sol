@@ -53,7 +53,10 @@ contract ExchangeWrapper is OnlyMargin {
     // ============ External Functions ============
 
     /**
-     * Exchange some amount of takerToken for makerToken.
+     * Exchange an exact amount of takerToken for makerToken.
+     *
+     * The exchange wrapper should make sure that allowance is set on the Proxy for the amount of
+     * makerToken received (the return value of the function).
      *
      * @param  makerToken           Address of makerToken, the token to receive
      * @param  takerToken           Address of takerToken, the token to pay
@@ -62,7 +65,7 @@ contract ExchangeWrapper is OnlyMargin {
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
      */
-    function exchange(
+    function exchangeSell(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -74,8 +77,11 @@ contract ExchangeWrapper is OnlyMargin {
         returns (uint256);
 
     /**
-     * Exchange takerToken for an exact amount of makerToken. Any extra makerToken exist
-     * as a result of the trade will be left in the exchange wrapper
+     * Exchange takerToken for an exact amount of makerToken.
+     *
+     * The exchange wrapper should make sure that allowance is set on the Proxy for:
+     *  1) desiredMakerToken
+     *  2) Its entire balance of takerToken
      *
      * @param  makerToken         Address of makerToken, the token to receive
      * @param  takerToken         Address of takerToken, the token to pay
@@ -84,7 +90,7 @@ contract ExchangeWrapper is OnlyMargin {
      * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
      * @return                    The amount of takerToken used
      */
-    function exchangeForAmount(
+    function exchangeBuy(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -93,48 +99,5 @@ contract ExchangeWrapper is OnlyMargin {
     )
         external
         /* onlyMargin */
-        returns (uint256);
-
-    /**
-     * Get amount of makerToken that will be paid out by exchange for a given trade. Should match
-     * the amount of makerToken returned by exchange
-     *
-     * @param  makerToken           Address of makerToken, the token to receive
-     * @param  takerToken           Address of takerToken, the token to pay
-     * @param  requestedFillAmount  Amount of takerToken being paid
-     * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
-     * @return                      The amount of makerToken that would be received as a result of
-     *                              taking this trade
-     */
-    function getTradeMakerTokenAmount(
-        address makerToken,
-        address takerToken,
-        uint256 requestedFillAmount,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256);
-
-    /**
-     * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
-     * Should match the takerToken amount used in exchangeForAmount. If the order cannot provide
-     * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
-     * than desiredMakerToken
-     *
-     * @param  makerToken         Address of makerToken, the token to receive
-     * @param  takerToken         Address of takerToken, the token to pay
-     * @param  desiredMakerToken  Amount of makerToken requested
-     * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
-     * @return                    Amount of takerToken the needed to complete the transaction
-     */
-    function getTakerTokenPrice(
-        address makerToken,
-        address takerToken,
-        uint256 desiredMakerToken,
-        bytes orderData
-    )
-        external
-        view
         returns (uint256);
 }

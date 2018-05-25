@@ -46,50 +46,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#getTradeMakerTokenAmount', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        const receivedMakerTokenAmount = await exchangeWrapper.getTradeMakerTokenAmount.call(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          1,
-          BYTES.EMPTY
-        );
-
-        expect(receivedMakerTokenAmount).to.be.bignumber.eq(0);
-      });
-    });
-  });
-
-  describe('#getTakerTokenPrice', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        await expectThrow(
-          exchangeWrapper.getTakerTokenPrice.call(
-            ADDRESSES.TEST[0],
-            ADDRESSES.TEST[1],
-            1,
-            BYTES.EMPTY
-          )
-        );
-
-        const requiredTakerTokenAmount = await exchangeWrapper.getTakerTokenPrice.call(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          0,
-          BYTES.EMPTY
-        );
-
-        expect(requiredTakerTokenAmount).to.be.bignumber.eq(0);
-      });
-    });
-  });
-
-  describe('#exchange', () => {
+  describe('#exchangeSell', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {
         const [
@@ -167,7 +124,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#exchangeForAmount', () => {
+  describe('#exchangeBuy', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('successfully executes a trade for a specific amount', async () => {
         const exchangeWrapper = await setup(accounts);
@@ -175,7 +132,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
         const tradeOriginator = accounts[9];
 
         await expectThrow(
-          exchangeWrapper.exchangeForAmount(
+          exchangeWrapper.exchangeBuy(
             ADDRESSES.TEST[0],
             ADDRESSES.TEST[1],
             tradeOriginator,
@@ -185,7 +142,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
         );
 
         const result = await transact(
-          exchangeWrapper.exchangeForAmount,
+          exchangeWrapper.exchangeBuy,
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1],
           tradeOriginator,

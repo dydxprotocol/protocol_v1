@@ -88,7 +88,7 @@ contract ZeroExExchangeWrapper is
 
     // ============ Margin-Only Functions ============
 
-    function exchange(
+    function exchangeSell(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -118,7 +118,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    function exchangeForAmount(
+    function exchangeBuy(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -159,47 +159,14 @@ contract ZeroExExchangeWrapper is
             desiredMakerToken
         );
 
+        // Ensure that proxy can take back any unused tokens
+        ensureAllowance(
+            takerToken,
+            DYDX_PROXY,
+            TokenInteract.balanceOf(takerToken, address(this))
+        );
+
         return requiredTakerTokenAmount;
-    }
-
-    // ============ Public Constant Functions ============
-
-    function getTradeMakerTokenAmount(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 requestedFillAmount,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmount(
-            requestedFillAmount,
-            order.takerTokenAmount,
-            order.makerTokenAmount
-        );
-    }
-
-    function getTakerTokenPrice(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 desiredMakerToken,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmountRoundedUp(
-            order.takerTokenAmount,
-            order.makerTokenAmount,
-            desiredMakerToken
-        );
     }
 
     // ============ Internal Functions ============
