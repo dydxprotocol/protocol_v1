@@ -57,63 +57,6 @@ describe('ZeroExExchangeWrapper', () => {
     });
   });
 
-  describe('#getTradeMakerTokenAmount', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const {
-          exchangeWrapper
-        } = await setup(accounts);
-
-        const order = await createSignedSellOrder(accounts);
-        const amount = new BigNumber(baseAmount.times(2));
-
-        const receivedMakerTokenAmount = await exchangeWrapper.getTradeMakerTokenAmount.call(
-          order.makerTokenAddress,
-          order.takerTokenAddress,
-          amount,
-          zeroExOrderToBytes(order)
-        );
-
-        const expected = getPartialAmount(
-          amount,
-          order.takerTokenAmount,
-          order.makerTokenAmount
-        );
-
-        expect(receivedMakerTokenAmount).to.be.bignumber.eq(expected);
-      });
-    });
-  });
-
-  describe('#getTakerTokenPrice', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const {
-          exchangeWrapper
-        } = await setup(accounts);
-
-        const order = await createSignedSellOrder(accounts);
-        const amount = new BigNumber(baseAmount.times(2));
-
-        const requiredTakerTokenAmount = await exchangeWrapper.getTakerTokenPrice.call(
-          order.makerTokenAddress,
-          order.takerTokenAddress,
-          amount,
-          zeroExOrderToBytes(order)
-        );
-
-        const expected = getPartialAmount(
-          order.takerTokenAmount,
-          order.makerTokenAmount,
-          amount,
-          true
-        );
-
-        expect(requiredTakerTokenAmount).to.be.bignumber.eq(expected);
-      });
-    });
-  });
-
   describe('#exchangeSell', () => {
     contract('ZeroExExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {

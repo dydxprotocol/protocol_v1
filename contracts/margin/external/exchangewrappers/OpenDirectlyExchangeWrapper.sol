@@ -88,37 +88,4 @@ contract OpenDirectlyExchangeWrapper is
 
         return 0;
     }
-
-    // ============ Public Constant Functions ============
-
-    function getTradeMakerTokenAmount(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 /* requestedFillAmount */,
-        bytes /* orderData */
-    )
-        external
-        view
-        returns (uint256)
-    {
-        return 0;
-    }
-
-    function getTakerTokenPrice(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 desiredMakerToken,
-        bytes /* orderData */
-    )
-        external
-        view
-        returns (uint256)
-    {
-        require(
-            desiredMakerToken == 0,
-            "OpenDirectlyExchangeWrapper#getTradeMakerTokenAmount: DesiredMakerToken must be zero"
-        );
-
-        return 0;
-    }
 }

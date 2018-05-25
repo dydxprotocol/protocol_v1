@@ -46,49 +46,6 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#getTradeMakerTokenAmount', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        const receivedMakerTokenAmount = await exchangeWrapper.getTradeMakerTokenAmount.call(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          1,
-          BYTES.EMPTY
-        );
-
-        expect(receivedMakerTokenAmount).to.be.bignumber.eq(0);
-      });
-    });
-  });
-
-  describe('#getTakerTokenPrice', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        await expectThrow(
-          exchangeWrapper.getTakerTokenPrice.call(
-            ADDRESSES.TEST[0],
-            ADDRESSES.TEST[1],
-            1,
-            BYTES.EMPTY
-          )
-        );
-
-        const requiredTakerTokenAmount = await exchangeWrapper.getTakerTokenPrice.call(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          0,
-          BYTES.EMPTY
-        );
-
-        expect(requiredTakerTokenAmount).to.be.bignumber.eq(0);
-      });
-    });
-  });
-
   describe('#exchangeSell', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {
