@@ -57,7 +57,7 @@ describe('ZeroExExchangeWrapper', () => {
     });
   });
 
-  describe('#getExchangePrice', () => {
+  describe('#getExchangeCost', () => {
     contract('ZeroExExchangeWrapper', accounts => {
       it('gives the correct maker token for a given order', async () => {
         const {
@@ -67,7 +67,7 @@ describe('ZeroExExchangeWrapper', () => {
         const order = await createSignedSellOrder(accounts);
         const amount = new BigNumber(baseAmount.times(2));
 
-        const requiredTakerTokenAmount = await exchangeWrapper.getExchangePrice.call(
+        const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,

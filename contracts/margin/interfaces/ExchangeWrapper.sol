@@ -85,7 +85,7 @@ contract ExchangeWrapper is OnlyMargin {
      * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
      * @return                    Amount of takerToken the needed to complete the transaction
      */
-    function getExchangePrice(
+    function getExchangeCost(
         address makerToken,
         address takerToken,
         uint256 desiredMakerToken,

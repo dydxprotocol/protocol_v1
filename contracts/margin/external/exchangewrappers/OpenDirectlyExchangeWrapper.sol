@@ -72,7 +72,7 @@ contract OpenDirectlyExchangeWrapper is
 
     // ============ Public Constant Functions ============
 
-    function getExchangePrice(
+    function getExchangeCost(
         address /* makerToken */,
         address /* takerToken */,
         uint256 desiredMakerToken,
@@ -84,7 +84,7 @@ contract OpenDirectlyExchangeWrapper is
     {
         require(
             desiredMakerToken == 0,
-            "OpenDirectlyExchangeWrapper#getExchangePrice: DesiredMakerToken must be zero"
+            "OpenDirectlyExchangeWrapper#getExchangeCost: DesiredMakerToken must be zero"
         );
 
         return 0;

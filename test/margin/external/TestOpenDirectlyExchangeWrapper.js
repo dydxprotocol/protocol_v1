@@ -44,13 +44,13 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#getExchangePrice', () => {
+  describe('#getExchangeCost', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('gives the correct maker token for a given order', async () => {
         const exchangeWrapper = await setup(accounts);
 
         await expectThrow(
-          exchangeWrapper.getExchangePrice.call(
+          exchangeWrapper.getExchangeCost.call(
             ADDRESSES.TEST[0],
             ADDRESSES.TEST[1],
             1,
@@ -58,7 +58,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
           )
         );
 
-        const requiredTakerTokenAmount = await exchangeWrapper.getExchangePrice.call(
+        const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1],
           0,

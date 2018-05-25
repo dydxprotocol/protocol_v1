@@ -118,7 +118,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    function getExchangePrice(
+    function getExchangeCost(
         address /* makerToken */,
         address /* takerToken */,
         uint256 desiredMakerToken,

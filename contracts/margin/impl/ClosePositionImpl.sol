@@ -178,7 +178,7 @@ library ClosePositionImpl {
 
         if (transaction.payoutInHeldToken) {
             buybackCostInHeldToken = ExchangeWrapper(transaction.exchangeWrapper)
-                .getExchangePrice(
+                .getExchangeCost(
                     transaction.owedToken,
                     transaction.heldToken,
                     transaction.owedTokenOwed,

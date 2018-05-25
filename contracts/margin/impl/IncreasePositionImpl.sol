@@ -26,6 +26,7 @@ import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { IncreaseLoanDelegator } from "../interfaces/lender/IncreaseLoanDelegator.sol";
 import { IncreasePositionDelegator } from "../interfaces/owner/IncreasePositionDelegator.sol";
 
@@ -90,12 +91,9 @@ library IncreasePositionImpl {
             depositInHeldToken
         );
 
-        uint256 heldTokenFromSell = preStateUpdate(
-            state,
-            transaction,
-            position,
-            orderData
-        );
+        validate(transaction, position);
+
+        doBorrowAndSell(state, transaction, orderData);
 
         updateState(
             position,
@@ -108,8 +106,7 @@ library IncreasePositionImpl {
         // LOG EVENT
         recordPositionIncreased(
             transaction,
-            position,
-            heldTokenFromSell
+            position
         );
 
         return transaction.lenderAmount;
@@ -179,24 +176,47 @@ library IncreasePositionImpl {
 
     // ============ Helper Functions ============
 
-    function preStateUpdate(
+    function doBorrowAndSell(
         MarginState.State storage state,
-        BorrowShared.Tx transaction,
-        MarginCommon.Position storage position,
+        BorrowShared.Tx memory transaction,
         bytes orderData
     )
         internal
-        returns (uint256 /* heldTokenFromSell */)
     {
-        validate(transaction, position);
+        BorrowShared.doPreSell(state, transaction);
 
-        uint256 heldTokenFromSell = BorrowShared.doBorrowAndSell(
-            state,
-            transaction,
+        if (!transaction.depositInHeldToken) {
+            transaction.depositAmount = getOwedTokenDeposit(transaction, orderData);
+            BorrowShared.doDepositOwedToken(state, transaction);
+        }
+
+        transaction.heldTokenFromSell = BorrowShared.doSell(state, transaction, orderData);
+
+        if (transaction.depositInHeldToken) {
+            transaction.depositAmount =
+                transaction.collateralAmount.sub(transaction.heldTokenFromSell);
+            BorrowShared.doDepositHeldToken(state, transaction);
+        }
+
+        BorrowShared.doPostSell(state, transaction);
+    }
+
+    function getOwedTokenDeposit(
+        BorrowShared.Tx transaction,
+        bytes orderData
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 totalOwedToken = ExchangeWrapper(transaction.exchangeWrapper).getExchangeCost(
+            transaction.loanOffering.heldToken,
+            transaction.loanOffering.owedToken,
+            transaction.collateralAmount,
             orderData
         );
 
-        return heldTokenFromSell;
+        return totalOwedToken.sub(transaction.lenderAmount);
     }
 
     function validate(
@@ -341,8 +361,7 @@ library IncreasePositionImpl {
 
     function recordPositionIncreased(
         BorrowShared.Tx transaction,
-        MarginCommon.Position storage position,
-        uint256 heldTokenFromSell
+        MarginCommon.Position storage position
     )
         internal
     {
@@ -356,7 +375,7 @@ library IncreasePositionImpl {
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
             transaction.principal,
-            heldTokenFromSell,
+            transaction.heldTokenFromSell,
             transaction.depositAmount,
             transaction.depositInHeldToken
         );
@@ -390,12 +409,6 @@ library IncreasePositionImpl {
                 principal,
                 block.timestamp
             ),
-            depositAmount: 0,
-            collateralAmount: getCollateralNeededForAddedPrincipal(
-                state,
-                positionId,
-                principal
-            ),
             loanOffering: parseLoanOfferingFromIncreasePositionTx(
                 position,
                 addresses,
@@ -405,7 +418,14 @@ library IncreasePositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[6],
-            depositInHeldToken: depositInHeldToken
+            depositInHeldToken: depositInHeldToken,
+            depositAmount: 0, // set later
+            collateralAmount: getCollateralNeededForAddedPrincipal(
+                state,
+                positionId,
+                principal
+            ),
+            heldTokenFromSell: 0 // set later
         });
 
         return transaction;
