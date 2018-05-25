@@ -47,10 +47,10 @@ library BorrowShared {
         uint256 principal;
         uint256 lenderAmount;
         uint256 depositAmount;
+        uint256 collateralAmount;
         MarginCommon.LoanOffering loanOffering;
         address exchangeWrapper;
         bool depositInHeldToken;
-        uint256 desiredTokenFromSell;
     }
 
     // ============ Internal Implementation Functions ============
@@ -61,36 +61,22 @@ library BorrowShared {
         bytes orderData
     )
         internal
-        returns (uint256, uint256)
+        returns (uint256)
     {
         validateTx(
             state,
             transaction
         );
 
-        getConsentIfSmartContractLender(transaction, transaction.positionId);
-
-        pullOwedTokensFromLender(state, transaction);
-
-        // Pull deposit from the msg.sender
-        uint256 heldTokenFromDeposit = transferDeposit(state, transaction, transaction.positionId);
-
-        uint256 sellAmount = transaction.depositInHeldToken ? transaction.lenderAmount
-            : transaction.lenderAmount.add(transaction.depositAmount);
+        getConsentIfSmartContractLender(transaction);
 
         uint256 heldTokenFromSell = executeSell(
             state,
             transaction,
-            orderData,
-            transaction.positionId,
-            sellAmount
+            orderData
         );
 
-        uint256 totalHeldTokenReceived = heldTokenFromDeposit.add(heldTokenFromSell);
-        validateMinimumHeldToken(
-            transaction,
-            totalHeldTokenReceived
-        );
+        validateMinimumHeldToken(transaction);
 
         // Transfer feeTokens from trader and lender
         transferLoanFees(state, transaction);
@@ -99,10 +85,7 @@ library BorrowShared {
         state.loanFills[transaction.loanOffering.loanHash] =
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.lenderAmount);
 
-        return (
-            heldTokenFromSell,
-            totalHeldTokenReceived
-        );
+        return heldTokenFromSell;
     }
 
     function validateTx(
@@ -208,8 +191,7 @@ library BorrowShared {
     }
 
     function getConsentIfSmartContractLender(
-        Tx transaction,
-        bytes32 positionId
+        Tx transaction
     )
         internal
     {
@@ -220,7 +202,7 @@ library BorrowShared {
                 getLoanOfferingAddresses(transaction),
                 getLoanOfferingValues256(transaction),
                 getLoanOfferingValues32(transaction),
-                positionId
+                transaction.positionId
             );
         }
     }
@@ -267,33 +249,6 @@ library BorrowShared {
         );
     }
 
-    function transferDeposit(
-        MarginState.State storage state,
-        Tx transaction,
-        bytes32 positionId
-    )
-        internal
-        returns (uint256 /* heldTokenFromDeposit */)
-    {
-        if (transaction.depositInHeldToken) {
-            Vault(state.VAULT).transferToVault(
-                positionId,
-                transaction.loanOffering.heldToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-            return transaction.depositAmount;
-        } else {
-            Proxy(state.PROXY).transferTokens(
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                transaction.exchangeWrapper,
-                transaction.depositAmount
-            );
-            return 0;
-        }
-    }
-
     function transferLoanFees(
         MarginState.State storage state,
         Tx transaction
@@ -337,51 +292,101 @@ library BorrowShared {
         }
     }
 
+    /**
+     * Pull the appropriate amount of tokens from the lender and the trader, complete the sell
+     * using the exchange, and store the collateral in the vault.
+     *
+     * NOTE: Calculates and sets transaction.collateralAmount for a new position.
+     * NOTE: Calculates and sets transaction.depositAmount for an existing position.
+     */
     function executeSell(
         MarginState.State storage state,
         Tx transaction,
-        bytes orderData,
-        bytes32 positionId,
-        uint256 sellAmount
+        bytes orderData
     )
         internal
         returns (uint256)
     {
-        uint256 heldTokenReceived;
-        if (transaction.desiredTokenFromSell == 0) {
-            heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-                transaction.loanOffering.heldToken,
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                sellAmount,
-                orderData
-            );
-        } else {
-            uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
-                transaction.loanOffering.heldToken,
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                transaction.desiredTokenFromSell,
-                orderData
-            );
+        uint256 sellAmount = transaction.lenderAmount;
+        bool positionExists = MarginCommon.containsPositionImpl(state, transaction.positionId);
 
-            assert(soldAmount == sellAmount);
-            heldTokenReceived = transaction.desiredTokenFromSell;
+        // Move owedTokens from lender to ExchangeWrapper
+        pullOwedTokensFromLender(state, transaction);
+
+        // Transfer deposit before trade if in owedToken
+        if (!transaction.depositInHeldToken) {
+            // Set deposit amount for existing position
+            if (positionExists) {
+                transaction.depositAmount = getOwedTokenDepositForExisting(transaction, orderData);
+            }
+            Proxy(state.PROXY).transferTokens(
+                transaction.loanOffering.owedToken,
+                msg.sender,
+                transaction.exchangeWrapper,
+                transaction.depositAmount
+            );
+            sellAmount = sellAmount.add(transaction.depositAmount);
         }
 
+        // Do the trade and transfer heldToken to Vault
+        uint256 heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+            transaction.loanOffering.heldToken,
+            transaction.loanOffering.owedToken,
+            msg.sender,
+            sellAmount,
+            orderData
+        );
         Vault(state.VAULT).transferToVault(
-            positionId,
+            transaction.positionId,
             transaction.loanOffering.heldToken,
             transaction.exchangeWrapper,
             heldTokenReceived
         );
 
+        // Transfer deposit after trade if in heldToken
+        if (transaction.depositInHeldToken) {
+            // Set deposit amount for existing position
+            if (positionExists) {
+                transaction.depositAmount = transaction.collateralAmount.sub(heldTokenReceived);
+            }
+            Vault(state.VAULT).transferToVault(
+                transaction.positionId,
+                transaction.loanOffering.heldToken,
+                msg.sender,
+                transaction.depositAmount
+            );
+        }
+
+        // Set collateralAmount for new positions
+        if (!positionExists) {
+            transaction.collateralAmount = heldTokenReceived.add(
+                transaction.depositInHeldToken ? transaction.depositAmount : 0
+            );
+        }
+
         return heldTokenReceived;
     }
 
-    function validateMinimumHeldToken(
+    function getOwedTokenDepositForExisting(
         Tx transaction,
-        uint256 totalHeldTokenReceived
+        bytes orderData
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 totalOwedToken = ExchangeWrapper(transaction.exchangeWrapper).getExchangePrice(
+            transaction.loanOffering.heldToken,
+            transaction.loanOffering.owedToken,
+            transaction.collateralAmount,
+            orderData
+        );
+
+        return totalOwedToken.sub(transaction.lenderAmount);
+    }
+
+    function validateMinimumHeldToken(
+        Tx transaction
     )
         internal
         pure
@@ -393,7 +398,7 @@ library BorrowShared {
         );
 
         require(
-            totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
+            transaction.collateralAmount >= loanOfferingMinimumHeldToken,
             "BorrowShared#validateMinimumHeldToken: Loan offering minimum held token not met"
         );
     }

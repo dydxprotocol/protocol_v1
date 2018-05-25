@@ -118,72 +118,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    function exchangeForAmount(
-        address makerToken,
-        address takerToken,
-        address tradeOriginator,
-        uint256 desiredMakerToken,
-        bytes orderData
-    )
-        external
-        onlyMargin
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        uint256 requiredTakerTokenAmount = MathHelpers.getPartialAmountRoundedUp(
-            order.takerTokenAmount,
-            order.makerTokenAmount,
-            desiredMakerToken
-        );
-
-        uint256 receivedMakerTokenAmount = exchangeImpl(
-            order,
-            makerToken,
-            takerToken,
-            tradeOriginator,
-            requiredTakerTokenAmount
-        );
-
-        assert(receivedMakerTokenAmount >= desiredMakerToken);
-
-        /**
-         * Version 1 implementation is to leave any excess received maker token locked in this
-         * this contract (forever). With normal token amounts (on the order of 10^18), it will
-         * not be worth the extra gas cost to send this extra token back to anyone.
-         */
-
-        ensureAllowance(
-            makerToken,
-            DYDX_PROXY,
-            desiredMakerToken
-        );
-
-        return requiredTakerTokenAmount;
-    }
-
-    // ============ Public Constant Functions ============
-
-    function getTradeMakerTokenAmount(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 requestedFillAmount,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmount(
-            requestedFillAmount,
-            order.takerTokenAmount,
-            order.makerTokenAmount
-        );
-    }
-
-    function getTakerTokenPrice(
+    function getExchangePrice(
         address /* makerToken */,
         address /* takerToken */,
         uint256 desiredMakerToken,

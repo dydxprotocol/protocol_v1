@@ -85,7 +85,7 @@ library OpenPositionImpl {
             "OpenPositionImpl#openPositionImpl: positionId already exists"
         );
 
-        (uint256 heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
+        uint256 heldTokenFromSell = BorrowShared.doBorrowAndSell(
             state,
             transaction,
             orderData
@@ -180,6 +180,7 @@ library OpenPositionImpl {
             principal: values256[7],
             lenderAmount: values256[7],
             depositAmount: values256[8],
+            collateralAmount: 0,
             loanOffering: parseLoanOffering(
                 addresses,
                 values256,
@@ -188,8 +189,7 @@ library OpenPositionImpl {
                 sigRS
             ),
             exchangeWrapper: addresses[10],
-            depositInHeldToken: depositInHeldToken,
-            desiredTokenFromSell: 0
+            depositInHeldToken: depositInHeldToken
         });
 
         return transaction;
