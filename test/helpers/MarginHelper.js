@@ -355,9 +355,6 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
     tx.principal,
     true
   );
-  console.log(start);
-  console.log(principal);
-  console.log(endingBalance);
   const heldTokenFromSell = tx.depositInHeldToken ?
     getPartialAmount(
       owed,

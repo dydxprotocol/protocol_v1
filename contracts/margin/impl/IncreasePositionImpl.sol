@@ -185,14 +185,25 @@ library IncreasePositionImpl {
     {
         BorrowShared.doPreSell(state, transaction);
 
+        uint256 maxHeldTokenFromSell = MathHelpers.maxUint256();
         if (!transaction.depositInHeldToken) {
             transaction.depositAmount = getOwedTokenDeposit(transaction, orderData);
             BorrowShared.doDepositOwedToken(state, transaction);
+            maxHeldTokenFromSell = transaction.collateralAmount;
         }
 
-        transaction.heldTokenFromSell = BorrowShared.doSell(state, transaction, orderData);
+        transaction.heldTokenFromSell = BorrowShared.doSell(
+            state,
+            transaction,
+            orderData,
+            maxHeldTokenFromSell
+        );
 
         if (transaction.depositInHeldToken) {
+            require(
+                transaction.heldTokenFromSell <= transaction.collateralAmount,
+                "IncreasePositionImpl#doBorrowAndSell: Too much heldToken from sell"
+            );
             transaction.depositAmount =
                 transaction.collateralAmount.sub(transaction.heldTokenFromSell);
             BorrowShared.doDepositHeldToken(state, transaction);

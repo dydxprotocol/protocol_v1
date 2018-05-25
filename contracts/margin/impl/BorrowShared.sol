@@ -19,6 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
@@ -91,7 +92,8 @@ library BorrowShared {
     function doSell(
         MarginState.State storage state,
         Tx transaction,
-        bytes orderData
+        bytes orderData,
+        uint256 maxAmount
     )
         internal
         returns (uint256)
@@ -101,13 +103,17 @@ library BorrowShared {
             transaction.lenderAmount.add(transaction.depositAmount);
 
         // Do the trade and transfer heldToken to Vault
-        uint256 heldTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-            transaction.loanOffering.heldToken,
-            transaction.loanOffering.owedToken,
-            msg.sender,
-            sellAmount,
-            orderData
+        uint256 heldTokenFromSell = Math.min256(
+            maxAmount,
+            ExchangeWrapper(transaction.exchangeWrapper).exchange(
+                transaction.loanOffering.heldToken,
+                transaction.loanOffering.owedToken,
+                msg.sender,
+                sellAmount,
+                orderData
+            )
         );
+
         Vault(state.VAULT).transferToVault(
             transaction.positionId,
             transaction.loanOffering.heldToken,

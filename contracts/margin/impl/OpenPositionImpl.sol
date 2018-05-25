@@ -23,6 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -118,7 +119,12 @@ library OpenPositionImpl {
             BorrowShared.doDepositOwedToken(state, transaction);
         }
 
-        transaction.heldTokenFromSell = BorrowShared.doSell(state, transaction, orderData);
+        transaction.heldTokenFromSell = BorrowShared.doSell(
+            state,
+            transaction,
+            orderData,
+            MathHelpers.maxUint256()
+        );
 
         transaction.collateralAmount = transaction.depositInHeldToken ?
             transaction.heldTokenFromSell.add(transaction.depositAmount) :
