@@ -349,7 +349,7 @@ library BorrowShared {
     {
         uint256 heldTokenReceived;
         if (transaction.desiredTokenFromSell == 0) {
-            heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+            heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchangeSell(
                 transaction.loanOffering.heldToken,
                 transaction.loanOffering.owedToken,
                 msg.sender,
@@ -357,7 +357,7 @@ library BorrowShared {
                 orderData
             );
         } else {
-            uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
+            uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeBuy(
                 transaction.loanOffering.heldToken,
                 transaction.loanOffering.owedToken,
                 msg.sender,

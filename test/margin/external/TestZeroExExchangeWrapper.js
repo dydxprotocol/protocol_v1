@@ -114,7 +114,7 @@ describe('ZeroExExchangeWrapper', () => {
     });
   });
 
-  describe('#exchange', () => {
+  describe('#exchangeSell', () => {
     contract('ZeroExExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {
         const {
@@ -137,7 +137,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -179,7 +179,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -206,7 +206,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -233,7 +233,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -278,7 +278,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -312,7 +312,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
-        await expectThrow(exchangeWrapper.exchange(
+        await expectThrow(exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -337,7 +337,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
-        await exchangeWrapper.exchange(
+        await exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -348,7 +348,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
-        await expectThrow(exchangeWrapper.exchange(
+        await expectThrow(exchangeWrapper.exchangeSell(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,
@@ -360,7 +360,7 @@ describe('ZeroExExchangeWrapper', () => {
     });
   });
 
-  describe('#exchangeForAmount', () => {
+  describe('#exchangeBuy', () => {
     contract('ZeroExExchangeWrapper', accounts => {
       it('successfully executes a trade for a specific amount', async () => {
         const {
@@ -389,7 +389,7 @@ describe('ZeroExExchangeWrapper', () => {
           dydxProxy
         );
 
-        await exchangeWrapper.exchangeForAmount(
+        await exchangeWrapper.exchangeBuy(
           order.makerTokenAddress,
           order.takerTokenAddress,
           tradeOriginator,

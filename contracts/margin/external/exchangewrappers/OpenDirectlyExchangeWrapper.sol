@@ -51,7 +51,7 @@ contract OpenDirectlyExchangeWrapper is
 
     // ============ Margin-Only Functions ============
 
-    function exchange(
+    function exchangeSell(
         address /* makerToken */,
         address takerToken,
         address tradeOriginator,
@@ -70,7 +70,7 @@ contract OpenDirectlyExchangeWrapper is
         return 0;
     }
 
-    function exchangeForAmount(
+    function exchangeBuy(
         address /* makerToken */,
         address /* takerToken */,
         address /* tradeOriginator */,
@@ -83,7 +83,7 @@ contract OpenDirectlyExchangeWrapper is
     {
         require(
             desiredMakerToken == 0,
-            "OpenDirectlyExchangeWrapper#exchangeForAmount: DesiredMakerToken must be zero"
+            "OpenDirectlyExchangeWrapper#exchangeBuy: DesiredMakerToken must be zero"
         );
 
         return 0;

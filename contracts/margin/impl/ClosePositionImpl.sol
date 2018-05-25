@@ -172,49 +172,52 @@ library ClosePositionImpl {
         internal
         returns (uint256, uint256)
     {
-        // Ask the exchange wrapper what the price in heldToken to buy back the close
-        // amount of owedToken is
         uint256 buybackCostInHeldToken;
+        uint256 receivedOwedToken;
 
-        if (transaction.payoutInHeldToken) {
-            buybackCostInHeldToken = ExchangeWrapper(transaction.exchangeWrapper)
-                .getTakerTokenPrice(
-                    transaction.owedToken,
-                    transaction.heldToken,
-                    transaction.owedTokenOwed,
-                    orderData
-                );
-
-            // Require enough available heldToken to pay for the buyback
-            require(
-                buybackCostInHeldToken <= transaction.availableHeldToken,
-                "ClosePositionImpl#buyBackOwedToken: Not enough available heldToken"
-            );
-        } else {
-            buybackCostInHeldToken = transaction.availableHeldToken;
-        }
-
-        // Send the requisite heldToken to do the buyback from vault to exchange wrapper
         Vault(state.VAULT).transferFromVault(
             transaction.positionId,
             transaction.heldToken,
             transaction.exchangeWrapper,
-            buybackCostInHeldToken
+            transaction.availableHeldToken
         );
 
-        // Trade the heldToken for the owedToken
-        uint256 receivedOwedToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-            transaction.owedToken,
-            transaction.heldToken,
-            msg.sender,
-            buybackCostInHeldToken,
-            orderData
-        );
+        if (transaction.payoutInHeldToken) {
+            receivedOwedToken = transaction.owedTokenOwed;
+            buybackCostInHeldToken = ExchangeWrapper(transaction.exchangeWrapper).exchangeBuy(
+                transaction.owedToken,
+                transaction.heldToken,
+                msg.sender,
+                transaction.owedTokenOwed,
+                orderData
+            );
 
-        require(
-            receivedOwedToken >= transaction.owedTokenOwed,
-            "ClosePositionImpl#buyBackOwedToken: Did not receive enough owedToken"
-        );
+            require(
+                buybackCostInHeldToken <= transaction.availableHeldToken,
+                "ClosePositionImpl#buyBackOwedToken: Spent too much heldToken"
+            );
+
+            Vault(state.VAULT).transferToVault(
+                transaction.positionId,
+                transaction.heldToken,
+                transaction.exchangeWrapper,
+                transaction.availableHeldToken.sub(buybackCostInHeldToken)
+            );
+        } else {
+            buybackCostInHeldToken = transaction.availableHeldToken;
+            receivedOwedToken = ExchangeWrapper(transaction.exchangeWrapper).exchangeSell(
+                transaction.owedToken,
+                transaction.heldToken,
+                msg.sender,
+                transaction.availableHeldToken,
+                orderData
+            );
+
+            require(
+                receivedOwedToken >= transaction.owedTokenOwed,
+                "ClosePositionImpl#buyBackOwedToken: Did not receive enough owedToken"
+            );
+        }
 
         return (buybackCostInHeldToken, receivedOwedToken);
     }

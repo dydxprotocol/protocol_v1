@@ -53,7 +53,7 @@ contract ExchangeWrapper is OnlyMargin {
     // ============ External Functions ============
 
     /**
-     * Exchange some amount of takerToken for makerToken.
+     * Exchange an exact amount of takerToken for makerToken.
      *
      * @param  makerToken           Address of makerToken, the token to receive
      * @param  takerToken           Address of takerToken, the token to pay
@@ -62,7 +62,7 @@ contract ExchangeWrapper is OnlyMargin {
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
      */
-    function exchange(
+    function exchangeSell(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -74,8 +74,7 @@ contract ExchangeWrapper is OnlyMargin {
         returns (uint256);
 
     /**
-     * Exchange takerToken for an exact amount of makerToken. Any extra makerToken exist
-     * as a result of the trade will be left in the exchange wrapper
+     * Exchange takerToken for an exact amount of makerToken.
      *
      * @param  makerToken         Address of makerToken, the token to receive
      * @param  takerToken         Address of takerToken, the token to pay
@@ -84,7 +83,7 @@ contract ExchangeWrapper is OnlyMargin {
      * @param  orderData          Arbitrary bytes data for any information to pass to the exchange
      * @return                    The amount of takerToken used
      */
-    function exchangeForAmount(
+    function exchangeBuy(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -118,7 +117,7 @@ contract ExchangeWrapper is OnlyMargin {
 
     /**
      * Get amount of takerToken required to buy a certain amount of makerToken for a given trade.
-     * Should match the takerToken amount used in exchangeForAmount. If the order cannot provide
+     * Should match the takerToken amount used in exchangeBuy. If the order cannot provide
      * exactly desiredMakerToken, then it must return the price to buy the minimum amount greater
      * than desiredMakerToken
      *

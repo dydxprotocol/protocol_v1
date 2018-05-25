@@ -89,7 +89,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#exchange', () => {
+  describe('#exchangeSell', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {
         const [
@@ -167,7 +167,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#exchangeForAmount', () => {
+  describe('#exchangeBuy', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('successfully executes a trade for a specific amount', async () => {
         const exchangeWrapper = await setup(accounts);
@@ -175,7 +175,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
         const tradeOriginator = accounts[9];
 
         await expectThrow(
-          exchangeWrapper.exchangeForAmount(
+          exchangeWrapper.exchangeBuy(
             ADDRESSES.TEST[0],
             ADDRESSES.TEST[1],
             tradeOriginator,
@@ -185,7 +185,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
         );
 
         const result = await transact(
-          exchangeWrapper.exchangeForAmount,
+          exchangeWrapper.exchangeBuy,
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1],
           tradeOriginator,

@@ -88,7 +88,7 @@ contract ZeroExExchangeWrapper is
 
     // ============ Margin-Only Functions ============
 
-    function exchange(
+    function exchangeSell(
         address makerToken,
         address takerToken,
         address tradeOriginator,
@@ -118,7 +118,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    function exchangeForAmount(
+    function exchangeBuy(
         address makerToken,
         address takerToken,
         address tradeOriginator,
