@@ -24,6 +24,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { InterestImpl } from "./InterestImpl.sol";
 import { MarginState } from "./MarginState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
+import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TimestampHelper } from "../../lib/TimestampHelper.sol";
 
@@ -298,6 +299,21 @@ library MarginCommon {
                 loanOffering.rates.interestPeriod
             )
         );
+    }
+
+    function getPositionBalanceImpl(
+        MarginState.State storage state,
+        bytes32 positionId
+    )
+        internal
+        view
+        returns(uint256)
+    {
+        if (!containsPositionImpl(state, positionId)) {
+            return 0;
+        }
+
+        return Vault(state.VAULT).balances(positionId, state.positions[positionId].heldToken);
     }
 
     function containsPositionImpl(

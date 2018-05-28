@@ -276,8 +276,7 @@ library IncreasePositionImpl {
         view
         returns (uint256)
     {
-        uint256 heldTokenBalance = Vault(state.VAULT).balances(
-            positionId, state.positions[positionId].heldToken);
+        uint256 heldTokenBalance = MarginCommon.getPositionBalanceImpl(state, positionId);
 
         return MathHelpers.getPartialAmountRoundedUp(
             principalToAdd,
