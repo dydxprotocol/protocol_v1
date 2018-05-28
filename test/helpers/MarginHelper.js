@@ -238,20 +238,6 @@ async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
   const newOwner = await dydxMargin.getPositionOwner.call(positionId);
   const newLender = await dydxMargin.getPositionLender.call(positionId);
   let logIndex = 0;
-  if (tx.loanOffering.owner !== tx.loanOffering.payer) {
-    expectLog(response.logs[++logIndex], 'LoanTransferred', {
-      positionId: positionId,
-      from: tx.loanOffering.payer,
-      to: tx.loanOffering.owner
-    });
-    if (newLender !== tx.loanOffering.owner) {
-      expectLog(response.logs[++logIndex], 'LoanTransferred', {
-        positionId: positionId,
-        from: tx.loanOffering.owner,
-        to: newLender
-      });
-    }
-  }
   if (tx.owner !== tx.trader) {
     expectLog(response.logs[++logIndex], 'PositionTransferred', {
       positionId: positionId,
@@ -263,6 +249,20 @@ async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
         positionId: positionId,
         from: tx.owner,
         to: newOwner
+      });
+    }
+  }
+  if (tx.loanOffering.owner !== tx.loanOffering.payer) {
+    expectLog(response.logs[++logIndex], 'LoanTransferred', {
+      positionId: positionId,
+      from: tx.loanOffering.payer,
+      to: tx.loanOffering.owner
+    });
+    if (newLender !== tx.loanOffering.owner) {
+      expectLog(response.logs[++logIndex], 'LoanTransferred', {
+        positionId: positionId,
+        from: tx.loanOffering.owner,
+        to: newLender
       });
     }
   }
