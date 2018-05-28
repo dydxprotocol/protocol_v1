@@ -72,9 +72,6 @@ library BorrowShared {
         );
 
         getConsentIfSmartContractLender(transaction);
-
-        // Move owedTokens from lender to exchange wrapper
-        pullOwedTokensFromLender(state, transaction);
     }
 
     /**
@@ -110,6 +107,9 @@ library BorrowShared {
         internal
         returns (uint256)
     {
+        // Move owedTokens from lender to exchange wrapper
+        pullOwedTokensFromLender(state, transaction);
+
         // Sell just the lender's owedToken (if trader deposit is in heldToken)
         // Otherwise sell both the lender's owedToken and the trader's deposit in owedToken
         uint256 sellAmount = transaction.depositInHeldToken ?
