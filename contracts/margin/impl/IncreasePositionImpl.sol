@@ -202,7 +202,7 @@ library IncreasePositionImpl {
         if (transaction.depositInHeldToken) {
             require(
                 transaction.heldTokenFromSell <= transaction.collateralAmount,
-                "IncreasePositionImpl#doBorrowAndSell: Too much heldToken from sell"
+                "IncreasePositionImpl#doBorrowAndSell: DEX order gives too much heldToken"
             );
             transaction.depositAmount =
                 transaction.collateralAmount.sub(transaction.heldTokenFromSell);
@@ -225,6 +225,11 @@ library IncreasePositionImpl {
             transaction.loanOffering.owedToken,
             transaction.collateralAmount,
             orderData
+        );
+
+        require(
+            transaction.lenderAmount <= totalOwedToken,
+            "IncreasePositionImpl#getOwedTokenDeposit: Lender amount is more than required"
         );
 
         return totalOwedToken.sub(transaction.lenderAmount);
