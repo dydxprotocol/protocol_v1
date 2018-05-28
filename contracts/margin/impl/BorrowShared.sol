@@ -96,13 +96,14 @@ library BorrowShared {
 
     /**
      * Sells the owedToken from the lender (and from the deposit if in owedToken) using the
-     * exchangeWrapper, then puts the resulting heldToken into the vault.
+     * exchangeWrapper, then puts the resulting heldToken into the vault. Only trades for
+     * maxHeldTokenToBuy of heldTokens at most.
      */
     function doSell(
         MarginState.State storage state,
         Tx transaction,
         bytes orderData,
-        uint256 maxAmount
+        uint256 maxHeldTokenToBuy
     )
         internal
         returns (uint256)
@@ -116,9 +117,9 @@ library BorrowShared {
             transaction.lenderAmount :
             transaction.lenderAmount.add(transaction.depositAmount);
 
-        // Do the trade, taking the maxAmount if more is returned
+        // Do the trade, taking only the maxHeldTokenToBuy if more is returned
         uint256 heldTokenFromSell = Math.min256(
-            maxAmount,
+            maxHeldTokenToBuy,
             ExchangeWrapper(transaction.exchangeWrapper).exchange(
                 transaction.loanOffering.heldToken,
                 transaction.loanOffering.owedToken,
@@ -144,7 +145,7 @@ library BorrowShared {
 
     /**
      * Take the owedToken deposit from the trader and give it to the exchange wrapper so that it can
-     * sell it for heldToken.
+     * be sold for heldToken.
      */
     function doDepositOwedToken(
         MarginState.State storage state,

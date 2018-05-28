@@ -309,10 +309,6 @@ library MarginCommon {
         view
         returns(uint256)
     {
-        if (!containsPositionImpl(state, positionId)) {
-            return 0;
-        }
-
         return Vault(state.VAULT).balances(positionId, state.positions[positionId].heldToken);
     }
 
