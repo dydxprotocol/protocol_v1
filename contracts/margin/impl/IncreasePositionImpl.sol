@@ -76,6 +76,7 @@ library IncreasePositionImpl {
         public
         returns (uint256)
     {
+        // Also ensures that the position exists
         MarginCommon.Position storage position =
             MarginCommon.getPositionFromStorage(state, positionId);
 
@@ -257,10 +258,7 @@ library IncreasePositionImpl {
         internal
         view
     {
-        require(
-            MarginCommon.containsPositionImpl(state, transaction.positionId),
-            "IncreasePositionImpl#validateIncrease: Position does not exist"
-        );
+        assert(MarginCommon.containsPositionImpl(state, transaction.positionId));
 
         require(
             position.callTimeLimit <= transaction.loanOffering.callTimeLimit,
