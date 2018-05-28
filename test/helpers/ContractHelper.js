@@ -1,4 +1,3 @@
-/*global web3*/
 const { wait } = require('@digix/tempo')(web3);
 
 /**

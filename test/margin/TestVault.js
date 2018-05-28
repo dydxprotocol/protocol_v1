@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, it, beforeEach*/
-
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 

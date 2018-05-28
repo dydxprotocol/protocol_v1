@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, before, it*/
-
 const TestExponent = artifacts.require("TestExponent");
 const { expectThrow } = require('../helpers/ExpectHelper');
 

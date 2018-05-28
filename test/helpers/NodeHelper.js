@@ -1,5 +1,3 @@
-/*global web3*/
-
 const promisify = require("es6-promisify");
 
 async function getBlockNumber(transactionHash) {

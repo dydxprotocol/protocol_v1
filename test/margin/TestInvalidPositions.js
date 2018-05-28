@@ -1,5 +1,3 @@
-/*global artifacts, web3, contract, describe, it*/
-
 const expect = require('chai').expect;
 
 const BigNumber = require('bignumber.js');

@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, it*/
-
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");

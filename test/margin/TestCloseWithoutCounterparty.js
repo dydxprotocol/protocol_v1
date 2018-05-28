@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, it*/
-
 const Margin= artifacts.require('Margin');
 const TestCloseLoanDelegator = artifacts.require('TestCloseLoanDelegator');
 const ERC20Short = artifacts.require('ERC20Short');

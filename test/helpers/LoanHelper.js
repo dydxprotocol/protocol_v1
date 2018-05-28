@@ -1,5 +1,3 @@
-/*global artifacts, web3*/
-
 const BigNumber = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
