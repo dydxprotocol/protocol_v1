@@ -23,6 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { BorrowShared } from "./BorrowShared.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
 /**
@@ -85,17 +86,12 @@ library OpenPositionImpl {
             "OpenPositionImpl#openPositionImpl: positionId already exists"
         );
 
-        (uint256 heldTokenFromSell,) = BorrowShared.doBorrowAndSell(
-            state,
-            transaction,
-            orderData
-        );
+        doBorrowAndSell(state, transaction, orderData);
 
         // Before doStoreNewPosition() so that PositionOpened event is before Transferred events
         recordPositionOpened(
             msg.sender,
-            transaction,
-            heldTokenFromSell
+            transaction
         );
 
         doStoreNewPosition(
@@ -107,6 +103,35 @@ library OpenPositionImpl {
     }
 
     // ============ Helper Functions ============
+
+    function doBorrowAndSell(
+        MarginState.State storage state,
+        BorrowShared.Tx memory transaction,
+        bytes orderData
+    )
+        internal
+    {
+        BorrowShared.doPreSell(state, transaction);
+
+        if (transaction.depositInHeldToken) {
+            BorrowShared.doDepositHeldToken(state, transaction);
+        } else {
+            BorrowShared.doDepositOwedToken(state, transaction);
+        }
+
+        transaction.heldTokenFromSell = BorrowShared.doSell(
+            state,
+            transaction,
+            orderData,
+            MathHelpers.maxUint256()
+        );
+
+        transaction.collateralAmount = transaction.depositInHeldToken ?
+            transaction.heldTokenFromSell.add(transaction.depositAmount) :
+            transaction.heldTokenFromSell;
+
+        BorrowShared.doPostSell(state, transaction);
+    }
 
     function doStoreNewPosition(
         MarginState.State storage state,
@@ -137,8 +162,7 @@ library OpenPositionImpl {
 
     function recordPositionOpened(
         address trader,
-        BorrowShared.Tx transaction,
-        uint256 heldTokenReceived
+        BorrowShared.Tx transaction
     )
         internal
     {
@@ -151,7 +175,7 @@ library OpenPositionImpl {
             transaction.loanOffering.heldToken,
             transaction.loanOffering.feeRecipient,
             transaction.principal,
-            heldTokenReceived,
+            transaction.heldTokenFromSell,
             transaction.depositAmount,
             transaction.loanOffering.rates.interestRate,
             transaction.loanOffering.callTimeLimit,
@@ -179,7 +203,6 @@ library OpenPositionImpl {
             owner: addresses[0],
             principal: values256[7],
             lenderAmount: values256[7],
-            depositAmount: values256[8],
             loanOffering: parseLoanOffering(
                 addresses,
                 values256,
@@ -189,7 +212,9 @@ library OpenPositionImpl {
             ),
             exchangeWrapper: addresses[10],
             depositInHeldToken: depositInHeldToken,
-            desiredTokenFromSell: 0
+            depositAmount: values256[8],
+            collateralAmount: 0, // set later
+            heldTokenFromSell: 0 // set later
         });
 
         return transaction;

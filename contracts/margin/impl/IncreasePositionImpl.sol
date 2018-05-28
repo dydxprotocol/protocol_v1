@@ -80,6 +80,7 @@ library IncreasePositionImpl {
             MarginCommon.getPositionFromStorage(state, positionId);
 
         BorrowShared.Tx memory transaction = parseIncreasePositionTx(
+            state,
             position,
             positionId,
             addresses,
@@ -90,12 +91,9 @@ library IncreasePositionImpl {
             depositInHeldToken
         );
 
-        uint256 heldTokenFromSell = preStateUpdate(
-            state,
-            transaction,
-            position,
-            orderData
-        );
+        validate(transaction, position);
+
+        doBorrowAndSell(state, transaction, orderData);
 
         updateState(
             position,
@@ -108,8 +106,7 @@ library IncreasePositionImpl {
         // LOG EVENT
         recordPositionIncreased(
             transaction,
-            position,
-            heldTokenFromSell
+            position
         );
 
         return transaction.lenderAmount;
@@ -138,11 +135,10 @@ library IncreasePositionImpl {
             "IncreasePositionImpl#increaseWithoutCounterpartyImpl: Cannot increase after maxDuration"
         );
 
-        uint256 heldTokenAmount = getPositionMinimumHeldToken(
-            positionId,
+        uint256 heldTokenAmount = getCollateralNeededForAddedPrincipal(
             state,
-            principalToAdd,
-            position
+            positionId,
+            principalToAdd
         );
 
         Vault(state.VAULT).transferToVault(
@@ -180,38 +176,63 @@ library IncreasePositionImpl {
 
     // ============ Helper Functions ============
 
-    function preStateUpdate(
+    function doBorrowAndSell(
         MarginState.State storage state,
-        BorrowShared.Tx transaction,
-        MarginCommon.Position storage position,
+        BorrowShared.Tx memory transaction,
         bytes orderData
     )
         internal
-        returns (uint256 /* heldTokenFromSell */)
     {
-        validate(transaction, position);
+        BorrowShared.doPreSell(state, transaction);
 
-        uint256 positionMinimumHeldToken = setDepositAmount(
+        uint256 maxHeldTokenFromSell = MathHelpers.maxUint256();
+        if (!transaction.depositInHeldToken) {
+            transaction.depositAmount = getOwedTokenDeposit(transaction, orderData);
+            BorrowShared.doDepositOwedToken(state, transaction);
+            maxHeldTokenFromSell = transaction.collateralAmount;
+        }
+
+        transaction.heldTokenFromSell = BorrowShared.doSell(
             state,
             transaction,
-            position,
+            orderData,
+            maxHeldTokenFromSell
+        );
+
+        if (transaction.depositInHeldToken) {
+            require(
+                transaction.heldTokenFromSell <= transaction.collateralAmount,
+                "IncreasePositionImpl#doBorrowAndSell: DEX order gives too much heldToken"
+            );
+            transaction.depositAmount =
+                transaction.collateralAmount.sub(transaction.heldTokenFromSell);
+            BorrowShared.doDepositHeldToken(state, transaction);
+        }
+
+        BorrowShared.doPostSell(state, transaction);
+    }
+
+    function getOwedTokenDeposit(
+        BorrowShared.Tx transaction,
+        bytes orderData
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 totalOwedToken = ExchangeWrapper(transaction.exchangeWrapper).getExchangeCost(
+            transaction.loanOffering.heldToken,
+            transaction.loanOffering.owedToken,
+            transaction.collateralAmount,
             orderData
         );
 
-        (
-            uint256 heldTokenFromSell,
-            uint256 totalHeldTokenReceived
-        ) = BorrowShared.doBorrowAndSell(
-            state,
-            transaction,
-            orderData
+        require(
+            transaction.lenderAmount <= totalOwedToken,
+            "IncreasePositionImpl#getOwedTokenDeposit: Lender amount is more than required"
         );
 
-        // This should always be true unless there is a faulty ExchangeWrapper (i.e. the
-        // ExchangeWrapper traded at a different price from what it said it would)
-        assert(positionMinimumHeldToken == totalHeldTokenReceived);
-
-        return heldTokenFromSell;
+        return totalOwedToken.sub(transaction.lenderAmount);
     }
 
     function validate(
@@ -240,75 +261,21 @@ library IncreasePositionImpl {
         );
     }
 
-    function setDepositAmount(
+    function getCollateralNeededForAddedPrincipal(
         MarginState.State storage state,
-        BorrowShared.Tx transaction,
-        MarginCommon.Position storage position,
-        bytes orderData
-    )
-        internal
-        view // Does modify transaction
-        returns (uint256 /* positionMinimumHeldToken */)
-    {
-        // Amount of heldToken we need to add to the position to maintain the position's ratio
-        // of heldToken to owedToken
-        uint256 positionMinimumHeldToken = getPositionMinimumHeldToken(
-            transaction.positionId,
-            state,
-            transaction.principal,
-            position
-        );
-
-        if (transaction.depositInHeldToken) {
-            uint256 heldTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper)
-                .getTradeMakerTokenAmount(
-                    transaction.loanOffering.heldToken,
-                    transaction.loanOffering.owedToken,
-                    transaction.lenderAmount,
-                    orderData
-                );
-
-            require(
-                heldTokenFromSell <= positionMinimumHeldToken,
-                "IncreasePositionImpl#setDepositAmount: DEX Order gives too much heldToken"
-            );
-            transaction.depositAmount = positionMinimumHeldToken.sub(heldTokenFromSell);
-        } else {
-            uint256 owedTokenToSell = ExchangeWrapper(transaction.exchangeWrapper)
-                .getTakerTokenPrice(
-                    transaction.loanOffering.heldToken,
-                    transaction.loanOffering.owedToken,
-                    positionMinimumHeldToken,
-                    orderData
-                );
-
-            require(
-                transaction.lenderAmount <= owedTokenToSell,
-                "IncreasePositionImpl#setDepositAmount: Cannot sell borrowed owedToken with order"
-            );
-            transaction.depositAmount = owedTokenToSell.sub(transaction.lenderAmount);
-            transaction.desiredTokenFromSell = positionMinimumHeldToken;
-        }
-
-        return positionMinimumHeldToken;
-    }
-
-    function getPositionMinimumHeldToken(
         bytes32 positionId,
-        MarginState.State storage state,
-        uint256 principalAdded,
-        MarginCommon.Position storage position
+        uint256 principalToAdd
     )
         internal
         view
         returns (uint256)
     {
         uint256 heldTokenBalance = Vault(state.VAULT).balances(
-            positionId, position.heldToken);
+            positionId, state.positions[positionId].heldToken);
 
         return MathHelpers.getPartialAmountRoundedUp(
-            principalAdded,
-            position.principal,
+            principalToAdd,
+            state.positions[positionId].principal,
             heldTokenBalance
         );
     }
@@ -410,8 +377,7 @@ library IncreasePositionImpl {
 
     function recordPositionIncreased(
         BorrowShared.Tx transaction,
-        MarginCommon.Position storage position,
-        uint256 heldTokenFromSell
+        MarginCommon.Position storage position
     )
         internal
     {
@@ -425,7 +391,7 @@ library IncreasePositionImpl {
             transaction.loanOffering.feeRecipient,
             transaction.lenderAmount,
             transaction.principal,
-            heldTokenFromSell,
+            transaction.heldTokenFromSell,
             transaction.depositAmount,
             transaction.depositInHeldToken
         );
@@ -434,6 +400,7 @@ library IncreasePositionImpl {
     // ============ Parsing Functions ============
 
     function parseIncreasePositionTx(
+        MarginState.State storage state,
         MarginCommon.Position storage position,
         bytes32 positionId,
         address[7] addresses,
@@ -447,16 +414,17 @@ library IncreasePositionImpl {
         view
         returns (BorrowShared.Tx memory)
     {
+        uint256 principal = values256[7];
+
         BorrowShared.Tx memory transaction = BorrowShared.Tx({
             positionId: positionId,
             owner: position.owner,
-            principal: values256[7],
+            principal: principal,
             lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
                 position,
-                values256[7],
+                principal,
                 block.timestamp
             ),
-            depositAmount: 0,
             loanOffering: parseLoanOfferingFromIncreasePositionTx(
                 position,
                 addresses,
@@ -467,7 +435,13 @@ library IncreasePositionImpl {
             ),
             exchangeWrapper: addresses[6],
             depositInHeldToken: depositInHeldToken,
-            desiredTokenFromSell: 0
+            depositAmount: 0, // set later
+            collateralAmount: getCollateralNeededForAddedPrincipal(
+                state,
+                positionId,
+                principal
+            ),
+            heldTokenFromSell: 0 // set later
         });
 
         return transaction;

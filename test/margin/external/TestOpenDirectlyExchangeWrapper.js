@@ -15,7 +15,6 @@ const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { ADDRESSES, BYTES, ORDER_TYPE } = require('../../helpers/Constants');
 const { getPartialAmount } = require('../../helpers/MathHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
-const { transact } = require('../../helpers/ContractHelper');
 const {
   createOpenTx,
   callOpenPosition,
@@ -26,7 +25,6 @@ describe('OpenDirectlyExchangeWrapper', () => {
   describe('Constructor', () => {
     contract('OpenDirectlyExchangeWrapper', () => {
       it('sets constants correctly', async () => {
-
         const contract = await OpenDirectlyExchangeWrapper.new(
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1]
@@ -46,30 +44,13 @@ describe('OpenDirectlyExchangeWrapper', () => {
     });
   });
 
-  describe('#getTradeMakerTokenAmount', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('gives the correct maker token for a given order', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        const receivedMakerTokenAmount = await exchangeWrapper.getTradeMakerTokenAmount.call(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          1,
-          BYTES.EMPTY
-        );
-
-        expect(receivedMakerTokenAmount).to.be.bignumber.eq(0);
-      });
-    });
-  });
-
-  describe('#getTakerTokenPrice', () => {
+  describe('#getExchangeCost', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('gives the correct maker token for a given order', async () => {
         const exchangeWrapper = await setup(accounts);
 
         await expectThrow(
-          exchangeWrapper.getTakerTokenPrice.call(
+          exchangeWrapper.getExchangeCost.call(
             ADDRESSES.TEST[0],
             ADDRESSES.TEST[1],
             1,
@@ -77,7 +58,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
           )
         );
 
-        const requiredTakerTokenAmount = await exchangeWrapper.getTakerTokenPrice.call(
+        const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1],
           0,
@@ -163,37 +144,6 @@ describe('OpenDirectlyExchangeWrapper', () => {
         expect(traderHeld0.minus(traderHeld1)).to.be.bignumber.eq(openTx.depositAmount);
         expect(positionBalance).to.be.bignumber.eq(openTx.depositAmount);
         expect(positionPrincipal).to.be.bignumber.eq(openTx.principal);
-      });
-    });
-  });
-
-  describe('#exchangeForAmount', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('successfully executes a trade for a specific amount', async () => {
-        const exchangeWrapper = await setup(accounts);
-
-        const tradeOriginator = accounts[9];
-
-        await expectThrow(
-          exchangeWrapper.exchangeForAmount(
-            ADDRESSES.TEST[0],
-            ADDRESSES.TEST[1],
-            tradeOriginator,
-            1,
-            BYTES.EMPTY
-          )
-        );
-
-        const result = await transact(
-          exchangeWrapper.exchangeForAmount,
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1],
-          tradeOriginator,
-          0,
-          BYTES.EMPTY
-        );
-
-        expect(result.result).to.be.bignumber.eq(0);
       });
     });
   });
