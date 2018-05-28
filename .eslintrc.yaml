@@ -5,6 +5,12 @@ parser: babel-eslint
 env:
   node: true
   es6: true
+  mocha: true
+
+globals:
+  web3: true
+  artifacts: true
+  contract: true
 
 rules:
   valid-jsdoc: error

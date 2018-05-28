@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, before, it*/
-
 const chai = require('chai');
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');

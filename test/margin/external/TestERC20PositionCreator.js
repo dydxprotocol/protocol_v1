@@ -1,5 +1,3 @@
-/*global web3, artifacts, contract, describe, it, before*/
-
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());

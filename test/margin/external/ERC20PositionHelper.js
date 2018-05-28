@@ -1,5 +1,3 @@
-/*global*/
-
 const BigNumber = require('bignumber.js');
 
 const TOKENIZED_POSITION_STATE = {

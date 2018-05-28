@@ -1,5 +1,3 @@
-/*global artifacts, web3*/
-
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroEx = require('0x.js').ZeroEx;
 const Web3 = require('web3');

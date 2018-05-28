@@ -1,5 +1,3 @@
-/*global*/
-
 const BigNumber = require('bignumber.js');
 const { ADDRESSES } = require('../../helpers/Constants');
 

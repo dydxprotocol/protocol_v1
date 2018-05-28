@@ -1,5 +1,3 @@
-/*global artifacts, contract, describe, beforeEach, it*/
-
 const expect = require('chai').expect;
 
 const Margin = artifacts.require("Margin");

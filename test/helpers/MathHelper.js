@@ -1,5 +1,3 @@
-/*global web3*/
-
 const Web3 = require('web3');
 const chai = require('chai');
 const expect = chai.expect;

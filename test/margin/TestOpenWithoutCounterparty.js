@@ -1,5 +1,3 @@
-/*global artifacts, web3, contract, describe, it*/
-
 const chai = require('chai');
 const expect = chai.expect;
 const Web3 = require('web3');
