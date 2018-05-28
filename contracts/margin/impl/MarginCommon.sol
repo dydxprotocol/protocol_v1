@@ -120,16 +120,16 @@ library MarginCommon {
         state.positions[positionId].interestRate = position.interestRate;
         state.positions[positionId].interestPeriod = position.interestPeriod;
 
-        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
-            positionId,
-            (position.lender != loanPayer) ? loanPayer : address(0),
-            position.lender
-        );
-
         state.positions[positionId].owner = TransferInternal.grantPositionOwnership(
             positionId,
             (position.owner != msg.sender) ? msg.sender : address(0),
             position.owner
+        );
+
+        state.positions[positionId].lender = TransferInternal.grantLoanOwnership(
+            positionId,
+            (position.lender != loanPayer) ? loanPayer : address(0),
+            position.lender
         );
     }
 
