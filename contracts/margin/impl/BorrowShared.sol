@@ -57,6 +57,9 @@ library BorrowShared {
 
     // ============ Internal Implementation Functions ============
 
+    /**
+     * Validate the transaction before exchanging heldToken for owedToken
+     */
     function doPreSell(
         MarginState.State storage state,
         Tx memory transaction
@@ -70,9 +73,14 @@ library BorrowShared {
 
         getConsentIfSmartContractLender(transaction);
 
+        // Move owedTokens from lender to exchange wrapper
         pullOwedTokensFromLender(state, transaction);
     }
 
+    /**
+     * Validate the transaction after exchanging heldToken for owedToken, pay out fees, and store
+     * how much of the loan was used.
+     */
     function doPostSell(
         MarginState.State storage state,
         Tx memory transaction
@@ -81,7 +89,7 @@ library BorrowShared {
     {
         validateTxPostSell(transaction);
 
-        // Transfer feeTokens from trader and lender
+        //  feeTokens from trader and lender
         transferLoanFees(state, transaction);
 
         // Update global amounts for the loan
@@ -89,6 +97,10 @@ library BorrowShared {
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.lenderAmount);
     }
 
+    /**
+     * Sells the owedToken from the lender (and from the deposit if in owedToken) using the
+     * exchangeWrapper, then puts the resulting heldToken into the vault.
+     */
     function doSell(
         MarginState.State storage state,
         Tx transaction,
@@ -98,11 +110,13 @@ library BorrowShared {
         internal
         returns (uint256)
     {
+        // Sell just the lender's owedToken (if trader deposit is in heldToken)
+        // Otherwise sell both the lender's owedToken and the trader's deposit in owedToken
         uint256 sellAmount = transaction.depositInHeldToken ?
             transaction.lenderAmount :
             transaction.lenderAmount.add(transaction.depositAmount);
 
-        // Do the trade and transfer heldToken to Vault
+        // Do the trade, taking the maxAmount if more is returned
         uint256 heldTokenFromSell = Math.min256(
             maxAmount,
             ExchangeWrapper(transaction.exchangeWrapper).exchange(
@@ -114,6 +128,7 @@ library BorrowShared {
             )
         );
 
+        // Move the tokens to the vault
         Vault(state.VAULT).transferToVault(
             transaction.positionId,
             transaction.loanOffering.heldToken,
@@ -123,6 +138,43 @@ library BorrowShared {
 
         return heldTokenFromSell;
     }
+
+    /**
+     * Take the owedToken deposit from the trader and give it to the exchange wrapper so that it can
+     * sell it for heldToken.
+     */
+    function doDepositOwedToken(
+        MarginState.State storage state,
+        Tx transaction
+    )
+        internal
+    {
+        Proxy(state.PROXY).transferTokens(
+            transaction.loanOffering.owedToken,
+            msg.sender,
+            transaction.exchangeWrapper,
+            transaction.depositAmount
+        );
+    }
+
+    /**
+     * Take the heldToken deposit from the trader and moves it to the vault.
+     */
+    function doDepositHeldToken(
+        MarginState.State storage state,
+        Tx transaction
+    )
+        internal
+    {
+        Vault(state.VAULT).transferToVault(
+            transaction.positionId,
+            transaction.loanOffering.heldToken,
+            msg.sender,
+            transaction.depositAmount
+        );
+    }
+
+    // ============ internal Functions ============
 
     function validateTxPreSell(
         MarginState.State storage state,
@@ -348,36 +400,6 @@ library BorrowShared {
                 takerFee
             );
         }
-    }
-
-    function doDepositOwedToken(
-        MarginState.State storage state,
-        Tx transaction
-    )
-        internal
-        returns (uint256)
-    {
-        Proxy(state.PROXY).transferTokens(
-            transaction.loanOffering.owedToken,
-            msg.sender,
-            transaction.exchangeWrapper,
-            transaction.depositAmount
-        );
-    }
-
-    function doDepositHeldToken(
-        MarginState.State storage state,
-        Tx transaction
-    )
-        internal
-        returns (uint256)
-    {
-        Vault(state.VAULT).transferToVault(
-            transaction.positionId,
-            transaction.loanOffering.heldToken,
-            msg.sender,
-            transaction.depositAmount
-        );
     }
 
     function getLoanOfferingAddresses(

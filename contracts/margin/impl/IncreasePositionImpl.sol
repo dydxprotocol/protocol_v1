@@ -91,7 +91,7 @@ library IncreasePositionImpl {
             depositInHeldToken
         );
 
-        validate(transaction, position);
+        validateIncrease(state, transaction, position);
 
         doBorrowAndSell(state, transaction, orderData);
 
@@ -235,7 +235,8 @@ library IncreasePositionImpl {
         return totalOwedToken.sub(transaction.lenderAmount);
     }
 
-    function validate(
+    function validateIncrease(
+        MarginState.State storage state,
         BorrowShared.Tx transaction,
         MarginCommon.Position storage position
     )
@@ -243,8 +244,13 @@ library IncreasePositionImpl {
         view
     {
         require(
+            MarginCommon.containsPositionImpl(state, transaction.positionId),
+            "IncreasePositionImpl#validateIncrease: Position does not exist"
+        );
+
+        require(
             position.callTimeLimit <= transaction.loanOffering.callTimeLimit,
-            "IncreasePositionImpl#validate: Loan offering must have >= position callTimeLimit"
+            "IncreasePositionImpl#validateIncrease: Loan callTimeLimit is less than the position"
         );
 
         // require the position to end no later than the loanOffering's maximum acceptable end time
@@ -252,12 +258,12 @@ library IncreasePositionImpl {
         uint256 offeringEndTimestamp = block.timestamp.add(transaction.loanOffering.maxDuration);
         require(
             positionEndTimestamp <= offeringEndTimestamp,
-            "IncreasePositionImpl#validate: Loan offering must have >= position end timestamp"
+            "IncreasePositionImpl#validateIncrease: Loan end timestamp is less than the position"
         );
 
         require(
             block.timestamp < positionEndTimestamp,
-            "IncreasePositionImpl#validate: Cannot increase position after its maximum duration"
+            "IncreasePositionImpl#validateIncrease: Position has passed its maximum duration"
         );
     }
 
