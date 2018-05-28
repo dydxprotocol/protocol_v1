@@ -272,6 +272,11 @@ library BorrowShared {
             transaction.loanOffering.rates.minHeldToken
         );
 
+        uint256 expectedCollateral = transaction.depositInHeldToken ?
+            transaction.heldTokenFromSell.add(transaction.depositAmount) :
+            transaction.heldTokenFromSell;
+        assert(transaction.collateralAmount == expectedCollateral);
+
         require(
             transaction.collateralAmount >= loanOfferingMinimumHeldToken,
             "BorrowShared#validateTxPostSell: Loan offering minimum held token not met"
