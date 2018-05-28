@@ -89,7 +89,7 @@ library BorrowShared {
     {
         validateTxPostSell(transaction);
 
-        //  feeTokens from trader and lender
+        // Transfer feeTokens from trader and lender
         transferLoanFees(state, transaction);
 
         // Update global amounts for the loan
@@ -136,6 +136,9 @@ library BorrowShared {
             heldTokenFromSell
         );
 
+        // Update collateral amount
+        transaction.collateralAmount = transaction.collateralAmount.add(heldTokenFromSell);
+
         return heldTokenFromSell;
     }
 
@@ -158,7 +161,7 @@ library BorrowShared {
     }
 
     /**
-     * Take the heldToken deposit from the trader and moves it to the vault.
+     * Take the heldToken deposit from the trader and move it to the vault.
      */
     function doDepositHeldToken(
         MarginState.State storage state,
@@ -172,6 +175,9 @@ library BorrowShared {
             msg.sender,
             transaction.depositAmount
         );
+
+        // Update collateral amount
+        transaction.collateralAmount = transaction.collateralAmount.add(transaction.depositAmount);
     }
 
     // ============ internal Functions ============
@@ -260,10 +266,6 @@ library BorrowShared {
         internal
         pure
     {
-        uint256 heldTokenAsCollateral = transaction.depositInHeldToken ?
-            transaction.heldTokenFromSell.add(transaction.depositAmount) :
-            transaction.heldTokenFromSell;
-
         uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
             transaction.lenderAmount,
             transaction.loanOffering.rates.maxAmount,
@@ -271,7 +273,7 @@ library BorrowShared {
         );
 
         require(
-            heldTokenAsCollateral >= loanOfferingMinimumHeldToken,
+            transaction.collateralAmount >= loanOfferingMinimumHeldToken,
             "BorrowShared#validateTxPostSell: Loan offering minimum held token not met"
         );
     }

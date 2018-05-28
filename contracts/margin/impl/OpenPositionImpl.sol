@@ -126,10 +126,6 @@ library OpenPositionImpl {
             MathHelpers.maxUint256()
         );
 
-        transaction.collateralAmount = transaction.depositInHeldToken ?
-            transaction.heldTokenFromSell.add(transaction.depositAmount) :
-            transaction.heldTokenFromSell;
-
         BorrowShared.doPostSell(state, transaction);
     }
 
