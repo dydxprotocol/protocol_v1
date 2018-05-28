@@ -65,9 +65,9 @@
     "ganache-cli": "^6.1.0",
     "mocha-junit-reporter": "^1.17.0",
     "request-promise-native": "^1.0.5",
-    "solidity-coverage": "0.5.2",
+    "solidity-coverage": "0.5.4",
     "solium": "1.1.7",
-    "truffle": "4.1.9",
+    "truffle": "4.1.11",
     "web3": "1.0.0-beta.34"
   }
 }
