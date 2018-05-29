@@ -61,6 +61,7 @@ library TokenInteract {
 
         ERC20(token).approve(spender, amount);
 
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             // if/else based on number of bytes returned from transfer
             switch returndatasize
@@ -105,6 +106,7 @@ library TokenInteract {
 
         ERC20(token).transfer(to, amount);
 
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             // if/else based on number of bytes returned from transfer
             switch returndatasize
@@ -149,6 +151,7 @@ library TokenInteract {
 
         ERC20(token).transferFrom(from, to, amount);
 
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             // if/else based on number of bytes returned from transfer
             switch returndatasize
@@ -188,7 +191,7 @@ interface ERC20 {
         external
         view
         returns (uint256);
-        
+
     function allowance(
         address owner,
         address spender
