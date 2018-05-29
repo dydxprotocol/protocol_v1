@@ -111,6 +111,13 @@ library TokenInteract {
         );
     }
 
+    // ============ Private Helper-Functions ============
+
+    /**
+     * Checks the return value of the previous function up to 32 bytes. Returns true if the previous
+     * function returned a non-zero value or did not return a value at all. Returns false only if
+     * the previous function returned all zeroes in the first 32 bytes of the return data.
+     */
     function checkSuccess(
     )
         private
