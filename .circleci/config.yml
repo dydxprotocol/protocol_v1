@@ -89,8 +89,3 @@ workflows:
       - coverage:
           requires:
             - checkout_and_install
-          filters:
-            branches:
-              only:
-                - master
-                - /.*coverage/

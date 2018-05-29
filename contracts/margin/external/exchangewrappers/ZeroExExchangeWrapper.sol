@@ -101,11 +101,29 @@ contract ZeroExExchangeWrapper is
     {
         Order memory order = parseOrder(orderData);
 
-        uint256 receivedMakerTokenAmount = exchangeImpl(
+        require(
+            requestedFillAmount <= order.takerTokenAmount,
+            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
+        );
+
+        transferTakerFee(
+            order,
+            tradeOriginator,
+            requestedFillAmount
+        );
+
+        ensureAllowance(
+            takerToken,
+            ZERO_EX_PROXY,
+            requestedFillAmount
+        );
+
+        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
+
+        uint256 receivedMakerTokenAmount = doTrade(
             order,
             makerToken,
             takerToken,
-            tradeOriginator,
             requestedFillAmount
         );
 
@@ -118,72 +136,7 @@ contract ZeroExExchangeWrapper is
         return receivedMakerTokenAmount;
     }
 
-    function exchangeForAmount(
-        address makerToken,
-        address takerToken,
-        address tradeOriginator,
-        uint256 desiredMakerToken,
-        bytes orderData
-    )
-        external
-        onlyMargin
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        uint256 requiredTakerTokenAmount = MathHelpers.getPartialAmountRoundedUp(
-            order.takerTokenAmount,
-            order.makerTokenAmount,
-            desiredMakerToken
-        );
-
-        uint256 receivedMakerTokenAmount = exchangeImpl(
-            order,
-            makerToken,
-            takerToken,
-            tradeOriginator,
-            requiredTakerTokenAmount
-        );
-
-        assert(receivedMakerTokenAmount >= desiredMakerToken);
-
-        /**
-         * Version 1 implementation is to leave any excess received maker token locked in this
-         * this contract (forever). With normal token amounts (on the order of 10^18), it will
-         * not be worth the extra gas cost to send this extra token back to anyone.
-         */
-
-        ensureAllowance(
-            makerToken,
-            DYDX_PROXY,
-            desiredMakerToken
-        );
-
-        return requiredTakerTokenAmount;
-    }
-
-    // ============ Public Constant Functions ============
-
-    function getTradeMakerTokenAmount(
-        address /* makerToken */,
-        address /* takerToken */,
-        uint256 requestedFillAmount,
-        bytes orderData
-    )
-        external
-        view
-        returns (uint256)
-    {
-        Order memory order = parseOrder(orderData);
-
-        return MathHelpers.getPartialAmount(
-            requestedFillAmount,
-            order.takerTokenAmount,
-            order.makerTokenAmount
-        );
-    }
-
-    function getTakerTokenPrice(
+    function getExchangeCost(
         address /* makerToken */,
         address /* takerToken */,
         uint256 desiredMakerToken,
@@ -203,50 +156,6 @@ contract ZeroExExchangeWrapper is
     }
 
     // ============ Internal Functions ============
-
-    function exchangeImpl(
-        Order order,
-        address makerToken,
-        address takerToken,
-        address tradeOriginator,
-        uint256 requestedFillAmount
-    )
-        internal
-        returns (uint256)
-    {
-        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-        require(
-            requestedFillAmount <= order.takerTokenAmount,
-            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
-        );
-
-        transferTakerFee(
-            order,
-            tradeOriginator,
-            requestedFillAmount
-        );
-
-        ensureAllowance(
-            takerToken,
-            ZERO_EX_PROXY,
-            requestedFillAmount
-        );
-
-        uint256 filledTakerTokenAmount = doTrade(
-            order,
-            makerToken,
-            takerToken,
-            requestedFillAmount
-        );
-
-        uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
-            order.makerTokenAmount,
-            order.takerTokenAmount,
-            filledTakerTokenAmount
-        );
-
-        return receivedMakerTokenAmount;
-    }
 
     function transferTakerFee(
         Order order,
@@ -310,7 +219,13 @@ contract ZeroExExchangeWrapper is
             "ZeroExExchangeWrapper#doTrade: Could not fill requested amount"
         );
 
-        return filledTakerTokenAmount;
+        uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(
+            filledTakerTokenAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+
+        return receivedMakerTokenAmount;
     }
 
     function ensureAllowance(

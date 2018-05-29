@@ -19,6 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
@@ -46,51 +47,44 @@ library BorrowShared {
         address owner;
         uint256 principal;
         uint256 lenderAmount;
-        uint256 depositAmount;
         MarginCommon.LoanOffering loanOffering;
         address exchangeWrapper;
         bool depositInHeldToken;
-        uint256 desiredTokenFromSell;
+        uint256 depositAmount;
+        uint256 collateralAmount;
+        uint256 heldTokenFromSell;
     }
 
     // ============ Internal Implementation Functions ============
 
-    function doBorrowAndSell(
+    /**
+     * Validate the transaction before exchanging heldToken for owedToken
+     */
+    function doPreSell(
         MarginState.State storage state,
-        Tx memory transaction,
-        bytes orderData
+        Tx memory transaction
     )
         internal
-        returns (uint256, uint256)
     {
-        validateTx(
+        validateTxPreSell(
             state,
             transaction
         );
 
-        getConsentIfSmartContractLender(transaction, transaction.positionId);
+        getConsentIfSmartContractLender(transaction);
+    }
 
-        pullOwedTokensFromLender(state, transaction);
-
-        // Pull deposit from the msg.sender
-        uint256 heldTokenFromDeposit = transferDeposit(state, transaction, transaction.positionId);
-
-        uint256 sellAmount = transaction.depositInHeldToken ? transaction.lenderAmount
-            : transaction.lenderAmount.add(transaction.depositAmount);
-
-        uint256 heldTokenFromSell = executeSell(
-            state,
-            transaction,
-            orderData,
-            transaction.positionId,
-            sellAmount
-        );
-
-        uint256 totalHeldTokenReceived = heldTokenFromDeposit.add(heldTokenFromSell);
-        validateMinimumHeldToken(
-            transaction,
-            totalHeldTokenReceived
-        );
+    /**
+     * Validate the transaction after exchanging heldToken for owedToken, pay out fees, and store
+     * how much of the loan was used.
+     */
+    function doPostSell(
+        MarginState.State storage state,
+        Tx memory transaction
+    )
+        internal
+    {
+        validateTxPostSell(transaction);
 
         // Transfer feeTokens from trader and lender
         transferLoanFees(state, transaction);
@@ -98,14 +92,98 @@ library BorrowShared {
         // Update global amounts for the loan
         state.loanFills[transaction.loanOffering.loanHash] =
             state.loanFills[transaction.loanOffering.loanHash].add(transaction.lenderAmount);
+    }
 
-        return (
-            heldTokenFromSell,
-            totalHeldTokenReceived
+    /**
+     * Sells the owedToken from the lender (and from the deposit if in owedToken) using the
+     * exchangeWrapper, then puts the resulting heldToken into the vault. Only trades for
+     * maxHeldTokenToBuy of heldTokens at most.
+     */
+    function doSell(
+        MarginState.State storage state,
+        Tx transaction,
+        bytes orderData,
+        uint256 maxHeldTokenToBuy
+    )
+        internal
+        returns (uint256)
+    {
+        // Move owedTokens from lender to exchange wrapper
+        pullOwedTokensFromLender(state, transaction);
+
+        // Sell just the lender's owedToken (if trader deposit is in heldToken)
+        // Otherwise sell both the lender's owedToken and the trader's deposit in owedToken
+        uint256 sellAmount = transaction.depositInHeldToken ?
+            transaction.lenderAmount :
+            transaction.lenderAmount.add(transaction.depositAmount);
+
+        // Do the trade, taking only the maxHeldTokenToBuy if more is returned
+        uint256 heldTokenFromSell = Math.min256(
+            maxHeldTokenToBuy,
+            ExchangeWrapper(transaction.exchangeWrapper).exchange(
+                transaction.loanOffering.heldToken,
+                transaction.loanOffering.owedToken,
+                msg.sender,
+                sellAmount,
+                orderData
+            )
+        );
+
+        // Move the tokens to the vault
+        Vault(state.VAULT).transferToVault(
+            transaction.positionId,
+            transaction.loanOffering.heldToken,
+            transaction.exchangeWrapper,
+            heldTokenFromSell
+        );
+
+        // Update collateral amount
+        transaction.collateralAmount = transaction.collateralAmount.add(heldTokenFromSell);
+
+        return heldTokenFromSell;
+    }
+
+    /**
+     * Take the owedToken deposit from the trader and give it to the exchange wrapper so that it can
+     * be sold for heldToken.
+     */
+    function doDepositOwedToken(
+        MarginState.State storage state,
+        Tx transaction
+    )
+        internal
+    {
+        Proxy(state.PROXY).transferTokens(
+            transaction.loanOffering.owedToken,
+            msg.sender,
+            transaction.exchangeWrapper,
+            transaction.depositAmount
         );
     }
 
-    function validateTx(
+    /**
+     * Take the heldToken deposit from the trader and move it to the vault.
+     */
+    function doDepositHeldToken(
+        MarginState.State storage state,
+        Tx transaction
+    )
+        internal
+    {
+        Vault(state.VAULT).transferToVault(
+            transaction.positionId,
+            transaction.loanOffering.heldToken,
+            msg.sender,
+            transaction.depositAmount
+        );
+
+        // Update collateral amount
+        transaction.collateralAmount = transaction.collateralAmount.add(transaction.depositAmount);
+    }
+
+    // ============ internal Functions ============
+
+    function validateTxPreSell(
         MarginState.State storage state,
         Tx transaction
     )
@@ -116,14 +194,14 @@ library BorrowShared {
 
         require(
             transaction.principal > 0,
-            "BorrowShared#validateTx: Positions with 0 principal are not allowed"
+            "BorrowShared#validateTxPreSell: Positions with 0 principal are not allowed"
         );
 
         // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
         if (transaction.loanOffering.taker != address(0)) {
             require(
                 msg.sender == transaction.loanOffering.taker,
-                "BorrowShared#validateTx: Invalid loan offering taker"
+                "BorrowShared#validateTxPreSell: Invalid loan offering taker"
             );
         }
 
@@ -131,7 +209,7 @@ library BorrowShared {
         require(
             isValidSignature(transaction.loanOffering)
             || state.approvedLoans[transaction.loanOffering.loanHash],
-            "BorrowShared#validateTx: Invalid loan offering signature"
+            "BorrowShared#validateTxPreSell: Invalid loan offering signature"
         );
 
         // Validate the amount is <= than max and >= min
@@ -141,46 +219,69 @@ library BorrowShared {
         );
         require(
             transaction.lenderAmount.add(unavailable) <= transaction.loanOffering.rates.maxAmount,
-            "BorrowShared#validateTx: Loan offering does not have enough available"
+            "BorrowShared#validateTxPreSell: Loan offering does not have enough available"
         );
 
         require(
             transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
-            "BorrowShared#validateTx: Lender amount is below loan offering minimum amount"
+            "BorrowShared#validateTxPreSell: Lender amount is below loan offering minimum amount"
         );
 
         require(
             transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
-            "BorrowShared#validateTx: owedToken cannot be equal to heldToken"
+            "BorrowShared#validateTxPreSell: owedToken cannot be equal to heldToken"
         );
 
         require(
             transaction.owner != address(0),
-            "BorrowShared#validateTx: Position owner cannot be 0"
+            "BorrowShared#validateTxPreSell: Position owner cannot be 0"
         );
 
         require(
             transaction.loanOffering.owner != address(0),
-            "BorrowShared#validateTx: Loan owner cannot be 0"
+            "BorrowShared#validateTxPreSell: Loan owner cannot be 0"
         );
 
         require(
             transaction.loanOffering.expirationTimestamp > block.timestamp,
-            "BorrowShared#validateTx: Loan offering is expired"
+            "BorrowShared#validateTxPreSell: Loan offering is expired"
         );
 
         require(
             transaction.loanOffering.maxDuration > 0,
-            "BorrowShared#validateTx: Loan offering has 0 maximum duration"
+            "BorrowShared#validateTxPreSell: Loan offering has 0 maximum duration"
         );
 
         require(
             transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
-            "BorrowShared#validateTx: Loan offering interestPeriod > maxDuration"
+            "BorrowShared#validateTxPreSell: Loan offering interestPeriod > maxDuration"
         );
 
         // The minimum heldToken is validated after executing the sell
         // Position and loan ownership is validated in TransferInternal
+    }
+
+    function validateTxPostSell(
+        Tx transaction
+    )
+        internal
+        pure
+    {
+        uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.lenderAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.minHeldToken
+        );
+
+        uint256 expectedCollateral = transaction.depositInHeldToken ?
+            transaction.heldTokenFromSell.add(transaction.depositAmount) :
+            transaction.heldTokenFromSell;
+        assert(transaction.collateralAmount == expectedCollateral);
+
+        require(
+            transaction.collateralAmount >= loanOfferingMinimumHeldToken,
+            "BorrowShared#validateTxPostSell: Loan offering minimum held token not met"
+        );
     }
 
     function isValidSignature(
@@ -208,8 +309,7 @@ library BorrowShared {
     }
 
     function getConsentIfSmartContractLender(
-        Tx transaction,
-        bytes32 positionId
+        Tx transaction
     )
         internal
     {
@@ -220,7 +320,7 @@ library BorrowShared {
                 getLoanOfferingAddresses(transaction),
                 getLoanOfferingValues256(transaction),
                 getLoanOfferingValues32(transaction),
-                positionId
+                transaction.positionId
             );
         }
     }
@@ -267,33 +367,6 @@ library BorrowShared {
         );
     }
 
-    function transferDeposit(
-        MarginState.State storage state,
-        Tx transaction,
-        bytes32 positionId
-    )
-        internal
-        returns (uint256 /* heldTokenFromDeposit */)
-    {
-        if (transaction.depositInHeldToken) {
-            Vault(state.VAULT).transferToVault(
-                positionId,
-                transaction.loanOffering.heldToken,
-                msg.sender,
-                transaction.depositAmount
-            );
-            return transaction.depositAmount;
-        } else {
-            Proxy(state.PROXY).transferTokens(
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                transaction.exchangeWrapper,
-                transaction.depositAmount
-            );
-            return 0;
-        }
-    }
-
     function transferLoanFees(
         MarginState.State storage state,
         Tx transaction
@@ -335,67 +408,6 @@ library BorrowShared {
                 takerFee
             );
         }
-    }
-
-    function executeSell(
-        MarginState.State storage state,
-        Tx transaction,
-        bytes orderData,
-        bytes32 positionId,
-        uint256 sellAmount
-    )
-        internal
-        returns (uint256)
-    {
-        uint256 heldTokenReceived;
-        if (transaction.desiredTokenFromSell == 0) {
-            heldTokenReceived = ExchangeWrapper(transaction.exchangeWrapper).exchange(
-                transaction.loanOffering.heldToken,
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                sellAmount,
-                orderData
-            );
-        } else {
-            uint256 soldAmount = ExchangeWrapper(transaction.exchangeWrapper).exchangeForAmount(
-                transaction.loanOffering.heldToken,
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                transaction.desiredTokenFromSell,
-                orderData
-            );
-
-            assert(soldAmount == sellAmount);
-            heldTokenReceived = transaction.desiredTokenFromSell;
-        }
-
-        Vault(state.VAULT).transferToVault(
-            positionId,
-            transaction.loanOffering.heldToken,
-            transaction.exchangeWrapper,
-            heldTokenReceived
-        );
-
-        return heldTokenReceived;
-    }
-
-    function validateMinimumHeldToken(
-        Tx transaction,
-        uint256 totalHeldTokenReceived
-    )
-        internal
-        pure
-    {
-        uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.lenderAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minHeldToken
-        );
-
-        require(
-            totalHeldTokenReceived >= loanOfferingMinimumHeldToken,
-            "BorrowShared#validateMinimumHeldToken: Loan offering minimum held token not met"
-        );
     }
 
     function getLoanOfferingAddresses(

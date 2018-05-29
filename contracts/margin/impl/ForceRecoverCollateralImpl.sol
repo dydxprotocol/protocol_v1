@@ -82,9 +82,8 @@ library ForceRecoverCollateralImpl {
         );
 
         // Send the tokens
-        Vault vault = Vault(state.VAULT);
-        uint256 heldTokenRecovered = vault.balances(positionId, position.heldToken);
-        vault.transferFromVault(
+        uint256 heldTokenRecovered = MarginCommon.getPositionBalanceImpl(state, positionId);
+        Vault(state.VAULT).transferFromVault(
             positionId,
             position.heldToken,
             recipient,

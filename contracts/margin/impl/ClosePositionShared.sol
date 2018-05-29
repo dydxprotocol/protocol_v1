@@ -133,13 +133,8 @@ library ClosePositionShared {
         // The ending heldToken balance of the vault should be the starting heldToken balance
         // minus the available heldToken amount
         assert(
-            Vault(state.VAULT).balances(transaction.positionId, transaction.heldToken)
+            MarginCommon.getPositionBalanceImpl(state, transaction.positionId)
             == transaction.startingHeldTokenBalance.sub(transaction.availableHeldToken)
-        );
-
-        // There should be no owed token locked in the position
-        assert(
-            Vault(state.VAULT).balances(transaction.positionId, transaction.owedToken) == 0
         );
 
         return payout;
@@ -204,10 +199,8 @@ library ClosePositionShared {
         view
         returns (CloseTx memory)
     {
-        uint256 startingHeldTokenBalance = Vault(state.VAULT).balances(
-            positionId,
-            position.heldToken
-        );
+        uint256 startingHeldTokenBalance = MarginCommon.getPositionBalanceImpl(state, positionId);
+
         uint256 availableHeldToken = MathHelpers.getPartialAmount(
             closeAmount,
             position.principal,

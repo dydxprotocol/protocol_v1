@@ -114,11 +114,7 @@ contract PositionGetters is MarginStorage {
         view
         returns (uint256)
     {
-        if (!MarginCommon.containsPositionImpl(state, positionId)) {
-            return 0;
-        }
-
-        return Vault(state.VAULT).balances(positionId, state.positions[positionId].heldToken);
+        return MarginCommon.getPositionBalanceImpl(state, positionId);
     }
 
     /**
