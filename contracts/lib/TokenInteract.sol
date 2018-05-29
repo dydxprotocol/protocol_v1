@@ -57,32 +57,10 @@ library TokenInteract {
     )
         internal
     {
-        uint256 tokensApproved;
-
         ERC20(token).approve(spender, amount);
 
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            // if/else based on number of bytes returned from transfer
-            switch returndatasize
-
-            // transfer returned no bytes. assume success
-            case 0 {
-                tokensApproved := 1
-            }
-
-            // transfer returned bytes. assume at most 32
-            default {
-                // copy 32 bytes into scratch memory
-                returndatacopy(0x0, 0x0, 0x20)
-
-                // store those bytes into tokensTransferred
-                tokensApproved := mload(0x0)
-            }
-        }
-
         require(
-            tokensApproved != 0,
+            checkSuccess(),
             "TokenInteract#approve: Approval failed"
         );
     }
@@ -102,32 +80,10 @@ library TokenInteract {
             return;
         }
 
-        uint256 tokensTransferred;
-
         ERC20(token).transfer(to, amount);
 
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            // if/else based on number of bytes returned from transfer
-            switch returndatasize
-
-            // transfer returned no bytes. assume success
-            case 0 {
-                tokensTransferred := 1
-            }
-
-            // transfer returned bytes. assume at most 32
-            default {
-                // copy 32 bytes into scratch memory
-                returndatacopy(0x0, 0x0, 0x20)
-
-                // store those bytes into tokensTransferred
-                tokensTransferred := mload(0x0)
-            }
-        }
-
         require(
-            tokensTransferred != 0,
+            checkSuccess(),
             "TokenInteract#transfer: Transfer failed"
         );
     }
@@ -147,37 +103,50 @@ library TokenInteract {
             return;
         }
 
-        uint256 tokensTransferred;
-
         ERC20(token).transferFrom(from, to, amount);
+
+        require(
+            checkSuccess(),
+            "TokenInteract#transferFrom: TransferFrom failed"
+        );
+    }
+
+    function checkSuccess(
+    )
+        private
+        pure
+        returns (bool)
+    {
+        uint256 returnValue;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            // if/else based on number of bytes returned from transfer
+            // if/else based on number of bytes returned from last function call
             switch returndatasize
 
-            // transfer returned no bytes. assume success
+            // no bytes returned: assume success
             case 0 {
-                tokensTransferred := 1
+                returnValue := 1
             }
 
-            // transfer returned bytes. assume at most 32
+            // bytes returned: assume 32 bytes
             default {
                 // copy 32 bytes into scratch memory
                 returndatacopy(0x0, 0x0, 0x20)
 
-                // store those bytes into tokensTransferred
-                tokensTransferred := mload(0x0)
+                // store those bytes into returnValue
+                returnValue := mload(0x0)
             }
         }
 
-        require(
-            tokensTransferred != 0,
-            "TokenInteract#transferFrom: Transfer failed"
-        );
+        return returnValue != 0;
     }
 }
 
+/**
+ * We have to use a non-compliant interface to call ERC20 functions so that we dont automatically
+ * revert when calling tokens that have no return vaue for transfer(), transferFrom(), or approve().
+ */
 interface ERC20 {
     function totalSupply(
     )
