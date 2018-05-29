@@ -152,7 +152,7 @@ library TokenInteract {
 
 /**
  * We have to use a non-compliant interface to call ERC20 functions so that we dont automatically
- * revert when calling tokens that have no return vaue for transfer(), transferFrom(), or approve().
+ * revert when calling tokens that have no return value for transfer(), transferFrom(), or approve()
  */
 interface ERC20 {
     function totalSupply(
