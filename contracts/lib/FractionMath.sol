@@ -151,17 +151,30 @@ library FractionMath {
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction128 memory r)
     {
-        uint256 max = num > den ? num : den;
-        uint256 first128Bits = (max >> 128);
-        if (first128Bits != 0) {
-            first128Bits += 1;
-            num /= first128Bits;
-            den /= first128Bits;
-        }
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            // max equals the first 128 bits of the larger of den or num
 
-        assert(den != 0 && den < 2**128 && num < 2**128); // unit-tested
+            // if max is more than 128 bits
+            if or(
+                gt(num, 0xffffffffffffffffffffffffffffffff),
+                gt(den, 0xffffffffffffffffffffffffffffffff)
+            ) {
+                let max := den
+                if gt(num, den) { max := num }
+                // divide num and den by the min value such that both fit in 128 bits
+                max := add(div(max, 0x100000000000000000000000000000000), 1)
+                num := div(num, max)
+                den := div(den, max)
+            }
+
+            // assert non-zero denominator, assert num and den both fit into 128 bits
+            if iszero(den) { invalid() }
+            if gt(den, 0xffffffffffffffffffffffffffffffff) { invalid() }
+            if gt(num, 0xffffffffffffffffffffffffffffffff) { invalid() }
+        }
 
         return Fraction.Fraction128({
             num: uint128(num),
