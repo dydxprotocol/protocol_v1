@@ -19,6 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { SafeERC20 } from "./SafeERC20.sol";
+
 
 /**
  * @title TokenInteract
@@ -35,7 +37,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return ERC20(token).balanceOf(owner);
+        return SafeERC20(token).balanceOf(owner);
     }
 
     function allowance(
@@ -47,7 +49,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return ERC20(token).allowance(owner, spender);
+        return SafeERC20(token).allowance(owner, spender);
     }
 
     function approve(
@@ -57,7 +59,7 @@ library TokenInteract {
     )
         internal
     {
-        ERC20(token).approve(spender, amount);
+        SafeERC20(token).approve(spender, amount);
 
         require(
             checkSuccess(),
@@ -80,7 +82,7 @@ library TokenInteract {
             return;
         }
 
-        ERC20(token).transfer(to, amount);
+        SafeERC20(token).transfer(to, amount);
 
         require(
             checkSuccess(),
@@ -103,7 +105,7 @@ library TokenInteract {
             return;
         }
 
-        ERC20(token).transferFrom(from, to, amount);
+        SafeERC20(token).transferFrom(from, to, amount);
 
         require(
             checkSuccess(),
@@ -115,8 +117,7 @@ library TokenInteract {
 
     /**
      * Checks the return value of the previous function up to 32 bytes. Returns true if the previous
-     * function returned a non-zero value or did not return a value at all. Returns false only if
-     * the previous function returned all zeroes in the first 32 bytes of the return data.
+     * function returned 0 bytes or 32 bytes that are not all-zero.
      */
     function checkSuccess(
     )
@@ -124,75 +125,34 @@ library TokenInteract {
         pure
         returns (bool)
     {
-        uint256 returnValue;
+        uint256 returnValue = 0;
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            // if/else based on number of bytes returned from last function call
+            // check number of bytes returned from last function call
             switch returndatasize
 
             // no bytes returned: assume success
-            case 0 {
+            case 0x0 {
                 returnValue := 1
             }
 
-            // bytes returned: assume 32 bytes
-            default {
-                // copy 32 bytes into scratch memory
-                returndatacopy(0x0, 0x0, 0x20)
+            // 32 bytes returned: check if non-zero
+            case 0x20 {
+                // find some free memory
+                let m := mload(0x40)
+
+                // copy 32 bytes into free memory
+                returndatacopy(m, 0x0, 0x20)
 
                 // store those bytes into returnValue
-                returnValue := mload(0x0)
+                returnValue := mload(m)
             }
+
+            // not sure what was returned: dont mark as success
+            default { }
         }
 
         return returnValue != 0;
     }
-}
-
-/**
- * We have to use a non-compliant interface to call ERC20 functions so that we dont automatically
- * revert when calling tokens that have no return value for transfer(), transferFrom(), or approve()
- */
-interface ERC20 {
-    function totalSupply(
-    )
-        external
-        view
-        returns (uint256);
-
-    function balanceOf(
-        address who
-    )
-        external
-        view
-        returns (uint256);
-
-    function allowance(
-        address owner,
-        address spender
-    )
-        external
-        view
-        returns (uint256);
-
-    function transfer(
-        address to,
-        uint256 value
-    )
-        external;
-
-
-    function transferFrom(
-        address from,
-        address to,
-        uint256 value
-    )
-        external;
-
-    function approve(
-        address spender,
-        uint256 value
-    )
-        external;
 }
