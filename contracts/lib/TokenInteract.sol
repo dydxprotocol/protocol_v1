@@ -133,18 +133,24 @@ library TokenInteract {
             switch returndatasize
 
             // no bytes returned: assume success
-            case 0 {
+            case 0x0 {
                 returnValue := 1
             }
 
-            // not sure what was returned: dont mark as success
-            default {
+            // 32 bytes returned: check if non-zero
+            case 0x20 {
+                // find some free memory
+                let m := mload(0x40)
+
                 // copy 32 bytes into free memory
-                returndatacopy(0x0, 0x0, 0x20)
+                returndatacopy(m, 0x0, 0x20)
 
                 // store those bytes into returnValue
-                returnValue := mload(0x0)
+                returnValue := mload(m)
             }
+
+            // not sure what was returned: dont mark as success
+            default { }
         }
 
         return returnValue != 0;
