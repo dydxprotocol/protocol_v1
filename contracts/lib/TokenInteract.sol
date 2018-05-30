@@ -139,14 +139,11 @@ library TokenInteract {
 
             // 32 bytes returned: check if non-zero
             case 0x20 {
-                // find some free memory
-                let m := mload(0x40)
+                // copy 32 bytes into scratch space
+                returndatacopy(0x0, 0x0, 0x20)
 
-                // copy 32 bytes into free memory
-                returndatacopy(m, 0x0, 0x20)
-
-                // store those bytes into returnValue
-                returnValue := mload(m)
+                // load those bytes into returnValue
+                returnValue := mload(0x0)
             }
 
             // not sure what was returned: dont mark as success
