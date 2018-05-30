@@ -29,7 +29,8 @@
     "node": "ganache-cli",
     "debug": "truffle debug",
     "dydxlint": "python util/lintcontracts.py && python util/linttests.py",
-    "build:js": "./node_modules/.bin/babel src --out-dir build/ --source-maps inline"
+    "build:js": "./node_modules/.bin/babel src --out-dir build/ --source-maps inline",
+    "prepublishOnly": "npm run compile -- --all && npm run build:js"
   },
   "repository": {
     "type": "git",
