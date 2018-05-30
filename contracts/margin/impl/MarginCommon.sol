@@ -166,7 +166,7 @@ library MarginCommon {
     }
 
     function calculateOwedAmount(
-        Position memory position,
+        Position storage position,
         uint256 closeAmount,
         uint256 endTimestamp
     )
@@ -187,7 +187,7 @@ library MarginCommon {
      * Calculates time elapsed rounded up to the nearest interestPeriod
      */
     function calculateEffectiveTimeElapsed(
-        Position memory position,
+        Position storage position,
         uint256 timestamp
     )
         internal
@@ -210,12 +210,12 @@ library MarginCommon {
     }
 
     function calculateLenderAmountForIncreasePosition(
-        Position memory position,
+        Position storage position,
         uint256 principalToAdd,
         uint256 endTimestamp
     )
         internal
-        pure
+        view
         returns (uint256)
     {
         uint256 timeElapsed = calculateEffectiveTimeElapsedForNewLender(position, endTimestamp);
@@ -231,11 +231,11 @@ library MarginCommon {
      * Calculates time elapsed rounded down to the nearest interestPeriod
      */
     function calculateEffectiveTimeElapsedForNewLender(
-        Position memory position,
+        Position storage position,
         uint256 timestamp
     )
         internal
-        pure
+        view
         returns (uint256)
     {
         uint256 elapsed = timestamp.sub(position.startTimestamp);

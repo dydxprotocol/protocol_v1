@@ -88,14 +88,14 @@ library DepositCollateralImpl {
             depositAmount
         );
 
-        // cancel loan call if applicable
-        bool loanCanceled = false;
+        // cancel margin call if applicable
+        bool marginCallCanceled = false;
         uint256 requiredDeposit = position.requiredDeposit;
         if (position.callTimestamp > 0 && requiredDeposit > 0) {
             if (depositAmount >= requiredDeposit) {
                 position.requiredDeposit = 0;
                 position.callTimestamp = 0;
-                loanCanceled = true;
+                marginCallCanceled = true;
             } else {
                 position.requiredDeposit = position.requiredDeposit.sub(depositAmount);
             }
@@ -107,7 +107,7 @@ library DepositCollateralImpl {
             msg.sender
         );
 
-        if (loanCanceled) {
+        if (marginCallCanceled) {
             emit MarginCallCanceled(
                 positionId,
                 position.lender,

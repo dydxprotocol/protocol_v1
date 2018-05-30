@@ -181,7 +181,7 @@ library BorrowShared {
         transaction.collateralAmount = transaction.collateralAmount.add(transaction.depositAmount);
     }
 
-    // ============ internal Functions ============
+    // ============ Internal Functions ============
 
     function validateTxPreSell(
         MarginState.State storage state,
@@ -267,17 +267,16 @@ library BorrowShared {
         internal
         pure
     {
-        uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
-            transaction.lenderAmount,
-            transaction.loanOffering.rates.maxAmount,
-            transaction.loanOffering.rates.minHeldToken
-        );
-
         uint256 expectedCollateral = transaction.depositInHeldToken ?
             transaction.heldTokenFromSell.add(transaction.depositAmount) :
             transaction.heldTokenFromSell;
         assert(transaction.collateralAmount == expectedCollateral);
 
+        uint256 loanOfferingMinimumHeldToken = MathHelpers.getPartialAmountRoundedUp(
+            transaction.lenderAmount,
+            transaction.loanOffering.rates.maxAmount,
+            transaction.loanOffering.rates.minHeldToken
+        );
         require(
             transaction.collateralAmount >= loanOfferingMinimumHeldToken,
             "BorrowShared#validateTxPostSell: Loan offering minimum held token not met"

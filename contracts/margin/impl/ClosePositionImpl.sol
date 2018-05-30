@@ -50,7 +50,7 @@ library ClosePositionImpl {
         uint256 owedTokenPaidToLender,
         uint256 payoutAmount,
         uint256 buybackCostInHeldToken,
-        bool payoutInHeldToken
+        bool    payoutInHeldToken
     );
 
     // ============ Public Implementation Functions ============
@@ -122,6 +122,8 @@ library ClosePositionImpl {
         uint256 receivedOwedToken = 0;
         uint256 lenderOwedToken = transaction.owedTokenOwed;
 
+        // Setting exchangeWrapper to 0x000... indicates owedToken should be taken directly
+        // from msg.sender
         if (transaction.exchangeWrapper == address(0)) {
             require(
                 transaction.payoutInHeldToken,
@@ -172,8 +174,8 @@ library ClosePositionImpl {
         internal
         returns (uint256, uint256)
     {
-        // Ask the exchange wrapper what the price in heldToken to buy back the close
-        // amount of owedToken is
+        // Ask the exchange wrapper the cost in heldToken to buy back the close
+        // amount of owedToken
         uint256 buybackCostInHeldToken;
 
         if (transaction.payoutInHeldToken) {

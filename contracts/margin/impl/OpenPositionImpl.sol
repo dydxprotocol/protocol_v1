@@ -90,7 +90,6 @@ library OpenPositionImpl {
 
         // Before doStoreNewPosition() so that PositionOpened event is before Transferred events
         recordPositionOpened(
-            msg.sender,
             transaction
         );
 
@@ -157,14 +156,13 @@ library OpenPositionImpl {
     }
 
     function recordPositionOpened(
-        address trader,
         BorrowShared.Tx transaction
     )
         internal
     {
         emit PositionOpened(
             transaction.positionId,
-            trader,
+            msg.sender,
             transaction.loanOffering.payer,
             transaction.loanOffering.loanHash,
             transaction.loanOffering.owedToken,
@@ -263,9 +261,9 @@ library OpenPositionImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minHeldToken: values256[2],
-            interestRate: values32[2],
             lenderFee: values256[3],
             takerFee: values256[4],
+            interestRate: values32[2],
             interestPeriod: values32[3]
         });
 

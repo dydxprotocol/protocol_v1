@@ -433,15 +433,18 @@ library IncreasePositionImpl {
     {
         uint256 principal = values256[7];
 
+        uint256 lenderAmount = MarginCommon.calculateLenderAmountForIncreasePosition(
+            position,
+            principal,
+            block.timestamp
+        );
+        assert(lenderAmount >= principal);
+
         BorrowShared.Tx memory transaction = BorrowShared.Tx({
             positionId: positionId,
             owner: position.owner,
             principal: principal,
-            lenderAmount: MarginCommon.calculateLenderAmountForIncreasePosition(
-                position,
-                principal,
-                block.timestamp
-            ),
+            lenderAmount: lenderAmount,
             loanOffering: parseLoanOfferingFromIncreasePositionTx(
                 position,
                 addresses,
@@ -508,9 +511,9 @@ library IncreasePositionImpl {
             maxAmount: values256[0],
             minAmount: values256[1],
             minHeldToken: values256[2],
-            interestRate: position.interestRate,
             lenderFee: values256[3],
             takerFee: values256[4],
+            interestRate: position.interestRate,
             interestPeriod: position.interestPeriod
         });
 

@@ -185,54 +185,6 @@ library ClosePositionShared {
         );
     }
 
-    function parseCloseTx(
-        MarginState.State storage state,
-        MarginCommon.Position storage position,
-        bytes32 positionId,
-        uint256 closeAmount,
-        address payoutRecipient,
-        address exchangeWrapper,
-        bool payoutInHeldToken,
-        bool isWithoutCounterparty
-    )
-        internal
-        view
-        returns (CloseTx memory)
-    {
-        uint256 startingHeldTokenBalance = MarginCommon.getPositionBalanceImpl(state, positionId);
-
-        uint256 availableHeldToken = MathHelpers.getPartialAmount(
-            closeAmount,
-            position.principal,
-            startingHeldTokenBalance
-        );
-        uint256 owedTokenOwed = 0;
-
-        if (!isWithoutCounterparty) {
-            owedTokenOwed = MarginCommon.calculateOwedAmount(
-                position,
-                closeAmount,
-                block.timestamp
-            );
-        }
-
-        return CloseTx({
-            positionId: positionId,
-            originalPrincipal: position.principal,
-            closeAmount: closeAmount,
-            owedTokenOwed: owedTokenOwed,
-            startingHeldTokenBalance: startingHeldTokenBalance,
-            availableHeldToken: availableHeldToken,
-            payoutRecipient: payoutRecipient,
-            owedToken: position.owedToken,
-            heldToken: position.heldToken,
-            positionOwner: position.owner,
-            positionLender: position.lender,
-            exchangeWrapper: exchangeWrapper,
-            payoutInHeldToken: payoutInHeldToken
-        });
-    }
-
     function getApprovedAmount(
         MarginCommon.Position storage position,
         bytes32 positionId,
@@ -366,5 +318,55 @@ library ClosePositionShared {
         }
 
         return newCloseAmount;
+    }
+
+    // ============ Parsing Functions ============
+
+    function parseCloseTx(
+        MarginState.State storage state,
+        MarginCommon.Position storage position,
+        bytes32 positionId,
+        uint256 closeAmount,
+        address payoutRecipient,
+        address exchangeWrapper,
+        bool payoutInHeldToken,
+        bool isWithoutCounterparty
+    )
+        internal
+        view
+        returns (CloseTx memory)
+    {
+        uint256 startingHeldTokenBalance = MarginCommon.getPositionBalanceImpl(state, positionId);
+
+        uint256 availableHeldToken = MathHelpers.getPartialAmount(
+            closeAmount,
+            position.principal,
+            startingHeldTokenBalance
+        );
+        uint256 owedTokenOwed = 0;
+
+        if (!isWithoutCounterparty) {
+            owedTokenOwed = MarginCommon.calculateOwedAmount(
+                position,
+                closeAmount,
+                block.timestamp
+            );
+        }
+
+        return CloseTx({
+            positionId: positionId,
+            originalPrincipal: position.principal,
+            closeAmount: closeAmount,
+            owedTokenOwed: owedTokenOwed,
+            startingHeldTokenBalance: startingHeldTokenBalance,
+            availableHeldToken: availableHeldToken,
+            payoutRecipient: payoutRecipient,
+            owedToken: position.owedToken,
+            heldToken: position.heldToken,
+            positionOwner: position.owner,
+            positionLender: position.lender,
+            exchangeWrapper: exchangeWrapper,
+            payoutInHeldToken: payoutInHeldToken
+        });
     }
 }
