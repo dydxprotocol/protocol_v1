@@ -1,13 +1,12 @@
 {
   "name": "@dydxprotocol/protocol",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
-  "main": "index.js",
+  "main": "build/index.js",
   "files": [
     "build/",
     "contracts/",
     "truffle.js",
-    "index.js",
     "LICENSE",
     "README.md",
     ".babelrc"
@@ -29,7 +28,8 @@
     "deploycosts": "truffle test util/DeployGasCosts.js",
     "node": "ganache-cli",
     "debug": "truffle debug",
-    "dydxlint": "python util/lintcontracts.py && python util/linttests.py"
+    "dydxlint": "python util/lintcontracts.py && python util/linttests.py",
+    "build:js": "./node_modules/.bin/babel src --out-dir build/ --source-maps inline"
   },
   "repository": {
     "type": "git",
@@ -51,8 +51,10 @@
   "devDependencies": {
     "0x.js": "^0.37.2",
     "@digix/tempo": "^0.2.0",
+    "babel-cli": "^6.26.0",
     "babel-eslint": "^8.2.3",
     "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.7.0",
     "babel-preset-es2017": "^6.24.1",
     "babel-register": "^6.26.0",
     "bignumber.js": "^4.1.0",
