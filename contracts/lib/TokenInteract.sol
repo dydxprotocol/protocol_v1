@@ -19,7 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ParedERC20 } from "./ParedERC20.sol";
+import { GeneralERC20 } from "./GeneralERC20.sol";
 
 
 /**
@@ -37,7 +37,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return ParedERC20(token).balanceOf(owner);
+        return GeneralERC20(token).balanceOf(owner);
     }
 
     function allowance(
@@ -49,7 +49,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return ParedERC20(token).allowance(owner, spender);
+        return GeneralERC20(token).allowance(owner, spender);
     }
 
     function approve(
@@ -59,7 +59,7 @@ library TokenInteract {
     )
         internal
     {
-        ParedERC20(token).approve(spender, amount);
+        GeneralERC20(token).approve(spender, amount);
 
         require(
             checkSuccess(),
@@ -82,7 +82,7 @@ library TokenInteract {
             return;
         }
 
-        ParedERC20(token).transfer(to, amount);
+        GeneralERC20(token).transfer(to, amount);
 
         require(
             checkSuccess(),
@@ -105,7 +105,7 @@ library TokenInteract {
             return;
         }
 
-        ParedERC20(token).transferFrom(from, to, amount);
+        GeneralERC20(token).transferFrom(from, to, amount);
 
         require(
             checkSuccess(),
