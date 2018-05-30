@@ -85,6 +85,19 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
+      it('fails on invalid loan offer taker owner', async () => {
+        const openTx = await createOpenTx(accounts);
+
+        await issueTokensAndSetAllowances(openTx);
+        openTx.loanOffering.takerOwner = openTx.buyOrder.maker;
+        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+
+        const dydxMargin = await Margin.deployed();
+        await expectThrow(callOpenPosition(dydxMargin, openTx));
+      });
+    });
+
+    contract('Margin', accounts => {
       it('fails on too high amount', async () => {
         const openTx = await createOpenTx(accounts);
 

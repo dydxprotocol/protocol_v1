@@ -134,6 +134,7 @@ async function callOpenPosition(
     tx.loanOffering.signer,
     tx.loanOffering.owner,
     tx.loanOffering.taker,
+    tx.loanOffering.takerOwner,
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
@@ -273,6 +274,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     tx.loanOffering.payer,
     tx.loanOffering.signer,
     tx.loanOffering.taker,
+    tx.loanOffering.takerOwner,
     tx.loanOffering.feeRecipient,
     tx.loanOffering.lenderFeeTokenAddress,
     tx.loanOffering.takerFeeTokenAddress,
@@ -831,6 +833,7 @@ function formatLoanOffering(loanOffering) {
     loanOffering.signer,
     loanOffering.owner,
     loanOffering.taker,
+    loanOffering.takerOwner,
     loanOffering.feeRecipient,
     FeeToken.address,
     FeeToken.address

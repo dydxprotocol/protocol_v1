@@ -65,7 +65,7 @@ library IncreasePositionImpl {
     function increasePositionImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        address[7] addresses,
+        address[8] addresses,
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
@@ -420,7 +420,7 @@ library IncreasePositionImpl {
     function parseIncreasePositionTx(
         MarginCommon.Position storage position,
         bytes32 positionId,
-        address[7] addresses,
+        address[8] addresses,
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
@@ -450,7 +450,7 @@ library IncreasePositionImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapper: addresses[6],
+            exchangeWrapper: addresses[7],
             depositInHeldToken: depositInHeldToken,
             depositAmount: 0, // set later
             collateralAmount: 0, // set later
@@ -462,7 +462,7 @@ library IncreasePositionImpl {
 
     function parseLoanOfferingFromIncreasePositionTx(
         MarginCommon.Position storage position,
-        address[7] addresses,
+        address[8] addresses,
         uint256[8] values256,
         uint32[2] values32,
         uint8 sigV,
@@ -479,9 +479,10 @@ library IncreasePositionImpl {
             signer: addresses[1],
             owner: position.lender,
             taker: addresses[2],
-            feeRecipient: addresses[3],
-            lenderFeeToken: addresses[4],
-            takerFeeToken: addresses[5],
+            takerOwner: addresses[3],
+            feeRecipient: addresses[4],
+            lenderFeeToken: addresses[5],
+            takerFeeToken: addresses[6],
             rates: parseLoanOfferingRatesFromIncreasePositionTx(position, values256),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
