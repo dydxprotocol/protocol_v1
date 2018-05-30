@@ -181,13 +181,13 @@ library BorrowShared {
         transaction.collateralAmount = transaction.collateralAmount.add(transaction.depositAmount);
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Helper-Functions ============
 
     function validateTxPreSell(
         MarginState.State storage state,
         Tx transaction
     )
-        internal
+        private
         view
     {
         assert(transaction.lenderAmount >= transaction.principal);
@@ -264,7 +264,7 @@ library BorrowShared {
     function validateTxPostSell(
         Tx transaction
     )
-        internal
+        private
         pure
     {
         uint256 expectedCollateral = transaction.depositInHeldToken ?
@@ -286,7 +286,7 @@ library BorrowShared {
     function isValidSignature(
         MarginCommon.LoanOffering loanOffering
     )
-        internal
+        private
         pure
         returns (bool)
     {
@@ -310,7 +310,7 @@ library BorrowShared {
     function getConsentIfSmartContractLender(
         Tx transaction
     )
-        internal
+        private
     {
         // If the signer != payer, assume payer is a smart contract and ask it for consent
         if (transaction.loanOffering.signer != transaction.loanOffering.payer) {
@@ -331,7 +331,7 @@ library BorrowShared {
         uint32[4] values32,
         bytes32 positionId
     )
-        internal
+        private
     {
         address newContractAddr = LoanOfferingVerifier(contractAddr).verifyLoanOffering(
             addresses,
@@ -355,7 +355,7 @@ library BorrowShared {
         MarginState.State storage state,
         Tx transaction
     )
-        internal
+        private
     {
         // Transfer owedToken to the exchange wrapper
         Proxy(state.PROXY).transferTokens(
@@ -370,7 +370,7 @@ library BorrowShared {
         MarginState.State storage state,
         Tx transaction
     )
-        internal
+        private
     {
         // 0 fee address indicates no fees
         if (transaction.loanOffering.feeRecipient == address(0)) {
@@ -412,7 +412,7 @@ library BorrowShared {
     function getLoanOfferingAddresses(
         Tx transaction
     )
-        internal
+        private
         pure
         returns (address[9])
     {
@@ -432,7 +432,7 @@ library BorrowShared {
     function getLoanOfferingValues256(
         Tx transaction
     )
-        internal
+        private
         pure
         returns (uint256[7])
     {
@@ -450,7 +450,7 @@ library BorrowShared {
     function getLoanOfferingValues32(
         Tx transaction
     )
-        internal
+        private
         pure
         returns (uint32[4])
     {

@@ -234,7 +234,7 @@ library MarginCommon {
         Position storage position,
         uint256 timestamp
     )
-        internal
+        private
         view
         returns (uint256)
     {
@@ -280,7 +280,7 @@ library MarginCommon {
     function getValuesHash(
         LoanOffering loanOffering
     )
-        internal
+        private
         pure
         returns (bytes32)
     {

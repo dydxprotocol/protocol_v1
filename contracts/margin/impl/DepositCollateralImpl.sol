@@ -117,7 +117,7 @@ library DepositCollateralImpl {
         }
     }
 
-    // ============ Internal Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function depositCollateralOnBehalfOfRecurse(
         address contractAddr,
@@ -125,7 +125,7 @@ library DepositCollateralImpl {
         bytes32 positionId,
         uint256 amount
     )
-        internal
+        private
     {
         // no need to ask for permission
         if (depositor == contractAddr) {

@@ -101,14 +101,14 @@ library OpenPositionImpl {
         return transaction.positionId;
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function doBorrowAndSell(
         MarginState.State storage state,
         BorrowShared.Tx memory transaction,
         bytes orderData
     )
-        internal
+        private
     {
         BorrowShared.doPreSell(state, transaction);
 
@@ -132,7 +132,7 @@ library OpenPositionImpl {
         MarginState.State storage state,
         BorrowShared.Tx memory transaction
     )
-        internal
+        private
     {
         MarginCommon.storeNewPosition(
             state,
@@ -158,7 +158,7 @@ library OpenPositionImpl {
     function recordPositionOpened(
         BorrowShared.Tx transaction
     )
-        internal
+        private
     {
         emit PositionOpened(
             transaction.positionId,
@@ -188,7 +188,7 @@ library OpenPositionImpl {
         bytes32[2] sigRS,
         bool depositInHeldToken
     )
-        internal
+        private
         view
         returns (BorrowShared.Tx memory)
     {
@@ -221,7 +221,7 @@ library OpenPositionImpl {
         uint8 sigV,
         bytes32[2] sigRS
     )
-        internal
+        private
         view
         returns (MarginCommon.LoanOffering memory)
     {
@@ -253,7 +253,7 @@ library OpenPositionImpl {
         uint256[10] values256,
         uint32[4] values32
     )
-        internal
+        private
         pure
         returns (MarginCommon.LoanRates memory)
     {
@@ -274,7 +274,7 @@ library OpenPositionImpl {
         uint8 sigV,
         bytes32[2] sigRS
     )
-        internal
+        private
         pure
         returns (MarginCommon.Signature memory)
     {

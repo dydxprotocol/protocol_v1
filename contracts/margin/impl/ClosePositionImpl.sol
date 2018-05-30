@@ -108,14 +108,14 @@ library ClosePositionImpl {
         );
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function returnOwedTokensToLender(
         MarginState.State storage state,
         ClosePositionShared.CloseTx memory transaction,
         bytes memory orderData
     )
-        internal
+        private
         returns (uint256, uint256)
     {
         uint256 buybackCostInHeldToken = 0;
@@ -171,7 +171,7 @@ library ClosePositionImpl {
         ClosePositionShared.CloseTx transaction,
         bytes memory orderData
     )
-        internal
+        private
         returns (uint256, uint256)
     {
         // Ask the exchange wrapper the cost in heldToken to buy back the close
@@ -226,7 +226,7 @@ library ClosePositionImpl {
         uint256 buybackCostInHeldToken,
         uint256 payout
     )
-        internal
+        private
     {
         emit PositionClosed(
             transaction.positionId,

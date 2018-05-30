@@ -236,7 +236,7 @@ library LoanImpl {
         );
     }
 
-    // ============ Internal Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function marginCallOnBehalfOfRecurse(
         address contractAddr,
@@ -244,7 +244,7 @@ library LoanImpl {
         bytes32 positionId,
         uint256 requiredDeposit
     )
-        internal
+        private
         returns (bool)
     {
         // no need to ask for permission
@@ -274,7 +274,7 @@ library LoanImpl {
         address who,
         bytes32 positionId
     )
-        internal
+        private
         returns (bool)
     {
         // no need to ask for permission
@@ -304,7 +304,7 @@ library LoanImpl {
         uint256[7] values256,
         uint32[4]  values32
     )
-        internal
+        private
         view
         returns (MarginCommon.LoanOffering memory)
     {
@@ -340,7 +340,7 @@ library LoanImpl {
         uint256[7] values256,
         uint32[4] values32
     )
-        internal
+        private
         pure
         returns (MarginCommon.LoanRates memory)
     {

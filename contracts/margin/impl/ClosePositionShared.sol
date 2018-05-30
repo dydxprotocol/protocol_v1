@@ -184,6 +184,8 @@ library ClosePositionShared {
             isWithoutCounterparty
         );
     }
+    
+    // ============ Private Helper-Functions ============
 
     function getApprovedAmount(
         MarginCommon.Position storage position,
@@ -192,7 +194,7 @@ library ClosePositionShared {
         address payoutRecipient,
         bool requireLenderApproval
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 newAmount = Math.min256(requestedAmount, position.principal);
@@ -233,7 +235,7 @@ library ClosePositionShared {
         bytes32 positionId,
         uint256 closeAmount
     )
-        internal
+        private
         returns (uint256)
     {
         // no need to ask for permission
@@ -280,7 +282,7 @@ library ClosePositionShared {
         bytes32 positionId,
         uint256 closeAmount
     )
-        internal
+        private
         returns (uint256)
     {
         // no need to ask for permission
@@ -332,7 +334,7 @@ library ClosePositionShared {
         bool payoutInHeldToken,
         bool isWithoutCounterparty
     )
-        internal
+        private
         view
         returns (CloseTx memory)
     {
