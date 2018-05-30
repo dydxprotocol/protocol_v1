@@ -171,7 +171,7 @@ library MarginCommon {
         uint256 endTimestamp
     )
         internal
-        pure
+        view
         returns (uint256)
     {
         uint256 timeElapsed = calculateEffectiveTimeElapsed(position, endTimestamp);
@@ -191,7 +191,7 @@ library MarginCommon {
         uint256 timestamp
     )
         internal
-        pure
+        view
         returns (uint256)
     {
         uint256 elapsed = timestamp.sub(position.startTimestamp);
