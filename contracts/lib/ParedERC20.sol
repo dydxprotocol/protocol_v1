@@ -21,14 +21,14 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title SafeERC20
+ * @title ParedERC20
  * @author dYdX
  *
  * Interface for using ERC20 Tokens. We have to use a special interface to call ERC20 functions so
  * that we dont automatically revert when calling non-compliant tokens that have no return value for
  * transfer(), transferFrom(), or approve().
  */
-interface SafeERC20 {
+interface ParedERC20 {
     function totalSupply(
     )
         external

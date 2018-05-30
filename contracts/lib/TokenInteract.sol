@@ -19,7 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeERC20 } from "./SafeERC20.sol";
+import { ParedERC20 } from "./ParedERC20.sol";
 
 
 /**
@@ -37,7 +37,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return SafeERC20(token).balanceOf(owner);
+        return ParedERC20(token).balanceOf(owner);
     }
 
     function allowance(
@@ -49,7 +49,7 @@ library TokenInteract {
         view
         returns (uint256)
     {
-        return SafeERC20(token).allowance(owner, spender);
+        return ParedERC20(token).allowance(owner, spender);
     }
 
     function approve(
@@ -59,7 +59,7 @@ library TokenInteract {
     )
         internal
     {
-        SafeERC20(token).approve(spender, amount);
+        ParedERC20(token).approve(spender, amount);
 
         require(
             checkSuccess(),
@@ -82,7 +82,7 @@ library TokenInteract {
             return;
         }
 
-        SafeERC20(token).transfer(to, amount);
+        ParedERC20(token).transfer(to, amount);
 
         require(
             checkSuccess(),
@@ -105,7 +105,7 @@ library TokenInteract {
             return;
         }
 
-        SafeERC20(token).transferFrom(from, to, amount);
+        ParedERC20(token).transferFrom(from, to, amount);
 
         require(
             checkSuccess(),
@@ -133,24 +133,18 @@ library TokenInteract {
             switch returndatasize
 
             // no bytes returned: assume success
-            case 0x0 {
+            case 0 {
                 returnValue := 1
             }
 
-            // 32 bytes returned: check if non-zero
-            case 0x20 {
-                // find some free memory
-                let m := mload(0x40)
-
+            // not sure what was returned: dont mark as success
+            default {
                 // copy 32 bytes into free memory
-                returndatacopy(m, 0x0, 0x20)
+                returndatacopy(0x0, 0x0, 0x20)
 
                 // store those bytes into returnValue
-                returnValue := mload(m)
+                returnValue := mload(0x0)
             }
-
-            // not sure what was returned: dont mark as success
-            default { }
         }
 
         return returnValue != 0;
