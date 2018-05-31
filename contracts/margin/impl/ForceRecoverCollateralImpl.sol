@@ -91,7 +91,8 @@ library ForceRecoverCollateralImpl {
         );
 
         // Delete the position
-        // NOTE: Since position is a storage pointer, this will also set all fields to 0
+        // NOTE: Since position is a storage pointer, this will also set all fields on
+        //       the position variable to 0
         MarginCommon.cleanupPosition(
             state,
             positionId
