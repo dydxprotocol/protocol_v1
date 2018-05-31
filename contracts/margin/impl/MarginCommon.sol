@@ -62,7 +62,7 @@ library MarginCommon {
         address   signer;
         address   owner;
         address   taker;
-        address   takerOwner;
+        address   positionOwner;
         address   feeRecipient;
         address   lenderFeeToken;
         address   takerFeeToken;
@@ -270,7 +270,7 @@ library MarginCommon {
                 loanOffering.signer,
                 loanOffering.owner,
                 loanOffering.taker,
-                loanOffering.takerOwner,
+                loanOffering.positionOwner,
                 loanOffering.feeRecipient,
                 loanOffering.lenderFeeToken,
                 loanOffering.takerFeeToken,

@@ -85,11 +85,11 @@ describe('#openPosition', () => {
     });
 
     contract('Margin', accounts => {
-      it('fails on invalid loan offer taker owner', async () => {
+      it('fails on invalid loan offer position owner', async () => {
         const openTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(openTx);
-        openTx.loanOffering.takerOwner = openTx.buyOrder.maker;
+        openTx.loanOffering.positionOwner = openTx.buyOrder.maker;
         openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         const dydxMargin = await Margin.deployed();

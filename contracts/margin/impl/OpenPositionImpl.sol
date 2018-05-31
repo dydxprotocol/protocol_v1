@@ -234,7 +234,7 @@ library OpenPositionImpl {
             signer: addresses[4],
             owner: addresses[5],
             taker: addresses[6],
-            takerOwner: addresses[7],
+            positionOwner: addresses[7],
             feeRecipient: addresses[8],
             lenderFeeToken: addresses[9],
             takerFeeToken: addresses[10],

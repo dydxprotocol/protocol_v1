@@ -470,7 +470,7 @@ describe('#openPosition', () => {
     it('allows a specified owner to own the position', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
-      openTx.loanOffering.takerOwner = openTx.trader;
+      openTx.loanOffering.positionOwner = openTx.trader;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
       await issueTokensAndSetAllowances(openTx);

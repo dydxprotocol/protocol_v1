@@ -479,7 +479,7 @@ library IncreasePositionImpl {
             signer: addresses[1],
             owner: position.lender,
             taker: addresses[2],
-            takerOwner: addresses[3],
+            positionOwner: addresses[3],
             feeRecipient: addresses[4],
             lenderFeeToken: addresses[5],
             takerFeeToken: addresses[6],

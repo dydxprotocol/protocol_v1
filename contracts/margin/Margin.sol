@@ -88,7 +88,7 @@ contract Margin is
      *  [4]  = loan signer
      *  [5]  = loan owner
      *  [6]  = loan taker
-     *  [7]  = loan taker owner
+     *  [7]  = loan position owner
      *  [8]  = loan fee recipient
      *  [9]  = loan lender fee token
      *  [10]  = loan taker fee token
@@ -202,7 +202,7 @@ contract Margin is
      *  [0]  = loan payer
      *  [1]  = loan signer
      *  [2]  = loan taker
-     *  [3]  = loan taker owner
+     *  [3]  = loan position owner
      *  [4]  = loan fee recipient
      *  [5]  = loan lender fee token
      *  [6]  = loan taker fee token
@@ -493,7 +493,7 @@ contract Margin is
      *  [3] = loan signer
      *  [4] = loan owner
      *  [5] = loan taker
-     *  [6] = loan taker owner
+     *  [6] = loan position owner
      *  [7] = loan fee recipient
      *  [8] = loan lender fee token
      *  [9] = loan taker fee token
@@ -550,7 +550,7 @@ contract Margin is
      *  [3] = loan signer
      *  [4] = loan owner
      *  [5] = loan taker
-     *  [6] = loan taker owner
+     *  [6] = loan position owner
      *  [7] = loan fee recipient
      *  [8] = loan lender fee token
      *  [9] = loan taker fee token

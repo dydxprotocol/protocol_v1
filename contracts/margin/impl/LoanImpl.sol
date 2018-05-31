@@ -315,7 +315,7 @@ library LoanImpl {
             signer: addresses[3],
             owner: addresses[4],
             taker: addresses[5],
-            takerOwner: addresses[6],
+            positionOwner: addresses[6],
             feeRecipient: addresses[7],
             lenderFeeToken: addresses[8],
             takerFeeToken: addresses[9],
