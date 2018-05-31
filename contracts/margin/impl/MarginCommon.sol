@@ -227,32 +227,6 @@ library MarginCommon {
         );
     }
 
-    /**
-     * Calculates time elapsed rounded down to the nearest interestPeriod
-     */
-    function calculateEffectiveTimeElapsedForNewLender(
-        Position storage position,
-        uint256 timestamp
-    )
-        private
-        view
-        returns (uint256)
-    {
-        uint256 elapsed = timestamp.sub(position.startTimestamp);
-
-        // round down to interestPeriod
-        uint256 period = position.interestPeriod;
-        if (period > 1) {
-            elapsed = elapsed.div(period).mul(period);
-        }
-
-        // bound by maxDuration
-        return Math.min256(
-            elapsed,
-            position.maxDuration
-        );
-    }
-
     function getLoanOfferingHash(
         LoanOffering loanOffering
     )
@@ -273,30 +247,6 @@ library MarginCommon {
                 loanOffering.lenderFeeToken,
                 loanOffering.takerFeeToken,
                 getValuesHash(loanOffering)
-            )
-        );
-    }
-
-    function getValuesHash(
-        LoanOffering loanOffering
-    )
-        private
-        pure
-        returns (bytes32)
-    {
-        return keccak256(
-            abi.encodePacked(
-                loanOffering.rates.maxAmount,
-                loanOffering.rates.minAmount,
-                loanOffering.rates.minHeldToken,
-                loanOffering.rates.lenderFee,
-                loanOffering.rates.takerFee,
-                loanOffering.expirationTimestamp,
-                loanOffering.salt,
-                loanOffering.callTimeLimit,
-                loanOffering.maxDuration,
-                loanOffering.rates.interestRate,
-                loanOffering.rates.interestPeriod
             )
         );
     }
@@ -350,5 +300,57 @@ library MarginCommon {
         );
 
         return position;
+    }
+
+    // ============ Private Helper-Functions ============
+
+    /**
+     * Calculates time elapsed rounded down to the nearest interestPeriod
+     */
+    function calculateEffectiveTimeElapsedForNewLender(
+        Position storage position,
+        uint256 timestamp
+    )
+        private
+        view
+        returns (uint256)
+    {
+        uint256 elapsed = timestamp.sub(position.startTimestamp);
+
+        // round down to interestPeriod
+        uint256 period = position.interestPeriod;
+        if (period > 1) {
+            elapsed = elapsed.div(period).mul(period);
+        }
+
+        // bound by maxDuration
+        return Math.min256(
+            elapsed,
+            position.maxDuration
+        );
+    }
+
+    function getValuesHash(
+        LoanOffering loanOffering
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                loanOffering.rates.maxAmount,
+                loanOffering.rates.minAmount,
+                loanOffering.rates.minHeldToken,
+                loanOffering.rates.lenderFee,
+                loanOffering.rates.takerFee,
+                loanOffering.expirationTimestamp,
+                loanOffering.salt,
+                loanOffering.callTimeLimit,
+                loanOffering.maxDuration,
+                loanOffering.rates.interestRate,
+                loanOffering.rates.interestPeriod
+            )
+        );
     }
 }

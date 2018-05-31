@@ -170,20 +170,6 @@ library FractionMath {
     }
 
     /**
-     * Asserts that a Fraction128 is valid (i.e. the denominator is non-zero)
-     *
-     * @param  a  The Fraction128 to validate
-     */
-    function validate(
-        Fraction.Fraction128 memory a
-    )
-        internal
-        pure
-    {
-        assert(a.den != 0); // unit-tested
-    }
-
-    /**
      * Returns an in-memory copy of a Fraction128
      *
      * @param  a  The Fraction128 to copy
@@ -198,5 +184,21 @@ library FractionMath {
     {
         validate(a);
         return Fraction.Fraction128({ num: a.num, den: a.den });
+    }
+
+    // ============ Private Helper-Functions ============
+
+    /**
+     * Asserts that a Fraction128 is valid (i.e. the denominator is non-zero)
+     *
+     * @param  a  The Fraction128 to validate
+     */
+    function validate(
+        Fraction.Fraction128 memory a
+    )
+        private
+        pure
+    {
+        assert(a.den != 0); // unit-tested
     }
 }

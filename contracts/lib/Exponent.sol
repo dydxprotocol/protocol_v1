@@ -172,23 +172,13 @@ library Exponent {
         return result;
     }
 
-    // ============ Private Helper-Functions ============
-
-    function ONE()
-        private
-        pure
-        returns (Fraction.Fraction128 memory)
-    {
-        return Fraction.Fraction128({ num: 1, den: 1 });
-    }
-
     /**
      * Returns a fraction roughly equaling E^((1/2)^x) for integer x
      */
     function getPrecomputedEToTheHalfToThe(
         uint256 x
     )
-        private
+        internal
         pure
         returns (Fraction.Fraction128 memory)
     {
@@ -241,7 +231,7 @@ library Exponent {
     function getPrecomputedEToThe(
         uint256 x
     )
-        private
+        internal
         pure
         returns (Fraction.Fraction128 memory)
     {
@@ -286,5 +276,15 @@ library Exponent {
             num: MAX_NUMERATOR,
             den: denominator
         });
+    }
+
+    // ============ Private Helper-Functions ============
+
+    function ONE()
+        private
+        pure
+        returns (Fraction.Fraction128 memory)
+    {
+        return Fraction.Fraction128({ num: 1, den: 1 });
     }
 }
