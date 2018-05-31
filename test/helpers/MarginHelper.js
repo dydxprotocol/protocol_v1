@@ -782,7 +782,7 @@ async function callCancelLoanOffer(
   ) {
     expectLog(tx.logs[0], 'LoanOfferingCanceled', {
       loanHash: loanOffering.loanHash,
-      lender: loanOffering.payer,
+      signer: loanOffering.signer,
       feeRecipient: loanOffering.feeRecipient,
       cancelAmount: canceledAmount2.minus(canceledAmount1)
     });
@@ -815,7 +815,7 @@ async function callApproveLoanOffering(
   if (!wasApproved) {
     expectLog(tx.logs[0], 'LoanOfferingApproved', {
       loanHash: loanOffering.loanHash,
-      lender: loanOffering.payer,
+      signer: loanOffering.signer,
       feeRecipient: loanOffering.feeRecipient
     });
   }

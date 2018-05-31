@@ -120,7 +120,7 @@ contract MarginEvents {
      */
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
-        address indexed lender,
+        address indexed signer,
         address indexed feeRecipient,
         uint256 cancelAmount
     );
@@ -130,7 +130,7 @@ contract MarginEvents {
      */
     event LoanOfferingApproved(
         bytes32 indexed loanHash,
-        address indexed lender,
+        address indexed signer,
         address indexed feeRecipient
     );
 

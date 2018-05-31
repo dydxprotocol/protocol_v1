@@ -70,7 +70,7 @@ library LoanImpl {
      */
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
-        address indexed payer,
+        address indexed signer,
         address indexed feeRecipient,
         uint256 cancelAmount
     );
@@ -80,7 +80,7 @@ library LoanImpl {
      */
     event LoanOfferingApproved(
         bytes32 indexed loanHash,
-        address indexed payer,
+        address indexed signer,
         address indexed feeRecipient
     );
 
@@ -192,7 +192,7 @@ library LoanImpl {
 
         emit LoanOfferingCanceled(
             loanOffering.loanHash,
-            loanOffering.payer,
+            loanOffering.signer,
             loanOffering.feeRecipient,
             amountToCancel
         );
@@ -231,7 +231,7 @@ library LoanImpl {
 
         emit LoanOfferingApproved(
             loanOffering.loanHash,
-            loanOffering.payer,
+            loanOffering.signer,
             loanOffering.feeRecipient
         );
     }
