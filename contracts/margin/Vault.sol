@@ -22,6 +22,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Proxy } from "./Proxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
@@ -37,6 +38,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  * a tokenFallback or equivalent function (See ERC223, ERC777, etc.)
  */
 contract Vault is
+    Ownable,
     StaticAccessControlled,
     HasNoEther,
     HasNoContracts
@@ -65,6 +67,32 @@ contract Vault is
         StaticAccessControlled(gracePeriod)
     {
         PROXY = proxy;
+    }
+
+    // ============ Owner-Only State-Changing Functions ============
+
+    /**
+     * Allows the owner to withdraw any excess tokens sent to the vault by unconventional means,
+     * including (but not limited-to) token airdrops. Any tokens moved to the vault by PROXY will be
+     * accounted for and will not be withdrawable by this function.
+     * @param  token  ERC20 token address
+     * @param  to     Address to transfer tokens to
+     * @return        Amount of tokens withdrawn
+     */
+    function withdrawExcessToken(
+        address token,
+        address to
+    )
+        external
+        onlyOwner
+        returns (uint256)
+    {
+        uint256 balance = TokenInteract.balanceOf(token, address(this));
+        uint256 withdrawableBalance = balance.sub(totalBalances[token]);
+
+        TokenInteract.transfer(token, to, withdrawableBalance);
+
+        return withdrawableBalance;
     }
 
     // ============ Authorized-Only State-Changing Functions ============

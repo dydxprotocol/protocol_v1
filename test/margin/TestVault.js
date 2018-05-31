@@ -10,10 +10,14 @@ const {
   validateStaticAccessControlledConstants
 } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
+const { transact } = require('../helpers/ContractHelper');
+const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 
 contract('Vault', accounts => {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
+  const num2 = new BigNumber(7);
+  const num3 = new BigNumber(5);
   let proxy, vault, tokenA, tokenB;
 
   beforeEach('migrate smart contracts and set permissions', async () => {
@@ -211,6 +215,104 @@ contract('Vault', accounts => {
       expect(balance).to.be.bignumber.equal(0);
       expect(totalBalance).to.be.bignumber.equal(0);
       expect(tokenBalance).to.be.bignumber.equal(0);
+    });
+  });
+
+  describe('#withdrawExcessToken', () => {
+    const holder1 = accounts[4];
+    const id = 'TEST_ID';
+    const id2 = 'TEST_ID_2';
+
+    let balances = {
+      vault: {
+        id: 0,
+        id2: 0,
+        total: 0,
+        actual: 0
+      }
+    };
+
+    async function checkBalances(token) {
+      [
+        balances.vault.id,
+        balances.vault.id2,
+        balances.vault.total,
+        balances.vault.actual
+      ] = await Promise.all([
+        vault.balances.call(id, token.address),
+        vault.balances.call(id2, token.address),
+        vault.totalBalances.call(token.address),
+        token.balanceOf.call(vault.address)
+      ]);
+    }
+
+    it('successfully transfers all tokens with no holdings', async () => {
+      await tokenB.issueTo(vault.address, num1);
+      await checkBalances(tokenB);
+      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id2).to.be.bignumber.equal(0);
+      expect(balances.vault.total).to.be.bignumber.equal(0);
+      expect(balances.vault.actual).to.be.bignumber.equal(num1);
+
+      const nToken = await transact(vault.withdrawExcessToken, tokenB.address, ADDRESSES.TEST[0]);
+      expect(nToken.result).to.be.bignumber.equal(num1);
+
+      await checkBalances(tokenB);
+      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id2).to.be.bignumber.equal(0);
+      expect(balances.vault.total).to.be.bignumber.equal(0);
+      expect(balances.vault.actual).to.be.bignumber.equal(0);
+
+      const withdrawnToken = await tokenB.balanceOf.call(ADDRESSES.TEST[0]);
+      expect(withdrawnToken).to.be.bignumber.equal(num1);
+    });
+
+    it('successfully transfers tokens with holdings', async () => {
+      await Promise.all([
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1.plus(num2),
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
+      ]);
+
+      await Promise.all([
+        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
+        vault.transferToVault(id2, tokenA.address, holder1, num2, { from: accounts[1] }),
+        tokenA.issueTo(vault.address, num3)
+      ])
+
+      await checkBalances(tokenA);
+      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id2).to.be.bignumber.equal(num2);
+      expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2).plus(num3));
+
+      const nToken = await transact(vault.withdrawExcessToken, tokenA.address, ADDRESSES.TEST[0]);
+      expect(nToken.result).to.be.bignumber.equal(num3);
+
+      await checkBalances(tokenA);
+      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id2).to.be.bignumber.equal(num2);
+      expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
+
+      const withdrawnToken = await tokenA.balanceOf.call(ADDRESSES.TEST[0]);
+      expect(withdrawnToken).to.be.bignumber.equal(num3);
+
+      const nToken2 = await transact(vault.withdrawExcessToken, tokenA.address, ADDRESSES.TEST[0]);
+      expect(nToken2.result).to.be.bignumber.equal(0);
+
+      await checkBalances(tokenA);
+      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id2).to.be.bignumber.equal(num2);
+      expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
+
+      const withdrawnToken2 = await tokenA.balanceOf.call(ADDRESSES.TEST[0]);
+      expect(withdrawnToken2).to.be.bignumber.equal(num3);
     });
   });
 
