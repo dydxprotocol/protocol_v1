@@ -32,7 +32,7 @@ contract('PositionGetters', (accounts) => {
   let salt = 872354;
 
 
-  // ============ Helper Functions ============
+  // ============ Helper-Functions ============
 
   function expectInterest(amount, interestRate, numDays, expected) {
     const exp = Math.exp(interestRate.div("1e8").mul(numDays).div(365));

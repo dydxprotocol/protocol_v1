@@ -91,12 +91,12 @@ contract ERC20PositionCreator is
         return tokenAddress;
     }
 
-    // ============ Internal Abstract Functions ============
+    // ============ Private Abstract Functions ============
 
     function createTokenContract(
         address from,
         bytes32 positionId
     )
-        internal
+        private
         returns (address);
 }

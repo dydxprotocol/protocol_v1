@@ -108,7 +108,7 @@ library ForceRecoverCollateralImpl {
         return heldTokenRecovered;
     }
 
-    // ============ Private Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function forceRecoverCollateralOnBehalfOfRecurse(
         address contractAddr,

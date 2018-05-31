@@ -363,7 +363,7 @@ contract ERC721MarginLoan is
         return owner;
     }
 
-    // ============ Internal Helper Functions ============
+    // ============ Private Functions ============
 
     /**
      * Implementation of withdrawing owedToken for a particular positionId
@@ -374,7 +374,7 @@ contract ERC721MarginLoan is
     function withdrawImpl(
         bytes32 positionId
     )
-        internal
+        private
         returns (uint256)
     {
         address owner = ownerOfPosition(positionId);
@@ -419,7 +419,7 @@ contract ERC721MarginLoan is
         address owner,
         bytes32 positionId
     )
-        internal
+        private
     {
         delete owedTokensRepaidSinceLastWithdraw[positionId];
         delete owedTokenAddress[positionId];
@@ -432,7 +432,7 @@ contract ERC721MarginLoan is
     function ownerOfPosition(
         bytes32 positionId
     )
-        internal
+        private
         view
         returns (address)
     {

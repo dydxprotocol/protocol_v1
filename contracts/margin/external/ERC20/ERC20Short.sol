@@ -66,13 +66,13 @@ contract ERC20Short is ERC20Position {
             ).decimals();
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Functions ============
 
     function getTokenAmountOnAdd(
         bytes32 /* positionId */,
         uint256 principalAdded
     )
-        internal
+        private
         view
         returns (uint256)
     {
@@ -84,7 +84,7 @@ contract ERC20Short is ERC20Position {
         uint256 balance,
         uint256 positionPrincipal
     )
-        internal
+        private
         view
         returns (
             uint256 /* tokenAmount */,
@@ -99,7 +99,7 @@ contract ERC20Short is ERC20Position {
     }
 
     function getNameIntro()
-        internal
+        private
         pure
         returns (bytes)
     {

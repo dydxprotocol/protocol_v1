@@ -136,7 +136,7 @@ contract Vault is
         validateBalance(token);
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     /**
      * Verifies that this contract is in control of at least as many tokens as accounted for
@@ -146,7 +146,7 @@ contract Vault is
     function validateBalance(
         address token
     )
-        internal
+        private
         view
     {
         // The actual balance could be greater than totalBalances[token] because anyone

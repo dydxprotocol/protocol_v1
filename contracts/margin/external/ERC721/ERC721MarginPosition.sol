@@ -198,6 +198,12 @@ contract ERC721MarginPosition is
         burnClosedTokenInternal(positionId);
     }
 
+    /**
+     * Burn several invalid tokens. Callable by anyone. Used to burn unecessary tokens for clarity
+     * and to free up storage. Throws if the position is not yet closed.
+     *
+     * @param  positionIds  Unique IDs of the positions
+     */
     function burnClosedTokenMultiple(
         bytes32[] positionIds
     )
@@ -324,12 +330,12 @@ contract ERC721MarginPosition is
         return ownerOfPosition(positionId);
     }
 
-    // ============ Internal Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function burnClosedTokenInternal(
         bytes32 positionId
     )
-        internal
+        private
     {
         require(
             Margin(DYDX_MARGIN).isPositionClosed(positionId),
@@ -341,7 +347,7 @@ contract ERC721MarginPosition is
     function ownerOfPosition(
         bytes32 positionId
     )
-        internal
+        private
         view
         returns (address)
     {

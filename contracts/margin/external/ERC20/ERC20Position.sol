@@ -407,12 +407,12 @@ contract ERC20Position is
         return address(this);
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Helper-Functions ============
 
     function withdrawImpl(
         address who
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 value = balanceOf(who);
@@ -444,7 +444,7 @@ contract ERC20Position is
 
     function setStateClosedIfClosed(
     )
-        internal
+        private
     {
         // If in OPEN state, but the position is closed, set to CLOSED state
         if (state == State.OPEN && Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
@@ -462,7 +462,7 @@ contract ERC20Position is
         address payoutRecipient,
         uint256 requestedAmount
     )
-        internal
+        private
         returns (uint256)
     {
         emit ClosedByTrustedParty(closer, payoutRecipient);
@@ -477,7 +477,7 @@ contract ERC20Position is
         uint256 requestedAmount,
         uint256 positionPrincipal
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 balance = balances[closer];
@@ -512,13 +512,13 @@ contract ERC20Position is
         return allowedCloseAmount;
     }
 
-    // ============ Internal Abstract Functions ============
+    // ============ Private Abstract Functions ============
 
     function getTokenAmountOnAdd(
         bytes32 positionId,
         uint256 principalAdded
     )
-        internal
+        private
         view
         returns (uint256);
 
@@ -527,7 +527,7 @@ contract ERC20Position is
         uint256 balance,
         uint256 positionPrincipal
     )
-        internal
+        private
         view
         returns (
             uint256 /* tokenAmount */,
@@ -535,7 +535,7 @@ contract ERC20Position is
         );
 
     function getNameIntro()
-        internal
+        private
         pure
         returns (bytes);
 }
