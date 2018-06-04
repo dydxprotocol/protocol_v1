@@ -91,6 +91,39 @@ def lintCommentHeader(dir, filepath, solidityVersion):
     return everythingOkay
 
 
+def lintFunctionComments(dir, filepath):
+    fileName = os.path.basename(filepath)
+    everythingOkay = True
+    inBlockComment = False
+    seenBlank = False
+    alreadyComplained = False
+    i = 1
+    for line in open(filepath, 'r').readlines():
+        errorSuffix = " (" + fileName + " : " + str(i) + ")"
+        lstripped = line.lstrip()
+        if ('param ' in lstripped and 'param  ' not in lstripped):
+            print "Param has only one space" + errorSuffix
+        if ('param   ' in lstripped):
+            print "Param has more than two spaces" + errorSuffix
+        if (not inBlockComment and lstripped.startswith('/**')):
+            inBlockComment = True
+            seenBlank = False
+            alreadyComplained = False
+        if (inBlockComment and lstripped.rstrip() == '*'):
+            seenBlank = True
+        if (inBlockComment and not seenBlank):
+            if ('*  param' in lstripped or '* @param' in lstripped):
+                if (not alreadyComplained):
+                    alreadyComplained = True
+                    everythingOkay = False
+                    print "No blank line before param list in function comment" + errorSuffix
+        if (inBlockComment and line.rstrip().endswith('*/')):
+            inBlockComment = False
+        i += 1
+
+    return everythingOkay
+
+
 def main():
     files = []
     start_dir = os.getcwd()
@@ -109,6 +142,7 @@ def main():
 
     everythingOkay = True
     for file in files:
+        everythingOkay &= lintFunctionComments(dir_path, file)
         everythingOkay &= lintImports(dir_path, file)
         everythingOkay &= lintCommentHeader(dir_path, file, "0.4.24")
 

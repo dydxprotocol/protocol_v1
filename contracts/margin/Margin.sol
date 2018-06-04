@@ -590,9 +590,9 @@ contract Margin is
     }
 
     /**
-     * Transfer ownership of a loan to a new address. This new address will be entitled
-     * to all payouts for this loan. Only callable by the lender for a position. If the "who"
-     * param is a contract, it must implement the LoanOwner interface.
+     * Transfer ownership of a loan to a new address. This new address will be entitled to all
+     * payouts for this loan. Only callable by the lender for a position. If "who" is a contract, it
+     * must implement the LoanOwner interface.
      *
      * @param  positionId  Unique ID for the position
      * @param  who         New owner of the loan
@@ -612,8 +612,8 @@ contract Margin is
 
     /**
      * Transfer ownership of a position to a new address. This new address will be entitled to all
-     * payouts. Only callable by the owner of a position. If the "who" param is a contract, it must
-     * implement the PositionOwner interface.
+     * payouts. Only callable by the owner of a position. If "who" is a contract, it must implement
+     * the PositionOwner interface.
      *
      * @param  positionId  Unique ID for the position
      * @param  who         New owner of the position
