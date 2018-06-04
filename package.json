@@ -71,6 +71,6 @@
     "solidity-coverage": "0.5.4",
     "solium": "1.1.7",
     "truffle": "4.1.11",
-    "web3": "^1.0.0-beta2"
+    "web3": "1.0.0-beta.34"
   }
 }
