@@ -22,6 +22,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Proxy } from "./Proxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
@@ -37,11 +38,20 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  * a tokenFallback or equivalent function (See ERC223, ERC777, etc.)
  */
 contract Vault is
+    Ownable,
     StaticAccessControlled,
     HasNoEther,
     HasNoContracts
 {
     using SafeMath for uint256;
+
+    // ============ Events ============
+
+    event ExcessTokensWithdrawn(
+        address indexed token,
+        address indexed to,
+        address caller
+    );
 
     // ============ State Variables ============
 
@@ -67,10 +77,46 @@ contract Vault is
         PROXY = proxy;
     }
 
+    // ============ Owner-Only State-Changing Functions ============
+
+    /**
+     * Allows the owner to withdraw any excess tokens sent to the vault by unconventional means,
+     * including (but not limited-to) token airdrops. Any tokens moved to the vault by PROXY will be
+     * accounted for and will not be withdrawable by this function.
+     *
+     * @param  token  ERC20 token address
+     * @param  to     Address to transfer tokens to
+     * @return        Amount of tokens withdrawn
+     */
+    function withdrawExcessToken(
+        address token,
+        address to
+    )
+        external
+        onlyOwner
+        returns (uint256)
+    {
+        uint256 actualBalance = TokenInteract.balanceOf(token, address(this));
+        uint256 accountedBalance = totalBalances[token];
+        uint256 withdrawableBalance = actualBalance.sub(accountedBalance);
+
+        require(
+            withdrawableBalance != 0,
+            "Vault#withdrawExcessToken: Withdrawable token amount must be non-zero"
+        );
+
+        TokenInteract.transfer(token, to, withdrawableBalance);
+
+        emit ExcessTokensWithdrawn(token, to, msg.sender);
+
+        return withdrawableBalance;
+    }
+
     // ============ Authorized-Only State-Changing Functions ============
 
     /**
      * Transfers tokens from an address (that has approved the proxy) to the vault.
+     *
      * @param  id      The vault which will receive the tokens
      * @param  token   ERC20 token address
      * @param  from    Address from which the tokens will be taken
