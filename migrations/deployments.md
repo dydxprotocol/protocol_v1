@@ -1,25 +1,27 @@
-## Kovan Deployment - 5/22/18:
+## Kovan Deployment - 6/4/18:
 
 ### Main
-- Margin:                          0x874aa80493fbbe1d6b9ed2c92874f3ff00ba53f0
-- Proxy:                           0x1ff95a36d5dab129428d6f38fbcda162be6a2964
-- Vault:                           0x8c6013b2b84f21b8c0500e553f7f0e51221e5d9f
+- Margin:                          [0xeec4c7032ecddc47182134933662f9b06b4fdc64](https://kovan.etherscan.io/address/0xeec4c7032ecddc47182134933662f9b06b4fdc64)
+- Proxy:                           [0x39a5d693857e22306182a49a88122ed85d3865bc](https://kovan.etherscan.io/address/0x39a5d693857e22306182a49a88122ed85d3865bc)
+- Vault:                           [0xa7e5c1fb69769f53e0212b7e697a4477f8b88bcb](https://kovan.etherscan.io/address/0xa7e5c1fb69769f53e0212b7e697a4477f8b88bcb)
 
 ### Second Layer
-- DutchAuctionCloser:              0x53a1e0fb1083c6096a3f89384f6411bac77e3029
-- ERC721MarginPosition:            0xf531ce8dc0ea17a445ac161121fdcefcc5699ac9
-- ZeroExExchangeWrapper:           0xa3ee452eccf565b725dbfea7674bde2cb944b84a
-- ERC20ShortCreator:               0xf0b50623e834858e17173d39824d543c6f93135a
-- ERC20LongCreator:                0xe8cfe95d8f306189dafa36e3a6dcd3e241286338
-- SharedLoanCreator:               0xa0be299ff84068c174a3a1fd957a0c0abab03f72
+- DutchAuctionCloser:              [0x746e9b178c9af049bbab25110f8f98907d36463e](https://kovan.etherscan.io/address/0x746e9b178c9af049bbab25110f8f98907d36463e)
+- ERC721MarginPosition:            [0xdf5eef0c021b60ab770b37a81a58678fe4dd823a](https://kovan.etherscan.io/address/0xdf5eef0c021b60ab770b37a81a58678fe4dd823a)
+- ZeroExExchangeWrapper:           [0xefa5f55da2bab6a314a589dabbb675d01986d5f1](https://kovan.etherscan.io/address/0xefa5f55da2bab6a314a589dabbb675d01986d5f1)
+- OpenDirectlyExchangeWrapper:     [0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36](https://kovan.etherscan.io/address/0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36)
+- ERC20ShortCreator:               [0xccca61c82ad2f6fb676cd4630d4b90b684684abc](https://kovan.etherscan.io/address/0xccca61c82ad2f6fb676cd4630d4b90b684684abc)
+- ERC20LongCreator:                [0x46c1686f889be57641fa6364f79f1cb057d3769c](https://kovan.etherscan.io/address/0x46c1686f889be57641fa6364f79f1cb057d3769c)
+- SharedLoanCreator:               [0xea725598cf0b5f2ddccaf989fd599f625b66e1f8](https://kovan.etherscan.io/address/0xea725598cf0b5f2ddccaf989fd599f625b66e1f8)
 
 ### Impl
-- TransferImpl:                    0x65547fb0c2c69dd24aea8ff97d6ec42a68b31fa9
-- LoanImpl:                        0x97c0aae5e57f5d7fae3387a31996b6b666088bc3
-- InterestImpl:                    0xca55dc6627313ec5e3ff8eaae5a2b57ac3e686a9
-- ForceRecoverCollateralImpl:      0xe4b7c15212a2e50b6e8bd5f4a31dc33b118533c5
-- OpenPositionImpl:                0x53c23b4a7c30f976214d87917e51b94548ae9142
-- DepositCollateralImpl:           0xa241e6f1baded18f8b9260a8e001033e59d45d2c
-- ClosePositionImpl:               0x73f61047254062a5f2909721992ad4a828e0e77f
-- CloseWithoutCounterpartyImpl:    0x6dc6d60220ea4d0fc5a20d592a0f22374fb4ff3c
-- IncreasePositionImpl:            0xf1a245686edd2b258053b3ddca0d8138dd09682b
+- TransferImpl:                    [0xa5d5e97cb3d3d6856d877770335d3669faa9f61c](https://kovan.etherscan.io/address/0xa5d5e97cb3d3d6856d877770335d3669faa9f61c)
+- LoanImpl:                        [0x854f7a04682dfa50b8ff4dfde924d3cac627411e](https://kovan.etherscan.io/address/0x854f7a04682dfa50b8ff4dfde924d3cac627411e)
+- InterestImpl:                    [0x3d2732ba0c448dd882de9030b03809fc733be464](https://kovan.etherscan.io/address/0x3d2732ba0c448dd882de9030b03809fc733be464)
+- ForceRecoverCollateralImpl:      [0x84b7ac86388fdef0a8a02e72da38cc9e259abded](https://kovan.etherscan.io/address/0x84b7ac86388fdef0a8a02e72da38cc9e259abded)
+- OpenPositionImpl:                [0x82ca6a6205ba693fd682ef8137b63c9fda27c51f](https://kovan.etherscan.io/address/0x82ca6a6205ba693fd682ef8137b63c9fda27c51f)
+- DepositCollateralImpl:           [0xd84f4998e5637c3cb4acf946f9f4a89a2e28f860](https://kovan.etherscan.io/address/0xd84f4998e5637c3cb4acf946f9f4a89a2e28f860)
+- ClosePositionImpl:               [0xa04738b43b1ac08ed6854becb025eba333c098f1](https://kovan.etherscan.io/address/0xa04738b43b1ac08ed6854becb025eba333c098f1)
+- CloseWithoutCounterpartyImpl:    [0x4cc0d5b4b2bdc318e5cd8b453b24e7816a8b0679](https://kovan.etherscan.io/address/0x4cc0d5b4b2bdc318e5cd8b453b24e7816a8b0679)
+- IncreasePositionImpl:            [0xb9a7e50c83185ee9933ebebcaaf27e9cd313bead](https://kovan.etherscan.io/address/0xb9a7e50c83185ee9933ebebcaaf27e9cd313bead)
+- OpenWithoutCounterpartyImpl:     [0x1f65c358e0e24a64c786cc268a86b3f6f09e8fc8](https://kovan.etherscan.io/address/0x1f65c358e0e24a64c786cc268a86b3f6f09e8fc8)
