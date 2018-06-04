@@ -11,6 +11,7 @@ const {
 } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 const { transact } = require('../helpers/ContractHelper');
+const { expectLog } = require('../helpers/EventHelper');
 const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 
 contract('Vault', accounts => {
@@ -18,9 +19,15 @@ contract('Vault', accounts => {
   const num1 = new BigNumber(12);
   const num2 = new BigNumber(7);
   const num3 = new BigNumber(5);
+  const id1 = BYTES32.TEST[0];
+  const id2 = BYTES32.TEST[1];
+  const id3 = BYTES32.TEST[2];
+  const holder1 = accounts[4];
+  const receiver = accounts[5];
   let proxy, vault, tokenA, tokenB;
 
-  beforeEach('migrate smart contracts and set permissions', async () => {
+
+  beforeEach('reset contracts', async () => {
     proxy = await ProxyContract.new(gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
       Vault.new(proxy.address, gracePeriod),
@@ -47,13 +54,9 @@ contract('Vault', accounts => {
   });
 
   describe('#transferToVault', () => {
-    const holder1 = accounts[4];
-    const id = 'TEST_ID';
-    const id2 = 'TEST_ID_2';
-
     let balances = {
       vault: {
-        id: 0,
+        id1: 0,
         id2: 0,
         total: 0,
         actual: 0
@@ -62,12 +65,12 @@ contract('Vault', accounts => {
 
     async function checkBalances() {
       [
-        balances.vault.id,
+        balances.vault.id1,
         balances.vault.id2,
         balances.vault.total,
         balances.vault.actual
       ] = await Promise.all([
-        vault.balances.call(id, tokenA.address),
+        vault.balances.call(id1, tokenA.address),
         vault.balances.call(id2, tokenA.address),
         vault.totalBalances.call(tokenA.address),
         tokenA.balanceOf.call(vault.address)
@@ -85,10 +88,10 @@ contract('Vault', accounts => {
         vault.grantAccess(accounts[1])
       ]);
 
-      await vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] });
+      await vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] });
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.total).to.be.bignumber.equal(num1);
       expect(balances.vault.actual).to.be.bignumber.equal(num1);
     });
@@ -105,7 +108,7 @@ contract('Vault', accounts => {
       ]);
 
       await Promise.all([
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] }),
         vault.transferToVault(
           id2,
           tokenA.address,
@@ -116,7 +119,7 @@ contract('Vault', accounts => {
       ]);
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.id2).to.be.bignumber.equal(num1.times(2));
       expect(balances.vault.total).to.be.bignumber.equal(num1.times(3));
       expect(balances.vault.actual).to.be.bignumber.equal(num1.times(3));
@@ -140,9 +143,9 @@ contract('Vault', accounts => {
       ]);
 
       await Promise.all([
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] }),
         vault.transferToVault(
-          id,
+          id1,
           tokenB.address,
           holder1,
           num1.times(2),
@@ -158,8 +161,8 @@ contract('Vault', accounts => {
         tokenBalanceA,
         tokenBalanceB
       ] = await Promise.all([
-        vault.balances.call(id, tokenA.address),
-        vault.balances.call(id, tokenB.address),
+        vault.balances.call(id1, tokenA.address),
+        vault.balances.call(id1, tokenB.address),
         vault.totalBalances.call(tokenA.address),
         vault.totalBalances.call(tokenB.address),
         tokenA.balanceOf.call(vault.address),
@@ -186,11 +189,11 @@ contract('Vault', accounts => {
       ]);
 
       await expectThrow(
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[2] })
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[2] })
       );
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
       expect(balances.vault.total).to.be.bignumber.equal(0);
       expect(balances.vault.actual).to.be.bignumber.equal(0);
     });
@@ -199,15 +202,15 @@ contract('Vault', accounts => {
       await vault.grantAccess(accounts[1]);
 
       await expectThrow(
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] })
       );
       await tokenA.issue(num1.times(3), { from: holder1 });
       await expectThrow(
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] })
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] })
       );
 
       const [balance, totalBalance, tokenBalance] = await Promise.all([
-        vault.balances.call(id, tokenA.address),
+        vault.balances.call(id1, tokenA.address),
         vault.totalBalances.call(tokenA.address),
         tokenA.balanceOf.call(vault.address)
       ]);
@@ -219,14 +222,11 @@ contract('Vault', accounts => {
   });
 
   describe('#withdrawExcessToken', () => {
-    const holder1 = accounts[4];
-    const id = 'TEST_ID';
-    const id2 = 'TEST_ID_2';
-
     let balances = {
       vault: {
-        id: 0,
+        id1: 0,
         id2: 0,
+        id3: 0,
         total: 0,
         actual: 0
       }
@@ -234,31 +234,62 @@ contract('Vault', accounts => {
 
     async function checkBalances(token) {
       [
-        balances.vault.id,
+        balances.vault.id1,
         balances.vault.id2,
+        balances.vault.id3,
         balances.vault.total,
         balances.vault.actual
       ] = await Promise.all([
-        vault.balances.call(id, token.address),
+        vault.balances.call(id1, token.address),
         vault.balances.call(id2, token.address),
+        vault.balances.call(id3, token.address),
         vault.totalBalances.call(token.address),
         token.balanceOf.call(vault.address)
       ]);
     }
 
+    async function doWithdraw(vault, token, to, expected, from) {
+      if (!from) {
+        from = await vault.owner.call();
+      }
+
+      // if expected amount is greater than zero, then call withdraw and check the result
+      if (expected) {
+        const nToken = await transact(vault.withdrawExcessToken, token.address, to, { from });
+        expectLog(nToken.logs[0], 'ExcessTokensWithdrawn', {
+          token: token.address,
+          to: to,
+          caller: from
+        });
+        expect(nToken.result).to.be.bignumber.equal(expected);
+      }
+
+      expectThrow(
+        vault.withdrawExcessToken(token.address, to, { from })
+      );
+    }
+
+    it('fails for non-owner', async () => {
+      await tokenB.issueTo(vault.address, num1);
+      await checkBalances(tokenB);
+      expect(balances.vault.actual).to.be.bignumber.equal(num1);
+
+      // fail withdrawal for non-owner
+      await doWithdraw(vault, tokenB, ADDRESSES.TEST[0], 0, accounts[1]);
+    });
+
     it('successfully transfers all tokens with no holdings', async () => {
       await tokenB.issueTo(vault.address, num1);
       await checkBalances(tokenB);
-      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
       expect(balances.vault.id2).to.be.bignumber.equal(0);
       expect(balances.vault.total).to.be.bignumber.equal(0);
       expect(balances.vault.actual).to.be.bignumber.equal(num1);
 
-      const nToken = await transact(vault.withdrawExcessToken, tokenB.address, ADDRESSES.TEST[0]);
-      expect(nToken.result).to.be.bignumber.equal(num1);
+      await doWithdraw(vault, tokenB, ADDRESSES.TEST[0], num1);
 
       await checkBalances(tokenB);
-      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
       expect(balances.vault.id2).to.be.bignumber.equal(0);
       expect(balances.vault.total).to.be.bignumber.equal(0);
       expect(balances.vault.actual).to.be.bignumber.equal(0);
@@ -279,22 +310,21 @@ contract('Vault', accounts => {
       ]);
 
       await Promise.all([
-        vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] }),
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] }),
         vault.transferToVault(id2, tokenA.address, holder1, num2, { from: accounts[1] }),
         tokenA.issueTo(vault.address, num3)
       ])
 
       await checkBalances(tokenA);
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.id2).to.be.bignumber.equal(num2);
       expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
       expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2).plus(num3));
 
-      const nToken = await transact(vault.withdrawExcessToken, tokenA.address, ADDRESSES.TEST[0]);
-      expect(nToken.result).to.be.bignumber.equal(num3);
+      await doWithdraw(vault, tokenA, ADDRESSES.TEST[0], num3);
 
       await checkBalances(tokenA);
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.id2).to.be.bignumber.equal(num2);
       expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
       expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
@@ -302,11 +332,10 @@ contract('Vault', accounts => {
       const withdrawnToken = await tokenA.balanceOf.call(ADDRESSES.TEST[0]);
       expect(withdrawnToken).to.be.bignumber.equal(num3);
 
-      const nToken2 = await transact(vault.withdrawExcessToken, tokenA.address, ADDRESSES.TEST[0]);
-      expect(nToken2.result).to.be.bignumber.equal(0);
+      await doWithdraw(vault, tokenA, ADDRESSES.TEST[0], 0);
 
       await checkBalances(tokenA);
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.id2).to.be.bignumber.equal(num2);
       expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
       expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
@@ -314,18 +343,75 @@ contract('Vault', accounts => {
       const withdrawnToken2 = await tokenA.balanceOf.call(ADDRESSES.TEST[0]);
       expect(withdrawnToken2).to.be.bignumber.equal(num3);
     });
+
+    it('successfully transfers multiple tokens with holdings', async () => {
+      await Promise.all([
+        issueAndSetAllowance(
+          tokenA,
+          holder1,
+          num1.plus(num2),
+          proxy.address
+        ),
+        issueAndSetAllowance(
+          tokenB,
+          holder1,
+          num1,
+          proxy.address
+        ),
+        vault.grantAccess(accounts[1])
+      ]);
+
+      await Promise.all([
+        vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] }),
+        vault.transferToVault(id2, tokenA.address, holder1, num2, { from: accounts[1] }),
+        vault.transferToVault(id3, tokenB.address, holder1, num1, { from: accounts[1] }),
+        tokenA.issueTo(vault.address, num3),
+        tokenB.issueTo(vault.address, num2)
+      ])
+
+      await checkBalances(tokenA);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
+      expect(balances.vault.id2).to.be.bignumber.equal(num2);
+      expect(balances.vault.id3).to.be.bignumber.equal(0);
+      expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2).plus(num3));
+
+      await checkBalances(tokenB);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
+      expect(balances.vault.id2).to.be.bignumber.equal(0);
+      expect(balances.vault.id3).to.be.bignumber.equal(num1);
+      expect(balances.vault.total).to.be.bignumber.equal(num1);
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
+
+      await doWithdraw(vault, tokenA, ADDRESSES.TEST[0], num3);
+      await doWithdraw(vault, tokenB, ADDRESSES.TEST[1], num2);
+
+      await checkBalances(tokenA);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
+      expect(balances.vault.id2).to.be.bignumber.equal(num2);
+      expect(balances.vault.total).to.be.bignumber.equal(num1.plus(num2));
+      expect(balances.vault.actual).to.be.bignumber.equal(num1.plus(num2));
+
+      await checkBalances(tokenB);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
+      expect(balances.vault.id2).to.be.bignumber.equal(0);
+      expect(balances.vault.id3).to.be.bignumber.equal(num1);
+      expect(balances.vault.total).to.be.bignumber.equal(num1);
+      expect(balances.vault.actual).to.be.bignumber.equal(num1);
+
+      const withdrawnTokenA = await tokenA.balanceOf.call(ADDRESSES.TEST[0]);
+      expect(withdrawnTokenA).to.be.bignumber.equal(num3);
+
+      const withdrawnTokenB = await tokenB.balanceOf.call(ADDRESSES.TEST[1]);
+      expect(withdrawnTokenB).to.be.bignumber.equal(num2);
+    });
   });
 
   describe('#transferFromVault', () => {
-    const holder1 = accounts[4];
-    const receiver = accounts[5];
-    const id = 'TEST_ID';
-    const id2 = 'TEST_ID_2';
-
     const halfNum1 = num1.div(2);
     let balances = {
       vault: {
-        id: 0,
+        id1: 0,
         total: 0,
         actual: 0
       },
@@ -334,12 +420,12 @@ contract('Vault', accounts => {
 
     async function checkBalances() {
       [
-        balances.vault.id,
+        balances.vault.id1,
         balances.vault.total,
         balances.vault.actual,
         balances.receiver
       ] = await Promise.all([
-        vault.balances.call(id, tokenA.address),
+        vault.balances.call(id1, tokenA.address),
         vault.totalBalances.call(tokenA.address),
         tokenA.balanceOf.call(vault.address),
         tokenA.balanceOf.call(receiver)
@@ -359,10 +445,10 @@ contract('Vault', accounts => {
         vault.grantAccess(accounts[1])
       ]);
 
-      await vault.transferToVault(id, tokenA.address, holder1, num1, { from: accounts[1] });
+      await vault.transferToVault(id1, tokenA.address, holder1, num1, { from: accounts[1] });
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(num1);
       expect(balances.receiver).to.be.bignumber.equal(0);
@@ -370,18 +456,18 @@ contract('Vault', accounts => {
 
     it('Sends tokens if vault has balance', async () => {
       await vault.grantAccess(receiver);
-      await vault.transferFromVault(id, tokenA.address, receiver, halfNum1, { from: receiver });
+      await vault.transferFromVault(id1, tokenA.address, receiver, halfNum1, { from: receiver });
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
+      expect(balances.vault.id1).to.be.bignumber.equal(halfNum1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
       expect(balances.receiver).to.be.bignumber.equal(halfNum1);
 
-      await vault.transferFromVault(id, tokenA.address, receiver, num1.div(2), { from: receiver });
+      await vault.transferFromVault(id1, tokenA.address, receiver, num1.div(2), { from: receiver });
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(0);
+      expect(balances.vault.id1).to.be.bignumber.equal(0);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(0);
       expect(balances.receiver).to.be.bignumber.equal(num1);
@@ -396,11 +482,11 @@ contract('Vault', accounts => {
 
       // okay to withdraw half of the tokens
       await vault.grantAccess(receiver);
-      await vault.transferFromVault(id, tokenA.address, receiver, halfNum1, { from: receiver });
+      await vault.transferFromVault(id1, tokenA.address, receiver, halfNum1, { from: receiver });
 
       // not okay to overwithdraw, even though those tokens are technically credited to the vault
       await expectAssertFailure(
-        vault.transferFromVault(id, tokenA.address, receiver, num1, { from: receiver })
+        vault.transferFromVault(id1, tokenA.address, receiver, num1, { from: receiver })
       );
 
       // not okay to withdraw from a bad id
@@ -409,7 +495,7 @@ contract('Vault', accounts => {
       );
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(halfNum1);
+      expect(balances.vault.id1).to.be.bignumber.equal(halfNum1);
       expect(balances.vault.total).to.be.bignumber.equal(halfNum1);
       expect(balances.receiver).to.be.bignumber.equal(halfNum1);
       // prove that the vault actually has extra un-assigned funds
@@ -419,11 +505,11 @@ contract('Vault', accounts => {
     it('Does not allow unauthorized addresses to send', async () => {
       // holder1 is not an approved address and therefore cannot simply take their funds back
       await expectThrow(
-        vault.transferFromVault(id, tokenA.address, holder1, num1, { from: holder1 })
+        vault.transferFromVault(id1, tokenA.address, holder1, num1, { from: holder1 })
       );
 
       await checkBalances();
-      expect(balances.vault.id).to.be.bignumber.equal(num1);
+      expect(balances.vault.id1).to.be.bignumber.equal(num1);
       expect(balances.vault.total).to.be.bignumber.equal(balances.vault.actual);
       expect(balances.vault.total).to.be.bignumber.equal(num1);
       expect(balances.receiver).to.be.bignumber.equal(0);
