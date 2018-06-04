@@ -39,9 +39,6 @@ library Exponent {
     // 2**128 - 1
     uint128 constant public MAX_NUMERATOR = 340282366920938463463374607431768211455;
 
-    // Number such that e is approximated by (MAX_NUMERATOR / E_DENOMINATOR)
-    uint128 constant public E_DENOMINATOR = 125182886983370532117250726298150828301;
-
     // Number of precomputed integers, X, for E^((1/2)^X)
     uint256 constant public MAX_PRECOMPUTE_PRECISION = 32;
 
@@ -175,16 +172,6 @@ library Exponent {
         return result;
     }
 
-    // ============ Helper Functions ============
-
-    function ONE()
-        internal
-        pure
-        returns (Fraction.Fraction128 memory)
-    {
-        return Fraction.Fraction128({ num: 1, den: 1 });
-    }
-
     /**
      * Returns a fraction roughly equaling E^((1/2)^x) for integer x
      */
@@ -195,6 +182,8 @@ library Exponent {
         pure
         returns (Fraction.Fraction128 memory)
     {
+        assert(x <= MAX_PRECOMPUTE_PRECISION);
+
         uint128 denominator = [
             125182886983370532117250726298150828301,
             206391688497133195273760705512282642279,
@@ -246,6 +235,8 @@ library Exponent {
         pure
         returns (Fraction.Fraction128 memory)
     {
+        assert(x <= NUM_PRECOMPUTED_INTEGERS);
+
         uint128 denominator = [
             340282366920938463463374607431768211455,
             125182886983370532117250726298150828301,
@@ -285,5 +276,15 @@ library Exponent {
             num: MAX_NUMERATOR,
             den: denominator
         });
+    }
+
+    // ============ Private Helper-Functions ============
+
+    function ONE()
+        private
+        pure
+        returns (Fraction.Fraction128 memory)
+    {
+        return Fraction.Fraction128({ num: 1, den: 1 });
     }
 }

@@ -112,13 +112,13 @@ library OpenWithoutCounterpartyImpl {
         return openTx.positionId;
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Helper-Functions ============
 
     function doStoreNewPosition(
         MarginState.State storage state,
         Tx memory openTx
     )
-        internal
+        private
     {
         MarginCommon.storeNewPosition(
             state,
@@ -145,7 +145,7 @@ library OpenWithoutCounterpartyImpl {
         MarginState.State storage state,
         Tx memory openTx
     )
-        internal
+        private
         view
     {
         require(
@@ -192,7 +192,7 @@ library OpenWithoutCounterpartyImpl {
     function recordPositionOpened(
         Tx memory openTx
     )
-        internal
+        private
     {
         emit PositionOpened(
             openTx.positionId,
@@ -219,7 +219,7 @@ library OpenWithoutCounterpartyImpl {
         uint256[3] values256,
         uint32[4]  values32
     )
-        internal
+        private
         view
         returns (Tx memory)
     {

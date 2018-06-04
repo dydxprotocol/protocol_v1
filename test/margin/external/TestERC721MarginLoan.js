@@ -36,7 +36,7 @@ describe('ERC721MarginLoan', () => {
   let salt = 471311;
   let openTx;
 
-  // ============ Helper Functions ============
+  // ============ Helper-Functions ============
 
   async function loadContracts() {
     [
@@ -593,7 +593,7 @@ describe('ERC721MarginLoan', () => {
     let openTx1, openTx2;
     let halfClose;
 
-    // ============ Helper Functions ============
+    // ============ Helper-Functions ============
 
     async function callWithdraw(positionId) {
       const lender = await loanContract.ownerOf.call(uint256(positionId));

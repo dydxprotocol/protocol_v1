@@ -28,7 +28,7 @@ contract('SharedLoanCreator', accounts => {
   let dydxMargin;
   let sharedLoanCreatorContract;
 
-  // ============ Helper Functions ============
+  // ============ Helper-Functions ============
 
   async function checkSuccess(openTx, sharedLoanContract, remainingPrincipal) {
     const payer = openTx.loanOffering.payer;

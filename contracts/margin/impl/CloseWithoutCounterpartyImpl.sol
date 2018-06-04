@@ -89,12 +89,12 @@ library CloseWithoutCounterpartyImpl {
         );
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function logEventOnCloseWithoutCounterparty(
         ClosePositionShared.CloseTx transaction
     )
-        internal
+        private
     {
         emit PositionClosed(
             transaction.positionId,

@@ -155,14 +155,14 @@ contract ZeroExExchangeWrapper is
         );
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Functions ============
 
     function transferTakerFee(
         Order order,
         address tradeOriginator,
         uint256 requestedFillAmount
     )
-        internal
+        private
     {
         if (order.feeRecipient == address(0)) {
             return;
@@ -188,7 +188,7 @@ contract ZeroExExchangeWrapper is
         address takerToken,
         uint256 requestedFillAmount
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 filledTakerTokenAmount = ZeroExExchangeInterface(ZERO_EX_EXCHANGE).fillOrder(
@@ -233,7 +233,7 @@ contract ZeroExExchangeWrapper is
         address spender,
         uint256 requiredAmount
     )
-        internal
+        private
     {
         if (TokenInteract.allowance(token, address(this), spender) >= requiredAmount) {
             return;
@@ -254,7 +254,7 @@ contract ZeroExExchangeWrapper is
     function parseOrder(
         bytes orderData
     )
-        internal
+        private
         pure
         returns (Order memory)
     {

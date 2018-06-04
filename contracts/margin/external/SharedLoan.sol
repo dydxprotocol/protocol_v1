@@ -369,10 +369,10 @@ contract SharedLoan is
         return withdrawImpl(who);
     }
 
-    // ============ Internal Functions ============
+    // ============ Private Functions ============
 
     function updateStateOnClosed()
-        internal
+        private
     {
         if (state != State.CLOSED) {
             if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
@@ -384,7 +384,7 @@ contract SharedLoan is
     function withdrawImpl(
         address who
     )
-        internal
+        private
         returns (uint256, uint256)
     {
         uint256 balance = balances[who];
@@ -421,7 +421,7 @@ contract SharedLoan is
         address who,
         uint256 balance
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 currentOwedTokenBalance = TokenInteract.balanceOf(
@@ -457,7 +457,7 @@ contract SharedLoan is
         address who,
         uint256 balance
     )
-        internal
+        private
         returns (uint256)
     {
         uint256 currentHeldTokenBalance = TokenInteract.balanceOf(

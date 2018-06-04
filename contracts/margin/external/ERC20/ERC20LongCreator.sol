@@ -42,13 +42,13 @@ contract ERC20LongCreator is ERC20PositionCreator {
         ERC20PositionCreator(margin, trustedRecipients)
     {}
 
-    // ============ Internal Functions ============
+    // ============ Private Functions ============
 
     function createTokenContract(
         address creator,
         bytes32 positionId
     )
-        internal
+        private
         returns (address)
     {
         return new ERC20Long(

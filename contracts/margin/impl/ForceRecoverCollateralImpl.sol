@@ -108,7 +108,7 @@ library ForceRecoverCollateralImpl {
         return heldTokenRecovered;
     }
 
-    // ============ Internal Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function forceRecoverCollateralOnBehalfOfRecurse(
         address contractAddr,
@@ -116,7 +116,7 @@ library ForceRecoverCollateralImpl {
         bytes32 positionId,
         address recipient
     )
-        internal
+        private
     {
         // no need to ask for permission
         if (recoverer == contractAddr) {

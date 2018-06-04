@@ -34,7 +34,11 @@ library FractionMath {
     using SafeMath for uint128;
 
     /**
-     * Adds a to b
+     * Returns a Fraction128 that is equal to a + b
+     *
+     * @param  a  The first Fraction128
+     * @param  b  The second Fraction128
+     * @return    The result (sum)
      */
     function add(
         Fraction.Fraction128 memory a,
@@ -59,7 +63,11 @@ library FractionMath {
     }
 
     /**
-     * Subtracts 1/(2^d) from a.
+     * Returns a Fraction128 that is equal to a - (1/2)^d
+     *
+     * @param  a  The Fraction128
+     * @param  d  The power of (1/2)
+     * @return    The result
      */
     function sub1Over(
         Fraction.Fraction128 memory a,
@@ -82,7 +90,11 @@ library FractionMath {
     }
 
     /**
-     * Divides a by d.
+     * Returns a Fraction128 that is equal to a / d
+     *
+     * @param  a  The first Fraction128
+     * @param  d  The divisor
+     * @return    The result (quotient)
      */
     function div(
         Fraction.Fraction128 memory a,
@@ -105,7 +117,11 @@ library FractionMath {
     }
 
     /**
-     * Multiplies a by b.
+     * Returns a Fraction128 that is equal to a * b.
+     *
+     * @param  a  The first Fraction128
+     * @param  b  The second Fraction128
+     * @return    The result (product)
      */
     function mul(
         Fraction.Fraction128 memory a,
@@ -123,6 +139,10 @@ library FractionMath {
 
     /**
      * Returns a fraction from two uint256's. Fits them into uint128 if necessary.
+     *
+     * @param  num  The numerator
+     * @param  den  The denominator
+     * @return      The Fraction128 that matches num/den most closely
      */
     /* solium-disable-next-line security/no-assign-params */
     function bound(
@@ -149,15 +169,12 @@ library FractionMath {
         });
     }
 
-    function validate(
-        Fraction.Fraction128 memory a
-    )
-        internal
-        pure
-    {
-        assert(a.den != 0); // unit-tested
-    }
-
+    /**
+     * Returns an in-memory copy of a Fraction128
+     *
+     * @param  a  The Fraction128 to copy
+     * @return    A copy of the Fraction128
+     */
     function copy(
         Fraction.Fraction128 memory a
     )
@@ -167,5 +184,21 @@ library FractionMath {
     {
         validate(a);
         return Fraction.Fraction128({ num: a.num, den: a.den });
+    }
+
+    // ============ Private Helper-Functions ============
+
+    /**
+     * Asserts that a Fraction128 is valid (i.e. the denominator is non-zero)
+     *
+     * @param  a  The Fraction128 to validate
+     */
+    function validate(
+        Fraction.Fraction128 memory a
+    )
+        private
+        pure
+    {
+        assert(a.den != 0); // unit-tested
     }
 }

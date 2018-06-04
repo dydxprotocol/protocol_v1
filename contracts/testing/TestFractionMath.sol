@@ -98,17 +98,6 @@ contract TestFractionMath {
         return (r.num, r.den);
     }
 
-    function validate(
-        uint128 a,
-        uint128 b
-    )
-        external
-        pure
-    {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        p.validate();
-    }
-
     function copy(
         uint128 a,
         uint128 b

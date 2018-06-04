@@ -38,7 +38,7 @@ contract('SharedLoan', accounts => {
     POSITION_OWNER: null
   }
 
-  // ============ Helper Functions ============
+  // ============ Helper-Functions ============
 
   async function setUpPosition() {
     const openTx = await doOpenPosition(accounts, { salt: salt++ });
@@ -428,7 +428,7 @@ contract('SharedLoan', accounts => {
     let principalShare;
     const closer = accounts[6];
 
-    // ============ Helper Functions ============
+    // ============ Helper-Functions ============
 
     async function callWithdraw(account) {
       const [owedBefore, heldBefore] = await Promise.all([

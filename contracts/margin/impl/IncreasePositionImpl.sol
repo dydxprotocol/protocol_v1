@@ -172,14 +172,14 @@ library IncreasePositionImpl {
         return heldTokenAmount;
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     function doBorrowAndSell(
         MarginState.State storage state,
         BorrowShared.Tx memory transaction,
         bytes orderData
     )
-        internal
+        private
     {
         // Calculate the number of heldTokens to add
         uint256 collateralToAdd = getCollateralNeededForAddedPrincipal(
@@ -231,7 +231,7 @@ library IncreasePositionImpl {
         uint256 collateralToAdd,
         bytes orderData
     )
-        internal
+        private
         view
         returns (uint256)
     {
@@ -255,7 +255,7 @@ library IncreasePositionImpl {
         BorrowShared.Tx transaction,
         MarginCommon.Position storage position
     )
-        internal
+        private
         view
     {
         assert(MarginCommon.containsPositionImpl(state, transaction.positionId));
@@ -285,7 +285,7 @@ library IncreasePositionImpl {
         bytes32 positionId,
         uint256 principalToAdd
     )
-        internal
+        private
         view
         returns (uint256)
     {
@@ -305,7 +305,7 @@ library IncreasePositionImpl {
         uint256 owedTokenLent,
         address loanPayer
     )
-        internal
+        private
     {
         position.principal = position.principal.add(principalAdded);
 
@@ -336,7 +336,7 @@ library IncreasePositionImpl {
         bytes32 positionId,
         uint256 principalAdded
     )
-        internal
+        private
     {
         // Assume owner approval if not a smart contract and they increased their own position
         if (trader == contractAddr && !AddressUtils.isContract(contractAddr)) {
@@ -367,7 +367,7 @@ library IncreasePositionImpl {
         uint256 principalAdded,
         uint256 amountLent
     )
-        internal
+        private
     {
         // Assume lender approval if not a smart contract and they increased their own loan
         if (payer == contractAddr && !AddressUtils.isContract(contractAddr)) {
@@ -397,7 +397,7 @@ library IncreasePositionImpl {
         BorrowShared.Tx transaction,
         MarginCommon.Position storage position
     )
-        internal
+        private
     {
         emit PositionIncreased(
             transaction.positionId,
@@ -427,7 +427,7 @@ library IncreasePositionImpl {
         bytes32[2] sigRS,
         bool depositInHeldToken
     )
-        internal
+        private
         view
         returns (BorrowShared.Tx memory)
     {
@@ -471,7 +471,7 @@ library IncreasePositionImpl {
         uint8 sigV,
         bytes32[2] sigRS
     )
-        internal
+        private
         view
         returns (MarginCommon.LoanOffering memory)
     {
@@ -504,7 +504,7 @@ library IncreasePositionImpl {
         MarginCommon.Position storage position,
         uint256[8] values256
     )
-        internal
+        private
         view
         returns (MarginCommon.LoanRates memory)
     {
@@ -525,7 +525,7 @@ library IncreasePositionImpl {
         uint8 sigV,
         bytes32[2] sigRS
     )
-        internal
+        private
         pure
         returns (MarginCommon.Signature memory)
     {

@@ -104,7 +104,7 @@ library InterestImpl {
         return safeMultiplyUint256ByFraction(principal, eToRT);
     }
 
-    // ============ Helper Functions ============
+    // ============ Private Helper-Functions ============
 
     /**
      * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator
@@ -114,7 +114,7 @@ library InterestImpl {
         uint256 n,
         Fraction.Fraction128 memory f
     )
-        internal
+        private
         pure
         returns (uint256)
     {

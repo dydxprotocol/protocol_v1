@@ -129,7 +129,7 @@ contract DutchAuctionCloser is
             "DutchAuctionCloser#receiveClosePositionPayout: Cannot pay out in baseToken"
         );
 
-        uint256 auctionPrice = getAuctionPrice(
+        uint256 auctionPrice = getAuctionCost(
             positionId,
             totalHeldToken
         );
@@ -154,13 +154,23 @@ contract DutchAuctionCloser is
         return true;
     }
 
-    // ============ Internal Helper functions ============
+    // ============ Public Constant Functions ============
 
-    function getAuctionPrice(
+    /**
+     * Gets the cost (in heldToken) of closing part of a position such that totalHeldToken
+     * heldTokens are freed from the position. This amount decreases linearly over the course of the
+     * auction from totalHeldToken to zero.
+     *
+     * @param  positionId      Unique ID of the position
+     * @param  totalHeldToken  The amount of heldTokens that are freed when closing the position
+     * @return                 The amount of heldTokens that would need to be paid to the position
+     *                         owner when freeing totalHeldToken tokens from the position
+     */
+    function getAuctionCost(
         bytes32 positionId,
         uint256 totalHeldToken
     )
-        internal
+        public
         view
         returns (uint256)
     {
@@ -177,10 +187,12 @@ contract DutchAuctionCloser is
         );
     }
 
+    // ============ Private Helper-Functions ============
+
     function getAuctionTimeLimits(
         bytes32 positionId
     )
-        internal
+        private
         view
         returns (
             uint256 /* auctionStartTimestamp */,
