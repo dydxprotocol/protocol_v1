@@ -88,10 +88,11 @@ contract Margin is
      *  [4]  = loan signer
      *  [5]  = loan owner
      *  [6]  = loan taker
-     *  [7]  = loan fee recipient
-     *  [8]  = loan lender fee token
-     *  [9]  = loan taker fee token
-     *  [10]  = exchange wrapper address
+     *  [7]  = loan position owner
+     *  [8]  = loan fee recipient
+     *  [9]  = loan lender fee token
+     *  [10]  = loan taker fee token
+     *  [11]  = exchange wrapper address
      *
      * @param  values256           Values corresponding to:
      *
@@ -122,7 +123,7 @@ contract Margin is
      * @return                     Unique ID for the new position
      */
     function openPosition(
-        address[11] addresses,
+        address[12] addresses,
         uint256[10] values256,
         uint32[4]   values32,
         uint8       sigV,
@@ -201,10 +202,11 @@ contract Margin is
      *  [0]  = loan payer
      *  [1]  = loan signer
      *  [2]  = loan taker
-     *  [3]  = loan fee recipient
-     *  [4]  = loan lender fee token
-     *  [5]  = loan taker fee token
-     *  [6]  = exchange wrapper address
+     *  [3]  = loan position owner
+     *  [4]  = loan fee recipient
+     *  [5]  = loan lender fee token
+     *  [6]  = loan taker fee token
+     *  [7]  = exchange wrapper address
      *
      * @param  values256           Values corresponding to:
      *
@@ -232,14 +234,14 @@ contract Margin is
      * @return                     Amount of owedTokens pulled from the lender
      */
     function increasePosition(
-        bytes32     positionId,
-        address[7]  addresses,
-        uint256[8]  values256,
-        uint32[2]   values32,
-        uint8       sigV,
-        bytes32[2]  sigRS,
-        bool        depositInHeldToken,
-        bytes       order
+        bytes32    positionId,
+        address[8] addresses,
+        uint256[8] values256,
+        uint32[2]  values32,
+        uint8      sigV,
+        bytes32[2] sigRS,
+        bool       depositInHeldToken,
+        bytes      order
     )
         external
         onlyWhileOperational
@@ -491,9 +493,10 @@ contract Margin is
      *  [3] = loan signer
      *  [4] = loan owner
      *  [5] = loan taker
-     *  [6] = loan fee recipient
-     *  [7] = loan lender fee token
-     *  [8] = loan taker fee token
+     *  [6] = loan position owner
+     *  [7] = loan fee recipient
+     *  [8] = loan lender fee token
+     *  [9] = loan taker fee token
      *
      * @param  values256  Values corresponding to:
      *
@@ -516,10 +519,10 @@ contract Margin is
      * @return                  Amount that was canceled
      */
     function cancelLoanOffering(
-        address[9] addresses,
-        uint256[7] values256,
-        uint32[4]  values32,
-        uint256    cancelAmount
+        address[10] addresses,
+        uint256[7]  values256,
+        uint32[4]   values32,
+        uint256     cancelAmount
     )
         external
         cancelLoanOfferingStateControl
@@ -547,9 +550,10 @@ contract Margin is
      *  [3] = loan signer
      *  [4] = loan owner
      *  [5] = loan taker
-     *  [6] = loan fee recipient
-     *  [7] = loan lender fee token
-     *  [8] = loan taker fee token
+     *  [6] = loan position owner
+     *  [7] = loan fee recipient
+     *  [8] = loan lender fee token
+     *  [9] = loan taker fee token
      *
      * @param  values256  Values corresponding to:
      *
@@ -569,9 +573,9 @@ contract Margin is
      *  [3] = loan interest update period (in seconds)
      */
     function approveLoanOffering(
-        address[9] addresses,
-        uint256[7] values256,
-        uint32[4]  values32
+        address[10] addresses,
+        uint256[7]  values256,
+        uint32[4]   values32
     )
         external
         onlyWhileOperational

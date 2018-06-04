@@ -154,10 +154,10 @@ library LoanImpl {
 
     function cancelLoanOfferingImpl(
         MarginState.State storage state,
-        address[9] addresses,
-        uint256[7] values256,
-        uint32[4]  values32,
-        uint256    cancelAmount
+        address[10] addresses,
+        uint256[7]  values256,
+        uint32[4]   values32,
+        uint256     cancelAmount
     )
         public
         returns (uint256)
@@ -202,9 +202,9 @@ library LoanImpl {
 
     function approveLoanOfferingImpl(
         MarginState.State storage state,
-        address[9] addresses,
-        uint256[7] values256,
-        uint32[4]  values32
+        address[10] addresses,
+        uint256[7]  values256,
+        uint32[4]   values32
     )
         public
     {
@@ -300,9 +300,9 @@ library LoanImpl {
     // ============ Parsing Functions ============
 
     function parseLoanOffering(
-        address[9] addresses,
-        uint256[7] values256,
-        uint32[4]  values32
+        address[10] addresses,
+        uint256[7]  values256,
+        uint32[4]   values32
     )
         internal
         view
@@ -315,9 +315,10 @@ library LoanImpl {
             signer: addresses[3],
             owner: addresses[4],
             taker: addresses[5],
-            feeRecipient: addresses[6],
-            lenderFeeToken: addresses[7],
-            takerFeeToken: addresses[8],
+            positionOwner: addresses[6],
+            feeRecipient: addresses[7],
+            lenderFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],

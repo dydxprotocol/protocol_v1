@@ -61,7 +61,7 @@ library OpenPositionImpl {
 
     function openPositionImpl(
         MarginState.State storage state,
-        address[11] addresses,
+        address[12] addresses,
         uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
@@ -181,7 +181,7 @@ library OpenPositionImpl {
     // ============ Parsing Functions ============
 
     function parseOpenTx(
-        address[11] addresses,
+        address[12] addresses,
         uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
@@ -204,7 +204,7 @@ library OpenPositionImpl {
                 sigV,
                 sigRS
             ),
-            exchangeWrapper: addresses[10],
+            exchangeWrapper: addresses[11],
             depositInHeldToken: depositInHeldToken,
             depositAmount: values256[8],
             collateralAmount: 0, // set later
@@ -215,7 +215,7 @@ library OpenPositionImpl {
     }
 
     function parseLoanOffering(
-        address[11] addresses,
+        address[12] addresses,
         uint256[10] values256,
         uint32[4] values32,
         uint8 sigV,
@@ -232,9 +232,10 @@ library OpenPositionImpl {
             signer: addresses[4],
             owner: addresses[5],
             taker: addresses[6],
-            feeRecipient: addresses[7],
-            lenderFeeToken: addresses[8],
-            takerFeeToken: addresses[9],
+            positionOwner: addresses[7],
+            feeRecipient: addresses[8],
+            lenderFeeToken: addresses[9],
+            takerFeeToken: addresses[10],
             rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],

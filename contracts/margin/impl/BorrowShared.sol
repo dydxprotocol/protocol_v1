@@ -197,11 +197,20 @@ library BorrowShared {
             "BorrowShared#validateTxPreSell: Positions with 0 principal are not allowed"
         );
 
-        // If the taker is 0x000... then anyone can take it. Otherwise only the taker can use it
+        // If the taker is 0x0 then any address can take it. Otherwise only the taker can use it.
         if (transaction.loanOffering.taker != address(0)) {
             require(
                 msg.sender == transaction.loanOffering.taker,
                 "BorrowShared#validateTxPreSell: Invalid loan offering taker"
+            );
+        }
+
+        // If the positionOwner is 0x0 then any address can be set as the position owner.
+        // Otherwise only the specified positionOwner can be set as the position owner.
+        if (transaction.loanOffering.positionOwner != address(0)) {
+            require(
+                transaction.owner == transaction.loanOffering.positionOwner,
+                "BorrowShared#validateTxPreSell: Invalid position owner"
             );
         }
 
