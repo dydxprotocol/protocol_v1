@@ -8,14 +8,14 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - {{ .Environment.DEP_CACHE_VERSION }}-dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
-            - {{ .Environment.DEP_CACHE_VERSION }}-dependency-cache-{{ .Branch }}-
-            - {{ .Environment.DEP_CACHE_VERSION }}-dependency-cache-
+            - v1-dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - v1-dependency-cache-{{ .Branch }}-
+            - v1-dependency-cache-
       - run:
           name: Install Dependencies
           command: npm install --quiet
       - save_cache:
-          key: {{ .Environment.DEP_CACHE_VERSION }}-dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          key: v1-dependency-cache-{{ .Branch }}-{{ checksum "package-lock.json" }}
           paths:
             - node_modules
       - save_cache:
