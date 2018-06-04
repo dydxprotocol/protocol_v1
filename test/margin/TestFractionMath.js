@@ -157,36 +157,6 @@ contract('FractionMath', function(_accounts) {
     });
   });
 
-  // ============ validate ============
-
-  describe('#validate', () => {
-    async function validate(num, den) {
-      await contract.validate(num, den);
-    }
-
-    async function validateThrow(num, den) {
-      await expectAssertFailure(contract.validate(num, den));
-    }
-
-    it('succeeds for most values', async () => {
-      await Promise.all([
-        validate(0, 1),
-        validate(1, 1),
-        validate(1, bn),
-        validate(0, bn),
-        validate(bn, bn),
-      ]);
-    });
-
-    it('fails for zero denominator', async () => {
-      await Promise.all([
-        validateThrow(0, 0),
-        validateThrow(1, 0),
-        validateThrow(bn, 0),
-      ]);
-    });
-  });
-
   // ============ copy ============
 
   describe('#copy', () => {
