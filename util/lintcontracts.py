@@ -97,26 +97,56 @@ def lintFunctionComments(dir, filepath):
     inBlockComment = False
     seenBlank = False
     alreadyComplained = False
+    argColumn = 0
     i = 1
     for line in open(filepath, 'r').readlines():
-        errorSuffix = " (" + fileName + " : " + str(i) + ")"
+        words = line.split()
+        errorSuffix = " (" + fileName + ":" + str(i) + ")"
         lstripped = line.lstrip()
+
+        # check for extra statements
         if ('param ' in lstripped and 'param  ' not in lstripped):
+            everythingOkay = False
             print "Param has only one space" + errorSuffix
         if ('param   ' in lstripped):
+            everythingOkay = False
             print "Param has more than two spaces" + errorSuffix
+
+        # start block comment
         if (not inBlockComment and lstripped.startswith('/**')):
+            argColumn = 0
             inBlockComment = True
             seenBlank = False
             alreadyComplained = False
+
+        # check for aligned parameters
+        if (inBlockComment):
+            col = 0
+            if ('param' in lstripped and len(words) >= 4):
+                col = line.find(' '+words[3]) + 1
+            if ('@returns' in lstripped):
+                col = line.find(words[2])
+            if (col > 0):
+                if (argColumn == 0):
+                    argColumn = col
+                else:
+                    if (col != argColumn):
+                        everythingOkay = False
+                        print "Params not aligned to column " + str(argColumn + 1) + errorSuffix
+
+        # blank comment line
         if (inBlockComment and lstripped.rstrip() == '*'):
             seenBlank = True
+
+        # make sure a blank comment line has been found before parameter list
         if (inBlockComment and not seenBlank):
             if ('*  param' in lstripped or '* @param' in lstripped):
                 if (not alreadyComplained):
                     alreadyComplained = True
                     everythingOkay = False
                     print "No blank line before param list in function comment" + errorSuffix
+
+        # end block comment
         if (inBlockComment and line.rstrip().endswith('*/')):
             inBlockComment = False
         i += 1

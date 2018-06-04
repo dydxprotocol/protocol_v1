@@ -485,7 +485,7 @@ contract Margin is
     /**
      * Cancel an amount of a loan offering. Only callable by the loan offering's payer or signer.
      *
-     * @param  addresses  Array of addresses:
+     * @param  addresses     Array of addresses:
      *
      *  [0] = owedToken
      *  [1] = heldToken
@@ -498,7 +498,7 @@ contract Margin is
      *  [8] = loan lender fee token
      *  [9] = loan taker fee token
      *
-     * @param  values256  Values corresponding to:
+     * @param  values256     Values corresponding to:
      *
      *  [0] = loan maximum amount
      *  [1] = loan minimum amount
@@ -508,15 +508,15 @@ contract Margin is
      *  [5] = loan expiration timestamp (in seconds)
      *  [6] = loan salt
      *
-     * @param  values32  Values corresponding to:
+     * @param  values32      Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      *
-     * @param  cancelAmount     Amount to cancel
-     * @return                  Amount that was canceled
+     * @param  cancelAmount  Amount to cancel
+     * @return               Amount that was canceled
      */
     function cancelLoanOffering(
         address[10] addresses,
@@ -565,7 +565,7 @@ contract Margin is
      *  [5] = loan expiration timestamp (in seconds)
      *  [6] = loan salt
      *
-     * @param  values32  Values corresponding to:
+     * @param  values32   Values corresponding to:
      *
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
