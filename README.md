@@ -10,7 +10,7 @@
   <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg' alt='License' />
   </a>
-  <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
+  <a href='https://www.npmjs.com/package/@dydxprotocol/protocol'>
     <img src='https://img.shields.io/npm/v/@dydxprotocol/protocol.svg' alt='NPM' />
   </a>
   <a href='https://slack.dydx.exchange'>
