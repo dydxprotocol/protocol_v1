@@ -5,7 +5,7 @@
     <img src="https://img.shields.io/circleci/project/github/dydxprotocol/protocol.svg" />
   </a>
   <a href='https://coveralls.io/github/dydxprotocol/protocol'>
-    <img src='https://img.shields.io/coveralls/github/dydxprotocol/protocol/master.svg' alt='Coverage Status' />
+    <img src='https://coveralls.io/repos/github/dydxprotocol/protocol/badge.svg?branch=master' alt='Coverage Status' />
   </a>
   <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg' alt='License' />
