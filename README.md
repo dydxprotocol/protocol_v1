@@ -7,16 +7,16 @@
   <a href='https://coveralls.io/github/dydxprotocol/protocol'>
     <img src='https://img.shields.io/coveralls/github/dydxprotocol/protocol/master.svg' alt='Coverage Status' />
   </a>
-</p>
-<p align="center">
   <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg' alt='License' />
   </a>
   <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
     <img src='https://img.shields.io/npm/v/@dydxprotocol/protocol.svg' alt='NPM' />
   </a>
+  <a href='https://slack.dydx.exchange'>
+    <img src='https://img.shields.io/badge/chat-slack-blue.svg' alt='Slack' />
+  </a>
 </p>
-
 
 Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protocol
 
