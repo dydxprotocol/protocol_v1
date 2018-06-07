@@ -335,7 +335,7 @@ library BorrowShared {
 
     function verifyLoanOfferingRecurse(
         address contractAddr,
-        address[9] addresses,
+        address[10] addresses,
         uint256[7] values256,
         uint32[4] values32,
         bytes32 positionId
@@ -423,7 +423,7 @@ library BorrowShared {
     )
         private
         pure
-        returns (address[9])
+        returns (address[10])
     {
         return [
             transaction.loanOffering.owedToken,
@@ -432,6 +432,7 @@ library BorrowShared {
             transaction.loanOffering.signer,
             transaction.loanOffering.owner,
             transaction.loanOffering.taker,
+            transaction.loanOffering.positionOwner,
             transaction.loanOffering.feeRecipient,
             transaction.loanOffering.lenderFeeToken,
             transaction.loanOffering.takerFeeToken
