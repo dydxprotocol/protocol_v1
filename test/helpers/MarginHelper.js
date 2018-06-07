@@ -289,7 +289,7 @@ async function callIncreasePosition(dydxMargin, tx) {
     tx.loanOffering.maxDuration
   ];
 
-  const order = zeroExOrderToBytes(tx.buyOrder);
+  const order = orderToBytes(tx.buyOrder);
 
   const [principal, balance] = await Promise.all([
     dydxMargin.getPositionPrincipal.call(positionId),
@@ -320,7 +320,8 @@ async function callIncreasePosition(dydxMargin, tx) {
 
 async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
   const positionId = tx.id;
-  const [time1, time2, principal, endingBalance] = await Promise.all([
+  const [owner, time1, time2, principal, endingBalance] = await Promise.all([
+    dydxMargin.getPositionOwner.call(positionId),
     dydxMargin.getPositionStartTimestamp.call(positionId),
     getBlockTimestamp(response.receipt.blockNumber),
     dydxMargin.getPositionPrincipal.call(positionId),
@@ -339,13 +340,18 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
     tx.principal,
     true
   );
-  const heldTokenFromSell = tx.depositInHeldToken ?
-    getPartialAmount(
-      owed,
-      tx.buyOrder.takerTokenAmount,
-      tx.buyOrder.makerTokenAmount
-    )
-    : minTotalDeposit;
+  let heldTokenFromSell;
+  if (tx.buyOrder.type === ORDER_TYPE.ZERO_EX) {
+    heldTokenFromSell = tx.depositInHeldToken ?
+      getPartialAmount(
+        owed,
+        tx.buyOrder.takerTokenAmount,
+        tx.buyOrder.makerTokenAmount
+      )
+      : minTotalDeposit;
+  } else if (tx.buyOrder.type === ORDER_TYPE.DIRECT) {
+    heldTokenFromSell = 0;
+  }
   const depositAmount = tx.depositInHeldToken ?
     minTotalDeposit.minus(heldTokenFromSell)
     : getPartialAmount(
@@ -359,7 +365,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
     positionId: positionId,
     trader: tx.trader,
     lender: tx.loanOffering.payer,
-    positionOwner: tx.owner,
+    positionOwner: owner,
     loanOwner: tx.loanOffering.owner,
     loanHash: tx.loanOffering.loanHash,
     loanFeeRecipient: tx.loanOffering.feeRecipient,

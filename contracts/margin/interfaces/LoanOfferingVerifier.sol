@@ -31,6 +31,35 @@ pragma experimental "v0.5.0";
  *       to these functions
  */
 contract LoanOfferingVerifier {
+
+    // ============ Structs ============
+
+    struct LoanOffering {
+        address owedToken;
+        address heldToken;
+        address payer;
+        address signer;
+        address owner;
+        address taker;
+        address positionOwner;
+        address feeRecipient;
+        address lenderFeeToken;
+        address takerFeeToken;
+        uint256 maximumAmount;
+        uint256 minimumAmount;
+        uint256 minimumHeldToken;
+        uint256 lenderFee;
+        uint256 takerFee;
+        uint256 expirationTimestamp;
+        uint256 salt;
+        uint32  callTimeLimit;
+        uint32  maxDuration;
+        uint32  interestRate;
+        uint32  interestPeriod;
+    }
+
+    // ============ Margin-Only State-Changing Functions ============
+
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
      * will be generated off-chain. The "loan owner" address will own the loan-side of the resulting
@@ -82,4 +111,72 @@ contract LoanOfferingVerifier {
         external
         /* onlyMargin */
         returns (address);
+
+    // ============ Parsing Functions ============
+
+    function parseLoanOffering(
+        address[10] addresses,
+        uint256[7] values256,
+        uint32[4] values32
+    )
+        internal
+        pure
+        returns (LoanOffering memory)
+    {
+        LoanOffering memory loanOffering;
+
+        fillLoanOfferingAddresses(loanOffering, addresses);
+        fillLoanOfferingValues256(loanOffering, values256);
+        fillLoanOfferingValues32(loanOffering, values32);
+
+        return loanOffering;
+    }
+
+    function fillLoanOfferingAddresses(
+        LoanOffering memory loanOffering,
+        address[10] addresses
+    )
+        private
+        pure
+    {
+        loanOffering.owedToken = addresses[0];
+        loanOffering.heldToken = addresses[1];
+        loanOffering.payer = addresses[2];
+        loanOffering.signer = addresses[3];
+        loanOffering.owner = addresses[4];
+        loanOffering.taker = addresses[5];
+        loanOffering.positionOwner = addresses[6];
+        loanOffering.feeRecipient = addresses[7];
+        loanOffering.lenderFeeToken = addresses[8];
+        loanOffering.takerFeeToken = addresses[9];
+    }
+
+    function fillLoanOfferingValues256(
+        LoanOffering memory loanOffering,
+        uint256[7] values256
+    )
+        private
+        pure
+    {
+        loanOffering.maximumAmount = values256[0];
+        loanOffering.minimumAmount = values256[1];
+        loanOffering.minimumHeldToken = values256[2];
+        loanOffering.lenderFee = values256[3];
+        loanOffering.takerFee = values256[4];
+        loanOffering.expirationTimestamp = values256[5];
+        loanOffering.salt = values256[6];
+    }
+
+    function fillLoanOfferingValues32(
+        LoanOffering memory loanOffering,
+        uint32[4] values32
+    )
+        private
+        pure
+    {
+        loanOffering.callTimeLimit = values32[0];
+        loanOffering.maxDuration = values32[1];
+        loanOffering.interestRate = values32[2];
+        loanOffering.interestPeriod = values32[3];
+    }
 }
