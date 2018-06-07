@@ -74,7 +74,7 @@ contract LoanOfferingVerifier {
      * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(
-        address[9] addresses,
+        address[10] addresses,
         uint256[7] values256,
         uint32[4] values32,
         bytes32 positionId

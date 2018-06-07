@@ -36,7 +36,7 @@ contract TestSmartContractLender is LoanOfferingVerifier {
     }
 
     function verifyLoanOffering(
-        address[9],
+        address[10],
         uint256[7],
         uint32[4],
         bytes32
