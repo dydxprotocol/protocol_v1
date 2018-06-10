@@ -17,7 +17,7 @@ const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
 const { transact } = require('./ContractHelper');
 const { expectLog } = require('./EventHelper');
-const { createLoanOffering } = require('./LoanHelper');
+const { createLoanOffering, setLoanHash } = require('./LoanHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { getBlockTimestamp } = require('./NodeHelper');
 const { issueAndSetAllowance } = require('./TokenHelper');
@@ -131,7 +131,6 @@ async function callOpenPosition(
     tx.loanOffering.owedToken,
     tx.loanOffering.heldToken,
     tx.loanOffering.payer,
-    tx.loanOffering.signer,
     tx.loanOffering.owner,
     tx.loanOffering.taker,
     tx.loanOffering.positionOwner,
@@ -161,22 +160,14 @@ async function callOpenPosition(
     tx.loanOffering.rates.interestPeriod
   ];
 
-  const sigV = tx.loanOffering.signature.v;
-
-  const sigRS = [
-    tx.loanOffering.signature.r,
-    tx.loanOffering.signature.s,
-  ];
-
   const order = orderToBytes(tx.buyOrder);
 
   let response = await dydxMargin.openPosition(
     addresses,
     values256,
     values32,
-    sigV,
-    sigRS,
     tx.depositInHeldToken,
+    tx.loanOffering.signature,
     order,
     { from: tx.trader }
   );
@@ -216,6 +207,8 @@ function getExpectedHeldTokenFromSell(tx) {
 
 async function expectLogOpenPosition(dydxMargin, positionId, tx, response) {
   const expectedHeldTokenFromSell = getExpectedHeldTokenFromSell(tx);
+
+  setLoanHash(tx.loanOffering);
 
   expectLog(response.logs[0], 'PositionOpened', {
     positionId: positionId,
@@ -272,7 +265,6 @@ async function callIncreasePosition(dydxMargin, tx) {
 
   const addresses = [
     tx.loanOffering.payer,
-    tx.loanOffering.signer,
     tx.loanOffering.taker,
     tx.loanOffering.positionOwner,
     tx.loanOffering.feeRecipient,
@@ -297,13 +289,6 @@ async function callIncreasePosition(dydxMargin, tx) {
     tx.loanOffering.maxDuration
   ];
 
-  const sigV = tx.loanOffering.signature.v;
-
-  const sigRS = [
-    tx.loanOffering.signature.r,
-    tx.loanOffering.signature.s,
-  ];
-
   const order = zeroExOrderToBytes(tx.buyOrder);
 
   const [principal, balance] = await Promise.all([
@@ -316,9 +301,8 @@ async function callIncreasePosition(dydxMargin, tx) {
     addresses,
     values256,
     values32,
-    sigV,
-    sigRS,
     tx.depositInHeldToken,
+    tx.loanOffering.signature,
     order,
     { from: tx.trader }
   );
@@ -784,7 +768,7 @@ async function callCancelLoanOffer(
   ) {
     expectLog(tx.logs[0], 'LoanOfferingCanceled', {
       loanHash: loanOffering.loanHash,
-      signer: loanOffering.signer,
+      payer: loanOffering.payer,
       feeRecipient: loanOffering.feeRecipient,
       cancelAmount: canceledAmount2.minus(canceledAmount1)
     });
@@ -795,42 +779,11 @@ async function callCancelLoanOffer(
   return tx;
 }
 
-async function callApproveLoanOffering(
-  dydxMargin,
-  loanOffering,
-  from
-) {
-  const { addresses, values256, values32 } = formatLoanOffering(loanOffering);
-
-  const wasApproved = await dydxMargin.isLoanApproved.call(loanOffering.loanHash);
-
-  const tx = await dydxMargin.approveLoanOffering(
-    addresses,
-    values256,
-    values32,
-    { from }
-  );
-
-  const approved = await dydxMargin.isLoanApproved.call(loanOffering.loanHash);
-  expect(approved).to.be.true;
-
-  if (!wasApproved) {
-    expectLog(tx.logs[0], 'LoanOfferingApproved', {
-      loanHash: loanOffering.loanHash,
-      signer: loanOffering.signer,
-      feeRecipient: loanOffering.feeRecipient
-    });
-  }
-
-  return tx;
-}
-
 function formatLoanOffering(loanOffering) {
   const addresses = [
     loanOffering.owedToken,
     loanOffering.heldToken,
     loanOffering.payer,
-    loanOffering.signer,
     loanOffering.owner,
     loanOffering.taker,
     loanOffering.positionOwner,
@@ -1050,7 +1003,6 @@ module.exports = {
   getPosition,
   doOpenPositionAndCall,
   issueForDirectClose,
-  callApproveLoanOffering,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee,
   callIncreasePosition,

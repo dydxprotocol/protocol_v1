@@ -52,6 +52,11 @@ module.exports = {
   },
   BYTES: {
     EMPTY: web3Instance.utils.utf8ToHex(""),
+    BAD_SIGNATURE: web3Instance.utils.utf8ToHex(
+      "12345670123456701234567012345670" +
+      "12345670123456701234567012345670" +
+      "12345670123456701234567012345670"
+    ),
   },
   DEFAULT_SALT: 425
 };

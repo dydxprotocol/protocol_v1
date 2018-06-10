@@ -55,7 +55,6 @@ describe('ERC721MarginLoan', () => {
     openTx = await createOpenTx(accounts, { salt: salt++ });
     if (payer) {
       openTx.loanOffering.payer = payer;
-      openTx.loanOffering.signer = payer;
     }
     openTx.loanOffering.owner = loanContract.address;
     openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);

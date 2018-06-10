@@ -85,14 +85,13 @@ contract Margin is
      *  [1]  = owedToken
      *  [2]  = heldToken
      *  [3]  = loan payer
-     *  [4]  = loan signer
-     *  [5]  = loan owner
-     *  [6]  = loan taker
-     *  [7]  = loan position owner
-     *  [8]  = loan fee recipient
-     *  [9]  = loan lender fee token
-     *  [10]  = loan taker fee token
-     *  [11]  = exchange wrapper address
+     *  [4]  = loan owner
+     *  [5]  = loan taker
+     *  [6]  = loan position owner
+     *  [7]  = loan fee recipient
+     *  [8]  = loan lender fee token
+     *  [9]  = loan taker fee token
+     *  [10]  = exchange wrapper address
      *
      * @param  values256           Values corresponding to:
      *
@@ -114,21 +113,20 @@ contract Margin is
      *  [2] = loan interest rate (annual nominal percentage times 10**6)
      *  [3] = loan interest update period (in seconds)
      *
-     * @param  sigV                ECDSA v parameter for loan offering
-     * @param  sigRS               ECDSA r and s parameters for loan offering
      * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
      *                             False if the margin deposit will be in owedToken
      *                             and then sold along with the owedToken borrowed from the lender
+     * @param  signature           If not a smart contract: ECDSA v, r, s parameters.
+     *                             If a smart contract: Arbitrary bytes the contract must approve.
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Unique ID for the new position
      */
     function openPosition(
-        address[12] addresses,
+        address[11] addresses,
         uint256[10] values256,
         uint32[4]   values32,
-        uint8       sigV,
-        bytes32[2]  sigRS,
         bool        depositInHeldToken,
+        bytes       signature,
         bytes       order
     )
         external
@@ -141,9 +139,8 @@ contract Margin is
             addresses,
             values256,
             values32,
-            sigV,
-            sigRS,
             depositInHeldToken,
+            signature,
             order
         );
     }
@@ -200,13 +197,12 @@ contract Margin is
      * @param  addresses           Addresses corresponding to:
      *
      *  [0]  = loan payer
-     *  [1]  = loan signer
-     *  [2]  = loan taker
-     *  [3]  = loan position owner
-     *  [4]  = loan fee recipient
-     *  [5]  = loan lender fee token
-     *  [6]  = loan taker fee token
-     *  [7]  = exchange wrapper address
+     *  [1]  = loan taker
+     *  [2]  = loan position owner
+     *  [3]  = loan fee recipient
+     *  [4]  = loan lender fee token
+     *  [5]  = loan taker fee token
+     *  [6]  = exchange wrapper address
      *
      * @param  values256           Values corresponding to:
      *
@@ -225,22 +221,21 @@ contract Margin is
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *
-     * @param  sigV                ECDSA v parameter for loan offering
-     * @param  sigRS               ECDSA r and s parameters for loan offering
      * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
      *                             False if the margin deposit will be pulled in owedToken
      *                             and then sold along with the owedToken borrowed from the lender
+     * @param  signature           If not a smart contract: ECDSA v, r, s parameters.
+     *                             If a smart contract: Arbitrary bytes the contract must approve.
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Amount of owedTokens pulled from the lender
      */
     function increasePosition(
         bytes32    positionId,
-        address[8] addresses,
+        address[7] addresses,
         uint256[8] values256,
         uint32[2]  values32,
-        uint8      sigV,
-        bytes32[2] sigRS,
         bool       depositInHeldToken,
+        bytes      signature,
         bytes      order
     )
         external
@@ -254,9 +249,8 @@ contract Margin is
             addresses,
             values256,
             values32,
-            sigV,
-            sigRS,
             depositInHeldToken,
+            signature,
             order
         );
     }
@@ -483,20 +477,19 @@ contract Margin is
     }
 
     /**
-     * Cancel an amount of a loan offering. Only callable by the loan offering's payer or signer.
+     * Cancel an amount of a loan offering. Only callable by the loan offering's payer.
      *
      * @param  addresses     Array of addresses:
      *
      *  [0] = owedToken
      *  [1] = heldToken
      *  [2] = loan payer
-     *  [3] = loan signer
-     *  [4] = loan owner
-     *  [5] = loan taker
-     *  [6] = loan position owner
-     *  [7] = loan fee recipient
-     *  [8] = loan lender fee token
-     *  [9] = loan taker fee token
+     *  [3] = loan owner
+     *  [4] = loan taker
+     *  [5] = loan position owner
+     *  [6] = loan fee recipient
+     *  [7] = loan lender fee token
+     *  [8] = loan taker fee token
      *
      * @param  values256     Values corresponding to:
      *
@@ -519,7 +512,7 @@ contract Margin is
      * @return               Amount that was canceled
      */
     function cancelLoanOffering(
-        address[10] addresses,
+        address[9] addresses,
         uint256[7]  values256,
         uint32[4]   values32,
         uint256     cancelAmount
@@ -535,57 +528,6 @@ contract Margin is
             values256,
             values32,
             cancelAmount
-        );
-    }
-
-    /**
-     * On-chain approve a loan offering. Meant for smart contracts to approve loans with a
-     * transaction rather than a signature.
-     *
-     * @param  addresses  Array of addresses:
-     *
-     *  [0] = owedToken
-     *  [1] = heldToken
-     *  [2] = loan payer
-     *  [3] = loan signer
-     *  [4] = loan owner
-     *  [5] = loan taker
-     *  [6] = loan position owner
-     *  [7] = loan fee recipient
-     *  [8] = loan lender fee token
-     *  [9] = loan taker fee token
-     *
-     * @param  values256  Values corresponding to:
-     *
-     *  [0] = loan maximum amount
-     *  [1] = loan minimum amount
-     *  [2] = loan minimum heldToken
-     *  [3] = loan lender fee
-     *  [4] = loan taker fee
-     *  [5] = loan expiration timestamp (in seconds)
-     *  [6] = loan salt
-     *
-     * @param  values32   Values corresponding to:
-     *
-     *  [0] = loan call time limit (in seconds)
-     *  [1] = loan maxDuration (in seconds)
-     *  [2] = loan interest rate (annual nominal percentage times 10**6)
-     *  [3] = loan interest update period (in seconds)
-     */
-    function approveLoanOffering(
-        address[10] addresses,
-        uint256[7]  values256,
-        uint32[4]   values32
-    )
-        external
-        onlyWhileOperational
-        nonReentrant
-    {
-        LoanImpl.approveLoanOfferingImpl(
-            state,
-            addresses,
-            values256,
-            values32
         );
     }
 

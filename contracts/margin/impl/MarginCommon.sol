@@ -59,7 +59,6 @@ library MarginCommon {
         address   owedToken;
         address   heldToken;
         address   payer;
-        address   signer;
         address   owner;
         address   taker;
         address   positionOwner;
@@ -72,7 +71,7 @@ library MarginCommon {
         uint32    maxDuration;
         uint256   salt;
         bytes32   loanHash;
-        Signature signature;
+        bytes     signature;
     }
 
     struct LoanRates {
@@ -83,12 +82,6 @@ library MarginCommon {
         uint256 takerFee;
         uint32  interestRate;
         uint32  interestPeriod;
-    }
-
-    struct Signature {
-        uint8 v;
-        bytes32 r;
-        bytes32 s;
     }
 
     // ============ Internal Implementation Functions ============
@@ -241,7 +234,6 @@ library MarginCommon {
                 loanOffering.owedToken,
                 loanOffering.heldToken,
                 loanOffering.payer,
-                loanOffering.signer,
                 loanOffering.owner,
                 loanOffering.taker,
                 loanOffering.positionOwner,

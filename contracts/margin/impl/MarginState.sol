@@ -44,11 +44,6 @@ library MarginState {
         // already been canceled.
         mapping (bytes32 => uint256) loanCancels;
 
-        // Mapping from loanHash -> bool, which stores whether the order has been pre-approved
-        // on-chain by the lender. This will typically be used to allow smart contracts to make
-        // on-chain loan offerings.
-        mapping (bytes32 => bool) approvedLoans;
-
         // Mapping from positionId -> Position, which stores all the open margin positions.
         mapping (bytes32 => MarginCommon.Position) positions;
 

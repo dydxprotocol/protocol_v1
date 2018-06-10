@@ -12,7 +12,6 @@ const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition,
-  callApproveLoanOffering,
   issueForDirectClose,
   callClosePositionDirectly
 } = require('../helpers/MarginHelper');
@@ -157,29 +156,6 @@ describe('MarginAdmin', () => {
           openTx.id,
           amount,
           { from: openTx.trader }
-        );
-      });
-    });
-
-    contract('Margin', accounts => {
-      it('Only allows #approveLoanOffering while OPERATIONAL', async () => {
-        const openTx = await createOpenTx(accounts);
-        const dydxMargin = await Margin.deployed();
-
-        await issueTokensAndSetAllowances(openTx);
-
-        await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
-        await expectThrow(callApproveLoanOffering(
-          dydxMargin,
-          openTx.loanOffering,
-          openTx.loanOffering.signer
-        ));
-
-        await dydxMargin.setOperationState(OperationState.OPERATIONAL);
-        await callApproveLoanOffering(
-          dydxMargin,
-          openTx.loanOffering,
-          openTx.loanOffering.signer
         );
       });
     });

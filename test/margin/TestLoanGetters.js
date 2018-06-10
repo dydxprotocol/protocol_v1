@@ -4,15 +4,12 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const { BYTES32 } = require('../helpers/Constants');
 const {
   createOpenTx,
-  callApproveLoanOffering,
   callOpenPosition,
   callCancelLoanOffer,
   issueTokensAndSetAllowances
 } = require('../helpers/MarginHelper');
-const { createLoanOffering } = require('../helpers/LoanHelper');
 
 contract('LoanGetters', (accounts) => {
   let dydxMargin;
@@ -64,33 +61,6 @@ contract('LoanGetters', (accounts) => {
         openTx.principal.times(2),
         ca1.plus(ca2)
       );
-    });
-  });
-});
-
-contract('LoanGetters', (accounts) => {
-  let dydxMargin;
-
-  before('get Margin', async () => {
-    dydxMargin = await Margin.deployed();
-  });
-
-  describe('#isLoanApproved', () => {
-    it('succeeds', async () => {
-      const loanOffering = await createLoanOffering(accounts);
-      const loanHash = loanOffering.loanHash;
-      let approved;
-
-      approved = await dydxMargin.isLoanApproved.call(loanHash);
-      expect(approved).to.be.false;
-
-      await callApproveLoanOffering(dydxMargin, loanOffering, loanOffering.signer);
-
-      approved = await dydxMargin.isLoanApproved.call(loanHash);
-      expect(approved).to.be.true;
-
-      approved = await dydxMargin.isLoanApproved.call(BYTES32.TEST[0]);
-      expect(approved).to.be.false;
     });
   });
 });

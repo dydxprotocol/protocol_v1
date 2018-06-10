@@ -31,7 +31,7 @@ const {
 const { callCancelOrder } = require('../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../helpers/ExpectHelper');
-const { ADDRESSES } = require('../helpers/Constants');
+const { ADDRESSES, BYTES } = require('../helpers/Constants');
 
 describe('#openPosition', () => {
   describe('Validations', () => {
@@ -52,7 +52,7 @@ describe('#openPosition', () => {
         const openTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(openTx);
-        openTx.loanOffering.signature.v = '0x01';
+        openTx.loanOffering.signature = BYTES.BAD_SIGNATURE;
 
         const dydxMargin = await Margin.deployed();
         await expectThrow(callOpenPosition(dydxMargin, openTx));
@@ -333,9 +333,7 @@ describe('#openPosition', () => {
           )
         ]);
 
-        openTx.loanOffering.signer = openTx.loanOffering.payer;
         openTx.loanOffering.payer = testSmartContractLender.address;
-        openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         await expectThrow(callOpenPosition(dydxMargin, openTx));
       });
