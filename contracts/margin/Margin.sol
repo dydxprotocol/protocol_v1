@@ -116,8 +116,10 @@ contract Margin is
      * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
      *                             False if the margin deposit will be in owedToken
      *                             and then sold along with the owedToken borrowed from the lender
-     * @param  signature           If not a smart contract: ECDSA v, r, s parameters.
-     *                             If a smart contract: Arbitrary bytes the contract must approve.
+     * @param  signature           If loan payer is an account, then this must be the tightly-packed
+     *                             ECDSA V/R/S parameters from signing the loan hash. If loan payer
+     *                             is a smart contract, these are arbitrary bytes that the contract
+     *                             will recieve when choosing whether to approve the loan.
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Unique ID for the new position
      */
@@ -224,8 +226,10 @@ contract Margin is
      * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
      *                             False if the margin deposit will be pulled in owedToken
      *                             and then sold along with the owedToken borrowed from the lender
-     * @param  signature           If not a smart contract: ECDSA v, r, s parameters.
-     *                             If a smart contract: Arbitrary bytes the contract must approve.
+     * @param  signature           If loan payer is an account, then this must be the tightly-packed
+     *                             ECDSA V/R/S parameters from signing the loan hash. If loan payer
+     *                             is a smart contract, these are arbitrary bytes that the contract
+     *                             will recieve when choosing whether to approve the loan.
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Amount of owedTokens pulled from the lender
      */
