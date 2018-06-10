@@ -47,7 +47,7 @@
   },
   "homepage": "https://github.com/dydxprotocol/protocol#readme",
   "dependencies": {
-    "zeppelin-solidity": "1.9.0"
+    "zeppelin-solidity": "1.10.0"
   },
   "devDependencies": {
     "0x.js": "^0.37.2",
