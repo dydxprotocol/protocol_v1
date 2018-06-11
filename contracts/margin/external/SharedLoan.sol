@@ -147,7 +147,7 @@ contract SharedLoan is
         bytes32 positionId,
         address margin,
         address initialLender,
-        address[] trustedLoanCallers
+        address[] trustedMarginCallers
     )
         public
         OnlyMargin(margin)
@@ -156,8 +156,8 @@ contract SharedLoan is
         state = State.UNINITIALIZED;
         INITIAL_LENDER = initialLender;
 
-        for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_MARGIN_CALLERS[trustedLoanCallers[i]] = true;
+        for (uint256 i = 0; i < trustedMarginCallers.length; i++) {
+            TRUSTED_MARGIN_CALLERS[trustedMarginCallers[i]] = true;
         }
     }
 

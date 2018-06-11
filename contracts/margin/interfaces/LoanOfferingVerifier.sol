@@ -19,6 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { MarginCommon } from "../impl/MarginCommon.sol";
+
 
 /**
  * @title LoanOfferingVerifier
@@ -31,32 +33,6 @@ pragma experimental "v0.5.0";
  *       to these functions
  */
 contract LoanOfferingVerifier {
-
-    // ============ Structs ============
-
-    struct LoanOffering {
-        address owedToken;
-        address heldToken;
-        address payer;
-        address signer;
-        address owner;
-        address taker;
-        address positionOwner;
-        address feeRecipient;
-        address lenderFeeToken;
-        address takerFeeToken;
-        uint256 maximumAmount;
-        uint256 minimumAmount;
-        uint256 minimumHeldToken;
-        uint256 lenderFee;
-        uint256 takerFee;
-        uint256 expirationTimestamp;
-        uint256 salt;
-        uint32  callTimeLimit;
-        uint32  maxDuration;
-        uint32  interestRate;
-        uint32  interestPeriod;
-    }
 
     // ============ Margin-Only State-Changing Functions ============
 
@@ -99,6 +75,7 @@ contract LoanOfferingVerifier {
      *  [3] = loan interest update period (in seconds)
      *
      * @param  positionId   Unique ID of the position
+     * @param  signature    Arbitrary bytes; may or may not be an ECDSA signature
      * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(
@@ -115,26 +92,28 @@ contract LoanOfferingVerifier {
     // ============ Parsing Functions ============
 
     function parseLoanOffering(
-        address[10] addresses,
+        address[9] addresses,
         uint256[7] values256,
-        uint32[4] values32
+        uint32[4] values32,
+        bytes signature
     )
         internal
         pure
-        returns (LoanOffering memory)
+        returns (MarginCommon.LoanOffering memory)
     {
-        LoanOffering memory loanOffering;
+        MarginCommon.LoanOffering memory loanOffering;
 
         fillLoanOfferingAddresses(loanOffering, addresses);
         fillLoanOfferingValues256(loanOffering, values256);
         fillLoanOfferingValues32(loanOffering, values32);
+        loanOffering.signature = signature;
 
         return loanOffering;
     }
 
     function fillLoanOfferingAddresses(
-        LoanOffering memory loanOffering,
-        address[10] addresses
+        MarginCommon.LoanOffering memory loanOffering,
+        address[9] addresses
     )
         private
         pure
@@ -142,33 +121,32 @@ contract LoanOfferingVerifier {
         loanOffering.owedToken = addresses[0];
         loanOffering.heldToken = addresses[1];
         loanOffering.payer = addresses[2];
-        loanOffering.signer = addresses[3];
-        loanOffering.owner = addresses[4];
-        loanOffering.taker = addresses[5];
-        loanOffering.positionOwner = addresses[6];
-        loanOffering.feeRecipient = addresses[7];
-        loanOffering.lenderFeeToken = addresses[8];
-        loanOffering.takerFeeToken = addresses[9];
+        loanOffering.owner = addresses[3];
+        loanOffering.taker = addresses[4];
+        loanOffering.positionOwner = addresses[5];
+        loanOffering.feeRecipient = addresses[6];
+        loanOffering.lenderFeeToken = addresses[7];
+        loanOffering.takerFeeToken = addresses[8];
     }
 
     function fillLoanOfferingValues256(
-        LoanOffering memory loanOffering,
+        MarginCommon.LoanOffering memory loanOffering,
         uint256[7] values256
     )
         private
         pure
     {
-        loanOffering.maximumAmount = values256[0];
-        loanOffering.minimumAmount = values256[1];
-        loanOffering.minimumHeldToken = values256[2];
-        loanOffering.lenderFee = values256[3];
-        loanOffering.takerFee = values256[4];
+        loanOffering.rates.maxAmount = values256[0];
+        loanOffering.rates.minAmount = values256[1];
+        loanOffering.rates.minHeldToken = values256[2];
+        loanOffering.rates.lenderFee = values256[3];
+        loanOffering.rates.takerFee = values256[4];
         loanOffering.expirationTimestamp = values256[5];
         loanOffering.salt = values256[6];
     }
 
     function fillLoanOfferingValues32(
-        LoanOffering memory loanOffering,
+        MarginCommon.LoanOffering memory loanOffering,
         uint32[4] values32
     )
         private
@@ -176,7 +154,7 @@ contract LoanOfferingVerifier {
     {
         loanOffering.callTimeLimit = values32[0];
         loanOffering.maxDuration = values32[1];
-        loanOffering.interestRate = values32[2];
-        loanOffering.interestPeriod = values32[3];
+        loanOffering.rates.interestRate = values32[2];
+        loanOffering.rates.interestPeriod = values32[3];
     }
 }

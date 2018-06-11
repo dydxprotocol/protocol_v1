@@ -57,13 +57,13 @@ contract SharedLoanCreator is
 
     constructor(
         address margin,
-        address[] trustedLoanCallers
+        address[] trustedMarginCallers
     )
         public
         OnlyMargin(margin)
     {
-        for (uint256 i = 0; i < trustedLoanCallers.length; i++) {
-            TRUSTED_MARGIN_CALLERS.push(trustedLoanCallers[i]);
+        for (uint256 i = 0; i < trustedMarginCallers.length; i++) {
+            TRUSTED_MARGIN_CALLERS.push(trustedMarginCallers[i]);
         }
     }
 

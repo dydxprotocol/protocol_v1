@@ -42,14 +42,48 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  * @author dYdX
  *
  * On-chain shared lender that allows anyone to deposit tokens into this contract to be used to
- * lend tokens for a particular position.
-
- * - Deposits go into a particular bucket, determined by time since the start of the position.
- * - When lending money, earlier buckets are used to lend first.
- * - When money is paid back, later buckets are paid back first.
- * - Over time, this gives higher interest to earlier buckets, but locks-up those funds for longer.
- * - Deposits in the same bucket earn the same interest.
- * - Lenders can withdraw their funds at any time if the funds are not being lent.
+ * lend tokens for a particular margin position.
+ *
+ * - Each bucket has three variables:
+ *   - Available Amount (AA)
+ *     - The available amount of tokens that the bucket has to lend out
+ *   - Outstanding Principal (OP)
+ *     - The amount of principal that the bucket is responsible for in the margin position
+ *   - Weight
+ *     - Used to keep track of each account's weighted ownership within a bucket
+ *     - Relative weight between buckets is meaningless
+ *     - Only accounts' relative weight within a bucket matters
+ *
+ * - Token Deposits:
+ *   - Go into a particular bucket, determined by time since the start of the position
+ *     - If the position has not started: bucket = 0
+ *     - If the position has started:     bucket = ceiling(time_since_start / BUCKET_TIME)
+ *     - This is always the highest bucket; that is, all higher buckets have no Weight, AA or OP
+ *   - Increase the bucket's AA
+ *   - Increase the bucket's weight and the account's weight in that bucket
+ *
+ * - Token Withdrawals:
+ *   - Can be from any bucket with available amount
+ *   - Decrease the bucket's AA (if it has enough, otherwise throw)
+ *   - Decrease the bucket's weight and the account's weight in that bucket
+ *
+ * - Increasing the Position (Lending):
+ *   - The lowest buckets with AA are used first
+ *   - Decreases AA
+ *   - Increases OP
+ *
+ * - Decreasing the Position (Being Paid-Back)
+ *   - The highest buckets with OP are paid back first
+ *   - Decreases OP
+ *   - Increases AA
+ *
+ *
+ * - Over time, this gives highest interest rates to earlier buckets, but disallows withdrawals from
+ *   those buckets for a longer period of time.
+ * - Deposits in the same bucket earn the same interest rate.
+ * - Lenders can withdraw their funds at any time if they are not being lent (and are therefore not
+ *   making the maximum interest).
+ * - The highest bucket with OP is always less-than-or-equal-to the lowest bucket with AA
  */
 contract BucketLender is
     OnlyMargin,
@@ -65,23 +99,71 @@ contract BucketLender is
 
     // ============ Events ============
 
-    // TODO
+    event Deposit(
+        address beneficiary,
+        uint256 bucket,
+        uint256 amount,
+        uint256 weight
+    );
+
+    event Withdraw(
+        address withdrawer,
+        uint256 bucket,
+        uint256 weight,
+        uint256 owedTokenWithdrawn,
+        uint256 heldTokenWithdrawn
+    );
 
     // ============ State Variables ============
 
-    // Available token to lend
-    mapping(uint256 => uint256) public availableForBkt;
+    /**
+     * Available Amount (AA) is the amount of tokens that is available to be lent by each bucket.
+     * These tokens are also available to be withdrawn by the accounts that have weight in the
+     * bucket.
+     */
+    // AA for each bucket
+    mapping(uint256 => uint256) public availableForBucket;
+    // Total AA
     uint256 public availableTotal;
 
-    // Current allocated principal for each bucket
-    mapping(uint256 => uint256) public principalForBkt;
+    /**
+     * Outstanding Principal (OP) is the share of the margin position's principal that each bucket
+     * is responsible for. That is, each bucket with OP is owed (OP)*E^(RT) owedTokens in repayment.
+     */
+    // OP for each bucket
+    mapping(uint256 => uint256) public principalForBucket;
+    // Total OP
     uint256 public principalTotal;
 
-    // Bucket accounting for which accounts have deposited into that bucket
-    mapping(uint256 => mapping(address => uint256)) public weightForBktForAct;
-    mapping(uint256 => uint256) public weightForBkt;
+    /**
+     * Weight determines an account's proportional share of a bucket. Relative weights have no
+     * meaning if they are not for the same bucket. Likewise, the relative weight of two buckets has
+     * no meaning. However, the relative weight of two accounts within the same bucket is equal to
+     * the accounts' shares in the bucket and are therefore proportional to the payout that they
+     * should expect from withdrawing from that bucket.
+     */
+    // Weight for each account in each bucket
+    mapping(uint256 => mapping(address => uint256)) public weightForBucketForAccount;
+    // Total Weight for each bucket
+    mapping(uint256 => uint256) public weightForBucket;
 
-    // Latest recorded value for totalOwedTokenRepaidToLender
+    /**
+     * The critical bucket is:
+     * - Greater-than-or-equal-to The highest bucket with OP
+     * - Less-than-or-equal-to the lowest bucket with AA
+     *
+     * It is equal to both of these values in most cases except in an edge cases where the two
+     * buckets are different. This value is cached to find such a bucket faster than looping through
+     * all possible buckets.
+     */
+    uint256 public criticalBucket = 0;
+
+    /**
+     * Latest cached value for totalOwedTokenRepaidToLender.
+     * This number updates on the dYdX Margin base protocol whenever the position is
+     * partially-closed, but this contract is not notified at that time. Therefore, it is updated
+     * upon increasing the position or when depositing/withdrawing
+     */
     uint256 public cachedRepaidAmount = 0;
 
     // ============ Constants ============
@@ -119,29 +201,19 @@ contract BucketLender is
         OWED_TOKEN = owedToken;
         BUCKET_TIME = bucketTime;
 
-        for (uint256 i = 0; i < trustedMarginCallers.length; i = i.add(1)) {
+        for (uint256 i = 0; i < trustedMarginCallers.length; i++) {
             TRUSTED_MARGIN_CALLERS[trustedMarginCallers[i]] = true;
         }
 
-        TokenInteract.approve(
-            OWED_TOKEN,
-            Margin(DYDX_MARGIN).getProxyAddress(),
-            MathHelpers.maxUint256()
-        );
+        setMaximumAllowanceOnProxy();
     }
 
     // ============ Modifiers ============
 
     modifier onlyPosition(bytes32 positionId) {
         require(
-            POSITION_ID == positionId
-        );
-        _;
-    }
-
-    modifier onlyWhileOpen() {
-        require(
-            !Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)
+            POSITION_ID == positionId,
+            "BucketLender#onlyPosition: Incorrect position"
         );
         _;
     }
@@ -150,22 +222,17 @@ contract BucketLender is
 
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
-     * will be generated off-chain and signed by a signer. The Margin contract will verify that
-     * the signature for the loan offering was made by signer. The "loan owner" address will own the
-     * loan-side of the resulting position.
-     *
-     * If true is returned, and no errors are thrown by the Margin contract, the loan will have
-     * occurred. This means that verifyLoanOffering can also be used to update internal contract
-     * state on a loan.
+     * will be generated off-chain. The "loan owner" address will own the loan-side of the resulting
+     * position.
      *
      * @param  addresses    Array of addresses:
      *
      *  [0] = owedToken
      *  [1] = heldToken
      *  [2] = loan payer
-     *  [3] = loan signer
-     *  [4] = loan owner
-     *  [5] = loan taker
+     *  [3] = loan owner
+     *  [4] = loan taker
+     *  [5] = loan positionOwner
      *  [6] = loan fee recipient
      *  [7] = loan lender fee token
      *  [8] = loan taker fee token
@@ -188,50 +255,63 @@ contract BucketLender is
      *  [3] = loan interest update period (in seconds)
      *
      * @param  positionId   Unique ID of the position
+     * @param  signature    Arbitrary bytes; may or may not be an ECDSA signature
      * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(
-        address[10] addresses,
+        address[9] addresses,
         uint256[7] values256,
         uint32[4] values32,
-        bytes32 positionId
+        bytes32 positionId,
+        bytes signature
     )
         external
         onlyMargin
         nonReentrant
         returns (address)
     {
-        LoanOffering memory loanOffering = parseLoanOffering(addresses, values256, values32);
+        MarginCommon.LoanOffering memory loanOffering = parseLoanOffering(
+            addresses,
+            values256,
+            values32,
+            signature
+        );
 
-        /* CHECK POSITIONID */
+        // CHECK POSITIONID
         require(positionId == POSITION_ID);
 
-        /* CHECK ADDRESSES */
+        // CHECK ADDRESSES
         require(loanOffering.owedToken == OWED_TOKEN);
         require(loanOffering.heldToken == HELD_TOKEN);
         require(loanOffering.payer == address(this));
-        // no need to require anything about loanOffering.signer
         require(loanOffering.owner == address(this));
-        // no need to require anything about loanOffering.taker
-        // no need to require anything about loanOffering.positionOwner
-        // no need to require anything about loanOffering.feeRecipient
-        // no need to require anything about loanOffering.lenderFeeToken
-        // no need to require anything about loanOffering.takerFeeToken
 
-        /* CHECK VALUES256 */
-        // no need to require anything about loanOffering.maximumAmount
-        // no need to require anything about loanOffering.minimumAmount
-        // no need to require anything about loanOffering.minimumHeldToken
-        require(loanOffering.lenderFee == 0);
-        // no need to require anything about loanOffering.takerFee
-        // no need to require anything about loanOffering.expirationTimestamp
-        // no need to require anything about loanOffering.salt
+        /* Can un-comment these after testing
+        Margin margin = Margin(DYDX_MARGIN);
 
-        /* CHECK VALUES32 */
-        // no need to require anything about loanOffering.callTimeLimit
-        // no need to require anything about loanOffering.maxDuration
-        // no need to require anything about loanOffering.interestRate
-        // no need to require anything about loanOffering.interestPeriod
+        require(loanOffering.taker == address(0));
+        require(loanOffering.positionOwner == margin.getPositionOwner(POSITION_ID));
+        require(loanOffering.lenderFeeToken == address(0));
+        require(loanOffering.takerFeeToken == address(0));
+
+        // CHECK VALUES256
+        require(loanOffering.maximumAmount == MathHelpers.maxUint256());
+        require(loanOffering.minimumAmount == 0);
+        require(loanOffering.minimumHeldToken == 0);
+        require(loanOffering.rates.lenderFee == 0);
+        require(loanOffering.rates.takerFee == 0);
+        require(loanOffering.expirationTimestamp == MathHelpers.maxUint256());
+        require(loanOffering.salt == 0);
+
+        // CHECK VALUES32
+        require(loanOffering.callTimeLimit == margin.getPositionCallTimeLimit(POSITION_ID));
+        require(loanOffering.maxDuration == margin.getPositionMaxDuration(POSITION_ID));
+        require(loanOffering.interestRate == margin.getPositionInterestRate(POSITION_ID));
+        require(loanOffering.interestPeriod == margin.getPositioninterestPeriod(POSITION_ID));
+
+        // CHECK SIGNATURE
+        // no need to require anything about loanOffering.signature
+        */
 
         return address(this);
     }
@@ -256,16 +336,18 @@ contract BucketLender is
     {
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
 
+        assert(principalTotal == 0);
         assert(position.principal > 0);
         assert(position.owedToken == OWED_TOKEN);
         assert(position.heldToken == HELD_TOKEN);
 
         // set relevant constants
         uint256 initialPrincipal = position.principal;
-        principalForBkt[0] = initialPrincipal;
+        principalForBucket[0] = initialPrincipal;
         principalTotal = initialPrincipal;
-        weightForBkt[0] = weightForBkt[0].add(initialPrincipal);
-        weightForBktForAct[0][from] = weightForBktForAct[0][from].add(initialPrincipal);
+        weightForBucket[0] = weightForBucket[0].add(initialPrincipal);
+        weightForBucketForAccount[0][from] =
+            weightForBucketForAccount[0][from].add(initialPrincipal);
 
         return address(this);
     }
@@ -291,14 +373,23 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
-        // Don't allow other lenders
-        require(payer == address(this));
+        require(
+            payer == address(this),
+            "BucketLender#increaseLoanOnBehalfOf: Other lenders cannot lend for this position"
+        );
+        require(
+            !Margin(DYDX_MARGIN).isPositionCalled(POSITION_ID),
+            "BucketLender#increaseLoanOnBehalfOf: No lending while the position is margin-called"
+        );
+        require(
+            lentAmount <= availableTotal,
+            "BucketLender#increaseLoanOnBehalfOf: No lending not-accounted-for funds"
+        );
 
-        // p2 is the principal after the add (p2 > p1)
-        // p1 is the principal before the add
         uint256 principalAfterIncrease = getCurrentPrincipalFromMargin();
         uint256 principalBeforeIncrease = principalAfterIncrease.sub(principalAdded);
 
+        // principalTotal was the principal after the last increase
         accountForClose(principalTotal.sub(principalBeforeIncrease));
 
         accountForIncrease(principalAdded, lentAmount);
@@ -326,8 +417,14 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
-        require(TRUSTED_MARGIN_CALLERS[caller]);
-        require(depositAmount == 0);
+        require(
+            TRUSTED_MARGIN_CALLERS[caller],
+            "BucketLender#marginCallOnBehalfOf: Margin-caller must be trusted"
+        );
+        require(
+            depositAmount == 0,
+            "BucketLender#marginCallOnBehalfOf: Deposit amount must be zero"
+        );
 
         return address(this);
     }
@@ -348,7 +445,10 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
-        require(TRUSTED_MARGIN_CALLERS[canceler]);
+        require(
+            TRUSTED_MARGIN_CALLERS[canceler],
+            "BucketLender#cancelMarginCallOnBehalfOf: Margin-call-canceler must be trusted"
+        );
 
         return address(this);
     }
@@ -372,7 +472,10 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
-        require(recipient == address(this));
+        require(
+            recipient == address(this),
+            "BucketLender#forceRecoverCollateralOnBehalfOf: Recipient must be this contract"
+        );
 
         rebalanceBuckets();
 
@@ -394,9 +497,17 @@ contract BucketLender is
         uint256 amount
     )
         external
-        onlyWhileOpen
         returns (uint256)
     {
+        require(
+            !Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID),
+            "BucketLender#deposit: Cannot deposit after the position is closed"
+        );
+        require(
+            Margin(DYDX_MARGIN).getPositionCallTimestamp(POSITION_ID) == 0,
+            "BucketLender#deposit: Cannot deposit while the position is margin-called"
+        );
+
         rebalanceBuckets();
 
         TokenInteract.transferFrom(
@@ -408,7 +519,7 @@ contract BucketLender is
 
         uint256 bucket = getBucketNumber();
 
-        uint256 effectiveAmount = availableForBkt[bucket].add(getBucketOwedAmount(bucket));
+        uint256 effectiveAmount = availableForBucket[bucket].add(getBucketOwedAmount(bucket));
 
         uint256 weightToAdd = 0;
         if (effectiveAmount == 0) {
@@ -417,7 +528,7 @@ contract BucketLender is
             weightToAdd = MathHelpers.getPartialAmount(
                 amount,
                 effectiveAmount,
-                weightForBkt[bucket]
+                weightForBucket[bucket]
             );
         }
 
@@ -425,68 +536,96 @@ contract BucketLender is
 
         changeAvailable(bucket, amount, true);
 
+        emit Deposit(
+            beneficiary,
+            bucket,
+            amount,
+            weightToAdd
+        );
+
         return bucket;
     }
 
-    function deposit2(
-        address beneficiary,
-        uint256 amount
+    /**
+     * Allows users to withdraw their lent funds. An account can withdraw its weighted share of the
+     * bucket.
+     *
+     * While the position is open, a bucket's share is equal to:
+     *   Owed Token: AA + OP * (1 + interest)
+     *   Held Token: 0
+     *
+     * After the position is closed, a bucket's share is equal to:
+     *   Owed Token: AA
+     *   Held Token: (Held Token Balance) * (OP / Total OP)
+     *
+     * @param  buckets      The bucket numbers to withdraw from
+     * @param  maxWeights   The maximum weight to withdraw from each bucket. The amount of tokens
+     *                      withdrawn will be at least this amount, but not necessarily more.
+     *                      Withdrawing the same weight from different buckets does not necessarily
+     *                      return the same amounts from those buckets. In order to withdraw as many
+     *                      tokens as possible, use the maximum uint256.
+     * @param  beneficiary  The address to send the tokens to
+     * @return              1) The number of owedTokens withdrawn
+     *                      2) The number of heldTokens withdrawn
+     */
+    function withdraw(
+        uint256[] buckets,
+        uint256[] maxWeights,
+        address beneficiary
     )
         external
-        onlyWhileOpen
-        returns (uint256)
+        returns (uint256, uint256)
     {
-        rebalanceBuckets();
-
-        TokenInteract.transferFrom(
-            OWED_TOKEN,
-            msg.sender,
-            address(this),
-            amount
+        require(
+            beneficiary != address(0),
+            "BucketLender#withdraw: Beneficiary cannot be the zero address"
         );
-    }
-
-    function deposit3(
-        address beneficiary,
-        uint256 amount
-    )
-        external
-        onlyWhileOpen
-        returns (uint256)
-    {
-        rebalanceBuckets();
-
-        TokenInteract.transferFrom(
-            OWED_TOKEN,
-            msg.sender,
-            address(this),
-            amount
+        require(
+            buckets.length == maxWeights.length,
+            "BucketLender#withdraw: The lengths of the input arrays must match"
         );
 
-        uint256 bucket = getBucketNumber();
+        rebalanceBuckets();
 
-        uint256 effectiveAmount = availableForBkt[bucket].add(getBucketOwedAmount(bucket));
+        uint256 totalOwedToken = 0;
+        uint256 totalHeldToken = 0;
 
-        uint256 weightToAdd = 0;
-        if (effectiveAmount == 0) {
-            weightToAdd = amount; // first deposit in bucket
-        } else {
-            weightToAdd = MathHelpers.getPartialAmount(
-                amount,
-                effectiveAmount,
-                weightForBkt[bucket]
+        uint256 maxHeldToken =
+            Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID) ?
+            TokenInteract.balanceOf(HELD_TOKEN, address(this)) :
+            0;
+
+        for (uint256 i = 0; i < buckets.length; i++) {
+            (uint256 owedTokenForBucket, uint256 heldTokenForBucket) = withdrawInternal(
+                buckets[i],
+                maxWeights[i],
+                maxHeldToken
             );
+
+            totalOwedToken = totalOwedToken.add(owedTokenForBucket);
+            totalHeldToken = totalHeldToken.add(heldTokenForBucket);
         }
+
+        // Transfer share of owedToken
+        TokenInteract.transfer(OWED_TOKEN, beneficiary, totalOwedToken);
+        TokenInteract.transfer(HELD_TOKEN, beneficiary, totalHeldToken);
+
+        return (totalOwedToken, totalHeldToken);
     }
+
+    // ============ Public State-Changing Functions ============
 
     /**
      * Allow anyone to refresh the bucket amounts if part of the position was closed since the last
-     * position increase. Favors earlier buckets.
+     * position increase.
      */
     function rebalanceBuckets()
         public
-        onlyWhileOpen
     {
+        if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
+            return;
+        }
+
         uint256 marginPrincipal = getCurrentPrincipalFromMargin();
 
         accountForClose(principalTotal.sub(marginPrincipal));
@@ -495,96 +634,16 @@ contract BucketLender is
     }
 
     /**
-     * Allows users to withdraw their lent funds.
-     *
-     * @param  buckets  The bucket numbers to withdraw from
-     * @return          The number of owedTokens withdrawn
+     * Helper function to make sure allowance is set on the dYdX proxy. Callable by anyone.
      */
-    function withdraw(
-        uint256[] buckets
-    )
-        external
-        returns (uint256)
+    function setMaximumAllowanceOnProxy()
+        public
     {
-        // running total amount of tokens to withdraw
-        uint256 runningTotal = 0;
-
-        if (!Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
-            rebalanceBuckets();
-        }
-
-        for (uint256 i = 0; i < buckets.length; i = i.add(1)) {
-            uint256 bucket = buckets[i];
-
-            // calculate the bucket's share
-            uint256 effectiveAmount = availableForBkt[bucket].add(getBucketOwedAmount(bucket));
-
-            // calculate the user's share
-            uint256 bucketWeight = weightForBkt[bucket];
-            uint256 userWeight = accountForWithdraw(bucket, msg.sender); // deletes the users share
-            uint256 amountToWithdraw = MathHelpers.getPartialAmount(
-                userWeight,
-                bucketWeight,
-                effectiveAmount
-            );
-
-            // check that there is enough token to give back
-            require(amountToWithdraw <= availableForBkt[bucket]);
-
-            // update amounts
-            changeAvailable(bucket, amountToWithdraw, false);
-            runningTotal = runningTotal.add(amountToWithdraw);
-        }
-
-        TokenInteract.transfer(OWED_TOKEN, msg.sender, runningTotal);
-
-        return runningTotal;
-    }
-
-    /**
-     * Allows lenders to withdraw heldToken in the event that the position was force-recovered.
-     *
-     * @param  buckets  The bucket numbers to withdraw from
-     * @return          The number of heldTokens withdrawn
-     */
-    function withdrawHeldToken(
-        uint256[] buckets
-    )
-        external
-        returns(uint256)
-    {
-        // running total amount of tokens to withdraw
-        uint256 runningUserPrincipal = 0;
-        uint256 originalPrincipalTotal = principalTotal;
-
-        for (uint256 i = 0; i < buckets.length; i = i.add(1)) {
-            uint256 bucket = buckets[i];
-
-            // calculate the user's share
-            uint256 bucketWeight = weightForBkt[bucket];
-            uint256 userWeight = accountForWithdraw(bucket, msg.sender); // deletes the users share
-
-            // calculate the user's principal for the bucket
-            uint256 userPrincipal =
-                userWeight
-                .mul(principalForBkt[bucket])
-                .div(bucketWeight);
-
-            // update amounts
-            changePrincipal(bucket, userPrincipal, false);
-
-            runningUserPrincipal = runningUserPrincipal.add(userPrincipal);
-        }
-
-        uint256 tokenAmount = MathHelpers.getPartialAmount(
-            runningUserPrincipal,
-            originalPrincipalTotal,
-            TokenInteract.balanceOf(HELD_TOKEN, address(this))
+        TokenInteract.approve(
+            OWED_TOKEN,
+            Margin(DYDX_MARGIN).getProxyAddress(),
+            MathHelpers.maxUint256()
         );
-
-        TokenInteract.transfer(HELD_TOKEN, msg.sender, tokenAmount);
-
-        return tokenAmount;
     }
 
     // ============ Helper Functions ============
@@ -593,8 +652,8 @@ contract BucketLender is
      * Updates the state variables at any time. Only does anything after the position has been
      * closed or partially-closed since the last time this function was called.
      *
-     * - Increases the available amount in the highest bucket with outstanding principal
-     * - Decreases the principal amount in that bucket
+     * - Increases the available amount in the highest buckets with outstanding principal
+     * - Decreases the principal amount in those buckets
      *
      * @param  principalRemoved  Amount of principal closed since the last update
      */
@@ -610,37 +669,39 @@ contract BucketLender is
         uint256 newRepaidAmount = Margin(DYDX_MARGIN).getTotalOwedTokenRepaidToLender(POSITION_ID);
         assert(newRepaidAmount.sub(cachedRepaidAmount) >= principalRemoved);
 
-        // find highest bucket with outstanding principal
-        uint256 bucket = getBucketNumber();
-        while (principalForBkt[bucket] == 0) {
-            bucket = bucket.sub(1);
-        }
+        uint256 principalToSub = principalRemoved;
+        uint256 availableToAdd = newRepaidAmount.sub(cachedRepaidAmount);
+        uint256 mostRecentlyUsedBucket;
 
-        // (available up / principal down) starting at the highest bucket
-        uint256 p_total = principalRemoved;
-        uint256 a_total = newRepaidAmount.sub(cachedRepaidAmount);
-        while (p_total > 0) {
-            uint256 p_i = Math.min256(p_total, principalForBkt[bucket]);
-            if (p_i == 0) {
+        // loop over buckets in reverse order starting with the critical bucket
+        for (
+            uint256 bucket = criticalBucket;
+            principalToSub > 0 && bucket <= criticalBucket;
+            bucket--
+        ) {
+            uint256 principalTemp = Math.min256(principalToSub, principalForBucket[bucket]);
+            if (principalTemp == 0) {
                 continue;
             }
-            uint256 a_i = MathHelpers.getPartialAmount(a_total, p_total, p_i);
+            uint256 availableTemp = MathHelpers.getPartialAmount(
+                principalTemp,
+                principalToSub,
+                availableToAdd
+            );
 
-            changeAvailable(bucket, a_i, true);
-            changePrincipal(bucket, p_i, false);
+            changeAvailable(bucket, availableTemp, true);
+            changePrincipal(bucket, principalTemp, false);
 
-            p_total = p_total.sub(p_i);
-            a_total = a_total.sub(a_i);
+            principalToSub = principalToSub.sub(principalTemp);
+            availableToAdd = availableToAdd.sub(availableTemp);
 
-            if (bucket == 0) {
-                break;
-            } else {
-                bucket = bucket.sub(1);
-            }
+            mostRecentlyUsedBucket = bucket;
         }
 
-        assert(p_total == 0);
-        assert(a_total == 0);
+        assert(principalToSub == 0);
+        assert(availableToAdd == 0);
+
+        setCriticalBucket(mostRecentlyUsedBucket);
 
         cachedRepaidAmount = newRepaidAmount;
     }
@@ -648,8 +709,8 @@ contract BucketLender is
     /**
      * Updates the state variables when a position is increased.
      *
-     * - Decreases the available amount in the lowest bucket with available token
-     * - Increases the principal amount in that bucket
+     * - Decreases the available amount in the lowest buckets with available token
+     * - Increases the principal amount in those buckets
      *
      * @param  principalAdded  Amount of principal added to the position
      * @param  lentAmount      Amount of owedToken lent
@@ -660,28 +721,162 @@ contract BucketLender is
     )
         internal
     {
-        uint256 p_total = principalAdded;
-        uint256 a_total = lentAmount;
+        uint256 principalToAdd = principalAdded;
+        uint256 availableToSub = lentAmount;
+        uint256 mostRecentlyUsedBucket;
 
-        for (uint256 bucket = 0; p_total > 0; bucket = bucket.add(1)) {
-            uint256 a_i = Math.min256(a_total, availableForBkt[bucket]);
-            if (a_i == 0) {
+        // loop over buckets in order starting from the critical bucket
+        uint256 lastBucket = getBucketNumber();
+        for (
+            uint256 bucket = criticalBucket;
+            principalToAdd > 0 && bucket <= lastBucket;
+            bucket++
+        ) {
+            uint256 availableTemp = Math.min256(availableToSub, availableForBucket[bucket]);
+            if (availableTemp == 0) {
                 continue;
             }
-            uint256 p_i = MathHelpers.getPartialAmount(p_total, a_total, a_i);
+            uint256 principalTemp = MathHelpers.getPartialAmount(
+                availableTemp,
+                availableToSub,
+                principalToAdd
+            );
 
-            changeAvailable(bucket, a_i, false);
-            changePrincipal(bucket, p_i, true);
+            changeAvailable(bucket, availableTemp, false);
+            changePrincipal(bucket, principalTemp, true);
 
-            p_total = p_total.sub(p_i);
-            a_total = a_total.sub(a_i);
+            principalToAdd = principalToAdd.sub(principalTemp);
+            availableToSub = availableToSub.sub(availableTemp);
+
+            mostRecentlyUsedBucket = bucket;
         }
 
-        assert(p_total == 0);
-        assert(a_total == 0);
+        assert(principalToAdd == 0);
+        assert(availableToSub == 0);
+
+        setCriticalBucket(mostRecentlyUsedBucket);
+    }
+
+    function withdrawInternal(
+        uint256 bucket,
+        uint256 maxWeight,
+        uint256 maxHeldToken
+    )
+        internal
+        returns(uint256, uint256)
+    {
+        // calculate the user's share
+        uint256 bucketWeight = weightForBucket[bucket];
+        uint256 userWeight = accountForWithdraw(bucket, msg.sender, maxWeight);
+
+        uint256 owedTokenToWithdraw = withdrawInternalOwedToken(
+            bucket,
+            userWeight,
+            bucketWeight
+        );
+
+        // calculate for heldToken
+        uint256 heldTokenToWithdraw = withdrawInternalHeldToken(
+            bucket,
+            userWeight,
+            bucketWeight,
+            maxHeldToken
+        );
+
+        emit Withdraw(
+            msg.sender,
+            bucket,
+            userWeight,
+            owedTokenToWithdraw,
+            heldTokenToWithdraw
+        );
+
+        return (owedTokenToWithdraw, heldTokenToWithdraw);
+    }
+
+    function withdrawInternalOwedToken(
+        uint256 bucket,
+        uint256 userWeight,
+        uint256 bucketWeight
+    )
+        internal
+        returns (uint256)
+    {
+        // amount to return for the bucket
+        uint256 owedTokenToWithdraw = MathHelpers.getPartialAmount(
+            userWeight,
+            bucketWeight,
+            availableForBucket[bucket].add(getBucketOwedAmount(bucket))
+        );
+
+        if (owedTokenToWithdraw == 0) {
+            return 0;
+        }
+
+        // check that there is enough token to give back
+        require(
+            owedTokenToWithdraw <= availableForBucket[bucket],
+            "BucketLender#withdrawInternalOwedToken: There must be enough available owedToken"
+        );
+
+        // update amounts
+        changeAvailable(bucket, owedTokenToWithdraw, false);
+
+        return owedTokenToWithdraw;
+    }
+
+    function withdrawInternalHeldToken(
+        uint256 bucket,
+        uint256 userWeight,
+        uint256 bucketWeight,
+        uint256 maxHeldToken
+    )
+        internal
+        returns (uint256)
+    {
+        if (maxHeldToken == 0) {
+            return 0;
+        }
+
+        // user's principal for the bucket
+        uint256 principalForBucketForAccount = MathHelpers.getPartialAmount(
+            userWeight,
+            bucketWeight,
+            principalForBucket[bucket]
+        );
+
+        if (principalForBucketForAccount == 0) {
+            return 0;
+        }
+
+        uint256 heldTokenToWithdraw = MathHelpers.getPartialAmount(
+            principalForBucketForAccount,
+            principalTotal,
+            maxHeldToken
+        );
+
+        changePrincipal(bucket, principalForBucketForAccount, false);
+
+        return heldTokenToWithdraw;
     }
 
     // ============ Setter Functions ============
+
+    /**
+     * Changes the critical bucket variable
+     *
+     * @param  bucket  The value to set criticalBucket to
+     */
+    function setCriticalBucket(
+        uint256 bucket
+    )
+        internal
+    {
+        // don't spend the gas to sstore unless we need to change the value
+        if (criticalBucket != bucket) {
+            criticalBucket = bucket;
+        }
+    }
 
     /**
      * Changes the available owedToken amount. This changes both the variable to track the total
@@ -698,13 +893,16 @@ contract BucketLender is
     )
         internal
     {
-        require(amount > 0);
+        if (amount == 0) {
+            return;
+        }
+
         if (increase) {
             availableTotal = availableTotal.add(amount);
-            availableForBkt[bucket] = availableForBkt[bucket].add(amount);
+            availableForBucket[bucket] = availableForBucket[bucket].add(amount);
         } else {
             availableTotal = availableTotal.sub(amount);
-            availableForBkt[bucket] = availableForBkt[bucket].sub(amount);
+            availableForBucket[bucket] = availableForBucket[bucket].sub(amount);
         }
     }
 
@@ -723,16 +921,26 @@ contract BucketLender is
     )
         internal
     {
-        require(amount > 0);
+        if (amount == 0) {
+            return;
+        }
+
         if (increase) {
             principalTotal = principalTotal.add(amount);
-            principalForBkt[bucket] = principalForBkt[bucket].add(amount);
+            principalForBucket[bucket] = principalForBucket[bucket].add(amount);
         } else {
             principalTotal = principalTotal.sub(amount);
-            principalForBkt[bucket] = principalForBkt[bucket].sub(amount);
+            principalForBucket[bucket] = principalForBucket[bucket].sub(amount);
         }
     }
 
+    /**
+     * Increases the 'weight' values for a bucket and an account within that bucket
+     *
+     * @param  bucket       The bucket number
+     * @param  account      The account to remove weight from
+     * @param  weightToAdd  Adds this amount of weight
+     */
     function accountForDeposit(
         uint256 bucket,
         address account,
@@ -740,30 +948,42 @@ contract BucketLender is
     )
         internal
     {
-        weightForBktForAct[bucket][account] = weightForBktForAct[bucket][account].add(weightToAdd);
-        weightForBkt[bucket] = weightForBkt[bucket].add(weightToAdd);
+        weightForBucketForAccount[bucket][account] =
+            weightForBucketForAccount[bucket][account].add(weightToAdd);
+        weightForBucket[bucket] = weightForBucket[bucket].add(weightToAdd);
     }
 
+    /**
+     * Decreases the 'weight' values for a bucket and an account within that bucket.
+     *
+     * @param  bucket         The bucket number
+     * @param  account        The account to remove weight from
+     * @param  maximumWeight  Removes up-to this amount of weight
+     * @return                The amount of weight removed
+     */
     function accountForWithdraw(
         uint256 bucket,
-        address account
+        address account,
+        uint256 maximumWeight
     )
         internal
         returns (uint256)
     {
-        uint256 userWeight = weightForBktForAct[bucket][account];
+        uint256 userWeight = weightForBucketForAccount[bucket][account];
+        uint256 weightToWithdraw = Math.min256(userWeight, maximumWeight);
 
-        weightForBkt[bucket] = weightForBkt[bucket].sub(userWeight);
-        delete weightForBktForAct[bucket][account];
+        weightForBucket[bucket] = weightForBucket[bucket].sub(weightToWithdraw);
+        weightForBucketForAccount[bucket][account] = userWeight.sub(weightToWithdraw);
 
-        return userWeight;
+        return weightToWithdraw;
     }
 
     // ============ Getter Functions ============
 
     /**
      * Get the current bucket number that funds will be deposited into. This is the highest bucket
-     * so far.
+     * so far. All lent funds before the position open will go into bucket 0. All lent funds after
+     * position open will go into buckets 1+.
      */
     function getBucketNumber()
         internal
@@ -777,7 +997,7 @@ contract BucketLender is
             return 0;
         }
 
-        return block.timestamp.sub(marginTimestamp).div(BUCKET_TIME);
+        return block.timestamp.sub(marginTimestamp).div(BUCKET_TIME).add(1);
     }
 
     /**
@@ -791,16 +1011,30 @@ contract BucketLender is
         view
         returns (uint256)
     {
-        uint256 lentPrincipal = principalForBkt[bucket];
+        // if the position is completely closed, then the outstanding principal will never be repaid
+        if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
+            return 0;
+        }
 
+        uint256 lentPrincipal = principalForBucket[bucket];
+
+        // the bucket has no outstanding principal
         if (lentPrincipal == 0) {
             return 0;
         }
 
-        return Margin(DYDX_MARGIN).getPositionOwedAmountAtTime(
+        // get the total amount of owedToken that would be paid back at this time
+        uint256 owedAmount = Margin(DYDX_MARGIN).getPositionOwedAmountAtTime(
             POSITION_ID,
-            lentPrincipal,
+            principalTotal,
             uint32(block.timestamp)
+        );
+
+        // return the bucket's share
+        return MathHelpers.getPartialAmount(
+            lentPrincipal,
+            principalTotal,
+            owedAmount
         );
     }
 

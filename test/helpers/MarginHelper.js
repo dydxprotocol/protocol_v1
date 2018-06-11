@@ -361,6 +361,8 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
       true
     ).minus(owed);
 
+  setLoanHash(tx.loanOffering);
+
   expectLog(response.logs[0], 'PositionIncreased', {
     positionId: positionId,
     trader: tx.trader,
