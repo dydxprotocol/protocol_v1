@@ -14,7 +14,7 @@ const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
-const { ADDRESSES, BIGNUMBERS } = require('../helpers/Constants');
+const { ADDRESSES, BIGNUMBERS, BYTES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const web3Instance = new Web3(web3.currentProvider);
@@ -25,7 +25,6 @@ const {
   callOpenPosition,
   doClosePosition,
   getPosition,
-  callApproveLoanOffering,
   getTokenAmountsFromOpen
 } = require('../helpers/MarginHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
@@ -117,10 +116,9 @@ describe('#openPosition', () => {
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      openTx.loanOffering.signer = openTx.loanOffering.payer;
       openTx.loanOffering.payer = testSmartContractLender.address;
       openTx.loanOffering.owner = testMarginCallDelegator.address;
-      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      openTx.loanOffering.signature = BYTES.EMPTY;
 
       const tx = await callOpenPosition(dydxMargin, openTx);
 
@@ -184,10 +182,9 @@ describe('#openPosition', () => {
         ADDRESSES.ZERO,
         ADDRESSES.ZERO);
 
-      openTx.loanOffering.signer = openTx.loanOffering.payer;
       openTx.loanOffering.payer = testSmartContractLender.address;
       openTx.loanOffering.owner = testMarginCallDelegator.address;
-      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      openTx.loanOffering.signature = BYTES.EMPTY;
 
       const tx = await callOpenPosition(dydxMargin, openTx);
 
@@ -384,23 +381,6 @@ describe('#openPosition', () => {
       openTx.loanOffering.owner = testLoanOwner.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await callOpenPosition(dydxMargin, openTx);
-      await checkSuccess(dydxMargin, openTx);
-    });
-  });
-
-  contract('Margin', accounts => {
-    it('succeeds with on-chain approved loan offerings', async () => {
-      const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
-
-      await issueTokensAndSetAllowances(openTx);
-      await callApproveLoanOffering(dydxMargin, openTx.loanOffering, openTx.loanOffering.signer);
-
-      openTx.loanOffering.signature.v = 0;
-      openTx.loanOffering.signature.r = "";
-      openTx.loanOffering.signature.s = "";
-
-      await callOpenPosition(dydxMargin, openTx);
-
       await checkSuccess(dydxMargin, openTx);
     });
   });

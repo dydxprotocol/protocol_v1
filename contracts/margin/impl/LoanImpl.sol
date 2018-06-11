@@ -37,7 +37,6 @@ import { MarginCallDelegator } from "../interfaces/lender/MarginCallDelegator.so
  *      - marginCall
  *      - cancelMarginCallImpl
  *      - cancelLoanOffering
- *      - approveLoanOffering
  */
 library LoanImpl {
     using SafeMath for uint256;
@@ -70,18 +69,9 @@ library LoanImpl {
      */
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
-        address indexed signer,
+        address indexed payer,
         address indexed feeRecipient,
         uint256 cancelAmount
-    );
-
-    /**
-     * A loan offering was approved on-chain by a lender
-     */
-    event LoanOfferingApproved(
-        bytes32 indexed loanHash,
-        address indexed signer,
-        address indexed feeRecipient
     );
 
     // ============ Public Implementation Functions ============
@@ -154,10 +144,10 @@ library LoanImpl {
 
     function cancelLoanOfferingImpl(
         MarginState.State storage state,
-        address[10] addresses,
-        uint256[7]  values256,
-        uint32[4]   values32,
-        uint256     cancelAmount
+        address[9] addresses,
+        uint256[7] values256,
+        uint32[4]  values32,
+        uint256    cancelAmount
     )
         public
         returns (uint256)
@@ -169,8 +159,8 @@ library LoanImpl {
         );
 
         require(
-            msg.sender == loanOffering.payer || msg.sender == loanOffering.signer,
-            "LoanImpl#cancelLoanOfferingImpl: Only loan offering payer or signer can cancel"
+            msg.sender == loanOffering.payer,
+            "LoanImpl#cancelLoanOfferingImpl: Only loan offering payer can cancel"
         );
         require(
             loanOffering.expirationTimestamp > block.timestamp,
@@ -192,48 +182,12 @@ library LoanImpl {
 
         emit LoanOfferingCanceled(
             loanOffering.loanHash,
-            loanOffering.signer,
+            loanOffering.payer,
             loanOffering.feeRecipient,
             amountToCancel
         );
 
         return amountToCancel;
-    }
-
-    function approveLoanOfferingImpl(
-        MarginState.State storage state,
-        address[10] addresses,
-        uint256[7]  values256,
-        uint32[4]   values32
-    )
-        public
-    {
-        MarginCommon.LoanOffering memory loanOffering = parseLoanOffering(
-            addresses,
-            values256,
-            values32
-        );
-
-        require(
-            loanOffering.signer == msg.sender,
-            "LoanImpl#approveLoanOfferingImpl: Only loan offering signer can approve"
-        );
-        require(
-            loanOffering.expirationTimestamp > block.timestamp,
-            "LoanImpl#approveLoanOfferingImpl: Loan offering is already expired"
-        );
-
-        if (state.approvedLoans[loanOffering.loanHash]) {
-            return;
-        }
-
-        state.approvedLoans[loanOffering.loanHash] = true;
-
-        emit LoanOfferingApproved(
-            loanOffering.loanHash,
-            loanOffering.signer,
-            loanOffering.feeRecipient
-        );
     }
 
     // ============ Private Helper-Functions ============
@@ -300,9 +254,9 @@ library LoanImpl {
     // ============ Parsing Functions ============
 
     function parseLoanOffering(
-        address[10] addresses,
-        uint256[7]  values256,
-        uint32[4]   values32
+        address[9] addresses,
+        uint256[7] values256,
+        uint32[4]  values32
     )
         private
         view
@@ -312,24 +266,19 @@ library LoanImpl {
             owedToken: addresses[0],
             heldToken: addresses[1],
             payer: addresses[2],
-            signer: addresses[3],
-            owner: addresses[4],
-            taker: addresses[5],
-            positionOwner: addresses[6],
-            feeRecipient: addresses[7],
-            lenderFeeToken: addresses[8],
-            takerFeeToken: addresses[9],
+            owner: addresses[3],
+            taker: addresses[4],
+            positionOwner: addresses[5],
+            feeRecipient: addresses[6],
+            lenderFeeToken: addresses[7],
+            takerFeeToken: addresses[8],
             rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             salt: values256[6],
             loanHash: 0,
-            signature: MarginCommon.Signature({
-                v: 0,
-                r: "",
-                s: ""
-            })
+            signature: new bytes(0)
         });
 
         loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);

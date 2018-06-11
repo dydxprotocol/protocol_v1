@@ -65,12 +65,11 @@ library IncreasePositionImpl {
     function increasePositionImpl(
         MarginState.State storage state,
         bytes32 positionId,
-        address[8] addresses,
+        address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
-        uint8 sigV,
-        bytes32[2] sigRS,
         bool depositInHeldToken,
+        bytes signature,
         bytes orderData
     )
         public
@@ -86,9 +85,8 @@ library IncreasePositionImpl {
             addresses,
             values256,
             values32,
-            sigV,
-            sigRS,
-            depositInHeldToken
+            depositInHeldToken,
+            signature
         );
 
         validateIncrease(state, transaction, position);
@@ -190,7 +188,7 @@ library IncreasePositionImpl {
         );
 
         // Do pre-exchange validations
-        BorrowShared.doPreSell(state, transaction);
+        BorrowShared.validateTxPreSell(state, transaction);
 
         // Calculate and deposit owedToken
         uint256 maxHeldTokenFromSell = MathHelpers.maxUint256();
@@ -420,12 +418,11 @@ library IncreasePositionImpl {
     function parseIncreasePositionTx(
         MarginCommon.Position storage position,
         bytes32 positionId,
-        address[8] addresses,
+        address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
-        uint8 sigV,
-        bytes32[2] sigRS,
-        bool depositInHeldToken
+        bool depositInHeldToken,
+        bytes signature
     )
         private
         view
@@ -450,10 +447,9 @@ library IncreasePositionImpl {
                 addresses,
                 values256,
                 values32,
-                sigV,
-                sigRS
+                signature
             ),
-            exchangeWrapper: addresses[7],
+            exchangeWrapper: addresses[6],
             depositInHeldToken: depositInHeldToken,
             depositAmount: 0, // set later
             collateralAmount: 0, // set later
@@ -465,11 +461,10 @@ library IncreasePositionImpl {
 
     function parseLoanOfferingFromIncreasePositionTx(
         MarginCommon.Position storage position,
-        address[8] addresses,
+        address[7] addresses,
         uint256[8] values256,
         uint32[2] values32,
-        uint8 sigV,
-        bytes32[2] sigRS
+        bytes signature
     )
         private
         view
@@ -479,20 +474,19 @@ library IncreasePositionImpl {
             owedToken: position.owedToken,
             heldToken: position.heldToken,
             payer: addresses[0],
-            signer: addresses[1],
             owner: position.lender,
-            taker: addresses[2],
-            positionOwner: addresses[3],
-            feeRecipient: addresses[4],
-            lenderFeeToken: addresses[5],
-            takerFeeToken: addresses[6],
+            taker: addresses[1],
+            positionOwner: addresses[2],
+            feeRecipient: addresses[3],
+            lenderFeeToken: addresses[4],
+            takerFeeToken: addresses[5],
             rates: parseLoanOfferingRatesFromIncreasePositionTx(position, values256),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             salt: values256[6],
             loanHash: 0,
-            signature: parseLoanOfferingSignature(sigV, sigRS)
+            signature: signature
         });
 
         loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
@@ -519,22 +513,5 @@ library IncreasePositionImpl {
         });
 
         return rates;
-    }
-
-    function parseLoanOfferingSignature(
-        uint8 sigV,
-        bytes32[2] sigRS
-    )
-        private
-        pure
-        returns (MarginCommon.Signature memory)
-    {
-        MarginCommon.Signature memory signature = MarginCommon.Signature({
-            v: sigV,
-            r: sigRS[0],
-            s: sigRS[1]
-        });
-
-        return signature;
     }
 }

@@ -21,7 +21,6 @@ async function createLoanOffering(
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
     payer: accounts[1],
-    signer: accounts[1],
     owner: accounts[1],
     taker: ADDRESSES.ZERO,
     positionOwner: ADDRESSES.ZERO,
@@ -48,7 +47,7 @@ async function createLoanOffering(
   return loanOffering;
 }
 
-async function signLoanOffering(loanOffering) {
+function setLoanHash(loanOffering) {
   const valuesHash = web3Instance.utils.soliditySha3(
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
@@ -67,7 +66,6 @@ async function signLoanOffering(loanOffering) {
     loanOffering.owedToken,
     loanOffering.heldToken,
     loanOffering.payer,
-    loanOffering.signer,
     loanOffering.owner,
     loanOffering.taker,
     loanOffering.positionOwner,
@@ -76,23 +74,22 @@ async function signLoanOffering(loanOffering) {
     loanOffering.takerFeeTokenAddress,
     valuesHash
   );
-
   loanOffering.loanHash = hash;
+}
+
+async function signLoanOffering(loanOffering) {
+  setLoanHash(loanOffering);
 
   const signature = await promisify(web3Instance.eth.sign)(
-    hash, loanOffering.signer
+    loanOffering.loanHash, loanOffering.payer
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
-
-  return {
-    v,
-    r: ethUtil.bufferToHex(r),
-    s: ethUtil.bufferToHex(s)
-  }
+  return ethUtil.bufferToHex(Buffer.concat([r, s, ethUtil.toBuffer(v)]));
 }
 
 module.exports = {
   createLoanOffering,
+  setLoanHash,
   signLoanOffering
 }

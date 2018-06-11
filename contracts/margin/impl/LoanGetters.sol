@@ -82,20 +82,4 @@ contract LoanGetters is MarginStorage {
     {
         return state.loanCancels[loanHash];
     }
-
-    /**
-     * Gets if a loan offering has been approved in an on-chain transaction.
-     *
-     * @param  loanHash  Unique hash of the loan offering
-     * @return           True if the loan offering was approved on-chain.
-     */
-    function isLoanApproved(
-        bytes32 loanHash
-    )
-        external
-        view
-        returns (bool)
-    {
-        return state.approvedLoans[loanHash];
-    }
 }

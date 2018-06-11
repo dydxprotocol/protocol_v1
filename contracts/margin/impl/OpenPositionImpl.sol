@@ -61,12 +61,11 @@ library OpenPositionImpl {
 
     function openPositionImpl(
         MarginState.State storage state,
-        address[12] addresses,
+        address[11] addresses,
         uint256[10] values256,
         uint32[4] values32,
-        uint8 sigV,
-        bytes32[2] sigRS,
         bool depositInHeldToken,
+        bytes signature,
         bytes orderData
     )
         public
@@ -76,9 +75,8 @@ library OpenPositionImpl {
             addresses,
             values256,
             values32,
-            sigV,
-            sigRS,
-            depositInHeldToken
+            depositInHeldToken,
+            signature
         );
 
         require(
@@ -110,7 +108,7 @@ library OpenPositionImpl {
     )
         private
     {
-        BorrowShared.doPreSell(state, transaction);
+        BorrowShared.validateTxPreSell(state, transaction);
 
         if (transaction.depositInHeldToken) {
             BorrowShared.doDepositHeldToken(state, transaction);
@@ -181,12 +179,11 @@ library OpenPositionImpl {
     // ============ Parsing Functions ============
 
     function parseOpenTx(
-        address[12] addresses,
+        address[11] addresses,
         uint256[10] values256,
         uint32[4] values32,
-        uint8 sigV,
-        bytes32[2] sigRS,
-        bool depositInHeldToken
+        bool depositInHeldToken,
+        bytes signature
     )
         private
         view
@@ -201,10 +198,9 @@ library OpenPositionImpl {
                 addresses,
                 values256,
                 values32,
-                sigV,
-                sigRS
+                signature
             ),
-            exchangeWrapper: addresses[11],
+            exchangeWrapper: addresses[10],
             depositInHeldToken: depositInHeldToken,
             depositAmount: values256[8],
             collateralAmount: 0, // set later
@@ -215,11 +211,10 @@ library OpenPositionImpl {
     }
 
     function parseLoanOffering(
-        address[12] addresses,
+        address[11] addresses,
         uint256[10] values256,
-        uint32[4] values32,
-        uint8 sigV,
-        bytes32[2] sigRS
+        uint32[4]   values32,
+        bytes       signature
     )
         private
         view
@@ -229,20 +224,19 @@ library OpenPositionImpl {
             owedToken: addresses[1],
             heldToken: addresses[2],
             payer: addresses[3],
-            signer: addresses[4],
-            owner: addresses[5],
-            taker: addresses[6],
-            positionOwner: addresses[7],
-            feeRecipient: addresses[8],
-            lenderFeeToken: addresses[9],
-            takerFeeToken: addresses[10],
+            owner: addresses[4],
+            taker: addresses[5],
+            positionOwner: addresses[6],
+            feeRecipient: addresses[7],
+            lenderFeeToken: addresses[8],
+            takerFeeToken: addresses[9],
             rates: parseLoanOfferRates(values256, values32),
             expirationTimestamp: values256[5],
             callTimeLimit: values32[0],
             maxDuration: values32[1],
             salt: values256[6],
             loanHash: 0,
-            signature: parseLoanOfferingSignature(sigV, sigRS)
+            signature: signature
         });
 
         loanOffering.loanHash = MarginCommon.getLoanOfferingHash(loanOffering);
@@ -269,22 +263,5 @@ library OpenPositionImpl {
         });
 
         return rates;
-    }
-
-    function parseLoanOfferingSignature(
-        uint8 sigV,
-        bytes32[2] sigRS
-    )
-        private
-        pure
-        returns (MarginCommon.Signature memory)
-    {
-        MarginCommon.Signature memory signature = MarginCommon.Signature({
-            v: sigV,
-            r: sigRS[0],
-            s: sigRS[1]
-        });
-
-        return signature;
     }
 }

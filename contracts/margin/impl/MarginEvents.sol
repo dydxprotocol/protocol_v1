@@ -120,18 +120,9 @@ contract MarginEvents {
      */
     event LoanOfferingCanceled(
         bytes32 indexed loanHash,
-        address indexed signer,
+        address indexed payer,
         address indexed feeRecipient,
         uint256 cancelAmount
-    );
-
-    /**
-     * A loan offering was approved on-chain by a lender
-     */
-    event LoanOfferingApproved(
-        bytes32 indexed loanHash,
-        address indexed signer,
-        address indexed feeRecipient
     );
 
     /**

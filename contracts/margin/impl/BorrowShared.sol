@@ -19,6 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
+import { ECRecovery } from "zeppelin-solidity/contracts/ECRecovery.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
@@ -38,6 +40,7 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
  * Both use a Loan Offering and a DEX Order to open or increase a position.
  */
 library BorrowShared {
+    using ECRecovery for bytes32;
     using SafeMath for uint256;
 
     // ============ Structs ============
@@ -60,18 +63,95 @@ library BorrowShared {
     /**
      * Validate the transaction before exchanging heldToken for owedToken
      */
-    function doPreSell(
+    function validateTxPreSell(
         MarginState.State storage state,
         Tx memory transaction
     )
         internal
     {
-        validateTxPreSell(
-            state,
-            transaction
+        assert(transaction.lenderAmount >= transaction.principal);
+
+        require(
+            transaction.principal > 0,
+            "BorrowShared#validateTxPreSell: Positions with 0 principal are not allowed"
         );
 
-        getConsentIfSmartContractLender(transaction);
+        // If the taker is 0x0 then any address can take it. Otherwise only the taker can use it.
+        if (transaction.loanOffering.taker != address(0)) {
+            require(
+                msg.sender == transaction.loanOffering.taker,
+                "BorrowShared#validateTxPreSell: Invalid loan offering taker"
+            );
+        }
+
+        // If the positionOwner is 0x0 then any address can be set as the position owner.
+        // Otherwise only the specified positionOwner can be set as the position owner.
+        if (transaction.loanOffering.positionOwner != address(0)) {
+            require(
+                transaction.owner == transaction.loanOffering.positionOwner,
+                "BorrowShared#validateTxPreSell: Invalid position owner"
+            );
+        }
+
+        // Require the loan offering to be approved by the payer
+        if (AddressUtils.isContract(transaction.loanOffering.payer)) {
+            getConsentFromSmartContractLender(transaction);
+        } else {
+            bytes32 messageHash = transaction.loanOffering.loanHash.toEthSignedMessageHash();
+            require(
+                transaction.loanOffering.payer ==
+                messageHash.recover(transaction.loanOffering.signature),
+                "BorrowShared#validateTxPreSell: Invalid loan offering signature"
+            );
+        }
+
+        // Validate the amount is <= than max and >= min
+        uint256 unavailable = MarginCommon.getUnavailableLoanOfferingAmountImpl(
+            state,
+            transaction.loanOffering.loanHash
+        );
+        require(
+            transaction.lenderAmount.add(unavailable) <= transaction.loanOffering.rates.maxAmount,
+            "BorrowShared#validateTxPreSell: Loan offering does not have enough available"
+        );
+
+        require(
+            transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
+            "BorrowShared#validateTxPreSell: Lender amount is below loan offering minimum amount"
+        );
+
+        require(
+            transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
+            "BorrowShared#validateTxPreSell: owedToken cannot be equal to heldToken"
+        );
+
+        require(
+            transaction.owner != address(0),
+            "BorrowShared#validateTxPreSell: Position owner cannot be 0"
+        );
+
+        require(
+            transaction.loanOffering.owner != address(0),
+            "BorrowShared#validateTxPreSell: Loan owner cannot be 0"
+        );
+
+        require(
+            transaction.loanOffering.expirationTimestamp > block.timestamp,
+            "BorrowShared#validateTxPreSell: Loan offering is expired"
+        );
+
+        require(
+            transaction.loanOffering.maxDuration > 0,
+            "BorrowShared#validateTxPreSell: Loan offering has 0 maximum duration"
+        );
+
+        require(
+            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
+            "BorrowShared#validateTxPreSell: Loan offering interestPeriod > maxDuration"
+        );
+
+        // The minimum heldToken is validated after executing the sell
+        // Position and loan ownership is validated in TransferInternal
     }
 
     /**
@@ -183,93 +263,6 @@ library BorrowShared {
 
     // ============ Private Helper-Functions ============
 
-    function validateTxPreSell(
-        MarginState.State storage state,
-        Tx transaction
-    )
-        private
-        view
-    {
-        assert(transaction.lenderAmount >= transaction.principal);
-
-        require(
-            transaction.principal > 0,
-            "BorrowShared#validateTxPreSell: Positions with 0 principal are not allowed"
-        );
-
-        // If the taker is 0x0 then any address can take it. Otherwise only the taker can use it.
-        if (transaction.loanOffering.taker != address(0)) {
-            require(
-                msg.sender == transaction.loanOffering.taker,
-                "BorrowShared#validateTxPreSell: Invalid loan offering taker"
-            );
-        }
-
-        // If the positionOwner is 0x0 then any address can be set as the position owner.
-        // Otherwise only the specified positionOwner can be set as the position owner.
-        if (transaction.loanOffering.positionOwner != address(0)) {
-            require(
-                transaction.owner == transaction.loanOffering.positionOwner,
-                "BorrowShared#validateTxPreSell: Invalid position owner"
-            );
-        }
-
-        // Require the order to either have a valid signature or be pre-approved on-chain
-        require(
-            isValidSignature(transaction.loanOffering)
-            || state.approvedLoans[transaction.loanOffering.loanHash],
-            "BorrowShared#validateTxPreSell: Invalid loan offering signature"
-        );
-
-        // Validate the amount is <= than max and >= min
-        uint256 unavailable = MarginCommon.getUnavailableLoanOfferingAmountImpl(
-            state,
-            transaction.loanOffering.loanHash
-        );
-        require(
-            transaction.lenderAmount.add(unavailable) <= transaction.loanOffering.rates.maxAmount,
-            "BorrowShared#validateTxPreSell: Loan offering does not have enough available"
-        );
-
-        require(
-            transaction.lenderAmount >= transaction.loanOffering.rates.minAmount,
-            "BorrowShared#validateTxPreSell: Lender amount is below loan offering minimum amount"
-        );
-
-        require(
-            transaction.loanOffering.owedToken != transaction.loanOffering.heldToken,
-            "BorrowShared#validateTxPreSell: owedToken cannot be equal to heldToken"
-        );
-
-        require(
-            transaction.owner != address(0),
-            "BorrowShared#validateTxPreSell: Position owner cannot be 0"
-        );
-
-        require(
-            transaction.loanOffering.owner != address(0),
-            "BorrowShared#validateTxPreSell: Loan owner cannot be 0"
-        );
-
-        require(
-            transaction.loanOffering.expirationTimestamp > block.timestamp,
-            "BorrowShared#validateTxPreSell: Loan offering is expired"
-        );
-
-        require(
-            transaction.loanOffering.maxDuration > 0,
-            "BorrowShared#validateTxPreSell: Loan offering has 0 maximum duration"
-        );
-
-        require(
-            transaction.loanOffering.rates.interestPeriod <= transaction.loanOffering.maxDuration,
-            "BorrowShared#validateTxPreSell: Loan offering interestPeriod > maxDuration"
-        );
-
-        // The minimum heldToken is validated after executing the sell
-        // Position and loan ownership is validated in TransferInternal
-    }
-
     function validateTxPostSell(
         Tx transaction
     )
@@ -292,53 +285,28 @@ library BorrowShared {
         );
     }
 
-    function isValidSignature(
-        MarginCommon.LoanOffering loanOffering
-    )
-        private
-        pure
-        returns (bool)
-    {
-        if (loanOffering.signature.v == 0
-            && loanOffering.signature.r == ""
-            && loanOffering.signature.s == ""
-        ) {
-            return false;
-        }
-
-        address recoveredSigner = ecrecover(
-            keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", loanOffering.loanHash)),
-            loanOffering.signature.v,
-            loanOffering.signature.r,
-            loanOffering.signature.s
-        );
-
-        return loanOffering.signer == recoveredSigner;
-    }
-
-    function getConsentIfSmartContractLender(
+    function getConsentFromSmartContractLender(
         Tx transaction
     )
         private
     {
-        // If the signer != payer, assume payer is a smart contract and ask it for consent
-        if (transaction.loanOffering.signer != transaction.loanOffering.payer) {
-            verifyLoanOfferingRecurse(
-                transaction.loanOffering.payer,
-                getLoanOfferingAddresses(transaction),
-                getLoanOfferingValues256(transaction),
-                getLoanOfferingValues32(transaction),
-                transaction.positionId
-            );
-        }
+        verifyLoanOfferingRecurse(
+            transaction.loanOffering.payer,
+            getLoanOfferingAddresses(transaction),
+            getLoanOfferingValues256(transaction),
+            getLoanOfferingValues32(transaction),
+            transaction.positionId,
+            transaction.loanOffering.signature
+        );
     }
 
     function verifyLoanOfferingRecurse(
         address contractAddr,
-        address[10] addresses,
+        address[9] addresses,
         uint256[7] values256,
         uint32[4] values32,
-        bytes32 positionId
+        bytes32 positionId,
+        bytes signature
     )
         private
     {
@@ -346,7 +314,8 @@ library BorrowShared {
             addresses,
             values256,
             values32,
-            positionId
+            positionId,
+            signature
         );
 
         if (newContractAddr != contractAddr) {
@@ -355,7 +324,8 @@ library BorrowShared {
                 addresses,
                 values256,
                 values32,
-                positionId
+                positionId,
+                signature
             );
         }
     }
@@ -423,13 +393,12 @@ library BorrowShared {
     )
         private
         pure
-        returns (address[10])
+        returns (address[9])
     {
         return [
             transaction.loanOffering.owedToken,
             transaction.loanOffering.heldToken,
             transaction.loanOffering.payer,
-            transaction.loanOffering.signer,
             transaction.loanOffering.owner,
             transaction.loanOffering.taker,
             transaction.loanOffering.positionOwner,

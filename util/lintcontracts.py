@@ -122,7 +122,7 @@ def lintFunctionComments(dir, filepath):
         # check for aligned parameters
         if (inBlockComment):
             col = 0
-            if ('param' in lstripped and len(words) >= 4):
+            if ('param ' in lstripped and len(words) >= 4):
                 col = line.find(' '+words[3]) + 1
             if ('@returns' in lstripped):
                 col = line.find(words[2])

@@ -33,9 +33,8 @@ pragma experimental "v0.5.0";
 contract LoanOfferingVerifier {
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
-     * will be generated off-chain and signed by a signer. The Margin contract will verify that
-     * the signature for the loan offering was made by signer. The "loan owner" address will own the
-     * loan-side of the resulting position.
+     * will be generated off-chain. The "loan owner" address will own the loan-side of the resulting
+     * position.
      *
      * If true is returned, and no errors are thrown by the Margin contract, the loan will have
      * occurred. This means that verifyLoanOffering can also be used to update internal contract
@@ -46,9 +45,9 @@ contract LoanOfferingVerifier {
      *  [0] = owedToken
      *  [1] = heldToken
      *  [2] = loan payer
-     *  [3] = loan signer
-     *  [4] = loan owner
-     *  [5] = loan taker
+     *  [3] = loan owner
+     *  [4] = loan taker
+     *  [5] = loan positionOwner
      *  [6] = loan fee recipient
      *  [7] = loan lender fee token
      *  [8] = loan taker fee token
@@ -74,10 +73,11 @@ contract LoanOfferingVerifier {
      * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(
-        address[10] addresses,
+        address[9] addresses,
         uint256[7] values256,
         uint32[4] values32,
-        bytes32 positionId
+        bytes32 positionId,
+        bytes signature
     )
         external
         /* onlyMargin */
