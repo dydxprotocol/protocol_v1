@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Fraction } from "./Fraction.sol";
+import { Math512 } from "./Math512.sol";
 
 
 /**
@@ -31,170 +32,168 @@ import { Fraction } from "./Fraction.sol";
  */
 library FractionMath {
     using SafeMath for uint256;
-    using SafeMath for uint128;
 
     /**
-     * Returns a Fraction128 that is equal to a + b
+     * Returns a Fraction256 that is equal to a + b
      *
-     * @param  a  The first Fraction128
-     * @param  b  The second Fraction128
+     * @param  a  The first Fraction256
+     * @param  b  The second Fraction256
      * @return    The result (sum)
      */
     function add(
-        Fraction.Fraction128 memory a,
-        Fraction.Fraction128 memory b
+        Fraction.Fraction256 memory a,
+        Fraction.Fraction256 memory b
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
-        uint256 left = a.num.mul(b.den);
-        uint256 right = b.num.mul(a.den);
-        uint256 denominator = a.den.mul(b.den);
-
-        // if left + right overflows, prevent overflow
-        if (left + right < left) {
-            left = left.div(2);
-            right = right.div(2);
-            denominator = denominator.div(2);
-        }
-
-        return bound(left.add(right), denominator);
+        (uint256 l0, uint256 l1) = Math512.mul512(a.num, b.den);
+        (uint256 r0, uint256 r1) = Math512.mul512(b.num, a.den);
+        (uint256 d0, uint256 d1) = Math512.mul512(a.den, b.den);
+        (uint256 n0, uint256 n1) = Math512.add512(l0, l1, r0, r1);
+        return bound(n0, n1, d0, d1);
     }
 
     /**
-     * Returns a Fraction128 that is equal to a - (1/2)^d
+     * Returns a Fraction256 that is equal to a - (1/2)^d
      *
-     * @param  a  The Fraction128
+     * @param  a  The Fraction256
      * @param  d  The power of (1/2)
      * @return    The result
      */
     function sub1Over(
-        Fraction.Fraction128 memory a,
-        uint128 d
+        Fraction.Fraction256 memory a,
+        uint256 d
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
         if (a.den % d == 0) {
-            return bound(
-                a.num.sub(a.den.div(d)),
-                a.den
-            );
+            return Fraction.Fraction256({
+                num: a.num.sub(a.den.div(d)),
+                den: a.den
+            });
         }
-        return bound(
-            a.num.mul(d).sub(a.den),
-            a.den.mul(d)
-        );
+
+        (uint256 n0, uint256 n1) = Math512.mul512(a.num, d);
+        (n0, n1) = Math512.sub512(n0, n1, a.den, 0);
+        (uint256 d0, uint256 d1) = Math512.mul512(a.den, d);
+
+        return bound(n0, n1, d0, d1);
     }
 
     /**
-     * Returns a Fraction128 that is equal to a / d
+     * Returns a Fraction256 that is equal to a / d
      *
-     * @param  a  The first Fraction128
+     * @param  a  The first Fraction256
      * @param  d  The divisor
      * @return    The result (quotient)
      */
     function div(
-        Fraction.Fraction128 memory a,
-        uint128 d
+        Fraction.Fraction256 memory a,
+        uint256 d
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
+        assert(d != 0);
+
         if (a.num % d == 0) {
-            return bound(
-                a.num.div(d),
-                a.den
-            );
+            return Fraction.Fraction256({
+                num: a.num.div(d),
+                den: a.den
+            });
         }
-        return bound(
-            a.num,
-            a.den.mul(d)
-        );
+
+        (uint256 d0, uint256 d1) = Math512.mul512(a.den, d);
+
+        return bound(a.num, 0, d0, d1);
     }
 
     /**
-     * Returns a Fraction128 that is equal to a * b.
+     * Returns a Fraction256 that is equal to a * b.
      *
-     * @param  a  The first Fraction128
-     * @param  b  The second Fraction128
+     * @param  a  The first Fraction256
+     * @param  b  The second Fraction256
      * @return    The result (product)
      */
     function mul(
-        Fraction.Fraction128 memory a,
-        Fraction.Fraction128 memory b
+        Fraction.Fraction256 memory a,
+        Fraction.Fraction256 memory b
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
-        return bound(
-            a.num.mul(b.num),
-            a.den.mul(b.den)
-        );
+        (uint256 n0, uint256 n1) = Math512.mul512(a.num, b.num);
+        (uint256 d0, uint256 d1) = Math512.mul512(a.den, b.den);
+        return bound(n0, n1, d0, d1);
     }
 
     /**
-     * Returns a fraction from two uint256's. Fits them into uint128 if necessary.
+     * Returns a fraction from two uint512's. Fits them into uint256 if necessary.
      *
-     * @param  num  The numerator
-     * @param  den  The denominator
-     * @return      The Fraction128 that matches num/den most closely
+     * @param  n0  The least-significant bits of the numerator
+     * @param  n1  The most-significant bits of the numerator
+     * @param  d0  The least-significant bits of the denominator
+     * @param  d1  The most-significant bits of the denominator
+     * @return     The Fraction256 that matches num/den most closely
      */
     /* solium-disable-next-line security/no-assign-params */
     function bound(
-        uint256 num,
-        uint256 den
+        uint256 n0,
+        uint256 n1,
+        uint256 d0,
+        uint256 d1
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
-        uint256 max = num > den ? num : den;
-        uint256 first128Bits = (max >> 128);
-        if (first128Bits != 0) {
-            first128Bits += 1;
-            num /= first128Bits;
-            den /= first128Bits;
+        (uint256 m0, uint256 m1) = Math512.max512(n0, n1, d0, d1);
+        if (m1 != 0) {
+            m1 += 1;
+            (d0, d1) = Math512.div512(d0, d1, m1);
+            (n0, n1) = Math512.div512(n0, n1, m1);
         }
 
-        assert(den != 0 && den < 2**128 && num < 2**128); // unit-tested
+        assert(d0 != 0 && d1 == 0 && n1 == 0); // unit-tested
 
-        return Fraction.Fraction128({
-            num: uint128(num),
-            den: uint128(den)
+        return Fraction.Fraction256({
+            num: n0,
+            den: d0
         });
     }
 
     /**
-     * Returns an in-memory copy of a Fraction128
+     * Returns an in-memory copy of a Fraction256
      *
-     * @param  a  The Fraction128 to copy
-     * @return    A copy of the Fraction128
+     * @param  a  The Fraction256 to copy
+     * @return    A copy of the Fraction256
      */
     function copy(
-        Fraction.Fraction128 memory a
+        Fraction.Fraction256 memory a
     )
         internal
         pure
-        returns (Fraction.Fraction128 memory)
+        returns (Fraction.Fraction256 memory)
     {
         validate(a);
-        return Fraction.Fraction128({ num: a.num, den: a.den });
+        return Fraction.Fraction256({ num: a.num, den: a.den });
     }
 
     // ============ Private Helper-Functions ============
 
     /**
-     * Asserts that a Fraction128 is valid (i.e. the denominator is non-zero)
+     * Asserts that a Fraction256 is valid (i.e. the denominator is non-zero)
      *
-     * @param  a  The Fraction128 to validate
+     * @param  a  The Fraction256 to validate
      */
     function validate(
-        Fraction.Fraction128 memory a
+        Fraction.Fraction256 memory a
     )
         private
         pure

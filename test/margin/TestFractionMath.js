@@ -6,7 +6,7 @@ const TestFractionMath = artifacts.require("TestFractionMath");
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectAssertFailure } = require('../helpers/ExpectHelper');
 
-const bn = BIGNUMBERS.ONES_127;
+const bn = BIGNUMBERS.ONES_255;
 
 contract('FractionMath', function(_accounts) {
   let contract;
@@ -20,6 +20,7 @@ contract('FractionMath', function(_accounts) {
   describe('#add', () => {
     it('succeeds for addition overflow', async () => {
       const [num, den] = await contract.add(bn, bn, bn, bn);
+      console.log(num, den);
       expect(num).to.be.bignumber.equal(den.times(2));
     });
   });
@@ -124,35 +125,35 @@ contract('FractionMath', function(_accounts) {
   // ============ bound ============
 
   describe('#bound', () => {
-    async function bound(num, den, numRes, denRes) {
-      const result = await contract.bound(num, den);
+    async function bound(n0, n1, d0, d1, numRes, denRes) {
+      const result = await contract.bound(n0, n1, d0, d1);
       expect(result[0]).to.be.bignumber.equal(numRes);
       expect(result[1]).to.be.bignumber.equal(denRes);
     }
 
-    async function boundThrow(num, den) {
-      await expectAssertFailure(contract.bound(num, den));
+    async function boundThrow(n0, n1, d0, d1) {
+      await expectAssertFailure(contract.bound(n0, n1, d0, d1));
     }
 
     it('succeeds for most values', async () => {
       await Promise.all([
-        bound(0, 1, 0, 1),
-        bound(1, 1, 1, 1),
-        bound(2, 4, 2, 4),
-        bound(bn, 1, bn, 1),
-        bound(0, bn, 0, bn),
-        bound(bn, bn, bn, bn),
-        bound(bn.times(2), bn, bn, bn.div(2).floor()),
+        bound(0, 0, 1, 0, 0, 1),
+        bound(1, 0, 1, 0, 1, 1),
+        bound(2, 0, 4, 0, 2, 4),
+        bound(bn, 0, 1, 0, bn, 1),
+        bound(0, 0, bn, 0, 0, bn),
+        bound(bn, 0, bn, 0, bn, bn),
+        bound(bn.times(2), 0, bn, 0, bn, bn.div(2).floor()),
       ]);
     });
 
     it('fails for zero denominator', async () => {
       await Promise.all([
-        boundThrow(0, 0),
-        boundThrow(1, 0),
-        boundThrow(bn, 0),
-        boundThrow(bn.times(2), 1),
-        boundThrow(bn.times(10), 2),
+        boundThrow(0, 0, 0, 0),
+        boundThrow(1, 0, 0, 0),
+        boundThrow(bn, 0, 0, 0),
+        boundThrow(bn.times(2), 0, 1, 0),
+        boundThrow(bn.times(10), 0, 2, 0),
       ]);
     });
   });

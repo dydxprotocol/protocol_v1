@@ -23,6 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Exponent } from "../../lib/Exponent.sol";
 import { Fraction } from "../../lib/Fraction.sol";
 import { FractionMath } from "../../lib/FractionMath.sol";
+import { Math512 } from "../../lib/Math512.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -35,7 +36,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  */
 library InterestImpl {
     using SafeMath for uint256;
-    using FractionMath for Fraction.Fraction128;
+    using FractionMath for Fraction.Fraction256;
 
     // ============ Constants ============
 
@@ -45,7 +46,7 @@ library InterestImpl {
 
     uint256 constant MAXIMUM_EXPONENT = 80;
 
-    uint128 constant E_TO_MAXIUMUM_EXPONENT = 55406223843935100525711733958316613;
+    uint256 constant E_TO_MAXIUMUM_EXPONENT = 55406223843935100525711733958316613;
 
     // ============ Public Implementation Functions ============
 
@@ -69,83 +70,32 @@ library InterestImpl {
         pure
         returns (uint256)
     {
-        uint256 numerator = interestRate.mul(secondsOfInterest);
-        uint128 denominator = (10**8) * (365 * 1 days);
-
-        // interestRate and secondsOfInterest should both be uint32
-        assert(numerator < 2**128);
-
         // fraction representing (Rate * Time)
-        Fraction.Fraction128 memory rt = Fraction.Fraction128({
-            num: uint128(numerator),
-            den: denominator
+        Fraction.Fraction256 memory rt = Fraction.Fraction256({
+            num: interestRate.mul(secondsOfInterest),
+            den: (10**8) * (365 * 1 days)
         });
 
-        // calculate e^(RT)
-        Fraction.Fraction128 memory eToRT;
-        if (numerator.div(denominator) >= MAXIMUM_EXPONENT) {
-            // degenerate case: cap calculation
-            eToRT = Fraction.Fraction128({
-                num: E_TO_MAXIUMUM_EXPONENT,
-                den: 1
-            });
-        } else {
-            // normal case: calculate e^(RT)
-            eToRT = Exponent.exp(
-                rt,
-                DEFAULT_PRECOMPUTE_PRECISION,
-                DEFAULT_MACLAURIN_PRECISION
-            );
+        // degenerate case: cap calculation
+        if (rt.num.div(rt.den) >= MAXIMUM_EXPONENT) {
+            return principal.mul(E_TO_MAXIUMUM_EXPONENT);
         }
+
+        // calculate e^(RT)
+        Fraction.Fraction256 memory eToRT = Exponent.exp(
+            rt,
+            DEFAULT_PRECOMPUTE_PRECISION,
+            DEFAULT_MACLAURIN_PRECISION
+        );
 
         // e^X for positive X should be greater-than or equal to 1
         assert(eToRT.num >= eToRT.den);
 
-        return safeMultiplyUint256ByFraction(principal, eToRT);
-    }
+        (uint256 r0, uint256 r1) = Math512.mul512(principal, eToRT.num);
+        (r0, r1) = Math512.div512(r0, r1, eToRT.den);
 
-    // ============ Private Helper-Functions ============
+        assert(r1 == 0);
 
-    /**
-     * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator
-     * and denominator of f are less than 2**128.
-     */
-    function safeMultiplyUint256ByFraction(
-        uint256 n,
-        Fraction.Fraction128 memory f
-    )
-        private
-        pure
-        returns (uint256)
-    {
-        uint256 term1 = n.div(2 ** 128); // first 128 bits
-        uint256 term2 = n % (2 ** 128); // second 128 bits
-
-        // uncommon scenario, requires n >= 2**128. calculates term1 = term1 * f
-        if (term1 > 0) {
-            term1 = term1.mul(f.num);
-            uint256 numBits = MathHelpers.getNumBits(term1);
-
-            // reduce rounding error by shifting all the way to the left before dividing
-            term1 = MathHelpers.divisionRoundedUp(
-                term1 << (uint256(256).sub(numBits)),
-                f.den);
-
-            // continue shifting or reduce shifting to get the right number
-            if (numBits > 128) {
-                term1 = term1 << (numBits.sub(128));
-            } else if (numBits < 128) {
-                term1 = term1 >> (uint256(128).sub(numBits));
-            }
-        }
-
-        // calculates term2 = term2 * f
-        term2 = MathHelpers.getPartialAmountRoundedUp(
-            f.num,
-            f.den,
-            term2
-        );
-
-        return term1.add(term2);
+        return r0;
     }
 }
