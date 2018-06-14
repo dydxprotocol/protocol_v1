@@ -49,6 +49,19 @@ contract EthWrapperForBucketLender
 
     // ============ Functions ============
 
+    /**
+     * In the current version of solidity, the fallback function is non-payable, so we do not need
+     * to define it in order to prevent sending eth to this contract directly.
+     */
+
+    /**
+     * Allows users to send eth directly to this contract and have it be wrapped and sent to a
+     * BucketLender to be lent for some margin position.
+     *
+     * @param  bucketLender  The address of the BucketLender contract to deposit money into
+     * @param  beneficiary   The address that will retain rights to the deposit
+     * @return               The bucket number that was deposited into
+     */
     function depositEth(
         address bucketLender,
         address beneficiary
@@ -59,6 +72,11 @@ contract EthWrapperForBucketLender
     {
         uint256 amount = msg.value;
 
+        require(
+            amount != 0,
+            "EthWrapperForBucketLender#depositEth: Cannot deposit zero amount"
+        );
+
         // wrap the eth
         WETH9(WETH).deposit.value(amount)();
         assert(TokenInteract.balanceOf(WETH, address(this)) >= amount);
@@ -67,8 +85,6 @@ contract EthWrapperForBucketLender
         TokenInteract.approve(WETH, bucketLender, uint256(-1));
 
         // deposit the tokens
-        uint256 bucket = BucketLender(bucketLender).deposit(beneficiary, amount);
-
-        return bucket;
+        return BucketLender(bucketLender).deposit(beneficiary, amount);
     }
 }

@@ -7,21 +7,18 @@ const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
-const BucketLender = artifacts.require("BucketLender");
+const TestBucketLender = artifacts.require("TestBucketLender");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 
-const { transact } = require('../../helpers/ContractHelper');
-const { ADDRESSES, BIGNUMBERS, BYTES, ORDER_TYPE } = require('../../helpers/Constants');
-const { expectThrow } = require('../../helpers/ExpectHelper');
-const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
-const { signLoanOffering } = require('../../helpers/LoanHelper');
+const { transact } = require('../../../helpers/ContractHelper');
+const { ADDRESSES, BIGNUMBERS, BYTES, ORDER_TYPE } = require('../../../helpers/Constants');
+const { expectThrow } = require('../../../helpers/ExpectHelper');
+const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
-  doOpenPosition,
-  getPosition,
   callIncreasePosition
-} = require('../../helpers/MarginHelper');
+} = require('../../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 const OT = new BigNumber('1e18');
@@ -65,6 +62,8 @@ async function doWithdraw(account, bucket) {
 async function runAliceBot() {
   const aliceAmount = OT;
   console.log("  runnning alice bot...");
+  console.log("    checking invariants...");
+  await bucketLender.checkInvariants();
   console.log("    depositing...");
   await issueAndSetAllowance(owedToken, alice, aliceAmount, bucketLender.address);
   const bucket = await transact(bucketLender.deposit, alice, aliceAmount, { from: alice });
@@ -74,6 +73,8 @@ async function runAliceBot() {
   expect(owedWithdrawn.plus(1)).to.bignumber.gte(aliceAmount);
   expect(heldWithdrawn).to.be.bignumber.eq(0);
   expect(remainingWeight).to.be.bignumber.eq(0);
+  console.log("    checking invariants...");
+  await bucketLender.checkInvariants();
   console.log("  done.");
 }
 
@@ -95,17 +96,23 @@ async function setUpPosition(accounts) {
   const nonce = Math.floor(Math.random() * 12983748912748);
   POSITION_ID = web3Instance.utils.soliditySha3(accounts[0], nonce);
 
-  bucketLender = await BucketLender.new(
+  const principal = new BigNumber('22e18');
+  const deposit = new BigNumber('60e18');
+
+  bucketLender = await TestBucketLender.new(
     Margin.address,
     POSITION_ID,
     heldToken.address,
     owedToken.address,
     BUCKET_TIME,
+    INTEREST_RATE,
+    INTEREST_PERIOD,
+    MAX_DURATION,
+    CALL_TIMELIMIT,
+    deposit, // MIN_HELD_TOKEN_NUMERATOR,
+    principal, // MIN_HELD_TOKEN_DENOMINATOR,
     [accounts[0]] // trusted margin-callers
   );
-
-  const principal = new BigNumber('22e18');
-  const deposit = new BigNumber('60e18');
 
   await Promise.all([
     issueTokenToAccountInAmountAndApproveProxy(heldToken, accounts[0], deposit),
@@ -165,6 +172,7 @@ contract('BucketLender', accounts => {
         c_isTrusted,
         c_isTrusted2,
 
+        c_wasForceClosed,
         c_criticalBucket,
         c_cachedRepaidAmount,
 
@@ -189,6 +197,7 @@ contract('BucketLender', accounts => {
         bucketLender.TRUSTED_MARGIN_CALLERS.call(accounts[0]),
         bucketLender.TRUSTED_MARGIN_CALLERS.call(accounts[1]),
 
+        bucketLender.wasForceClosed.call(),
         bucketLender.criticalBucket.call(),
         bucketLender.cachedRepaidAmount.call(),
 
@@ -214,6 +223,7 @@ contract('BucketLender', accounts => {
       expect(c_isTrusted).to.be.true;
       expect(c_isTrusted2).to.be.false;
 
+      expect(c_wasForceClosed).to.be.false;
       expect(c_criticalBucket).to.be.bignumber.eq(0);
       expect(c_cachedRepaidAmount).to.be.bignumber.eq(0);
 
@@ -269,7 +279,7 @@ contract('BucketLender', accounts => {
       await wait(60 * 60 * 24 * 4);
 
       await issueTokenToAccountInAmountAndApproveProxy(owedToken, trader, OT.times(1000));
-
+      await bucketLender.checkInvariants();
       console.log("  closing position...");
       await margin.closePositionDirectly(
         POSITION_ID,
@@ -278,22 +288,25 @@ contract('BucketLender', accounts => {
         { from: trader }
       );
       console.log("  done.");
+
       await bucketLender.rebalanceBuckets();
+      await bucketLender.checkInvariants();
       console.log("  depositing from useless lender...");
+      await expectThrow(doDeposit(uselessLender, 0));
       await doDeposit(uselessLender, OT.times(3));
       console.log("  done.");
 
       await wait(60 * 60 * 24 * 1);
 
       await runAliceBot();
-
+      await bucketLender.checkInvariants();
       console.log("  increasing position...");
       tx = createIncreaseTx(trader, OT.times(3))
       await callIncreasePosition(margin, tx);
       tx = createIncreaseTx(trader, OT.times(3))
       await callIncreasePosition(margin, tx);
       console.log("  done.");
-
+      await bucketLender.checkInvariants();
       // expect that the lenders can no longer withdraw their owedToken isnce it has been lent
       await expectThrow(doWithdraw(lender1, 0));
       await expectThrow(doWithdraw(lender2, 0));
@@ -301,7 +314,7 @@ contract('BucketLender', accounts => {
       await wait(60 * 60 * 24 * 1);
 
       await runAliceBot();
-
+      await bucketLender.checkInvariants();
       console.log("  closing position...");
       await margin.closePositionDirectly(
         POSITION_ID,
@@ -310,19 +323,32 @@ contract('BucketLender', accounts => {
         { from: trader }
       );
       console.log("  done.");
-
+      await bucketLender.checkInvariants();
       await runAliceBot();
-
+      await bucketLender.checkInvariants();
+      // margin-call
+      await expectThrow(margin.marginCall(POSITION_ID, 0, { from: lender1 }));
+      await expectThrow(margin.marginCall(POSITION_ID, 1));
       await margin.marginCall(POSITION_ID, 0);
+      await bucketLender.checkInvariants();
+      // can't deposit while margin-called
+      await expectThrow(doDeposit(uselessLender, OT));
 
       await wait(60 * 60 * 24 * 1);
-
+      await bucketLender.checkInvariants();
+      // cancel margin-call
+      await expectThrow(margin.cancelMarginCall(POSITION_ID, { from: lender1 }));
       await margin.cancelMarginCall(POSITION_ID);
+      await bucketLender.checkInvariants();
+      // can deposit again
+      await doDeposit(uselessLender, OT);
 
       await wait(60 * 60 * 24 * 1);
-
+      await bucketLender.checkInvariants();
+      // margin-call again
+      await expectThrow(margin.marginCall(POSITION_ID, 0, { from: lender2 }));
       await margin.marginCall(POSITION_ID, 0);
-
+      await bucketLender.checkInvariants();
       console.log("  closing position...");
       await margin.closePositionDirectly(
         POSITION_ID,
@@ -333,9 +359,19 @@ contract('BucketLender', accounts => {
       console.log("  done.");
 
       await wait(60 * 60 * 24 * 1);
-
+      await bucketLender.checkInvariants();
+      //  Force-recover collateral
+      console.log("  force-recovering collateral...");
+      await expectThrow(margin.forceRecoverCollateral(POSITION_ID, accounts[0]));
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
-
+      console.log("  done.");
+      await bucketLender.checkInvariants();
+      // can't deposit after position closed
+      await expectThrow(doDeposit(uselessLender, OT));
+      await bucketLender.checkInvariants();
+      // do bad withdrawals
+      // do all remaining withdrawals
+      console.log("  doing all remaining withdrawals...");
       for(let a = 0; a < 10; a++) {
         let act = accounts[a];
         for(let b = 0; b < 20; b++) {
@@ -350,7 +386,62 @@ contract('BucketLender', accounts => {
           }
         }
       }
+      console.log("  done.");
 
+      // check constants
+      console.log("  checking constants...");
+      const [
+        c_wasForceClosed,
+        c_criticalBucket,
+        c_cachedRepaidAmount,
+        actualRepaidAmount,
+
+        c_available,
+        c_available2,
+        c_available3,
+        c_principal,
+        c_principal2,
+        c_weight,
+        c_weight2,
+
+        isClosed,
+
+        bucketLenderOwedToken,
+        bucketLenderHeldToken,
+      ] = await Promise.all([
+        bucketLender.wasForceClosed.call(),
+        bucketLender.criticalBucket.call(),
+        bucketLender.cachedRepaidAmount.call(),
+        margin.getTotalOwedTokenRepaidToLender.call(POSITION_ID),
+
+        bucketLender.availableTotal.call(),
+        bucketLender.availableForBucket.call(0),
+        bucketLender.availableForBucket.call(1),
+        bucketLender.principalTotal.call(),
+        bucketLender.principalForBucket.call(0),
+        bucketLender.weightForBucket.call(0),
+        bucketLender.weightForBucketForAccount.call(0, accounts[0]),
+
+        margin.isPositionClosed.call(POSITION_ID),
+
+        owedToken.balanceOf.call(bucketLender.address),
+        heldToken.balanceOf.call(bucketLender.address),
+      ]);
+      expect(c_wasForceClosed).to.be.true;
+      expect(c_criticalBucket).to.be.bignumber.eq(0);
+      expect(c_cachedRepaidAmount).to.be.bignumber.eq(actualRepaidAmount);
+      expect(c_available).to.be.bignumber.eq(0);
+      expect(c_available2).to.be.bignumber.eq(0);
+      expect(c_available3).to.be.bignumber.eq(0);
+      expect(c_principal).to.be.bignumber.eq(0);
+      expect(c_principal2).to.be.bignumber.eq(0);
+      expect(c_weight).to.be.bignumber.eq(0);
+      expect(c_weight2).to.be.bignumber.eq(0);
+      expect(isClosed).to.be.true;
+      expect(bucketLenderOwedToken).to.be.bignumber.eq(0);
+      expect(bucketLenderHeldToken).to.be.bignumber.eq(0);
+      console.log("  done.");
+      await bucketLender.checkInvariants();
     });
   });
 });
@@ -382,7 +473,7 @@ function createIncreaseTx(trader, principal) {
         interestRate:   INTEREST_RATE,
         interestPeriod: INTEREST_PERIOD
       },
-      expirationTimestamp: 1000000000000,
+      expirationTimestamp: BIGNUMBERS.ONES_255,
       callTimeLimit: CALL_TIMELIMIT.toNumber(),
       maxDuration: MAX_DURATION.toNumber(),
       salt: 0,
