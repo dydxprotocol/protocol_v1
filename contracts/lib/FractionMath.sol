@@ -51,8 +51,8 @@ library FractionMath {
         (uint256 l0, uint256 l1) = Math512.mul512(a.num, b.den);
         (uint256 r0, uint256 r1) = Math512.mul512(b.num, a.den);
         (uint256 d0, uint256 d1) = Math512.mul512(a.den, b.den);
-        (uint256 n0, uint256 n1) = Math512.add512(l0, l1, r0, r1);
-        return bound(n0, n1, d0, d1);
+        (uint256 n0, uint256 n1) = Math512.add512(l0, l1, r0, r1); // solium-disable-line
+        return bound(n0, n1, d0, d1); // solium-disable-line
     }
 
     /**
@@ -78,10 +78,10 @@ library FractionMath {
         }
 
         (uint256 n0, uint256 n1) = Math512.mul512(a.num, d);
-        (n0, n1) = Math512.sub512(n0, n1, a.den, 0);
+        (n0, n1) = Math512.sub512(n0, n1, a.den, 0);  // solium-disable-line
         (uint256 d0, uint256 d1) = Math512.mul512(a.den, d);
 
-        return bound(n0, n1, d0, d1);
+        return bound(n0, n1, d0, d1); // solium-disable-line
     }
 
     /**
@@ -110,7 +110,7 @@ library FractionMath {
 
         (uint256 d0, uint256 d1) = Math512.mul512(a.den, d);
 
-        return bound(a.num, 0, d0, d1);
+        return bound(a.num, 0, d0, d1); // solium-disable-line
     }
 
     /**
@@ -130,7 +130,7 @@ library FractionMath {
     {
         (uint256 n0, uint256 n1) = Math512.mul512(a.num, b.num);
         (uint256 d0, uint256 d1) = Math512.mul512(a.den, b.den);
-        return bound(n0, n1, d0, d1);
+        return bound(n0, n1, d0, d1); // solium-disable-line
     }
 
     /**
@@ -153,14 +153,20 @@ library FractionMath {
         pure
         returns (Fraction.Fraction256 memory)
     {
-        (uint256 m0, uint256 m1) = Math512.max512(n0, n1, d0, d1);
+        uint256 m1 = n1 > d1 ? n1 : d1;
         if (m1 != 0) {
-            m1 += 1;
-            (d0, d1) = Math512.div512(d0, d1, m1);
-            (n0, n1) = Math512.div512(n0, n1, m1);
+            if (m1 >= 2**255) { // just throw away the least significant bits
+                n0 = n1;
+                d0 = d1;
+            } else { // bit shift down to one uint256
+                m1 += 1;
+                uint invm1 = Math512.div256(m1);
+                n0 = n0 / m1 + n1 * invm1;
+                d0 = d0 / m1 + d1 * invm1;
+            }
         }
 
-        assert(d0 != 0 && d1 == 0 && n1 == 0); // unit-tested
+        assert(d0 != 0); // unit-tested
 
         return Fraction.Fraction256({
             num: n0,

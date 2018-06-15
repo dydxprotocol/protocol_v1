@@ -27,17 +27,17 @@ contract TestFractionMath {
     using FractionMath for Fraction.Fraction256;
 
     function add(
-        uint256 a,
-        uint256 b,
-        uint256 c,
-        uint256 d
+        uint256 n1,
+        uint256 d1,
+        uint256 n2,
+        uint256 d2
     )
         external
         pure
         returns (uint256, uint256)
     {
-        Fraction.Fraction256 memory p = Fraction.Fraction256({num: a, den: b});
-        Fraction.Fraction256 memory q = Fraction.Fraction256({num: c, den: d});
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: n1, den: d1});
+        Fraction.Fraction256 memory q = Fraction.Fraction256({num: n2, den: d2});
         Fraction.Fraction256 memory r = p.add(q);
         return (r.num, r.den);
     }

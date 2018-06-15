@@ -71,14 +71,17 @@ contract('Deploy Costs', () => {
       const tokens2 = new BigNumber('1e40');
       const percent = new BigNumber('1e6');
 
+      let gasCostBase = await contract.doNothing();
+      gasCostBase = gasCostBase.receipt.gasUsed;
+
       async function printGasCost(seconds) {
         const tx = await contract.getCompoundedInterest(tokens1, percent, seconds);
-        console.log('\tInterestCalculation gas cost (small): ' + tx.receipt.gasUsed);
+        console.log('\tInterestCalculation gas cost (sml): ' + (tx.receipt.gasUsed - gasCostBase));
       }
 
       async function printGasCostLarge(seconds) {
         const tx = await contract.getCompoundedInterest(tokens2, percent, seconds);
-        console.log('\tInterestCalculation gas cost (large): ' + tx.receipt.gasUsed);
+        console.log('\tInterestCalculation gas cost (lrg): ' + (tx.receipt.gasUsed - gasCostBase));
       }
 
       await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS));

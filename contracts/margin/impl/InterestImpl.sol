@@ -76,26 +76,78 @@ library InterestImpl {
             den: (10**8) * (365 * 1 days)
         });
 
-        // degenerate case: cap calculation
-        if (rt.num.div(rt.den) >= MAXIMUM_EXPONENT) {
-            return principal.mul(E_TO_MAXIUMUM_EXPONENT);
-        }
+        Fraction.Fraction256 memory eToRT;
 
-        // calculate e^(RT)
-        Fraction.Fraction256 memory eToRT = Exponent.exp(
-            rt,
-            DEFAULT_PRECOMPUTE_PRECISION,
-            DEFAULT_MACLAURIN_PRECISION
-        );
+        if (rt.num.div(rt.den) >= MAXIMUM_EXPONENT) {
+            // degenerate case: cap calculation
+            eToRT = Fraction.Fraction256({
+                num: E_TO_MAXIUMUM_EXPONENT,
+                den: 1
+            });
+        } else {
+            // calculate e^(RT)
+            eToRT = Exponent.exp(
+                rt,
+                DEFAULT_PRECOMPUTE_PRECISION,
+                DEFAULT_MACLAURIN_PRECISION
+            );
+        }
 
         // e^X for positive X should be greater-than or equal to 1
         assert(eToRT.num >= eToRT.den);
 
-        (uint256 r0, uint256 r1) = Math512.mul512(principal, eToRT.num);
-        (r0, r1) = Math512.div512(r0, r1, eToRT.den);
+        uint256 d = eToRT.num >> 128;
+        if (d != 0) {
+            d += 1;
+            eToRT.num /= d;
+            eToRT.den /= d;
+        }
 
-        assert(r1 == 0);
+        return safeMultiplyUint256ByFraction(principal, eToRT);
+    }
 
-        return r0;
+    // ============ Private Helper-Functions ============
+
+    /**
+     * Returns n * f, trying to prevent overflow as much as possible. Assumes that the numerator
+     * and denominator of f are less than 2**128.
+     */
+    function safeMultiplyUint256ByFraction(
+        uint256 n,
+        Fraction.Fraction256 memory f
+    )
+        private
+        pure
+        returns (uint256)
+    {
+        uint256 term1 = n.div(2 ** 128); // first 128 bits
+        uint256 term2 = n % (2 ** 128); // second 128 bits
+
+        // uncommon scenario, requires n >= 2**128. calculates term1 = term1 * f
+        if (term1 > 0) {
+            term1 = term1.mul(f.num);
+            uint256 numBits = MathHelpers.getNumBits(term1);
+
+            // reduce rounding error by shifting all the way to the left before dividing
+            term1 = MathHelpers.divisionRoundedUp(
+                term1 << (uint256(256).sub(numBits)),
+                f.den);
+
+            // continue shifting or reduce shifting to get the right number
+            if (numBits > 128) {
+                term1 = term1 << (numBits.sub(128));
+            } else if (numBits < 128) {
+                term1 = term1 >> (uint256(128).sub(numBits));
+            }
+        }
+
+        // calculates term2 = term2 * f
+        term2 = MathHelpers.getPartialAmountRoundedUp(
+            f.num,
+            f.den,
+            term2
+        );
+
+        return term1.add(term2);
     }
 }

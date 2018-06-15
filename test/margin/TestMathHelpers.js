@@ -131,10 +131,18 @@ contract('InterestHelper', function(_accounts) {
       expect(result).to.be.bignumber.equal(0);
 
       let n = new BigNumber(1);
+      let m = new BigNumber(1);
       for(let i = 0; i < 256; i++) {
-        let result = await contract.getNumBits.call(n);
-        expect(result).to.be.bignumber.equal(i + 1);
+        let [result0, result1] = await Promise.all([
+          contract.getNumBits.call(n),
+          contract.getNumBits.call(m)
+        ]);
+
+        expect(result0).to.be.bignumber.equal(i + 1);
+        expect(result1).to.be.bignumber.equal(i + 1);
+
         n = n.times(2);
+        m = m.plus(n);
       }
     });
   });

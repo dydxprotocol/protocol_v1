@@ -19,17 +19,24 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { MathHelpers } from "./MathHelpers.sol";
+
 
 /**
  * @title Math512
+ * @author dYdX
+ *
+ * Bitwise math manipulations
  */
 library Math512 {
 
     /**
-     * returns 2**256 / a
+     * Returns 2**256 / a
+     *
      * @param  a  The input
      * @return    The result
      */
+    /* solium-disable-next-line security/no-named-returns */
     function div256(
         uint256 a
     )
@@ -38,29 +45,23 @@ library Math512 {
         returns (uint256 r)
     {
         require(a > 1);
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             r := add(div(sub(0, a), a), 1)
         }
     }
 
     /**
-     * returns 2**256 mod a
-     * @param  a  The input
-     * @return    The result
+     * Returns R = A + B
+     *
+     * @param  a0  The least-significant digits of A
+     * @param  a1  The least-significant digits of A
+     * @param  b0  The least-significant digits of B
+     * @param  b1  The least-significant digits of B
+     * @return     1) The least-significant digits of R
+     *             2) The most-significant digits of R
      */
-    function mod256(
-        uint256 a
-    )
-        internal
-        pure
-        returns (uint256 r)
-    {
-        require(a != 0);
-        assembly {
-            r := mod(sub(0, a), a)
-        }
-    }
-
+    /* solium-disable-next-line security/no-named-returns */
     function add512(
         uint256 a0,
         uint256 a1,
@@ -71,12 +72,24 @@ library Math512 {
         pure
         returns (uint256 r0, uint256 r1)
     {
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             r0 := add(a0, b0)
             r1 := add(add(a1, b1), lt(r0, a0))
         }
     }
 
+    /**
+     * Returns R = A - B
+     *
+     * @param  a0  The least-significant digits of A
+     * @param  a1  The least-significant digits of A
+     * @param  b0  The least-significant digits of B
+     * @param  b1  The least-significant digits of B
+     * @return     1) The least-significant digits of R
+     *             2) The most-significant digits of R
+     */
+    /* solium-disable-next-line security/no-named-returns */
     function sub512(
         uint256 a0,
         uint256 a1,
@@ -88,12 +101,22 @@ library Math512 {
         returns (uint256 r0, uint256 r1)
     {
         assert (a1 > b1 || (a1 == b1 && a0 > b0));
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             r0 := sub(a0, b0)
             r1 := sub(sub(a1, b1), lt(a0, b0))
         }
     }
 
+    /**
+     * Returns R = a * b
+     *
+     * @param  a  One input
+     * @param  b  The other input
+     * @return    1) The least-significant digits of R
+     *            2) The most-significant digits of R
+     */
+    /* solium-disable-next-line security/no-named-returns */
     function mul512(
         uint256 a,
         uint256 b
@@ -102,53 +125,11 @@ library Math512 {
         pure
         returns (uint256 r0, uint256 r1)
     {
+        /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             let mm := mulmod(a, b, not(0))
             r0 := mul(a, b)
             r1 := sub(sub(mm, r0), lt(mm, r0))
         }
-    }
-
-    function div512(
-        uint256 a0,
-        uint256 a1,
-        uint256 b
-    )
-        internal
-        pure
-        returns (uint256 x0, uint256 x1)
-    {
-        require (b != 0);
-
-        if (b == 1) {
-            return (a0, a1);
-        }
-        uint256 t0;
-        uint256 t1;
-        uint256 q = div256(b);
-        uint256 r = mod256(b);
-        while (a1 != 0) {
-            (t0, t1) = mul512(a1, q);
-            (x0, x1) = add512(x0, x1, t0, t1);
-            (t0, t1) = mul512(a1, r);
-            (a0, a1) = add512(t0, t1, a0, 0);
-        }
-        (x0, x1) = add512(x0, x1, a0 / b, 0);
-    }
-
-    function max512(
-        uint256 a0,
-        uint256 a1,
-        uint256 b0,
-        uint256 b1
-    )
-        internal
-        pure
-        returns (uint256 r0, uint256 r1)
-    {
-        if (a1 == b1) {
-            return a0 > b0 ? (a0, a1) : (b0, b1);
-        }
-        return a1 > b1 ? (a0, a1) : (b0, b1);
     }
 }

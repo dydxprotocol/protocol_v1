@@ -75,7 +75,7 @@ library Exponent {
         }
 
         // get the integer value of the fraction (example: 9/4 is 2.25 so has integerValue of 2)
-        uint256 integerX = uint256(Xcopy.num).div(Xcopy.den);
+        uint256 integerX = Xcopy.num.div(Xcopy.den);
 
         // if X is less than 1, then just calculate X
         if (integerX == 0) {

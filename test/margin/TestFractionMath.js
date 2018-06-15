@@ -18,10 +18,15 @@ contract('FractionMath', function(_accounts) {
   // ============ add ============
 
   describe('#add', () => {
-    it('succeeds for addition overflow', async () => {
-      const [num, den] = await contract.add(bn, bn, bn, bn);
-      console.log(num, den);
-      expect(num).to.be.bignumber.equal(den.times(2));
+    async function add(n1, d1, n2, d2, numRes, denRes) {
+      const result = await contract.add(n1, d1, n2, d2);
+      expect(result[0]).to.be.bignumber.equal(numRes);
+      expect(result[1]).to.be.bignumber.equal(denRes);
+    }
+    it('succeeds for add', async () => {
+      await Promise.all([
+        add(1, 2, 1, 2, 2, 2)
+      ]);
     });
   });
 
