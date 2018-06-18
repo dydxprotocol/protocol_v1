@@ -19,6 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { Margin } from "../margin/Margin.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
 import { BucketLender } from "../margin/external/BucketLender/BucketLender.sol";
 
 
@@ -36,8 +38,8 @@ contract TestBucketLender is BucketLender {
         uint32 interestPeriod,
         uint32 maxDuration,
         uint32 callTimelimit,
-        uint256 minHeldTokenNumerator,
-        uint256 minHeldTokenDenominator,
+        uint32 minHeldTokenNumerator,
+        uint32 minHeldTokenDenominator,
         address[] trustedMarginCallers
     )
         public
@@ -78,6 +80,10 @@ contract TestBucketLender is BucketLender {
             availableSum += aa;
         }
 
+        require(TokenInteract.balanceOf(OWED_TOKEN, address(this)) >= availableTotal);
+        if (principalTotal > 0) {
+            require(Margin(DYDX_MARGIN).getPositionPrincipal(POSITION_ID) <= principalTotal);
+        }
         require(principalSum == principalTotal);
         require(availableSum == availableTotal);
 

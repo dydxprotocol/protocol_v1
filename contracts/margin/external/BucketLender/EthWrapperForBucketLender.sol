@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { BucketLender } from "./BucketLender.sol";
 import { WETH9 } from "../../../external/weth/WETH9.sol";
+import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 
 
@@ -82,7 +83,7 @@ contract EthWrapperForBucketLender
         assert(TokenInteract.balanceOf(WETH, address(this)) >= amount);
 
         // approve for "unlimited amount". WETH9 leaves this value as-is when doing transferFrom
-        TokenInteract.approve(WETH, bucketLender, uint256(-1));
+        TokenInteract.approve(WETH, bucketLender, MathHelpers.maxUint256());
 
         // deposit the tokens
         return BucketLender(bucketLender).deposit(beneficiary, amount);
