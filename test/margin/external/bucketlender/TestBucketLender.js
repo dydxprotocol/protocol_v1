@@ -52,11 +52,13 @@ function gcd(a, b) {
 
 // grants tokens to a lender and has them deposit them into the bucket lender
 async function doDeposit(account, amount) {
+  await bucketLender.checkInvariants();
   console.log("    depositing...");
   await issueAndSetAllowance(owedToken, account, amount, bucketLender.address);
   console.log("      ...");
   const tx = await transact(bucketLender.deposit, account, amount, { from: account });
   console.log("    done (depositing).");
+  await bucketLender.checkInvariants();
   return tx.result;
 }
 
@@ -66,6 +68,7 @@ async function doWithdraw(account, bucket, args) {
   args.beneficiary = args.beneficiary || account;
   args.throws = args.throws || false;
   args.weight = args.weight || BIGNUMBERS.ONES_255;
+  await bucketLender.checkInvariants();
 
   if (args.throws) {
     await expectThrow(
@@ -101,12 +104,14 @@ async function doWithdraw(account, bucket, args) {
   expect(held1.minus(held0)).to.be.bignumber.eq(heldWithdrawn);
 
   const remainingWeight = await bucketLender.weightForBucketForAccount.call(bucket, account);
+  await bucketLender.checkInvariants();
   return {owedWithdrawn, heldWithdrawn, remainingWeight};
 }
 
 async function doIncrease(amount, args) {
   args = args || {};
   args.throws = args.throws || false;
+  await bucketLender.checkInvariants();
 
   const incrTx = createIncreaseTx(trader, amount);
 
@@ -120,17 +125,23 @@ async function doIncrease(amount, args) {
   console.log("    increasing...");
   await callIncreasePosition(margin, incrTx);
   console.log("    done (increasing).");
+  await bucketLender.checkInvariants();
 }
 
-async function doClose(amount) {
+async function doClose(amount, args) {
+  args = args || {};
+  args.closer = args.closer || trader;
+  await bucketLender.checkInvariants();
+
   console.log("    closing...");
   await margin.closePositionDirectly(
     POSITION_ID,
     amount,
-    trader,
-    { from: trader }
+    args.closer,
+    { from: args.closer }
   );
   console.log("    done (closing).");
+  await bucketLender.checkInvariants();
 }
 
 async function runAliceBot(expectThrow = false) {
@@ -208,7 +219,8 @@ async function setUpPosition(accounts, openThePosition = true) {
   );
 
   await Promise.all([
-    issueTokenToAccountInAmountAndApproveProxy(heldToken, accounts[0], deposit),
+    issueTokenToAccountInAmountAndApproveProxy(owedToken, TRUSTED_PARTY, OT.times(1000)),
+    issueTokenToAccountInAmountAndApproveProxy(heldToken, TRUSTED_PARTY, deposit),
     doDeposit(lender1, OT.times(2)),
     doDeposit(lender2, OT.times(3)),
     issueTokenToAccountInAmountAndApproveProxy(heldToken, trader, OT.times(1000)),
@@ -249,15 +261,17 @@ async function setUpPosition(accounts, openThePosition = true) {
       MAX_DURATION,
       INTEREST_RATE,
       INTEREST_PERIOD
-    ]
+    ],
+    { from: TRUSTED_PARTY }
   );
+  await bucketLender.checkInvariants();
 }
 
 contract('BucketLender', accounts => {
 
   // ============ Before/After ============
 
-  beforeEach('Set up contracts', async () => {
+  beforeEach('set up contracts', async () => {
     [
       margin,
       heldToken,
@@ -545,7 +559,7 @@ contract('BucketLender', accounts => {
 
   describe('#receiveLoanOwnership', () => {
     const ogPrincipal = OT.times(2);
-    const ogDeposit = OT.times(2);
+    const ogDeposit = OT.times(6);
 
     it('succeeds under normal conditions', async () => {
       await setUpPosition(accounts);
@@ -945,19 +959,88 @@ contract('BucketLender', accounts => {
     });
 
     it('succeeds after full-close', async () => {
-      //TODO
+      await wait(1);
+      await doIncrease(OT.times(4));
+      await wait(60 * 60 * 24 * 2);
+      await doClose(OT.times(4));
+      await doClose(BIGNUMBERS.ONES_255, { closer: TRUSTED_PARTY });
+
+      const isClosed = await margin.isPositionClosed.call(POSITION_ID);
+      expect(isClosed).to.be.true;
+
+      const {owedWithdrawn, heldWithdrawn, remainingWeight} = await doWithdraw(lender1, 0);
+      expect(owedWithdrawn).to.be.bignumber.gt(OT.times(2));
+      expect(heldWithdrawn).to.be.bignumber.eq(0);
+      expect(remainingWeight).to.be.bignumber.eq(0);
     });
 
     it('succeeds after force-closing', async () => {
-      //TODO
+      await doIncrease(OT.times(4));
+      await wait(MAX_DURATION.toNumber());
+      await doClose(OT.times(2));
+      await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
+
+      const ratio = 3;
+      let result, weight, value;
+
+      weight = await bucketLender.weightForBucketForAccount.call(0, lender1);
+      result = await doWithdraw(lender1, 0);
+      expect(result.owedWithdrawn).to.be.bignumber.gt(0);
+      expect(result.heldWithdrawn).to.be.bignumber.gt(0);
+      expect(result.remainingWeight).to.be.bignumber.eq(0);
+      value = result.owedWithdrawn.plus(result.heldWithdrawn.div(ratio));
+      expect(value).to.be.bignumber.gt(weight);
+
+      weight = await bucketLender.weightForBucketForAccount.call(0, lender2);
+      result = await doWithdraw(lender2, 0);
+      expect(result.owedWithdrawn).to.be.bignumber.gt(0);
+      expect(result.heldWithdrawn).to.be.bignumber.gt(0);
+      expect(result.remainingWeight).to.be.bignumber.eq(0);
+      value = result.owedWithdrawn.plus(result.heldWithdrawn.div(ratio));
+      expect(value).to.be.bignumber.gt(weight);
+
+      weight = await bucketLender.weightForBucketForAccount.call(0, TRUSTED_PARTY);
+      result = await doWithdraw(TRUSTED_PARTY, 0);
+      expect(result.owedWithdrawn).to.be.bignumber.gt(0);
+      expect(result.heldWithdrawn).to.be.bignumber.gt(0);
+      expect(result.remainingWeight).to.be.bignumber.eq(0);
+      value = result.owedWithdrawn.plus(result.heldWithdrawn.div(ratio));
+      expect(value).to.be.bignumber.gt(weight);
     });
 
-    it('fails for withdrawing from the current bucket', async () => {
-      //TODO
+    it('fails for not-enough available amount', async () => {
+      await doIncrease(OT.times(4));
+      await wait(60 * 60 * 24 * 4);
+
+      await doWithdraw(lender1, 0, { throws: true });
+
+      const weight = OT.div(2);
+      const {owedWithdrawn, heldWithdrawn, remainingWeight} =
+        await doWithdraw(lender1, 0, { weight: weight });
+      expect(owedWithdrawn).to.be.bignumber.gte(weight);
+      expect(heldWithdrawn).to.be.bignumber.eq(0);
+      expect(remainingWeight).to.be.bignumber.eq(OT.times(3).div(2));
     });
 
-    it('fails for no available amount', async () => {
-      //TODO
+    it('succeeds but returns no tokens for the current/critical bucket', async () => {
+      let bucket;
+      await wait(1);
+
+      bucket = await doDeposit(lender1, OT);
+      expect(bucket).to.be.bignumber.eq(1);
+
+      await doIncrease(OT.times(5).plus(1));
+
+      bucket = await doDeposit(lender1, OT);
+      expect(bucket).to.be.bignumber.eq(1);
+      await bucketLender.rebalanceBuckets();
+
+      const weight = await bucketLender.weightForBucketForAccount.call(1, lender1);
+      const {owedWithdrawn, heldWithdrawn, remainingWeight} = await doWithdraw(lender1, 1);
+
+      expect(owedWithdrawn).to.be.bignumber.eq(0);
+      expect(heldWithdrawn).to.be.bignumber.eq(0);
+      expect(remainingWeight).to.be.bignumber.eq(weight);
     });
 
     it('fails to withdraw to the zero address', async () => {
@@ -985,11 +1068,114 @@ contract('BucketLender', accounts => {
   });
 
   describe('#rebalanceBuckets', () => {
-    it('TODO', async () => {
-      //TODO
+    async function getAmounts() {
+      const [
+        principalTotal,
+        principal0,
+        principal1,
+        availableTotal,
+        available0,
+        available1,
+      ] = await Promise.all([
+        bucketLender.principalTotal.call(),
+        bucketLender.principalForBucket.call(0),
+        bucketLender.principalForBucket.call(1),
+        bucketLender.availableTotal.call(),
+        bucketLender.availableForBucket.call(0),
+        bucketLender.availableForBucket.call(1),
+      ]);
+
+      expect(principalTotal).to.be.bignumber.eq(principal0.plus(principal1));
+      expect(availableTotal).to.be.bignumber.eq(available0.plus(available1));
+
+      return {
+        principalTotal,
+        principal0,
+        principal1,
+        availableTotal,
+        available0,
+        available1,
+      };
+    }
+
+    it('succeeds after close', async () => {
+      let result;
+      const startingPrincipal = await bucketLender.principalTotal.call();
+      await wait(1);
+
+      await doDeposit(lender1, OT.times(5));
+      result = await getAmounts();
+      expect(result.principal0).to.be.bignumber.eq(startingPrincipal);
+      expect(result.principal1).to.be.bignumber.eq(0);
+      expect(result.available0).to.be.bignumber.eq(OT.times(5));
+      expect(result.available1).to.be.bignumber.eq(OT.times(5));
+
+      await doIncrease(OT.times(8));
+      result = await getAmounts();
+      expect(result.principal0).to.be.bignumber.eq(startingPrincipal.plus(OT.times(5)));
+      expect(result.principal1).to.be.bignumber.eq(OT.times(3));
+      expect(result.available0).to.be.bignumber.eq(0);
+      expect(result.available1).to.be.bignumber.eq(OT.times(2));
+
+      await wait(60 * 60 * 24 * 2);
+
+      await doClose(OT.times(5));
+      result = await getAmounts();
+      expect(result.principal0).to.be.bignumber.eq(startingPrincipal.plus(OT.times(5)));
+      expect(result.principal1).to.be.bignumber.eq(OT.times(3));
+      expect(result.available0).to.be.bignumber.eq(0);
+      expect(result.available1).to.be.bignumber.eq(OT.times(2));
+
+      await bucketLender.rebalanceBuckets();
+      result = await getAmounts();
+      expect(result.principal0).to.be.bignumber.eq(startingPrincipal.plus(OT.times(3)));
+      expect(result.principal1).to.be.bignumber.eq(0);
+      expect(result.available0).to.be.bignumber.gte(OT.times(2));
+      expect(result.available1).to.be.bignumber.gte(OT.times(5));
     });
 
-    //TODO: add more tests
+    it('does nothing after the position is force-closed', async () => {
+      await doDeposit(lender1, OT.times(5));
+      await doIncrease(OT.times(8));
+      await wait(MAX_DURATION.toNumber());
+      await doClose(OT.times(5));
+
+      const result0 = await getAmounts();
+      await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
+      const result1 = await getAmounts();
+      await bucketLender.rebalanceBuckets();
+      const result2 = await getAmounts();
+
+      expect(result0.principal0).to.be.bignumber.not.eq(result1.principal0);
+      expect(result0.principal1).to.be.bignumber.not.eq(result1.principal1);
+      expect(result0.available0).to.be.bignumber.not.eq(result1.available0);
+      expect(result0.available1).to.be.bignumber.not.eq(result1.available1);
+
+      expect(result1.principal0).to.be.bignumber.eq(result2.principal0);
+      expect(result1.principal1).to.be.bignumber.eq(result2.principal1);
+      expect(result1.available0).to.be.bignumber.eq(result2.available0);
+      expect(result1.available1).to.be.bignumber.eq(result2.available1);
+    });
+
+    it('does nothing when the position has not been closed since the last rebalance', async () => {
+      await wait(1);
+      await doDeposit(lender1, OT.times(5));
+      await wait(60 * 60 * 24);
+      await doIncrease(OT.times(5));
+      await wait(60 * 60 * 24);
+      await doClose(OT.times(2));
+      await wait(60 * 60 * 24);
+      await doIncrease(OT.times(5));
+
+      const result1 = await getAmounts();
+      await bucketLender.rebalanceBuckets();
+      const result2 = await getAmounts();
+
+      expect(result1.principal0).to.be.bignumber.eq(result2.principal0);
+      expect(result1.principal1).to.be.bignumber.eq(result2.principal1);
+      expect(result1.available0).to.be.bignumber.eq(result2.available0);
+      expect(result1.available1).to.be.bignumber.eq(result2.available1);
+    });
   });
 
   // ============ Integration Tests ============
@@ -1019,7 +1205,6 @@ contract('BucketLender', accounts => {
       await bucketLender.rebalanceBuckets();
       await runAliceBot();
 
-      await expectThrow(doDeposit(uselessLender, 0));
       await doDeposit(uselessLender, OT.times(3));
       await runAliceBot();
 
@@ -1086,7 +1271,6 @@ contract('BucketLender', accounts => {
 
       //  Force-recover collateral
       console.log("  force-recovering collateral...");
-      await expectThrow(margin.forceRecoverCollateral(POSITION_ID, TRUSTED_PARTY));
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
       console.log("  done.");
       await bucketLender.checkInvariants();
@@ -1261,7 +1445,6 @@ contract('BucketLender', accounts => {
 
       //  Force-recover collateral
       console.log("  force-recovering collateral...");
-      await expectThrow(margin.forceRecoverCollateral(POSITION_ID, TRUSTED_PARTY));
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
       console.log("  done.");
       await bucketLender.checkInvariants();
@@ -1382,7 +1565,6 @@ contract('BucketLender', accounts => {
       await doClose(OT);
       await runAliceBot();
 
-      await expectThrow(doDeposit(uselessLender, 0));
       await doDeposit(uselessLender, OT.times(3));
       await runAliceBot();
 
@@ -1459,7 +1641,6 @@ contract('BucketLender', accounts => {
 
       //  Force-recover collateral
       console.log("  force-recovering collateral...");
-      await expectThrow(margin.forceRecoverCollateral(POSITION_ID, TRUSTED_PARTY));
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
       console.log("  done.");
       await bucketLender.checkInvariants();

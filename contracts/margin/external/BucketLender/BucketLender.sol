@@ -382,8 +382,14 @@ contract BucketLender is
         assert(initialPrincipal > 0);
 
         // lenders should have certain guarantees about how the position is collateralized
-        require(position.owedToken == OWED_TOKEN);
-        require(position.heldToken == HELD_TOKEN);
+        require(
+            position.owedToken == OWED_TOKEN,
+            "BucketLender#receiveLoanOwnership: Position owedToken mismatch"
+        );
+        require(
+            position.heldToken == HELD_TOKEN,
+            "BucketLender#receiveLoanOwnership: Position heldToken mismatch"
+        );
 
         // require enough heldToken
         uint256 minStartingHeldToken = MathHelpers.getPartialAmount(
@@ -436,10 +442,6 @@ contract BucketLender is
         require(
             !Margin(DYDX_MARGIN).isPositionCalled(POSITION_ID),
             "BucketLender#increaseLoanOnBehalfOf: No lending while the position is margin-called"
-        );
-        require(
-            lentAmount <= availableTotal,
-            "BucketLender#increaseLoanOnBehalfOf: No lending not-accounted-for funds"
         );
 
         // This function is only called after the state has been updated in the base protocol;
@@ -678,6 +680,16 @@ contract BucketLender is
 
         rebalanceBucketsInternal();
 
+        // decide if some bucket is unable to be withdrawn from (is locked)
+        // the zero value represents no-lock
+        uint256 lockedBucket = 0;
+        if (
+            Margin(DYDX_MARGIN).containsPosition(POSITION_ID) &&
+            criticalBucket == getCurrentBucket()
+        ) {
+            lockedBucket = criticalBucket;
+        }
+
         uint256 totalOwedToken = 0;
         uint256 totalHeldToken = 0;
 
@@ -687,8 +699,15 @@ contract BucketLender is
         }
 
         for (uint256 i = 0; i < buckets.length; i++) {
+            uint256 bucket = buckets[i];
+
+            // prevent withdrawing from the current bucket if it is also the critical bucket
+            if ((bucket != 0) && (bucket == lockedBucket)) {
+                continue;
+            }
+
             (uint256 owedTokenForBucket, uint256 heldTokenForBucket) = withdrawSingleBucket(
-                buckets[i],
+                bucket,
                 maxWeights[i],
                 maxHeldToken
             );
@@ -711,7 +730,7 @@ contract BucketLender is
      * state if part of the position has been closed since the last position increase.
      */
     function rebalanceBucketsInternal()
-        internal
+        private
     {
         // if force-closed, don't update the outstanding principal values; they are needed to repay
         // lenders with heldToken
@@ -801,6 +820,11 @@ contract BucketLender is
     )
         private
     {
+        require(
+            lentAmount <= availableTotal,
+            "BucketLender#accountForIncrease: No lending not-accounted-for funds"
+        );
+
         uint256 principalToAdd = principalAdded;
         uint256 availableToSub = lentAmount;
         uint256 criticalBucketTemp;
@@ -1014,10 +1038,6 @@ contract BucketLender is
     )
         private
     {
-        if (amount == 0) {
-            return;
-        }
-
         if (increase) {
             availableTotal = availableTotal.add(amount);
             availableForBucket[bucket] = availableForBucket[bucket].add(amount);
@@ -1042,10 +1062,6 @@ contract BucketLender is
     )
         private
     {
-        if (amount == 0) {
-            return;
-        }
-
         if (increase) {
             principalTotal = principalTotal.add(amount);
             principalForBucket[bucket] = principalForBucket[bucket].add(amount);
@@ -1060,6 +1076,8 @@ contract BucketLender is
     /**
      * Get the current bucket number that funds will be deposited into. This is also the highest
      * bucket so far.
+     *
+     * @return The highest bucket and the one that funds will be deposited into
      */
     function getCurrentBucket()
         private
@@ -1122,6 +1140,8 @@ contract BucketLender is
 
     /**
      * Gets the position's current principal amount from the Margin contract
+     *
+     * @return The position's current principal
      */
     function getPositionPrincipal()
         private
