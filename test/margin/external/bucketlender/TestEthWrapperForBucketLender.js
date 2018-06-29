@@ -49,13 +49,15 @@ contract('BucketLender', accounts => {
         POSITION_ID,
         heldToken.address,
         weth.address,
-        BUCKET_TIME,
-        INTEREST_RATE,
-        INTEREST_PERIOD,
-        MAX_DURATION,
-        CALL_TIMELIMIT,
-        DEPOSIT, // MIN_HELD_TOKEN_NUMERATOR,
-        PRINCIPAL, // MIN_HELD_TOKEN_DENOMINATOR,
+        [
+          BUCKET_TIME,
+          INTEREST_RATE,
+          INTEREST_PERIOD,
+          MAX_DURATION,
+          CALL_TIMELIMIT,
+          DEPOSIT, // MIN_HELD_TOKEN_NUMERATOR,
+          PRINCIPAL, // MIN_HELD_TOKEN_DENOMINATOR,
+        ],
         [] // trusted margin-callers
       )
     ]);
@@ -77,18 +79,26 @@ contract('BucketLender', accounts => {
   });
 
   describe('#depositEth', () => {
-    it('succeeds for normal case', async () => {
+    it('succeeds when depositing multiple times', async () => {
       const sender = accounts[1];
       const beneficiary = accounts[2];
-      const result = await transact(
+      let result;
+
+      result = await transact(
         ethWrapper.depositEth,
         bucketLender.address,
         beneficiary,
         { from: sender, value: value }
       );
+      expect(result.result).to.be.bignumber.eq(0); // expect bucket 0
 
-      // expect bucket 0
-      expect(result.result).to.be.bignumber.eq(0);
+      result = await transact(
+        ethWrapper.depositEth,
+        bucketLender.address,
+        beneficiary,
+        { from: sender, value: value }
+      );
+      expect(result.result).to.be.bignumber.eq(0); // expect bucket 0
 
       const [
         weight1,
@@ -97,8 +107,8 @@ contract('BucketLender', accounts => {
         bucketLender.weightForBucket.call(0),
         bucketLender.weightForBucketForAccount.call(0, beneficiary),
       ]);
-      expect(weight1).to.be.bignumber.eq(value);
-      expect(weight2).to.be.bignumber.eq(value);
+      expect(weight1).to.be.bignumber.eq(value.times(2));
+      expect(weight2).to.be.bignumber.eq(value.times(2));
     });
 
     it('fails for zero amount', async () => {

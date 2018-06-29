@@ -194,13 +194,15 @@ async function setUpPosition(accounts, openThePosition = true) {
     POSITION_ID,
     heldToken.address,
     owedToken.address,
-    BUCKET_TIME,
-    INTEREST_RATE,
-    INTEREST_PERIOD,
-    MAX_DURATION,
-    CALL_TIMELIMIT,
-    deposit.div(g), // MIN_HELD_TOKEN_NUMERATOR,
-    principal.div(g), // MIN_HELD_TOKEN_DENOMINATOR,
+    [
+      BUCKET_TIME,
+      INTEREST_RATE,
+      INTEREST_PERIOD,
+      MAX_DURATION,
+      CALL_TIMELIMIT,
+      deposit.div(g), // MIN_HELD_TOKEN_NUMERATOR,
+      principal.div(g), // MIN_HELD_TOKEN_DENOMINATOR,
+    ],
     [TRUSTED_PARTY] // trusted margin-callers
   );
 
@@ -935,6 +937,27 @@ contract('BucketLender', accounts => {
         expect(heldWithdrawn).to.be.bignumber.eq(0);
         expect(remainingWeight).to.be.bignumber.eq(0);
       }
+    });
+
+    it('Withdraw succeeds even when principal amount for lender is zero', async () => {
+      await doDeposit(lender1, 1);
+      await doDeposit(lender2, OT);
+
+      await wait(60 * 24 * 24 * 1 + 1);
+
+      await doIncrease(OT.times(5));
+
+      await wait(MAX_DURATION.toNumber());
+      await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
+
+      const result1 = await doWithdraw(lender1, 1);
+      expect(result1.owedWithdrawn).to.be.bignumber.eq(0);
+      expect(result1.heldWithdrawn).to.be.bignumber.eq(0);
+      expect(result1.remainingWeight).to.be.bignumber.eq(0);
+      const result2 = await doWithdraw(lender2, 1);
+      expect(result2.owedWithdrawn).to.be.bignumber.gt(0);
+      expect(result2.heldWithdrawn).to.be.bignumber.gt(0);
+      expect(result2.remainingWeight).to.be.bignumber.eq(0);
     });
 
     it('succeeds but returns no tokens for random buckets', async () => {

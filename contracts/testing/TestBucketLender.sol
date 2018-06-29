@@ -33,13 +33,7 @@ contract TestBucketLender is BucketLender {
         bytes32 positionId,
         address heldToken,
         address owedToken,
-        uint32 bucketTime,
-        uint32 interestRate,
-        uint32 interestPeriod,
-        uint32 maxDuration,
-        uint32 callTimelimit,
-        uint32 minHeldTokenNumerator,
-        uint32 minHeldTokenDenominator,
+        uint32[7] parameters,
         address[] trustedMarginCallers
     )
         public
@@ -48,13 +42,7 @@ contract TestBucketLender is BucketLender {
             positionId,
             heldToken,
             owedToken,
-            bucketTime,
-            interestRate,
-            interestPeriod,
-            maxDuration,
-            callTimelimit,
-            minHeldTokenNumerator,
-            minHeldTokenDenominator,
+            parameters,
             trustedMarginCallers
         )
     {
