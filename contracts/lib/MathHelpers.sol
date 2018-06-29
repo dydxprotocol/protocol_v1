@@ -108,29 +108,47 @@ library MathHelpers {
     }
 
     /**
-     * Returns the number of bits in a uint256. That is, the lowest number, x, such that n >> x == 0
+     * Returns the number of bits in a uint256. That is, the lowest number, y, such that x >> y == 0
      *
-     * @param  n  The uint256 to get the number of bits in
-     * @return    The number of bits in n
+     * @param  x  The uint256 to get the number of bits in
+     * @return    The number of bits in x
      */
     function getNumBits(
+        uint256 x
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        uint256 y;
+        uint256 n = 0;
+        y = x >>128; if (y != 0) { n += 128; x = y; }
+        y = x >> 64; if (y != 0) { n +=  64; x = y; }
+        y = x >> 32; if (y != 0) { n +=  32; x = y; }
+        y = x >> 16; if (y != 0) { n +=  16; x = y; }
+        y = x >>  8; if (y != 0) { n +=   8; x = y; }
+        y = x >>  4; if (y != 0) { n +=   4; x = y; }
+        y = x >>  2; if (y != 0) { n +=   2; x = y; }
+        y = x >>  1; if (y != 0) return n + 2;
+        return n + x;
+    }
+
+    function getHighestBit(
         uint256 n
     )
         internal
         pure
         returns (uint256)
     {
-        uint256 first = 0;
-        uint256 last = 256;
-        while (first < last) {
-            uint256 check = (first + last) / 2;
-            if ((n >> check) == 0) {
-                last = check;
-            } else {
-                first = check + 1;
-            }
-        }
-        assert(first <= 256);
-        return first;
+        uint256 m = n;
+        m |= m >> 1;
+        m |= m >> 2;
+        m |= m >> 4;
+        m |= m >> 8;
+        m |= m >> 16;
+        m |= m >> 32;
+        m |= m >> 64;
+        m |= m >> 128;
+        return m + 1;
     }
 }

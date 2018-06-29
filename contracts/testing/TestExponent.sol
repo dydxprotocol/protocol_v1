@@ -28,8 +28,8 @@ import { MathHelpers } from "../lib/MathHelpers.sol";
 
 contract TestExponent {
     function exp(
-        uint128 numerator,
-        uint128 denominator,
+        uint256 numerator,
+        uint256 denominator,
         uint256 precomputePrecision,
         uint256 maclaurinPrecision
     )
@@ -37,8 +37,8 @@ contract TestExponent {
         pure
         returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory percent = Exponent.exp(
-            Fraction.Fraction128({
+        Fraction.Fraction256 memory percent = Exponent.exp(
+            Fraction.Fraction256({
                 num: numerator,
                 den: denominator
             }),

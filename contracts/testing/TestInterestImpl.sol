@@ -46,4 +46,12 @@ contract TestInterestImpl {
             secondsOfInterest
         );
     }
+
+    function doNothing()
+        public
+    {
+        if (false) {
+            test = 1;
+        }
+    }
 }

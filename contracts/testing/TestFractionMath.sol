@@ -24,90 +24,92 @@ import { FractionMath } from "../lib/FractionMath.sol";
 
 
 contract TestFractionMath {
-    using FractionMath for Fraction.Fraction128;
+    using FractionMath for Fraction.Fraction256;
 
     function add(
-        uint128 a,
-        uint128 b,
-        uint128 c,
-        uint128 d
+        uint256 n1,
+        uint256 d1,
+        uint256 n2,
+        uint256 d2
     )
         external
         pure
-        returns (uint128, uint128)
+        returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        Fraction.Fraction128 memory q = Fraction.Fraction128({num: c, den: d});
-        Fraction.Fraction128 memory r = p.add(q);
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: n1, den: d1});
+        Fraction.Fraction256 memory q = Fraction.Fraction256({num: n2, den: d2});
+        Fraction.Fraction256 memory r = p.add(q);
         return (r.num, r.den);
     }
 
     function sub1Over(
-        uint128 a,
-        uint128 b,
-        uint128 d
+        uint256 a,
+        uint256 b,
+        uint256 d
     )
         external
         pure
-        returns (uint128, uint128)
+        returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        Fraction.Fraction128 memory r = p.sub1Over(d);
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: a, den: b});
+        Fraction.Fraction256 memory r = p.sub1Over(d);
         return (r.num, r.den);
     }
 
     function div(
-        uint128 a,
-        uint128 b,
-        uint128 d
+        uint256 a,
+        uint256 b,
+        uint256 d
     )
         external
         pure
-        returns (uint128, uint128)
+        returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        Fraction.Fraction128 memory r = p.div(d);
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: a, den: b});
+        Fraction.Fraction256 memory r = p.div(d);
         return (r.num, r.den);
     }
 
     function mul(
-        uint128 a,
-        uint128 b,
-        uint128 c,
-        uint128 d
+        uint256 a,
+        uint256 b,
+        uint256 c,
+        uint256 d
     )
         external
         pure
-        returns (uint128, uint128)
+        returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        Fraction.Fraction128 memory q = Fraction.Fraction128({num: c, den: d});
-        Fraction.Fraction128 memory r = p.mul(q);
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: a, den: b});
+        Fraction.Fraction256 memory q = Fraction.Fraction256({num: c, den: d});
+        Fraction.Fraction256 memory r = p.mul(q);
         return (r.num, r.den);
     }
 
     function bound(
+        uint256 n0,
+        uint256 n1,
+        uint256 d0,
+        uint256 d1
+    )
+        external
+        pure
+        returns (uint256, uint256)
+    {
+        Fraction.Fraction256 memory r = FractionMath.bound(n0, n1, d0, d1);
+        return (r.num, r.den);
+    }
+
+    function copy(
         uint256 a,
         uint256 b
     )
         external
         pure
-        returns (uint128, uint128)
+        returns (uint256, uint256)
     {
-        Fraction.Fraction128 memory r = FractionMath.bound(a, b);
-        return (r.num, r.den);
-    }
-
-    function copy(
-        uint128 a,
-        uint128 b
-    )
-        external
-        pure
-        returns (uint128, uint128)
-    {
-        Fraction.Fraction128 memory p = Fraction.Fraction128({num: a, den: b});
-        Fraction.Fraction128 memory r = p.copy();
+        Fraction.Fraction256 memory p = Fraction.Fraction256({num: a, den: b});
+        Fraction.Fraction256 memory r = p.copy();
         return (r.num, r.den);
     }
 }

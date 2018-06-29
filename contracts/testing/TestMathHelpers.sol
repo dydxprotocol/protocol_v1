@@ -77,4 +77,14 @@ contract TestMathHelpers {
     {
         return MathHelpers.getNumBits(n);
     }
+
+    function getHighestBit(
+        uint256 n
+    )
+        public
+        pure
+        returns (uint256)
+    {
+        return MathHelpers.getHighestBit(n);
+    }
 }

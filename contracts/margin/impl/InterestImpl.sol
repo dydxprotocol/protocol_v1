@@ -23,6 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { Exponent } from "../../lib/Exponent.sol";
 import { Fraction } from "../../lib/Fraction.sol";
 import { FractionMath } from "../../lib/FractionMath.sol";
+import { Math512 } from "../../lib/Math512.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 
 
@@ -35,7 +36,7 @@ import { MathHelpers } from "../../lib/MathHelpers.sol";
  */
 library InterestImpl {
     using SafeMath for uint256;
-    using FractionMath for Fraction.Fraction128;
+    using FractionMath for Fraction.Fraction256;
 
     // ============ Constants ============
 
@@ -45,7 +46,7 @@ library InterestImpl {
 
     uint256 constant MAXIMUM_EXPONENT = 80;
 
-    uint128 constant E_TO_MAXIUMUM_EXPONENT = 55406223843935100525711733958316613;
+    uint256 constant E_TO_MAXIUMUM_EXPONENT = 55406223843935100525711733958316613;
 
     // ============ Public Implementation Functions ============
 
@@ -69,28 +70,22 @@ library InterestImpl {
         pure
         returns (uint256)
     {
-        uint256 numerator = interestRate.mul(secondsOfInterest);
-        uint128 denominator = (10**8) * (365 * 1 days);
-
-        // interestRate and secondsOfInterest should both be uint32
-        assert(numerator < 2**128);
-
         // fraction representing (Rate * Time)
-        Fraction.Fraction128 memory rt = Fraction.Fraction128({
-            num: uint128(numerator),
-            den: denominator
+        Fraction.Fraction256 memory rt = Fraction.Fraction256({
+            num: interestRate.mul(secondsOfInterest),
+            den: (10**8) * (365 * 1 days)
         });
 
-        // calculate e^(RT)
-        Fraction.Fraction128 memory eToRT;
-        if (numerator.div(denominator) >= MAXIMUM_EXPONENT) {
+        Fraction.Fraction256 memory eToRT;
+
+        if (rt.num.div(rt.den) >= MAXIMUM_EXPONENT) {
             // degenerate case: cap calculation
-            eToRT = Fraction.Fraction128({
+            eToRT = Fraction.Fraction256({
                 num: E_TO_MAXIUMUM_EXPONENT,
                 den: 1
             });
         } else {
-            // normal case: calculate e^(RT)
+            // calculate e^(RT)
             eToRT = Exponent.exp(
                 rt,
                 DEFAULT_PRECOMPUTE_PRECISION,
@@ -100,6 +95,13 @@ library InterestImpl {
 
         // e^X for positive X should be greater-than or equal to 1
         assert(eToRT.num >= eToRT.den);
+
+        uint256 d = eToRT.num >> 128;
+        if (d != 0) {
+            d += 1;
+            eToRT.num /= d;
+            eToRT.den /= d;
+        }
 
         return safeMultiplyUint256ByFraction(principal, eToRT);
     }
@@ -112,7 +114,7 @@ library InterestImpl {
      */
     function safeMultiplyUint256ByFraction(
         uint256 n,
-        Fraction.Fraction128 memory f
+        Fraction.Fraction256 memory f
     )
         private
         pure
