@@ -53,11 +53,8 @@ function gcd(a, b) {
 // grants tokens to a lender and has them deposit them into the bucket lender
 async function doDeposit(account, amount) {
   await bucketLender.checkInvariants();
-  console.log("    depositing...");
   await issueAndSetAllowance(owedToken, account, amount, bucketLender.address);
-  console.log("      ...");
   const tx = await transact(bucketLender.deposit, account, amount, { from: account });
-  console.log("    done (depositing).");
   await bucketLender.checkInvariants();
   return tx.result;
 }
@@ -122,9 +119,7 @@ async function doIncrease(amount, args) {
     return;
   }
 
-  console.log("    increasing...");
   await callIncreasePosition(margin, incrTx);
-  console.log("    done (increasing).");
   await bucketLender.checkInvariants();
 }
 
@@ -133,41 +128,32 @@ async function doClose(amount, args) {
   args.closer = args.closer || trader;
   await bucketLender.checkInvariants();
 
-  console.log("    closing...");
   await margin.closePositionDirectly(
     POSITION_ID,
     amount,
     args.closer,
     { from: args.closer }
   );
-  console.log("    done (closing).");
   await bucketLender.checkInvariants();
 }
 
 async function runAliceBot(expectThrow = false) {
   const aliceAmount = OT;
-  console.log("  runnning alice bot...");
-  console.log("    checking invariants...");
   await bucketLender.checkInvariants();
-  console.log("    depositing...");
   await issueAndSetAllowance(owedToken, alice, aliceAmount, bucketLender.address);
 
   if (expectThrow) {
     await expectThrow(bucketLender.deposit(alice, aliceAmount, { from: alice }));
-    console.log("    done (alice bot).");
     return;
   }
 
   const bucket = await transact(bucketLender.deposit, alice, aliceAmount, { from: alice });
-  console.log("    withdrawing (bucket " + bucket.result.toString() + ")...");
   const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(alice, bucket.result);
   expect(owedWithdrawn).to.be.bignumber.lte(aliceAmount);
   expect(owedWithdrawn.plus(1)).to.bignumber.gte(aliceAmount);
   expect(heldWithdrawn).to.be.bignumber.eq(0);
   expect(remainingWeight).to.be.bignumber.eq(0);
-  console.log("    checking invariants...");
   await bucketLender.checkInvariants();
-  console.log("  done (alice bot).");
 }
 
 async function giveAPositionTo(contract, accounts) {
@@ -1270,9 +1256,7 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       //  Force-recover collateral
-      console.log("  force-recovering collateral...");
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
-      console.log("  done.");
       await bucketLender.checkInvariants();
 
       // can't deposit after position closed
@@ -1282,25 +1266,17 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       // do all remaining withdrawals
-      console.log("  doing all remaining withdrawals...");
       for(let a = 0; a < 10; a++) {
         let act = accounts[a];
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            console.log("  withdrawing (bucket " + b + ") (account " + a + ")...");
             const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
-            console.log("    owed: " + owedWithdrawn.toString());
-            console.log("    held: " + heldWithdrawn.toString());
-            console.log("    remw: " + remainingWeight.toString());
-            console.log("  done.");
           }
         }
       }
-      console.log("  done.");
 
       // check constants
-      console.log("  checking constants...");
       const [
         c_wasForceClosed,
         c_criticalBucket,
@@ -1351,7 +1327,6 @@ contract('BucketLender', accounts => {
       expect(isClosed).to.be.true;
       expect(bucketLenderOwedToken).to.be.bignumber.eq(0);
       expect(bucketLenderHeldToken).to.be.bignumber.eq(0);
-      console.log("  done.");
       await bucketLender.checkInvariants();
     });
 
@@ -1444,9 +1419,7 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       //  Force-recover collateral
-      console.log("  force-recovering collateral...");
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
-      console.log("  done.");
       await bucketLender.checkInvariants();
 
       // can't deposit after position closed
@@ -1456,25 +1429,17 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       // do all remaining withdrawals
-      console.log("  doing all remaining withdrawals...");
       for(let a = 0; a < 10; a++) {
         let act = accounts[a];
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            console.log("  withdrawing (bucket " + b + ") (account " + a + ")...");
             const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
-            console.log("    owed: " + owedWithdrawn.toString());
-            console.log("    held: " + heldWithdrawn.toString());
-            console.log("    remw: " + remainingWeight.toString());
-            console.log("  done.");
           }
         }
       }
-      console.log("  done.");
 
       // check constants
-      console.log("  checking constants...");
       const [
         c_wasForceClosed,
         c_criticalBucket,
@@ -1525,7 +1490,6 @@ contract('BucketLender', accounts => {
       expect(isClosed).to.be.true;
       expect(bucketLenderOwedToken).to.be.bignumber.eq(0);
       expect(bucketLenderHeldToken).to.be.bignumber.eq(0);
-      console.log("  done.");
       await bucketLender.checkInvariants();
     });
 
@@ -1640,9 +1604,8 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       //  Force-recover collateral
-      console.log("  force-recovering collateral...");
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
-      console.log("  done.");
+      consolelog("  done.");
       await bucketLender.checkInvariants();
 
       // can't deposit after position closed
@@ -1652,25 +1615,17 @@ contract('BucketLender', accounts => {
       await bucketLender.checkInvariants();
 
       // do all remaining withdrawals
-      console.log("  doing all remaining withdrawals...");
       for(let a = 0; a < 10; a++) {
         let act = accounts[a];
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            console.log("  withdrawing (bucket " + b + ") (account " + a + ")...");
             const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
-            console.log("    owed: " + owedWithdrawn.toString());
-            console.log("    held: " + heldWithdrawn.toString());
-            console.log("    remw: " + remainingWeight.toString());
-            console.log("  done.");
           }
         }
       }
-      console.log("  done.");
 
       // check constants
-      console.log("  checking constants...");
       const [
         c_wasForceClosed,
         c_criticalBucket,
@@ -1721,7 +1676,6 @@ contract('BucketLender', accounts => {
       expect(isClosed).to.be.true;
       expect(bucketLenderOwedToken).to.be.bignumber.eq(0);
       expect(bucketLenderHeldToken).to.be.bignumber.eq(0);
-      console.log("  done.");
       await bucketLender.checkInvariants();
     });
   });
