@@ -10,7 +10,7 @@ const BucketLender = artifacts.require("BucketLender");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
 
 const { transact } = require('../../../helpers/ContractHelper');
-const { BIGNUMBERS, BYTES32 } = require('../../../helpers/Constants');
+const { BIGNUMBERS } = require('../../../helpers/Constants');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 
 let heldToken, weth, bucketLender, ethWrapper;

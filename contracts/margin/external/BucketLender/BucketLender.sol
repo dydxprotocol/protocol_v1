@@ -99,6 +99,7 @@ contract BucketLender is
     ReentrancyGuard
 {
     using SafeMath for uint256;
+    using TokenInteract for address;
 
     // ============ Events ============
 
@@ -243,8 +244,7 @@ contract BucketLender is
         }
 
         // Set maximum allowance on proxy
-        TokenInteract.approve(
-            OWED_TOKEN,
+        OWED_TOKEN.approve(
             Margin(DYDX_MARGIN).getProxyAddress(),
             MathHelpers.maxUint256()
         );
@@ -377,11 +377,16 @@ contract BucketLender is
     {
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         uint256 initialPrincipal = position.principal;
+        uint256 minHeldToken = MathHelpers.getPartialAmount(
+            uint256(MIN_HELD_TOKEN_NUMERATOR),
+            uint256(MIN_HELD_TOKEN_DENOMINATOR),
+            initialPrincipal
+        );
 
-        assert(principalTotal == 0);
         assert(initialPrincipal > 0);
+        assert(principalTotal == 0);
+        assert(from != address(this)); // position must be opened without lending from this position
 
-        // lenders should have certain guarantees about how the position is collateralized
         require(
             position.owedToken == OWED_TOKEN,
             "BucketLender#receiveLoanOwnership: Position owedToken mismatch"
@@ -390,18 +395,10 @@ contract BucketLender is
             position.heldToken == HELD_TOKEN,
             "BucketLender#receiveLoanOwnership: Position heldToken mismatch"
         );
-
-        // require enough heldToken
-        uint256 minStartingHeldToken = MathHelpers.getPartialAmount(
-            uint256(MIN_HELD_TOKEN_NUMERATOR),
-            uint256(MIN_HELD_TOKEN_DENOMINATOR),
-            initialPrincipal
+        require(
+            Margin(DYDX_MARGIN).getPositionBalance(POSITION_ID) >= minHeldToken,
+            "BucketLender#receiveLoanOwnership: Not enough heldToken as collateral"
         );
-        require(Margin(DYDX_MARGIN).getPositionBalance(POSITION_ID) >= minStartingHeldToken);
-
-        // assert that the position was opened without using funds from this position
-        // (i.e. that it was opened using openWithoutCounterparty())
-        assert(from != address(this));
 
         // set relevant constants
         principalForBucket[0] = initialPrincipal;
@@ -595,8 +592,7 @@ contract BucketLender is
 
         rebalanceBucketsInternal();
 
-        TokenInteract.transferFrom(
-            OWED_TOKEN,
+        OWED_TOKEN.transferFrom(
             msg.sender,
             address(this),
             amount
@@ -623,7 +619,7 @@ contract BucketLender is
         );
 
         // update state
-        updateAvailable(bucket, amount, true);
+        increaseAvailable(bucket, amount);
         weightForBucketForAccount[bucket][beneficiary] =
             weightForBucketForAccount[bucket][beneficiary].add(weightToAdd);
         weightForBucket[bucket] = weightForBucket[bucket].add(weightToAdd);
@@ -695,7 +691,7 @@ contract BucketLender is
 
         uint256 maxHeldToken = 0;
         if (wasForceClosed) {
-            maxHeldToken = TokenInteract.balanceOf(HELD_TOKEN, address(this));
+            maxHeldToken = HELD_TOKEN.balanceOf(address(this));
         }
 
         for (uint256 i = 0; i < buckets.length; i++) {
@@ -717,8 +713,8 @@ contract BucketLender is
         }
 
         // Transfer share of owedToken
-        TokenInteract.transfer(OWED_TOKEN, beneficiary, totalOwedToken);
-        TokenInteract.transfer(HELD_TOKEN, beneficiary, totalHeldToken);
+        OWED_TOKEN.transfer(beneficiary, totalOwedToken);
+        HELD_TOKEN.transfer(beneficiary, totalHeldToken);
 
         return (totalOwedToken, totalHeldToken);
     }
@@ -788,8 +784,8 @@ contract BucketLender is
                 availableToAdd
             );
 
-            updateAvailable(bucket, availableTemp, true);
-            updatePrincipal(bucket, principalTemp, false);
+            increaseAvailable(bucket, availableTemp);
+            decreasePrincipal(bucket, principalTemp);
 
             principalToSub = principalToSub.sub(principalTemp);
             availableToAdd = availableToAdd.sub(availableTemp);
@@ -848,8 +844,8 @@ contract BucketLender is
                 principalToAdd
             );
 
-            updateAvailable(bucket, availableTemp, false);
-            updatePrincipal(bucket, principalTemp, true);
+            decreaseAvailable(bucket, availableTemp);
+            increasePrincipal(bucket, principalTemp);
 
             principalToAdd = principalToAdd.sub(principalTemp);
             availableToSub = availableToSub.sub(availableTemp);
@@ -956,7 +952,7 @@ contract BucketLender is
         );
 
         // update amounts
-        updateAvailable(bucket, owedTokenToWithdraw, false);
+        decreaseAvailable(bucket, owedTokenToWithdraw);
 
         return owedTokenToWithdraw;
     }
@@ -1000,7 +996,7 @@ contract BucketLender is
             maxHeldToken
         );
 
-        updatePrincipal(bucket, principalForBucketForAccount, false);
+        decreasePrincipal(bucket, principalForBucketForAccount);
 
         return heldTokenToWithdraw;
     }
@@ -1024,51 +1020,71 @@ contract BucketLender is
     }
 
     /**
-     * Changes the available owedToken amount. This changes both the variable to track the total
+     * Increases the available owedToken amount. This changes both the variable to track the total
      * amount as well as the variable to track a particular bucket.
      *
      * @param  bucket    The bucket number
      * @param  amount    The amount to change the available amount by
-     * @param  increase  True if positive change, false if negative change
      */
-    function updateAvailable(
+    function increaseAvailable(
         uint256 bucket,
-        uint256 amount,
-        bool increase
+        uint256 amount
     )
         private
     {
-        if (increase) {
-            availableTotal = availableTotal.add(amount);
-            availableForBucket[bucket] = availableForBucket[bucket].add(amount);
-        } else {
-            availableTotal = availableTotal.sub(amount);
-            availableForBucket[bucket] = availableForBucket[bucket].sub(amount);
-        }
+        availableTotal = availableTotal.add(amount);
+        availableForBucket[bucket] = availableForBucket[bucket].add(amount);
     }
 
     /**
-     * Changes the principal amount. This changes both the variable to track the total
+     * Decreases the available owedToken amount. This changes both the variable to track the total
+     * amount as well as the variable to track a particular bucket.
+     *
+     * @param  bucket    The bucket number
+     * @param  amount    The amount to change the available amount by
+     */
+    function decreaseAvailable(
+        uint256 bucket,
+        uint256 amount
+    )
+        private
+    {
+        availableTotal = availableTotal.sub(amount);
+        availableForBucket[bucket] = availableForBucket[bucket].sub(amount);
+    }
+
+    /**
+     * Increases the principal amount. This changes both the variable to track the total
      * amount as well as the variable to track a particular bucket.
      *
      * @param  bucket    The bucket number
      * @param  amount    The amount to change the principal amount by
-     * @param  increase  True if positive change, false if negative change
      */
-    function updatePrincipal(
+    function increasePrincipal(
         uint256 bucket,
-        uint256 amount,
-        bool increase
+        uint256 amount
     )
         private
     {
-        if (increase) {
-            principalTotal = principalTotal.add(amount);
-            principalForBucket[bucket] = principalForBucket[bucket].add(amount);
-        } else {
-            principalTotal = principalTotal.sub(amount);
-            principalForBucket[bucket] = principalForBucket[bucket].sub(amount);
-        }
+        principalTotal = principalTotal.add(amount);
+        principalForBucket[bucket] = principalForBucket[bucket].add(amount);
+    }
+
+    /**
+     * Decreases the principal amount. This changes both the variable to track the total
+     * amount as well as the variable to track a particular bucket.
+     *
+     * @param  bucket    The bucket number
+     * @param  amount    The amount to change the principal amount by
+     */
+    function decreasePrincipal(
+        uint256 bucket,
+        uint256 amount
+    )
+        private
+    {
+        principalTotal = principalTotal.sub(amount);
+        principalForBucket[bucket] = principalForBucket[bucket].sub(amount);
     }
 
     // ============ Getter Functions ============

@@ -33,6 +33,8 @@ import { TokenInteract } from "../../../lib/TokenInteract.sol";
  */
 contract EthWrapperForBucketLender
 {
+    using TokenInteract for address;
+
     // ============ Constants ============
 
     // Address of the WETH token
@@ -80,10 +82,13 @@ contract EthWrapperForBucketLender
 
         // wrap the eth
         WETH9(WETH).deposit.value(amount)();
-        assert(TokenInteract.balanceOf(WETH, address(this)) >= amount);
+        assert(WETH.balanceOf(address(this)) >= amount);
 
-        // approve for "unlimited amount". WETH9 leaves this value as-is when doing transferFrom
-        TokenInteract.approve(WETH, bucketLender, MathHelpers.maxUint256());
+        // ensure enough allowance
+        if (WETH.allowance(address(this), bucketLender) == 0) {
+            // approve for "unlimited amount". WETH9 leaves this value as-is when doing transferFrom
+            WETH.approve(bucketLender, MathHelpers.maxUint256());
+        }
 
         // deposit the tokens
         return BucketLender(bucketLender).deposit(beneficiary, amount);

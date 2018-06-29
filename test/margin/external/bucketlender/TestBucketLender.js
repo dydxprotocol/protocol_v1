@@ -1605,7 +1605,6 @@ contract('BucketLender', accounts => {
 
       //  Force-recover collateral
       await margin.forceRecoverCollateral(POSITION_ID, bucketLender.address);
-      consolelog("  done.");
       await bucketLender.checkInvariants();
 
       // can't deposit after position closed
