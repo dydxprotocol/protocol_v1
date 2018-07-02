@@ -67,26 +67,19 @@ contract ERC20Long is ERC20Position {
     // ============ Private Functions ============
 
     function getTokenAmountOnAdd(
-        bytes32 positionId,
         uint256 /* principalAdded */
     )
         private
         view
         returns (uint256)
     {
-        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
+        // total supply should always equal position balance, except after closing with trusted
+        // recipient, in which case this function cannot be called.
 
+        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(POSITION_ID);
         return positionBalance.sub(totalSupply_);
     }
 
-    /**
-     * The amount of long tokens burned on a close is always exactly equal to the amount of
-     * heldTokens used for the close in the backing position
-     *
-     * NOTE: It's possible that it is impossible for a token holder to close his entire token
-     *       balance. If the principal of the backing position is less than the supply of long
-     *       tokens it is not possible to express every token amount in a principal amount.
-     */
     function getCloseAmounts(
         uint256 requestedCloseAmount,
         uint256 balance,
@@ -99,12 +92,16 @@ contract ERC20Long is ERC20Position {
             uint256 /* allowedCloseAmount */
         )
     {
+        bytes32 positionId = POSITION_ID;
+        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
+
         uint256 requestedTokenAmount = MathHelpers.getPartialAmount(
             requestedCloseAmount,
             positionPrincipal,
-            totalSupply_
+            positionBalance
         );
 
+        // if user has enough tokens, allow the close to occur
         if (requestedTokenAmount <= balance) {
             return (requestedTokenAmount, requestedCloseAmount);
         }
@@ -113,14 +110,14 @@ contract ERC20Long is ERC20Position {
         // than balance
         uint256 maxAllowedCloseAmount = MathHelpers.getPartialAmount(
             balance,
-            totalSupply_,
+            positionBalance,
             positionPrincipal
         );
 
         uint256 tokenAmount = MathHelpers.getPartialAmount(
             maxAllowedCloseAmount,
             positionPrincipal,
-            totalSupply_
+            positionBalance
         );
 
         return (tokenAmount, maxAllowedCloseAmount);

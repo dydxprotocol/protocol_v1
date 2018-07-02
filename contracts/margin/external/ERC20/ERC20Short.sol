@@ -60,16 +60,13 @@ contract ERC20Short is ERC20Position {
         view
         returns (uint8)
     {
-        return
-            DetailedERC20(
-                Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID)
-            ).decimals();
+        address owedToken = Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID);
+        return DetailedERC20(owedToken).decimals();
     }
 
     // ============ Private Functions ============
 
     function getTokenAmountOnAdd(
-        bytes32 /* positionId */,
         uint256 principalAdded
     )
         private
@@ -91,7 +88,8 @@ contract ERC20Short is ERC20Position {
             uint256 /* allowedCloseAmount */
         )
     {
-        assert(positionPrincipal == totalSupply_);
+        // positionPrincipal < totalSupply_ if position was closed by a trusted closer
+        assert(positionPrincipal <= totalSupply_);
 
         uint256 amount = Math.min256(balance, requestedCloseAmount);
 
