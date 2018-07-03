@@ -57,6 +57,7 @@ jobs:
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "test/**/*.js" | circleci tests split --split-by=timings) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          no_output_timeout: 20m
       - store_test_results:
           path: ~/protocol/junit
       - store_artifacts:
@@ -71,6 +72,7 @@ jobs:
       - run:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
+          no_output_timeout: 40m
 
 workflows:
   version: 2
