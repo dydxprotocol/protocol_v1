@@ -719,6 +719,20 @@ contract('ERC20Short', accounts => {
       }
     );
 
+    it('fails when position is still open', async () => {
+      // close position halfway and then try to withdraw
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const trader = POSITION.TX.trader;
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.withdrawMultiple(
+            [trader],
+            { from: trader }
+          )
+        );
+      }
+    });
+
     it('succeeds for multiple accounts', async () => {
       // close half, force recover, then some random person can't withdraw any funds
       const heldTokenAmount = new BigNumber("1e18");
@@ -758,14 +772,27 @@ contract('ERC20Short', accounts => {
 
         expect(
           traderAfter.minus(traderBefore)
-        ).to.be.bignumber.eq(
+        ).to.be.bignumber.equal(
           halfHolderAfter.minus(halfHolderBefore)
-        ).to.be.bignumber.eq(
+        ).to.be.bignumber.equal(
           heldTokenAmount.div(2)
         );
-        expect(noHolderAfter.minus(noHolderBefore)).to.be.bignumber.eq(0);
+        expect(noHolderAfter.minus(noHolderBefore)).to.be.bignumber.equal(0);
       }
     });
+  });
+
+  describe('#withdraw', () => {
+    beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
+      async () => {
+        await setUpPositions();
+        await setUpTokens();
+        await transferPositionsToTokens();
+        await returnTokenstoTrader();
+        await marginCallPositions();
+        await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
+      }
+    );
 
     it('returns 0 when caller never had any tokens', async () => {
       // close half, force recover, then some random person can't withdraw any funds
@@ -779,14 +806,9 @@ contract('ERC20Short', accounts => {
           POSITION.PRINCIPAL.div(2)
         );
         await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
-        const tx = await transact(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple,
-          [rando],
-          { from: rando }
-        );
+        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, rando, { from: rando });
 
-        expect(tx.result.length).to.be.eq(1);
-        expect(tx.result[0]).to.be.bignumber.eq(0);
+        expect(tx.result).to.be.bignumber.eq(0);
       }
     });
 
@@ -802,13 +824,12 @@ contract('ERC20Short', accounts => {
         await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
         await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
         const tx = await transact(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple,
-          [POSITION.TX.trader],
+          POSITION.TOKEN_CONTRACT.withdraw,
+          POSITION.TX.trader,
           { from: rando }
         );
 
-        expect(tx.result.length).to.be.eq(1);
-        expect(tx.result[0]).to.be.bignumber.eq(heldTokenAmount);
+        expect(tx.result).to.be.bignumber.eq(heldTokenAmount);
       }
     });
 
@@ -827,14 +848,9 @@ contract('ERC20Short', accounts => {
         await expectThrow(
           dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender })
         );
-        const tx = await transact(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple,
-          [trader],
-          { from: trader }
-        );
+        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
 
-        expect(tx.result.length).to.be.eq(1);
-        expect(tx.result[0]).to.be.bignumber.eq(0);
+        expect(tx.result).to.be.bignumber.eq(0);
       }
     });
 
@@ -849,12 +865,7 @@ contract('ERC20Short', accounts => {
           POSITION.TX,
           POSITION.PRINCIPAL.div(2)
         );
-        await expectThrow(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple(
-            [trader],
-            { from: trader }
-          )
-        );
+        await expectThrow(POSITION.TOKEN_CONTRACT.withdraw(trader, { from: trader }));
       }
     });
 
@@ -867,14 +878,8 @@ contract('ERC20Short', accounts => {
 
         await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
 
-        const tx = await transact(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple,
-          [trader],
-          { from: trader }
-        );
-
-        expect(tx.result.length).to.be.eq(1);
-        expect(tx.result[0]).to.be.bignumber.eq(0);
+        const tx = await transact(POSITION.TOKEN_CONTRACT.withdraw, trader, { from: trader });
+        expect(tx.result).to.be.bignumber.equal(0);
       }
     });
   });

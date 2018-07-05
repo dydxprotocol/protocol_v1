@@ -308,6 +308,28 @@ contract ERC20Position is
     // ============ Public State Changing Functions ============
 
     /**
+     * Helper to allow withdrawal for multiple owners in one call
+     *
+     * @param  who  Array of addresses to withdraw for
+     */
+    function withdrawMultiple(
+        address[] who
+    )
+        external
+        nonReentrant
+    {
+        setStateClosedIfClosed();
+        require(
+            state == State.CLOSED,
+            "ERC20Position#withdrawMultiple: Position has not yet been closed"
+        );
+
+        for (uint256 i = 0; i < who.length; i++) {
+            withdrawImpl(who[i]);
+        }
+    }
+
+    /**
      * Withdraw heldTokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
      *
@@ -322,29 +344,23 @@ contract ERC20Position is
      * yourself. Likely, rounding error will be small enough to not properly incentivize people to
      * carry out such an attack.
      *
-     * @param  who  Array of addresses to withdraw for
-     * @return      The amount of heldToken withdrawn for each address
+     * @param  who  Address of the account to withdraw for
+     * @return      The amount of heldToken withdrawn
      */
-    function withdrawMultiple(
-        address[] who
+    function withdraw(
+        address who
     )
         external
         nonReentrant
-        returns (uint256[] memory)
+        returns (uint256)
     {
         setStateClosedIfClosed();
         require(
             state == State.CLOSED,
-            "ERC20Position#withdrawMultiple: Position has not yet been closed"
+            "ERC20Position#withdraw: Position has not yet been closed"
         );
 
-        uint256[] memory ret = new uint256[](who.length);
-
-        for (uint256 i = 0; i < who.length; i++) {
-            ret[i] = withdrawImpl(who[i]);
-        }
-
-        return ret;
+        return withdrawImpl(who);
     }
 
     // ============ Public Constant Functions ============
