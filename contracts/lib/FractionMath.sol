@@ -161,7 +161,9 @@ library FractionMath {
             den /= first128Bits;
         }
 
-        assert(den != 0 && den < 2**128 && num < 2**128); // unit-tested
+        assert(den != 0); // unit-tested
+        assert(den < 2**128);
+        assert(num < 2**128);
 
         return Fraction.Fraction128({
             num: uint128(num),
