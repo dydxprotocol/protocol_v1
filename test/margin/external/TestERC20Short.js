@@ -460,6 +460,34 @@ contract('ERC20Short', accounts => {
       }
     });
 
+    it('closes at most the remaining amount after closedUsingTrustedRecipient', async () => {
+      await transferPositionsToTokens();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+
+        // close to trusted recipient
+        await callClosePositionDirectly(
+          dydxMargin,
+          POSITION.TX,
+          POSITION.PRINCIPAL.div(2),
+          { recipient: POSITION.TRUSTED_RECIPIENTS[1] }
+        );
+
+        await callClosePositionDirectly(
+          dydxMargin,
+          POSITION.TX,
+          POSITION.PRINCIPAL,
+          { from: POSITION.TX.trader }
+        );
+
+        const closed = await dydxMargin.isPositionClosed.call(POSITION.ID);
+        expect(closed).to.be.true;
+      }
+    });
+
     it('fails if user does not own any of the tokenized position', async () => {
       await transferPositionsToTokens();
       await returnTokenstoTrader();
