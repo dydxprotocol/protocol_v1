@@ -107,24 +107,22 @@ contract ERC20Long is ERC20Position {
 
         // The maximum amount of principal able to be closed without using more heldTokens
         // than balance
-        uint256 maxAllowedCloseAmount = MathHelpers.getPartialAmount(
+        uint256 allowedCloseAmount = MathHelpers.getPartialAmount(
             balance,
             positionBalance,
             positionPrincipal
         );
 
-        // make sure that the close amount is not higher than requested
-        if (maxAllowedCloseAmount > requestedCloseAmount) {
-            maxAllowedCloseAmount = requestedCloseAmount;
-        }
+        // the new close amount should not be higher than what was requested
+        assert(allowedCloseAmount < requestedCloseAmount);
 
-        uint256 tokenAmount = MathHelpers.getPartialAmount(
-            maxAllowedCloseAmount,
+        uint256 allowedTokenAmount = MathHelpers.getPartialAmount(
+            allowedCloseAmount,
             positionPrincipal,
             positionBalance
         );
 
-        return (tokenAmount, maxAllowedCloseAmount);
+        return (allowedTokenAmount, allowedCloseAmount);
     }
 
     function getNameIntro()

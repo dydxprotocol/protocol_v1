@@ -475,15 +475,47 @@ contract('ERC20Long', accounts => {
           { recipient: POSITION.TRUSTED_RECIPIENTS[1] }
         );
 
+        // close rest of tokens
         await callClosePositionDirectly(
           dydxMargin,
           POSITION.TX,
           POSITION.PRINCIPAL,
           { from: POSITION.TX.trader }
         );
+      }
+    });
 
-        const closed = await dydxMargin.isPositionClosed.call(POSITION.ID);
-        expect(closed).to.be.true;
+    it('closes at most the users balance after closedUsingTrustedRecipient', async () => {
+      await transferPositionsToTokens();
+      await returnTokenstoTrader();
+      await grantDirectCloseTokensToTrader();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+
+        // close to trusted recipient
+        await callClosePositionDirectly(
+          dydxMargin,
+          POSITION.TX,
+          POSITION.PRINCIPAL.div(2),
+          { recipient: POSITION.TRUSTED_RECIPIENTS[1] }
+        );
+
+        // give away most tokens
+        const balance = await POSITION.TOKEN_CONTRACT.balanceOf.call(POSITION.TX.trader);
+        await POSITION.TOKEN_CONTRACT.transfer(
+          ADDRESSES.ONE,
+          balance.times(3).div(4).floor(),
+          { from: POSITION.TX.trader }
+        );
+
+        // close rest of tokens
+        await callClosePositionDirectly(
+          dydxMargin,
+          POSITION.TX,
+          POSITION.PRINCIPAL,
+          { from: POSITION.TX.trader }
+        );
       }
     });
 
