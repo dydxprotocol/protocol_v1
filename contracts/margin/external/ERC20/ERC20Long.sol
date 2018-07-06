@@ -92,8 +92,7 @@ contract ERC20Long is ERC20Position {
             uint256 /* allowedCloseAmount */
         )
     {
-        bytes32 positionId = POSITION_ID;
-        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(positionId);
+        uint256 positionBalance = Margin(DYDX_MARGIN).getPositionBalance(POSITION_ID);
 
         uint256 requestedTokenAmount = MathHelpers.getPartialAmount(
             requestedCloseAmount,
@@ -113,6 +112,11 @@ contract ERC20Long is ERC20Position {
             positionBalance,
             positionPrincipal
         );
+
+        // make sure that the close amount is not higher than requested
+        if (maxAllowedCloseAmount > requestedCloseAmount) {
+            maxAllowedCloseAmount = requestedCloseAmount;
+        }
 
         uint256 tokenAmount = MathHelpers.getPartialAmount(
             maxAllowedCloseAmount,
