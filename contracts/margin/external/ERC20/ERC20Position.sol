@@ -112,6 +112,9 @@ contract ERC20Position is
     // Recipients that will fairly verify and redistribute funds from closing the position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
+    // Cap of the principal amount of the position
+    uint256 PRINCIPAL_CAP;
+
     // Current State of this contract. See State enum
     State public state;
 
@@ -143,6 +146,7 @@ contract ERC20Position is
 
     constructor(
         bytes32 positionId,
+        uint256 principalCap,
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
@@ -152,6 +156,7 @@ contract ERC20Position is
         OnlyMargin(margin)
     {
         POSITION_ID = positionId;
+        PRINCIPAL_CAP = principalCap;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
         symbol = _symbol;
@@ -185,6 +190,14 @@ contract ERC20Position is
     {
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
+
+        uint256 cap = PRINCIPAL_CAP;
+        if (cap > 0) {
+            require(
+                position.principal <= cap,
+                "ERC20Position#receivePositionOwnership: Principal cannot be greater than cap"
+            );
+        }
 
         // set relevant constants
         state = State.OPEN;
@@ -228,6 +241,15 @@ contract ERC20Position is
         onlyPosition(positionId)
         returns (address)
     {
+        uint256 cap = PRINCIPAL_CAP;
+        if (cap > 0) {
+            uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
+            require(
+                positionPrincipal <= cap,
+                "ERC20Position#increasePositionOnBehalfOf: Principal cannot be greater than cap"
+            );
+        }
+
         uint256 tokenAmount = getTokenAmountOnAdd(
             positionId,
             principalAdded
