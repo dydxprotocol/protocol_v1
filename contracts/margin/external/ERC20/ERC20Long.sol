@@ -39,6 +39,7 @@ import { MathHelpers } from "../../../lib/MathHelpers.sol";
 contract ERC20Long is ERC20Position {
     constructor(
         bytes32 positionId,
+        uint256 principalCap,
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients
@@ -46,6 +47,7 @@ contract ERC20Long is ERC20Position {
         public
         ERC20Position(
             positionId,
+            principalCap,
             margin,
             initialTokenHolder,
             trustedRecipients,
