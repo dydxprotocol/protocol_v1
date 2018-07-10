@@ -27,7 +27,7 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
  * @author dYdX
  *
  * Contains admin functions for the Margin contract
- * The owner can put Margin into vatious close-only modes, which will disallow new position creation
+ * The owner can put Margin into various close-only modes, which will disallow new position creation
  */
 contract MarginAdmin is Ownable {
     // ============ Enums ============
