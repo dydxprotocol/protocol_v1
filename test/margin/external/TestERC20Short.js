@@ -108,7 +108,10 @@ contract('ERC20Short', accounts => {
     ]);
   }
 
-  async function setUpTokens() {
+  async function setUpTokens(args) {
+    args = args || {};
+    args.principalCap = args.principalCap || 0;
+
     POSITIONS.FULL.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
     POSITIONS.PART.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
     [
@@ -117,11 +120,13 @@ contract('ERC20Short', accounts => {
     ] = await Promise.all([
       ERC20Short.new(
         POSITIONS.FULL.ID,
+        args.principalCap,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.TRUSTED_RECIPIENTS),
       ERC20Short.new(
         POSITIONS.PART.ID,
+        args.principalCap,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.PART.TRUSTED_RECIPIENTS)
@@ -256,6 +261,29 @@ contract('ERC20Short', accounts => {
     });
 
     it('fails for msg.sender != Margin', async () => {
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.receivePositionOwnership(
+            INITIAL_TOKEN_HOLDER,
+            POSITION.ID,
+            { from: INITIAL_TOKEN_HOLDER }
+          )
+        );
+      }
+    });
+
+    it('fails if principal above cap', async () => {
+      await setUpPositions();
+      await setUpTokens(POSITIONS.PART.PRINCIPAL.minus(1));
+
+
+      await dydxMargin.transferPosition(POSITIONS.PART.ID, POSITIONS.PART.TOKEN_CONTRACT.address,
+        { from: POSITIONS.PART.TX.owner });
+
+      await dydxMargin.transferPosition(POSITIONS.FULL.ID, POSITIONS.FULL.TOKEN_CONTRACT.address,
+        { from: POSITIONS.FULL.TX.owner });
+
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         await expectThrow(
@@ -803,6 +831,7 @@ contract('ERC20Short', accounts => {
       await setUpPositions();
       const tokenContract = await ERC20Short.new(
         POSITIONS.FULL.ID,
+        0,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         []);

@@ -190,14 +190,7 @@ contract ERC20Position is
     {
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
-
-        uint256 cap = PRINCIPAL_CAP;
-        if (cap > 0) {
-            require(
-                position.principal <= cap,
-                "ERC20Position#receivePositionOwnership: Principal cannot be greater than cap"
-            );
-        }
+        requirePrincipalBelowCap(position.principal);
 
         // set relevant constants
         state = State.OPEN;
@@ -241,14 +234,7 @@ contract ERC20Position is
         onlyPosition(positionId)
         returns (address)
     {
-        uint256 cap = PRINCIPAL_CAP;
-        if (cap > 0) {
-            uint256 positionPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(positionId);
-            require(
-                positionPrincipal <= cap,
-                "ERC20Position#increasePositionOnBehalfOf: Principal cannot be greater than cap"
-            );
-        }
+        requirePrincipalBelowCap(Margin(DYDX_MARGIN).getPositionPrincipal(positionId));
 
         uint256 tokenAmount = getTokenAmountOnAdd(
             positionId,
@@ -532,6 +518,22 @@ contract ERC20Position is
         }
 
         return allowedCloseAmount;
+    }
+
+    function requirePrincipalBelowCap(
+        uint256 principal
+    )
+        private
+        view
+    {
+        uint256 principalCap = PRINCIPAL_CAP;
+        if (principalCap == 0) {
+            return;
+        }
+        require(
+            principal <= principalCap,
+            "ERC20Position#checkAgainstCap: Principal cannot be greater than cap"
+        );
     }
 
     // ============ Private Abstract Functions ============
