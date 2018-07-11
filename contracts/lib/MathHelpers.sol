@@ -37,7 +37,7 @@ library MathHelpers {
      * @param  numerator    Numerator
      * @param  denominator  Denominator
      * @param  target       Value to calculate partial of
-     * @return              Rounded-up result of target * numerator / denominator
+     * @return              target * numerator / denominator
      */
     function getPartialAmount(
         uint256 numerator,
