@@ -532,7 +532,7 @@ contract ERC20Position is
         }
         require(
             principal <= principalCap,
-            "ERC20Position#checkAgainstCap: Principal cannot be greater than cap"
+            "ERC20Position#requirePrincipalBelowCap: Principal cannot be greater than cap"
         );
     }
 
