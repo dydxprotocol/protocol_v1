@@ -23,6 +23,7 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
@@ -89,6 +90,7 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  */
 contract BucketLender is
     HasNoEther,
+    Ownable,
     OnlyMargin,
     LoanOwner,
     IncreaseLoanDelegator,
@@ -568,6 +570,9 @@ contract BucketLender is
         nonReentrant
         returns (uint256)
     {
+        Margin margin = Margin(DYDX_MARGIN);
+        bytes32 positionId = POSITION_ID;
+
         require(
             beneficiary != address(0),
             "BucketLender#deposit: Beneficiary cannot be the zero address"
@@ -577,11 +582,11 @@ contract BucketLender is
             "BucketLender#deposit: Cannot deposit zero tokens"
         );
         require(
-            !Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID),
+            !margin.isPositionClosed(positionId),
             "BucketLender#deposit: Cannot deposit after the position is closed"
         );
         require(
-            !Margin(DYDX_MARGIN).isPositionCalled(POSITION_ID),
+            !margin.isPositionCalled(positionId),
             "BucketLender#deposit: Cannot deposit while the position is margin-called"
         );
 
@@ -674,10 +679,7 @@ contract BucketLender is
         // decide if some bucket is unable to be withdrawn from (is locked)
         // the zero value represents no-lock
         uint256 lockedBucket = 0;
-        if (
-            Margin(DYDX_MARGIN).containsPosition(POSITION_ID) &&
-            criticalBucket == getCurrentBucket()
-        ) {
+        if (criticalBucket == getCurrentBucket()) {
             lockedBucket = criticalBucket;
         }
 
@@ -986,6 +988,30 @@ contract BucketLender is
         updatePrincipal(bucket, principalForBucketForAccount, false);
 
         return heldTokenToWithdraw;
+    }
+
+    function withdrawExcessToken(
+        address token,
+        address to
+    )
+        external
+        onlyOwner
+        returns (uint256)
+    {
+        if (token == OWED_TOKEN) {
+            uint256 amount = token.balanceOf(address(this));
+            amount = amount.sub(availableTotal);
+            token.transfer(to, amount);
+        } else {
+            if (token == HELD_TOKEN) {
+                require(
+                    principalTotal == 0,
+                    "BucketLender#withdrawExcessToken: Withdrawing heldToken when principal is zero"
+                );
+            }
+            uint256 amount = token.balanceOf(address(this));
+            token.transfer(to, amount);
+        }
     }
 
     // ============ Setter Functions ============
