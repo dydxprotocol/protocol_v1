@@ -356,8 +356,10 @@ contract ERC721MarginPosition is
         // ownerOf() should have already required this
         assert(owner != address(0));
 
-        // this contract should not own tokens
-        require(owner != address(this));
+        require(
+            owner != address(this),
+            "ERC721MarginPosition#ownerOfPosition: 721 contract should not own tokens"
+        );
 
         return owner;
     }

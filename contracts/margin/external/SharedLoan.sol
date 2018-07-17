@@ -257,7 +257,10 @@ contract SharedLoan is
         onlyPosition(positionId)
         returns (address)
     {
-        require(TRUSTED_MARGIN_CALLERS[caller]);
+        require(
+            TRUSTED_MARGIN_CALLERS[caller],
+            "SharedLoan#marginCallOnBehalfOf: margin caller must be trusted"
+        );
 
         return address(this);
     }
@@ -282,7 +285,10 @@ contract SharedLoan is
         onlyPosition(positionId)
         returns (address)
     {
-        require(TRUSTED_MARGIN_CALLERS[canceler]);
+        require(
+            TRUSTED_MARGIN_CALLERS[canceler],
+            "SharedLoan#marginCallOnBehalfOf: margin call canceler must be trusted"
+        );
 
         return address(this);
     }
