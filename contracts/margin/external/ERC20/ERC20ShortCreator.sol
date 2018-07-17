@@ -53,7 +53,6 @@ contract ERC20ShortCreator is ERC20PositionCreator {
     {
         return new ERC20Short(
             positionId,
-            0, // no cap
             DYDX_MARGIN,
             from,
             TRUSTED_RECIPIENTS

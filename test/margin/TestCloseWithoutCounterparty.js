@@ -23,7 +23,7 @@ describe('#CloseWithoutCounterparty', () => {
     dydxMargin = await Margin.deployed();
     openTx = await doOpenPosition(accounts);
     // Deploy an ERC20Short token
-    erc20Contract = await ERC20Short.new(openTx.id, 0, dydxMargin.address, initialHolder, [
+    erc20Contract = await ERC20Short.new(openTx.id, dydxMargin.address, initialHolder, [
       ADDRESSES.TEST[1],
       ADDRESSES.TEST[2]
     ]);

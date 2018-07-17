@@ -53,7 +53,6 @@ contract ERC20LongCreator is ERC20PositionCreator {
     {
         return new ERC20Long(
             positionId,
-            0, // no cap
             DYDX_MARGIN,
             creator,
             TRUSTED_RECIPIENTS
