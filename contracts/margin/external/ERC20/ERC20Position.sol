@@ -76,6 +76,7 @@ contract ERC20Position is
      */
     event ClosedByTrustedParty(
         address closer,
+        uint256 tokenAmount,
         address payoutRecipient
     );
 
@@ -115,11 +116,14 @@ contract ERC20Position is
     // Current State of this contract. See State enum
     State public state;
 
+    // Symbol to be ERC20 compliant with frontends
+    string public symbol;
+
     // Address of the short's heldToken. Cached for convenience and lower-cost withdrawals
     address public heldToken;
 
-    // Symbol to be ERC20 compliant with frontends
-    string public symbol;
+    // Position has been closed using a trusted recipient
+    bool public closedUsingTrustedRecipient;
 
     // ============ Modifiers ============
 
@@ -155,6 +159,7 @@ contract ERC20Position is
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
         symbol = _symbol;
+        closedUsingTrustedRecipient = false;
 
         for (uint256 i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS[trustedRecipients[i]] = true;
@@ -189,10 +194,7 @@ contract ERC20Position is
         // set relevant constants
         state = State.OPEN;
 
-        uint256 tokenAmount = getTokenAmountOnAdd(
-            positionId,
-            position.principal
-        );
+        uint256 tokenAmount = getTokenAmountOnAdd(position.principal);
 
         totalSupply_ = tokenAmount;
         balances[INITIAL_TOKEN_HOLDER] = tokenAmount;
@@ -228,10 +230,16 @@ contract ERC20Position is
         onlyPosition(positionId)
         returns (address)
     {
-        uint256 tokenAmount = getTokenAmountOnAdd(
-            positionId,
-            principalAdded
+        require(
+            !Margin(DYDX_MARGIN).isPositionCalled(POSITION_ID),
+            "ERC20Position#increasePositionOnBehalfOf: Position is margin-called"
         );
+        require(
+            !closedUsingTrustedRecipient,
+            "ERC20Position#increasePositionOnBehalfOf: Position closed using trusted recipient"
+        );
+
+        uint256 tokenAmount = getTokenAmountOnAdd(principalAdded);
 
         balances[trader] = balances[trader].add(tokenAmount);
         totalSupply_ = totalSupply_.add(tokenAmount);
@@ -272,8 +280,8 @@ contract ERC20Position is
         assert(requestedAmount <= positionPrincipal);
 
         uint256 allowedAmount;
-        if (positionPrincipal == requestedAmount && TRUSTED_RECIPIENTS[payoutRecipient]) {
-            allowedAmount = closeByTrustedParty(
+        if (TRUSTED_RECIPIENTS[payoutRecipient]) {
+            allowedAmount = closeUsingTrustedRecipient(
                 closer,
                 payoutRecipient,
                 requestedAmount
@@ -287,6 +295,12 @@ contract ERC20Position is
         }
 
         assert(allowedAmount > 0);
+        assert(allowedAmount <= requestedAmount);
+
+        if (allowedAmount == positionPrincipal) {
+            state = State.CLOSED;
+            emit CompletelyClosed();
+        }
 
         return (address(this), allowedAmount);
     }
@@ -457,7 +471,7 @@ contract ERC20Position is
      * Tokens are not burned when a trusted recipient is used, but we require the position to be
      * completely closed. All token holders are then entitled to the heldTokens in the contract
      */
-    function closeByTrustedParty(
+    function closeUsingTrustedRecipient(
         address closer,
         address payoutRecipient,
         uint256 requestedAmount
@@ -465,9 +479,14 @@ contract ERC20Position is
         private
         returns (uint256)
     {
-        emit ClosedByTrustedParty(closer, payoutRecipient);
-        state = State.CLOSED;
-        emit CompletelyClosed();
+        assert(requestedAmount > 0);
+
+        // remember that a trusted recipient was used
+        if (!closedUsingTrustedRecipient) {
+            closedUsingTrustedRecipient = true;
+        }
+
+        emit ClosedByTrustedParty(closer, requestedAmount, payoutRecipient);
 
         return requestedAmount;
     }
@@ -504,18 +523,12 @@ contract ERC20Position is
 
         emit TokensRedeemedForClose(closer, tokenAmount);
 
-        if (totalSupply_ == 0) {
-            state = State.CLOSED;
-            emit CompletelyClosed();
-        }
-
         return allowedCloseAmount;
     }
 
     // ============ Private Abstract Functions ============
 
     function getTokenAmountOnAdd(
-        bytes32 positionId,
         uint256 principalAdded
     )
         private
