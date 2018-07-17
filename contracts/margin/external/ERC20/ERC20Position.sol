@@ -112,6 +112,9 @@ contract ERC20Position is
     // Recipients that will fairly verify and redistribute funds from closing the position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
+    // Cap of the principal amount of the position
+    uint256 PRINCIPAL_CAP;
+
     // Current State of this contract. See State enum
     State public state;
 
@@ -143,6 +146,7 @@ contract ERC20Position is
 
     constructor(
         bytes32 positionId,
+        uint256 principalCap,
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
@@ -152,6 +156,7 @@ contract ERC20Position is
         OnlyMargin(margin)
     {
         POSITION_ID = positionId;
+        PRINCIPAL_CAP = principalCap;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
         symbol = _symbol;
@@ -185,6 +190,7 @@ contract ERC20Position is
     {
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
         assert(position.principal > 0);
+        requirePrincipalBelowCap(position.principal);
 
         // set relevant constants
         state = State.OPEN;
@@ -228,6 +234,8 @@ contract ERC20Position is
         onlyPosition(positionId)
         returns (address)
     {
+        requirePrincipalBelowCap(Margin(DYDX_MARGIN).getPositionPrincipal(positionId));
+
         uint256 tokenAmount = getTokenAmountOnAdd(
             positionId,
             principalAdded
@@ -510,6 +518,22 @@ contract ERC20Position is
         }
 
         return allowedCloseAmount;
+    }
+
+    function requirePrincipalBelowCap(
+        uint256 principal
+    )
+        private
+        view
+    {
+        uint256 principalCap = PRINCIPAL_CAP;
+        if (principalCap == 0) {
+            return;
+        }
+        require(
+            principal <= principalCap,
+            "ERC20Position#requirePrincipalBelowCap: Principal cannot be greater than cap"
+        );
     }
 
     // ============ Private Abstract Functions ============

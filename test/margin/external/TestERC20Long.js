@@ -109,7 +109,9 @@ contract('ERC20Long', accounts => {
     ]);
   }
 
-  async function setUpTokens() {
+  async function setUpTokens(args) {
+    args = args || {};
+    args.principalCap = args.principalCap || 0;
     POSITIONS.FULL.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
     POSITIONS.PART.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
     [
@@ -118,11 +120,13 @@ contract('ERC20Long', accounts => {
     ] = await Promise.all([
       ERC20Long.new(
         POSITIONS.FULL.ID,
+        args.principalCap,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.FULL.TRUSTED_RECIPIENTS),
       ERC20Long.new(
         POSITIONS.PART.ID,
+        args.principalCap,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.PART.TRUSTED_RECIPIENTS)
@@ -264,6 +268,50 @@ contract('ERC20Long', accounts => {
           )
         );
       }
+    });
+
+    it('fails if principal above cap', async () => {
+      await setUpPositions();
+
+      // Fails for both positions
+      await setUpTokens({ principalCap: POSITIONS.PART.PRINCIPAL.minus(1) });
+      await expectThrow(
+        dydxMargin.transferPosition(
+          POSITIONS.PART.ID,
+          POSITIONS.PART.TOKEN_CONTRACT.address,
+          { from: POSITIONS.PART.TX.owner }
+        )
+      );
+      await expectThrow(
+        dydxMargin.transferPosition(
+          POSITIONS.FULL.ID,
+          POSITIONS.FULL.TOKEN_CONTRACT.address,
+          { from: POSITIONS.FULL.TX.owner }
+        )
+      );
+
+      // Succeeds for the smaller position only
+      await setUpTokens({ principalCap: POSITIONS.PART.PRINCIPAL });
+      await dydxMargin.transferPosition(
+        POSITIONS.PART.ID,
+        POSITIONS.PART.TOKEN_CONTRACT.address,
+        { from: POSITIONS.PART.TX.owner }
+      );
+      await expectThrow(
+        dydxMargin.transferPosition(
+          POSITIONS.FULL.ID,
+          POSITIONS.FULL.TOKEN_CONTRACT.address,
+          { from: POSITIONS.FULL.TX.owner }
+        )
+      );
+
+      // Succeeds for the larger position
+      await setUpTokens({ principalCap: POSITIONS.FULL.PRINCIPAL });
+      await dydxMargin.transferPosition(
+        POSITIONS.FULL.ID,
+        POSITIONS.FULL.TOKEN_CONTRACT.address,
+        { from: POSITIONS.FULL.TX.owner }
+      );
     });
 
     it('fails for a second position', async () => {
@@ -543,18 +591,20 @@ contract('ERC20Long', accounts => {
   });
 
   describe('#increasePositionOnBehalfOf', () => {
-    beforeEach('Set up all tokenized positions',
-      async () => {
-        await setUpPositions();
-        await setUpTokens();
-        await transferPositionsToTokens();
-      }
-    );
+    beforeEach('Set up all tokenized positions', async () => {
+      await setUpPositions();
+      await setUpTokens();
+      await transferPositionsToTokens();
+    });
 
-    it('succeeds', async () => {
+    it('succeeds if no cap', async () => {
       let pepper = 0;
       let tempAccounts = accounts;
       const divNumber = 2;
+
+      await setUpPositions();
+      await setUpTokens();
+      await transferPositionsToTokens();
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -582,6 +632,66 @@ contract('ERC20Long', accounts => {
         expect(traderBalance).to.be.bignumber.equal(POSITION.NUM_TOKENS.div(divNumber).ceil());
         expect(ITHBalance).to.be.bignumber.equal(POSITION.NUM_TOKENS);
         expect(totalBalance).to.be.bignumber.equal(traderBalance.plus(ITHBalance));
+      }
+    });
+
+    it('succeeds if principal below cap', async () => {
+      let pepper = 0;
+      let tempAccounts = accounts;
+
+      await setUpPositions();
+      const principalCap = POSITIONS.FULL.PRINCIPAL.times(2);
+      await setUpTokens({ principalCap: principalCap });
+      await transferPositionsToTokens();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        tempAccounts = tempAccounts.slice(1);
+        let incrTx = await createOpenTx(tempAccounts, { salt: 99999 + pepper });
+        incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+        incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
+        incrTx.owner = POSITION.TOKEN_CONTRACT.address;
+        await issueTokensAndSetAllowances(incrTx);
+        incrTx.id = POSITION.TX.id;
+        incrTx.principal = principalCap;
+        await issueTokenToAccountInAmountAndApproveProxy(
+          heldToken,
+          incrTx.trader,
+          incrTx.depositAmount.times(4)
+        );
+        await expectThrow(
+          callIncreasePosition(dydxMargin, incrTx)
+        );
+      }
+    });
+
+    it('fails if principal above cap', async () => {
+      let pepper = 0;
+      let tempAccounts = accounts;
+
+      await setUpPositions();
+      const principalCap = POSITIONS.FULL.PRINCIPAL;
+      await setUpTokens({ principalCap: principalCap });
+      await transferPositionsToTokens();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        tempAccounts = tempAccounts.slice(1);
+        let incrTx = await createOpenTx(tempAccounts, { salt: 99999 + pepper });
+        incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+        incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
+        incrTx.owner = POSITION.TOKEN_CONTRACT.address;
+        await issueTokensAndSetAllowances(incrTx);
+        incrTx.id = POSITION.TX.id;
+        incrTx.principal = principalCap;
+        await issueTokenToAccountInAmountAndApproveProxy(
+          heldToken,
+          incrTx.trader,
+          incrTx.depositAmount.times(4)
+        );
+        await expectThrow(
+          callIncreasePosition(dydxMargin, incrTx)
+        );
       }
     });
   });
@@ -803,6 +913,7 @@ contract('ERC20Long', accounts => {
       await setUpPositions();
       const tokenContract = await ERC20Long.new(
         POSITIONS.FULL.ID,
+        0,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         []);
