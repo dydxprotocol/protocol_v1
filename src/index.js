@@ -13,6 +13,7 @@ const ERC721MarginLoan      = require('../build/contracts/ERC721MarginLoan.json'
 const ERC721MarginPosition  = require('../build/contracts/ERC721MarginPosition.json');
 const ZeroExExchangeWrapper = require('../build/contracts/ZeroExExchangeWrapper.json');
 const ERC20                 = require('../build/contracts/ERC20.json');
+const TestToken             = require('../build/contracts/TestToken.json');
 
 module.exports = {
   Margin,
@@ -29,5 +30,6 @@ module.exports = {
   ERC721MarginLoan,
   ERC721MarginPosition,
   ZeroExExchangeWrapper,
-  ERC20
+  ERC20,
+  TestToken
 }
