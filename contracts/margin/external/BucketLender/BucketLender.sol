@@ -716,6 +716,41 @@ contract BucketLender is
         return (totalOwedToken, totalHeldToken);
     }
 
+    /**
+     * Allows the owner to withdraw any excess tokens sent to the vault by unconventional means,
+     * including (but not limited-to) token airdrops. Any tokens moved to this contract by calling
+     * deposit() will be accounted for and will not be withdrawable by this function.
+     *
+     * @param  token  ERC20 token address
+     * @param  to     Address to transfer tokens to
+     * @return        Amount of tokens withdrawn
+     */
+    function withdrawExcessToken(
+        address token,
+        address to
+    )
+        external
+        onlyOwner
+        returns (uint256)
+    {
+        rebalanceBucketsInternal();
+
+        if (token == OWED_TOKEN) {
+            uint256 amount = token.balanceOf(address(this));
+            amount = amount.sub(availableTotal);
+            token.transfer(to, amount);
+        } else {
+            if (token == HELD_TOKEN) {
+                require(
+                    principalTotal == 0,
+                    "BucketLender#withdrawExcessToken: Withdrawing heldToken when principal is zero"
+                );
+            }
+            uint256 amount = token.balanceOf(address(this));
+            token.transfer(to, amount);
+        }
+    }
+
     // ============ Helper Functions ============
 
     /**
@@ -988,30 +1023,6 @@ contract BucketLender is
         updatePrincipal(bucket, principalForBucketForAccount, false);
 
         return heldTokenToWithdraw;
-    }
-
-    function withdrawExcessToken(
-        address token,
-        address to
-    )
-        external
-        onlyOwner
-        returns (uint256)
-    {
-        if (token == OWED_TOKEN) {
-            uint256 amount = token.balanceOf(address(this));
-            amount = amount.sub(availableTotal);
-            token.transfer(to, amount);
-        } else {
-            if (token == HELD_TOKEN) {
-                require(
-                    principalTotal == 0,
-                    "BucketLender#withdrawExcessToken: Withdrawing heldToken when principal is zero"
-                );
-            }
-            uint256 amount = token.balanceOf(address(this));
-            token.transfer(to, amount);
-        }
     }
 
     // ============ Setter Functions ============
