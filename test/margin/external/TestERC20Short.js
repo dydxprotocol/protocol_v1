@@ -59,7 +59,7 @@ contract('ERC20Short', accounts => {
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
 
-  before('Set up Proxy, Margin accounts', async () => {
+  before('Set up TokenProxy, Margin accounts', async () => {
     [
       dydxMargin,
       owedToken,

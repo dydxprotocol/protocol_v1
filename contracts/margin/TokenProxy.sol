@@ -27,12 +27,12 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
 
 
 /**
- * @title Proxy
+ * @title TokenProxy
  * @author dYdX
  *
  * Used to transfer tokens between addresses which have set allowance on this contract.
  */
-contract Proxy is StaticAccessControlled, NoOwner {
+contract TokenProxy is StaticAccessControlled, NoOwner {
     using SafeMath for uint256;
 
     // ============ Constructor ============

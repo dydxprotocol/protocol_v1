@@ -6,7 +6,7 @@ const ZeroExExchange = artifacts.require("ZeroExExchange");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const {
   createOpenTx,
   issueTokensAndSetAllowances,
@@ -323,12 +323,12 @@ describe('#openPosition', () => {
         await Promise.all([
           testSmartContractLender.allow(
             feeToken.address,
-            ProxyContract.address,
+            TokenProxy.address,
             lenderFeeTokenBalance
           ),
           testSmartContractLender.allow(
             owedToken.address,
-            ProxyContract.address,
+            TokenProxy.address,
             lenderOwedTokenBalance
           )
         ]);

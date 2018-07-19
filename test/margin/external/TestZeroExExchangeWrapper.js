@@ -514,6 +514,6 @@ async function validateBalances(
     startingBalances.tradeOriginatorFeeToken.minus(takerFee)
   );
 
-  // Exchange Wrapper Proxy Allowance
+  // Exchange Wrapper TokenProxy Allowance
   expect(exchangeWrapperProxyAllowance).to.be.bignumber.gte(tradedMakerToken);
 }

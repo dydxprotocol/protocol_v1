@@ -593,12 +593,12 @@ contract Margin is
     }
 
     /**
-     * Gets the address of the Proxy contract that accounts must set allowance on in order to make
-     * loans or open/close positions.
+     * Gets the address of the TokenProxy contract that accounts must set allowance on in order to
+     * make loans or open/close positions.
      *
-     * @return  The address of the Proxy contract
+     * @return  The address of the TokenProxy contract
      */
-    function getProxyAddress()
+    function getTokenProxyAddress()
         external
         view
         returns (address)

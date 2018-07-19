@@ -72,13 +72,13 @@ npm run dydxlint
 
 Contains business logic for margin trading. All external functions for margin trading are in this contract.
 
-##### Proxy.sol
+##### TokenProxy.sol
 
 Used to transfer user funds. Users set token allowance for the proxy authorizing it to transfer their funds. Only allows authorized contracts to transfer funds.
 
 ##### Vault.sol
 
-Holds all token funds. Is authorized to transfer user funds via the Proxy. Allows authorized contracts to withdraw funds.
+Holds all token funds. Is authorized to transfer user funds via the TokenProxy. Allows authorized contracts to withdraw funds.
 
 #### Second Layer
 

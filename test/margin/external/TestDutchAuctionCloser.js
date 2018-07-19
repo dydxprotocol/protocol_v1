@@ -7,7 +7,7 @@ const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const Margin = artifacts.require("Margin");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 
 const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
@@ -95,7 +95,7 @@ contract('DutchAuctionCloser', accounts => {
       if (numTokens < targetTokens) {
         await OwedTokenContract.issueTo(dutchBidder, targetTokens.minus(numTokens));
         await OwedTokenContract.approve(
-          ProxyContract.address,
+          TokenProxy.address,
           targetTokens,
           { from: dutchBidder });
       }

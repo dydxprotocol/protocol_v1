@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { ClosePositionShared } from "./ClosePositionShared.sol";
 import { MarginState } from "./MarginState.sol";
-import { Proxy } from "../Proxy.sol";
+import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 
@@ -131,7 +131,7 @@ library ClosePositionImpl {
             );
 
             // No DEX Order; send owedTokens directly from the closer to the lender
-            Proxy(state.PROXY).transferTokens(
+            TokenProxy(state.PROXY).transferTokens(
                 transaction.owedToken,
                 msg.sender,
                 transaction.positionLender,
@@ -152,7 +152,7 @@ library ClosePositionImpl {
             }
 
             // Transfer owedToken from the exchange wrapper to the lender
-            Proxy(state.PROXY).transferTokens(
+            TokenProxy(state.PROXY).transferTokens(
                 transaction.owedToken,
                 transaction.exchangeWrapper,
                 transaction.positionLender,

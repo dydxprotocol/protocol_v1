@@ -23,7 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { Proxy } from "./Proxy.sol";
+import { TokenProxy } from "./TokenProxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 
@@ -55,7 +55,7 @@ contract Vault is
 
     // ============ State Variables ============
 
-    // Address of the Proxy contract. Used for moving tokens.
+    // Address of the TokenProxy contract. Used for moving tokens.
     address public PROXY;
 
     // Map from vault ID to map from token address to amount of that token attributed to the
@@ -132,7 +132,7 @@ contract Vault is
         requiresAuthorization
     {
         // First send tokens to this contract
-        Proxy(PROXY).transferTokens(
+        TokenProxy(PROXY).transferTokens(
             token,
             from,
             address(this),
