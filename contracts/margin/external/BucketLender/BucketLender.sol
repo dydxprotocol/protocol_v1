@@ -23,7 +23,6 @@ import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
@@ -90,7 +89,6 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  */
 contract BucketLender is
     HasNoEther,
-    Ownable,
     OnlyMargin,
     LoanOwner,
     IncreaseLoanDelegator,
