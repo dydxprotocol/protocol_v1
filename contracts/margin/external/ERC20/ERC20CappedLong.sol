@@ -63,7 +63,10 @@ contract ERC20CappedLong is ERC20Long {
     {
         uint256 tokenAmount = super.getTokenAmountOnAdd(principalAdded);
 
-        require(totalSupply_.add(tokenAmount) <= tokenCap);
+        require(
+            totalSupply_.add(tokenAmount) <= tokenCap,
+            "ERC20CappedLong#getTokenAmountOnAdd: Adding tokenAmount would exceed cap"
+        );
 
         return tokenAmount;
     }

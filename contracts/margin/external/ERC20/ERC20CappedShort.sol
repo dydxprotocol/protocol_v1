@@ -63,7 +63,10 @@ contract ERC20CappedShort is ERC20Short {
     {
         uint256 tokenAmount = super.getTokenAmountOnAdd(principalAdded);
 
-        require(totalSupply_.add(tokenAmount) <= tokenCap);
+        require(
+            totalSupply_.add(tokenAmount) <= tokenCap,
+            "ERC20CappedShort#getTokenAmountOnAdd: Adding tokenAmount would exceed cap"
+        );
 
         return tokenAmount;
     }
