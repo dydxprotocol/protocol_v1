@@ -325,24 +325,66 @@ contract BucketLender is
         assert(loanOffering.heldToken == HELD_TOKEN);
         assert(loanOffering.payer == address(this));
         assert(loanOffering.owner == address(this));
-        require(loanOffering.taker == address(0));
-        require(loanOffering.feeRecipient == address(0));
-        require(loanOffering.positionOwner == address(0));
-        require(loanOffering.lenderFeeToken == address(0));
-        require(loanOffering.takerFeeToken == address(0));
+        require(
+            loanOffering.taker == address(0),
+            "BucketLender#verifyLoanOffering: loanOffering.taker is non-zero"
+        );
+        require(
+            loanOffering.feeRecipient == address(0),
+            "BucketLender#verifyLoanOffering: loanOffering.feeRecipient is non-zero"
+        );
+        require(
+            loanOffering.positionOwner == address(0),
+            "BucketLender#verifyLoanOffering: loanOffering.positionOwner is non-zero"
+        );
+        require(
+            loanOffering.lenderFeeToken == address(0),
+            "BucketLender#verifyLoanOffering: loanOffering.lenderFeeToken is non-zero"
+        );
+        require(
+            loanOffering.takerFeeToken == address(0),
+            "BucketLender#verifyLoanOffering: loanOffering.takerFeeToken is non-zero"
+        );
 
         // CHECK VALUES256
-        require(loanOffering.rates.maxAmount == MathHelpers.maxUint256());
-        require(loanOffering.rates.minAmount == 0);
-        require(loanOffering.rates.minHeldToken == 0);
-        require(loanOffering.rates.lenderFee == 0);
-        require(loanOffering.rates.takerFee == 0);
-        require(loanOffering.expirationTimestamp == MathHelpers.maxUint256());
-        require(loanOffering.salt == 0);
+        require(
+            loanOffering.rates.maxAmount == MathHelpers.maxUint256(),
+            "BucketLender#verifyLoanOffering: loanOffering.maxAmount is incorrect"
+        );
+        require(
+            loanOffering.rates.minAmount == 0,
+            "BucketLender#verifyLoanOffering: loanOffering.minAmount is non-zero"
+        );
+        require(
+            loanOffering.rates.minHeldToken == 0,
+            "BucketLender#verifyLoanOffering: loanOffering.minHeldToken is non-zero"
+        );
+        require(
+            loanOffering.rates.lenderFee == 0,
+            "BucketLender#verifyLoanOffering: loanOffering.lenderFee is non-zero"
+        );
+        require(
+            loanOffering.rates.takerFee == 0,
+            "BucketLender#verifyLoanOffering: loanOffering.takerFee is non-zero"
+        );
+        require(
+            loanOffering.expirationTimestamp == MathHelpers.maxUint256(),
+            "BucketLender#verifyLoanOffering: expirationTimestamp is incorrect"
+        );
+        require(
+            loanOffering.salt == 0,
+            "BucketLender#verifyLoanOffering: loanOffering.salt is non-zero"
+        );
 
         // CHECK VALUES32
-        require(loanOffering.callTimeLimit == CALL_TIMELIMIT);
-        require(loanOffering.maxDuration == MAX_DURATION);
+        require(
+            loanOffering.callTimeLimit == CALL_TIMELIMIT,
+            "BucketLender#verifyLoanOffering: loanOffering.callTimelimit is incorrect"
+        );
+        require(
+            loanOffering.maxDuration == MAX_DURATION,
+            "BucketLender#verifyLoanOffering: loanOffering.maxDuration is incorrect"
+        );
         assert(loanOffering.rates.interestRate == INTEREST_RATE);
         assert(loanOffering.rates.interestPeriod == INTEREST_PERIOD);
 
@@ -1071,11 +1113,11 @@ contract BucketLender is
         if (increase) {
             newTotal = availableTotal.add(amount);
             newForBucket = availableForBucket[bucket].add(amount);
-            emit AvailableIncreased(newTotal, bucket, newForBucket, amount);
+            emit AvailableIncreased(newTotal, bucket, newForBucket, amount); // solium-disable-line
         } else {
             newTotal = availableTotal.sub(amount);
             newForBucket = availableForBucket[bucket].sub(amount);
-            emit AvailableDecreased(newTotal, bucket, newForBucket, amount);
+            emit AvailableDecreased(newTotal, bucket, newForBucket, amount); // solium-disable-line
         }
 
         availableTotal = newTotal;
@@ -1107,11 +1149,11 @@ contract BucketLender is
         if (increase) {
             newTotal = principalTotal.add(amount);
             newForBucket = principalForBucket[bucket].add(amount);
-            emit PrincipalIncreased(newTotal, bucket, newForBucket, amount);
+            emit PrincipalIncreased(newTotal, bucket, newForBucket, amount); // solium-disable-line
         } else {
             newTotal = principalTotal.sub(amount);
             newForBucket = principalForBucket[bucket].sub(amount);
-            emit PrincipalDecreased(newTotal, bucket, newForBucket, amount);
+            emit PrincipalDecreased(newTotal, bucket, newForBucket, amount); // solium-disable-line
         }
 
         principalTotal = newTotal;
