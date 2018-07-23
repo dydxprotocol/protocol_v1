@@ -69,7 +69,7 @@ contract ERC20Long is ERC20Position {
     function getTokenAmountOnAdd(
         uint256 /* principalAdded */
     )
-        private
+        internal
         view
         returns (uint256)
     {

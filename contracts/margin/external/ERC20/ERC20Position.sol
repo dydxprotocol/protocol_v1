@@ -531,7 +531,7 @@ contract ERC20Position is
     function getTokenAmountOnAdd(
         uint256 principalAdded
     )
-        private
+        internal
         view
         returns (uint256);
 
