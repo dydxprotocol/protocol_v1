@@ -677,7 +677,10 @@ contract BucketLender is
         // decide if some bucket is unable to be withdrawn from (is locked)
         // the zero value represents no-lock
         uint256 lockedBucket = 0;
-        if (criticalBucket == getCurrentBucket()) {
+        if (
+            Margin(DYDX_MARGIN).containsPosition(POSITION_ID) &&
+            criticalBucket == getCurrentBucket()
+        ) {
             lockedBucket = criticalBucket;
         }
 
