@@ -32,7 +32,7 @@ import { ERC20Short } from "./ERC20Short.sol";
 contract ERC20CappedShort is ERC20Short {
     using SafeMath for uint256;
 
-    uint256 tokenCap;
+    uint256 public tokenCap;
 
     constructor(
         bytes32 positionId,

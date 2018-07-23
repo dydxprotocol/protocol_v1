@@ -32,7 +32,7 @@ import { ERC20Long } from "./ERC20Long.sol";
 contract ERC20CappedLong is ERC20Long {
     using SafeMath for uint256;
 
-    uint256 tokenCap;
+    uint256 public tokenCap;
 
     constructor(
         bytes32 positionId,
