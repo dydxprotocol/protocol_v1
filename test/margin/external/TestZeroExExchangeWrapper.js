@@ -30,25 +30,25 @@ describe('ZeroExExchangeWrapper', () => {
         } = await setup(accounts);
 
         const [
-          DYDX_PROXY,
+          DYDX_TOKEN_PROXY,
           ZERO_EX_EXCHANGE,
-          ZERO_EX_PROXY,
+          ZERO_EX_TOKEN_PROXY,
           ZRX,
           DYDX_MARGIN,
           zrxProxyAllowance
         ] = await Promise.all([
-          exchangeWrapper.DYDX_PROXY.call(),
+          exchangeWrapper.DYDX_TOKEN_PROXY.call(),
           exchangeWrapper.ZERO_EX_EXCHANGE.call(),
-          exchangeWrapper.ZERO_EX_PROXY.call(),
+          exchangeWrapper.ZERO_EX_TOKEN_PROXY.call(),
           exchangeWrapper.ZRX.call(),
           exchangeWrapper.DYDX_MARGIN.call(),
           feeToken.allowance.call(exchangeWrapper.address, ZeroExProxy.address)
         ]);
 
-        expect(DYDX_PROXY).to.eq(dydxProxy);
+        expect(DYDX_TOKEN_PROXY).to.eq(dydxProxy);
         expect(DYDX_MARGIN).to.eq(dydxMargin);
         expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchange.address);
-        expect(ZERO_EX_PROXY).to.eq(ZeroExProxy.address);
+        expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExProxy.address);
         expect(ZRX).to.eq(FeeToken.address);
         expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.ONES_255);
       });

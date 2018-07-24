@@ -34,7 +34,7 @@ library MarginState {
         address VAULT;
 
         // Address of the TokenProxy contract
-        address PROXY;
+        address TOKEN_PROXY;
 
         // Mapping from loanHash -> amount, which stores the amount of a loan which has
         // already been filled.

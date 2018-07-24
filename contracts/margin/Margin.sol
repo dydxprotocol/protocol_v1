@@ -69,7 +69,7 @@ contract Margin is
     {
         state = MarginState.State({
             VAULT: vault,
-            PROXY: proxy
+            TOKEN_PROXY: proxy
         });
     }
 
@@ -603,6 +603,6 @@ contract Margin is
         view
         returns (address)
     {
-        return state.PROXY;
+        return state.TOKEN_PROXY;
     }
 }

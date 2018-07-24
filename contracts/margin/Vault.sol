@@ -56,7 +56,7 @@ contract Vault is
     // ============ State Variables ============
 
     // Address of the TokenProxy contract. Used for moving tokens.
-    address public PROXY;
+    address public TOKEN_PROXY;
 
     // Map from vault ID to map from token address to amount of that token attributed to the
     // particular vault ID.
@@ -74,15 +74,15 @@ contract Vault is
         public
         StaticAccessControlled(gracePeriod)
     {
-        PROXY = proxy;
+        TOKEN_PROXY = proxy;
     }
 
     // ============ Owner-Only State-Changing Functions ============
 
     /**
      * Allows the owner to withdraw any excess tokens sent to the vault by unconventional means,
-     * including (but not limited-to) token airdrops. Any tokens moved to the vault by PROXY will be
-     * accounted for and will not be withdrawable by this function.
+     * including (but not limited-to) token airdrops. Any tokens moved to the vault by TOKEN_PROXY
+     * will be accounted for and will not be withdrawable by this function.
      *
      * @param  token  ERC20 token address
      * @param  to     Address to transfer tokens to
@@ -132,7 +132,7 @@ contract Vault is
         requiresAuthorization
     {
         // First send tokens to this contract
-        TokenProxy(PROXY).transferTokens(
+        TokenProxy(TOKEN_PROXY).transferTokens(
             token,
             from,
             address(this),

@@ -131,7 +131,7 @@ library ClosePositionImpl {
             );
 
             // No DEX Order; send owedTokens directly from the closer to the lender
-            TokenProxy(state.PROXY).transferTokens(
+            TokenProxy(state.TOKEN_PROXY).transferTokens(
                 transaction.owedToken,
                 msg.sender,
                 transaction.positionLender,
@@ -152,7 +152,7 @@ library ClosePositionImpl {
             }
 
             // Transfer owedToken from the exchange wrapper to the lender
-            TokenProxy(state.PROXY).transferTokens(
+            TokenProxy(state.TOKEN_PROXY).transferTokens(
                 transaction.owedToken,
                 transaction.exchangeWrapper,
                 transaction.positionLender,

@@ -106,7 +106,7 @@ library ClosePositionShared {
 
             payout = receivedOwedToken.sub(transaction.owedTokenOwed);
 
-            TokenProxy(state.PROXY).transferTokens(
+            TokenProxy(state.TOKEN_PROXY).transferTokens(
                 transaction.owedToken,
                 transaction.exchangeWrapper,
                 transaction.payoutRecipient,
@@ -184,7 +184,7 @@ library ClosePositionShared {
             isWithoutCounterparty
         );
     }
-    
+
     // ============ Private Helper-Functions ============
 
     function getApprovedAmount(

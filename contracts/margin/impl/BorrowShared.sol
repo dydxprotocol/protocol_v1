@@ -233,7 +233,7 @@ library BorrowShared {
     )
         internal
     {
-        TokenProxy(state.PROXY).transferTokens(
+        TokenProxy(state.TOKEN_PROXY).transferTokens(
             transaction.loanOffering.owedToken,
             msg.sender,
             transaction.exchangeWrapper,
@@ -337,7 +337,7 @@ library BorrowShared {
         private
     {
         // Transfer owedToken to the exchange wrapper
-        TokenProxy(state.PROXY).transferTokens(
+        TokenProxy(state.TOKEN_PROXY).transferTokens(
             transaction.loanOffering.owedToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapper,
@@ -356,7 +356,7 @@ library BorrowShared {
             return;
         }
 
-        TokenProxy proxy = TokenProxy(state.PROXY);
+        TokenProxy proxy = TokenProxy(state.TOKEN_PROXY);
 
         uint256 lenderFee = MathHelpers.getPartialAmount(
             transaction.lenderAmount,

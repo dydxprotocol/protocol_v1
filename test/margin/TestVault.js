@@ -45,7 +45,7 @@ contract('Vault', accounts => {
         tokenProxy
       ] = await Promise.all([
         vault.owner.call(),
-        vault.PROXY.call()
+        vault.TOKEN_PROXY.call()
       ]);
 
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());

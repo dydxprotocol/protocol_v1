@@ -29,15 +29,15 @@ describe('OpenDirectlyExchangeWrapper', () => {
         );
 
         const [
-          DYDX_PROXY,
+          DYDX_TOKEN_PROXY,
           DYDX_MARGIN
         ] = await Promise.all([
-          contract.DYDX_PROXY.call(),
+          contract.DYDX_TOKEN_PROXY.call(),
           contract.DYDX_MARGIN.call()
         ]);
 
         expect(DYDX_MARGIN).to.eq(ADDRESSES.TEST[0]);
-        expect(DYDX_PROXY).to.eq(ADDRESSES.TEST[1]);
+        expect(DYDX_TOKEN_PROXY).to.eq(ADDRESSES.TEST[1]);
       });
     });
   });
