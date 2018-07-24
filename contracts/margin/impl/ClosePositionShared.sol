@@ -184,7 +184,7 @@ library ClosePositionShared {
             isWithoutCounterparty
         );
     }
-    
+
     // ============ Private Helper-Functions ============
 
     function getApprovedAmount(
@@ -197,35 +197,34 @@ library ClosePositionShared {
         private
         returns (uint256)
     {
-        uint256 newAmount = Math.min256(requestedAmount, position.principal);
+        // Ensure enough principal
+        uint256 allowedAmount = Math.min256(requestedAmount, position.principal);
 
         // Ensure owner consent
-        uint256 allowedOwnerAmount = closePositionOnBehalfOfRecurse(
+        allowedAmount = closePositionOnBehalfOfRecurse(
             position.owner,
             msg.sender,
             payoutRecipient,
             positionId,
-            newAmount
+            allowedAmount
         );
-        newAmount = allowedOwnerAmount;
 
         // Ensure lender consent
         if (requireLenderApproval) {
-            uint256 allowedLenderAmount = closeLoanOnBehalfOfRecurse(
+            allowedAmount = closeLoanOnBehalfOfRecurse(
                 position.lender,
                 msg.sender,
                 payoutRecipient,
                 positionId,
-                newAmount
+                allowedAmount
             );
-            newAmount = allowedLenderAmount;
         }
 
-        assert(newAmount > 0);
-        assert(newAmount <= position.principal);
-        assert(newAmount <= requestedAmount);
+        assert(allowedAmount > 0);
+        assert(allowedAmount <= position.principal);
+        assert(allowedAmount <= requestedAmount);
 
-        return newAmount;
+        return allowedAmount;
     }
 
     function closePositionOnBehalfOfRecurse(
