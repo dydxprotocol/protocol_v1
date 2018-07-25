@@ -5,7 +5,7 @@ const BigNumber = require('bignumber.js');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const Margin = artifacts.require("Margin");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
@@ -29,15 +29,15 @@ describe('OpenDirectlyExchangeWrapper', () => {
         );
 
         const [
-          DYDX_PROXY,
+          DYDX_TOKEN_PROXY,
           DYDX_MARGIN
         ] = await Promise.all([
-          contract.DYDX_PROXY.call(),
+          contract.DYDX_TOKEN_PROXY.call(),
           contract.DYDX_MARGIN.call()
         ]);
 
         expect(DYDX_MARGIN).to.eq(ADDRESSES.TEST[0]);
-        expect(DYDX_PROXY).to.eq(ADDRESSES.TEST[1]);
+        expect(DYDX_TOKEN_PROXY).to.eq(ADDRESSES.TEST[1]);
       });
     });
   });
@@ -77,7 +77,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
           owedToken,
           heldToken
         ] = await Promise.all([
-          ProxyContract.deployed(),
+          TokenProxy.deployed(),
           Margin.deployed(),
           OwedToken.deployed(),
           HeldToken.deployed()

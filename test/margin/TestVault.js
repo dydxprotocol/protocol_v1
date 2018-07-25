@@ -1,7 +1,7 @@
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const TestToken = artifacts.require("TestToken");
 
@@ -28,7 +28,7 @@ contract('Vault', accounts => {
 
 
   beforeEach('reset contracts', async () => {
-    proxy = await ProxyContract.new(gracePeriod);
+    proxy = await TokenProxy.new(gracePeriod);
     [vault, tokenA, tokenB] = await Promise.all([
       Vault.new(proxy.address, gracePeriod),
       TestToken.new(),
@@ -42,14 +42,14 @@ contract('Vault', accounts => {
       await validateStaticAccessControlledConstants(vault, gracePeriod);
       const [
         owner,
-        contractProxy
+        tokenProxy
       ] = await Promise.all([
         vault.owner.call(),
-        vault.PROXY.call()
+        vault.TOKEN_PROXY.call()
       ]);
 
       expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
-      expect(contractProxy.toLowerCase()).to.eq(proxy.address);
+      expect(tokenProxy.toLowerCase()).to.eq(proxy.address);
     });
   });
 

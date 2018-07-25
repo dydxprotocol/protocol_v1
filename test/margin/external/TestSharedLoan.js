@@ -102,7 +102,7 @@ contract('SharedLoan', accounts => {
 
   // ============ Before ============
 
-  before('Set up Proxy, Margin accounts', async () => {
+  before('Set up TokenProxy, Margin accounts', async () => {
     [
       dydxMargin,
       owedToken,

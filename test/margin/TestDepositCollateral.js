@@ -5,7 +5,7 @@ const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require('TokenA');
-const ProxyContract = artifacts.require('Proxy');
+const TokenProxy = artifacts.require('TokenProxy');
 const TestDepositCollateralDelegator = artifacts.require('TestDepositCollateralDelegator');
 const { BYTES32 } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
@@ -185,7 +185,7 @@ async function doDepositCollateral({
     heldToken,
     from,
     amount,
-    ProxyContract.address
+    TokenProxy.address
   );
 
   const tx = await dydxMargin.depositCollateral(

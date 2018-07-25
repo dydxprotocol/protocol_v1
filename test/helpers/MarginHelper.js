@@ -7,7 +7,7 @@ const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
@@ -396,7 +396,7 @@ async function issueTokensAndSetAllowances(tx) {
       owedToken,
       tx.loanOffering.payer,
       tx.loanOffering.rates.maxAmount,
-      ProxyContract.address
+      TokenProxy.address
     ),
 
     // Trader Deposit
@@ -404,7 +404,7 @@ async function issueTokensAndSetAllowances(tx) {
       depositToken,
       tx.trader,
       tx.depositAmount,
-      ProxyContract.address
+      TokenProxy.address
     ),
 
     // Buy Order Maker Held Token
@@ -428,7 +428,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.loanOffering.payer,
       tx.loanOffering.rates.lenderFee,
-      ProxyContract.address
+      TokenProxy.address
     ),
 
     // Trader Loan Fee
@@ -436,7 +436,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.trader,
       tx.loanOffering.rates.takerFee,
-      ProxyContract.address
+      TokenProxy.address
     ),
 
     // Trader Buy Order Fee
@@ -919,7 +919,7 @@ async function issueForDirectClose(openTx) {
     owedToken,
     openTx.trader,
     maxOwedTokenOwed,
-    ProxyContract.address
+    TokenProxy.address
   );
 }
 
@@ -984,7 +984,7 @@ async function issueTokenToAccountInAmountAndApproveProxy(token, account, amount
     token,
     account,
     amount,
-    ProxyContract.address
+    TokenProxy.address
   );
 }
 

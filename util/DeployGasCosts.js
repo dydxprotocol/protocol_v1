@@ -7,7 +7,7 @@ const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const ERC20Short = artifacts.require("ERC20Short");
 const Vault = artifacts.require("Vault");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
 const { getGasCost } = require('../test/helpers/NodeHelper');
@@ -38,14 +38,14 @@ contract('Deploy Costs', () => {
     });
   });
 
-  describe('Proxy', () => {
+  describe('TokenProxy', () => {
     it('', async () => {
-      const contract = await ProxyContract.new(
+      const contract = await TokenProxy.new(
         BIGNUMBERS.ONE_DAY_IN_SECONDS
       );
 
       const deployGasCost = await getGasCost(contract.transactionHash);
-      console.log('\tProxy deploy gas cost: ' + deployGasCost);
+      console.log('\tTokenProxy deploy gas cost: ' + deployGasCost);
     });
   });
 

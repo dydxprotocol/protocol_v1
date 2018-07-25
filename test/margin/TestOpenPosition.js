@@ -8,7 +8,7 @@ const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const Vault = artifacts.require("Vault");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
@@ -102,12 +102,12 @@ describe('#openPosition', () => {
       await Promise.all([
         testSmartContractLender.allow(
           feeToken.address,
-          ProxyContract.address,
+          TokenProxy.address,
           lenderFeeTokenBalance
         ),
         testSmartContractLender.allow(
           owedToken.address,
-          ProxyContract.address,
+          TokenProxy.address,
           lenderOwedTokenBalance
         )
       ]);
@@ -168,12 +168,12 @@ describe('#openPosition', () => {
       await Promise.all([
         testSmartContractLender.allow(
           feeToken.address,
-          ProxyContract.address,
+          TokenProxy.address,
           lenderFeeTokenBalance
         ),
         testSmartContractLender.allow(
           owedToken.address,
-          ProxyContract.address,
+          TokenProxy.address,
           lenderOwedTokenBalance
         )
       ]);

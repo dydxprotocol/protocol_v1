@@ -3,21 +3,21 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const Proxy = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const TestToken = artifacts.require("TestToken");
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
-contract('Proxy', accounts => {
+contract('TokenProxy', accounts => {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
   let contract, tokenA, tokenB;
 
   beforeEach(async () => {
     [contract, tokenA, tokenB] = await Promise.all([
-      Proxy.new(gracePeriod),
+      TokenProxy.new(gracePeriod),
       TestToken.new(),
       TestToken.new()
     ]);

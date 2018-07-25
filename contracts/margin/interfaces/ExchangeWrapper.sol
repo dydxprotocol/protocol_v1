@@ -36,7 +36,7 @@ contract ExchangeWrapper is OnlyMargin {
 
     // ============ Constants ============
 
-    address public DYDX_PROXY;
+    address public DYDX_TOKEN_PROXY;
 
     // ============ Constructor ============
 
@@ -47,7 +47,7 @@ contract ExchangeWrapper is OnlyMargin {
         public
         OnlyMargin(margin)
     {
-        DYDX_PROXY = dydxProxy;
+        DYDX_TOKEN_PROXY = dydxProxy;
     }
 
     // ============ External Functions ============

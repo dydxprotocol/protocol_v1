@@ -21,7 +21,7 @@
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
@@ -97,7 +97,7 @@ function get0xProxyAddress(network) {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
-  throw "0x Proxy Not Found";
+  throw "0x TokenProxy Not Found";
 }
 
 function getZRXAddress(network) {
@@ -122,7 +122,7 @@ function getSharedLoanTrustedMarginCallers(network) {
 
 async function deployMarginContracts(deployer, network) {
   await Promise.all([
-    deployer.deploy(ProxyContract, ONE_HOUR),
+    deployer.deploy(TokenProxy, ONE_HOUR),
     deployer.deploy(InterestImpl),
     deployer.deploy(ForceRecoverCollateralImpl),
     deployer.deploy(LoanImpl),
@@ -160,21 +160,21 @@ async function deployMarginContracts(deployer, network) {
 
   await deployer.deploy(
     Vault,
-    ProxyContract.address,
+    TokenProxy.address,
     ONE_HOUR
   );
 
   await deployer.deploy(
     Margin,
     Vault.address,
-    ProxyContract.address
+    TokenProxy.address
   );
 
   await Promise.all([
     deployer.deploy(
       ZeroExExchangeWrapper,
       Margin.address,
-      ProxyContract.address,
+      TokenProxy.address,
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
       getZRXAddress(network)
@@ -182,7 +182,7 @@ async function deployMarginContracts(deployer, network) {
     deployer.deploy(
       OpenDirectlyExchangeWrapper,
       Margin.address,
-      ProxyContract.address
+      TokenProxy.address
     ),
     deployer.deploy(
       ERC721MarginPosition,
@@ -217,7 +217,7 @@ async function deployMarginContracts(deployer, network) {
 }
 
 async function authorizeOnProxy() {
-  const proxy = await ProxyContract.deployed();
+  const proxy = await TokenProxy.deployed();
   await Promise.all([
     proxy.grantAccess(Vault.address),
     proxy.grantAccess(Margin.address)

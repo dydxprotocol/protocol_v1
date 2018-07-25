@@ -24,7 +24,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { Proxy } from "../Proxy.sol";
+import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
@@ -106,7 +106,7 @@ library ClosePositionShared {
 
             payout = receivedOwedToken.sub(transaction.owedTokenOwed);
 
-            Proxy(state.PROXY).transferTokens(
+            TokenProxy(state.TOKEN_PROXY).transferTokens(
                 transaction.owedToken,
                 transaction.exchangeWrapper,
                 transaction.payoutRecipient,

@@ -150,7 +150,7 @@ describe('#transferPosition', () => {
         proxyAddress
       ] = await Promise.all([
         dydxMargin.getVaultAddress.call(),
-        dydxMargin.getProxyAddress.call()
+        dydxMargin.getTokenProxyAddress.call()
       ]);
 
       await transferPosition_THROW(openTx, dydxMargin.address, owner);
@@ -299,7 +299,7 @@ describe('#transferLoan', () => {
         proxyAddress
       ] = await Promise.all([
         dydxMargin.getVaultAddress.call(),
-        dydxMargin.getProxyAddress.call()
+        dydxMargin.getTokenProxyAddress.call()
       ]);
 
       await transferLoan_THROW(openTx, dydxMargin.address, lender);

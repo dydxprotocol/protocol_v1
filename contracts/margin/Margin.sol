@@ -69,7 +69,7 @@ contract Margin is
     {
         state = MarginState.State({
             VAULT: vault,
-            PROXY: proxy
+            TOKEN_PROXY: proxy
         });
     }
 
@@ -593,16 +593,16 @@ contract Margin is
     }
 
     /**
-     * Gets the address of the Proxy contract that accounts must set allowance on in order to make
-     * loans or open/close positions.
+     * Gets the address of the TokenProxy contract that accounts must set allowance on in order to
+     * make loans or open/close positions.
      *
-     * @return  The address of the Proxy contract
+     * @return  The address of the TokenProxy contract
      */
-    function getProxyAddress()
+    function getTokenProxyAddress()
         external
         view
         returns (address)
     {
-        return state.PROXY;
+        return state.TOKEN_PROXY;
     }
 }

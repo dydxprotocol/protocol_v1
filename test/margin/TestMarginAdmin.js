@@ -2,7 +2,7 @@ const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require('TokenA');
-const ProxyContract = artifacts.require('Proxy');
+const TokenProxy = artifacts.require('TokenProxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
 const {
   createOpenTx,
@@ -141,7 +141,7 @@ describe('MarginAdmin', () => {
           heldToken,
           openTx.trader,
           amount,
-          ProxyContract.address
+          TokenProxy.address
         );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);

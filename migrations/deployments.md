@@ -2,7 +2,7 @@
 
 ### Main
 - Margin:                          [0xeec4c7032ecddc47182134933662f9b06b4fdc64](https://kovan.etherscan.io/address/0xeec4c7032ecddc47182134933662f9b06b4fdc64)
-- Proxy:                           [0x39a5d693857e22306182a49a88122ed85d3865bc](https://kovan.etherscan.io/address/0x39a5d693857e22306182a49a88122ed85d3865bc)
+- TokenProxy:                           [0x39a5d693857e22306182a49a88122ed85d3865bc](https://kovan.etherscan.io/address/0x39a5d693857e22306182a49a88122ed85d3865bc)
 - Vault:                           [0xa7e5c1fb69769f53e0212b7e697a4477f8b88bcb](https://kovan.etherscan.io/address/0xa7e5c1fb69769f53e0212b7e697a4477f8b88bcb)
 
 ### Second Layer

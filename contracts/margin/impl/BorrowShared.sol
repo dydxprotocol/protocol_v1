@@ -25,7 +25,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { Proxy } from "../Proxy.sol";
+import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
@@ -233,7 +233,7 @@ library BorrowShared {
     )
         internal
     {
-        Proxy(state.PROXY).transferTokens(
+        TokenProxy(state.TOKEN_PROXY).transferTokens(
             transaction.loanOffering.owedToken,
             msg.sender,
             transaction.exchangeWrapper,
@@ -337,7 +337,7 @@ library BorrowShared {
         private
     {
         // Transfer owedToken to the exchange wrapper
-        Proxy(state.PROXY).transferTokens(
+        TokenProxy(state.TOKEN_PROXY).transferTokens(
             transaction.loanOffering.owedToken,
             transaction.loanOffering.payer,
             transaction.exchangeWrapper,
@@ -356,7 +356,7 @@ library BorrowShared {
             return;
         }
 
-        Proxy proxy = Proxy(state.PROXY);
+        TokenProxy proxy = TokenProxy(state.TOKEN_PROXY);
 
         uint256 lenderFee = MathHelpers.getPartialAmount(
             transaction.lenderAmount,

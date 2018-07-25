@@ -5,7 +5,7 @@ const BigNumber = require('bignumber.js');
 
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const Margin = artifacts.require("Margin");
-const ProxyContract = artifacts.require("Proxy");
+const TokenProxy = artifacts.require("TokenProxy");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
@@ -352,7 +352,7 @@ contract('ERC721MarginPosition', accounts => {
         owedToken,
         account,
         amount,
-        ProxyContract.address
+        TokenProxy.address
       );
     }
 
@@ -431,7 +431,7 @@ contract('ERC721MarginPosition', accounts => {
         owedToken,
         account,
         amount,
-        ProxyContract.address
+        TokenProxy.address
       );
     }
 
