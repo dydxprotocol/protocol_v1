@@ -17,6 +17,7 @@
 */
 
 pragma solidity 0.4.24;
+pragma experimental "v0.5.0";
 
 import "./base/ZeroExToken.sol";
 import "./base/ZeroExOwnable.sol";
@@ -107,7 +108,7 @@ contract ZeroExProxy is ZeroExOwnable {
     /// @return Array of authorized addresses.
     function getAuthorizedAddresses()
         public
-        constant
+        view
         returns (address[])
     {
         return authorities;
