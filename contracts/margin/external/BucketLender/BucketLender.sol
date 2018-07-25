@@ -266,7 +266,7 @@ contract BucketLender is
 
         // Set maximum allowance on proxy
         OWED_TOKEN.approve(
-            Margin(DYDX_MARGIN).getProxyAddress(),
+            Margin(margin).getProxyAddress(),
             MathHelpers.maxUint256()
         );
     }

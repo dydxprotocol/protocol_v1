@@ -27,7 +27,7 @@ const {
 } = require('../../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
-let OT = new BigNumber('1e18');
+let OT = new BigNumber('1234567898765543211');
 
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -187,7 +187,6 @@ async function setUpPosition(accounts, openThePosition = true) {
 
   const principal = OT.times(2);
   const deposit = OT.times(6);
-  const g = gcd(principal.toNumber(), deposit.toNumber());
 
   bucketLender = await TestBucketLender.new(
     Margin.address,
@@ -200,8 +199,8 @@ async function setUpPosition(accounts, openThePosition = true) {
       INTEREST_PERIOD,
       MAX_DURATION,
       CALL_TIMELIMIT,
-      deposit.div(g), // MIN_HELD_TOKEN_NUMERATOR,
-      principal.div(g), // MIN_HELD_TOKEN_DENOMINATOR,
+      3,
+      1
     ],
     [TRUSTED_PARTY] // trusted margin-callers
   );
@@ -1023,12 +1022,13 @@ contract('BucketLender', accounts => {
 
       await doWithdraw(lender1, 0, { throws: true });
 
-      const weight = OT.div(2);
+      const weightToWithdraw = OT.div(2).floor();
+      const startingWeight = await bucketLender.weightForBucketForAccount.call(0, lender1);
       const {owedWithdrawn, heldWithdrawn, remainingWeight} =
-        await doWithdraw(lender1, 0, { weight: weight });
-      expect(owedWithdrawn).to.be.bignumber.gte(weight);
+        await doWithdraw(lender1, 0, { weight: weightToWithdraw });
+      expect(owedWithdrawn).to.be.bignumber.gte(weightToWithdraw);
       expect(heldWithdrawn).to.be.bignumber.eq(0);
-      expect(remainingWeight).to.be.bignumber.eq(OT.times(3).div(2));
+      expect(remainingWeight).to.be.bignumber.eq(startingWeight.minus(weightToWithdraw));
     });
 
     it('succeeds but returns no tokens for the current/critical bucket', async () => {
@@ -1294,7 +1294,7 @@ contract('BucketLender', accounts => {
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
+            await doWithdraw(act, b);
           }
         }
       }
@@ -1457,7 +1457,7 @@ contract('BucketLender', accounts => {
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
+            await doWithdraw(act, b);
           }
         }
       }
@@ -1642,7 +1642,7 @@ contract('BucketLender', accounts => {
         for(let b = 0; b < 20; b++) {
           const hasWeight = await bucketLender.weightForBucketForAccount.call(b, act);
           if (!hasWeight.isZero()) {
-            const { owedWithdrawn, heldWithdrawn, remainingWeight } = await doWithdraw(act, b);
+            await doWithdraw(act, b);
           }
         }
       }
