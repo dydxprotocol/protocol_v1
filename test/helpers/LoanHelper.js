@@ -2,7 +2,7 @@ const BigNumber = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT } = require('./Constants');
+const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT, SIGNATURE_TYPE } = require('./Constants');
 const Web3 = require('web3');
 const Margin = artifacts.require("Margin");
 const promisify = require("es6-promisify");
@@ -85,7 +85,14 @@ async function signLoanOffering(loanOffering) {
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
-  return ethUtil.bufferToHex(Buffer.concat([r, s, ethUtil.toBuffer(v)]));
+  return ethUtil.bufferToHex(
+    Buffer.concat([
+      ethUtil.toBuffer(SIGNATURE_TYPE.DEC),
+      ethUtil.toBuffer(v),
+      r,
+      s,
+    ])
+  );
 }
 
 module.exports = {

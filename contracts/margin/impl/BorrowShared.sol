@@ -20,13 +20,13 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { AddressUtils } from "zeppelin-solidity/contracts/AddressUtils.sol";
-import { ECRecovery } from "zeppelin-solidity/contracts/ECRecovery.sol";
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
+import { ECRecovery } from "../../lib/ECRecovery.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
@@ -40,7 +40,6 @@ import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
  * Both use a Loan Offering and a DEX Order to open or increase a position.
  */
 library BorrowShared {
-    using ECRecovery for bytes32;
     using SafeMath for uint256;
 
     // ============ Structs ============
@@ -97,10 +96,11 @@ library BorrowShared {
         if (AddressUtils.isContract(transaction.loanOffering.payer)) {
             getConsentFromSmartContractLender(transaction);
         } else {
-            bytes32 messageHash = transaction.loanOffering.loanHash.toEthSignedMessageHash();
             require(
-                transaction.loanOffering.payer ==
-                messageHash.recover(transaction.loanOffering.signature),
+                transaction.loanOffering.payer == ECRecovery.recover(
+                    transaction.loanOffering.loanHash,
+                    transaction.loanOffering.signature
+                ),
                 "BorrowShared#validateTxPreSell: Invalid loan offering signature"
             );
         }
