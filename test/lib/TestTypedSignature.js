@@ -7,11 +7,11 @@ const ethUtil = require('ethereumjs-util');
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
 
-const TestECRecovery = artifacts.require("TestECRecovery");
+const TestTypedSignature = artifacts.require("TestTypedSignature");
 const { BIGNUMBERS, BYTES32, SIGNATURE_TYPE } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
-contract('ECRecovery', accounts => {
+contract('TestTypedSignature', accounts => {
   let contract;
   const rawKey = "43f2ee33c522046e80b67e96ceb84a05b60b9434b0ee2e3ae4b1311b9f5dcc46";
   const privateKey = new Buffer(rawKey, "hex");
@@ -20,7 +20,7 @@ contract('ECRecovery', accounts => {
   const PROPER_SIG_LENGTH = 66;
 
   before(async () => {
-    contract = await TestECRecovery.new();
+    contract = await TestTypedSignature.new();
   });
 
   describe('INVALID', () => {

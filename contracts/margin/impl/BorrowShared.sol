@@ -26,8 +26,8 @@ import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
 import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
-import { ECRecovery } from "../../lib/ECRecovery.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { ExchangeWrapper } from "../interfaces/ExchangeWrapper.sol";
 import { LoanOfferingVerifier } from "../interfaces/LoanOfferingVerifier.sol";
 
@@ -97,7 +97,7 @@ library BorrowShared {
             getConsentFromSmartContractLender(transaction);
         } else {
             require(
-                transaction.loanOffering.payer == ECRecovery.recover(
+                transaction.loanOffering.payer == TypedSignature.recover(
                     transaction.loanOffering.loanHash,
                     transaction.loanOffering.signature
                 ),

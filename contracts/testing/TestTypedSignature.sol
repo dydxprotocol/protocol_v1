@@ -19,10 +19,10 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ECRecovery } from "../lib/ECRecovery.sol";
+import { TypedSignature } from "../lib/TypedSignature.sol";
 
 
-contract TestECRecovery {
+contract TestTypedSignature {
     function recover(
         bytes32 hash,
         bytes signatureWithType
@@ -31,6 +31,6 @@ contract TestECRecovery {
         pure
         returns (address)
     {
-        return ECRecovery.recover(hash, signatureWithType);
+        return TypedSignature.recover(hash, signatureWithType);
     }
 }

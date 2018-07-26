@@ -21,17 +21,15 @@ pragma experimental "v0.5.0";
 
 
 /**
- * @title ECRecovery
+ * @title TypedSignature
  * @author dYdX
  *
- * Based on OpenZeppelin's ECRecovery contract. Allows for ecrecovery of signed messages with three
- * different prepended messages:
- *
+ * Allows for ecrecovery of signed hashes with three different prepended messages:
  * 1) ""
  * 2) "\x19Ethereum Signed Message:\n32"
  * 3) "\x19Ethereum Signed Message:\n\x20"
  */
-library ECRecovery {
+library TypedSignature {
 
     enum SignatureType {
         INVALID,
@@ -90,12 +88,13 @@ library ECRecovery {
         }
 
         bytes32 signedHash;
-        if (sigType == SignatureType.ECRECOVER_NULL) {
-            signedHash = hash;
-        } else if (sigType == SignatureType.ECRECOVER_DEC) {
+        if (sigType == SignatureType.ECRECOVER_DEC) {
             signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
         } else if (sigType == SignatureType.ECRECOVER_HEX) {
             signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
+        } else {
+            assert(sigType == SignatureType.ECRECOVER_NULL);
+            signedHash = hash;
         }
 
         return ecrecover(
