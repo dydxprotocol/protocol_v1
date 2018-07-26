@@ -42,7 +42,6 @@ contract('ECRecovery', accounts => {
       const n = Buffer.from("12345678123456781234567812345678");
       const tooShort = Buffer.concat([n, n]);
       const signatureWithType = ethUtil.bufferToHex(tooShort);
-      console.log(tooShort);
       expect(tooShort.length).to.be.lt(PROPER_SIG_LENGTH);
       await expectThrow(contract.recover(hash, signatureWithType));
     });

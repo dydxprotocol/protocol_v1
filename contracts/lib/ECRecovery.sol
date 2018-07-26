@@ -35,12 +35,25 @@ library ECRecovery {
 
     enum SignatureType {
         INVALID,
-        ECRECOVER_NUL,
+        ECRECOVER_NULL,
         ECRECOVER_DEC,
         ECRECOVER_HEX,
         UNSUPPORTED
     }
 
+    // prepended message with the length of the signed hash in hexadecimal
+    bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";
+
+    // prepended message with the length of the signed hash in decimal
+    bytes constant private PREPEND_DEC = "\x19Ethereum Signed Message:\n32";
+
+    /**
+     * Gives the address of the signer of a hash. Allows for three common prepended strings.
+     *
+     * @param  hash               Hash that was signed (does not include prepended message)
+     * @param  signatureWithType  Type and ECDSA signature with structure: {1:type}{1:v}{32:r}{32:s}
+     * @return                    address of the signer of the hash
+     */
     function recover(
         bytes32 hash,
         bytes signatureWithType
@@ -55,11 +68,15 @@ library ECRecovery {
         );
 
         uint8 rawSigType = uint8(signatureWithType[0]);
+
+        require(
+            rawSigType > uint8(SignatureType.INVALID),
+            "SignatureValidator#validateSignature: invalid signature type"
+        );
         require(
             rawSigType < uint8(SignatureType.UNSUPPORTED),
             "SignatureValidator#validateSignature: unsupported signature type"
         );
-
 
         SignatureType sigType = SignatureType(rawSigType);
         uint8 v = uint8(signatureWithType[1]);
@@ -68,24 +85,21 @@ library ECRecovery {
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-          r := mload(add(signatureWithType, 34))
-          s := mload(add(signatureWithType, 66))
+            r := mload(add(signatureWithType, 34))
+            s := mload(add(signatureWithType, 66))
         }
 
-        bytes32 recoveryHash;
-        if (sigType == SignatureType.ECRECOVER_NUL) {
-            recoveryHash = hash;
+        bytes32 signedHash;
+        if (sigType == SignatureType.ECRECOVER_NULL) {
+            signedHash = hash;
         } else if (sigType == SignatureType.ECRECOVER_DEC) {
-            recoveryHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
+            signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
         } else if (sigType == SignatureType.ECRECOVER_HEX) {
-            recoveryHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n\x20", hash));
-        } else {
-            assert(sigType == SignatureType.INVALID);
-            revert("SignatureValidator#validateSignature: invalid signature type");
+            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
         }
 
         return ecrecover(
-            recoveryHash,
+            signedHash,
             v,
             r,
             s
