@@ -5,8 +5,9 @@ const BigNumber = require('bignumber.js');
 module.exports = {
   SIGNATURE_TYPE: {
     INVALID_ZERO: 0,
-    INVALID_NONZERO: 15,
-    NUL: 1,
+    INVALID_ONE: 1,
+    UNSUPPORTED: 4,
+    UNSUPPORTED_LARGE: 15,
     DEC: 2,
     HEX: 3,
   },
