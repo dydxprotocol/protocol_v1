@@ -1,6 +1,6 @@
 const Margin                = require('../build/contracts/Margin.json');
 const Vault                 = require('../build/contracts/Vault.json');
-const TokenProxy            = require('../build/contracts../TokenProxy.json');
+const TokenProxy            = require('../build/contracts/TokenProxy.json');
 const DutchAuctionCloser    = require('../build/contracts/DutchAuctionCloser.json');
 const SharedLoan            = require('../build/contracts/SharedLoan.json');
 const SharedLoanCreator     = require('../build/contracts/SharedLoanCreator.json');
