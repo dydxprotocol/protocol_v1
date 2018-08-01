@@ -778,20 +778,19 @@ contract BucketLender is
     {
         rebalanceBucketsInternal();
 
+        uint256 amount = token.balanceOf(address(this));
+
         if (token == OWED_TOKEN) {
-            uint256 amount = token.balanceOf(address(this));
             amount = amount.sub(availableTotal);
-            token.transfer(to, amount);
-        } else {
-            if (token == HELD_TOKEN) {
-                require(
-                    principalTotal == 0,
-                    "BucketLender#withdrawExcessToken: Withdrawing heldToken when principal is zero"
-                );
-            }
-            uint256 amount = token.balanceOf(address(this));
-            token.transfer(to, amount);
+        } else if (token == HELD_TOKEN) {
+            require(
+                !wasForceClosed,
+                "BucketLender#withdrawExcessToken: heldToken cannot be withdrawn if force-closed"
+            );
         }
+
+        token.transfer(to, amount);
+        return amount;
     }
 
     // ============ Helper Functions ============

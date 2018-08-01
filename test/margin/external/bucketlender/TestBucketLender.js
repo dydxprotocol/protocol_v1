@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
+const TestToken = artifacts.require("TokenC");
 const TestBucketLender = artifacts.require("TestBucketLender");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
@@ -42,13 +43,6 @@ let testLoanOwner, testMarginCallDelegator;
 let margin, heldToken, owedToken;
 let bucketLender;
 let TRUSTED_PARTY, lender1, lender2, uselessLender, trader, alice;
-
-function gcd(a, b) {
-  if (!b) {
-    return a;
-  }
-  return gcd(b, a % b);
-}
 
 // grants tokens to a lender and has them deposit them into the bucket lender
 async function doDeposit(account, amount) {
@@ -679,6 +673,29 @@ contract('BucketLender', accounts => {
     });
 
     it('prevents lending while the position is margin-called', async () => {
+      const principal = OT.times(2);
+      const deposit = OT.times(6);
+      await setUpPosition(accounts, false);
+      await margin.openWithoutCounterparty(
+        [
+          trader,
+          owedToken.address,
+          heldToken.address,
+          bucketLender.address
+        ],
+        [
+          principal,
+          deposit,
+          NONCE
+        ],
+        [
+          CALL_TIMELIMIT,
+          MAX_DURATION,
+          INTEREST_RATE,
+          INTEREST_PERIOD
+        ],
+        { from: TRUSTED_PARTY }
+      );
       await margin.marginCall(POSITION_ID, 0);
       let tx = createIncreaseTx(trader, OT);
       await expectThrow(callIncreasePosition(margin, tx));
@@ -896,6 +913,98 @@ contract('BucketLender', accounts => {
       await expectThrow(
         doDeposit(lender1, OT)
       );
+    });
+  });
+
+  describe('#withdrawExcessToken', () => {
+    const reciever = accounts[9];
+    const amount = new BigNumber("1123498756213");
+
+    async function doWithdrawExtra(token, toExpect) {
+      const [bl0, rc0] = await Promise.all([
+        token.balanceOf.call(bucketLender.address),
+        token.balanceOf.call(reciever)
+      ]);
+      const moved = await transact(bucketLender.withdrawExcessToken, token.address, reciever);
+      const [bl1, rc1] = await Promise.all([
+        token.balanceOf.call(bucketLender.address),
+        token.balanceOf.call(reciever)
+      ]);
+      expect(moved.result).to.be.bignumber.eq(toExpect);
+      expect(bl0.sub(bl1)).to.be.bignumber.eq(toExpect);
+      expect(rc1.sub(rc0)).to.be.bignumber.eq(toExpect);
+    }
+
+    it('succeeds after rebalance for owedToken', async () => {
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doDeposit(uselessLender, amount);
+      await doWithdrawExtra(owedToken, amount);
+
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doDeposit(uselessLender, amount);
+      await doWithdrawExtra(owedToken, amount);
+
+      await doIncrease(amount);
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doWithdrawExtra(owedToken, amount);
+
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doIncrease(amount);
+      await doWithdrawExtra(owedToken, amount);
+
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doClose(amount);
+      await bucketLender.rebalanceBuckets();
+      await doWithdrawExtra(owedToken, amount);
+
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doClose(amount);
+      await owedToken.issueTo(bucketLender.address, amount);
+      await bucketLender.rebalanceBuckets();
+      await doWithdrawExtra(owedToken, amount.times(2));
+
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doWithdrawExtra(owedToken, amount);
+    });
+
+    it('succeeds before rebalance for owedToken', async () => {
+      await doIncrease(amount);
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doClose(amount);
+      await owedToken.issueTo(bucketLender.address, amount);
+      await doWithdrawExtra(owedToken, amount.times(2));
+    });
+
+    it('succeeds for heldToken', async () => {
+      // succeeds while open
+      await heldToken.issueTo(bucketLender.address, amount);
+      await doWithdrawExtra(heldToken, amount);
+
+      // succeeds after close
+      await heldToken.issueTo(bucketLender.address, amount);
+      await doClose(BIGNUMBERS.ONES_255, { closer: TRUSTED_PARTY });
+      await doWithdrawExtra(heldToken, amount);
+    });
+
+    it('fails after force-close for heldToken', async () => {
+      await heldToken.issueTo(bucketLender.address, amount);
+
+      // force-close it
+      await margin.marginCall(POSITION_ID, 0, { from: TRUSTED_PARTY });
+      await wait(MAX_DURATION.toNumber());
+      await margin.forceRecoverCollateral(
+        POSITION_ID,
+        bucketLender.address,
+        { from: TRUSTED_PARTY }
+      );
+
+      await expectThrow(bucketLender.withdrawExcessToken(heldToken.address, reciever));
+    });
+
+    it('succeeds for random token', async () => {
+      const randomToken = await TestToken.new();
+      await randomToken.issueTo(bucketLender.address, amount);
+      await doWithdrawExtra(randomToken, amount);
     });
   });
 
