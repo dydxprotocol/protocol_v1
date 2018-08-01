@@ -32,10 +32,10 @@ pragma experimental "v0.5.0";
 library TypedSignature {
 
     // Solidity does not offer guarantees about enum values, so we define them explicitly
-    uint8 private constant SIGTYPE_INVALID = 1;
-    uint8 private constant SIGTYPE_ECRECOVER_DEC = 2;
-    uint8 private constant SIGTYPE_ECRECOVER_HEX = 3;
-    uint8 private constant SIGTYPE_UNSUPPORTED = 4;
+    uint8 private constant SIGTYPE_INVALID = 0;
+    uint8 private constant SIGTYPE_ECRECOVER_DEC = 1;
+    uint8 private constant SIGTYPE_ECRECOVER_HEX = 2;
+    uint8 private constant SIGTYPE_UNSUPPORTED = 3;
 
     // prepended message with the length of the signed hash in hexadecimal
     bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";

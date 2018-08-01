@@ -1,14 +1,13 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
 
 const TestTypedSignature = artifacts.require("TestTypedSignature");
-const { BIGNUMBERS, BYTES32, SIGNATURE_TYPE } = require('../helpers/Constants');
+const { BYTES32, SIGNATURE_TYPE } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 contract('TestTypedSignature', accounts => {
@@ -27,25 +26,18 @@ contract('TestTypedSignature', accounts => {
     it("fails when invalid type (zero)", async () => {
       const signature = await promisify(web3Instance.eth.sign)(hash, accounts[0]);
       const { v, r, s } = ethUtil.fromRpcSig(signature);
-      const signatureWithType = getSignature(SIGNATURE_TYPE.INVALID_ZERO, v, r, s);
+      const signatureWithType = getSignature(SIGNATURE_TYPE.INVALID, v, r, s);
       await expectThrow(contract.recover(hash, signatureWithType));
     });
 
-    it("fails when invalid type (one)", async () => {
-      const signature = await promisify(web3Instance.eth.sign)(hash, accounts[0]);
-      const { v, r, s } = ethUtil.fromRpcSig(signature);
-      const signatureWithType = getSignature(SIGNATURE_TYPE.INVALID_ONE, v, r, s);
-      await expectThrow(contract.recover(hash, signatureWithType));
-    });
-
-    it("fails when unsupported type (4)", async () => {
+    it("fails when unsupported type (3)", async () => {
       const signature = await promisify(web3Instance.eth.sign)(hash, accounts[0]);
       const { v, r, s } = ethUtil.fromRpcSig(signature);
       const signatureWithType = getSignature(SIGNATURE_TYPE.UNSUPPORTED, v, r, s);
       await expectThrow(contract.recover(hash, signatureWithType));
     });
 
-    it("fails when unsupported type (>4)", async () => {
+    it("fails when unsupported type (>3)", async () => {
       const signature = await promisify(web3Instance.eth.sign)(hash, accounts[0]);
       const { v, r, s } = ethUtil.fromRpcSig(signature);
       const signatureWithType = getSignature(SIGNATURE_TYPE.UNSUPPORTED_LARGE, v, r, s);
