@@ -117,16 +117,13 @@ contract MarginAdmin is Ownable {
             newState < OPERATION_STATE_INVALID,
             "MarginAdmin#setOperationState: newState is not a valid operation state"
         );
-        require(
-            newState != operationState,
-            "MarginAdmin#setOperationState: newState is already the operation state"
-        );
 
-        emit OperationStateChanged(
-            operationState,
-            newState
-        );
-
-        operationState = newState;
+        if (newState != operationState) {
+            emit OperationStateChanged(
+                operationState,
+                newState
+            );
+            operationState = newState;
+        }
     }
 }

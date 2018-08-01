@@ -25,6 +25,7 @@ const OperationState = {
   CLOSE_AND_CANCEL_LOAN_ONLY: 1,
   CLOSE_ONLY: 2,
   CLOSE_DIRECTLY_ONLY: 3,
+  INVALID: 4,
 };
 
 describe('MarginAdmin', () => {
@@ -60,9 +61,7 @@ describe('MarginAdmin', () => {
     contract('Margin', () => {
       it('Does not allow invalid OperationStates', async () => {
         const dydxMargin = await Margin.deployed();
-
-        await expectAssertFailure(dydxMargin.setOperationState(7));
-        await expectOperationState(dydxMargin, OperationState.OPERATIONAL);
+        await expectThrow(dydxMargin.setOperationState(OperationState.INVALID));
       });
     });
 
