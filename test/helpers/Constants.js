@@ -4,11 +4,11 @@ const BigNumber = require('bignumber.js');
 
 module.exports = {
   SIGNATURE_TYPE: {
-    INVALID_ZERO: 0,
-    INVALID_NONZERO: 15,
-    NUL: 1,
-    DEC: 2,
-    HEX: 3,
+    INVALID: 0,
+    UNSUPPORTED: 3,
+    UNSUPPORTED_LARGE: 15,
+    DEC: 1,
+    HEX: 2,
   },
   ORDER_TYPE: {
     ZERO_EX: "zeroEx",

@@ -31,13 +31,11 @@ pragma experimental "v0.5.0";
  */
 library TypedSignature {
 
-    enum SignatureType {
-        INVALID,
-        ECRECOVER_NULL,
-        ECRECOVER_DEC,
-        ECRECOVER_HEX,
-        UNSUPPORTED
-    }
+    // Solidity does not offer guarantees about enum values, so we define them explicitly
+    uint8 private constant SIGTYPE_INVALID = 0;
+    uint8 private constant SIGTYPE_ECRECOVER_DEC = 1;
+    uint8 private constant SIGTYPE_ECRECOVER_HEX = 2;
+    uint8 private constant SIGTYPE_UNSUPPORTED = 3;
 
     // prepended message with the length of the signed hash in hexadecimal
     bytes constant private PREPEND_HEX = "\x19Ethereum Signed Message:\n\x20";
@@ -65,18 +63,17 @@ library TypedSignature {
             "SignatureValidator#validateSignature: invalid signature length"
         );
 
-        uint8 rawSigType = uint8(signatureWithType[0]);
+        uint8 sigType = uint8(signatureWithType[0]);
 
         require(
-            rawSigType > uint8(SignatureType.INVALID),
+            sigType > uint8(SIGTYPE_INVALID),
             "SignatureValidator#validateSignature: invalid signature type"
         );
         require(
-            rawSigType < uint8(SignatureType.UNSUPPORTED),
+            sigType < uint8(SIGTYPE_UNSUPPORTED),
             "SignatureValidator#validateSignature: unsupported signature type"
         );
 
-        SignatureType sigType = SignatureType(rawSigType);
         uint8 v = uint8(signatureWithType[1]);
         bytes32 r;
         bytes32 s;
@@ -88,13 +85,11 @@ library TypedSignature {
         }
 
         bytes32 signedHash;
-        if (sigType == SignatureType.ECRECOVER_DEC) {
+        if (sigType == SIGTYPE_ECRECOVER_DEC) {
             signedHash = keccak256(abi.encodePacked(PREPEND_DEC, hash));
-        } else if (sigType == SignatureType.ECRECOVER_HEX) {
-            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
         } else {
-            assert(sigType == SignatureType.ECRECOVER_NULL);
-            signedHash = hash;
+            assert(sigType == SIGTYPE_ECRECOVER_HEX);
+            signedHash = keccak256(abi.encodePacked(PREPEND_HEX, hash));
         }
 
         return ecrecover(
