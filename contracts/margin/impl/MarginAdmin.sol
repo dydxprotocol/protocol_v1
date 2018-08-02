@@ -32,24 +32,22 @@ import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
 contract MarginAdmin is Ownable {
     // ============ Enums ============
 
-    /**
-     * Enum containing the possible operation states of Margin:
-     *
-     * OPERATIONAL                      - All functionality enabled
-     * CLOSE_AND_CANCEL_LOAN_ONLY       - Only closing functions + cancelLoanOffering allowed
-     *                                    (marginCall, closePosition, cancelLoanOffering
-     *                                    closePositionDirectly, forceRecoverCollateral)
-     * CLOSE_ONLY                       - Only closing functions allowed (marginCall, closePosition,
-     *                                    closePositionDirectly, forceRecoverCollateral)
-     * CLOSE_DIRECTLY_ONLY              - Only closing functions allowed (marginCall,
-     *                                    closePositionDirectly, forceRecoverCollateral)
-     */
-    enum OperationState {
-        OPERATIONAL,
-        CLOSE_AND_CANCEL_LOAN_ONLY,
-        CLOSE_ONLY,
-        CLOSE_DIRECTLY_ONLY
-    }
+    // All functionality enabled
+    uint8 private constant OPERATION_STATE_OPERATIONAL = 0;
+
+    // Only closing functions + cancelLoanOffering allowed (marginCall, closePosition,
+    // cancelLoanOffering, closePositionDirectly, forceRecoverCollateral)
+    uint8 private constant OPERATION_STATE_CLOSE_AND_CANCEL_LOAN_ONLY = 1;
+
+    // Only closing functions allowed (marginCall, closePosition, closePositionDirectly,
+    // forceRecoverCollateral)
+    uint8 private constant OPERATION_STATE_CLOSE_ONLY = 2;
+
+    // Only closing functions allowed (marginCall, closePositionDirectly, forceRecoverCollateral)
+    uint8 private constant OPERATION_STATE_CLOSE_DIRECTLY_ONLY = 3;
+
+    // This operation state (and any higher) is invalid
+    uint8 private constant OPERATION_STATE_INVALID = 4;
 
     // ============ Events ============
 
@@ -57,13 +55,13 @@ contract MarginAdmin is Ownable {
      * Event indicating the operation state has changed
      */
     event OperationStateChanged(
-        OperationState from,
-        OperationState to
+        uint8 from,
+        uint8 to
     );
 
     // ============ State Variables ============
 
-    OperationState public operationState;
+    uint8 public operationState;
 
     // ============ Constructor ============
 
@@ -71,14 +69,14 @@ contract MarginAdmin is Ownable {
         public
         Ownable()
     {
-        operationState = OperationState.OPERATIONAL;
+        operationState = OPERATION_STATE_OPERATIONAL;
     }
 
     // ============ Modifiers ============
 
     modifier onlyWhileOperational() {
         require(
-            operationState == OperationState.OPERATIONAL,
+            operationState == OPERATION_STATE_OPERATIONAL,
             "MarginAdmin#onlyWhileOperational: Can only call while operational"
         );
         _;
@@ -86,8 +84,8 @@ contract MarginAdmin is Ownable {
 
     modifier cancelLoanOfferingStateControl() {
         require(
-            operationState == OperationState.OPERATIONAL
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY,
+            operationState == OPERATION_STATE_OPERATIONAL
+            || operationState == OPERATION_STATE_CLOSE_AND_CANCEL_LOAN_ONLY,
             "MarginAdmin#cancelLoanOfferingStateControl: Invalid operation state"
         );
         _;
@@ -95,9 +93,9 @@ contract MarginAdmin is Ownable {
 
     modifier closePositionStateControl() {
         require(
-            operationState == OperationState.OPERATIONAL
-            || operationState == OperationState.CLOSE_AND_CANCEL_LOAN_ONLY
-            || operationState == OperationState.CLOSE_ONLY,
+            operationState == OPERATION_STATE_OPERATIONAL
+            || operationState == OPERATION_STATE_CLOSE_AND_CANCEL_LOAN_ONLY
+            || operationState == OPERATION_STATE_CLOSE_ONLY,
             "MarginAdmin#closePositionStateControl: Invalid operation state"
         );
         _;
@@ -110,18 +108,22 @@ contract MarginAdmin is Ownable {
     // ============ Owner-Only State-Changing Functions ============
 
     function setOperationState(
-        OperationState state
+        uint8 newState
     )
         external
         onlyOwner
     {
-        if (state != operationState) {
+        require(
+            newState < OPERATION_STATE_INVALID,
+            "MarginAdmin#setOperationState: newState is not a valid operation state"
+        );
+
+        if (newState != operationState) {
             emit OperationStateChanged(
                 operationState,
-                state
+                newState
             );
-
-            operationState = state;
+            operationState = newState;
         }
     }
 }
