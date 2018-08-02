@@ -1,0 +1,154 @@
+/*
+
+    Copyright 2018 dYdX Trading Inc.
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+*/
+
+pragma solidity 0.4.24;
+pragma experimental "v0.5.0";
+
+import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { WETH9 } from "../../external/weth/WETH9.sol";
+import { MathHelpers } from "../../lib/MathHelpers.sol";
+import { TokenInteract } from "../../lib/TokenInteract.sol";
+import { Margin } from "../Margin.sol";
+
+
+/**
+ * @title ShortEthOpener
+ * @author dYdX
+ *
+ * Contract for allowing anyone to mint short eth tokens using a payable function
+ */
+contract ShortEthOpener {
+    using TokenInteract for address;
+
+    // ============ State Variables ============
+
+    address public DYDX_MARGIN;
+
+    address public WETH;
+
+    // ============ Constructor ============
+
+    constructor(
+        address margin,
+        address weth
+    )
+        public
+    {
+        DYDX_MARGIN = margin;
+        WETH = weth;
+
+        // WETH approval of maxInt does not decrease
+        WETH.approve(DYDX_MARGIN, MathHelpers.maxUint256());
+    }
+
+    // ============ Public Functions ============
+
+    /**
+     * Fallback function. Disallows ether to be sent to this contract without data except when
+     * unwrapping WETH.
+     */
+    function ()
+        external
+        payable
+    {
+        require(
+            msg.sender == WETH,
+            "ShortEthOpener#fallback: Cannot recieve ETH directly except when unwrapping WETH"
+        );
+    }
+
+    /**
+     * Increase the size of a position. Funds will be borrowed from the loan payer and sold as per
+     * the position. The amount of owedToken borrowed from the lender will be >= the amount of
+     * principal added, as it will incorporate interest already earned by the position so far.
+     *
+     * @param  addresses           Addresses corresponding to:
+     *
+     *  [0]  = loan payer
+     *  [1]  = loan taker
+     *  [2]  = loan position owner
+     *  [3]  = loan fee recipient
+     *  [4]  = loan lender fee token
+     *  [5]  = loan taker fee token
+     *  [6]  = exchange wrapper address
+     *
+     * @param  values256           Values corresponding to:
+     *
+     *  [0]  = loan maximum amount
+     *  [1]  = loan minimum amount
+     *  [2]  = loan minimum heldToken
+     *  [3]  = loan lender fee
+     *  [4]  = loan taker fee
+     *  [5]  = loan expiration timestamp (in seconds)
+     *  [6]  = loan salt
+     *  [7]  = amount of principal to add to the position (NOTE: the amount pulled from the lender
+     *                                                           will be >= this amount)
+     *
+     * @param  values32            Values corresponding to:
+     *
+     *  [0] = loan call time limit (in seconds)
+     *  [1] = loan maxDuration (in seconds)
+     *
+     * @param  signature           If loan payer is an account, then this must be the tightly-packed
+     *                             ECDSA V/R/S parameters from signing the loan hash. If loan payer
+     *                             is a smart contract, these are arbitrary bytes that the contract
+     *                             will recieve when choosing whether to approve the loan.
+     * @param  order               Order object to be passed to the exchange wrapper
+     * @return                     Amount of owedTokens pulled from the lender
+     */
+    function mintShortTokens(
+        bytes32    positionId,
+        address[7] addresses,
+        uint256[8] values256,
+        uint32[2]  values32,
+        bytes      signature,
+        bytes      order
+    )
+        external
+        payable
+        returns (uint256)
+    {
+        // wrap all eth
+        WETH9(WETH).deposit.value(msg.value)();
+
+        // mint the short tokens
+        Margin(DYDX_MARGIN).increasePosition(
+            positionId,
+            addresses,
+            values256,
+            values32,
+            false, //depositInHeldToken
+            signature,
+            order
+        );
+
+        // send the short tokens back to the user
+        address shortTokenContract = Margin(DYDX_MARGIN).getPositionOwner(positionId);
+        uint256 shortTokens = shortTokenContract.balanceOf(address(this));
+        shortTokenContract.transfer(msg.sender, shortTokens);
+
+        // unwrap any leftover WETH and send eth back to the user
+        uint256 leftoverEth = WETH.balanceOf(address(this));
+        if (leftoverEth > 0) {
+            WETH9(WETH).withdraw(leftoverEth);
+            msg.sender.transfer(leftoverEth);
+        }
+
+        return shortTokens;
+    }
+}
