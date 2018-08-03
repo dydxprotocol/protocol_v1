@@ -1,13 +1,14 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
-const Margin = artifacts.require("Margin");
-const TokenProxy = artifacts.require("TokenProxy");
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
+const OpenDirectlyExchangeWrapper = artifacts.require('OpenDirectlyExchangeWrapper');
+const Margin = artifacts.require('Margin');
+const TokenProxy = artifacts.require('TokenProxy');
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
 
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { ADDRESSES, BYTES, ORDER_TYPE } = require('../../helpers/Constants');
@@ -16,7 +17,7 @@ const { expectThrow } = require('../../helpers/ExpectHelper');
 const {
   createOpenTx,
   callOpenPosition,
-  issueTokenToAccountInAmountAndApproveProxy
+  issueTokenToAccountInAmountAndApproveProxy,
 } = require('../../helpers/MarginHelper');
 
 describe('OpenDirectlyExchangeWrapper', () => {
@@ -25,15 +26,15 @@ describe('OpenDirectlyExchangeWrapper', () => {
       it('sets constants correctly', async () => {
         const contract = await OpenDirectlyExchangeWrapper.new(
           ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1]
+          ADDRESSES.TEST[1],
         );
 
         const [
           DYDX_TOKEN_PROXY,
-          DYDX_MARGIN
+          DYDX_MARGIN,
         ] = await Promise.all([
           contract.DYDX_TOKEN_PROXY.call(),
-          contract.DYDX_MARGIN.call()
+          contract.DYDX_MARGIN.call(),
         ]);
 
         expect(DYDX_MARGIN).to.eq(ADDRESSES.TEST[0]);
@@ -43,7 +44,7 @@ describe('OpenDirectlyExchangeWrapper', () => {
   });
 
   describe('#getExchangeCost', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
+    contract('OpenDirectlyExchangeWrapper', (accounts) => {
       it('gives the correct maker token for a given order', async () => {
         const exchangeWrapper = await setup(accounts);
 
@@ -52,15 +53,15 @@ describe('OpenDirectlyExchangeWrapper', () => {
             ADDRESSES.TEST[0],
             ADDRESSES.TEST[1],
             1,
-            BYTES.EMPTY
-          )
+            BYTES.EMPTY,
+          ),
         );
 
         const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
           ADDRESSES.TEST[0],
           ADDRESSES.TEST[1],
           0,
-          BYTES.EMPTY
+          BYTES.EMPTY,
         );
 
         expect(requiredTakerTokenAmount).to.be.bignumber.eq(0);
@@ -69,23 +70,23 @@ describe('OpenDirectlyExchangeWrapper', () => {
   });
 
   describe('#exchange', () => {
-    contract('OpenDirectlyExchangeWrapper', accounts => {
+    contract('OpenDirectlyExchangeWrapper', (accounts) => {
       it('successfully executes a trade', async () => {
         const [
           dydxProxy,
           dydxMargin,
           owedToken,
-          heldToken
+          heldToken,
         ] = await Promise.all([
           TokenProxy.deployed(),
           Margin.deployed(),
           OwedToken.deployed(),
-          HeldToken.deployed()
+          HeldToken.deployed(),
         ]);
 
         const exchangeWrapper = await OpenDirectlyExchangeWrapper.new(
           dydxMargin.address,
-          dydxProxy.address
+          dydxProxy.address,
         );
 
         const openTx = await createOpenTx(accounts);
@@ -98,27 +99,27 @@ describe('OpenDirectlyExchangeWrapper', () => {
           openTx.principal,
           openTx.loanOffering.rates.maxAmount,
           openTx.loanOffering.rates.minHeldToken,
-          true
+          true,
         );
         await issueTokenToAccountInAmountAndApproveProxy(
           heldToken,
           openTx.trader,
-          openTx.depositAmount
+          openTx.depositAmount,
         );
         await issueTokenToAccountInAmountAndApproveProxy(
           owedToken,
           openTx.loanOffering.payer,
-          openTx.principal
+          openTx.principal,
         );
 
         const [
           payerOwed0,
           traderOwed0,
-          traderHeld0
+          traderHeld0,
         ] = await Promise.all([
           owedToken.balanceOf.call(openTx.loanOffering.payer),
           owedToken.balanceOf.call(openTx.trader),
-          heldToken.balanceOf.call(openTx.trader)
+          heldToken.balanceOf.call(openTx.trader),
         ]);
 
         const response = await callOpenPosition(dydxMargin, openTx);
@@ -128,13 +129,13 @@ describe('OpenDirectlyExchangeWrapper', () => {
           traderOwed1,
           traderHeld1,
           positionBalance,
-          positionPrincipal
+          positionPrincipal,
         ] = await Promise.all([
           owedToken.balanceOf.call(openTx.loanOffering.payer),
           owedToken.balanceOf.call(openTx.trader),
           heldToken.balanceOf.call(openTx.trader),
           dydxMargin.getPositionBalance.call(response.id),
-          dydxMargin.getPositionPrincipal.call(response.id)
+          dydxMargin.getPositionPrincipal.call(response.id),
         ]);
 
         expect(payerOwed0.minus(payerOwed1)).to.be.bignumber.eq(openTx.principal);

@@ -2,7 +2,7 @@ const chai = require('chai');
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const Margin = artifacts.require("Margin");
+const Margin = artifacts.require('Margin');
 const TestPositionOwner = artifacts.require('TestPositionOwner');
 const { wait } = require('@digix/tempo')(web3);
 const {
@@ -10,27 +10,27 @@ const {
   doOpenPosition,
   callClosePosition,
   issueForDirectClose,
-  callClosePositionDirectly
+  callClosePositionDirectly,
 } = require('../helpers/MarginHelper');
 const {
-  createSignedSellOrder
+  createSignedSellOrder,
 } = require('../helpers/ZeroExHelper');
 const {
   checkSuccess,
   checkSuccessCloseDirectly,
-  getBalances
+  getBalances,
 } = require('../helpers/ClosePositionHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 
 const { expectThrow } = require('../helpers/ExpectHelper');
 
 describe('#closePosition', () => {
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('Successfully closes a position in increments', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
 
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -38,18 +38,18 @@ describe('#closePosition', () => {
       // Close half the position at a time
       const closeAmount = openTx.principal.div(2).floor();
 
-      let [startingBalances,] = await Promise.all([
+      let [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx, sellOrder),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
 
       await checkSuccess(dydxMargin, openTx, closeTx, sellOrder, closeAmount, startingBalances);
 
-      [startingBalances,] = await Promise.all([
+      [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx, sellOrder),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       // Close the rest of the position
@@ -59,22 +59,22 @@ describe('#closePosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('Successfully closes a position when paying out in owedToken', async () => {
       const payoutInHeldToken = false;
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
       // Close half the position at a time
       const closeAmount = openTx.principal.div(2).floor();
 
-      let [startingBalances,] = await Promise.all([
+      let [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx, sellOrder),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       let closeTx = await callClosePosition(
@@ -82,7 +82,7 @@ describe('#closePosition', () => {
         openTx,
         sellOrder,
         closeAmount,
-        { payoutInHeldToken }
+        { payoutInHeldToken },
       );
 
       await checkSuccess(
@@ -92,12 +92,12 @@ describe('#closePosition', () => {
         sellOrder,
         closeAmount,
         startingBalances,
-        payoutInHeldToken
+        payoutInHeldToken,
       );
 
-      [startingBalances,] = await Promise.all([
+      [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx, sellOrder),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       // Close the rest of the position
@@ -106,7 +106,7 @@ describe('#closePosition', () => {
         openTx,
         sellOrder,
         closeAmount,
-        { payoutInHeldToken }
+        { payoutInHeldToken },
       );
 
       await checkSuccess(
@@ -116,17 +116,17 @@ describe('#closePosition', () => {
         sellOrder,
         closeAmount,
         startingBalances,
-        payoutInHeldToken
+        payoutInHeldToken,
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('only allows the position owner to close', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       const closeAmount = openTx.principal.div(2).floor();
@@ -137,30 +137,30 @@ describe('#closePosition', () => {
           openTx,
           sellOrder,
           closeAmount,
-          { from: accounts[6] }
-        )
+          { from: accounts[6] },
+        ),
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('Only closes up to the current position principal', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
       // Try to close twice the position principal
       const closeAmount = openTx.principal.times(2);
 
-      const [startingBalances,] = await Promise.all([
+      const [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx, sellOrder),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
-      let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
+      const closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
 
       await checkSuccess(
         dydxMargin,
@@ -168,34 +168,34 @@ describe('#closePosition', () => {
         closeTx,
         sellOrder,
         openTx.principal,
-        startingBalances
+        startingBalances,
       );
     });
   });
 
   describe('#closeOnBehalfOf', () => {
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('succeeds when position owner returns maximum value', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
           ADDRESSES.ZERO,
-          closeAmount
+          closeAmount,
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
-        const [startingBalances,] = await Promise.all([
+        const [startingBalances] = await Promise.all([
           getBalances(dydxMargin, openTx, sellOrder),
-          wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+          wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
         ]);
 
-        let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
+        const closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
 
         await checkSuccess(
           dydxMargin,
@@ -203,33 +203,33 @@ describe('#closePosition', () => {
           closeTx,
           sellOrder,
           closeAmount,
-          startingBalances
+          startingBalances,
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('restricts close amount to value returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
           ADDRESSES.ZERO,
-          closeAmount.div(2)
+          closeAmount.div(2),
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
-        const [startingBalances,] = await Promise.all([
+        const [startingBalances] = await Promise.all([
           getBalances(dydxMargin, openTx, sellOrder),
-          wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+          wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
         ]);
 
-        let closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
+        const closeTx = await callClosePosition(dydxMargin, openTx, sellOrder, closeAmount);
 
         await checkSuccess(
           dydxMargin,
@@ -237,23 +237,23 @@ describe('#closePosition', () => {
           closeTx,
           sellOrder,
           closeAmount.div(2),
-          startingBalances
+          startingBalances,
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('fails if 0 is returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
           ADDRESSES.ZERO,
-          0
+          0,
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -264,18 +264,18 @@ describe('#closePosition', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('fails if greater value is returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
         const owner = await TestPositionOwner.new(
           dydxMargin.address,
           ADDRESSES.ONE,
           ADDRESSES.ZERO,
-          closeAmount.times(2)
+          closeAmount.times(2),
         );
         const openTx = await doOpenPosition(accounts, { positionOwner: owner.address });
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -289,7 +289,7 @@ describe('#closePosition', () => {
 });
 
 describe('#closePositionDirectly', () => {
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('Successfully closes a position directly in increments', async () => {
       const openTx = await doOpenPosition(accounts);
 
@@ -299,28 +299,28 @@ describe('#closePositionDirectly', () => {
       const dydxMargin = await Margin.deployed();
       const closeAmount = openTx.principal.div(2).floor();
 
-      let [startingBalances,] = await Promise.all([
+      let [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       let closeTx = await callClosePositionDirectly(
         dydxMargin,
         openTx,
-        closeAmount
+        closeAmount,
       );
 
       await checkSuccessCloseDirectly(dydxMargin, openTx, closeTx, closeAmount, startingBalances);
 
-      [startingBalances,] = await Promise.all([
+      [startingBalances] = await Promise.all([
         getBalances(dydxMargin, openTx),
-        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()) // Wait for interest
+        wait(openTx.loanOffering.rates.interestPeriod.plus(1).toNumber()), // Wait for interest
       ]);
 
       closeTx = await callClosePositionDirectly(
         dydxMargin,
         openTx,
-        closeAmount
+        closeAmount,
       );
 
       await checkSuccessCloseDirectly(dydxMargin, openTx, closeTx, closeAmount, startingBalances);

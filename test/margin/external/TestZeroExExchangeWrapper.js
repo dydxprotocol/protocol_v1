@@ -1,13 +1,14 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
-const FeeToken = artifacts.require("TokenC");
-const TestToken = artifacts.require("TestToken");
+const ZeroExExchangeWrapper = artifacts.require('ZeroExExchangeWrapper');
+const ZeroExExchange = artifacts.require('ZeroExExchange');
+const ZeroExProxy = artifacts.require('ZeroExProxy');
+const FeeToken = artifacts.require('TokenC');
+const TestToken = artifacts.require('TestToken');
 
 const { BIGNUMBERS, ADDRESSES } = require('../../helpers/Constants');
 const { zeroExOrderToBytes } = require('../../helpers/BytesHelper');
@@ -20,13 +21,13 @@ const baseAmount = new BigNumber('1e18');
 
 describe('ZeroExExchangeWrapper', () => {
   describe('Constructor', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('sets constants correctly', async () => {
         const {
           dydxMargin,
           dydxProxy,
           exchangeWrapper,
-          feeToken
+          feeToken,
         } = await setup(accounts);
 
         const [
@@ -35,14 +36,14 @@ describe('ZeroExExchangeWrapper', () => {
           ZERO_EX_TOKEN_PROXY,
           ZRX,
           DYDX_MARGIN,
-          zrxProxyAllowance
+          zrxProxyAllowance,
         ] = await Promise.all([
           exchangeWrapper.DYDX_TOKEN_PROXY.call(),
           exchangeWrapper.ZERO_EX_EXCHANGE.call(),
           exchangeWrapper.ZERO_EX_TOKEN_PROXY.call(),
           exchangeWrapper.ZRX.call(),
           exchangeWrapper.DYDX_MARGIN.call(),
-          feeToken.allowance.call(exchangeWrapper.address, ZeroExProxy.address)
+          feeToken.allowance.call(exchangeWrapper.address, ZeroExProxy.address),
         ]);
 
         expect(DYDX_TOKEN_PROXY).to.eq(dydxProxy);
@@ -56,10 +57,10 @@ describe('ZeroExExchangeWrapper', () => {
   });
 
   describe('#getExchangeCost', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('gives the correct maker token for a given order', async () => {
         const {
-          exchangeWrapper
+          exchangeWrapper,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -69,14 +70,14 @@ describe('ZeroExExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order)
+          zeroExOrderToBytes(order),
         );
 
         const expected = getPartialAmount(
           order.takerTokenAmount,
           order.makerTokenAmount,
           amount,
-          true
+          true,
         );
 
         expect(requiredTakerTokenAmount).to.be.bignumber.eq(expected);
@@ -85,13 +86,13 @@ describe('ZeroExExchangeWrapper', () => {
   });
 
   describe('#exchange', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('successfully executes a trade', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
           dydxMargin,
-          dydxProxy
+          dydxProxy,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -104,7 +105,7 @@ describe('ZeroExExchangeWrapper', () => {
           order,
           exchangeWrapper,
           tradeOriginator,
-          dydxProxy
+          dydxProxy,
         );
 
         await exchangeWrapper.exchange(
@@ -113,7 +114,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await validateBalances(
@@ -122,18 +123,18 @@ describe('ZeroExExchangeWrapper', () => {
           exchangeWrapper,
           tradeOriginator,
           amount,
-          dydxProxy
+          dydxProxy,
         );
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('successfully executes multiple trades', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
           dydxMargin,
-          dydxProxy
+          dydxProxy,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -146,7 +147,7 @@ describe('ZeroExExchangeWrapper', () => {
           order,
           exchangeWrapper,
           tradeOriginator,
-          dydxProxy
+          dydxProxy,
         );
 
         await exchangeWrapper.exchange(
@@ -155,7 +156,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await validateBalances(
@@ -164,7 +165,7 @@ describe('ZeroExExchangeWrapper', () => {
           exchangeWrapper,
           tradeOriginator,
           amount,
-          dydxProxy
+          dydxProxy,
         );
 
         amount = new BigNumber(baseAmount.times(1.5));
@@ -173,7 +174,7 @@ describe('ZeroExExchangeWrapper', () => {
           order,
           exchangeWrapper,
           tradeOriginator,
-          dydxProxy
+          dydxProxy,
         );
 
         await exchangeWrapper.exchange(
@@ -182,7 +183,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await validateBalances(
@@ -191,7 +192,7 @@ describe('ZeroExExchangeWrapper', () => {
           exchangeWrapper,
           tradeOriginator,
           amount,
-          dydxProxy
+          dydxProxy,
         );
 
         amount = new BigNumber(baseAmount.times(1.2));
@@ -200,7 +201,7 @@ describe('ZeroExExchangeWrapper', () => {
           order,
           exchangeWrapper,
           tradeOriginator,
-          dydxProxy
+          dydxProxy,
         );
 
         await exchangeWrapper.exchange(
@@ -209,7 +210,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await validateBalances(
@@ -218,18 +219,18 @@ describe('ZeroExExchangeWrapper', () => {
           exchangeWrapper,
           tradeOriginator,
           amount,
-          dydxProxy
+          dydxProxy,
         );
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('does not transfer taker fee when 0 feeRecipient', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
           dydxMargin,
-          dydxProxy
+          dydxProxy,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -245,7 +246,7 @@ describe('ZeroExExchangeWrapper', () => {
           order,
           exchangeWrapper,
           tradeOriginator,
-          dydxProxy
+          dydxProxy,
         );
 
         await exchangeWrapper.exchange(
@@ -254,7 +255,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await validateBalances(
@@ -263,17 +264,17 @@ describe('ZeroExExchangeWrapper', () => {
           exchangeWrapper,
           tradeOriginator,
           amount,
-          dydxProxy
+          dydxProxy,
         );
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('fails if order is too small', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
-          dydxMargin
+          dydxMargin,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -288,17 +289,17 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         ));
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExExchangeWrapper', (accounts) => {
       it('fails if order has already been filled', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
-          dydxMargin
+          dydxMargin,
         } = await setup(accounts);
 
         const order = await createSignedSellOrder(accounts);
@@ -313,7 +314,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         );
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
@@ -324,7 +325,7 @@ describe('ZeroExExchangeWrapper', () => {
           tradeOriginator,
           amount,
           zeroExOrderToBytes(order),
-          { from: dydxMargin }
+          { from: dydxMargin },
         ));
       });
     });
@@ -343,7 +344,7 @@ async function setup(accounts) {
     dydxProxy,
     ZeroExExchange.address,
     ZeroExProxy.address,
-    feeToken.address
+    feeToken.address,
   );
 
   return {
@@ -359,7 +360,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
   const [makerToken, takerToken, feeToken] = await Promise.all([
     TestToken.at(order.makerTokenAddress),
     TestToken.at(order.takerTokenAddress),
-    FeeToken.deployed()
+    FeeToken.deployed(),
   ]);
 
   await Promise.all([
@@ -368,7 +369,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
       makerToken,
       order.maker,
       order.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExProxy.address,
     ),
 
     // Taker Token
@@ -379,7 +380,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
       feeToken,
       order.maker,
       order.makerFee,
-      ZeroExProxy.address
+      ZeroExProxy.address,
     ),
 
     // Taker Fee Token
@@ -387,8 +388,8 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
       feeToken,
       tradeOriginator,
       order.takerFee,
-      exchangeWrapper.address
-    )
+      exchangeWrapper.address,
+    ),
   ]);
 }
 
@@ -396,7 +397,7 @@ async function getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy) {
   const [makerToken, takerToken, feeToken] = await Promise.all([
     TestToken.at(order.makerTokenAddress),
     TestToken.at(order.takerTokenAddress),
-    FeeToken.deployed()
+    FeeToken.deployed(),
   ]);
 
   const [
@@ -412,7 +413,7 @@ async function getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy) {
 
     tradeOriginatorFeeToken,
 
-    exchangeWrapperProxyAllowance
+    exchangeWrapperProxyAllowance,
   ] = await Promise.all([
     makerToken.balanceOf.call(order.maker),
     takerToken.balanceOf.call(order.maker),
@@ -426,7 +427,7 @@ async function getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy) {
 
     feeToken.balanceOf.call(tradeOriginator),
 
-    makerToken.allowance.call(exchangeWrapper.address, dydxProxy)
+    makerToken.allowance.call(exchangeWrapper.address, dydxProxy),
   ]);
 
   return {
@@ -442,7 +443,7 @@ async function getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy) {
 
     tradeOriginatorFeeToken,
 
-    exchangeWrapperProxyAllowance
+    exchangeWrapperProxyAllowance,
   };
 }
 
@@ -452,7 +453,7 @@ async function validateBalances(
   exchangeWrapper,
   tradeOriginator,
   amount,
-  dydxProxy
+  dydxProxy,
 ) {
   const {
     makerMakerToken,
@@ -467,51 +468,51 @@ async function validateBalances(
 
     tradeOriginatorFeeToken,
 
-    exchangeWrapperProxyAllowance
+    exchangeWrapperProxyAllowance,
   } = await getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy);
 
   const tradedMakerToken = getPartialAmount(
     amount,
     order.takerTokenAmount,
-    order.makerTokenAmount
+    order.makerTokenAmount,
   );
   const makerFee = order.feeRecipient === ADDRESSES.ZERO ? BIGNUMBERS.ZERO : getPartialAmount(
     amount,
     order.takerTokenAmount,
-    order.makerFee
+    order.makerFee,
   );
   const takerFee = order.feeRecipient === ADDRESSES.ZERO ? BIGNUMBERS.ZERO : getPartialAmount(
     amount,
     order.takerTokenAmount,
-    order.takerFee
+    order.takerFee,
   );
 
   // Maker Balances
   expect(makerMakerToken).to.be.bignumber.eq(
-    startingBalances.makerMakerToken.minus(tradedMakerToken)
+    startingBalances.makerMakerToken.minus(tradedMakerToken),
   );
   expect(makerTakerToken).to.be.bignumber.eq(
-    startingBalances.makerTakerToken.plus(amount)
+    startingBalances.makerTakerToken.plus(amount),
   );
   expect(makerFeeToken).to.be.bignumber.eq(
-    startingBalances.makerFeeToken.minus(makerFee)
+    startingBalances.makerFeeToken.minus(makerFee),
   );
 
   // Exchange Wrapper Balances
   expect(exchangeWrapperMakerToken).to.be.bignumber.eq(
-    startingBalances.exchangeWrapperMakerToken.plus(tradedMakerToken)
+    startingBalances.exchangeWrapperMakerToken.plus(tradedMakerToken),
   );
   expect(exchangeWrapperTakerToken).to.be.bignumber.eq(0);
   expect(exchangeWrapperFeeToken).to.be.bignumber.eq(0);
 
   // Fee Recipient Balance
   expect(feeRecipientFeeToken).to.be.bignumber.eq(
-    startingBalances.feeRecipientFeeToken.plus(makerFee.plus(takerFee))
+    startingBalances.feeRecipientFeeToken.plus(makerFee.plus(takerFee)),
   );
 
   // Trade Originator Balance
   expect(tradeOriginatorFeeToken).to.be.bignumber.eq(
-    startingBalances.tradeOriginatorFeeToken.minus(takerFee)
+    startingBalances.tradeOriginatorFeeToken.minus(takerFee),
   );
 
   // Exchange Wrapper TokenProxy Allowance

@@ -1,25 +1,28 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const TokenProxy = artifacts.require("TokenProxy");
-const TestToken = artifacts.require("TestToken");
+const TokenProxy = artifacts.require('TokenProxy');
+const TestToken = artifacts.require('TestToken');
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../helpers/AccessControlledHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
-contract('TokenProxy', accounts => {
+contract('TokenProxy', (accounts) => {
   const gracePeriod = new BigNumber('1234567');
   const num1 = new BigNumber(12);
-  let contract, tokenA, tokenB;
+  let contract,
+    tokenA,
+    tokenB;
 
   beforeEach(async () => {
     [contract, tokenA, tokenB] = await Promise.all([
       TokenProxy.new(gracePeriod),
       TestToken.new(),
-      TestToken.new()
+      TestToken.new(),
     ]);
   });
 
@@ -39,22 +42,22 @@ contract('TokenProxy', accounts => {
         tokenA,
         holder1,
         num1,
-        contract.address
+        contract.address,
       );
       await contract.grantAccess(accounts[1]);
 
       // A random address should not be able to call
       await expectThrow(
-        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[3] })
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[3] }),
       );
       // Nor should the owner
       await expectThrow(
-        contract.transferTokens(tokenA.address, holder1, recipient, num1,)
+        contract.transferTokens(tokenA.address, holder1, recipient, num1),
       );
 
       const [balance, balance2] = await Promise.all([
         tokenA.balanceOf.call(holder1),
-        tokenA.balanceOf.call(recipient)
+        tokenA.balanceOf.call(recipient),
       ]);
       expect(balance).to.be.bignumber.equal(num1);
       expect(balance2).to.be.bignumber.equal(0);
@@ -63,7 +66,7 @@ contract('TokenProxy', accounts => {
     it('fails on insufficient holder balance or allowance', async () => {
       await contract.grantAccess(accounts[2]);
       await expectThrow(
-        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] }),
       );
 
       let balance = await tokenA.balanceOf.call(holder1);
@@ -71,7 +74,7 @@ contract('TokenProxy', accounts => {
 
       await tokenA.issue(num1, { from: holder1 });
       await expectThrow(
-        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] })
+        contract.transferTokens(tokenA.address, holder1, recipient, num1, { from: accounts[2] }),
       );
 
       balance = await tokenA.balanceOf.call(holder1);
@@ -79,12 +82,13 @@ contract('TokenProxy', accounts => {
 
       await tokenA.approve(contract.address, num1, { from: holder1 });
       await contract.transferTokens(
-        tokenA.address, holder1, recipient, num1, { from: accounts[2] });
+        tokenA.address, holder1, recipient, num1, { from: accounts[2] },
+      );
 
       let balance2;
       [balance, balance2] = await Promise.all([
         tokenA.balanceOf.call(holder1),
-        tokenA.balanceOf.call(recipient)
+        tokenA.balanceOf.call(recipient),
       ]);
       expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
@@ -96,15 +100,17 @@ contract('TokenProxy', accounts => {
         tokenA,
         holder1,
         num1,
-        contract.address
+        contract.address,
       );
       await contract.transferTokens(
-        tokenA.address, holder1, recipient, num1, { from: accounts[2] });
+        tokenA.address, holder1, recipient, num1, { from: accounts[2] },
+      );
 
-      let balance2, balance;
+      let balance2,
+        balance;
       [balance, balance2] = await Promise.all([
         tokenA.balanceOf.call(holder1),
-        tokenA.balanceOf.call(recipient)
+        tokenA.balanceOf.call(recipient),
       ]);
       expect(balance).to.be.bignumber.equal(0);
       expect(balance2).to.be.bignumber.equal(num1);
@@ -134,7 +140,7 @@ contract('TokenProxy', accounts => {
         tokenA,
         account,
         num2,
-        contract.address
+        contract.address,
       );
 
       await expectAvailable(num2);
@@ -148,7 +154,7 @@ contract('TokenProxy', accounts => {
         tokenA,
         account,
         BIGNUMBERS.ZERO,
-        contract.address
+        contract.address,
       );
 
       await expectAvailable(BIGNUMBERS.ZERO);

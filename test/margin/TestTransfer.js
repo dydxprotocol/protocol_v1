@@ -1,10 +1,10 @@
 const expect = require('chai').expect;
 
-const Margin = artifacts.require("Margin");
-const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
-const TestPositionOwner = artifacts.require("TestPositionOwner");
-const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
-const TestLoanOwner = artifacts.require("TestLoanOwner");
+const Margin = artifacts.require('Margin');
+const TestClosePositionDelegator = artifacts.require('TestClosePositionDelegator');
+const TestPositionOwner = artifacts.require('TestPositionOwner');
+const TestMarginCallDelegator = artifacts.require('TestMarginCallDelegator');
+const TestLoanOwner = artifacts.require('TestLoanOwner');
 const { doOpenPosition } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
@@ -13,38 +13,39 @@ const { ADDRESSES, BYTES32 } = require('../helpers/Constants');
 let salt = 102030;
 
 describe('#transferPosition', () => {
-  let dydxMargin, openTx, owner;
+  let dydxMargin,
+    openTx,
+    owner;
 
   async function transferPosition_THROW(openTx, to, from) {
     const originalOwner = await dydxMargin.getPositionOwner.call(openTx.id);
     await expectThrow(
-      dydxMargin.transferPosition(openTx.id, to, { from: from })
+      dydxMargin.transferPosition(openTx.id, to, { from }),
     );
     const currentOwner = await dydxMargin.getPositionOwner.call(openTx.id);
     expect(currentOwner).to.eq(originalOwner);
-    return;
   }
 
   async function transferPosition(openTx, to, from, expectedOwner = null) {
     expectedOwner = expectedOwner || to;
-    const tx = await dydxMargin.transferPosition(openTx.id, to, { from: from});
+    const tx = await dydxMargin.transferPosition(openTx.id, to, { from });
 
     if (expectedOwner === to) {
       expectLog(tx.logs[0], 'PositionTransferred', {
         positionId: openTx.id,
-        from: from,
-        to: to
+        from,
+        to,
       });
     } else {
       expectLog(tx.logs[0], 'PositionTransferred', {
         positionId: openTx.id,
-        from: from,
-        to: to
+        from,
+        to,
       });
       expectLog(tx.logs[1], 'PositionTransferred', {
         positionId: openTx.id,
         from: to,
-        to: expectedOwner
+        to: expectedOwner,
       });
     }
 
@@ -54,7 +55,7 @@ describe('#transferPosition', () => {
     return tx;
   }
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     const toAddress = accounts[9];
 
     beforeEach('set up a position', async () => {
@@ -74,7 +75,7 @@ describe('#transferPosition', () => {
 
     it('transfers ownership of a position', async () => {
       const tx = await transferPosition(openTx, toAddress, owner);
-      console.log('\tMargin.transferPosition gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.transferPosition gas used: ${tx.receipt.gasUsed}`);
     });
 
     it('fails if already transferred', async () => {
@@ -83,7 +84,7 @@ describe('#transferPosition', () => {
     });
 
     it('fails for invalid id', async () => {
-      await transferPosition_THROW({id: BYTES32.BAD_ID}, toAddress, owner);
+      await transferPosition_THROW({ id: BYTES32.BAD_ID }, toAddress, owner);
     });
 
     it('successfully transfers to a contract with the correct interface', async () => {
@@ -92,32 +93,37 @@ describe('#transferPosition', () => {
       const testClosePositionDelegator = await TestClosePositionDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        false);
+        false,
+      );
 
       const tx = await transferPosition(
         openTx,
         testClosePositionDelegator.address,
-        owner);
-      console.log('\tMargin.transferPosition gas used (to contract): ' + tx.receipt.gasUsed);
+        owner,
+      );
+      console.log(`\tMargin.transferPosition gas used (to contract): ${tx.receipt.gasUsed}`);
     });
 
     it('successfully transfers to a contract that chains to another contract', async () => {
       const testClosePositionDelegator = await TestClosePositionDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        false);
+        false,
+      );
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
         ADDRESSES.ZERO,
-        0);
+        0,
+      );
 
       const tx = await transferPosition(
         openTx,
         testPositionOwner.address,
         owner,
-        testClosePositionDelegator.address);
-      console.log('\tMargin.transferPosition gas used (chains thru): ' + tx.receipt.gasUsed);
+        testClosePositionDelegator.address,
+      );
+      console.log(`\tMargin.transferPosition gas used (chains thru): ${tx.receipt.gasUsed}`);
     });
 
     it('fails to transfer to a contract that transfers to 0x0', async () => {
@@ -125,7 +131,8 @@ describe('#transferPosition', () => {
         Margin.address,
         ADDRESSES.ZERO,
         ADDRESSES.ZERO,
-        0);
+        0,
+      );
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
     });
@@ -135,7 +142,8 @@ describe('#transferPosition', () => {
         Margin.address,
         owner,
         ADDRESSES.ZERO,
-        0);
+        0,
+      );
 
       await transferPosition_THROW(openTx, testPositionOwner.address, owner);
     });
@@ -147,10 +155,10 @@ describe('#transferPosition', () => {
     it('fails to transfer to an arbitrary contract', async () => {
       const [
         vaultAddress,
-        proxyAddress
+        proxyAddress,
       ] = await Promise.all([
         dydxMargin.getVaultAddress.call(),
-        dydxMargin.getTokenProxyAddress.call()
+        dydxMargin.getTokenProxyAddress.call(),
       ]);
 
       await transferPosition_THROW(openTx, dydxMargin.address, owner);
@@ -164,39 +172,39 @@ describe('#transferPosition', () => {
 });
 
 describe('#transferLoan', () => {
-  let dydxMargin, openTx;
+  let dydxMargin,
+    openTx;
   let lender;
 
-  async function transferLoan_THROW(openTx, to, from,) {
+  async function transferLoan_THROW(openTx, to, from) {
     const originalLender = await dydxMargin.getPositionLender.call(openTx.id);
     await expectThrow(
-      dydxMargin.transferLoan(openTx.id, to, { from: from })
+      dydxMargin.transferLoan(openTx.id, to, { from }),
     );
     const lender = await dydxMargin.getPositionLender.call(openTx.id);
     expect(lender).to.eq(originalLender);
-    return;
   }
 
   async function transferLoan(openTx, to, from, expectedLender = null) {
     expectedLender = expectedLender || to;
-    const tx = await dydxMargin.transferLoan(openTx.id, to, { from: from});
+    const tx = await dydxMargin.transferLoan(openTx.id, to, { from });
 
     if (expectedLender === to) {
       expectLog(tx.logs[0], 'LoanTransferred', {
         positionId: openTx.id,
-        from: from,
-        to: to
+        from,
+        to,
       });
     } else {
       expectLog(tx.logs[0], 'LoanTransferred', {
         positionId: openTx.id,
-        from: from,
-        to: to
+        from,
+        to,
       });
       expectLog(tx.logs[1], 'LoanTransferred', {
         positionId: openTx.id,
         from: to,
-        to: expectedLender
+        to: expectedLender,
       });
     }
 
@@ -206,7 +214,7 @@ describe('#transferLoan', () => {
     return tx;
   }
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     const toAddress = accounts[9];
 
     beforeEach('set up a position', async () => {
@@ -226,7 +234,7 @@ describe('#transferLoan', () => {
 
     it('transfers ownership of a loan', async () => {
       const tx = await transferLoan(openTx, toAddress, lender);
-      console.log('\tMargin.transferLoan gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.transferLoan gas used: ${tx.receipt.gasUsed}`);
     });
 
     it('fails if already transferred', async () => {
@@ -235,45 +243,48 @@ describe('#transferLoan', () => {
     });
 
     it('fails for invalid id', async () => {
-      await transferLoan_THROW({id: BYTES32.BAD_ID}, toAddress, lender);
+      await transferLoan_THROW({ id: BYTES32.BAD_ID }, toAddress, lender);
     });
 
     it('successfully transfers to a contract with the correct interface', async () => {
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
 
       const tx = await transferLoan(openTx, testMarginCallDelegator.address, lender);
       const newLender = await dydxMargin.getPositionLender.call(openTx.id);
       expect(newLender.toLowerCase()).to.eq(testMarginCallDelegator.address.toLowerCase());
-      console.log('\tMargin.transferLoan gas used (to contract): ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.transferLoan gas used (to contract): ${tx.receipt.gasUsed}`);
     });
 
     it('successfully transfers to a contract that chains to another contract', async () => {
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         testMarginCallDelegator.address,
-        ADDRESSES.ZERO
+        ADDRESSES.ZERO,
       );
 
       const tx = await transferLoan(
         openTx,
         testLoanOwner.address,
         lender,
-        testMarginCallDelegator.address);
-      console.log('\tMargin.transferLoan gas used (chain thru): ' + tx.receipt.gasUsed);
+        testMarginCallDelegator.address,
+      );
+      console.log(`\tMargin.transferLoan gas used (chain thru): ${tx.receipt.gasUsed}`);
     });
 
     it('fails to transfer to a contract that transfers to 0x0', async () => {
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO
+        ADDRESSES.ZERO,
       );
 
       await transferLoan_THROW(openTx, testLoanOwner.address, lender);
@@ -283,7 +294,7 @@ describe('#transferLoan', () => {
       const testLoanOwner = await TestLoanOwner.new(
         dydxMargin.address,
         lender,
-        ADDRESSES.ZERO
+        ADDRESSES.ZERO,
       );
 
       await transferLoan_THROW(openTx, testLoanOwner.address, lender);
@@ -296,10 +307,10 @@ describe('#transferLoan', () => {
     it('fails to transfer to an arbitrary contract', async () => {
       const [
         vaultAddress,
-        proxyAddress
+        proxyAddress,
       ] = await Promise.all([
         dydxMargin.getVaultAddress.call(),
-        dydxMargin.getTokenProxyAddress.call()
+        dydxMargin.getTokenProxyAddress.call(),
       ]);
 
       await transferLoan_THROW(openTx, dydxMargin.address, lender);

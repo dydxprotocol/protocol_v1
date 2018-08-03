@@ -1,28 +1,29 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const Margin = artifacts.require("Margin");
+const Margin = artifacts.require('Margin');
 const {
   createOpenTx,
   callOpenPosition,
   callCancelLoanOffer,
-  issueTokensAndSetAllowances
+  issueTokensAndSetAllowances,
 } = require('../helpers/MarginHelper');
 
 contract('LoanGetters', (accounts) => {
   let dydxMargin;
 
-  async function expectLoanAmounts(loanHash, expectedFilledAmount, expectedCanceledAmount){
+  async function expectLoanAmounts(loanHash, expectedFilledAmount, expectedCanceledAmount) {
     const [
       unavailableAmount,
       filledAmount,
-      canceledAmount
+      canceledAmount,
     ] = await Promise.all([
       dydxMargin.getLoanUnavailableAmount.call(loanHash),
       dydxMargin.getLoanFilledAmount.call(loanHash),
-      dydxMargin.getLoanCanceledAmount.call(loanHash)
+      dydxMargin.getLoanCanceledAmount.call(loanHash),
     ]);
 
     expect(unavailableAmount).to.be.bignumber.equal(filledAmount.plus(canceledAmount));
@@ -36,9 +37,9 @@ contract('LoanGetters', (accounts) => {
 
   describe('#getLoanUnavailableAmount, getLoanFilledAmount, #getLoanCanceledAmount', () => {
     it('succeeds for all', async () => {
-      const ca1 = new BigNumber("1e17");
-      const ca2 = new BigNumber("1e16");
-      let openTx = await createOpenTx(accounts);
+      const ca1 = new BigNumber('1e17');
+      const ca2 = new BigNumber('1e16');
+      const openTx = await createOpenTx(accounts);
       openTx.principal = openTx.principal.div(2).floor();
 
       await expectLoanAmounts(openTx.loanOffering.loanHash, 0, 0);
@@ -59,7 +60,7 @@ contract('LoanGetters', (accounts) => {
       await expectLoanAmounts(
         openTx.loanOffering.loanHash,
         openTx.principal.times(2),
-        ca1.plus(ca2)
+        ca1.plus(ca2),
       );
     });
   });

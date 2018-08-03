@@ -1,22 +1,24 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 
-const Margin = artifacts.require("Margin");
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
-const Vault = artifacts.require("Vault");
-const TokenProxy = artifacts.require("TokenProxy");
-const TestSmartContractLender = artifacts.require("TestSmartContractLender");
-const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
-const TestLoanOwner = artifacts.require("TestLoanOwner");
-const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator");
-const TestPositionOwner = artifacts.require("TestPositionOwner");
+const Margin = artifacts.require('Margin');
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
+const FeeToken = artifacts.require('TokenC');
+const Vault = artifacts.require('Vault');
+const TokenProxy = artifacts.require('TokenProxy');
+const TestSmartContractLender = artifacts.require('TestSmartContractLender');
+const TestMarginCallDelegator = artifacts.require('TestMarginCallDelegator');
+const TestLoanOwner = artifacts.require('TestLoanOwner');
+const TestClosePositionDelegator = artifacts.require('TestClosePositionDelegator');
+const TestPositionOwner = artifacts.require('TestPositionOwner');
 const { ADDRESSES, BIGNUMBERS, BYTES } = require('../helpers/Constants');
 const { expectThrow } = require('../helpers/ExpectHelper');
-const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+
+const ExchangeWrapper = artifacts.require('ZeroExExchangeWrapper');
 const web3Instance = new Web3(web3.currentProvider);
 
 const {
@@ -25,13 +27,13 @@ const {
   callOpenPosition,
   doClosePosition,
   getPosition,
-  getTokenAmountsFromOpen
+  getTokenAmountsFromOpen,
 } = require('../helpers/MarginHelper');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
 
 describe('#openPosition', () => {
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('succeeds on valid inputs', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -39,13 +41,13 @@ describe('#openPosition', () => {
 
       const tx = await callOpenPosition(dydxMargin, openTx);
 
-      console.log('\tMargin.openPosition (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.openPosition (0x Exchange Contract) gas used: ${tx.receipt.gasUsed}`);
 
       await checkSuccess(dydxMargin, openTx);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('succeeds when deposit is paid in owedToken', async () => {
       const openTx = await createOpenTx(accounts, { depositInHeldToken: false });
       const dydxMargin = await Margin.deployed();
@@ -55,66 +57,67 @@ describe('#openPosition', () => {
       const tx = await callOpenPosition(dydxMargin, openTx);
 
       console.log(
-        '\tMargin.openPosition (owedToken deposit / 0x Exchange Contract) gas used: '
-        + tx.receipt.gasUsed
+        `\tMargin.openPosition (owedToken deposit / 0x Exchange Contract) gas used: ${
+          tx.receipt.gasUsed}`,
       );
 
       await checkSuccess(dydxMargin, openTx);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('allows smart contracts to be lenders', async () => {
       const openTx = await createOpenTx(accounts);
       const [
         dydxMargin,
         feeToken,
         owedToken,
-        testSmartContractLender
+        testSmartContractLender,
       ] = await Promise.all([
         Margin.deployed(),
         FeeToken.deployed(),
         OwedToken.deployed(),
-        TestSmartContractLender.new(true, ADDRESSES.ZERO)
+        TestSmartContractLender.new(true, ADDRESSES.ZERO),
       ]);
 
       await issueTokensAndSetAllowances(openTx);
 
       const [
         lenderFeeTokenBalance,
-        lenderOwedTokenBalance
+        lenderOwedTokenBalance,
       ] = await Promise.all([
         feeToken.balanceOf.call(openTx.loanOffering.payer),
-        owedToken.balanceOf.call(openTx.loanOffering.payer)
+        owedToken.balanceOf.call(openTx.loanOffering.payer),
       ]);
       await Promise.all([
         feeToken.transfer(
           testSmartContractLender.address,
           lenderFeeTokenBalance,
-          { from: openTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer },
         ),
         owedToken.transfer(
           testSmartContractLender.address,
           lenderOwedTokenBalance,
-          { from: openTx.loanOffering.payer }
-        )
+          { from: openTx.loanOffering.payer },
+        ),
       ]);
       await Promise.all([
         testSmartContractLender.allow(
           feeToken.address,
           TokenProxy.address,
-          lenderFeeTokenBalance
+          lenderFeeTokenBalance,
         ),
         testSmartContractLender.allow(
           owedToken.address,
           TokenProxy.address,
-          lenderOwedTokenBalance
-        )
+          lenderOwedTokenBalance,
+        ),
       ]);
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
 
       openTx.loanOffering.payer = testSmartContractLender.address;
       openTx.loanOffering.owner = testMarginCallDelegator.address;
@@ -122,13 +125,13 @@ describe('#openPosition', () => {
 
       const tx = await callOpenPosition(dydxMargin, openTx);
 
-      console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.openPosition (smart contract lender) gas used: ${tx.receipt.gasUsed}`);
 
       await checkSuccess(dydxMargin, openTx);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('allows smart contracts to specify other addresses', async () => {
       const openTx = await createOpenTx(accounts);
       const testSmartContractLender2 = await TestSmartContractLender.new(true, ADDRESSES.ZERO);
@@ -136,51 +139,52 @@ describe('#openPosition', () => {
         dydxMargin,
         feeToken,
         owedToken,
-        testSmartContractLender
+        testSmartContractLender,
       ] = await Promise.all([
         Margin.deployed(),
         FeeToken.deployed(),
         OwedToken.deployed(),
-        TestSmartContractLender.new(true, testSmartContractLender2.address)
+        TestSmartContractLender.new(true, testSmartContractLender2.address),
       ]);
 
       await issueTokensAndSetAllowances(openTx);
 
       const [
         lenderFeeTokenBalance,
-        lenderOwedTokenBalance
+        lenderOwedTokenBalance,
       ] = await Promise.all([
         feeToken.balanceOf.call(openTx.loanOffering.payer),
-        owedToken.balanceOf.call(openTx.loanOffering.payer)
+        owedToken.balanceOf.call(openTx.loanOffering.payer),
       ]);
       await Promise.all([
         feeToken.transfer(
           testSmartContractLender.address,
           lenderFeeTokenBalance,
-          { from: openTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer },
         ),
         owedToken.transfer(
           testSmartContractLender.address,
           lenderOwedTokenBalance,
-          { from: openTx.loanOffering.payer }
-        )
+          { from: openTx.loanOffering.payer },
+        ),
       ]);
       await Promise.all([
         testSmartContractLender.allow(
           feeToken.address,
           TokenProxy.address,
-          lenderFeeTokenBalance
+          lenderFeeTokenBalance,
         ),
         testSmartContractLender.allow(
           owedToken.address,
           TokenProxy.address,
-          lenderOwedTokenBalance
-        )
+          lenderOwedTokenBalance,
+        ),
       ]);
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
 
       openTx.loanOffering.payer = testSmartContractLender.address;
       openTx.loanOffering.owner = testMarginCallDelegator.address;
@@ -188,36 +192,36 @@ describe('#openPosition', () => {
 
       const tx = await callOpenPosition(dydxMargin, openTx);
 
-      console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.openPosition (smart contract lender) gas used: ${tx.receipt.gasUsed}`);
 
       await checkSuccess(dydxMargin, openTx);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow ownership to be assigned to contracts w/o proper interface', async () => {
       const [
         dydxMargin,
         testLoanOwner,
         testPositionOwner,
         openTx1,
-        openTx2
+        openTx2,
       ] = await Promise.all([
         Margin.deployed(),
         TestLoanOwner.new(Margin.address, ADDRESSES.ZERO, ADDRESSES.ZERO),
         TestPositionOwner.new(Margin.address, ADDRESSES.ZERO, ADDRESSES.ZERO, 0),
         createOpenTx(accounts),
-        createOpenTx(accounts)
+        createOpenTx(accounts),
       ]);
 
       openTx1.owner = testLoanOwner.address; // loan owner can't take ownership
       openTx2.loanOffering.owner = testPositionOwner.address; // owner can't take loan
       [
         openTx1.loanOffering.signature,
-        openTx2.loanOffering.signature
+        openTx2.loanOffering.signature,
       ] = await Promise.all([
         signLoanOffering(openTx1.loanOffering),
-        signLoanOffering(openTx2.loanOffering)
+        signLoanOffering(openTx2.loanOffering),
       ]);
 
       await issueTokensAndSetAllowances(openTx1);
@@ -228,19 +232,19 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow the same nonce to be used twice', async () => {
       const extraArgs = { collisionCheck: false };
       const [
         dydxMargin,
         openTx1,
         openTx2,
-        openTx3
+        openTx3,
       ] = await Promise.all([
         Margin.deployed(),
-        createOpenTx(accounts, { nonce: 1}),
-        createOpenTx(accounts, { nonce: 1}),
-        createOpenTx(accounts, { nonce: 2}),
+        createOpenTx(accounts, { nonce: 1 }),
+        createOpenTx(accounts, { nonce: 1 }),
+        createOpenTx(accounts, { nonce: 2 }),
       ]);
 
       await issueTokensAndSetAllowances(openTx1);
@@ -249,7 +253,7 @@ describe('#openPosition', () => {
       // using the same nonce again should fail
       await issueTokensAndSetAllowances(openTx2);
       await expectThrow(
-        callOpenPosition(dydxMargin, openTx2, extraArgs)
+        callOpenPosition(dydxMargin, openTx2, extraArgs),
       );
 
       // prove that it still works for a different nonce
@@ -257,32 +261,32 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow the same nonce to be used twice, even if the first was closed', async () => {
       const extraArgs = { collisionCheck: false };
-      let [
+      const [
         dydxMargin,
         openTx1,
         openTx2,
-        openTx3
+        openTx3,
       ] = await Promise.all([
         Margin.deployed(),
-        createOpenTx(accounts, { nonce: 1}),
-        createOpenTx(accounts, { nonce: 1}),
-        createOpenTx(accounts, { nonce: 2}),
+        createOpenTx(accounts, { nonce: 1 }),
+        createOpenTx(accounts, { nonce: 1 }),
+        createOpenTx(accounts, { nonce: 2 }),
       ]);
 
       await issueTokensAndSetAllowances(openTx1);
       const response = await callOpenPosition(dydxMargin, openTx1, extraArgs);
       openTx1.id = response.id;
-      await doClosePosition(accounts, openTx1,  openTx1.principal);
+      await doClosePosition(accounts, openTx1, openTx1.principal);
       const closed = await dydxMargin.isPositionClosed.call(openTx1.id);
       expect(closed).to.be.true;
 
       // using the same nonce again should fail
       await issueTokensAndSetAllowances(openTx2);
       await expectThrow(
-        callOpenPosition(dydxMargin, openTx2, extraArgs)
+        callOpenPosition(dydxMargin, openTx2, extraArgs),
       );
 
       // prove that it still works for a different nonce
@@ -290,30 +294,30 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow position owner to be zero', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = ADDRESSES.ZERO;
       await expectThrow(
-        callOpenPosition(dydxMargin, openTx)
+        callOpenPosition(dydxMargin, openTx),
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow loan owner to be zero', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
       await issueTokensAndSetAllowances(openTx);
       openTx.loanOffering.owner = ADDRESSES.ZERO;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await expectThrow(
-        callOpenPosition(dydxMargin, openTx)
+        callOpenPosition(dydxMargin, openTx),
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('properly assigns owner for lender and owner for accounts', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
       await issueTokensAndSetAllowances(openTx);
@@ -325,26 +329,26 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('properly assigns owner for lender and owner for contracts', async () => {
       const [
         dydxMargin,
         testMarginCallDelegator,
         testClosePositionDelegator,
-        openTx
+        openTx,
       ] = await Promise.all([
         Margin.deployed(),
         TestMarginCallDelegator.new(
           Margin.address,
           ADDRESSES.ZERO,
-          ADDRESSES.ZERO
+          ADDRESSES.ZERO,
         ),
         TestClosePositionDelegator.new(
           Margin.address,
           ADDRESSES.ZERO,
-          false
+          false,
         ),
-        createOpenTx(accounts)
+        createOpenTx(accounts),
       ]);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = testClosePositionDelegator.address;
@@ -355,26 +359,30 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('properly assigns owner for lender and owner for chaining', async () => {
       const dydxMargin = await Margin.deployed();
       const testMarginCallDelegator = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
       const testClosePositionDelegator = await TestClosePositionDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        false);
+        false,
+      );
       const testLoanOwner = await TestLoanOwner.new(
         Margin.address,
         testMarginCallDelegator.address,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
       const testPositionOwner = await TestPositionOwner.new(
         Margin.address,
         testClosePositionDelegator.address,
         false,
-        0);
+        0,
+      );
       const openTx = await createOpenTx(accounts);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = testPositionOwner.address;
@@ -385,7 +393,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not transfer fees if fee address is 0', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -400,7 +408,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('fails if owedToken equals heldToken', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -410,12 +418,12 @@ describe('#openPosition', () => {
       await issueTokensAndSetAllowances(openTx);
 
       await expectThrow(
-        callOpenPosition(dydxMargin, openTx)
+        callOpenPosition(dydxMargin, openTx),
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('works with 0 fees', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -431,7 +439,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('allows a specified taker to take the loan', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -446,7 +454,7 @@ describe('#openPosition', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('allows a specified owner to own the position', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
 
@@ -465,10 +473,10 @@ describe('#openPosition', () => {
 async function getMarginAndOpenTx(accounts) {
   const [
     dydxMargin,
-    openTx
+    openTx,
   ] = await Promise.all([
     Margin.deployed(),
-    createOpenTx(accounts)
+    createOpenTx(accounts),
   ]);
   return { dydxMargin, openTx };
 }
@@ -476,7 +484,7 @@ async function getMarginAndOpenTx(accounts) {
 async function checkSuccess(dydxMargin, openTx) {
   const positionId = web3Instance.utils.soliditySha3(
     openTx.trader,
-    openTx.nonce
+    openTx.nonce,
   );
 
   const contains = await dydxMargin.containsPosition.call(positionId);
@@ -487,7 +495,8 @@ async function checkSuccess(dydxMargin, openTx) {
   expect(position.heldToken).to.equal(openTx.heldToken);
   expect(position.principal).to.be.bignumber.equal(openTx.principal);
   expect(position.interestRate).to.be.bignumber.equal(
-    openTx.loanOffering.rates.interestRate);
+    openTx.loanOffering.rates.interestRate,
+  );
   expect(position.callTimeLimit).to.be.bignumber.equal(openTx.loanOffering.callTimeLimit);
   expect(position.callTimestamp).to.be.bignumber.equal(0);
   expect(position.maxDuration).to.be.bignumber.equal(openTx.loanOffering.maxDuration);
@@ -495,13 +504,13 @@ async function checkSuccess(dydxMargin, openTx) {
   let toReturn = null;
   try {
     toReturn = await TestPositionOwner.at(openTx.owner).TO_RETURN.call();
-  } catch(e) {
+  } catch (e) {
     toReturn = null;
   }
   expect(position.owner).to.equal(toReturn || openTx.owner);
   try {
     toReturn = await TestLoanOwner.at(openTx.loanOffering.owner).TO_RETURN.call();
-  } catch(e) {
+  } catch (e) {
     toReturn = null;
   }
   expect(position.lender).to.equal(toReturn || openTx.loanOffering.owner);
@@ -511,15 +520,15 @@ async function checkSuccess(dydxMargin, openTx) {
   const {
     soldAmount,
     expectedHeldTokenFromSell,
-    expectedHeldTokenBalance
+    expectedHeldTokenBalance,
   } = getTokenAmountsFromOpen(openTx);
 
   expect(balance).to.be.bignumber.equal(expectedHeldTokenBalance);
 
-  const lenderFee = openTx.loanOffering.feeRecipient === ADDRESSES.ZERO ?
-    0 : openTx.loanOffering.rates.lenderFee;
-  const loanTakerFee = openTx.loanOffering.feeRecipient === ADDRESSES.ZERO ?
-    0 : openTx.loanOffering.rates.takerFee;
+  const lenderFee = openTx.loanOffering.feeRecipient === ADDRESSES.ZERO
+    ? 0 : openTx.loanOffering.rates.lenderFee;
+  const loanTakerFee = openTx.loanOffering.feeRecipient === ADDRESSES.ZERO
+    ? 0 : openTx.loanOffering.rates.takerFee;
 
   const [
     owedToken,
@@ -528,7 +537,7 @@ async function checkSuccess(dydxMargin, openTx) {
   ] = await Promise.all([
     OwedToken.deployed(),
     HeldToken.deployed(),
-    FeeToken.deployed()
+    FeeToken.deployed(),
   ]);
 
   const [
@@ -542,7 +551,7 @@ async function checkSuccess(dydxMargin, openTx) {
     makerFeeToken,
     exchangeWrapperFeeToken,
     traderFeeToken,
-    loanOfferingFilledAmount
+    loanOfferingFilledAmount,
   ] = await Promise.all([
     owedToken.balanceOf.call(openTx.loanOffering.payer),
     owedToken.balanceOf.call(openTx.buyOrder.maker),
@@ -554,17 +563,17 @@ async function checkSuccess(dydxMargin, openTx) {
     feeToken.balanceOf.call(openTx.buyOrder.maker),
     feeToken.balanceOf.call(ExchangeWrapper.address),
     feeToken.balanceOf.call(openTx.trader),
-    dydxMargin.getLoanFilledAmount.call(openTx.loanOffering.loanHash)
+    dydxMargin.getLoanFilledAmount.call(openTx.loanOffering.loanHash),
   ]);
 
   expect(lenderOwedToken).to.be.bignumber.equal(
-    openTx.loanOffering.rates.maxAmount.minus(openTx.principal)
+    openTx.loanOffering.rates.maxAmount.minus(openTx.principal),
   );
   expect(makerOwedToken).to.be.bignumber.equal(soldAmount);
   expect(exchangeWrapperOwedToken).to.be.bignumber.equal(0);
   expect(traderHeldToken).to.be.bignumber.equal(0);
   expect(makerHeldToken).to.be.bignumber.equal(
-    openTx.buyOrder.makerTokenAmount.minus(expectedHeldTokenFromSell)
+    openTx.buyOrder.makerTokenAmount.minus(expectedHeldTokenFromSell),
   );
   expect(vaultHeldToken).to.be.bignumber.equal(expectedHeldTokenBalance);
   expect(lenderFeeToken).to.be.bignumber.equal(
@@ -573,9 +582,9 @@ async function checkSuccess(dydxMargin, openTx) {
         getPartialAmount(
           openTx.principal,
           openTx.loanOffering.rates.maxAmount,
-          lenderFee
-        )
-      )
+          lenderFee,
+        ),
+      ),
   );
   expect(exchangeWrapperFeeToken).to.be.bignumber.equal(0);
   expect(makerFeeToken).to.be.bignumber.equal(
@@ -584,9 +593,9 @@ async function checkSuccess(dydxMargin, openTx) {
         getPartialAmount(
           soldAmount,
           openTx.buyOrder.takerTokenAmount,
-          openTx.buyOrder.makerFee
-        )
-      )
+          openTx.buyOrder.makerFee,
+        ),
+      ),
   );
   expect(traderFeeToken).to.be.bignumber.equal(
     openTx.loanOffering.rates.takerFee
@@ -595,16 +604,16 @@ async function checkSuccess(dydxMargin, openTx) {
         getPartialAmount(
           openTx.principal,
           openTx.loanOffering.rates.maxAmount,
-          loanTakerFee
-        )
+          loanTakerFee,
+        ),
       )
       .minus(
         getPartialAmount(
           soldAmount,
           openTx.buyOrder.takerTokenAmount,
-          openTx.buyOrder.takerFee
-        )
-      )
+          openTx.buyOrder.takerFee,
+        ),
+      ),
   );
   expect(loanOfferingFilledAmount).to.be.bignumber.eq(openTx.principal);
 }

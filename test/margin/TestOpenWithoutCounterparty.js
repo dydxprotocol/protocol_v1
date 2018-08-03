@@ -1,34 +1,35 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 const Web3 = require('web3');
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const Margin = artifacts.require("Margin");
-const TokenProxy = artifacts.require("TokenProxy");
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const Vault = artifacts.require("Vault");
+const Margin = artifacts.require('Margin');
+const TokenProxy = artifacts.require('TokenProxy');
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
+const Vault = artifacts.require('Vault');
 const { ADDRESSES, BYTES32, BIGNUMBERS } = require('../helpers/Constants');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 const { expectLog } = require('../helpers/EventHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const {
   getPosition,
-  issueTokenToAccountInAmountAndApproveProxy
+  issueTokenToAccountInAmountAndApproveProxy,
 } = require('../helpers/MarginHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
 describe('#openWithoutCounterparty', () => {
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('succeeds on valid inputs', async () => {
       const [
         openTx,
-        dydxMargin
+        dydxMargin,
       ] = await Promise.all([
         setup(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
 
       const startingBalances = await getBalances(openTx);
@@ -36,22 +37,22 @@ describe('#openWithoutCounterparty', () => {
       const tx = await callOpenWithoutCounterparty(dydxMargin, openTx);
 
       console.log(
-        '\tMargin.openWithoutCounterparty gas used: '
-        + tx.receipt.gasUsed
+        `\tMargin.openWithoutCounterparty gas used: ${
+          tx.receipt.gasUsed}`,
       );
 
       await validate(dydxMargin, openTx, tx, startingBalances);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('succeeds if different nonces are used', async () => {
       const [
         openTx,
-        dydxMargin
+        dydxMargin,
       ] = await Promise.all([
         setup(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
 
       await callOpenWithoutCounterparty(dydxMargin, openTx);
@@ -66,14 +67,14 @@ describe('#openWithoutCounterparty', () => {
   });
 
   describe('Validations', () => {
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if positionId already exists', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         await callOpenWithoutCounterparty(dydxMargin, openTx);
@@ -84,26 +85,26 @@ describe('#openWithoutCounterparty', () => {
           callOpenWithoutCounterparty(
             dydxMargin,
             openTx2,
-            { shouldContain: true }
-          )
+            { shouldContain: true },
+          ),
         );
 
         // works with different nonce
-        openTx2.nonce = openTx2.nonce.plus(1)
+        openTx2.nonce = openTx2.nonce.plus(1);
         await callOpenWithoutCounterparty(dydxMargin, openTx2);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if positionId already existed, but was closed', async () => {
         const [
           openTx,
           dydxMargin,
-          owedToken
+          owedToken,
         ] = await Promise.all([
           setup(accounts),
           Margin.deployed(),
-          OwedToken.deployed()
+          OwedToken.deployed(),
         ]);
 
         // open first position
@@ -114,13 +115,13 @@ describe('#openWithoutCounterparty', () => {
         await issueTokenToAccountInAmountAndApproveProxy(
           owedToken,
           openTx.positionOwner,
-          openTx.principal.times(2)
+          openTx.principal.times(2),
         );
         await dydxMargin.closePositionDirectly(
           openTx.id,
           openTx.principal,
           openTx.positionOwner,
-          { from: openTx.positionOwner }
+          { from: openTx.positionOwner },
         );
         const closed = await dydxMargin.isPositionClosed.call(openTx.id);
         expect(closed).to.be.true;
@@ -131,24 +132,24 @@ describe('#openWithoutCounterparty', () => {
           callOpenWithoutCounterparty(
             dydxMargin,
             openTx2,
-            { shouldContain: true }
-          )
+            { shouldContain: true },
+          ),
         );
 
         // works with different nonce
-        openTx2.nonce = openTx2.nonce.plus(1)
+        openTx2.nonce = openTx2.nonce.plus(1);
         await callOpenWithoutCounterparty(dydxMargin, openTx2);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if loan owner is 0', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.loanOwner = ADDRESSES.ZERO;
@@ -157,14 +158,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if position owner is 0', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.positionOwner = ADDRESSES.ZERO;
@@ -173,14 +174,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if principal is 0', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.principal = BIGNUMBERS.ZERO;
@@ -189,14 +190,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if owedToken is 0', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.owedToken = ADDRESSES.ZERO;
@@ -205,14 +206,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if owedToken is equal to heldToken', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.owedToken = openTx.heldToken;
@@ -221,14 +222,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if maxDuration is 0', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.maxDuration = BIGNUMBERS.ZERO;
@@ -237,14 +238,14 @@ describe('#openWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Fails if interestPeriod is > maxDuration', async () => {
         const [
           openTx,
-          dydxMargin
+          dydxMargin,
         ] = await Promise.all([
           setup(accounts),
-          Margin.deployed()
+          Margin.deployed(),
         ]);
 
         openTx.interestPeriod = openTx.maxDuration.plus(1);
@@ -260,7 +261,7 @@ async function setup(accounts) {
   const loanOwner = accounts[2];
   const positionOwner = accounts[3];
 
-  const deposit   = new BigNumber('1098765932109876543');
+  const deposit = new BigNumber('1098765932109876543');
   const principal = new BigNumber('2387492837498237491');
   const nonce = new BigNumber('19238');
 
@@ -276,7 +277,7 @@ async function setup(accounts) {
     heldToken,
     trader,
     deposit,
-    TokenProxy.address
+    TokenProxy.address,
   );
 
   return {
@@ -291,18 +292,18 @@ async function setup(accounts) {
     interestRate,
     interestPeriod,
     owedToken: OwedToken.address,
-    heldToken: HeldToken.address
+    heldToken: HeldToken.address,
   };
 }
 
 async function callOpenWithoutCounterparty(
   dydxMargin,
   openTx,
-  { shouldContain = false} = {}
+  { shouldContain = false } = {},
 ) {
   const positionId = web3Instance.utils.soliditySha3(
     openTx.trader,
-    openTx.nonce
+    openTx.nonce,
   );
 
   let contains;
@@ -317,20 +318,20 @@ async function callOpenWithoutCounterparty(
       openTx.positionOwner,
       openTx.owedToken,
       openTx.heldToken,
-      openTx.loanOwner
+      openTx.loanOwner,
     ],
     [
       openTx.principal,
       openTx.deposit,
-      openTx.nonce
+      openTx.nonce,
     ],
     [
       openTx.callTimeLimit,
       openTx.maxDuration,
       openTx.interestRate,
-      openTx.interestPeriod
+      openTx.interestPeriod,
     ],
-    { from: openTx.trader }
+    { from: openTx.trader },
   );
 
   contains = await dydxMargin.containsPosition.call(positionId);
@@ -345,7 +346,7 @@ async function callOpenWithoutCounterparty(
 
 async function expectOpenLog(dydxMargin, positionId, openTx, response) {
   expectLog(response.logs[0], 'PositionOpened', {
-    positionId: positionId,
+    positionId,
     trader: openTx.trader,
     lender: openTx.trader,
     loanHash: BYTES32.ZERO,
@@ -358,7 +359,7 @@ async function expectOpenLog(dydxMargin, positionId, openTx, response) {
     interestRate: openTx.interestRate,
     callTimeLimit: openTx.callTimeLimit,
     maxDuration: openTx.maxDuration,
-    depositInHeldToken: true
+    depositInHeldToken: true,
   });
 
   const newOwner = await dydxMargin.getPositionOwner.call(positionId);
@@ -366,29 +367,29 @@ async function expectOpenLog(dydxMargin, positionId, openTx, response) {
   let logIndex = 0;
   if (openTx.positionOwner !== openTx.trader) {
     expectLog(response.logs[++logIndex], 'PositionTransferred', {
-      positionId: positionId,
+      positionId,
       from: openTx.trader,
-      to: openTx.positionOwner
+      to: openTx.positionOwner,
     });
     if (newOwner !== openTx.positionOwner) {
       expectLog(response.logs[++logIndex], 'PositionTransferred', {
-        positionId: positionId,
+        positionId,
         from: openTx.positionOwner,
-        to: newOwner
+        to: newOwner,
       });
     }
   }
   if (openTx.loanOwner !== openTx.trader) {
     expectLog(response.logs[++logIndex], 'LoanTransferred', {
-      positionId: positionId,
+      positionId,
       from: openTx.trader,
-      to: openTx.loanOwner
+      to: openTx.loanOwner,
     });
     if (newLender !== openTx.loanOwner) {
       expectLog(response.logs[++logIndex], 'LoanTransferred', {
-        positionId: positionId,
+        positionId,
         from: openTx.loanOwner,
-        to: newLender
+        to: newLender,
       });
     }
   }
@@ -398,11 +399,11 @@ async function validate(dydxMargin, openTx, tx, startingBalances) {
   const [
     position,
     positionBalance,
-    { traderHeldToken, vaultHeldToken }
+    { traderHeldToken, vaultHeldToken },
   ] = await Promise.all([
     getPosition(dydxMargin, tx.id),
     dydxMargin.getPositionBalance.call(tx.id),
-    getBalances(openTx)
+    getBalances(openTx),
   ]);
 
   expect(position.owner).to.be.eq(openTx.positionOwner);
@@ -420,7 +421,7 @@ async function validate(dydxMargin, openTx, tx, startingBalances) {
   expect(positionBalance).to.be.bignumber.eq(openTx.deposit);
   expect(vaultHeldToken).to.be.bignumber.eq(startingBalances.vaultHeldToken.plus(openTx.deposit));
   expect(traderHeldToken).to.be.bignumber.eq(
-    startingBalances.traderHeldToken.minus(openTx.deposit)
+    startingBalances.traderHeldToken.minus(openTx.deposit),
   );
 }
 
@@ -428,7 +429,7 @@ async function getBalances(openTx) {
   const heldToken = await HeldToken.deployed();
   const [
     traderHeldToken,
-    vaultHeldToken
+    vaultHeldToken,
   ] = await Promise.all([
     heldToken.balanceOf.call(openTx.trader),
     heldToken.balanceOf.call(Vault.address),

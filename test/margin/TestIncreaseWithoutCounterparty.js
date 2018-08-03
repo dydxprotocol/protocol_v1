@@ -1,12 +1,13 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
 
-const Margin = artifacts.require("Margin");
-const HeldToken = artifacts.require("TokenA");
-const TestPositionOwner = artifacts.require("TestPositionOwner");
-const TestLoanOwner = artifacts.require("TestLoanOwner");
+const Margin = artifacts.require('Margin');
+const HeldToken = artifacts.require('TokenA');
+const TestPositionOwner = artifacts.require('TestPositionOwner');
+const TestLoanOwner = artifacts.require('TestLoanOwner');
 const { ADDRESSES } = require('../helpers/Constants');
 const { getPartialAmount } = require('../helpers/MathHelper');
 const { signLoanOffering } = require('../helpers/LoanHelper');
@@ -21,7 +22,7 @@ const {
 } = require('../helpers/MarginHelper');
 
 describe('#increaseWithoutCounterparty', () => {
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('succeeds on valid inputs', async () => {
       const {
         dydxMargin,
@@ -31,34 +32,33 @@ describe('#increaseWithoutCounterparty', () => {
         startingBalance,
         heldToken,
         testPositionOwner,
-        testLoanOwner
+        testLoanOwner,
       } = await setup(accounts);
 
       const tx = await dydxMargin.increaseWithoutCounterparty(
         openTx.id,
         addAmount,
-        { from: adder }
+        { from: adder },
       );
 
-      console.log('\tMargin.increaseWithoutCounterparty gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.increaseWithoutCounterparty gas used: ${tx.receipt.gasUsed}`);
 
       const position = await getPosition(dydxMargin, openTx.id);
 
       expect(position.principal).to.be.bignumber.eq(
-        openTx.principal.plus(addAmount)
+        openTx.principal.plus(addAmount),
       );
 
       const finalBalance = await dydxMargin.getPositionBalance.call(openTx.id);
       const startingHeldTokenBalancePerUnit = getPartialAmount(startingBalance, openTx.principal);
-      const finalHeldTokenPerUnit =
-        getPartialAmount(finalBalance, openTx.principal.plus(addAmount));
+      const finalHeldTokenPerUnit = getPartialAmount(finalBalance, openTx.principal.plus(addAmount));
 
       expect(finalHeldTokenPerUnit).to.be.bignumber.eq(startingHeldTokenBalancePerUnit);
 
       const [
         adderHeldToken,
         afterIncreasePosition,
-        adderLoanValueAdded
+        adderLoanValueAdded,
       ] = await Promise.all([
         heldToken.balanceOf.call(adder),
         testPositionOwner.valueAdded.call(openTx.id, adder),
@@ -71,29 +71,29 @@ describe('#increaseWithoutCounterparty', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('disallows increasing by 0', async () => {
       const {
         dydxMargin,
         openTx,
-        adder
+        adder,
       } = await setup(accounts);
 
       await expectThrow(dydxMargin.increaseWithoutCounterparty(
         openTx.id,
         0,
-        { from: adder }
+        { from: adder },
       ));
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('does not allow increasing after maximum duration', async () => {
       const {
         dydxMargin,
         openTx,
         adder,
-        addAmount
+        addAmount,
       } = await setup(accounts);
 
       await wait(openTx.loanOffering.maxDuration + 1);
@@ -101,7 +101,7 @@ describe('#increaseWithoutCounterparty', () => {
       await expectThrow(dydxMargin.increaseWithoutCounterparty(
         openTx.id,
         addAmount,
-        { from: adder }
+        { from: adder },
       ));
     });
   });
@@ -112,7 +112,7 @@ describe('#increaseWithoutCounterparty', () => {
       dydxMargin,
       heldToken,
       testPositionOwner,
-      testLoanOwner
+      testLoanOwner,
     ] = await Promise.all([
       createOpenTx(accounts),
       Margin.deployed(),
@@ -144,13 +144,13 @@ describe('#increaseWithoutCounterparty', () => {
       addAmount,
       openTx.principal,
       startingBalance,
-      true
+      true,
     );
 
     await issueTokenToAccountInAmountAndApproveProxy(
       heldToken,
       adder,
-      heldTokenAmount
+      heldTokenAmount,
     );
 
     return {
@@ -161,7 +161,7 @@ describe('#increaseWithoutCounterparty', () => {
       startingBalance,
       heldToken,
       testPositionOwner,
-      testLoanOwner
+      testLoanOwner,
     };
   }
 });

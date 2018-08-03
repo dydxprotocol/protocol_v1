@@ -1,6 +1,7 @@
 const expect = require('chai').expect;
 const BigNumber = require('bignumber.js');
-const Margin = artifacts.require("Margin");
+
+const Margin = artifacts.require('Margin');
 const HeldToken = artifacts.require('TokenA');
 const TokenProxy = artifacts.require('TokenProxy');
 const { expectAssertFailure, expectThrow } = require('../helpers/ExpectHelper');
@@ -13,10 +14,10 @@ const {
   issueTokensAndSetAllowancesForClose,
   callClosePosition,
   issueForDirectClose,
-  callClosePositionDirectly
+  callClosePositionDirectly,
 } = require('../helpers/MarginHelper');
 const {
-  createSignedSellOrder
+  createSignedSellOrder,
 } = require('../helpers/ZeroExHelper');
 const { issueAndSetAllowance } = require('../helpers/TokenHelper');
 
@@ -30,21 +31,21 @@ const OperationState = {
 
 describe('MarginAdmin', () => {
   describe('Constructor', () => {
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Sets OperationState to OPERATIONAL', async () => {
         const dydxMargin = await Margin.deployed();
 
         const [
           operationState,
-          owner
+          owner,
         ] = await Promise.all([
           dydxMargin.operationState.call(),
-          dydxMargin.owner.call()
+          dydxMargin.owner.call(),
         ]);
 
         expect(operationState.toNumber()).to.eq(OperationState.OPERATIONAL);
         expect(owner.toLowerCase()).to.eq(accounts[0].toLowerCase());
-      })
+      });
     });
   });
 
@@ -65,12 +66,12 @@ describe('MarginAdmin', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Only allows owner to set', async () => {
         const dydxMargin = await Margin.deployed();
 
         await expectThrow(
-          dydxMargin.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] })
+          dydxMargin.setOperationState(OperationState.CLOSE_ONLY, { from: accounts[2] }),
         );
         await expectOperationState(dydxMargin, OperationState.OPERATIONAL);
       });
@@ -87,7 +88,7 @@ describe('MarginAdmin', () => {
   });
 
   describe('#onlyWhileOperational', () => {
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Only allows #openPosition while OPERATIONAL', async () => {
         const openTx = await createOpenTx(accounts);
         const dydxMargin = await Margin.deployed();
@@ -102,7 +103,7 @@ describe('MarginAdmin', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Only allows #cancelMarginCall while OPERATIONAL', async () => {
         const dydxMargin = await Margin.deployed();
         const openTx = await doOpenPosition(accounts);
@@ -110,28 +111,28 @@ describe('MarginAdmin', () => {
         await dydxMargin.marginCall(
           openTx.id,
           new BigNumber(10),
-          { from: openTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer },
         );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(dydxMargin.cancelMarginCall(
           openTx.id,
-          { from: openTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer },
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await dydxMargin.cancelMarginCall(
           openTx.id,
-          { from: openTx.loanOffering.payer }
+          { from: openTx.loanOffering.payer },
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #deposit while OPERATIONAL', async () => {
         const [dydxMargin, heldToken] = await Promise.all([
           Margin.deployed(),
-          HeldToken.deployed()
+          HeldToken.deployed(),
         ]);
         const openTx = await doOpenPosition(accounts);
         const amount = new BigNumber(1000);
@@ -140,21 +141,21 @@ describe('MarginAdmin', () => {
           heldToken,
           openTx.trader,
           amount,
-          TokenProxy.address
+          TokenProxy.address,
         );
 
         await dydxMargin.setOperationState(OperationState.CLOSE_ONLY);
         await expectThrow(dydxMargin.depositCollateral(
           openTx.id,
           amount,
-          { from: openTx.trader }
+          { from: openTx.trader },
         ));
 
         await dydxMargin.setOperationState(OperationState.OPERATIONAL);
         await dydxMargin.depositCollateral(
           openTx.id,
           amount,
-          { from: openTx.trader }
+          { from: openTx.trader },
         );
       });
     });
@@ -174,37 +175,37 @@ describe('MarginAdmin', () => {
           callCancelLoanOffer(
             dydxMargin,
             openTx.loanOffering,
-            cancelAmount
-          )
+            cancelAmount,
+          ),
         );
       } else {
         await callCancelLoanOffer(
           dydxMargin,
           openTx.loanOffering,
-          cancelAmount
+          cancelAmount,
         );
       }
     }
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #cancelLoanOffering while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #cancelLoanOffering while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Disallows #cancelLoanOffering while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY, true);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Disallows #cancelLoanOffering while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY, true);
       });
@@ -218,7 +219,7 @@ describe('MarginAdmin', () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
         createSignedSellOrder(accounts),
-        Margin.deployed()
+        Margin.deployed(),
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
 
@@ -230,25 +231,25 @@ describe('MarginAdmin', () => {
       }
     }
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePosition while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePosition while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePosition while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Disallows #closePosition while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY, true);
       });
@@ -267,25 +268,25 @@ describe('MarginAdmin', () => {
       await callClosePositionDirectly(dydxMargin, openTx, closeAmount);
     }
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePositionDirectly while OPERATIONAL', async () => {
         await test(accounts, OperationState.OPERATIONAL);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePositionDirectly while CLOSE_AND_CANCEL_LOAN_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_AND_CANCEL_LOAN_ONLY);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePositionDirectly while CLOSE_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_ONLY);
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('Allows #closePositionDirectly while CLOSE_DIRECTLY_ONLY', async () => {
         await test(accounts, OperationState.CLOSE_DIRECTLY_ONLY);
       });

@@ -1,4 +1,4 @@
-const Margin= artifacts.require('Margin');
+const Margin = artifacts.require('Margin');
 const TestCloseLoanDelegator = artifacts.require('TestCloseLoanDelegator');
 const ERC20Short = artifacts.require('ERC20Short');
 const ERC20 = artifacts.require('ERC20');
@@ -12,12 +12,17 @@ function multiplyByClosePercent(input, numerator = 1, denominator = 5) {
   return getPartialAmount(
     numerator,
     denominator,
-    input
+    input,
   );
 }
 
 describe('#CloseWithoutCounterparty', () => {
-  let dydxMargin, openTx, erc20Contract, lender, principal, totalSupply;
+  let dydxMargin,
+    openTx,
+    erc20Contract,
+    lender,
+    principal,
+    totalSupply;
 
   async function configurePosition(initialHolder, accounts) {
     dydxMargin = await Margin.deployed();
@@ -25,7 +30,7 @@ describe('#CloseWithoutCounterparty', () => {
     // Deploy an ERC20Short token
     erc20Contract = await ERC20Short.new(openTx.id, dydxMargin.address, initialHolder, [
       ADDRESSES.TEST[1],
-      ADDRESSES.TEST[2]
+      ADDRESSES.TEST[2],
     ]);
     // Transfer the position from the trader to the ERC20 token
     await dydxMargin.transferPosition(openTx.id, erc20Contract.address, { from: openTx.trader });
@@ -38,7 +43,7 @@ describe('#CloseWithoutCounterparty', () => {
     await erc20Contract.transfer(openTx.loanOffering.payer, principal, { from: initialHolder });
   }
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('allows a lender to receive heldTokens', async () => {
       const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
       await configurePosition(initialHolder, accounts);
@@ -62,21 +67,20 @@ describe('#CloseWithoutCounterparty', () => {
         getPartialAmount(
           principal,
           totalSupply,
-          heldTokenBalance
-        )
+          heldTokenBalance,
+        ),
       );
     });
   });
 
   describe('#closeLoanOnBehalfOf', () => {
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('allows if the lender is a smart contract that returns its own address', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
-        const closeLoanDelegator =
-          await TestCloseLoanDelegator.new(dydxMargin.address, principal);
+        const closeLoanDelegator = await TestCloseLoanDelegator.new(dydxMargin.address, principal);
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(openTx.id, closeLoanDelegator.address, { from: lender });
 
@@ -97,20 +101,19 @@ describe('#CloseWithoutCounterparty', () => {
           getPartialAmount(
             principal,
             totalSupply,
-            heldTokenBalance
-          )
+            heldTokenBalance,
+          ),
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('allows if the lender is a smart contract that returns a different address', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
-        const closeLoanDelegator =
-          await TestCloseLoanDelegator.new(dydxMargin.address, principal);
+        const closeLoanDelegator = await TestCloseLoanDelegator.new(dydxMargin.address, principal);
         await closeLoanDelegator.setAddressToReturn(lender);
 
         // Transfer the loan to the CloseLoanDelegator
@@ -133,24 +136,23 @@ describe('#CloseWithoutCounterparty', () => {
           getPartialAmount(
             principal,
             totalSupply,
-            heldTokenBalance
-          )
+            heldTokenBalance,
+          ),
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('limits close amount to amount returned', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
-        const allowedCloseAmount = multiplyByClosePercent(totalSupply, 1, 7)
-        const closeLoanDelegator =
-          await TestCloseLoanDelegator.new(
-            dydxMargin.address,
-            allowedCloseAmount
-          );
+        const allowedCloseAmount = multiplyByClosePercent(totalSupply, 1, 7);
+        const closeLoanDelegator = await TestCloseLoanDelegator.new(
+          dydxMargin.address,
+          allowedCloseAmount,
+        );
 
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(openTx.id, closeLoanDelegator.address, { from: lender });
@@ -173,23 +175,22 @@ describe('#CloseWithoutCounterparty', () => {
           getPartialAmount(
             allowedCloseAmount,
             totalSupply,
-            heldTokenBalance
-          )
+            heldTokenBalance,
+          ),
         );
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('fails if 0 returned', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
-        const closeLoanDelegator =
-          await TestCloseLoanDelegator.new(
-            dydxMargin.address,
-            0
-          );
+        const closeLoanDelegator = await TestCloseLoanDelegator.new(
+          dydxMargin.address,
+          0,
+        );
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(openTx.id, closeLoanDelegator.address, { from: lender });
 
@@ -202,17 +203,16 @@ describe('#CloseWithoutCounterparty', () => {
       });
     });
 
-    contract('Margin', accounts => {
+    contract('Margin', (accounts) => {
       it('faild if greater value returned', async () => {
         const initialHolder = accounts[9]; // Using same accounts as TestERC20Short.js
         await configurePosition(initialHolder, accounts);
 
         // Create a new loan owner smart contract that implements CloseLoanDelegator
-        const closeLoanDelegator =
-          await TestCloseLoanDelegator.new(
-            dydxMargin.address,
-            principal.times(2)
-          );
+        const closeLoanDelegator = await TestCloseLoanDelegator.new(
+          dydxMargin.address,
+          principal.times(2),
+        );
         // Transfer the loan to the CloseLoanDelegator
         await dydxMargin.transferLoan(openTx.id, closeLoanDelegator.address, { from: lender });
 

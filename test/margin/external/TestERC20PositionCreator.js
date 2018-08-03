@@ -1,34 +1,35 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const ERC20Long = artifacts.require("ERC20Long");
-const ERC20LongCreator = artifacts.require("ERC20LongCreator");
-const ERC20Short = artifacts.require("ERC20Short");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const HeldToken = artifacts.require("TokenA");
-const Margin = artifacts.require("Margin");
+const ERC20Long = artifacts.require('ERC20Long');
+const ERC20LongCreator = artifacts.require('ERC20LongCreator');
+const ERC20Short = artifacts.require('ERC20Short');
+const ERC20ShortCreator = artifacts.require('ERC20ShortCreator');
+const HeldToken = artifacts.require('TokenA');
+const Margin = artifacts.require('Margin');
 
 const { getERC20PositionConstants, TOKENIZED_POSITION_STATE } = require('./ERC20PositionHelper');
 const { expectAssertFailure, expectThrow } = require('../../helpers/ExpectHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
-  callClosePosition
+  callClosePosition,
 } = require('../../helpers/MarginHelper');
 const { createSignedSellOrder } = require('../../helpers/ZeroExHelper');
 
 const CREATORS = { ERC20ShortCreator, ERC20LongCreator };
 
-contract('ERC20PositionCreator', accounts => {
+contract('ERC20PositionCreator', (accounts) => {
   let dydxMargin;
   let salt = 112345;
 
   before('retrieve deployed contracts', async () => {
     [
-      dydxMargin
+      dydxMargin,
     ] = await Promise.all([
-      Margin.deployed()
+      Margin.deployed(),
     ]);
   });
 
@@ -36,13 +37,13 @@ contract('ERC20PositionCreator', accounts => {
     let contract;
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
-      for (let creator in CREATORS) {
+      for (const creator in CREATORS) {
         contract = await CREATORS[creator].new(Margin.address, trustedRecipientsExpected);
         const dydxMarginAddress = await contract.DYDX_MARGIN.call();
         expect(dydxMarginAddress).to.equal(Margin.address);
 
         const numRecipients = trustedRecipientsExpected.length;
-        for(let i = 0; i < numRecipients; i++) {
+        for (let i = 0; i < numRecipients; i++) {
           const trustedRecipient = await contract.TRUSTED_RECIPIENTS.call(i);
           expect(trustedRecipient).to.equal(trustedRecipientsExpected[i]);
         }
@@ -60,11 +61,11 @@ contract('ERC20PositionCreator', accounts => {
       const [
         tokenAddress,
         balance,
-        principal
+        principal,
       ] = await Promise.all([
         dydxMargin.getPositionOwner.call(openTx.id),
         dydxMargin.getPositionBalance.call(openTx.id),
-        dydxMargin.getPositionPrincipal.call(openTx.id)
+        dydxMargin.getPositionPrincipal.call(openTx.id),
       ]);
 
       let erc20Contract;
@@ -90,30 +91,30 @@ contract('ERC20PositionCreator', accounts => {
     }
 
     it('fails for arbitrary caller', async () => {
-      const badId = web3.fromAscii("06231993");
-      for (let creator in CREATORS) {
+      const badId = web3.fromAscii('06231993');
+      for (const creator in CREATORS) {
         const creatorContract = await CREATORS[creator].deployed();
         await expectThrow(
-          creatorContract.receivePositionOwnership(accounts[0], badId)
+          creatorContract.receivePositionOwnership(accounts[0], badId),
         );
       }
     });
 
     it('succeeds for new position', async () => {
-      for (let creator in CREATORS) {
+      for (const creator in CREATORS) {
         const openTx = await doOpenPosition(
           accounts,
           {
             salt: salt++,
-            positionOwner: CREATORS[creator].address
-          }
+            positionOwner: CREATORS[creator].address,
+          },
         );
         await checkSuccess(openTx, creator);
       }
     });
 
     it('succeeds for half-closed position', async () => {
-      for (let creator in CREATORS) {
+      for (const creator in CREATORS) {
         const openTx = await doOpenPosition(accounts, { salt: salt++ });
 
         // close half the position
@@ -123,7 +124,8 @@ contract('ERC20PositionCreator', accounts => {
           dydxMargin,
           openTx,
           sellOrder,
-          openTx.principal.div(2).floor());
+          openTx.principal.div(2).floor(),
+        );
 
         // transfer position to ERC20PositionCreator
         await dydxMargin.transferPosition(openTx.id, CREATORS[creator].address);

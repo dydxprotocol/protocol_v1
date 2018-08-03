@@ -1,7 +1,7 @@
-const TestExponent = artifacts.require("TestExponent");
+const TestExponent = artifacts.require('TestExponent');
 const { expectThrow } = require('../helpers/ExpectHelper');
 
-contract('InterestHelper', function(_accounts) {
+contract('InterestHelper', (_accounts) => {
   let contract;
 
   describe('#exp', () => {

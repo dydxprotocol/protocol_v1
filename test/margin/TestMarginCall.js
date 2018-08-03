@@ -1,14 +1,15 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const Margin = artifacts.require("Margin");
-const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
+const Margin = artifacts.require('Margin');
+const TestMarginCallDelegator = artifacts.require('TestMarginCallDelegator');
 const {
   doOpenPosition,
   getPosition,
-  doOpenPositionAndCall
+  doOpenPositionAndCall,
 } = require('../helpers/MarginHelper');
 const { expectThrow } = require('../helpers/ExpectHelper');
 const { expectLog } = require('../helpers/EventHelper');
@@ -16,7 +17,7 @@ const { getBlockTimestamp } = require('../helpers/NodeHelper');
 const { ADDRESSES } = require('../helpers/Constants');
 
 function getCallTimestamp(tx) {
-  return getBlockTimestamp(tx.receipt.blockNumber)
+  return getBlockTimestamp(tx.receipt.blockNumber);
 }
 
 describe('#marginCall', () => {
@@ -26,29 +27,29 @@ describe('#marginCall', () => {
   async function marginCall(
     openTx,
     deposit = REQUIRED_DEPOSIT,
-    from = openTx.loanOffering.owner
+    from = openTx.loanOffering.owner,
   ) {
     const [lender, trader] = await Promise.all([
       dydxMargin.getPositionLender.call(openTx.id),
-      dydxMargin.getPositionOwner.call(openTx.id)
+      dydxMargin.getPositionOwner.call(openTx.id),
     ]);
     const tx = await dydxMargin.marginCall(
       openTx.id,
       deposit,
-      { from: from}
+      { from },
     );
     expectLog(tx.logs[0], 'MarginCallInitiated', {
       positionId: openTx.id,
-      lender: lender,
+      lender,
       owner: trader,
-      requiredDeposit: deposit
+      requiredDeposit: deposit,
     });
 
     const positionCalledTimestamp = await getCallTimestamp(tx);
 
     const {
       callTimestamp,
-      requiredDeposit
+      requiredDeposit,
     } = await getPosition(dydxMargin, openTx.id);
 
     expect(callTimestamp).to.be.bignumber.equal(positionCalledTimestamp);
@@ -57,18 +58,18 @@ describe('#marginCall', () => {
     return tx;
   }
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('sets callTimestamp and requiredDeposit on the position', async () => {
       dydxMargin = await Margin.deployed();
       const openTx = await doOpenPosition(accounts);
 
       const tx = await marginCall(openTx, REQUIRED_DEPOSIT);
 
-      console.log('\tMargin.marginCall gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.marginCall gas used: ${tx.receipt.gasUsed}`);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('prevents unauthorized accounts from calling', async () => {
       dydxMargin = await Margin.deployed();
       const openTx = await doOpenPosition(accounts);
@@ -76,7 +77,7 @@ describe('#marginCall', () => {
       await expectThrow(dydxMargin.marginCall(
         openTx.id,
         REQUIRED_DEPOSIT,
-        { from: accounts[6] }
+        { from: accounts[6] },
       ));
 
       const { callTimestamp } = await getPosition(dydxMargin, openTx.id);
@@ -85,7 +86,7 @@ describe('#marginCall', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const openTx = await doOpenPosition(accounts);
@@ -93,11 +94,12 @@ describe('#marginCall', () => {
       const loanCaller = await TestMarginCallDelegator.new(
         Margin.address,
         caller,
-        ADDRESSES.ZERO);
+        ADDRESSES.ZERO,
+      );
       await dydxMargin.transferLoan(
         openTx.id,
         loanCaller.address,
-        { from: openTx.loanOffering.payer }
+        { from: openTx.loanOffering.payer },
       );
       let position = await getPosition(dydxMargin, openTx.id);
       expect(position.callTimestamp).to.be.bignumber.equal(0);
@@ -105,7 +107,7 @@ describe('#marginCall', () => {
       await expectThrow(dydxMargin.marginCall(
         openTx.id,
         REQUIRED_DEPOSIT,
-        { from: accounts[6] }
+        { from: accounts[6] },
       ));
       position = await getPosition(dydxMargin, openTx.id);
       expect(position.callTimestamp).to.be.bignumber.equal(0);
@@ -113,12 +115,12 @@ describe('#marginCall', () => {
       await marginCall(
         openTx,
         REQUIRED_DEPOSIT,
-        caller
+        caller,
       );
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('fails if the loan has already been called', async () => {
       dydxMargin = await Margin.deployed();
       const openTx = await doOpenPosition(accounts);
@@ -128,7 +130,7 @@ describe('#marginCall', () => {
       await expectThrow(dydxMargin.marginCall(
         openTx.id,
         REQUIRED_DEPOSIT.plus(REQUIRED_DEPOSIT),
-        { from: openTx.loanOffering.payer }
+        { from: openTx.loanOffering.payer },
       ));
     });
   });
@@ -139,26 +141,26 @@ describe('#cancelMarginCall', () => {
 
   async function cancelMarginCall(
     openTx,
-    from = openTx.loanOffering.owner
+    from = openTx.loanOffering.owner,
   ) {
     const [lender, trader] = await Promise.all([
       dydxMargin.getPositionLender.call(openTx.id),
-      dydxMargin.getPositionOwner.call(openTx.id)
+      dydxMargin.getPositionOwner.call(openTx.id),
     ]);
     const tx = await dydxMargin.cancelMarginCall(
       openTx.id,
-      { from: from }
+      { from },
     );
     expectLog(tx.logs[0], 'MarginCallCanceled', {
       positionId: openTx.id,
-      lender: lender,
+      lender,
       owner: trader,
-      depositAmount: 0
+      depositAmount: 0,
     });
 
     const {
       callTimestamp,
-      requiredDeposit
+      requiredDeposit,
     } = await getPosition(dydxMargin, openTx.id);
 
     expect(callTimestamp).to.be.bignumber.equal(0);
@@ -167,18 +169,18 @@ describe('#cancelMarginCall', () => {
     return tx;
   }
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('unsets callTimestamp and requiredDeposit on the position', async () => {
       dydxMargin = await Margin.deployed();
       const { openTx } = await doOpenPositionAndCall(accounts);
 
       const tx = await cancelMarginCall(openTx);
 
-      console.log('\tMargin.cancelMarginCall gas used: ' + tx.receipt.gasUsed);
+      console.log(`\tMargin.cancelMarginCall gas used: ${tx.receipt.gasUsed}`);
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('prevents unauthorized accounts from cancelling', async () => {
       dydxMargin = await Margin.deployed();
       const { openTx, callTx } = await doOpenPositionAndCall(accounts);
@@ -187,7 +189,7 @@ describe('#cancelMarginCall', () => {
 
       await expectThrow(dydxMargin.cancelMarginCall(
         openTx.id,
-        { from: accounts[6] }
+        { from: accounts[6] },
       ));
 
       const { callTimestamp } = await getPosition(dydxMargin, openTx.id);
@@ -196,19 +198,19 @@ describe('#cancelMarginCall', () => {
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('fails if the loan has not been called', async () => {
       dydxMargin = await Margin.deployed();
       const openTx = await doOpenPosition(accounts);
 
       await expectThrow(dydxMargin.cancelMarginCall(
         openTx.id,
-        { from: openTx.loanOffering.payer }
+        { from: openTx.loanOffering.payer },
       ));
     });
   });
 
-  contract('Margin', accounts => {
+  contract('Margin', (accounts) => {
     it('MarginCallDelegator loan owner only allows certain accounts', async () => {
       dydxMargin = await Margin.deployed();
       const { openTx } = await doOpenPositionAndCall(accounts);
@@ -216,18 +218,19 @@ describe('#cancelMarginCall', () => {
       const loanCaller = await TestMarginCallDelegator.new(
         Margin.address,
         ADDRESSES.ZERO,
-        canceler);
+        canceler,
+      );
       await dydxMargin.transferLoan(
         openTx.id,
         loanCaller.address,
-        { from: openTx.loanOffering.payer }
+        { from: openTx.loanOffering.payer },
       );
       let position = await getPosition(dydxMargin, openTx.id);
       expect(position.callTimestamp).to.be.bignumber.not.equal(0);
 
       await expectThrow(dydxMargin.cancelMarginCall(
         openTx.id,
-        { from: accounts[6] }
+        { from: accounts[6] },
       ));
       position = await getPosition(dydxMargin, openTx.id);
       expect(position.callTimestamp).to.be.bignumber.not.equal(0);

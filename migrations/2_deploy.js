@@ -1,4 +1,4 @@
-/*global artifacts*/
+/* global artifacts */
 
 /*
 
@@ -18,38 +18,39 @@
 
 */
 
-const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
-const Vault = artifacts.require("Vault");
-const TokenProxy = artifacts.require("TokenProxy");
-const Margin = artifacts.require("Margin");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
-const SharedLoanCreator = artifacts.require("SharedLoanCreator");
-const ERC20LongCreator = artifacts.require("ERC20LongCreator");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
-const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
-const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const OpenPositionImpl = artifacts.require("OpenPositionImpl");
+const OpenDirectlyExchangeWrapper = artifacts.require('OpenDirectlyExchangeWrapper');
+const ZeroExExchangeWrapper = artifacts.require('ZeroExExchangeWrapper');
+const Vault = artifacts.require('Vault');
+const TokenProxy = artifacts.require('TokenProxy');
+const Margin = artifacts.require('Margin');
+const ZeroExExchange = artifacts.require('ZeroExExchange');
+const ZeroExProxy = artifacts.require('ZeroExProxy');
+const SharedLoanCreator = artifacts.require('SharedLoanCreator');
+const ERC20LongCreator = artifacts.require('ERC20LongCreator');
+const ERC20ShortCreator = artifacts.require('ERC20ShortCreator');
+const ERC721MarginPosition = artifacts.require('ERC721MarginPosition');
+const DutchAuctionCloser = artifacts.require('DutchAuctionCloser');
+const OpenPositionImpl = artifacts.require('OpenPositionImpl');
 const OpenWithoutCounterpartyImpl = artifacts.require(
-  "OpenWithoutCounterpartyImpl"
+  'OpenWithoutCounterpartyImpl',
 );
-const IncreasePositionImpl = artifacts.require("IncreasePositionImpl");
-const ClosePositionImpl = artifacts.require("ClosePositionImpl");
-const CloseWithoutCounterpartyImpl = artifacts.require("CloseWithoutCounterpartyImpl");
-const ForceRecoverCollateralImpl = artifacts.require("ForceRecoverCollateralImpl");
-const DepositCollateralImpl = artifacts.require("DepositCollateralImpl");
-const LoanImpl = artifacts.require("LoanImpl");
-const TransferImpl = artifacts.require("TransferImpl");
-const InterestImpl = artifacts.require("InterestImpl");
+const IncreasePositionImpl = artifacts.require('IncreasePositionImpl');
+const ClosePositionImpl = artifacts.require('ClosePositionImpl');
+const CloseWithoutCounterpartyImpl = artifacts.require('CloseWithoutCounterpartyImpl');
+const ForceRecoverCollateralImpl = artifacts.require('ForceRecoverCollateralImpl');
+const DepositCollateralImpl = artifacts.require('DepositCollateralImpl');
+const LoanImpl = artifacts.require('LoanImpl');
+const TransferImpl = artifacts.require('TransferImpl');
+const InterestImpl = artifacts.require('InterestImpl');
 
 // For testing
-const TokenA = artifacts.require("TokenA");
-const TokenB = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
+const TokenA = artifacts.require('TokenA');
+const TokenB = artifacts.require('TokenB');
+const FeeToken = artifacts.require('TokenC');
 
 // Other constants
 const BigNumber = require('bignumber.js');
+
 const ONE_HOUR = new BigNumber(60 * 60);
 
 function isDevNetwork(network) {
@@ -83,41 +84,41 @@ function maybeDeploy0x(deployer, network) {
 function get0xExchangeAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchange.address;
-  } else if (network === 'kovan' ) {
+  } if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }
 
-  throw "0x Exchange Not Found";
+  throw '0x Exchange Not Found';
 }
 
 function get0xProxyAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxy.address;
-  } else if (network === 'kovan' ) {
+  } if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
-  throw "0x TokenProxy Not Found";
+  throw '0x TokenProxy Not Found';
 }
 
 function getZRXAddress(network) {
   if (isDevNetwork(network)) {
     return FeeToken.address;
-  } else if (network === 'kovan' ) {
+  } if (network === 'kovan') {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
   }
 
-  throw "ZRX Not Found";
+  throw 'ZRX Not Found';
 }
 
 function getSharedLoanTrustedMarginCallers(network) {
   if (isDevNetwork(network)) {
     return [];
-  } else if (network === 'kovan' ) {
+  } if (network === 'kovan') {
     return ['0x008E81A8817e0f1820cE98c92C8c72be27443857'];
   }
 
-  throw "Network Unsupported";
+  throw 'Network Unsupported';
 }
 
 async function deployMarginContracts(deployer, network) {
@@ -161,13 +162,13 @@ async function deployMarginContracts(deployer, network) {
   await deployer.deploy(
     Vault,
     TokenProxy.address,
-    ONE_HOUR
+    ONE_HOUR,
   );
 
   await deployer.deploy(
     Margin,
     Vault.address,
-    TokenProxy.address
+    TokenProxy.address,
   );
 
   await Promise.all([
@@ -177,42 +178,42 @@ async function deployMarginContracts(deployer, network) {
       TokenProxy.address,
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
-      getZRXAddress(network)
+      getZRXAddress(network),
     ),
     deployer.deploy(
       OpenDirectlyExchangeWrapper,
       Margin.address,
-      TokenProxy.address
+      TokenProxy.address,
     ),
     deployer.deploy(
       ERC721MarginPosition,
-      Margin.address
+      Margin.address,
     ),
     deployer.deploy(
       DutchAuctionCloser,
       Margin.address,
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
-    )
+    ),
   ]);
 
   await Promise.all([
     deployer.deploy(
       ERC20ShortCreator,
       Margin.address,
-      [DutchAuctionCloser.address]
+      [DutchAuctionCloser.address],
     ),
     deployer.deploy(
       ERC20LongCreator,
       Margin.address,
-      [DutchAuctionCloser.address]
-    )
+      [DutchAuctionCloser.address],
+    ),
   ]);
 
   await deployer.deploy(
     SharedLoanCreator,
     Margin.address,
-    getSharedLoanTrustedMarginCallers(network)
+    getSharedLoanTrustedMarginCallers(network),
   );
 }
 
@@ -220,7 +221,7 @@ async function authorizeOnProxy() {
   const proxy = await TokenProxy.deployed();
   await Promise.all([
     proxy.grantAccess(Vault.address),
-    proxy.grantAccess(Margin.address)
+    proxy.grantAccess(Margin.address),
   ]);
 }
 
@@ -235,7 +236,7 @@ async function doMigration(deployer, network) {
   await deployMarginContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
-    grantAccessToVault()
+    grantAccessToVault(),
   ]);
 }
 

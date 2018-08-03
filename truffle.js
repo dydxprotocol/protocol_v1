@@ -1,31 +1,31 @@
-require("babel-register");
+require('babel-register');
 require('babel-polyfill');
 
 let mocha = {
-  useColors: true
+  useColors: true,
 };
 
 if (process.env.TRUFFLE_REPORTER) {
   mocha = {
     reporter: 'mocha-junit-reporter',
     reporterOptions: {
-      mochaFile: './junit/test-results.xml'
-    }
+      mochaFile: './junit/test-results.xml',
+    },
   };
 }
 
 module.exports = {
   networks: {
     kovan: {
-      host: "127.0.0.1",
+      host: '127.0.0.1',
       port: 8545,
-      network_id: "42",
-      gas:4700000
+      network_id: '42',
+      gas:4700000,
     },
     dev: {
-      host: "localhost",
+      host: 'localhost',
       port: 8545,
-      network_id: "*"
+      network_id: '*',
     },
     coverage: {
       host: 'localhost',
@@ -38,13 +38,13 @@ module.exports = {
       host: 'localhost',
       network_id: '1212',
       port: 8545,
-    }
+    },
   },
   mocha,
   solc: {
     optimizer: {
       enabled: true,
-      runs: 10000
-    }
-  }
+      runs: 10000,
+    },
+  },
 };

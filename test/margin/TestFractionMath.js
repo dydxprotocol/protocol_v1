@@ -1,14 +1,15 @@
 const chai = require('chai');
+
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const TestFractionMath = artifacts.require("TestFractionMath");
+const TestFractionMath = artifacts.require('TestFractionMath');
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectAssertFailure } = require('../helpers/ExpectHelper');
 
 const bn = BIGNUMBERS.ONES_127;
 
-contract('FractionMath', function(_accounts) {
+contract('FractionMath', (_accounts) => {
   let contract;
 
   before('deploy mock contract', async () => {
