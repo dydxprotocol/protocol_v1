@@ -1,3 +1,5 @@
+const promisify = require("es6-promisify");
+
 const Margin                = require('../build/contracts/Margin.json');
 const Vault                 = require('../build/contracts/Vault.json');
 const TokenProxy            = require('../build/contracts/TokenProxy.json');
@@ -15,6 +17,15 @@ const ZeroExExchangeWrapper = require('../build/contracts/ZeroExExchangeWrapper.
 const ERC20                 = require('../build/contracts/ERC20.json');
 const TestToken             = require('../build/contracts/TestToken.json');
 
+function reset(web3Instance) {
+  return promisify(web3Instance.currentProvider.sendAsync)({
+    jsonrpc: "2.0",
+    method: "evm_revert",
+    id: 12345,
+    params: ['0x1'],
+  });
+}
+
 module.exports = {
   Margin,
   Vault,
@@ -31,5 +42,6 @@ module.exports = {
   ERC721MarginPosition,
   ZeroExExchangeWrapper,
   ERC20,
-  TestToken
+  TestToken,
+  reset
 }

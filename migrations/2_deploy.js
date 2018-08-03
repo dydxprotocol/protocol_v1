@@ -1,5 +1,3 @@
-/*global artifacts*/
-
 /*
 
     Copyright 2018 dYdX Trading Inc.
