@@ -35,8 +35,8 @@ contract BucketLenderFactory {
 
     event BucketLenderCreated(
         address indexed creator,
-        address at,
-        bytes32 positionId
+        bytes32 indexed positionId,
+        address at
     );
 
     // ============ State Variables ============
@@ -64,13 +64,13 @@ contract BucketLenderFactory {
      * @param  owedToken      Address of the token being lent by the BucketLender
      * @param  parameters     Values corresponding to:
      *
-     *                        [0] = number of seconds per bucket
-     *                        [1] = interest rate
-     *                        [2] = interest period
-     *                        [3] = maximum loan duration
-     *                        [4] = margin-call timelimit
-     *                        [5] = numerator of minimum heldToken-per-owedToken
-     *                        [6] = denominator of minimum heldToken-per-owedToken
+     *  [0] = number of seconds per bucket
+     *  [1] = interest rate
+     *  [2] = interest period
+     *  [3] = maximum loan duration
+     *  [4] = margin-call timelimit
+     *  [5] = numerator of minimum heldToken-per-owedToken
+     *  [6] = denominator of minimum heldToken-per-owedToken
      *
      * @param  marginCallers  Accounts that are permitted to margin-call positions (or cancel the margin call)
      * @return                The address of the new BucketLender contract
@@ -98,8 +98,8 @@ contract BucketLenderFactory {
 
         emit BucketLenderCreated(
             msg.sender,
-            newBucketLender,
-            positionId
+            positionId,
+            newBucketLender
         );
 
         return newBucketLender;

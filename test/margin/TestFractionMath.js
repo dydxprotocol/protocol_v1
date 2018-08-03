@@ -6,7 +6,7 @@ const TestFractionMath = artifacts.require("TestFractionMath");
 const { BIGNUMBERS } = require('../helpers/Constants');
 const { expectAssertFailure } = require('../helpers/ExpectHelper');
 
-const bn = BIGNUMBERS.ONES_127;
+const bn = BIGNUMBERS.MAX_UINT128;
 
 contract('FractionMath', function(_accounts) {
   let contract;

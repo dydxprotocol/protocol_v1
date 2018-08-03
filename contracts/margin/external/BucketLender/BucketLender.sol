@@ -104,14 +104,14 @@ contract BucketLender is
     // ============ Events ============
 
     event Deposit(
-        address beneficiary,
+        address indexed beneficiary,
         uint256 bucket,
         uint256 amount,
         uint256 weight
     );
 
     event Withdraw(
-        address withdrawer,
+        address indexed withdrawer,
         uint256 bucket,
         uint256 weight,
         uint256 owedTokenWithdrawn,
@@ -155,6 +155,7 @@ contract BucketLender is
      */
     // Available Amount for each bucket
     mapping(uint256 => uint256) public availableForBucket;
+
     // Total Available Amount
     uint256 public availableTotal;
 
@@ -165,6 +166,7 @@ contract BucketLender is
      */
     // Outstanding Principal for each bucket
     mapping(uint256 => uint256) public principalForBucket;
+
     // Total Outstanding Principal
     uint256 public principalTotal;
 
@@ -177,6 +179,7 @@ contract BucketLender is
      */
     // Weight for each account in each bucket
     mapping(uint256 => mapping(address => uint256)) public weightForBucketForAccount;
+
     // Total Weight for each bucket
     mapping(uint256 => uint256) public weightForBucket;
 
@@ -378,11 +381,11 @@ contract BucketLender is
 
         // CHECK VALUES32
         require(
-            loanOffering.callTimeLimit == CALL_TIMELIMIT,
+            loanOffering.callTimeLimit == MathHelpers.maxUint32(),
             "BucketLender#verifyLoanOffering: loanOffering.callTimelimit is incorrect"
         );
         require(
-            loanOffering.maxDuration == MAX_DURATION,
+            loanOffering.maxDuration == MathHelpers.maxUint32(),
             "BucketLender#verifyLoanOffering: loanOffering.maxDuration is incorrect"
         );
         assert(loanOffering.rates.interestRate == INTEREST_RATE);
@@ -431,6 +434,22 @@ contract BucketLender is
         require(
             position.heldToken == HELD_TOKEN,
             "BucketLender#receiveLoanOwnership: Position heldToken mismatch"
+        );
+        require(
+            position.maxDuration == MAX_DURATION,
+            "BucketLender#receiveLoanOwnership: Position maxDuration mismatch"
+        );
+        require(
+            position.callTimeLimit == CALL_TIMELIMIT,
+            "BucketLender#receiveLoanOwnership: Position callTimeLimit mismatch"
+        );
+        require(
+            position.interestRate == INTEREST_RATE,
+            "BucketLender#receiveLoanOwnership: Position interestRate mismatch"
+        );
+        require(
+            position.interestPeriod == INTEREST_PERIOD,
+            "BucketLender#receiveLoanOwnership: Position interestPeriod mismatch"
         );
         require(
             Margin(DYDX_MARGIN).getPositionBalance(POSITION_ID) >= minHeldToken,

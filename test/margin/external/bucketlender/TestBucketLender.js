@@ -58,7 +58,7 @@ async function doWithdraw(account, bucket, args) {
   args = args || {};
   args.beneficiary = args.beneficiary || account;
   args.throws = args.throws || false;
-  args.weight = args.weight || BIGNUMBERS.ONES_255;
+  args.weight = args.weight || BIGNUMBERS.MAX_UINT256;
   await bucketLender.checkInvariants();
 
   if (args.throws) {
@@ -390,20 +390,20 @@ contract('BucketLender', accounts => {
             OpenDirectlyExchangeWrapper.address,
           ],
           [
-            BIGNUMBERS.ONES_255,
+            BIGNUMBERS.MAX_UINT256,
             BIGNUMBERS.ZERO,
             BIGNUMBERS.ZERO,
             BIGNUMBERS.ZERO,
             BIGNUMBERS.ZERO,
-            BIGNUMBERS.ONES_255,
+            BIGNUMBERS.MAX_UINT256,
             BIGNUMBERS.ZERO,
             OT,
             OT.times(3),
             NONCE
           ],
           [
-            CALL_TIMELIMIT,
-            MAX_DURATION,
+            BIGNUMBERS.MAX_UINT32,
+            BIGNUMBERS.MAX_UINT32,
             INTEREST_RATE,
             INTEREST_PERIOD
           ],
@@ -463,6 +463,7 @@ contract('BucketLender', accounts => {
     });
 
     it('prevents different values', async () => {
+      await wait(2);
       let incrTx;
 
       // works once
@@ -470,70 +471,70 @@ contract('BucketLender', accounts => {
       await callIncreasePosition(margin, incrTx);
 
       // maxAmount
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.rates.maxAmount = OT.times(1000);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // minAmount
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.rates.minAmount = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // minHeldToken
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.rates.minHeldToken = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // lenderFee
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.rates.lenderFee = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // takerFee
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.rates.takerFee = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // expirationTimestamp
-      incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.expirationTimestamp = BIGNUMBERS.ONES_255.minus(1);
+      incrTx = createIncreaseTx(trader, OT)
+      incrTx.loanOffering.expirationTimestamp = BIGNUMBERS.MAX_UINT256.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // salt
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       incrTx.loanOffering.salt = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
-      // callTimeLimit
-      incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.callTimeLimit = CALL_TIMELIMIT.plus(1);
+      // maxDuration
+      incrTx = createIncreaseTx(trader, OT)
+      incrTx.loanOffering.maxDuration = BIGNUMBERS.MAX_UINT32.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
-      // maxDuration
-      incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.maxDuration = MAX_DURATION.plus(1);
+      // callTimeLimit
+      incrTx = createIncreaseTx(trader, OT)
+      incrTx.loanOffering.callTimeLimit = BIGNUMBERS.MAX_UINT32.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // works again
-      incrTx = createIncreaseTx(trader, OT);
+      incrTx = createIncreaseTx(trader, OT)
       await callIncreasePosition(margin, incrTx);
     });
   });
@@ -541,6 +542,45 @@ contract('BucketLender', accounts => {
   describe('#receiveLoanOwnership', () => {
     const ogPrincipal = OT.times(2);
     const ogDeposit = OT.times(6);
+
+    async function openWithoutCounterpartyForBucketLender(args) {
+      args = args || {};
+      args.owner = args.owner || ERC20ShortCreator.address;
+      args.owedToken = args.owedToken || owedToken.address;
+      args.heldToken = args.heldToken || heldToken.address;
+      args.lender = args.lender || bucketLender.address;
+      args.principal = args.principal || ogPrincipal;
+      args.deposit = args.deposit || ogDeposit;
+      args.nonce = args.nonce || NONCE;
+      args.callTimeLimit = args.callTimeLimit || CALL_TIMELIMIT;
+      args.maxDuration = args.maxDuration || MAX_DURATION;
+      args.interestRate = args.interestRate || INTEREST_RATE;
+      args.interestPeriod = args.interestPeriod || INTEREST_PERIOD;
+      const promise = margin.openWithoutCounterparty(
+        [
+          args.owner,
+          args.owedToken,
+          args.heldToken,
+          args.lender
+        ],
+        [
+          args.principal,
+          args.deposit,
+          args.nonce
+        ],
+        [
+          args.callTimeLimit,
+          args.maxDuration,
+          args.interestRate,
+          args.interestPeriod
+        ]
+      );
+      if (args.throws) {
+        await expectThrow(promise);
+      } else {
+        await Promise.all([promise]);
+      }
+    }
 
     it('succeeds under normal conditions', async () => {
       await setUpPosition(accounts);
@@ -552,77 +592,45 @@ contract('BucketLender', accounts => {
       await setUpPosition(accounts, false);
       const badToken = await HeldToken.new();
       await issueTokenToAccountInAmountAndApproveProxy(badToken, accounts[0], OT.times(1000)),
-      await expectThrow(
-        margin.openWithoutCounterparty(
-          [
-            ERC20ShortCreator.address,
-            owedToken.address,
-            badToken.address,
-            bucketLender.address
-          ],
-          [
-            ogPrincipal,
-            ogDeposit,
-            NONCE
-          ],
-          [
-            CALL_TIMELIMIT,
-            MAX_DURATION,
-            INTEREST_RATE,
-            INTEREST_PERIOD
-          ]
-        )
-      );
+      await openWithoutCounterpartyForBucketLender({ throws: true, heldToken: badToken.address });
     });
 
     it('fails for the wrong owedToken', async () => {
       await setUpPosition(accounts, false);
       const badToken = await OwedToken.new();
-      await expectThrow(
-        margin.openWithoutCounterparty(
-          [
-            ERC20ShortCreator.address,
-            badToken.address,
-            heldToken.address,
-            bucketLender.address
-          ],
-          [
-            ogPrincipal,
-            ogDeposit,
-            NONCE
-          ],
-          [
-            CALL_TIMELIMIT,
-            MAX_DURATION,
-            INTEREST_RATE,
-            INTEREST_PERIOD
-          ]
-        )
+      await openWithoutCounterpartyForBucketLender({ throws: true, owedToken: badToken.address });
+    });
+
+    it('fails for the wrong maxDuration', async () => {
+      await setUpPosition(accounts, false);
+      const maxDuration = BIGNUMBERS.MAX_UINT32.minus(2);
+      await openWithoutCounterpartyForBucketLender({ throws: true, maxDuration: maxDuration });
+    });
+
+    it('fails for the wrong callTimeLimit', async () => {
+      await setUpPosition(accounts, false);
+      const callTimeLimit = BIGNUMBERS.MAX_UINT32.minus(2);
+      await openWithoutCounterpartyForBucketLender({ throws: true, callTimeLimit: callTimeLimit });
+    });
+
+    it('fails for the wrong interestRate', async () => {
+      await setUpPosition(accounts, false);
+      const interestRate = INTEREST_RATE.add(1);
+      await openWithoutCounterpartyForBucketLender({ throws: true, interestRate: interestRate });
+    });
+
+    it('fails for the wrong interestPeriod', async () => {
+      await setUpPosition(accounts, false);
+      const interestPeriod = INTEREST_RATE.add(1);
+      await openWithoutCounterpartyForBucketLender(
+        { throws: true, interestPeriod: interestPeriod }
       );
     });
 
     it('fails for insufficient collateral', async () => {
       await setUpPosition(accounts, false);
-      await expectThrow(
-        margin.openWithoutCounterparty(
-          [
-            ERC20ShortCreator.address,
-            owedToken.address,
-            heldToken.address,
-            bucketLender.address
-          ],
-          [
-            ogPrincipal.plus(1),
-            ogDeposit,
-            NONCE
-          ],
-          [
-            CALL_TIMELIMIT,
-            MAX_DURATION,
-            INTEREST_RATE,
-            INTEREST_PERIOD
-          ]
-        )
+      await openWithoutCounterpartyForBucketLender(
+        { throws: true, principal: ogPrincipal.plus(1) }
       );
     });
 
@@ -906,7 +914,7 @@ contract('BucketLender', accounts => {
       await issueTokenToAccountInAmountAndApproveProxy(owedToken, TRUSTED_PARTY, OT.times(1000));
       await margin.closePositionDirectly(
         POSITION_ID,
-        BIGNUMBERS.ONES_255,
+        BIGNUMBERS.MAX_UINT256,
         TRUSTED_PARTY,
         { from: TRUSTED_PARTY }
       );
@@ -982,7 +990,7 @@ contract('BucketLender', accounts => {
 
       // succeeds after close
       await heldToken.issueTo(bucketLender.address, amount);
-      await doClose(BIGNUMBERS.ONES_255, { closer: TRUSTED_PARTY });
+      await doClose(BIGNUMBERS.MAX_UINT256, { closer: TRUSTED_PARTY });
       await doWithdrawExtra(heldToken, amount);
     });
 
@@ -1080,7 +1088,7 @@ contract('BucketLender', accounts => {
       await doIncrease(OT.times(4));
       await wait(60 * 60 * 24 * 2);
       await doClose(OT.times(4));
-      await doClose(BIGNUMBERS.ONES_255, { closer: TRUSTED_PARTY });
+      await doClose(BIGNUMBERS.MAX_UINT256, { closer: TRUSTED_PARTY });
 
       const isClosed = await margin.isPositionClosed.call(POSITION_ID);
       expect(isClosed).to.be.true;
@@ -1169,7 +1177,7 @@ contract('BucketLender', accounts => {
       await expectThrow(
         bucketLender.withdraw(
           [0],
-          [BIGNUMBERS.ONES_255, BIGNUMBERS.ONES_255],
+          [BIGNUMBERS.MAX_UINT256, BIGNUMBERS.MAX_UINT256],
           lender1,
           { from: lender1 }
         )
@@ -1177,7 +1185,7 @@ contract('BucketLender', accounts => {
       await expectThrow(
         bucketLender.withdraw(
           [0, 1],
-          [BIGNUMBERS.ONES_255],
+          [BIGNUMBERS.MAX_UINT256],
           lender1,
           { from: lender1 }
         )
@@ -1382,7 +1390,7 @@ contract('BucketLender', accounts => {
 
       await bucketLender.checkInvariants();
 
-      await doClose(BIGNUMBERS.ONES_255);
+      await doClose(BIGNUMBERS.MAX_UINT256);
 
       await wait(60 * 60 * 24 * 1);
       await bucketLender.checkInvariants();
@@ -1831,7 +1839,7 @@ function createIncreaseTx(trader, principal) {
       lenderFeeTokenAddress: ADDRESSES.ZERO,
       takerFeeTokenAddress: ADDRESSES.ZERO,
       rates: {
-        maxAmount:      BIGNUMBERS.ONES_255,
+        maxAmount:      BIGNUMBERS.MAX_UINT256,
         minAmount:      BIGNUMBERS.ZERO,
         minHeldToken:   BIGNUMBERS.ZERO,
         lenderFee:      BIGNUMBERS.ZERO,
@@ -1839,9 +1847,9 @@ function createIncreaseTx(trader, principal) {
         interestRate:   INTEREST_RATE,
         interestPeriod: INTEREST_PERIOD
       },
-      expirationTimestamp: BIGNUMBERS.ONES_255,
-      callTimeLimit: CALL_TIMELIMIT.toNumber(),
-      maxDuration: MAX_DURATION.toNumber(),
+      expirationTimestamp: BIGNUMBERS.MAX_UINT256,
+      callTimeLimit: BIGNUMBERS.MAX_UINT32,
+      maxDuration: BIGNUMBERS.MAX_UINT32,
       salt: 0,
       signature: BYTES.EMPTY
     }
