@@ -1,13 +1,8 @@
-const Web3 = require('web3');
+import Web3 from 'web3';
+
 const web3Instance = new Web3(web3.currentProvider);
 
-function toBytes(val) {
-  return web3Instance.utils.hexToBytes(
-    web3Instance.utils.padLeft(web3Instance.utils.toHex(val), 64)
-  );
-}
-
-function zeroExOrderToBytes(order) {
+export function zeroExOrderToBytes(order) {
   const v = [].concat(toBytes(order.maker))
     .concat(toBytes(order.taker))
     .concat(toBytes(order.feeRecipient))
@@ -23,6 +18,8 @@ function zeroExOrderToBytes(order) {
   return web3Instance.utils.bytesToHex(v);
 }
 
-module.exports = {
-  zeroExOrderToBytes
+function toBytes(val) {
+  return web3Instance.utils.hexToBytes(
+    web3Instance.utils.padLeft(web3Instance.utils.toHex(val), 64),
+  );
 }

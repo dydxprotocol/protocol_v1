@@ -1,27 +1,26 @@
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('chai-bignumber')());
-
-const Margin = artifacts.require("Margin");
-const ERC20CappedShort = artifacts.require("ERC20CappedShort");
-const ERC20CappedLong = artifacts.require("ERC20CappedLong");
-const HeldToken = artifacts.require("TokenA");
-const { ADDRESSES, BYTES32 } = require('../../helpers/Constants');
-const {
+import BigNumber from 'bignumber.js';
+import expect from '../../helpers/expect';
+import {
   callIncreasePosition,
   createOpenTx,
   doOpenPosition,
   issueTokensAndSetAllowances,
   issueTokenToAccountInAmountAndApproveProxy,
-} = require('../../helpers/MarginHelper');
-const { expectThrow } = require('../../helpers/ExpectHelper');
-const { signLoanOffering } = require('../../helpers/LoanHelper');
-const BigNumber = require('bignumber.js');
+} from '../../helpers/MarginHelper';
+import { expectThrow } from '../../helpers/ExpectHelper';
+import { signLoanOffering } from '../../helpers/LoanHelper';
+import { ADDRESSES, BYTES32 } from '../../helpers/Constants';
 
-contract('ERC20Short', accounts => {
-  let dydxMargin, heldToken;
+const Margin = artifacts.require('Margin');
+const ERC20CappedShort = artifacts.require('ERC20CappedShort');
+const ERC20CappedLong = artifacts.require('ERC20CappedLong');
+const HeldToken = artifacts.require('TokenA');
 
-  let POSITIONS = {
+contract('ERC20Short', (accounts) => {
+  let dydxMargin;
+  let heldToken;
+
+  const POSITIONS = {
     LONG: {
       TOKEN_CONTRACT: null,
       TX: null,
@@ -29,7 +28,7 @@ contract('ERC20Short', accounts => {
       SELL_ORDER: null,
       NUM_TOKENS: 0,
       PRINCIPAL: 0,
-      SALT: 0
+      SALT: 0,
     },
     SHORT: {
       TOKEN_CONTRACT: null,
@@ -38,8 +37,8 @@ contract('ERC20Short', accounts => {
       SELL_ORDER: null,
       NUM_TOKENS: 0,
       PRINCIPAL: 0,
-      SALT: 0
-    }
+      SALT: 0,
+    },
   };
 
   let pepper = 0;
@@ -48,15 +47,15 @@ contract('ERC20Short', accounts => {
   before('Set up Proxy, Margin accounts', async () => {
     [
       dydxMargin,
-      heldToken
+      heldToken,
     ] = await Promise.all([
       Margin.deployed(),
-      HeldToken.deployed()
+      HeldToken.deployed(),
     ]);
   });
 
   async function setUpPositions() {
-    pepper++;
+    pepper += 1;
 
     POSITIONS.LONG.SALT = 123456 + pepper;
     POSITIONS.SHORT.SALT = 654321 + pepper;
@@ -74,10 +73,10 @@ contract('ERC20Short', accounts => {
 
     [
       POSITIONS.LONG.NUM_TOKENS,
-      POSITIONS.SHORT.NUM_TOKENS
+      POSITIONS.SHORT.NUM_TOKENS,
     ] = await Promise.all([
       dydxMargin.getPositionBalance.call(POSITIONS.LONG.ID),
-      dydxMargin.getPositionPrincipal.call(POSITIONS.SHORT.ID)
+      dydxMargin.getPositionPrincipal.call(POSITIONS.SHORT.ID),
     ]);
   }
 
@@ -86,22 +85,22 @@ contract('ERC20Short', accounts => {
     POSITIONS.SHORT.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
     [
       POSITIONS.LONG.TOKEN_CONTRACT,
-      POSITIONS.SHORT.TOKEN_CONTRACT
+      POSITIONS.SHORT.TOKEN_CONTRACT,
     ] = await Promise.all([
       ERC20CappedLong.new(
         POSITIONS.LONG.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.LONG.TRUSTED_RECIPIENTS,
-        POSITIONS.LONG.NUM_TOKENS.times(multiplier)
+        POSITIONS.LONG.NUM_TOKENS.times(multiplier),
       ),
       ERC20CappedShort.new(
         POSITIONS.SHORT.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.SHORT.TRUSTED_RECIPIENTS,
-        POSITIONS.SHORT.NUM_TOKENS.times(multiplier)
-      )
+        POSITIONS.SHORT.NUM_TOKENS.times(multiplier),
+      ),
     ]);
   }
 
@@ -110,12 +109,12 @@ contract('ERC20Short', accounts => {
       dydxMargin.transferPosition(
         POSITIONS.LONG.ID,
         POSITIONS.LONG.TOKEN_CONTRACT.address,
-        { from: POSITIONS.LONG.TX.trader }
+        { from: POSITIONS.LONG.TX.trader },
       ),
       dydxMargin.transferPosition(
         POSITIONS.SHORT.ID,
         POSITIONS.SHORT.TOKEN_CONTRACT.address,
-        { from: POSITIONS.SHORT.TX.trader }
+        { from: POSITIONS.SHORT.TX.trader },
       ),
     ]);
   }
@@ -132,7 +131,7 @@ contract('ERC20Short', accounts => {
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         [trustedAccount],
-        tokenCap
+        tokenCap,
       );
       const [
         supply,
@@ -140,7 +139,7 @@ contract('ERC20Short', accounts => {
         pid,
         ith,
         trusted1,
-        trusted2
+        trusted2,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
         tokenContract.tokenCap.call(),
@@ -163,7 +162,7 @@ contract('ERC20Short', accounts => {
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         [trustedAccount],
-        tokenCap
+        tokenCap,
       );
       const [
         supply,
@@ -171,7 +170,7 @@ contract('ERC20Short', accounts => {
         pid,
         ith,
         trusted1,
-        trusted2
+        trusted2,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
         tokenContract.tokenCap.call(),
@@ -194,48 +193,47 @@ contract('ERC20Short', accounts => {
       await setUpPositions();
       await setUpTokens(1);
 
-      for (let type in POSITIONS) {
+
+      Object.keys(POSITIONS).forEach(async (type) => {
         const POSITION = POSITIONS[type];
 
         await dydxMargin.transferPosition(
           POSITION.ID,
           POSITION.TOKEN_CONTRACT.address,
-          { from: POSITION.TX.owner }
+          { from: POSITION.TX.owner },
         );
 
         const supply = await POSITION.TOKEN_CONTRACT.totalSupply.call();
 
         expect(supply).to.be.bignumber.eq(POSITION.NUM_TOKENS);
-      }
+      });
     });
 
     it('fails for low tokenCap', async () => {
       await setUpPositions();
-      await setUpTokens(.9);
+      await setUpTokens(0.9);
 
-      for (let type in POSITIONS) {
+      Object.keys(POSITIONS).forEach(async (type) => {
         const POSITION = POSITIONS[type];
 
         await expectThrow(
           dydxMargin.transferPosition(
             POSITION.ID,
             POSITION.TOKEN_CONTRACT.address,
-            { from: POSITION.TX.owner }
-          )
+            { from: POSITION.TX.owner },
+          ),
         );
-      }
+      });
     });
   });
 
   describe('#increasePositionOnBehalfOf', () => {
-    let pepper = 0;
-
     async function doIncrease(position, acts, args) {
       args = args || {};
       args.throws = args.throws || false;
       args.multiplier = args.multiplier || 1;
 
-      let incrTx = await createOpenTx(acts, { salt: 99999 + pepper });
+      const incrTx = await createOpenTx(acts, { salt: 99999 + pepper });
       incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
       incrTx.owner = position.TOKEN_CONTRACT.address;
@@ -245,7 +243,7 @@ contract('ERC20Short', accounts => {
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,
         incrTx.trader,
-        incrTx.depositAmount.times(4)
+        incrTx.depositAmount.times(4),
       );
 
       if (args.throws) {
@@ -256,39 +254,37 @@ contract('ERC20Short', accounts => {
       return incrTx;
     }
 
-    beforeEach('Set up all tokenized positions',
-      async () => {
-        await setUpPositions();
-        await setUpTokens(2);
-        await transferPositionsToTokens();
-      }
-    );
+    beforeEach('Set up all tokenized positions', async () => {
+      await setUpPositions();
+      await setUpTokens(2);
+      await transferPositionsToTokens();
+    });
 
     it('succeeds if the number of tokens remains under the token cap', async () => {
       let tempAccounts = accounts;
-      for (let type in POSITIONS) {
+      Object.keys(POSITIONS).forEach(async (type) => {
         const POSITION = POSITIONS[type];
         tempAccounts = tempAccounts.slice(1);
         await doIncrease(POSITION, tempAccounts, { throws: false, multiplier: 1 });
 
         const [
           supply,
-          cap
+          cap,
         ] = await Promise.all([
           POSITION.TOKEN_CONTRACT.totalSupply.call(),
           POSITION.TOKEN_CONTRACT.tokenCap.call(),
         ]);
         expect(supply).to.be.bignumber.eq(cap);
-      }
+      });
     });
 
     it('fails if it would exceed the token cap', async () => {
       let tempAccounts = accounts;
-      for (let type in POSITIONS) {
+      Object.keys(POSITIONS).forEach(async (type) => {
         const POSITION = POSITIONS[type];
         tempAccounts = tempAccounts.slice(1);
         await doIncrease(POSITION, tempAccounts, { throws: true, multiplier: 1.1 });
-      }
+      });
     });
   });
 });

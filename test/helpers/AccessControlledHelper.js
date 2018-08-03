@@ -1,12 +1,8 @@
-const chai = require('chai');
-const expect = chai.expect;
+import chai from 'chai';
+import { getBlockNumber, getBlockTimestamp } from './NodeHelper';
+
+const { expect } = chai;
 chai.use(require('chai-bignumber')());
-
-const { getBlockNumber, getBlockTimestamp } = require("./NodeHelper");
-
-module.exports = {
-  validateStaticAccessControlledConstants
-};
 
 /**
  * Validates that the constructor for any contract of type StaticAccessControlled has correctly set
@@ -15,9 +11,10 @@ module.exports = {
  * @param  {BigNumber} expectedGracePeriod the expected value of gracePeriodExpiration
  * @return {bool}                          returns true unless it throws an error due to expect()
  */
-async function validateStaticAccessControlledConstants(
+export async function validateStaticAccessControlledConstants(
   contract,
-  expectedGracePeriod) {
+  expectedGracePeriod,
+) {
   const contractGracePeriodExpiration = await contract.GRACE_PERIOD_EXPIRATION.call();
 
   const blockNumber = await getBlockNumber(contract.transactionHash);

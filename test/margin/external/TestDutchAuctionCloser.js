@@ -1,30 +1,29 @@
-const chai = require('chai');
-const expect = chai.expect;
-chai.use(require('chai-bignumber')());
-
-const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const Margin = artifacts.require("Margin");
-const TokenProxy = artifacts.require("TokenProxy");
-const Vault = artifacts.require("Vault");
-
-const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
-const {
+import expect from '../../helpers/expect';
+import { getOwedAmount } from '../../helpers/ClosePositionHelper';
+import {
   callClosePositionDirectly,
   doClosePosition,
-  getMaxInterestFee
-} = require('../../helpers/MarginHelper');
-const { expectThrow } = require('../../helpers/ExpectHelper');
-const {
-  doOpenPosition
-} = require('../../helpers/MarginHelper');
+  doOpenPosition,
+  getMaxInterestFee,
+} from '../../helpers/MarginHelper';
+import { expectThrow } from '../../helpers/ExpectHelper';
+
 const { wait } = require('@digix/tempo')(web3);
 
-contract('DutchAuctionCloser', accounts => {
-  let dydxMargin, VaultContract, ERC721MarginPositionContract;
-  let OwedTokenContract, HeldTokenContract;
+const DutchAuctionCloser = artifacts.require('DutchAuctionCloser');
+const ERC721MarginPosition = artifacts.require('ERC721MarginPosition');
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
+const Margin = artifacts.require('Margin');
+const TokenProxy = artifacts.require('TokenProxy');
+const Vault = artifacts.require('Vault');
+
+contract('DutchAuctionCloser', (accounts) => {
+  let dydxMargin;
+  let VaultContract;
+  let ERC721MarginPositionContract;
+  let OwedTokenContract;
+  let HeldTokenContract;
   let openTx;
   const dutchBidder = accounts[9];
 
@@ -68,24 +67,26 @@ contract('DutchAuctionCloser', accounts => {
     let callTimeLimit;
 
     beforeEach('approve DutchAuctionCloser for token transfers from bidder', async () => {
+      salt += 1;
       openTx = await doOpenPosition(
         accounts,
         {
-          salt: salt++,
-          positionOwner: ERC721MarginPosition.address
-        }
+          salt,
+          positionOwner: ERC721MarginPosition.address,
+        },
       );
       await ERC721MarginPositionContract.approveRecipient(
         DutchAuctionCloser.address,
         true,
-        { from: openTx.trader }
+        { from: openTx.trader },
       );
       await dydxMargin.marginCall(
         openTx.id,
-        0 /*requiredDeposit*/,
-        { from: openTx.loanOffering.owner }
+        0, // requiredDeposit
+        { from: openTx.loanOffering.owner },
       );
-      callTimeLimit = openTx.loanOffering.callTimeLimit;
+
+      ({ callTimeLimit } = openTx.loanOffering);
 
       // grant tokens and set permissions for bidder
       const numTokens = await OwedTokenContract.balanceOf.call(dutchBidder);
@@ -97,7 +98,8 @@ contract('DutchAuctionCloser', accounts => {
         await OwedTokenContract.approve(
           TokenProxy.address,
           targetTokens,
-          { from: dutchBidder });
+          { from: dutchBidder },
+        );
       }
     });
 
@@ -113,8 +115,8 @@ contract('DutchAuctionCloser', accounts => {
         openTx.principal.div(2),
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       ));
     });
 
@@ -127,8 +129,8 @@ contract('DutchAuctionCloser', accounts => {
         openTx.principal.div(2),
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       ));
     });
 
@@ -141,8 +143,8 @@ contract('DutchAuctionCloser', accounts => {
         openTx.principal.div(2),
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       ));
     });
 
@@ -159,8 +161,8 @@ contract('DutchAuctionCloser', accounts => {
         closeAmount,
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       );
     });
 
@@ -178,8 +180,8 @@ contract('DutchAuctionCloser', accounts => {
         closeAmount,
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       );
     });
 
@@ -188,7 +190,7 @@ contract('DutchAuctionCloser', accounts => {
       const closeAmount = openTx.principal.div(2).floor();
 
       // closing half is fine (set trader to bidder temporarily for doClosePosition)
-      const trader = openTx.trader;
+      const { trader } = openTx;
       openTx.trader = dutchBidder;
       await expectThrow(
         doClosePosition(
@@ -200,10 +202,10 @@ contract('DutchAuctionCloser', accounts => {
             callCloseArgs: {
               from: dutchBidder,
               recipient: DutchAuctionCloser.address,
-              payoutInHeldToken: false
-            }
-          }
-        )
+              payoutInHeldToken: false,
+            },
+          },
+        ),
       );
       openTx.trader = trader;
     });
@@ -214,7 +216,7 @@ contract('DutchAuctionCloser', accounts => {
       const [
         owedTokenBidder0,
         heldTokenTrader0,
-        heldTokenBidder0
+        heldTokenBidder0,
       ] = await Promise.all([
         OwedTokenContract.balanceOf.call(dutchBidder),
         HeldTokenContract.balanceOf.call(openTx.trader),
@@ -231,8 +233,8 @@ contract('DutchAuctionCloser', accounts => {
         closeAmount,
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       );
       const owedAmount1 = await getOwedAmount(openTx, closeTx1, closeAmount);
 
@@ -243,8 +245,8 @@ contract('DutchAuctionCloser', accounts => {
         closeAmount,
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       );
       const owedAmount2 = await getOwedAmount(openTx, closeTx2, closeAmount);
 
@@ -255,14 +257,14 @@ contract('DutchAuctionCloser', accounts => {
         closeAmount,
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
-        }
+          recipient: DutchAuctionCloser.address,
+        },
       ));
 
       const [
         owedTokenBidder1,
         heldTokenTrader1,
-        heldTokenBidder1
+        heldTokenBidder1,
       ] = await Promise.all([
         OwedTokenContract.balanceOf.call(dutchBidder),
         HeldTokenContract.balanceOf.call(openTx.trader),
@@ -271,9 +273,9 @@ contract('DutchAuctionCloser', accounts => {
 
       // check amounts
       expect(
-        owedTokenBidder0.minus(owedTokenBidder1)
+        owedTokenBidder0.minus(owedTokenBidder1),
       ).to.be.bignumber.equal(
-        owedAmount1.plus(owedAmount2)
+        owedAmount1.plus(owedAmount2),
       );
 
       // check that all the held token in the vault went to either the trader or the bidder
@@ -282,9 +284,9 @@ contract('DutchAuctionCloser', accounts => {
       expect(bidderDiff).to.be.bignumber.not.equal(0);
       expect(traderDiff).to.be.bignumber.not.equal(0);
       expect(
-        traderDiff.plus(bidderDiff)
+        traderDiff.plus(bidderDiff),
       ).to.be.bignumber.equal(
-        heldTokenVault
+        heldTokenVault,
       );
     });
   });

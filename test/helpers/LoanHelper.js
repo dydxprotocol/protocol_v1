@@ -1,23 +1,29 @@
-const BigNumber = require('bignumber.js');
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
-const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT, SIGNATURE_TYPE } = require('./Constants');
-const Web3 = require('web3');
-const Margin = artifacts.require("Margin");
-const promisify = require("es6-promisify");
-const ethUtil = require('ethereumjs-util');
+import BigNumber from 'bignumber.js';
+import Web3 from 'web3';
+import promisify from 'es6-promisify';
+import ethUtil from 'ethereumjs-util';
+import {
+  ADDRESSES,
+  BIGNUMBERS,
+  DEFAULT_SALT,
+  SIGNATURE_TYPE,
+} from './Constants';
+
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
+const FeeToken = artifacts.require('TokenC');
+const Margin = artifacts.require('Margin');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-async function createLoanOffering(
+export async function createLoanOffering(
   accounts,
   {
     salt = DEFAULT_SALT,
-    interestPeriod
-  } = {}
+    interestPeriod,
+  } = {},
 ) {
-  let loanOffering = {
+  const loanOffering = {
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
     payer: accounts[1],
@@ -34,12 +40,12 @@ async function createLoanOffering(
       lenderFee:          new BigNumber('11098765432109871'),
       takerFee:           new BigNumber('21098765432109871'),
       interestRate:       new BigNumber('3650101'), // ~3.65% nominal per year
-      interestPeriod:     interestPeriod || BIGNUMBERS.ONE_DAY_IN_SECONDS
+      interestPeriod:     interestPeriod || BIGNUMBERS.ONE_DAY_IN_SECONDS,
     },
     expirationTimestamp:  1000000000000, // 31.69 millennia from 1970
     callTimeLimit: 10000,
     maxDuration: 365 * BIGNUMBERS.ONE_DAY_IN_SECONDS.toNumber(),
-    salt: salt
+    salt,
   };
 
   loanOffering.signature = await signLoanOffering(loanOffering);
@@ -47,7 +53,7 @@ async function createLoanOffering(
   return loanOffering;
 }
 
-function setLoanHash(loanOffering) {
+export function setLoanHash(loanOffering) {
   const valuesHash = web3Instance.utils.soliditySha3(
     loanOffering.rates.maxAmount,
     loanOffering.rates.minAmount,
@@ -59,7 +65,7 @@ function setLoanHash(loanOffering) {
     { type: 'uint32', value: loanOffering.callTimeLimit },
     { type: 'uint32', value: loanOffering.maxDuration },
     { type: 'uint32', value: loanOffering.rates.interestRate },
-    { type: 'uint32', value: loanOffering.rates.interestPeriod }
+    { type: 'uint32', value: loanOffering.rates.interestPeriod },
   );
   const hash = web3Instance.utils.soliditySha3(
     Margin.address,
@@ -72,16 +78,18 @@ function setLoanHash(loanOffering) {
     loanOffering.feeRecipient,
     loanOffering.lenderFeeTokenAddress,
     loanOffering.takerFeeTokenAddress,
-    valuesHash
+    valuesHash,
   );
+
   loanOffering.loanHash = hash;
 }
 
-async function signLoanOffering(loanOffering) {
+export async function signLoanOffering(loanOffering) {
   setLoanHash(loanOffering);
 
   const signature = await promisify(web3Instance.eth.sign)(
-    loanOffering.loanHash, loanOffering.payer
+    loanOffering.loanHash,
+    loanOffering.payer,
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -91,12 +99,6 @@ async function signLoanOffering(loanOffering) {
       ethUtil.toBuffer(v),
       r,
       s,
-    ])
+    ]),
   );
-}
-
-module.exports = {
-  createLoanOffering,
-  setLoanHash,
-  signLoanOffering
 }

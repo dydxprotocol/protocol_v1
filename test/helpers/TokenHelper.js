@@ -1,15 +1,11 @@
-async function issueAndSetAllowance(
+export async function issueAndSetAllowance(
   token,
   account,
   amount,
-  allowed
+  allowed,
 ) {
   await Promise.all([
     token.issueTo(account, amount),
-    token.approve(allowed, amount, { from: account })
+    token.approve(allowed, amount, { from: account }),
   ]);
 }
-
-module.exports = {
-  issueAndSetAllowance
-};

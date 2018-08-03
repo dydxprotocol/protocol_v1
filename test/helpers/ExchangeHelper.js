@@ -1,10 +1,10 @@
-function callCancelOrder(exchange, order, cancelAmount) {
+export function callCancelOrder(exchange, order, cancelAmount) {
   const addresses = [
     order.maker,
     order.taker,
     order.makerTokenAddress,
     order.takerTokenAddress,
-    order.feeRecipient
+    order.feeRecipient,
   ];
 
   const values = [
@@ -13,15 +13,13 @@ function callCancelOrder(exchange, order, cancelAmount) {
     order.makerFee,
     order.takerFee,
     order.expirationUnixTimestampSec,
-    order.salt
+    order.salt,
   ];
 
   return exchange.cancelOrder(
     addresses,
     values,
     cancelAmount,
-    { from: order.maker }
+    { from: order.maker },
   );
 }
-
-module.exports.callCancelOrder = callCancelOrder;

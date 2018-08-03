@@ -1,7 +1,7 @@
-const expect = require('chai').expect;
+import expect from './expect';
 
 // For solidity function calls that violate require()
-async function expectThrow(promise) {
+export async function expectThrow(promise) {
   try {
     await promise;
     throw new Error('Did not throw');
@@ -11,7 +11,7 @@ async function expectThrow(promise) {
 }
 
 // For solidity function calls that violate assert()
-async function expectAssertFailure(promise) {
+export async function expectAssertFailure(promise) {
   try {
     await promise;
     throw new Error('Did not throw');
@@ -21,18 +21,13 @@ async function expectAssertFailure(promise) {
 }
 
 // Helper function
-function assertCertainError(error, expected_error_msg) {
+function assertCertainError(error, expectedErrorMsg) {
   // This complication is so that the actual error will appear in truffle test output
-  const message = error.message;
-  const matchedIndex = message.search(expected_error_msg);
+  const { message } = error;
+  const matchedIndex = message.search(expectedErrorMsg);
   let matchedString = message;
   if (matchedIndex >= 0) {
-    matchedString = message.substring(matchedIndex, matchedIndex + expected_error_msg.length);
+    matchedString = message.substring(matchedIndex, matchedIndex + expectedErrorMsg.length);
   }
-  expect(matchedString).to.equal(expected_error_msg);
+  expect(matchedString).to.equal(expectedErrorMsg);
 }
-
-module.exports = {
-  expectThrow,
-  expectAssertFailure
-};

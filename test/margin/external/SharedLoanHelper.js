@@ -1,13 +1,13 @@
-const BigNumber = require('bignumber.js');
-const { ADDRESSES } = require('../../helpers/Constants');
+import BigNumber from 'bignumber.js';
+import { ADDRESSES } from '../../helpers/Constants';
 
-const SHARED_LOAN_STATE = {
+export const SHARED_LOAN_STATE = {
   UNINITIALIZED: new BigNumber(0),
   OPEN: new BigNumber(1),
-  CLOSED: new BigNumber(2)
+  CLOSED: new BigNumber(2),
 };
 
-async function getSharedLoanConstants(sharedLoanContract, initialLender) {
+export async function getSharedLoanConstants(sharedLoanContract, initialLender) {
   const [
     MarginAddress,
     InitialLender,
@@ -35,7 +35,7 @@ async function getSharedLoanConstants(sharedLoanContract, initialLender) {
     sharedLoanContract.balances.call(initialLender),
     sharedLoanContract.balances.call(ADDRESSES.ZERO),
     sharedLoanContract.owedTokenWithdrawnEarly.call(initialLender),
-    sharedLoanContract.owedTokenWithdrawnEarly.call(ADDRESSES.ZERO)
+    sharedLoanContract.owedTokenWithdrawnEarly.call(ADDRESSES.ZERO),
   ]);
   return {
     MarginAddress,
@@ -53,8 +53,3 @@ async function getSharedLoanConstants(sharedLoanContract, initialLender) {
     OwedTokenWithdrawnEarlyZero,
   };
 }
-
-module.exports = {
-  SHARED_LOAN_STATE,
-  getSharedLoanConstants
-};

@@ -1,25 +1,26 @@
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroEx = require('0x.js').ZeroEx;
-const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
-const promisify = require("es6-promisify");
-const ethUtil = require('ethereumjs-util');
-const { DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
+import { ZeroEx } from '0x.js';
+import Web3 from 'web3';
+import BigNumber from 'bignumber.js';
+import promisify from 'es6-promisify';
+import ethUtil from 'ethereumjs-util';
+import { DEFAULT_SALT, ORDER_TYPE } from './Constants';
+
+const ZeroExExchange = artifacts.require('ZeroExExchange');
+const HeldToken = artifacts.require('TokenA');
+const OwedToken = artifacts.require('TokenB');
+const FeeToken = artifacts.require('TokenC');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-const BASE_AMOUNT = new BigNumber('1098623452345987123')
+const BASE_AMOUNT = new BigNumber('1098623452345987123');
 
-async function createSignedSellOrder(
+export async function createSignedSellOrder(
   accounts,
   {
-    salt = DEFAULT_SALT
-  } = {}
+    salt = DEFAULT_SALT,
+  } = {},
 ) {
-  let order = {
+  const order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
@@ -36,7 +37,7 @@ async function createSignedSellOrder(
 
     // heldToken
     takerTokenAddress: HeldToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(19.123475).floor()
+    takerTokenAmount: BASE_AMOUNT.times(19.123475).floor(),
   };
 
   order.ecSignature = await signOrder(order);
@@ -44,22 +45,22 @@ async function createSignedSellOrder(
   return order;
 }
 
-async function createSignedBuyOrder(
+export async function createSignedBuyOrder(
   accounts,
   {
-    salt = DEFAULT_SALT
-  } = {}
+    salt = DEFAULT_SALT,
+  } = {},
 ) {
-  let order = {
+  const order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: accounts[4],
     maker: accounts[2],
-    makerFee: BASE_AMOUNT.times(.02012398).floor(),
+    makerFee: BASE_AMOUNT.times(0.02012398).floor(),
     salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
-    takerFee: BASE_AMOUNT.times(.1019238).floor(),
+    takerFee: BASE_AMOUNT.times(0.1019238).floor(),
     makerFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
 
@@ -77,9 +78,9 @@ async function createSignedBuyOrder(
   return order;
 }
 
-async function signOrder(order) {
+export async function signOrder(order) {
   const signature = await promisify(web3Instance.eth.sign)(
-    getOrderHash(order), order.maker
+    getOrderHash(order), order.maker,
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -87,11 +88,11 @@ async function signOrder(order) {
   return {
     v,
     r: ethUtil.bufferToHex(r),
-    s: ethUtil.bufferToHex(s)
+    s: ethUtil.bufferToHex(s),
   };
 }
 
-function getOrderHash(order) {
+export function getOrderHash(order) {
   return web3Instance.utils.soliditySha3(
     ZeroExExchange.address,
     order.maker,
@@ -104,13 +105,6 @@ function getOrderHash(order) {
     order.makerFee,
     order.takerFee,
     order.expirationUnixTimestampSec,
-    order.salt
-  )
-}
-
-module.exports = {
-  createSignedSellOrder,
-  createSignedBuyOrder,
-  signOrder,
-  getOrderHash
+    order.salt,
+  );
 }
