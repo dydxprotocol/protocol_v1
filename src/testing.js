@@ -1,5 +1,6 @@
 import promisify from "es6-promisify";
 import BigNumber from 'bignumber.js';
+import * as TestPositionsJson from '../build/test-posiitions';
 
 export function reset(web3Instance) {
   return promisify(web3Instance.currentProvider.sendAsync)({
@@ -9,8 +10,6 @@ export function reset(web3Instance) {
     params: ['0x1'],
   });
 }
-
-import * as TestPositionsJson from '../build/test-posiitions';
 
 export const TEST_POSITIONS = TestPositionsJson.map(mapPositionFromJson);
 

@@ -1,2 +1,2 @@
-export * as contracts from './contracts';
-export * as testing from './testing';
+export * from './contracts';
+export * from './testing';

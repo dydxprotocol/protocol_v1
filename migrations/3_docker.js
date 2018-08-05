@@ -25,7 +25,7 @@ async function doMigration(deployer, network, accounts) {
     const margin = await Margin.deployed();
     const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
 
-    const json = JSON.stringify(positions);
+    const json = JSON.stringify(positions, null, 4);
 
     await writeFileAsync(__dirname + '/../build/test-positions.json', json, 'utf8');
   }
