@@ -8,12 +8,9 @@ cleanup ()
 
 trap cleanup SIGINT SIGTERM
 
-npm run node -- -i 1212 -d -p 8545 -h 0.0.0.0 &
+npm run docker_node &
+PROC_ID=$!
 sleep 5
 npm run migrate -- --network=docker --reset
 
-while [ 1 ]
-do
-  sleep 60 &
-  wait $!
-done
+kill -TERM $PROC_ID

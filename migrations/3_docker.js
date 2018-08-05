@@ -1,32 +1,36 @@
+global.artifacts = artifacts;
+global.web3 = web3;
+
+const fs = require('fs');
 const promisify = require("es6-promisify");
+const Margin = artifacts.require('Margin');
+const { snapshot } = require('../test/helpers/SnapshotHelper');
+const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
+const { DEFAULT_SALT } = require('../test/helpers/Constants');
 
-function revert() {
-  return promisify(web3.currentProvider.sendAsync)({
-    jsonrpc: "2.0",
-    method: "evm_revert",
-    id: 12345,
-    params: ['0x1'],
-  });
-}
+web3.currentProvider.sendAsync = web3.currentProvider.send;
 
-function snapshot() {
-  return promisify(web3.currentProvider.sendAsync)({
-    jsonrpc: "2.0",
-    method: "evm_snapshot",
-    id: 12345
-  });
-}
+const writeFileAsync = promisify(fs.writeFile);
 
-async function doMigration(deployer, network) {
+async function doMigration(deployer, network, accounts) {
   if (network === 'docker') {
-    const id = await snapshot();
-    console.log(id)
+    let salt = DEFAULT_SALT;
+    const openTransactions = [];
 
-    const r = await revert();
-    console.log(r)
+    openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
+    openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
+    openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
+
+    await snapshot();
+    const margin = await Margin.deployed();
+    const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
+
+    const json = JSON.stringify(positions);
+
+    await writeFileAsync(__dirname + '/../build/test-positions.json', json, 'utf8');
   }
 }
 
-module.exports = (deployer, network, _addresses) => {
-  deployer.then(() => doMigration(deployer, network));
+module.exports = (deployer, network, accounts) => {
+  deployer.then(() => doMigration(deployer, network, accounts));
 };

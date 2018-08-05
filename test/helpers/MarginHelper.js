@@ -11,8 +11,8 @@ const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
 const { transact } = require('./ContractHelper');
@@ -389,6 +389,13 @@ async function issueTokensAndSetAllowances(tx) {
   ]);
 
   const depositToken = tx.depositInHeldToken ? heldToken : owedToken;
+
+  await issueAndSetAllowance(
+    owedToken,
+    tx.loanOffering.payer,
+    tx.loanOffering.rates.maxAmount,
+    TokenProxy.address
+  )
 
   await Promise.all([
     // Loan Payer Owed Token

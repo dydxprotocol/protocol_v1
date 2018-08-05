@@ -16,9 +16,12 @@ COPY ./truffle.js /home/dydx/app/truffle.js
 COPY ./scripts /home/dydx/app/scripts
 COPY ./migrations /home/dydx/app/migrations
 COPY ./contracts /home/dydx/app/contracts
+COPY ./test /home/dydx/app/test
 
 RUN npm run compile -- --all
+RUN mkdir /home/.ganache
+RUN sh scripts/docker.sh
 
 EXPOSE 8545
 
-CMD ["sh", "scripts/docker.sh"]
+CMD ["npm", "run", "docker_node"]
