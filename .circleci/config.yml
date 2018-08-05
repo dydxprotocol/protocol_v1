@@ -86,21 +86,21 @@ jobs:
         key: protocol-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
         paths:
           - ~/protocol
-  publish:
-    docker:
-      - image: circleci/node:9.11.1
-    working_directory: ~/protocol
-    steps:
-      - restore_cache:
-          key: protocol-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
-      - add_ssh_keys:
-          fingerprints:
-            - "27:0f:9b:8a:19:8c:86:8f:4b:e8:28:01:69:08:ff:fb"
-      - run:
-          name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
-      - run:
-          command: sh scripts/publish_if_not_exists.sh
+  # publish:
+  #   docker:
+  #     - image: circleci/node:9.11.1
+  #   working_directory: ~/protocol
+  #   steps:
+  #     - restore_cache:
+  #         key: protocol-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+  #     - add_ssh_keys:
+  #         fingerprints:
+  #           - "27:0f:9b:8a:19:8c:86:8f:4b:e8:28:01:69:08:ff:fb"
+  #     - run:
+  #         name: Authenticate with registry
+  #         command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
+  #     - run:
+  #         command: sh scripts/publish_if_not_exists.sh
 
 workflows:
   version: 2
@@ -122,11 +122,11 @@ workflows:
       - prod_build:
           requires:
             - build
-      - publish:
-          requires:
-            - prod_build
-            - test
-            - lint
-          filters:
-            branches:
-              only: master
+      # - publish:
+      #     requires:
+      #       - prod_build
+      #       - test
+      #       - lint
+      #     filters:
+      #       branches:
+      #         only: master
