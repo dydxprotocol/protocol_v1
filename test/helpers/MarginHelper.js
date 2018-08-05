@@ -390,13 +390,6 @@ async function issueTokensAndSetAllowances(tx) {
 
   const depositToken = tx.depositInHeldToken ? heldToken : owedToken;
 
-  await issueAndSetAllowance(
-    owedToken,
-    tx.loanOffering.payer,
-    tx.loanOffering.rates.maxAmount,
-    TokenProxy.address
-  )
-
   await Promise.all([
     // Loan Payer Owed Token
     issueAndSetAllowance(
