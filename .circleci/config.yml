@@ -102,7 +102,7 @@ jobs:
             - "27:0f:9b:8a:19:8c:86:8f:4b:e8:28:01:69:08:ff:fb"
       - run:
           name: Authenticate with registry
-          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/protocol/.npmrc
       - run:
           command: sh scripts/publish_if_not_exists.sh
 
