@@ -73,6 +73,38 @@ jobs:
           name: Coverage
           command: python util/hideasserts.py && npm run coverage && cat coverage/lcov.info | node_modules/.bin/coveralls
           no_output_timeout: 40m
+  prod_build:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Build Javascript
+          command: npm run build:js
+      - run:
+          name: Production Build
+          command: sh scripts/prod_build.sh
+      - save_cache:
+          key: protocol-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/protocol
+  publish:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
+    steps:
+      - restore_cache:
+          key: protocol-completed-prod-build-{{ .Environment.CIRCLE_SHA1 }}
+      - add_ssh_keys:
+          fingerprints:
+            - "27:0f:9b:8a:19:8c:86:8f:4b:e8:28:01:69:08:ff:fb"
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
+      - run:
+          command: sh scripts/publish_if_not_exists.sh
 
 workflows:
   version: 2
@@ -91,3 +123,14 @@ workflows:
       - coverage:
           requires:
             - checkout_and_install
+      - prod_build:
+          requires:
+            - build
+      - publish:
+          requires:
+            - prod_build
+            - test
+            - lint
+          filters:
+            branches:
+              only: master
