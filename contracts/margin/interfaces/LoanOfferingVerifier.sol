@@ -30,7 +30,7 @@ pragma experimental "v0.5.0";
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract LoanOfferingVerifier {
+interface LoanOfferingVerifier {
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
      * will be generated off-chain. The "loan owner" address will own the loan-side of the resulting

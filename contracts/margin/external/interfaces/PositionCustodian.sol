@@ -27,7 +27,7 @@ pragma experimental "v0.5.0";
  * Interface to interact with other second-layer contracts. For contracts that own positions as a
  * proxy for other addresses.
  */
-contract PositionCustodian {
+interface PositionCustodian {
 
     /**
      * Function that is intended to be called by external contracts to see where to pay any fees or
