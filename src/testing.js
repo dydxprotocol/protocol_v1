@@ -1,6 +1,6 @@
 import promisify from "es6-promisify";
 import BigNumber from 'bignumber.js';
-import * as TestPositionsJson from '../build/test-posiitions';
+import * as TestPositionsJson from '../build/test-positions';
 
 export function reset(web3Instance) {
   // Needed for different versions of web3
