@@ -3,7 +3,10 @@ import BigNumber from 'bignumber.js';
 import * as TestPositionsJson from '../build/test-posiitions';
 
 export function reset(web3Instance) {
-  return promisify(web3Instance.currentProvider.sendAsync)({
+  // Needed for different versions of web3
+  const func = web3Instance.currentProvider.sendAsync || web3Instance.currentProvider.send;
+
+  return promisify(func)({
     jsonrpc: "2.0",
     method: "evm_revert",
     id: 12345,
