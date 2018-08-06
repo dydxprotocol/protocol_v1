@@ -19,20 +19,20 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { Margin } from "../Margin.sol";
 import { WETH9 } from "../../external/weth/WETH9.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { Margin } from "../Margin.sol";
 
 
 /**
- * @title ShortEthOpener
+ * @title PayableMarginMinter
  * @author dYdX
  *
  * Contract for allowing anyone to mint short eth tokens using a payable function
  */
-contract ShortEthOpener {
+contract PayableMarginMinter is ReentrancyGuard {
     using TokenInteract for address;
 
     // ============ State Variables ============
@@ -68,7 +68,7 @@ contract ShortEthOpener {
     {
         require(
             msg.sender == WETH,
-            "ShortEthOpener#fallback: Cannot recieve ETH directly except when unwrapping WETH"
+            "PayableMarginMinter#fallback: Cannot recieve ETH directly unless unwrapping WETH"
         );
     }
 
@@ -104,6 +104,9 @@ contract ShortEthOpener {
      *  [0] = loan call time limit (in seconds)
      *  [1] = loan maxDuration (in seconds)
      *
+     * @param  depositInHeldToken  True if the trader wishes to pay the margin deposit in heldToken.
+     *                             False if the margin deposit will be in owedToken
+     *                             and then sold along with the owedToken borrowed from the lender
      * @param  signature           If loan payer is an account, then this must be the tightly-packed
      *                             ECDSA V/R/S parameters from signing the loan hash. If loan payer
      *                             is a smart contract, these are arbitrary bytes that the contract
@@ -111,16 +114,18 @@ contract ShortEthOpener {
      * @param  order               Order object to be passed to the exchange wrapper
      * @return                     Amount of owedTokens pulled from the lender
      */
-    function mintShortTokens(
+    function mintMarginTokens(
         bytes32    positionId,
         address[7] addresses,
         uint256[8] values256,
         uint32[2]  values32,
+        bool depositInHeldToken,
         bytes      signature,
         bytes      order
     )
         external
         payable
+        nonReentrant
         returns (uint256)
     {
         // wrap all eth
@@ -132,7 +137,7 @@ contract ShortEthOpener {
             addresses,
             values256,
             values32,
-            false, //depositInHeldToken
+            depositInHeldToken,
             signature,
             order
         );

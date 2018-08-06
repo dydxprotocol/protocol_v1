@@ -1,7 +1,6 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const { wait } = require('@digix/tempo')(web3);
 const BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
@@ -10,20 +9,15 @@ const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
 const WETH9 = artifacts.require("WETH9");
 const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
-const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ERC20Short = artifacts.require("ERC20Short");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const SharedLoan = artifacts.require("SharedLoan");
 const SharedLoanCreator = artifacts.require("SharedLoanCreator");
-const ShortEthOpener = artifacts.require("ShortEthOpener");
+const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const { BIGNUMBERS, DEFAULT_SALT } = require('../../helpers/Constants');
-const { getPartialAmount } = require('../../helpers/MathHelper');
 const { createLoanOffering, signLoanOffering } = require('../../helpers/LoanHelper');
-const { expectThrow } = require('../../helpers/ExpectHelper');
 const { signOrder, createSignedBuyOrder } = require('../../helpers/ZeroExHelper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 const { transact } = require('../../helpers/ContractHelper');
@@ -37,7 +31,7 @@ let Seo, Weth, Dai, dydxMargin;
 let positionId, tokenContract, sharedLoanContract;
 let salt = DEFAULT_SALT + 1;
 
-contract('#ShortEthOpener', accounts => {
+contract('#PayableMarginMinter', accounts => {
   const opener = accounts[0];
 
   before('', async () => {
@@ -46,7 +40,7 @@ contract('#ShortEthOpener', accounts => {
       WETH9.new(),
       HeldToken.new()
     ]);
-    Seo = await ShortEthOpener.new(Margin.address, Weth.address);
+    Seo = await PayableMarginMinter.new(Margin.address, Weth.address);
     await Weth.deposit({ value: new BigNumber("90e18"), from: opener });
     await Weth.approve(TokenProxy.address, BIGNUMBERS.ONES_255, { from: opener });
     await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.ONES_127);
@@ -145,11 +139,12 @@ contract('#ShortEthOpener', accounts => {
     await Weth.approve(TokenProxy.address, BIGNUMBERS.ONES_255, { from: trader });
 
     const transaction = await transact(
-      Seo.mintShortTokens,
+      Seo.mintMarginTokens,
       positionId,
       addresses,
       values256,
       values32,
+      false,
       loanOffering.signature,
       orderToBytes(order),
       {
