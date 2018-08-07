@@ -12,10 +12,7 @@ export function reset(web3Instance) {
     params: ['0x1'],
   });
 }
-// (() => {
-//   const TestPositionsArray = [TestPositionsJson["0"],TestPositionsJson["1"],TestPositionsJson["2"]];
-//   console.log(TestPositionsArray)
-// })();
+
 export const TEST_POSITIONS = [TestPositionsJson["0"],TestPositionsJson["1"],TestPositionsJson["2"]]
   .map(mapPositionFromJson);
 console.log(TEST_POSITIONS);
