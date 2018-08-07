@@ -33,11 +33,12 @@ async function createOpenTx(
     depositInHeldToken = true,
     positionOwner,
     interestPeriod,
+    loanOwner,
     nonce
   } = {}
 ) {
   const [loanOffering, buyOrder] = await Promise.all([
-    createLoanOffering(accounts, { salt, interestPeriod }),
+    createLoanOffering(accounts, { salt, interestPeriod, loanOwner }),
     createSignedBuyOrder(accounts, { salt })
   ]);
 

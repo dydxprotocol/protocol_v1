@@ -16,6 +16,8 @@
 
 */
 
+const { isDevNetwork } = require('./helpers');
+
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -49,15 +51,6 @@ const FeeToken = artifacts.require("TokenC");
 // Other constants
 const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
-
-function isDevNetwork(network) {
-  return network === 'development'
-          || network === 'test'
-          || network === 'develop'
-          || network === 'dev'
-          || network === 'docker'
-          || network === 'coverage';
-}
 
 function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {

@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/protocol",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
   "main": "build/index.js",
   "files": [
@@ -19,7 +19,8 @@
     "util": "util"
   },
   "scripts": {
-    "test": "truffle test",
+    "test": "NODE_ENV=test truffle test test/contracts/**/*",
+    "test:js": "NODE_ENV=test truffle test test/js/**/*",
     "compile": "truffle compile",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
