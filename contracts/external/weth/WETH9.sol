@@ -1,4 +1,5 @@
 pragma solidity 0.4.24;
+pragma experimental "v0.5.0";
 
 
 contract WETH9 {
@@ -14,7 +15,7 @@ contract WETH9 {
     mapping (address => uint)                       public  balanceOf;
     mapping (address => mapping (address => uint))  public  allowance;
 
-    function() public payable {
+    function() external payable {
         deposit();
     }
     function deposit() public payable {
