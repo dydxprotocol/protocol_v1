@@ -50,5 +50,5 @@ contract('Margin', accounts => {
   //     const balanceAfterReset = await token.balanceOf.call(account);
   //     expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);
   //   });
-  // });
+  });
 });
