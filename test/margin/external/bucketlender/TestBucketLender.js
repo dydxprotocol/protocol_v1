@@ -471,70 +471,70 @@ contract('BucketLender', accounts => {
       await callIncreasePosition(margin, incrTx);
 
       // maxAmount
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.rates.maxAmount = OT.times(1000);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // minAmount
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.rates.minAmount = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // minHeldToken
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.rates.minHeldToken = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // lenderFee
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.rates.lenderFee = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // takerFee
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.rates.takerFee = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // expirationTimestamp
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.expirationTimestamp = BIGNUMBERS.MAX_UINT256.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // salt
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.salt = new BigNumber(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // maxDuration
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.maxDuration = BIGNUMBERS.MAX_UINT32.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // callTimeLimit
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       incrTx.loanOffering.callTimeLimit = BIGNUMBERS.MAX_UINT32.minus(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // works again
-      incrTx = createIncreaseTx(trader, OT)
+      incrTx = createIncreaseTx(trader, OT);
       await callIncreasePosition(margin, incrTx);
     });
   });
