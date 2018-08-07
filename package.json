@@ -19,8 +19,7 @@
     "util": "util"
   },
   "scripts": {
-    "test": "NODE_ENV=test truffle test test/contracts/**/*",
-    "test:js": "NODE_ENV=test truffle test test/js/**/*",
+    "test": "NODE_ENV=test truffle test",
     "compile": "truffle compile",
     "migrate": "truffle migrate",
     "develop": "truffle develop",

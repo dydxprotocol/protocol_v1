@@ -56,24 +56,12 @@ jobs:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Test
-          command: TESTFILES=$(circleci tests glob "test/**/*.js" | circleci tests split --split-by=timings) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
+          command: TESTFILES=$(circleci tests glob "test/tests/**/*.js" | circleci tests split --split-by=timings) && TRUFFLE_REPORTER=true npm test -- ${TESTFILES}
           no_output_timeout: 20m
       - store_test_results:
           path: ~/protocol/junit
       - store_artifacts:
           path: ~/protocol/junit
-  test_js:
-    docker:
-      - image: circleci/node:9.11.1
-    working_directory: ~/protocol
-    parallelism: 2
-    steps:
-      - restore_cache:
-          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Test
-          command: npm run test:js
-          no_output_timeout: 20m
   coverage:
     docker:
       - image: circleci/node:9.11.1
@@ -130,9 +118,6 @@ workflows:
           requires:
             - checkout_and_install
       - test:
-          requires:
-            - build
-      - test_js:
           requires:
             - build
       - coverage:

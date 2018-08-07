@@ -10,7 +10,7 @@ const OwedToken = artifacts.require("TokenB");
 
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../../helpers/Constants');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('.././../helpers/ZeroExHelper');
+const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
 const { getPartialAmount, uint256 } = require('../../../helpers/MathHelper');
 const { transact } = require('../../../helpers/ContractHelper');
 const { signLoanOffering } = require('../../../helpers/LoanHelper');
