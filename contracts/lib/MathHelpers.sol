@@ -86,7 +86,7 @@ library MathHelpers {
         pure
         returns (uint256)
     {
-        assert(denominator != 0); // unit-tested
+        assert(denominator != 0); // coverage-enable-line
         if (numerator == 0) {
             return 0;
         }

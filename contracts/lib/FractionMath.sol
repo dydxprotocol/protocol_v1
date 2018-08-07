@@ -161,7 +161,7 @@ library FractionMath {
             den /= first128Bits;
         }
 
-        assert(den != 0); // unit-tested
+        assert(den != 0); // coverage-enable-line
         assert(den < 2**128);
         assert(num < 2**128);
 
@@ -201,6 +201,6 @@ library FractionMath {
         private
         pure
     {
-        assert(a.den != 0); // unit-tested
+        assert(a.den != 0); // coverage-enable-line
     }
 }
