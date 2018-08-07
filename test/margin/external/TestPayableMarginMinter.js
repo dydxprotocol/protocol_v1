@@ -34,7 +34,7 @@ let salt = DEFAULT_SALT + 1;
 contract('#PayableMarginMinter', accounts => {
   const opener = accounts[0];
 
-  before('', async () => {
+  before('set up contracts', async () => {
     [dydxMargin, Weth, Dai] = await Promise.all([
       Margin.deployed(),
       WETH9.new(),
@@ -46,7 +46,7 @@ contract('#PayableMarginMinter', accounts => {
     await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.ONES_127);
   });
 
-  beforeEach('', async () => {
+  beforeEach('open position', async () => {
     const nonce = salt++;
     positionId = web3Instance.utils.soliditySha3(opener, nonce);
     await dydxMargin.openWithoutCounterparty(
@@ -117,7 +117,6 @@ contract('#PayableMarginMinter', accounts => {
       loanOffering.takerFeeTokenAddress,
       ZeroExExchangeWrapper.address
     ];
-    await issueTokenToAccountInAmountAndApproveProxy(Dai, trader, BIGNUMBERS.ONES_127);
 
     const values256 = [
       loanOffering.rates.maxAmount,
@@ -134,9 +133,6 @@ contract('#PayableMarginMinter', accounts => {
       loanOffering.callTimeLimit,
       loanOffering.maxDuration
     ];
-
-    await Weth.deposit({ value: new BigNumber("90e18"), from: trader });
-    await Weth.approve(TokenProxy.address, BIGNUMBERS.ONES_255, { from: trader });
 
     const transaction = await transact(
       Seo.mintMarginTokens,
