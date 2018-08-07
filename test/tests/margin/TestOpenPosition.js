@@ -34,6 +34,7 @@ describe('#openPosition', () => {
   contract('Margin', accounts => {
     it('succeeds on valid inputs', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       await issueTokensAndSetAllowances(openTx);
 
@@ -41,7 +42,7 @@ describe('#openPosition', () => {
 
       console.log('\tMargin.openPosition (0x Exchange Contract) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -49,6 +50,7 @@ describe('#openPosition', () => {
     it('succeeds when deposit is paid in owedToken', async () => {
       const openTx = await createOpenTx(accounts, { depositInHeldToken: false });
       const dydxMargin = await Margin.deployed();
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       await issueTokensAndSetAllowances(openTx);
 
@@ -59,7 +61,7 @@ describe('#openPosition', () => {
         + tx.receipt.gasUsed
       );
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -77,6 +79,7 @@ describe('#openPosition', () => {
         OwedToken.deployed(),
         TestSmartContractLender.new(true, ADDRESSES.ZERO)
       ]);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       await issueTokensAndSetAllowances(openTx);
 
@@ -124,7 +127,7 @@ describe('#openPosition', () => {
 
       console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -143,6 +146,7 @@ describe('#openPosition', () => {
         OwedToken.deployed(),
         TestSmartContractLender.new(true, testSmartContractLender2.address)
       ]);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       await issueTokensAndSetAllowances(openTx);
 
@@ -190,7 +194,7 @@ describe('#openPosition', () => {
 
       console.log('\tMargin.openPosition (smart contract lender) gas used: ' + tx.receipt.gasUsed);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -316,12 +320,13 @@ describe('#openPosition', () => {
   contract('Margin', accounts => {
     it('properly assigns owner for lender and owner for accounts', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = accounts[8];
       openTx.loanOffering.owner = accounts[9];
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await callOpenPosition(dydxMargin, openTx);
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -346,12 +351,13 @@ describe('#openPosition', () => {
         ),
         createOpenTx(accounts)
       ]);
+      const startingBalances = await getBalances(openTx, dydxMargin);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = testClosePositionDelegator.address;
       openTx.loanOffering.owner = testMarginCallDelegator.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await callOpenPosition(dydxMargin, openTx);
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -376,18 +382,20 @@ describe('#openPosition', () => {
         false,
         0);
       const openTx = await createOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
       await issueTokensAndSetAllowances(openTx);
       openTx.owner = testPositionOwner.address;
       openTx.loanOffering.owner = testLoanOwner.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await callOpenPosition(dydxMargin, openTx);
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
   contract('Margin', accounts => {
     it('does not transfer fees if fee address is 0', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       openTx.loanOffering.feeRecipient = ADDRESSES.ZERO;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
@@ -396,7 +404,7 @@ describe('#openPosition', () => {
 
       await callOpenPosition(dydxMargin, openTx);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
@@ -418,6 +426,7 @@ describe('#openPosition', () => {
   contract('Margin', accounts => {
     it('works with 0 fees', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       openTx.loanOffering.rates.lenderFee = BIGNUMBERS.ZERO;
       openTx.loanOffering.rates.takerFee = BIGNUMBERS.ZERO;
@@ -427,13 +436,14 @@ describe('#openPosition', () => {
 
       await callOpenPosition(dydxMargin, openTx);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
   contract('Margin', accounts => {
     it('allows a specified taker to take the loan', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       openTx.loanOffering.taker = openTx.trader;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
@@ -442,13 +452,14 @@ describe('#openPosition', () => {
 
       await callOpenPosition(dydxMargin, openTx);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 
   contract('Margin', accounts => {
     it('allows a specified owner to own the position', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
 
       openTx.loanOffering.positionOwner = openTx.trader;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
@@ -457,7 +468,7 @@ describe('#openPosition', () => {
 
       await callOpenPosition(dydxMargin, openTx);
 
-      await checkSuccess(dydxMargin, openTx);
+      await checkSuccess(dydxMargin, openTx, startingBalances);
     });
   });
 });
@@ -473,7 +484,7 @@ async function getMarginAndOpenTx(accounts) {
   return { dydxMargin, openTx };
 }
 
-async function checkSuccess(dydxMargin, openTx) {
+async function checkSuccess(dydxMargin, openTx, startingBalances) {
   const positionId = web3Instance.utils.soliditySha3(
     openTx.trader,
     openTx.nonce
@@ -521,6 +532,83 @@ async function checkSuccess(dydxMargin, openTx) {
   const loanTakerFee = openTx.loanOffering.feeRecipient === ADDRESSES.ZERO ?
     0 : openTx.loanOffering.rates.takerFee;
 
+  const {
+    lenderOwedToken,
+    makerOwedToken,
+    exchangeWrapperOwedToken,
+    traderHeldToken,
+    makerHeldToken,
+    vaultHeldToken,
+    lenderFeeToken,
+    makerFeeToken,
+    exchangeWrapperFeeToken,
+    traderFeeToken,
+    loanOfferingFilledAmount
+  } = await getBalances(openTx, dydxMargin);
+
+  expect(lenderOwedToken).to.be.bignumber.equal(
+    openTx.loanOffering.rates.maxAmount.minus(openTx.principal)
+      .plus(startingBalances.lenderOwedToken)
+  );
+  expect(makerOwedToken).to.be.bignumber.equal(soldAmount.plus(startingBalances.makerOwedToken));
+  expect(exchangeWrapperOwedToken).to.be.bignumber.equal(startingBalances.exchangeWrapperOwedToken);
+  expect(traderHeldToken).to.be.bignumber.equal(startingBalances.traderHeldToken);
+  expect(makerHeldToken).to.be.bignumber.equal(
+    openTx.buyOrder.makerTokenAmount
+      .minus(expectedHeldTokenFromSell)
+      .plus(startingBalances.makerHeldToken)
+  );
+  expect(vaultHeldToken).to.be.bignumber.equal(
+    expectedHeldTokenBalance.plus(startingBalances.vaultHeldToken)
+  );
+  expect(lenderFeeToken).to.be.bignumber.equal(
+    openTx.loanOffering.rates.lenderFee
+      .minus(
+        getPartialAmount(
+          openTx.principal,
+          openTx.loanOffering.rates.maxAmount,
+          lenderFee
+        )
+      )
+      .plus(startingBalances.lenderFeeToken)
+  );
+  expect(exchangeWrapperFeeToken).to.be.bignumber.equal(startingBalances.exchangeWrapperFeeToken);
+  expect(makerFeeToken).to.be.bignumber.equal(
+    openTx.buyOrder.makerFee
+      .minus(
+        getPartialAmount(
+          soldAmount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.buyOrder.makerFee
+        )
+      )
+      .plus(startingBalances.makerFeeToken)
+  );
+  expect(traderFeeToken).to.be.bignumber.equal(
+    openTx.loanOffering.rates.takerFee
+      .plus(openTx.buyOrder.takerFee)
+      .minus(
+        getPartialAmount(
+          openTx.principal,
+          openTx.loanOffering.rates.maxAmount,
+          loanTakerFee
+        )
+      )
+      .minus(
+        getPartialAmount(
+          soldAmount,
+          openTx.buyOrder.takerTokenAmount,
+          openTx.buyOrder.takerFee
+        )
+      )
+      .plus(startingBalances.traderFeeToken)
+  );
+  expect(loanOfferingFilledAmount).to.be.bignumber.eq(
+    openTx.principal.plus(startingBalances.loanOfferingFilledAmount)
+  );
+}
+
+async function getBalances(openTx, dydxMargin) {
   const [
     owedToken,
     heldToken,
@@ -557,54 +645,17 @@ async function checkSuccess(dydxMargin, openTx) {
     dydxMargin.getLoanFilledAmount.call(openTx.loanOffering.loanHash)
   ]);
 
-  expect(lenderOwedToken).to.be.bignumber.equal(
-    openTx.loanOffering.rates.maxAmount.minus(openTx.principal)
-  );
-  expect(makerOwedToken).to.be.bignumber.equal(soldAmount);
-  expect(exchangeWrapperOwedToken).to.be.bignumber.equal(0);
-  expect(traderHeldToken).to.be.bignumber.equal(0);
-  expect(makerHeldToken).to.be.bignumber.equal(
-    openTx.buyOrder.makerTokenAmount.minus(expectedHeldTokenFromSell)
-  );
-  expect(vaultHeldToken).to.be.bignumber.equal(expectedHeldTokenBalance);
-  expect(lenderFeeToken).to.be.bignumber.equal(
-    openTx.loanOffering.rates.lenderFee
-      .minus(
-        getPartialAmount(
-          openTx.principal,
-          openTx.loanOffering.rates.maxAmount,
-          lenderFee
-        )
-      )
-  );
-  expect(exchangeWrapperFeeToken).to.be.bignumber.equal(0);
-  expect(makerFeeToken).to.be.bignumber.equal(
-    openTx.buyOrder.makerFee
-      .minus(
-        getPartialAmount(
-          soldAmount,
-          openTx.buyOrder.takerTokenAmount,
-          openTx.buyOrder.makerFee
-        )
-      )
-  );
-  expect(traderFeeToken).to.be.bignumber.equal(
-    openTx.loanOffering.rates.takerFee
-      .plus(openTx.buyOrder.takerFee)
-      .minus(
-        getPartialAmount(
-          openTx.principal,
-          openTx.loanOffering.rates.maxAmount,
-          loanTakerFee
-        )
-      )
-      .minus(
-        getPartialAmount(
-          soldAmount,
-          openTx.buyOrder.takerTokenAmount,
-          openTx.buyOrder.takerFee
-        )
-      )
-  );
-  expect(loanOfferingFilledAmount).to.be.bignumber.eq(openTx.principal);
+  return {
+    lenderOwedToken,
+    makerOwedToken,
+    exchangeWrapperOwedToken,
+    traderHeldToken,
+    makerHeldToken,
+    vaultHeldToken,
+    lenderFeeToken,
+    makerFeeToken,
+    exchangeWrapperFeeToken,
+    traderFeeToken,
+    loanOfferingFilledAmount
+  };
 }

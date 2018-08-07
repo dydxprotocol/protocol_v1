@@ -4,7 +4,9 @@ chai.use(require('chai-bignumber')());
 
 const { wait } = require('@digix/tempo')(web3);
 const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
 const Margin = artifacts.require("Margin");
+const Vault = artifacts.require("Vault");
 const TestForceRecoverCollateralDelegator =
   artifacts.require("TestForceRecoverCollateralDelegator");
 const {
@@ -18,7 +20,25 @@ const { ADDRESSES } = require('../../helpers/Constants');
 describe('#forceRecoverCollateral', () => {
   contract('Margin', accounts => {
     it('allows funds to be recovered by the lender', async () => {
-      const { dydxMargin, vault, owedToken, openTx } = await doOpenPositionAndCall(accounts);
+      const [vault, owedToken, heldToken] = await Promise.all([
+        Vault.deployed(),
+        OwedToken.deployed(),
+        HeldToken.deployed(),
+      ]);
+
+      const [
+        startingVaultOwedTokenBalance,
+        startingVwedTokenBalanceOfVault,
+        startingVaultHeldTokenBalance,
+        startingHeldTokenBalanceOfVault,
+      ] = await Promise.all([
+        vault.totalBalances.call(OwedToken.address),
+        owedToken.balanceOf.call(Vault.address),
+        vault.totalBalances.call(HeldToken.address),
+        heldToken.balanceOf.call(Vault.address),
+      ]);
+
+      const { dydxMargin, openTx } = await doOpenPositionAndCall(accounts);
       await wait(openTx.loanOffering.callTimeLimit);
 
       const heldTokenBalance = await dydxMargin.getPositionBalance.call(openTx.id);
@@ -31,8 +51,6 @@ describe('#forceRecoverCollateral', () => {
       );
 
       console.log('\tMargin.forceRecoverCollateral gas used: ' + tx.receipt.gasUsed);
-
-      const heldToken = await HeldToken.deployed();
 
       const [
         vaultOwedTokenBalance,
@@ -52,10 +70,10 @@ describe('#forceRecoverCollateral', () => {
         heldToken.balanceOf.call(recipient)
       ]);
 
-      expect(vaultOwedTokenBalance).to.be.bignumber.equal(0);
-      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(vaultHeldTokenBalance).to.be.bignumber.equal(0);
-      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultOwedTokenBalance).to.be.bignumber.equal(startingVaultOwedTokenBalance);
+      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(startingVwedTokenBalanceOfVault);
+      expect(vaultHeldTokenBalance).to.be.bignumber.equal(startingVaultHeldTokenBalance);
+      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(startingHeldTokenBalanceOfVault);
       expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
       expect(recipientHeldTokenBalance).to.be.bignumber.equal(heldTokenBalance);
@@ -85,7 +103,25 @@ describe('#forceRecoverCollateral', () => {
     let salt = 9999;
 
     async function testFRCD(recoverer, recipient) {
-      const { dydxMargin, vault, owedToken, openTx } =
+      const [vault, owedToken, heldToken] = await Promise.all([
+        Vault.deployed(),
+        OwedToken.deployed(),
+        HeldToken.deployed(),
+      ]);
+
+      const [
+        startingVaultOwedTokenBalance,
+        startingVwedTokenBalanceOfVault,
+        startingVaultHeldTokenBalance,
+        startingHeldTokenBalanceOfVault,
+      ] = await Promise.all([
+        vault.totalBalances.call(OwedToken.address),
+        owedToken.balanceOf.call(Vault.address),
+        vault.totalBalances.call(HeldToken.address),
+        heldToken.balanceOf.call(Vault.address),
+      ]);
+
+      const { dydxMargin, openTx } =
         await doOpenPositionAndCall(accounts, { salt: salt++ });
 
       await wait(openTx.loanOffering.callTimeLimit);
@@ -132,8 +168,6 @@ describe('#forceRecoverCollateral', () => {
         { from: finalRecoverer }
       );
 
-      const heldToken = await HeldToken.deployed();
-
       const [
         vaultOwedTokenBalance,
         owedTokenBalanceOfVault,
@@ -152,10 +186,10 @@ describe('#forceRecoverCollateral', () => {
         heldToken.balanceOf.call(finalRecipient),
       ]);
 
-      expect(vaultOwedTokenBalance).to.be.bignumber.equal(0);
-      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(0);
-      expect(vaultHeldTokenBalance).to.be.bignumber.equal(0);
-      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(0);
+      expect(vaultOwedTokenBalance).to.be.bignumber.equal(startingVaultOwedTokenBalance);
+      expect(owedTokenBalanceOfVault).to.be.bignumber.equal(startingVwedTokenBalanceOfVault);
+      expect(vaultHeldTokenBalance).to.be.bignumber.equal(startingVaultHeldTokenBalance);
+      expect(heldTokenBalanceOfVault).to.be.bignumber.equal(startingHeldTokenBalanceOfVault);
       expect(positionExists).to.be.false;
       expect(isPositionClosed).to.be.true;
       expect(frcdHeldTokenBalance).to.be.bignumber.equal(heldTokenBalance);
