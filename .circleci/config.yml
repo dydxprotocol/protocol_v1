@@ -62,6 +62,18 @@ jobs:
           path: ~/protocol/junit
       - store_artifacts:
           path: ~/protocol/junit
+  test_js:
+    docker:
+      - image: circleci/node:9.11.1
+    working_directory: ~/protocol
+    parallelism: 2
+    steps:
+      - restore_cache:
+          key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Test
+          command: npm run test:js
+          no_output_timeout: 20m
   coverage:
     docker:
       - image: circleci/node:9.11.1
@@ -120,6 +132,9 @@ workflows:
       - test:
           requires:
             - build
+      - test_js:
+          requires:
+            - build
       - coverage:
           requires:
             - checkout_and_install
@@ -130,6 +145,7 @@ workflows:
           requires:
             - prod_build
             - test
+            - test_js
             - lint
           filters:
             branches:
