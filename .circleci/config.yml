@@ -130,7 +130,6 @@ workflows:
           requires:
             - prod_build
             - test
-            - test_js
             - lint
           filters:
             branches:
