@@ -66,7 +66,7 @@ contract PayableMarginMinter is ReentrancyGuard {
         external
         payable
     {
-        require(
+        require( // coverage-disable-line
             msg.sender == WETH,
             "PayableMarginMinter#fallback: Cannot recieve ETH directly unless unwrapping WETH"
         );
