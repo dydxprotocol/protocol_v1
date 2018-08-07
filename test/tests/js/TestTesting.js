@@ -9,7 +9,7 @@ const Margin = artifacts.require('Margin');
 const TokenA = artifacts.require('TokenA');
 
 contract('Margin', accounts => {
-  describe('TEST_POSITIONS', () => {
+  // describe('TEST_POSITIONS', () => {
   //   it('sets up positions correctly', async () => {
   //     const margin = await Margin.deployed();
   //
@@ -33,22 +33,22 @@ contract('Margin', accounts => {
   //   });
   // });
   //
-  // describe('#reset', () => {
-  //   it('resets any transactions made', async () => {
-  //     const account = accounts[5];
-  //     const amount = new BigNumber(123456);
-  //     const token = await TokenA.deployed();
-  //
-  //     const startingBalance = await token.balanceOf.call(account);
-  //     await token.issueTo(account, amount);
-  //     const afterBalance = await token.balanceOf.call(account);
-  //
-  //     expect(afterBalance).to.be.bignumber.eq(startingBalance.plus(amount));
-  //
-  //     await reset(web3);
-  //
-  //     const balanceAfterReset = await token.balanceOf.call(account);
-  //     expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);
-  //   });
+  describe('#reset', () => {
+    it('resets any transactions made', async () => {
+      const account = accounts[5];
+      const amount = new BigNumber(123456);
+      const token = await TokenA.deployed();
+
+      const startingBalance = await token.balanceOf.call(account);
+      await token.issueTo(account, amount);
+      const afterBalance = await token.balanceOf.call(account);
+
+      expect(afterBalance).to.be.bignumber.eq(startingBalance.plus(amount));
+
+      await reset(web3);
+
+      const balanceAfterReset = await token.balanceOf.call(account);
+      expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);
+    });
   });
 });
