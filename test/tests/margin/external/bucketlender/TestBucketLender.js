@@ -351,16 +351,6 @@ contract('BucketLender', accounts => {
     });
   });
 
-  // ============ Complicated case ============
-
-  describe('Alice Bot GOOOO', () => {
-    it('runs alice bot several times', async () => {
-      await runAliceBot();
-      await runAliceBot();
-      await runAliceBot();
-    });
-  });
-
   // ============ Margin-Only State-Changing Functions ============
 
   describe('#verifyLoanOffering', () => {
@@ -1017,6 +1007,12 @@ contract('BucketLender', accounts => {
   });
 
   describe('#withdraw', () => {
+    it('Multiple deposit and withdraw', async () => {
+      await runAliceBot();
+      await runAliceBot();
+      await runAliceBot();
+    });
+
     it('succeeds in withdrawing from bucket 0', async () => {
       await doWithdraw(lender1, 0);
       await doWithdraw(lender1, 0, { weight: 0 });

@@ -35,6 +35,7 @@ import { ForceRecoverCollateralDelegator } from "../../interfaces/lender/ForceRe
 import { IncreaseLoanDelegator } from "../../interfaces/lender/IncreaseLoanDelegator.sol";
 import { LoanOwner } from "../../interfaces/lender/LoanOwner.sol";
 import { MarginCallDelegator } from "../../interfaces/lender/MarginCallDelegator.sol";
+import { LoanOfferingParser } from "../lib/LoanOfferingParser.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";
 
 
@@ -95,6 +96,7 @@ contract BucketLender is
     MarginCallDelegator,
     CancelMarginCallDelegator,
     ForceRecoverCollateralDelegator,
+    LoanOfferingParser,
     LoanOfferingVerifier,
     ReentrancyGuard
 {
@@ -269,7 +271,7 @@ contract BucketLender is
 
         // Set maximum allowance on proxy
         OWED_TOKEN.approve(
-            Margin(margin).getProxyAddress(),
+            Margin(margin).getTokenProxyAddress(),
             MathHelpers.maxUint256()
         );
     }
