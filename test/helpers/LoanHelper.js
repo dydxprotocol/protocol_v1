@@ -14,14 +14,15 @@ async function createLoanOffering(
   accounts,
   {
     salt = DEFAULT_SALT,
-    interestPeriod
+    interestPeriod,
+    loanOwner
   } = {}
 ) {
   let loanOffering = {
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
     payer: accounts[1],
-    owner: accounts[1],
+    owner: loanOwner || accounts[1],
     taker: ADDRESSES.ZERO,
     positionOwner: ADDRESSES.ZERO,
     feeRecipient: accounts[3],

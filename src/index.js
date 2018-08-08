@@ -1,2 +1,3 @@
 export * from './contracts';
-export * from './testing';
+export * from './snapshots';
+export * from './test-positions';
