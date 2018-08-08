@@ -7,7 +7,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
-const WETH9 = artifacts.require("WETH9");
+const WETH9 = artifacts.require("canonical-weth/contracts/WETH9.sol");
 const HeldToken = artifacts.require("TokenA");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
