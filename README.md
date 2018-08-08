@@ -24,6 +24,40 @@ Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protoco
 
 [Short & Leveraged Long Tokens Whitepaper](https://margintokens.dydx.exchange)
 
+### Npm Package Usage
+
+#### Install
+
+```
+npm install --save @dydxprotocol/protocol
+```
+
+#### Contracts
+
+```javascript
+import { Margin as MarginContract } from '@dydxprotocol/protocol';
+import truffleContract from 'truffle-contract';
+
+async function openPosition(provider, networkId) {
+  const Margin = truffleContract(MarginContract);
+
+  Margin.setProvider(provider);
+  Margin.setNetwork(networkId);
+
+  const margin = await Margin.deployed();
+
+  await margin.openPosition(...);
+}
+```
+
+#### Seed Positions / Orders
+
+```javascript
+import { seeds } from '@dydxprotocol/protocol';
+
+
+```
+
 ### Development
 
 #### Install
