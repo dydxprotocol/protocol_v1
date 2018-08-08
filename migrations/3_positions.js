@@ -5,7 +5,7 @@ const fs = require('fs');
 const promisify = require("es6-promisify");
 const Margin = artifacts.require('Margin');
 const { isDevNetwork } = require('./helpers');
-const { snapshot } = require('../test/helpers/SnapshotHelper');
+const { snapshot } = require('../src/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
 
 web3.currentProvider.sendAsync = web3.currentProvider.send;
@@ -21,7 +21,8 @@ async function doMigration(deployer, network, accounts) {
     openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
     openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
 
-    await snapshot();
+    await snapshot(web3);
+
     const margin = await Margin.deployed();
     const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
     for (let i = 0; i < openTransactions.length; i++) {
