@@ -30,7 +30,7 @@ import { TokenInteract } from "../../lib/TokenInteract.sol";
  * @title PayableMarginMinter
  * @author dYdX
  *
- * Contract for allowing anyone to mint short eth tokens using a payable function
+ * Contract for allowing anyone to mint short or margin-long tokens using a payable function
  */
 contract PayableMarginMinter is ReentrancyGuard {
     using TokenInteract for address;
@@ -120,7 +120,7 @@ contract PayableMarginMinter is ReentrancyGuard {
         address[7] addresses,
         uint256[8] values256,
         uint32[2]  values32,
-        bool depositInHeldToken,
+        bool       depositInHeldToken,
         bytes      signature,
         bytes      order
     )
@@ -132,7 +132,7 @@ contract PayableMarginMinter is ReentrancyGuard {
         // wrap all eth
         WETH9(WETH).deposit.value(msg.value)();
 
-        // mint the short tokens
+        // mint the margin tokens
         Margin(DYDX_MARGIN).increasePosition(
             positionId,
             addresses,
@@ -143,10 +143,10 @@ contract PayableMarginMinter is ReentrancyGuard {
             order
         );
 
-        // send the short tokens back to the user
-        address shortTokenContract = Margin(DYDX_MARGIN).getPositionOwner(positionId);
-        uint256 shortTokens = shortTokenContract.balanceOf(address(this));
-        shortTokenContract.transfer(msg.sender, shortTokens);
+        // send the margin tokens back to the user
+        address marginTokenContract = Margin(DYDX_MARGIN).getPositionOwner(positionId);
+        uint256 numTokens = marginTokenContract.balanceOf(address(this));
+        marginTokenContract.transfer(msg.sender, numTokens);
 
         // unwrap any leftover WETH and send eth back to the user
         uint256 leftoverEth = WETH.balanceOf(address(this));
@@ -155,6 +155,6 @@ contract PayableMarginMinter is ReentrancyGuard {
             msg.sender.transfer(leftoverEth);
         }
 
-        return shortTokens;
+        return numTokens;
     }
 }
