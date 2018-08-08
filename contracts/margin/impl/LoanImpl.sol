@@ -199,7 +199,6 @@ library LoanImpl {
         uint256 requiredDeposit
     )
         private
-        returns (bool)
     {
         // no need to ask for permission
         if (who == contractAddr) {
@@ -229,7 +228,6 @@ library LoanImpl {
         bytes32 positionId
     )
         private
-        returns (bool)
     {
         // no need to ask for permission
         if (who == contractAddr) {

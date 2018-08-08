@@ -32,7 +32,7 @@ import { MarginCommon } from "../impl/MarginCommon.sol";
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract LoanOfferingVerifier {
+interface LoanOfferingVerifier {
 
     // ============ Margin-Only State-Changing Functions ============
 

@@ -3,7 +3,14 @@ const web3Instance = new Web3(web3.currentProvider);
 const BigNumber = require('bignumber.js');
 
 module.exports = {
-  ORDER_TYPE:{
+  SIGNATURE_TYPE: {
+    INVALID: 0,
+    UNSUPPORTED: 3,
+    UNSUPPORTED_LARGE: 15,
+    DEC: 1,
+    HEX: 2,
+  },
+  ORDER_TYPE: {
     ZERO_EX: "zeroEx",
     KYBER: "kyber",
     DIRECT: "openDirectly"

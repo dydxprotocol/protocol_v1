@@ -23,7 +23,7 @@ import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { Ownable } from "zeppelin-solidity/contracts/ownership/Ownable.sol";
-import { Proxy } from "./Proxy.sol";
+import { TokenProxy } from "./TokenProxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 
@@ -55,8 +55,8 @@ contract Vault is
 
     // ============ State Variables ============
 
-    // Address of the Proxy contract. Used for moving tokens.
-    address public PROXY;
+    // Address of the TokenProxy contract. Used for moving tokens.
+    address public TOKEN_PROXY;
 
     // Map from vault ID to map from token address to amount of that token attributed to the
     // particular vault ID.
@@ -74,15 +74,15 @@ contract Vault is
         public
         StaticAccessControlled(gracePeriod)
     {
-        PROXY = proxy;
+        TOKEN_PROXY = proxy;
     }
 
     // ============ Owner-Only State-Changing Functions ============
 
     /**
      * Allows the owner to withdraw any excess tokens sent to the vault by unconventional means,
-     * including (but not limited-to) token airdrops. Any tokens moved to the vault by PROXY will be
-     * accounted for and will not be withdrawable by this function.
+     * including (but not limited-to) token airdrops. Any tokens moved to the vault by TOKEN_PROXY
+     * will be accounted for and will not be withdrawable by this function.
      *
      * @param  token  ERC20 token address
      * @param  to     Address to transfer tokens to
@@ -132,7 +132,7 @@ contract Vault is
         requiresAuthorization
     {
         // First send tokens to this contract
-        Proxy(PROXY).transferTokens(
+        TokenProxy(TOKEN_PROXY).transferTokens(
             token,
             from,
             address(this),

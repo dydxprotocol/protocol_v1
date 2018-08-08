@@ -29,7 +29,7 @@ pragma experimental "v0.5.0";
  * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
  *       to these functions
  */
-contract LoanOwner {
+interface LoanOwner {
 
     // ============ Public Interface functions ============
 

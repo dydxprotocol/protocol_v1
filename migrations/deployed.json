@@ -1,0 +1,83 @@
+{
+    "Margin": {
+        "42": {
+            "links": {
+                "OpenPositionImpl": "0xc57f874e8fd9c4b063f74b34b8ee1daddc19a225",
+                "ClosePositionImpl": "0xede8bf43e1c3cb8dd13c480f54b843d6736ae6b6",
+                "CloseWithoutCounterpartyImpl": "0xda75cc2749264046c14b5b7a9fa1a7d56ed72e2e",
+                "InterestImpl": "0x4313cca8f702e67dfc784f4778c939c6b3620514",
+                "ForceRecoverCollateralImpl": "0xb984fdf85b814b465eff2396d18b7b78163da029",
+                "LoanImpl": "0xef4f4be07b3d5141c4566caff3567191948d669c",
+                "DepositCollateralImpl": "0xa2710483fb528f3b11f20be6e3f701633dcfbaf4",
+                "TransferImpl": "0xfdf8cb392ec70bb0752165fda3961dc3ac55af17",
+                "IncreasePositionImpl": "0x70a93396b17f623df4c4c9d222252829055f892a",
+                "OpenWithoutCounterpartyImpl": "0x24751749816ba6c0f6d0b2066208e78e8d6553c5"
+            },
+            "address": "0xe97da4a12ee7feafddfdd4766d2705f2ee993d6a",
+            "transactionHash": "0x1a785ff423c1bcf0ef45dae335eff194ee42b4c0c1586f0505f5f49bb3abc838"
+        }
+    },
+    "Vault": {
+        "42": {
+            "links": {},
+            "address": "0x4fdc15f9e00316cf114bc4389c12c79ae0344175",
+            "transactionHash": "0xd49f2f3a8bc98018065bb853b1c6a925b1440b694f3916fd9a87e7c4e15dd967"
+        }
+    },
+    "TokenProxy": {
+        "42": {
+            "links": {},
+            "address": "0x12262ee5a32b3892a3fce087ff7a3299c0f8813f",
+            "transactionHash": "0x27f1dd56296bb2ad8358b037f14dfca948fe60f24b7f4b1caf2db33b1d6cb843"
+        }
+    },
+    "DutchAuctionCloser": {
+        "42": {
+            "links": {},
+            "address": "0x4e338944afbace1f1095b1fde436f91e79d11486",
+            "transactionHash": "0x3fb3d77bd3e4e54c1e9bcf22429b9fb3f59ec094d035d2f85773e15b0b0bf89b"
+        }
+    },
+    "SharedLoanCreator": {
+        "42": {
+            "links": {},
+            "address": "0x49f2bff73a6c47391133022522725b9d2b62498c",
+            "transactionHash": "0x0e483662d2d7b140fe3cb51ff13f99c76ba75b65ae396d7ab60ae157cfca9e65"
+        }
+    },
+    "ERC20ShortCreator": {
+        "42": {
+            "links": {},
+            "address": "0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c",
+            "transactionHash": "0x8a970b3d9cde9363d74885875c0453341bfc026969335f88bf98db84338f2d72"
+        }
+    },
+    "ERC20LongCreator": {
+        "42": {
+            "links": {},
+            "address": "0x8adf53551449c56394c2952ed8f01604e0de2683",
+            "transactionHash": "0xe46e2940a6301ceb0199e39e014451818665bbba20041ac198ee30989d68d81b"
+        }
+    },
+    "ERC721MarginPosition": {
+        "42": {
+            "links": {},
+            "address": "0x3d1720538d31c5a396deb00ab9956dec072a6423",
+            "transactionHash": "0xd659dcf0b6623966fe9a3cca1fceba0e7bc29d768b746e9ce940ef1b599433bc"
+        }
+    },
+    "ZeroExExchangeWrapper": {
+        "42": {
+            "links": {},
+            "address": "0x721976badf842a263f8d1a5d64c5578a4368f330",
+            "transactionHash": "0x9dab35bd6ebd6df6e110c0d3f16035e759bf4ac2165b25253ebc652981c6f9b0"
+        }
+    },
+    "OpenDirectlyExchangeWrapper": {
+        "42": {
+            "links": {},
+            "address": "0x5aab90bacc2d3d6eb1d208920bdb0b3c3278e24d",
+            "transactionHash": "0xdedcffadc3992c9a0a40b02118763cd70ecb72ca82d643a4e410bb535a3beef0"
+        }
+    }
+}

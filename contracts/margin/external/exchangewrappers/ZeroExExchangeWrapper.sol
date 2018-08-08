@@ -61,7 +61,7 @@ contract ZeroExExchangeWrapper is
     // ============ State Variables ============
 
     address public ZERO_EX_EXCHANGE;
-    address public ZERO_EX_PROXY;
+    address public ZERO_EX_TOKEN_PROXY;
     address public ZRX;
 
     // ============ Constructor ============
@@ -77,13 +77,13 @@ contract ZeroExExchangeWrapper is
         ExchangeWrapper(margin, dydxProxy)
     {
         ZERO_EX_EXCHANGE = zeroExExchange;
-        ZERO_EX_PROXY = zeroExProxy;
+        ZERO_EX_TOKEN_PROXY = zeroExProxy;
         ZRX = zrxToken;
 
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
         // NOTE: this is *not* standard behavior for an ERC20, so do not rely on it for other tokens
-        TokenInteract.approve(ZRX, ZERO_EX_PROXY, MathHelpers.maxUint256());
+        TokenInteract.approve(ZRX, ZERO_EX_TOKEN_PROXY, MathHelpers.maxUint256());
     }
 
     // ============ Margin-Only Functions ============
@@ -114,7 +114,7 @@ contract ZeroExExchangeWrapper is
 
         ensureAllowance(
             takerToken,
-            ZERO_EX_PROXY,
+            ZERO_EX_TOKEN_PROXY,
             requestedFillAmount
         );
 
@@ -129,7 +129,7 @@ contract ZeroExExchangeWrapper is
 
         ensureAllowance(
             makerToken,
-            DYDX_PROXY,
+            DYDX_TOKEN_PROXY,
             receivedMakerTokenAmount
         );
 

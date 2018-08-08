@@ -24,7 +24,7 @@ import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
 import { MarginCommon } from "./MarginCommon.sol";
 import { MarginState } from "./MarginState.sol";
-import { Proxy } from "../Proxy.sol";
+import { TokenProxy } from "../TokenProxy.sol";
 import { Vault } from "../Vault.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
@@ -106,7 +106,7 @@ library ClosePositionShared {
 
             payout = receivedOwedToken.sub(transaction.owedTokenOwed);
 
-            Proxy(state.PROXY).transferTokens(
+            TokenProxy(state.TOKEN_PROXY).transferTokens(
                 transaction.owedToken,
                 transaction.exchangeWrapper,
                 transaction.payoutRecipient,
@@ -184,7 +184,7 @@ library ClosePositionShared {
             isWithoutCounterparty
         );
     }
-    
+
     // ============ Private Helper-Functions ============
 
     function getApprovedAmount(
@@ -197,35 +197,34 @@ library ClosePositionShared {
         private
         returns (uint256)
     {
-        uint256 newAmount = Math.min256(requestedAmount, position.principal);
+        // Ensure enough principal
+        uint256 allowedAmount = Math.min256(requestedAmount, position.principal);
 
         // Ensure owner consent
-        uint256 allowedOwnerAmount = closePositionOnBehalfOfRecurse(
+        allowedAmount = closePositionOnBehalfOfRecurse(
             position.owner,
             msg.sender,
             payoutRecipient,
             positionId,
-            newAmount
+            allowedAmount
         );
-        newAmount = allowedOwnerAmount;
 
         // Ensure lender consent
         if (requireLenderApproval) {
-            uint256 allowedLenderAmount = closeLoanOnBehalfOfRecurse(
+            allowedAmount = closeLoanOnBehalfOfRecurse(
                 position.lender,
                 msg.sender,
                 payoutRecipient,
                 positionId,
-                newAmount
+                allowedAmount
             );
-            newAmount = allowedLenderAmount;
         }
 
-        assert(newAmount > 0);
-        assert(newAmount <= position.principal);
-        assert(newAmount <= requestedAmount);
+        assert(allowedAmount > 0);
+        assert(allowedAmount <= position.principal);
+        assert(allowedAmount <= requestedAmount);
 
-        return newAmount;
+        return allowedAmount;
     }
 
     function closePositionOnBehalfOfRecurse(
