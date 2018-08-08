@@ -7,6 +7,7 @@ const Margin = artifacts.require('Margin');
 const { isDevNetwork } = require('./helpers');
 const { snapshot } = require('../src/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
+const { createShortToken } = require('../test/helpers/ERC20PositionHelper');
 
 web3.currentProvider.sendAsync = web3.currentProvider.send;
 
@@ -20,6 +21,7 @@ async function doMigration(deployer, network, accounts) {
     openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
     openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
     openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
+    openTransactions.push(await createShortToken(accounts, { salt: salt++ }));
 
     await snapshot(web3);
 
@@ -27,6 +29,8 @@ async function doMigration(deployer, network, accounts) {
     const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
     for (let i = 0; i < openTransactions.length; i++) {
       positions[i].id = openTransactions[i].id;
+
+      positions[i].isTokenized = i === 3 ? true : false;
     }
 
     const json = JSON.stringify(positions, null, 4);
