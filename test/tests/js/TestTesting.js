@@ -16,26 +16,16 @@ contract('Margin', accounts => {
   });
 
   describe('TEST_POSITIONS', () => {
-    it('sets up positions correctly', async () => {
-      const margin = await Margin.deployed();
+    it('sets up test positions correctly', async () => {
+      await checkTestPositions();
+    });
 
-      const promises = TEST_POSITIONS.map(async testPosition => {
-        const position = await getPosition(margin, testPosition.id);
+    it('test positions still exist after reset', async () => {
+      await checkTestPositions();
 
-        expect(testPosition.owedToken).to.be.eq(position.owedToken);
-        expect(testPosition.heldToken).to.be.eq(position.heldToken);
-        expect(testPosition.lender).to.be.eq(position.lender);
-        expect(testPosition.owner).to.be.eq(position.owner);
-        expect(testPosition.interestRate).to.be.bignumber.eq(position.interestRate);
-        expect(testPosition.requiredDeposit).to.be.bignumber.eq(position.requiredDeposit);
-        expect(testPosition.callTimeLimit).to.be.bignumber.eq(position.callTimeLimit);
-        expect(testPosition.startTimestamp).to.be.bignumber.eq(position.startTimestamp);
-        expect(testPosition.callTimestamp).to.be.bignumber.eq(position.callTimestamp);
-        expect(testPosition.maxDuration).to.be.bignumber.eq(position.maxDuration);
-        expect(testPosition.interestPeriod).to.be.bignumber.eq(position.interestPeriod);
-      });
+      await reset(web3);
 
-      await Promise.all(promises);
+      await checkTestPositions();
     });
   });
 
@@ -82,3 +72,25 @@ contract('Margin', accounts => {
     });
   });
 });
+
+async function checkTestPositions() {
+  const promises = TEST_POSITIONS.map(async testPosition => {
+    const margin = await Margin.deployed();
+
+    const position = await getPosition(margin, testPosition.id);
+
+    expect(testPosition.owedToken).to.be.eq(position.owedToken);
+    expect(testPosition.heldToken).to.be.eq(position.heldToken);
+    expect(testPosition.lender).to.be.eq(position.lender);
+    expect(testPosition.owner).to.be.eq(position.owner);
+    expect(testPosition.interestRate).to.be.bignumber.eq(position.interestRate);
+    expect(testPosition.requiredDeposit).to.be.bignumber.eq(position.requiredDeposit);
+    expect(testPosition.callTimeLimit).to.be.bignumber.eq(position.callTimeLimit);
+    expect(testPosition.startTimestamp).to.be.bignumber.eq(position.startTimestamp);
+    expect(testPosition.callTimestamp).to.be.bignumber.eq(position.callTimestamp);
+    expect(testPosition.maxDuration).to.be.bignumber.eq(position.maxDuration);
+    expect(testPosition.interestPeriod).to.be.bignumber.eq(position.interestPeriod);
+  });
+
+  await Promise.all(promises);
+}
