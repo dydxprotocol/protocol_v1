@@ -9,8 +9,8 @@ const OwedToken = artifacts.require("TokenB");
 const BucketLender = artifacts.require("BucketLender");
 const BucketLenderFactory = artifacts.require("BucketLenderFactory");
 
-const { transact } = require('../../../helpers/ContractHelper');
-const { ADDRESSES, BYTES32 } = require('../../../helpers/Constants');
+const { transact } = require('../../../../helpers/ContractHelper');
+const { ADDRESSES, BYTES32 } = require('../../../../helpers/Constants');
 
 contract('BucketLenderFactory', () => {
 

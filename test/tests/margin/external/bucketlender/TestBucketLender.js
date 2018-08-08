@@ -14,18 +14,18 @@ const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
 const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 
-const { transact } = require('../../../helpers/ContractHelper');
-const { ADDRESSES, BIGNUMBERS, BYTES, ORDER_TYPE } = require('../../../helpers/Constants');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
-const { signLoanOffering } = require('../../../helpers/LoanHelper');
+const { transact } = require('../../../../helpers/ContractHelper');
+const { ADDRESSES, BIGNUMBERS, BYTES, ORDER_TYPE } = require('../../../../helpers/Constants');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
+const { signLoanOffering } = require('../../../../helpers/LoanHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
   issueTokensAndSetAllowances,
   callIncreasePosition,
   callOpenPosition,
   createOpenTx,
-} = require('../../../helpers/MarginHelper');
+} = require('../../../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 let OT = new BigNumber('1234567898765543211');

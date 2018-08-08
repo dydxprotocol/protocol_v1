@@ -9,9 +9,9 @@ const WETH9 = artifacts.require("WETH9");
 const BucketLender = artifacts.require("BucketLender");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
 
-const { transact } = require('../../../helpers/ContractHelper');
-const { BIGNUMBERS } = require('../../../helpers/Constants');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
+const { transact } = require('../../../../helpers/ContractHelper');
+const { BIGNUMBERS } = require('../../../../helpers/Constants');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
 
 let heldToken, weth, bucketLender, ethWrapper;
 const value = new BigNumber('1e10');
