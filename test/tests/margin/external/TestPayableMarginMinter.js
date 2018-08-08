@@ -16,15 +16,15 @@ const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const SharedLoan = artifacts.require("SharedLoan");
 const SharedLoanCreator = artifacts.require("SharedLoanCreator");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
-const { BIGNUMBERS, DEFAULT_SALT } = require('../../helpers/Constants');
-const { createLoanOffering, signLoanOffering } = require('../../helpers/LoanHelper');
-const { signOrder, createSignedBuyOrder } = require('../../helpers/ZeroExHelper');
-const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
-const { transact } = require('../../helpers/ContractHelper');
+const { BIGNUMBERS, DEFAULT_SALT } = require('../../../helpers/Constants');
+const { createLoanOffering, signLoanOffering } = require('../../../helpers/LoanHelper');
+const { signOrder, createSignedBuyOrder } = require('../../../helpers/ZeroExHelper');
+const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
+const { transact } = require('../../../helpers/ContractHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
   orderToBytes
-} = require('../../helpers/MarginHelper');
+} = require('../../../helpers/MarginHelper');
 
 
 let Seo, Weth, Dai, dydxMargin;
@@ -58,7 +58,7 @@ contract('#PayableMarginMinter', accounts => {
       ],
       [
         1000, // principal
-        1000, // deposit
+        2000, // deposit
         nonce
       ],
       [
@@ -134,7 +134,8 @@ contract('#PayableMarginMinter', accounts => {
       loanOffering.maxDuration
     ];
 
-    const transaction = await transact(
+    // extra ether
+    const transaction1 = await transact(
       Seo.mintMarginTokens,
       positionId,
       addresses,
@@ -145,12 +146,30 @@ contract('#PayableMarginMinter', accounts => {
       orderToBytes(order),
       {
         from: trader,
-        value: amountOfEth
+        value: principal.times(2)
       }
     );
-    const actualTokens = await tokenContract.balanceOf.call(trader);
+    const actualTokens1 = await tokenContract.balanceOf.call(trader);
+    expect(transaction1.result).to.be.bignumber.eq(principal);
+    expect(transaction1.result).to.be.bignumber.eq(actualTokens1);
 
-    expect(transaction.result).to.be.bignumber.eq(principal);
-    expect(transaction.result).to.be.bignumber.eq(actualTokens);
+    // no extra ether
+    const transaction2 = await transact(
+      Seo.mintMarginTokens,
+      positionId,
+      addresses,
+      values256,
+      values32,
+      false,
+      loanOffering.signature,
+      orderToBytes(order),
+      {
+        from: trader,
+        value: principal
+      }
+    );
+    const actualTokens2 = await tokenContract.balanceOf.call(trader);
+    expect(transaction2.result).to.be.bignumber.eq(principal);
+    expect(transaction2.result).to.be.bignumber.eq(actualTokens2.minus(actualTokens1));
   });
 });

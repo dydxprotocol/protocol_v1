@@ -53,7 +53,8 @@ contract PayableMarginMinter is ReentrancyGuard {
         WETH = weth;
 
         // WETH approval of maxInt does not decrease
-        WETH.approve(DYDX_MARGIN, MathHelpers.maxUint256());
+        address tokenProxy = Margin(DYDX_MARGIN).getTokenProxyAddress();
+        WETH.approve(tokenProxy, MathHelpers.maxUint256());
     }
 
     // ============ Public Functions ============
