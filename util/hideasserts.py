@@ -13,7 +13,9 @@ def hideAsserts(dir, filepath):
     # parse entire file
     for line in open(filepath, 'r').readlines():
         builder = line.rstrip();
-        if (line.lstrip().startswith('assert(') and ('unit-tested' not in line)):
+        assertToSkip = line.lstrip().startswith('assert(') and ('coverage-enable-line' not in line)
+        explicitToSkip = 'coverage-disable-line' in line
+        if assertToSkip or explicitToSkip:
             inAnAssert = True
             numAssertsChanged += 1
             spacesToAdd = len(builder) - len(builder.lstrip()) - 2;

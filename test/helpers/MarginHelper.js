@@ -1007,5 +1007,6 @@ module.exports = {
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee,
   callIncreasePosition,
-  getTokenAmountsFromOpen
+  getTokenAmountsFromOpen,
+  orderToBytes
 };

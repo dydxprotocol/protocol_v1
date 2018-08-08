@@ -196,6 +196,7 @@ contract Margin is
      * the position. The amount of owedToken borrowed from the lender will be >= the amount of
      * principal added, as it will incorporate interest already earned by the position so far.
      *
+     * @param  positionId          Unique ID of the position
      * @param  addresses           Addresses corresponding to:
      *
      *  [0]  = loan payer
@@ -263,7 +264,7 @@ contract Margin is
      * Increase a position directly by putting up heldToken. The caller will serve as both the
      * lender and the position owner
      *
-     * @param  positionId      Unique ID of the position sell
+     * @param  positionId      Unique ID of the position
      * @param  principalToAdd  Principal amount to add to the position
      * @return                 Amount of heldToken pulled from the msg.sender
      */
@@ -288,7 +289,7 @@ contract Margin is
      * an order and exchangeWrapper to facilitate the closing of the position. The payoutRecipient
      * is sent the resulting payout.
      *
-     * @param  positionId            Unique ID for the position
+     * @param  positionId            Unique ID of the position
      * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
      *                               closed is also bounded by:
      *                               1) The principal of the position
@@ -331,7 +332,7 @@ contract Margin is
     /**
      * Helper to close a position by paying owedToken directly rather than using an exchangeWrapper.
      *
-     * @param  positionId            Unique ID for the position
+     * @param  positionId            Unique ID of the position
      * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
      *                               closed is also bounded by:
      *                               1) The principal of the position
@@ -367,7 +368,7 @@ contract Margin is
      * Reduce the size of a position and withdraw a proportional amount of heldToken from the vault.
      * Must be approved by both the position owner and lender.
      *
-     * @param  positionId            Unique ID for the position
+     * @param  positionId            Unique ID of the position
      * @param  requestedCloseAmount  Principal amount of the position to close. The actual amount
      *                               closed is also bounded by:
      *                               1) The principal of the position
@@ -401,7 +402,7 @@ contract Margin is
      * the position. If the owner does not close the position, the lender can recover the collateral
      * in the position.
      *
-     * @param  positionId       Unique ID for the position
+     * @param  positionId       Unique ID of the position
      * @param  requiredDeposit  Amount of deposit the position owner will have to put up to cancel
      *                          the margin-call
      */
@@ -422,7 +423,7 @@ contract Margin is
     /**
      * Cancel a margin-call. Only callable with the approval of the position lender.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId  Unique ID of the position
      */
     function cancelMarginCall(
         bytes32 positionId
@@ -439,7 +440,7 @@ contract Margin is
      * the loan has expired or the loan has been margin-called for the duration of the callTimeLimit
      * but remains unclosed. Only callable with the approval of the position lender.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId  Unique ID of the position
      * @param  recipient   Address to send the recovered tokens to
      * @return             Amount of heldToken recovered
      */
@@ -462,7 +463,7 @@ contract Margin is
      * Deposit additional heldToken as collateral for a position. Cancels margin-call if:
      * 0 < position.requiredDeposit < depositAmount. Only callable by the position owner.
      *
-     * @param  positionId       Unique ID for the position
+     * @param  positionId       Unique ID of the position
      * @param  depositAmount    Additional amount in heldToken to deposit
      */
     function depositCollateral(
@@ -540,7 +541,7 @@ contract Margin is
      * payouts for this loan. Only callable by the lender for a position. If "who" is a contract, it
      * must implement the LoanOwner interface.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId  Unique ID of the position
      * @param  who         New owner of the loan
      */
     function transferLoan(
@@ -561,7 +562,7 @@ contract Margin is
      * payouts. Only callable by the owner of a position. If "who" is a contract, it must implement
      * the PositionOwner interface.
      *
-     * @param  positionId  Unique ID for the position
+     * @param  positionId  Unique ID of the position
      * @param  who         New owner of the position
      */
     function transferPosition(
