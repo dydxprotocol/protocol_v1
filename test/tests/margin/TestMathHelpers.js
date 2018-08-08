@@ -105,7 +105,7 @@ contract('InterestHelper', function(_accounts) {
   describe('#maxUint256', () => {
     it('gives the expected value', async () => {
       const result = await contract.maxUint256.call();
-      expect(result).to.be.bignumber.equal(BIGNUMBERS.ONES_255);
+      expect(result).to.be.bignumber.equal(BIGNUMBERS.MAX_UINT256);
     });
   });
 

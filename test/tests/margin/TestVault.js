@@ -264,7 +264,7 @@ contract('Vault', accounts => {
         expect(nToken.result).to.be.bignumber.equal(expected);
       }
 
-      expectThrow(
+      await expectThrow(
         vault.withdrawExcessToken(token.address, to, { from })
       );
     }

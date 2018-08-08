@@ -276,9 +276,18 @@ contract('PositionGetters', (accounts) => {
 
   describe('#getPositionPrincipal and #getPositionBalance', () => {
     it('check values for principal and balance', async () => {
+      const [principal0, balance0] = await Promise.all([
+        dydxMargin.getPositionPrincipal.call(BYTES32.BAD_ID),
+        dydxMargin.getPositionBalance.call(BYTES32.BAD_ID),
+      ]);
+      expect(principal0).to.be.bignumber.equal(0);
+      expect(balance0).to.be.bignumber.equal(0);
+
       const { expectedHeldTokenBalance } = getTokenAmountsFromOpen(openTx);
-      const principal1 = await dydxMargin.getPositionPrincipal.call(positionId);
-      const balance1 = await dydxMargin.getPositionBalance.call(positionId);
+      const [principal1, balance1] = await Promise.all([
+        dydxMargin.getPositionPrincipal.call(positionId),
+        dydxMargin.getPositionBalance.call(positionId),
+      ]);
       expect(principal1).to.be.bignumber.equal(openTx.principal);
       expect(balance1).to.be.bignumber.equal(expectedHeldTokenBalance);
 

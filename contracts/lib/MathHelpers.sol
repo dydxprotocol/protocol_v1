@@ -108,6 +108,20 @@ library MathHelpers {
     }
 
     /**
+     * Calculates and returns the maximum value for a uint256 in solidity
+     *
+     * @return  The maximum value for uint256
+     */
+    function maxUint32(
+    )
+        internal
+        pure
+        returns (uint32)
+    {
+        return 2 ** 32 - 1;
+    }
+
+    /**
      * Returns the number of bits in a uint256. That is, the lowest number, x, such that n >> x == 0
      *
      * @param  n  The uint256 to get the number of bits in

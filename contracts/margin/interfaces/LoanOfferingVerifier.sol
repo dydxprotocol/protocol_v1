@@ -31,6 +31,7 @@ pragma experimental "v0.5.0";
  *       to these functions
  */
 interface LoanOfferingVerifier {
+
     /**
      * Function a smart contract must implement to be able to consent to a loan. The loan offering
      * will be generated off-chain. The "loan owner" address will own the loan-side of the resulting
@@ -70,6 +71,7 @@ interface LoanOfferingVerifier {
      *  [3] = loan interest update period (in seconds)
      *
      * @param  positionId   Unique ID of the position
+     * @param  signature    Arbitrary bytes; may or may not be an ECDSA signature
      * @return              This address to accept, a different address to ask that contract
      */
     function verifyLoanOffering(

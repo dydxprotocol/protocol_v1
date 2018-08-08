@@ -50,7 +50,7 @@ describe('ZeroExExchangeWrapper', () => {
         expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchange.address);
         expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExProxy.address);
         expect(ZRX).to.eq(FeeToken.address);
-        expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.ONES_255);
+        expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.MAX_UINT256);
       });
     });
   });

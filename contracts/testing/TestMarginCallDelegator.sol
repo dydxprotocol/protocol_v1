@@ -34,6 +34,7 @@ contract TestMarginCallDelegator is
 
     address public CALLER;
     address public CANCELER;
+    address public TO_RETURN;
 
     constructor(
         address margin,
@@ -45,6 +46,7 @@ contract TestMarginCallDelegator is
     {
         CALLER = caller;
         CANCELER = canceler;
+        TO_RETURN = address(this);
     }
 
     function receiveLoanOwnership(
@@ -68,7 +70,7 @@ contract TestMarginCallDelegator is
         returns (address)
     {
         require(caller == CALLER);
-        return address(this);
+        return TO_RETURN;
     }
 
     function cancelMarginCallOnBehalfOf(
@@ -80,6 +82,27 @@ contract TestMarginCallDelegator is
         returns (address)
     {
         require(canceler == CANCELER);
-        return address(this);
+        return TO_RETURN;
+    }
+
+    function forceRecoverCollateralOnBehalfOf(
+        address,
+        bytes32,
+        address
+    )
+        onlyMargin
+        external
+        view
+        returns (address)
+    {
+        return TO_RETURN;
+    }
+
+    function setToReturn(
+        address toReturn
+    )
+        external
+    {
+        TO_RETURN = toReturn;
     }
 }
