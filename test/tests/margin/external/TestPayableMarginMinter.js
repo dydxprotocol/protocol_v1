@@ -7,7 +7,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
-const WETH9 = artifacts.require("canonical-weth/contracts/WETH9.sol");
+const WETH9 = artifacts.require("WETH9");
 const HeldToken = artifacts.require("TokenA");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
@@ -42,8 +42,8 @@ contract('#PayableMarginMinter', accounts => {
     ]);
     Seo = await PayableMarginMinter.new(Margin.address, Weth.address);
     await Weth.deposit({ value: new BigNumber("90e18"), from: opener });
-    await Weth.approve(TokenProxy.address, BIGNUMBERS.ONES_255, { from: opener });
-    await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.ONES_127);
+    await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: opener });
+    await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.MAX_UINT128);
   });
 
   beforeEach('open position', async () => {
@@ -78,7 +78,6 @@ contract('#PayableMarginMinter', accounts => {
   it('succeeds on valid inputs', async () => {
     const trader = accounts[9];
     const principal = new BigNumber(10000);
-    const amountOfEth = new BigNumber("1e10");
 
     let order = await createSignedBuyOrder(accounts, { salt: salt++ });
     order.takerFee = order.makerFee = 0;
@@ -106,7 +105,7 @@ contract('#PayableMarginMinter', accounts => {
     loanOffering.rates.minHeldToken = new BigNumber(0);
     loanOffering.signature = await signLoanOffering(loanOffering);
     await Weth.deposit({ value: new BigNumber("90e18"), from: loanOffering.payer });
-    await Weth.approve(TokenProxy.address, BIGNUMBERS.ONES_255, { from: loanOffering.payer });
+    await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: loanOffering.payer });
 
     const addresses = [
       loanOffering.payer,
