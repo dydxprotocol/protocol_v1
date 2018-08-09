@@ -4,7 +4,6 @@ const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
-const FeeToken = artifacts.require("TokenC");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
 const { DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
@@ -16,14 +15,15 @@ const BASE_AMOUNT = new BigNumber('1098623452345987123')
 async function createSignedSellOrder(
   accounts,
   {
-    salt = DEFAULT_SALT
+    salt = DEFAULT_SALT,
+    feeRecipient,
   } = {}
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
-    feeRecipient: accounts[6],
+    feeRecipient: feeRecipient || accounts[6],
     maker: accounts[5],
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     salt: new BigNumber(salt),
@@ -47,21 +47,20 @@ async function createSignedSellOrder(
 async function createSignedBuyOrder(
   accounts,
   {
-    salt = DEFAULT_SALT
+    salt = DEFAULT_SALT,
+    feeRecipient,
   } = {}
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
-    feeRecipient: accounts[4],
+    feeRecipient: feeRecipient || accounts[4],
     maker: accounts[2],
     makerFee: BASE_AMOUNT.times(.02012398).floor(),
     salt: new BigNumber(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BASE_AMOUNT.times(.1019238).floor(),
-    makerFeeTokenAddress: FeeToken.address,
-    takerFeeTokenAddress: FeeToken.address,
 
     // heldToken
     makerTokenAddress: HeldToken.address,

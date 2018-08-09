@@ -50,7 +50,7 @@ jobs:
     docker:
       - image: circleci/node:9.11.1
     working_directory: ~/protocol
-    parallelism: 2
+    parallelism: 3
     steps:
       - restore_cache:
           key: protocol-completed-build-{{ .Environment.CIRCLE_SHA1 }}
