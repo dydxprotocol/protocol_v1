@@ -19,8 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { BucketLender } from "./BucketLender.sol";
-import { WETH9 } from "../../../external/weth/WETH9.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 
