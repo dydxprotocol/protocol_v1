@@ -24,29 +24,9 @@ Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protoco
 
 [Short & Leveraged Long Tokens Whitepaper](https://margintokens.dydx.exchange)
 
-## Docker Container
-
-[Docker container](https://hub.docker.com/r/dydxprotocol/protocol/) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212
-
-```
-docker pull dydxprotocol/protocol
-docker run dydxprotocol/protocol
-```
-
-#### Docker Compose
-
-```
-# docker-compose.yml
-
-version: '3'
-services:
-  protocol:
-    image: dydxprotocol/protocol:latest
-    ports:
-      - 8545:8545
-```
-
 ## Npm Package
+
+The npm package contains the deployed addresses of the contracts, and also allows access to seed positions and orders on the docker test container
 
 #### Install
 
@@ -88,6 +68,28 @@ console.log(position.isTokenized);
 const order = seeds.orders[1];
 
 console.log(order.maker);
+```
+
+## Docker Container
+
+[Docker container](https://hub.docker.com/r/dydxprotocol/protocol/) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212
+
+```
+docker pull dydxprotocol/protocol
+docker run dydxprotocol/protocol
+```
+
+#### Docker Compose
+
+```
+# docker-compose.yml
+
+version: '3'
+services:
+  protocol:
+    image: dydxprotocol/protocol:latest
+    ports:
+      - 8545:8545
 ```
 
 ## Development
