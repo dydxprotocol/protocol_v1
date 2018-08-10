@@ -1,9 +1,7 @@
 {
 	"presets":
 		[["env", {
-			"targets": {
-				"node": "8"
-			}
+			"targets": "es5"
 		}]],
 	"plugins": ["transform-object-rest-spread"]
 }
