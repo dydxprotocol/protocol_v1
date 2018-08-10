@@ -25,19 +25,24 @@ const Margin = artifacts.require('Margin');
 const ZeroExProxy = artifacts.require('ZeroExProxy');
 const TestToken = artifacts.require('TestToken');
 const { isDevNetwork } = require('./helpers');
-const { snapshot } = require('../src/snapshots');
+const { snapshot } = require('../src/lib/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
 const { createShortToken } = require('../test/helpers/ERC20PositionHelper');
 const { ADDRESSES } = require('../test/helpers/Constants');
 const { createSignedBuyOrder, createSignedSellOrder } = require('../test/helpers/ZeroExHelper');
 const { issueAndSetAllowance } = require('../test/helpers/TokenHelper');
+const mkdirp = require('mkdirp');
 
+const mkdirAsync = promisify(mkdirp);
 web3.currentProvider.sendAsync = web3.currentProvider.send;
 
 const writeFileAsync = promisify(fs.writeFile);
 
 async function doMigration(deployer, network, accounts) {
   if (isDevNetwork(network)) {
+    const directory = __dirname + '/../build/';
+    await mkdirAsync(directory);
+
     const seeds = {};
 
     // Needs to complete before createSeedOrders
@@ -51,7 +56,7 @@ async function doMigration(deployer, network, accounts) {
     seeds.orders = orders;
 
     const json = JSON.stringify(seeds, null, 4);
-    await writeFileAsync(__dirname + '/../build/seeds.json', json, 'utf8');
+    await writeFileAsync(directory + '/seeds.json', json, 'utf8');
   }
 }
 

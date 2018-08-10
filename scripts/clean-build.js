@@ -1,4 +1,4 @@
-import * as contracts from '../src/contracts';
+import * as contracts from '../src/lib/contracts';
 import deployed from '../migrations/deployed';
 import fs from 'fs';
 import promisify from 'es6-promisify';

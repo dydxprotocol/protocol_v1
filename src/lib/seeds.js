@@ -17,7 +17,7 @@
 */
 
 import BigNumber from 'bignumber.js';
-import SeedsJson from '../build/seeds.json';
+import SeedsJson from '../../build/seeds.json';
 
 SeedsJson.positions = SeedsJson.positions.map(mapPositionFromJson);
 SeedsJson.orders = SeedsJson.orders.map(mapOrderFromJson);

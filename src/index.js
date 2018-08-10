@@ -16,6 +16,6 @@
 
 */
 
-export * from './contracts';
-export * from './snapshots';
-export { default as seeds } from './seeds';
+export * from './lib/contracts';
+export * from './lib/snapshots';
+export { default as seeds } from './lib/seeds';

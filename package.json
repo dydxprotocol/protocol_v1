@@ -1,8 +1,8 @@
 {
   "name": "@dydxprotocol/protocol",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Ethereum Smart Contracts for the dYdX Margin Trading Protocol",
-  "main": "build/index.js",
+  "main": "build/js/index.js",
   "files": [
     "build/",
     "contracts/",
@@ -30,7 +30,7 @@
     "node": "ganache-cli",
     "debug": "truffle debug",
     "dydxlint": "python util/lintcontracts.py && python util/linttests.py",
-    "build:js": "./node_modules/.bin/babel src --out-dir build/ --source-maps inline",
+    "build:js": "./node_modules/.bin/babel src --out-dir build/js --source-maps inline",
     "docker_node": "ganache-cli -i 1212 -d -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "clean_contract_json": "babel-node ./scripts/clean-build.js",
     "deploy_kovan": "truffle migrate --network=kovan --reset && babel-node ./scripts/save-deployed-addresses.js"
