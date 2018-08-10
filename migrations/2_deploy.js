@@ -42,7 +42,11 @@ const DepositCollateralImpl = artifacts.require("DepositCollateralImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
 const InterestImpl = artifacts.require("InterestImpl");
-
+const PayableMarginMinter = artifacts.require("PayableMarginMinter");
+const BucketLenderFactory = artifacts.require("BucketLenderFactory");
+const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const CanonicalWeth = require('canonical-weth');
+const contract = require('truffle-contract');
 // For testing
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
@@ -111,7 +115,13 @@ function getSharedLoanTrustedMarginCallers(network) {
   throw "Network Unsupported";
 }
 
-async function deployMarginContracts(deployer, network) {
+async function deployContracts(deployer, network) {
+  await deployBaseProtocol(deployer);
+
+  await deploySecondLayer(deployer, network);
+}
+
+async function deployBaseProtocol(deployer) {
   await Promise.all([
     deployer.deploy(TokenProxy, ONE_HOUR),
     deployer.deploy(InterestImpl),
@@ -160,7 +170,9 @@ async function deployMarginContracts(deployer, network) {
     Vault.address,
     TokenProxy.address
   );
+}
 
+async function deploySecondLayer(deployer, network) {
   await Promise.all([
     deployer.deploy(
       ZeroExExchangeWrapper,
@@ -184,8 +196,14 @@ async function deployMarginContracts(deployer, network) {
       Margin.address,
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
-    )
+    ),
   ]);
+
+console.log('a')
+  await deployer.deploy(
+    contract(CanonicalWeth)
+  )
+  console.log('b')
 
   await Promise.all([
     deployer.deploy(
@@ -197,14 +215,26 @@ async function deployMarginContracts(deployer, network) {
       ERC20LongCreator,
       Margin.address,
       [DutchAuctionCloser.address]
+    ),
+    deployer.deploy(
+      SharedLoanCreator,
+      Margin.address,
+      getSharedLoanTrustedMarginCallers(network)
+    ),
+    deployer.deploy(
+      PayableMarginMinter,
+      Margin.address,
+      CanonicalWeth.address
+    ),
+    deployer.deploy(
+      BucketLenderFactory,
+      Margin.address
+    ),
+    deployer.deploy(
+      EthWrapperForBucketLender,
+      CanonicalWeth.address
     )
   ]);
-
-  await deployer.deploy(
-    SharedLoanCreator,
-    Margin.address,
-    getSharedLoanTrustedMarginCallers(network)
-  );
 }
 
 async function authorizeOnProxy() {
@@ -223,7 +253,7 @@ async function grantAccessToVault() {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
-  await deployMarginContracts(deployer, network);
+  await deployContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault()
