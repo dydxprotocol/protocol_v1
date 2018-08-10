@@ -41,6 +41,16 @@ export {
 }                                     from '../../build/contracts/OpenDirectlyExchangeWrapper.json';
 export { default as ERC20 }             from '../../build/contracts/ERC20.json';
 export { default as TestToken }         from '../../build/contracts/TestToken.json';
+export { default as WETH9 }             from '../../build/contracts/WETH9.json';
+export {
+  default as PayableMarginMinter
+}                                       from '../../build/contracts/PayableMarginMinter.json';
+export {
+  default as BucketLenderFactory
+}                                       from '../../build/contracts/BucketLenderFactory.json';
+export {
+  default as EthWrapperForBucketLender
+}                                       from '../../build/contracts/EthWrapperForBucketLender.json';
 
 // Testing Contracts
 export { default as TokenA }            from '../../build/contracts/TokenA.json';
