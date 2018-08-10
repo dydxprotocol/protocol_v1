@@ -13,8 +13,8 @@
   <a href='https://www.npmjs.com/package/@dydxprotocol/protocol'>
     <img src='https://img.shields.io/npm/v/@dydxprotocol/protocol.svg' alt='NPM' />
   </a>
-  <a href='https://slack.dydx.exchange'>
-    <img src='https://img.shields.io/badge/chat-slack-blue.svg' alt='Slack' />
+  <a href='https://gitter.im/dydxprotocol/Lobby'>
+    <img src='https://img.shields.io/gitter/room/nwjs/nw.js.svg' alt='Gitter' />
   </a>
 </p>
 
