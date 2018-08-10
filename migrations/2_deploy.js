@@ -45,8 +45,8 @@ const InterestImpl = artifacts.require("InterestImpl");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const BucketLenderFactory = artifacts.require("BucketLenderFactory");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
-const CanonicalWeth = require('canonical-weth');
-const contract = require('truffle-contract');
+const WETH9 = artifacts.require("WETH9");
+
 // For testing
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
@@ -78,7 +78,7 @@ function maybeDeploy0x(deployer, network) {
 function get0xExchangeAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchange.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }
 
@@ -88,7 +88,7 @@ function get0xExchangeAddress(network) {
 function get0xProxyAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxy.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
@@ -98,7 +98,7 @@ function get0xProxyAddress(network) {
 function getZRXAddress(network) {
   if (isDevNetwork(network)) {
     return FeeToken.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
   }
 
@@ -108,11 +108,19 @@ function getZRXAddress(network) {
 function getSharedLoanTrustedMarginCallers(network) {
   if (isDevNetwork(network)) {
     return [];
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return ['0x008E81A8817e0f1820cE98c92C8c72be27443857'];
   }
 
   throw "Network Unsupported";
+}
+
+function getWethAddress(network) {
+  if (isDevNetwork(network)) {
+    return WETH9.address;
+  } else if (network === 'kovan') {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
 }
 
 async function deployContracts(deployer, network) {
@@ -197,13 +205,10 @@ async function deploySecondLayer(deployer, network) {
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
     ),
+    deployer.deploy(
+      WETH9
+    ),
   ]);
-
-console.log('a')
-  await deployer.deploy(
-    contract(CanonicalWeth)
-  )
-  console.log('b')
 
   await Promise.all([
     deployer.deploy(
@@ -224,7 +229,7 @@ console.log('a')
     deployer.deploy(
       PayableMarginMinter,
       Margin.address,
-      CanonicalWeth.address
+      getWethAddress(network)
     ),
     deployer.deploy(
       BucketLenderFactory,
@@ -232,7 +237,7 @@ console.log('a')
     ),
     deployer.deploy(
       EthWrapperForBucketLender,
-      CanonicalWeth.address
+      getWethAddress(network)
     )
   ]);
 }
