@@ -25,7 +25,7 @@ const Margin = artifacts.require('Margin');
 const ZeroExProxy = artifacts.require('ZeroExProxy');
 const TestToken = artifacts.require('TestToken');
 const { isDevNetwork } = require('./helpers');
-const { snapshot } = require('../src/snapshots');
+const { snapshot } = require('../src/lib/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
 const { createShortToken } = require('../test/helpers/ERC20PositionHelper');
 const { ADDRESSES } = require('../test/helpers/Constants');
@@ -40,7 +40,7 @@ const writeFileAsync = promisify(fs.writeFile);
 
 async function doMigration(deployer, network, accounts) {
   if (isDevNetwork(network)) {
-    const directory = __dirname + '/../build/js/';
+    const directory = __dirname + '/../build/';
     await mkdirAsync(directory);
 
     const seeds = {};
