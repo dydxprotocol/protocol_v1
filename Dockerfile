@@ -12,13 +12,16 @@ COPY package.json /home/dydx/app/package.json
 COPY package-lock.json /home/dydx/app/package-lock.json
 RUN npm install --loglevel warn
 
+COPY ./.babelrc /home/dydx/app/.babelrc
 COPY ./truffle.js /home/dydx/app/truffle.js
-COPY ./scripts /home/dydx/app/scripts
-COPY ./migrations /home/dydx/app/migrations
 COPY ./contracts /home/dydx/app/contracts
-COPY ./test /home/dydx/app/test
-
 RUN npm run compile -- --all
+
+COPY ./migrations /home/dydx/app/migrations
+COPY ./scripts /home/dydx/app/scripts
+COPY ./test /home/dydx/app/test
+COPY ./src /home/dydx/app/src
+
 RUN mkdir /home/.ganache
 RUN sh scripts/docker.sh
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 VERSION=$(cat package.json | jq -r '.version')
 NAME=@dydxprotocol/protocol

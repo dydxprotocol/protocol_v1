@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 
 npm run node -- -i 1212 -d -p 8545 -h 0.0.0.0 &
 PROC_ID=$!
