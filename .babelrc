@@ -1,7 +1,8 @@
 {
-	"presets":
-		[["env", {
-			"targets": "es5"
-		}]],
-	"plugins": ["transform-object-rest-spread"]
+  "presets": [
+    ["env", {
+        "useBuiltIns": true
+    }]
+  ],
+  "plugins": [["transform-runtime", { "polyfill": false }], "transform-object-rest-spread"]
 }
