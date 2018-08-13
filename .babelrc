@@ -1,6 +1,8 @@
 {
   "presets": [
-    ["env"]
+    ["env", {
+        "useBuiltIns": true
+    }]
   ],
-  "plugins": ["transform-object-rest-spread"]
+  "plugins": [["transform-runtime", { "polyfill": false }], "transform-object-rest-spread"]
 }
