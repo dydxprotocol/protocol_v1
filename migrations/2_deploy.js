@@ -42,6 +42,10 @@ const DepositCollateralImpl = artifacts.require("DepositCollateralImpl");
 const LoanImpl = artifacts.require("LoanImpl");
 const TransferImpl = artifacts.require("TransferImpl");
 const InterestImpl = artifacts.require("InterestImpl");
+const PayableMarginMinter = artifacts.require("PayableMarginMinter");
+const BucketLenderFactory = artifacts.require("BucketLenderFactory");
+const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const WETH9 = artifacts.require("WETH9");
 
 // For testing
 const TokenA = artifacts.require("TokenA");
@@ -74,7 +78,7 @@ function maybeDeploy0x(deployer, network) {
 function get0xExchangeAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchange.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }
 
@@ -84,7 +88,7 @@ function get0xExchangeAddress(network) {
 function get0xProxyAddress(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxy.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
@@ -94,7 +98,7 @@ function get0xProxyAddress(network) {
 function getZRXAddress(network) {
   if (isDevNetwork(network)) {
     return FeeToken.address;
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
   }
 
@@ -104,14 +108,28 @@ function getZRXAddress(network) {
 function getSharedLoanTrustedMarginCallers(network) {
   if (isDevNetwork(network)) {
     return [];
-  } else if (network === 'kovan' ) {
+  } else if (network === 'kovan') {
     return ['0x008E81A8817e0f1820cE98c92C8c72be27443857'];
   }
 
   throw "Network Unsupported";
 }
 
-async function deployMarginContracts(deployer, network) {
+function getWethAddress(network) {
+  if (isDevNetwork(network)) {
+    return WETH9.address;
+  } else if (network === 'kovan') {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+}
+
+async function deployContracts(deployer, network) {
+  await deployBaseProtocol(deployer);
+
+  await deploySecondLayer(deployer, network);
+}
+
+async function deployBaseProtocol(deployer) {
   await Promise.all([
     deployer.deploy(TokenProxy, ONE_HOUR),
     deployer.deploy(InterestImpl),
@@ -160,8 +178,10 @@ async function deployMarginContracts(deployer, network) {
     Vault.address,
     TokenProxy.address
   );
+}
 
-  await Promise.all([
+async function deploySecondLayer(deployer, network) {
+  const promises = [
     deployer.deploy(
       ZeroExExchangeWrapper,
       Margin.address,
@@ -184,8 +204,16 @@ async function deployMarginContracts(deployer, network) {
       Margin.address,
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
-    )
-  ]);
+    ),
+  ];
+
+  if (isDevNetwork(network)) {
+    promises.push(deployer.deploy(
+      WETH9
+    ));
+  }
+
+  await Promise.all(promises);
 
   await Promise.all([
     deployer.deploy(
@@ -197,14 +225,26 @@ async function deployMarginContracts(deployer, network) {
       ERC20LongCreator,
       Margin.address,
       [DutchAuctionCloser.address]
+    ),
+    deployer.deploy(
+      SharedLoanCreator,
+      Margin.address,
+      getSharedLoanTrustedMarginCallers(network)
+    ),
+    deployer.deploy(
+      PayableMarginMinter,
+      Margin.address,
+      getWethAddress(network)
+    ),
+    deployer.deploy(
+      BucketLenderFactory,
+      Margin.address
+    ),
+    deployer.deploy(
+      EthWrapperForBucketLender,
+      getWethAddress(network)
     )
   ]);
-
-  await deployer.deploy(
-    SharedLoanCreator,
-    Margin.address,
-    getSharedLoanTrustedMarginCallers(network)
-  );
 }
 
 async function authorizeOnProxy() {
@@ -223,7 +263,7 @@ async function grantAccessToVault() {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await maybeDeploy0x(deployer, network);
-  await deployMarginContracts(deployer, network);
+  await deployContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
     grantAccessToVault()
