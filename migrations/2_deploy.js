@@ -181,7 +181,7 @@ async function deployBaseProtocol(deployer) {
 }
 
 async function deploySecondLayer(deployer, network) {
-  await Promise.all([
+  const promises = [
     deployer.deploy(
       ZeroExExchangeWrapper,
       Margin.address,
@@ -205,10 +205,15 @@ async function deploySecondLayer(deployer, network) {
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
     ),
-    deployer.deploy(
+  ];
+
+  if (isDevNetwork(network)) {
+    promises.push(deployer.deploy(
       WETH9
-    ),
-  ]);
+    ));
+  }
+
+  await Promise.all(promises);
 
   await Promise.all([
     deployer.deploy(
