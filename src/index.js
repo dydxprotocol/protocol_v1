@@ -16,6 +16,7 @@
 
 */
 
+export * from './lib/polyfills';
 export * from './lib/contracts';
 export * from './lib/snapshots';
 export { default as seeds } from './lib/seeds';
