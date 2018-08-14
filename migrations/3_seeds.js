@@ -62,19 +62,21 @@ async function doMigration(deployer, network, accounts) {
 
 async function createSeedPositions(accounts) {
   let salt = 729436712;
+  let nonce = 238947238;
   const openTransactions = [];
 
-  openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
-  openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
-  openTransactions.push(await doOpenPosition(accounts, { salt: salt++ }));
-  openTransactions.push(await createShortToken(accounts, { salt: salt++ }));
+  openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
+  openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
+  openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
+  openTransactions.push(await createShortToken(accounts, { nonce: nonce++ }));
+  openTransactions.push(await createShortToken(accounts, { nonce: nonce++ }));
 
   const margin = await Margin.deployed();
   const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
   for (let i = 0; i < openTransactions.length; i++) {
     positions[i].id = openTransactions[i].id;
 
-    positions[i].isTokenized = i === 3 ? true : false;
+    positions[i].isTokenized = i === 3 || i === 4 ? true : false;
   }
 
   return positions;

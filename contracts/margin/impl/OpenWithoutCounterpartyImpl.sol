@@ -108,6 +108,7 @@ library OpenWithoutCounterpartyImpl {
             state,
             openTx
         );
+        return "0x";
 
         return openTx.positionId;
     }
