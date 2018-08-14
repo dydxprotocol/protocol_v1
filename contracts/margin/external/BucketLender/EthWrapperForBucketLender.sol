@@ -50,12 +50,21 @@ contract EthWrapperForBucketLender
         WETH = weth;
     }
 
-    // ============ Functions ============
+    // ============ Public Functions ============
 
     /**
-     * In the current version of solidity, the fallback function is non-payable, so we do not need
-     * to define it in order to prevent sending eth to this contract directly.
+     * Fallback function. Disallows ether to be sent to this contract without data except when
+     * unwrapping WETH.
      */
+    function ()
+        external
+        payable
+    {
+        require( // coverage-disable-line
+            msg.sender == WETH,
+            "EthWrapperForBucketLender#fallback: Cannot recieve ETH directly unless unwrapping WETH"
+        );
+    }
 
     /**
      * Allows users to send eth directly to this contract and have it be wrapped and sent to a
@@ -92,5 +101,47 @@ contract EthWrapperForBucketLender
 
         // deposit the tokens
         return BucketLender(bucketLender).deposit(beneficiary, amount);
+    }
+
+    /**
+     * Allows users to send eth directly to this contract and have it be wrapped and sent to a
+     * BucketLender to be lent for some margin position.
+     *
+     * @param  bucketLender  The address of the BucketLender contract to deposit money into
+     * @return               The bucket number that was deposited into
+     */
+    function withdrawEth(
+        address bucketLender,
+        uint256[] buckets,
+        uint256[] maxWeights
+    )
+        external
+        returns (uint256, uint256)
+    {
+        address owedToken = BucketLender(bucketLender).OWED_TOKEN();
+        address heldToken = BucketLender(bucketLender).HELD_TOKEN();
+        require(
+            owedToken == WETH,
+            "EthWrapperForBucketLender: Cannot withdraw from non-WETH BucketLender"
+        );
+
+        // withdraw the weth
+        (
+            uint256 owedTokenAmount,
+            uint256 heldTokenAmount
+        ) = BucketLender(bucketLender).withdraw(
+            buckets,
+            maxWeights,
+            msg.sender
+        );
+
+        // send all eth to msg.sender
+        WETH9(owedToken).withdraw(owedTokenAmount);
+        msg.sender.transfer(owedTokenAmount);
+
+        // send all other tokens to msg.sender
+        heldToken.transfer(msg.sender, heldTokenAmount);
+
+        return (owedTokenAmount, heldTokenAmount);
     }
 }

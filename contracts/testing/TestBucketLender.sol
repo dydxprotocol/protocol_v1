@@ -34,7 +34,8 @@ contract TestBucketLender is BucketLender {
         address heldToken,
         address owedToken,
         uint32[7] parameters,
-        address[] trustedMarginCallers
+        address[] trustedMarginCallers,
+        address[] trustedWithdrawers
     )
         public
         BucketLender(
@@ -43,7 +44,8 @@ contract TestBucketLender is BucketLender {
             heldToken,
             owedToken,
             parameters,
-            trustedMarginCallers
+            trustedMarginCallers,
+            trustedWithdrawers
         )
     {
     }

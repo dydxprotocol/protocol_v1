@@ -43,7 +43,7 @@ contract('BucketLenderFactory', () => {
       const numerator = new BigNumber(161718);
       const denominator = new BigNumber(192021);
       const marginCaller = ADDRESSES.TEST[0];
-      const notMarginCaller = ADDRESSES.TEST[1];
+      const withdrawer = ADDRESSES.TEST[2];
 
       const factory = await BucketLenderFactory.new(Margin.address);
 
@@ -63,6 +63,9 @@ contract('BucketLenderFactory', () => {
         ],
         [
           marginCaller
+        ],
+        [
+          withdrawer
         ]
       );
 
@@ -82,6 +85,8 @@ contract('BucketLenderFactory', () => {
         bl_denominator,
         bl_marginCallerOkay,
         bl_notMarginCallerNotOkay,
+        bl_withdrawerOkay,
+        bl_notWithdrawerNotOkay,
       ] = await Promise.all([
         bucketLender.DYDX_MARGIN.call(),
         bucketLender.POSITION_ID.call(),
@@ -95,7 +100,9 @@ contract('BucketLenderFactory', () => {
         bucketLender.MIN_HELD_TOKEN_NUMERATOR.call(),
         bucketLender.MIN_HELD_TOKEN_DENOMINATOR.call(),
         bucketLender.TRUSTED_MARGIN_CALLERS.call(marginCaller),
-        bucketLender.TRUSTED_MARGIN_CALLERS.call(notMarginCaller),
+        bucketLender.TRUSTED_MARGIN_CALLERS.call(withdrawer),
+        bucketLender.TRUSTED_WITHDRAWERS.call(withdrawer),
+        bucketLender.TRUSTED_WITHDRAWERS.call(marginCaller),
       ]);
 
       expect(bl_margin).to.be.eq(Margin.address);
@@ -111,6 +118,8 @@ contract('BucketLenderFactory', () => {
       expect(bl_denominator).to.be.bignumber.eq(denominator);
       expect(bl_marginCallerOkay).to.be.eq(true);
       expect(bl_notMarginCallerNotOkay).to.be.eq(false);
+      expect(bl_withdrawerOkay).to.be.eq(true);
+      expect(bl_notWithdrawerNotOkay).to.be.eq(false);
     });
   });
 });

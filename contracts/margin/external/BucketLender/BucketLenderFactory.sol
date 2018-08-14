@@ -80,7 +80,8 @@ contract BucketLenderFactory {
         address heldToken,
         address owedToken,
         uint32[7] parameters,
-        address[] marginCallers
+        address[] marginCallers,
+        address[] withdrawers
     )
         external
         returns (address)
@@ -91,7 +92,8 @@ contract BucketLenderFactory {
             heldToken,
             owedToken,
             parameters,
-            marginCallers
+            marginCallers,
+            withdrawers
         );
 
         Ownable(newBucketLender).transferOwnership(msg.sender);
