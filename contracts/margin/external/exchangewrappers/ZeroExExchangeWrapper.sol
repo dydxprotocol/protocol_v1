@@ -40,6 +40,7 @@ contract ZeroExExchangeWrapper is
     ExchangeWrapper
 {
     using SafeMath for uint256;
+    using TokenInteract for address;
 
     // ============ Structs ============
 
@@ -60,6 +61,9 @@ contract ZeroExExchangeWrapper is
 
     // ============ State Variables ============
 
+    // msg.senders that will put the correct tradeOriginator in callerData when doing an exchange
+    mapping (address => bool) public TRUSTED_MSG_SENDER;
+
     address public ZERO_EX_EXCHANGE;
     address public ZERO_EX_TOKEN_PROXY;
     address public ZRX;
@@ -67,36 +71,38 @@ contract ZeroExExchangeWrapper is
     // ============ Constructor ============
 
     constructor(
-        address margin,
-        address dydxProxy,
         address zeroExExchange,
         address zeroExProxy,
-        address zrxToken
+        address zrxToken,
+        address[] trustedMsgSenders
     )
         public
-        ExchangeWrapper(margin, dydxProxy)
     {
         ZERO_EX_EXCHANGE = zeroExExchange;
         ZERO_EX_TOKEN_PROXY = zeroExProxy;
         ZRX = zrxToken;
 
+        for (uint i = 0; i < trustedMsgSenders.length; i++) {
+            TRUSTED_MSG_SENDER[trustedMsgSenders[i]] = true;
+        }
+
         // The ZRX token does not decrement allowance if set to MAX_UINT
         // therefore setting it once to the maximum amount is sufficient
         // NOTE: this is *not* standard behavior for an ERC20, so do not rely on it for other tokens
-        TokenInteract.approve(ZRX, ZERO_EX_TOKEN_PROXY, MathHelpers.maxUint256());
+        ZRX.approve(ZERO_EX_TOKEN_PROXY, MathHelpers.maxUint256());
     }
 
-    // ============ Margin-Only Functions ============
+    // ============ Public Functions ============
 
     function exchange(
+        address sender,
+        address receiver,
         address makerToken,
         address takerToken,
-        address tradeOriginator,
         uint256 requestedFillAmount,
         bytes orderData
     )
         external
-        onlyMargin
         returns (uint256)
     {
         Order memory order = parseOrder(orderData);
@@ -106,9 +112,14 @@ contract ZeroExExchangeWrapper is
             "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
         );
 
+        require(
+            requestedFillAmount <= takerToken.balanceOf(address(this)),
+            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than tokens held"
+        );
+
         transferTakerFee(
             order,
-            tradeOriginator,
+            sender,
             requestedFillAmount
         );
 
@@ -117,8 +128,6 @@ contract ZeroExExchangeWrapper is
             ZERO_EX_TOKEN_PROXY,
             requestedFillAmount
         );
-
-        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
 
         uint256 receivedMakerTokenAmount = doTrade(
             order,
@@ -129,7 +138,7 @@ contract ZeroExExchangeWrapper is
 
         ensureAllowance(
             makerToken,
-            DYDX_TOKEN_PROXY,
+            receiver,
             receivedMakerTokenAmount
         );
 
@@ -174,8 +183,16 @@ contract ZeroExExchangeWrapper is
             order.takerFee
         );
 
-        TokenInteract.transferFrom(
-            ZRX,
+        if (takerFee == 0) {
+            return;
+        }
+
+        require(
+            TRUSTED_MSG_SENDER[msg.sender],
+            "ZeroExExchangeWrapper#transferTakerFee: Only trusted senders can dictate the fee payer"
+        );
+
+        ZRX.transferFrom(
             tradeOriginator,
             address(this),
             takerFee
@@ -235,12 +252,11 @@ contract ZeroExExchangeWrapper is
     )
         private
     {
-        if (TokenInteract.allowance(token, address(this), spender) >= requiredAmount) {
+        if (token.allowance(address(this), spender) >= requiredAmount) {
             return;
         }
 
-        TokenInteract.approve(
-            token,
+        token.approve(
             spender,
             MathHelpers.maxUint256()
         );

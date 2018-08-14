@@ -185,11 +185,10 @@ async function deploySecondLayer(deployer, network) {
   const promises = [
     deployer.deploy(
       ZeroExExchangeWrapper,
-      Margin.address,
-      TokenProxy.address,
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
-      getZRXAddress(network)
+      getZRXAddress(network),
+      [Margin.address]
     ),
     deployer.deploy(
       OpenDirectlyExchangeWrapper,

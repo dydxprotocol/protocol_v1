@@ -20,28 +20,6 @@ const {
 } = require('../../../helpers/MarginHelper');
 
 describe('OpenDirectlyExchangeWrapper', () => {
-  describe('Constructor', () => {
-    contract('OpenDirectlyExchangeWrapper', () => {
-      it('sets constants correctly', async () => {
-        const contract = await OpenDirectlyExchangeWrapper.new(
-          ADDRESSES.TEST[0],
-          ADDRESSES.TEST[1]
-        );
-
-        const [
-          DYDX_TOKEN_PROXY,
-          DYDX_MARGIN
-        ] = await Promise.all([
-          contract.DYDX_TOKEN_PROXY.call(),
-          contract.DYDX_MARGIN.call()
-        ]);
-
-        expect(DYDX_MARGIN).to.eq(ADDRESSES.TEST[0]);
-        expect(DYDX_TOKEN_PROXY).to.eq(ADDRESSES.TEST[1]);
-      });
-    });
-  });
-
   describe('#getExchangeCost', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
       it('gives the correct maker token for a given order', async () => {

@@ -198,16 +198,15 @@ library BorrowShared {
             transaction.lenderAmount.add(transaction.depositAmount);
 
         // Do the trade, taking only the maxHeldTokenToBuy if more is returned
-        uint256 heldTokenFromSell = Math.min256(
-            maxHeldTokenToBuy,
-            ExchangeWrapper(transaction.exchangeWrapper).exchange(
-                transaction.loanOffering.heldToken,
-                transaction.loanOffering.owedToken,
-                msg.sender,
-                sellAmount,
-                orderData
-            )
+        uint256 heldTokenFromSell = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+            msg.sender,
+            state.TOKEN_PROXY,
+            transaction.loanOffering.heldToken,
+            transaction.loanOffering.owedToken,
+            sellAmount,
+            orderData
         );
+        heldTokenFromSell = Math.min256(heldTokenFromSell, maxHeldTokenToBuy);
 
         // Move the tokens to the vault
         Vault(state.VAULT).transferToVault(

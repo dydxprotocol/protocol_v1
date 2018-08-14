@@ -19,58 +19,39 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { OnlyMargin } from "./OnlyMargin.sol";
-
 
 /**
  * @title ExchangeWrapper
  * @author dYdX
  *
- * Contract interface that Exchange Wrapper smart contracts must implement in order to be used to
- * open or close positions on the dYdX using external exchanges.
- *
- * NOTE: Any contract implementing this interface should also use OnlyMargin to control access
- *       to these functions
+ * Contract interface that Exchange Wrapper smart contracts must implement in order to interface
+ * with other smart contracts through a common interface.
  */
-contract ExchangeWrapper is OnlyMargin {
+contract ExchangeWrapper {
 
-    // ============ Constants ============
-
-    address public DYDX_TOKEN_PROXY;
-
-    // ============ Constructor ============
-
-    constructor(
-        address margin,
-        address dydxProxy
-    )
-        public
-        OnlyMargin(margin)
-    {
-        DYDX_TOKEN_PROXY = dydxProxy;
-    }
-
-    // ============ External Functions ============
+    // ============ Public Functions ============
 
     /**
      * Exchange some amount of takerToken for makerToken.
      *
+     * @param  sender               Address of the initiator of the trade (however, this value
+     *                              cannot always be trusted)
+     * @param  receiver             Address to set allowance on once the trade has completed
      * @param  makerToken           Address of makerToken, the token to receive
      * @param  takerToken           Address of takerToken, the token to pay
-     * @param  tradeOriginator      The msg.sender of the first call into the dYdX contract
      * @param  requestedFillAmount  Amount of takerToken being paid
      * @param  orderData            Arbitrary bytes data for any information to pass to the exchange
      * @return                      The amount of makerToken received
      */
     function exchange(
+        address sender,
+        address receiver,
         address makerToken,
         address takerToken,
-        address tradeOriginator,
         uint256 requestedFillAmount,
         bytes orderData
     )
         external
-        /* onlyMargin */
         returns (uint256);
 
     /**
