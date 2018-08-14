@@ -11,7 +11,7 @@ const TestToken = artifacts.require("TokenC");
 const TestBucketLender = artifacts.require("TestBucketLender");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 
 const { transact } = require('../../../../helpers/ContractHelper');
@@ -227,7 +227,7 @@ async function setUpPosition(accounts, openThePosition = true) {
 
   await margin.openWithoutCounterparty(
     [
-      ERC20ShortCreator.address,
+      ERC20ShortFactory.address,
       owedToken.address,
       heldToken.address,
       bucketLender.address
@@ -367,7 +367,7 @@ contract('BucketLender', accounts => {
       await expectThrow(
         margin.openPosition(
           [
-            ERC20ShortCreator.address,
+            ERC20ShortFactory.address,
             owedToken.address,
             heldToken.address,
             bucketLender.address,
@@ -535,7 +535,7 @@ contract('BucketLender', accounts => {
 
     async function openWithoutCounterpartyForBucketLender(args) {
       args = args || {};
-      args.owner = args.owner || ERC20ShortCreator.address;
+      args.owner = args.owner || ERC20ShortFactory.address;
       args.owedToken = args.owedToken || owedToken.address;
       args.heldToken = args.heldToken || heldToken.address;
       args.lender = args.lender || bucketLender.address;

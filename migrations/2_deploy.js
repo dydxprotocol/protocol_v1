@@ -25,9 +25,9 @@ const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
-const SharedLoanCreator = artifacts.require("SharedLoanCreator");
-const ERC20LongCreator = artifacts.require("ERC20LongCreator");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const SharedLoanFactory = artifacts.require("SharedLoanFactory");
+const ERC20LongFactory = artifacts.require("ERC20LongFactory");
+const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const OpenPositionImpl = artifacts.require("OpenPositionImpl");
@@ -217,17 +217,17 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
-      ERC20ShortCreator,
+      ERC20ShortFactory,
       Margin.address,
       [DutchAuctionCloser.address]
     ),
     deployer.deploy(
-      ERC20LongCreator,
+      ERC20LongFactory,
       Margin.address,
       [DutchAuctionCloser.address]
     ),
     deployer.deploy(
-      SharedLoanCreator,
+      SharedLoanFactory,
       Margin.address,
       getSharedLoanTrustedMarginCallers(network)
     ),

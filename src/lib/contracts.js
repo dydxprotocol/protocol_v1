@@ -23,12 +23,12 @@ export {
   default as DutchAuctionCloser
 }                                       from '../../build/contracts/DutchAuctionCloser.json';
 export { default as SharedLoan }        from '../../build/contracts/SharedLoan.json';
-export { default as SharedLoanCreator } from '../../build/contracts/SharedLoanCreator.json';
+export { default as SharedLoanFactory } from '../../build/contracts/SharedLoanFactory.json';
 export { default as ERC20Position }     from '../../build/contracts/ERC20Position.json';
 export { default as ERC20Short }        from '../../build/contracts/ERC20Short.json';
 export { default as ERC20Long }         from '../../build/contracts/ERC20Long.json';
-export { default as ERC20ShortCreator } from '../../build/contracts/ERC20ShortCreator.json';
-export { default as ERC20LongCreator }  from '../../build/contracts/ERC20LongCreator.json';
+export { default as ERC20ShortFactory } from '../../build/contracts/ERC20ShortFactory.json';
+export { default as ERC20LongFactory }  from '../../build/contracts/ERC20LongFactory.json';
 export { default as ERC721MarginLoan }  from '../../build/contracts/ERC721MarginLoan.json';
 export {
   default as ERC721MarginPosition

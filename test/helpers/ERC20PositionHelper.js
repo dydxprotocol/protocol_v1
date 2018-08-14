@@ -4,7 +4,7 @@ const BigNumber = require('bignumber.js');
 const { issueAndSetAllowance } = require('./TokenHelper');
 
 const Margin = artifacts.require('Margin');
-const ERC20ShortCreator = artifacts.require('ERC20ShortCreator');
+const ERC20ShortFactory = artifacts.require('ERC20ShortFactory');
 const BucketLender = artifacts.require('BucketLender');
 const TokenProxy = artifacts.require('TokenProxy');
 const WETH9 = artifacts.require("WETH9");
@@ -32,7 +32,7 @@ async function createShortToken(
     createOpenTx(
       accounts,
       {
-        positionOwner: ERC20ShortCreator.address,
+        positionOwner: ERC20ShortFactory.address,
         interestPeriod,
         trader,
         nonce
@@ -62,7 +62,7 @@ async function createShortToken(
 
   await dydxMargin.openWithoutCounterparty(
     [
-      ERC20ShortCreator.address,
+      ERC20ShortFactory.address,
       WETH9.address,
       HeldToken.address,
       bucketLender.address

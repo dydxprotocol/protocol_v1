@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const SharedLoanCreator = artifacts.require("SharedLoanCreator");
+const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const SharedLoan = artifacts.require("SharedLoan");
 const Margin = artifacts.require("Margin");
 
@@ -20,13 +20,13 @@ const {
   callClosePosition
 } = require('../../../helpers/MarginHelper');
 
-contract('SharedLoanCreator', accounts => {
+contract('SharedLoanFactory', accounts => {
 
   // ============ Constants ============
 
   let salt = 578123;
   let dydxMargin;
-  let sharedLoanCreatorContract;
+  let sharedLoanFactoryContract;
 
   // ============ Helper-Functions ============
 
@@ -55,10 +55,10 @@ contract('SharedLoanCreator', accounts => {
   before('retrieve deployed contracts', async () => {
     [
       dydxMargin,
-      sharedLoanCreatorContract
+      sharedLoanFactoryContract
     ] = await Promise.all([
       Margin.deployed(),
-      SharedLoanCreator.deployed()
+      SharedLoanFactory.deployed()
     ]);
   });
 
@@ -68,7 +68,7 @@ contract('SharedLoanCreator', accounts => {
     let contract;
     it('sets constants correctly', async () => {
       const trustedMarginCallersExpected = [accounts[8], accounts[9]];
-      contract = await SharedLoanCreator.new(Margin.address, trustedMarginCallersExpected);
+      contract = await SharedLoanFactory.new(Margin.address, trustedMarginCallersExpected);
       const dydxMarginAddress = await contract.DYDX_MARGIN.call();
       expect(dydxMarginAddress).to.equal(Margin.address);
 
@@ -87,13 +87,13 @@ contract('SharedLoanCreator', accounts => {
     it('fails for arbitrary caller', async () => {
       const openTx = await doOpenPosition(accounts, { salt });
       await expectThrow(
-        sharedLoanCreatorContract.receiveLoanOwnership(accounts[0], openTx.id)
+        sharedLoanFactoryContract.receiveLoanOwnership(accounts[0], openTx.id)
       );
     });
 
     it('succeeds for new position', async () => {
       const openTx = await createOpenTx(accounts, { salt: salt++ });
-      openTx.loanOffering.owner = sharedLoanCreatorContract.address;
+      openTx.loanOffering.owner = sharedLoanFactoryContract.address;
       openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
       await issueTokensAndSetAllowances(openTx);
       const response = await callOpenPosition(dydxMargin, openTx);
@@ -115,10 +115,10 @@ contract('SharedLoanCreator', accounts => {
         sellOrder,
         openTx.principal.div(2).floor());
 
-      // transfer loan to SharedLoanCreator
+      // transfer loan to SharedLoanFactory
       await dydxMargin.transferLoan(
         openTx.id,
-        sharedLoanCreatorContract.address,
+        sharedLoanFactoryContract.address,
         { from: openTx.loanOffering.owner }
       );
 

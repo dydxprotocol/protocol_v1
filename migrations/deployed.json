@@ -38,21 +38,21 @@
             "transactionHash": "0x754760abb136b0543780de16df8ea4d56604766146b4f6d4022cf38f3ad81dd9"
         }
     },
-    "SharedLoanCreator": {
+    "SharedLoanFactory": {
         "42": {
             "links": {},
             "address": "0x12506202ce98fc79bef1e5a98f95aba22ebe1908",
             "transactionHash": "0xcbe1ab7eada0c7f45adcbfbbd4a8c7d36ba9a4d03e8359d4bdf5fc341aeab132"
         }
     },
-    "ERC20ShortCreator": {
+    "ERC20ShortFactory": {
         "42": {
             "links": {},
             "address": "0xf735889abd1e3ab3f0a74c80f0558d4d8c022624",
             "transactionHash": "0xc243a0b3995a06f6f7548fb58c0902c3cd75503440e0951981627c3f76cdbb4f"
         }
     },
-    "ERC20LongCreator": {
+    "ERC20LongFactory": {
         "42": {
             "links": {},
             "address": "0xf62afab8e98f44a8ac863dd94d297825833c78ce",
