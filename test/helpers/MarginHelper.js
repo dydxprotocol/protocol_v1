@@ -34,7 +34,8 @@ async function createOpenTx(
     positionOwner,
     interestPeriod,
     loanOwner,
-    nonce
+    nonce,
+    trader
   } = {}
 ) {
   const [loanOffering, buyOrder] = await Promise.all([
@@ -49,12 +50,19 @@ async function createOpenTx(
     principal: new BigNumber('1098765932109876544'),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
-    trader: accounts[0],
+    trader: trader || accounts[0],
     exchangeWrapper: ZeroExExchangeWrapper.address,
     depositInHeldToken: depositInHeldToken,
     nonce: nonce || Math.floor(Math.random() * 12983748912748)
   };
   tx.depositAmount = getMinimumDeposit(tx);
+
+  const positionId = web3Instance.utils.soliditySha3(
+    tx.trader,
+    tx.nonce
+  );
+
+  tx.id = positionId;
 
   return tx;
 }
@@ -462,12 +470,13 @@ async function doOpenPosition(
   accounts,
   {
     salt = DEFAULT_SALT,
+    nonce,
     positionOwner,
     interestPeriod
   } = {}
 ) {
   const [openTx, dydxMargin] = await Promise.all([
-    createOpenTx(accounts, { salt, positionOwner, interestPeriod }),
+    createOpenTx(accounts, { salt, nonce, positionOwner, interestPeriod }),
     Margin.deployed()
   ]);
 

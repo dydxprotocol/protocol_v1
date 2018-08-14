@@ -51,6 +51,9 @@ export {
 export {
   default as EthWrapperForBucketLender
 }                                       from '../../build/contracts/EthWrapperForBucketLender.json';
+export {
+  default as BucketLender
+}                                       from '../../build/contracts/BucketLender.json';
 
 // Testing Contracts
 export { default as TokenA }            from '../../build/contracts/TokenA.json';
