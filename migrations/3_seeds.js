@@ -22,14 +22,15 @@ global.web3 = web3;
 const fs = require('fs');
 const promisify = require("es6-promisify");
 const Margin = artifacts.require('Margin');
-const ZeroExProxy = artifacts.require('ZeroExProxy');
 const TestToken = artifacts.require('TestToken');
 const { isDevNetwork } = require('./helpers');
 const { snapshot } = require('../src/lib/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
-const { createShortToken } = require('../test/helpers/ERC20PositionHelper');
-const { ADDRESSES } = require('../test/helpers/Constants');
-const { createSignedBuyOrder, createSignedSellOrder } = require('../test/helpers/ZeroExHelper');
+const {
+  createShortToken,
+  createBuyOrderForToken,
+  createSellOrderForToken
+} = require('../test/helpers/ERC20PositionHelper');
 const { issueAndSetAllowance } = require('../test/helpers/TokenHelper');
 const mkdirp = require('mkdirp');
 
@@ -84,20 +85,9 @@ async function createSeedPositions(accounts) {
 
 async function createSeedOrders(accounts) {
   const orders = await Promise.all([
-    createSignedBuyOrder(accounts, { salt: 7294234423, feeRecipient: ADDRESSES.ZERO }),
-    createSignedSellOrder(accounts, { salt: 7294234424, feeRecipient: ADDRESSES.ZERO }),
+    createBuyOrderForToken(accounts),
+    createSellOrderForToken(accounts),
   ]);
-
-  const makerTokens = await Promise.all(orders.map(order => TestToken.at(order.makerTokenAddress)));
-
-  await Promise.all(orders.map((order, i) => {
-    return issueAndSetAllowance(
-      makerTokens[i],
-      order.maker,
-      order.makerTokenAmount,
-      ZeroExProxy.address,
-    )
-  }));
 
   return orders;
 }
