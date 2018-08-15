@@ -7,11 +7,16 @@ const Margin = artifacts.require('Margin');
 const ERC20ShortCreator = artifacts.require('ERC20ShortCreator');
 const BucketLender = artifacts.require('BucketLender');
 const TokenProxy = artifacts.require('TokenProxy');
-const TestToken = artifacts.require('TestToken');
 const WETH9 = artifacts.require("WETH9");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const { ADDRESSES } = require('./Constants');
+const { createSignedOrder } = require('./ZeroExHelper');
+const HeldToken = artifacts.require("TokenA");
+const ZeroExProxy = artifacts.require('ZeroExProxy');
 
 const DEPOSIT = new BigNumber('500e18');
+const SELL_PRICE = new BigNumber('3018104e14');  // 301.8104
+const BUY_PRICE = new BigNumber('2991231e14'); // 299.1231
 const PRINCIPAL = new BigNumber('1e18');
 
 async function createShortToken(
@@ -39,7 +44,7 @@ async function createShortToken(
   const [bucketLender, ethWrapper, heldToken] = await Promise.all([
     createBucketLender(openTx),
     EthWrapperForBucketLender.deployed(),
-    TestToken.at(openTx.heldToken),
+    HeldToken.deployed(),
   ]);
 
 
@@ -59,7 +64,7 @@ async function createShortToken(
     [
       ERC20ShortCreator.address,
       WETH9.address,
-      openTx.heldToken,
+      HeldToken.address,
       bucketLender.address
     ],
     [
@@ -79,11 +84,61 @@ async function createShortToken(
   return openTx;
 }
 
+async function createBuyOrderForToken(accounts) {
+  const [heldToken, order] = await Promise.all([
+    HeldToken.deployed(),
+    createSignedOrder(
+      accounts,
+      {
+        salt: 7294234423,
+        feeRecipient: ADDRESSES.ZERO,
+        makerTokenAddress: HeldToken.address,
+        makerTokenAmount: new BigNumber('10').times(BUY_PRICE),
+        takerTokenAddress: WETH9.address,
+        takerTokenAmount: new BigNumber('10').times(PRINCIPAL),
+      },
+    ),
+  ]);
+
+  await issueAndSetAllowance(
+    heldToken,
+    order.maker,
+    order.makerTokenAmount,
+    ZeroExProxy.address,
+  );
+
+  return order;
+}
+
+async function createSellOrderForToken(accounts) {
+  const [weth, order] = await Promise.all([
+    WETH9.deployed(),
+    createSignedOrder(
+      accounts,
+      {
+        salt: 7294234423,
+        feeRecipient: ADDRESSES.ZERO,
+        makerTokenAddress: WETH9.address,
+        makerTokenAmount: new BigNumber('10').times(PRINCIPAL),
+        takerTokenAddress: HeldToken.address,
+        takerTokenAmount: new BigNumber('10').times(SELL_PRICE),
+      },
+    ),
+  ]);
+
+  await Promise.all([
+    weth.deposit({ value: order.makerTokenAmount, from: order.maker }),
+    weth.approve(ZeroExProxy.address, order.makerTokenAmount, { from: order.maker })
+  ]);
+
+  return order;
+}
+
 async function createBucketLender(openTx) {
   const bucketLender = await BucketLender.new(
     Margin.address,
     openTx.id,
-    openTx.heldToken,
+    HeldToken.address,
     WETH9.address,
     [
       BIGNUMBERS.ONE_DAY_IN_SECONDS,
@@ -101,5 +156,7 @@ async function createBucketLender(openTx) {
 }
 
 module.exports = {
-  createShortToken
+  createShortToken,
+  createBuyOrderForToken,
+  createSellOrderForToken,
 };
