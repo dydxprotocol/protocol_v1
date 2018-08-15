@@ -21,13 +21,13 @@ pragma experimental "v0.5.0";
 
 import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { MathHelpers } from "../../lib/MathHelpers.sol";
-import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { MarginCommon } from "../impl/MarginCommon.sol";
-import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
-import { PayoutRecipient } from "../interfaces/PayoutRecipient.sol";
-import { PositionCustodian } from "./interfaces/PositionCustodian.sol";
-import { MarginHelper } from "./lib/MarginHelper.sol";
+import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { MarginCommon } from "../../impl/MarginCommon.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
+import { PayoutRecipient } from "../../interfaces/PayoutRecipient.sol";
+import { PositionCustodian } from "../interfaces/PositionCustodian.sol";
+import { MarginHelper } from "../lib/MarginHelper.sol";
 
 
 /**

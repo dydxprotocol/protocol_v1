@@ -22,6 +22,9 @@ export { default as TokenProxy }        from '../../build/contracts/TokenProxy.j
 export {
   default as DutchAuctionCloser
 }                                       from '../../build/contracts/DutchAuctionCloser.json';
+export {
+  default as WethPayoutRecipient
+}                                       from '../../build/contracts/WethPayoutRecipient.json';
 export { default as SharedLoan }        from '../../build/contracts/SharedLoan.json';
 export { default as SharedLoanCreator } from '../../build/contracts/SharedLoanCreator.json';
 export { default as ERC20Position }     from '../../build/contracts/ERC20Position.json';
