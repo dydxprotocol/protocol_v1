@@ -22,7 +22,6 @@ global.web3 = web3;
 const fs = require('fs');
 const promisify = require("es6-promisify");
 const Margin = artifacts.require('Margin');
-const TestToken = artifacts.require('TestToken');
 const { isDevNetwork } = require('./helpers');
 const { snapshot } = require('../src/lib/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
@@ -31,7 +30,6 @@ const {
   createBuyOrderForToken,
   createSellOrderForToken
 } = require('../test/helpers/ERC20PositionHelper');
-const { issueAndSetAllowance } = require('../test/helpers/TokenHelper');
 const mkdirp = require('mkdirp');
 
 const mkdirAsync = promisify(mkdirp);
@@ -51,7 +49,7 @@ async function doMigration(deployer, network, accounts) {
 
     const orders = await createSeedOrders(accounts);
 
-    await snapshot(web3);
+    await snapshot(web3.currentProvider);
 
     seeds.positions = positions;
     seeds.orders = orders;

@@ -18,9 +18,8 @@
 
 import promisify from "es6-promisify";
 
-export async function reset(web3Instance, id) {
-  // Needed for different versions of web3
-  const func = web3Instance.currentProvider.sendAsync || web3Instance.currentProvider.send;
+export async function reset(provider, id) {
+  const func = provider.sendAsync || provider.send;
 
   await promisify(func)({
     jsonrpc: "2.0",
@@ -29,12 +28,12 @@ export async function reset(web3Instance, id) {
     params: [id || '0x01'],
   });
 
-  return snapshot(web3Instance);
+  return snapshot(provider);
 }
 
-export async function snapshot(web3Instance) {
+export async function snapshot(provider) {
   // Needed for different versions of web3
-  const func = web3Instance.currentProvider.sendAsync || web3Instance.currentProvider.send;
+  const func = provider.sendAsync || provider.send;
 
   const response = await promisify(func)({
     jsonrpc: "2.0",
