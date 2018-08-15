@@ -1193,16 +1193,21 @@ contract BucketLender is
         view
         returns (uint256)
     {
-        assert(!Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID));
+        // load variables from storage;
+        Margin margin = Margin(DYDX_MARGIN);
+        bytes32 positionId = POSITION_ID;
+        uint32 bucketTime = BUCKET_TIME;
+
+        assert(!margin.isPositionClosed(positionId));
 
         // if position not created, allow deposits in the first bucket
-        if (!Margin(DYDX_MARGIN).containsPosition(POSITION_ID)) {
+        if (bucketTime == 0 || !margin.containsPosition(positionId)) {
             return 0;
         }
 
         // return the number of BUCKET_TIME periods elapsed since the position start, rounded-up
-        uint256 marginTimestamp = Margin(DYDX_MARGIN).getPositionStartTimestamp(POSITION_ID);
-        return block.timestamp.sub(marginTimestamp).div(BUCKET_TIME).add(1);
+        uint256 startTimestamp = margin.getPositionStartTimestamp(positionId);
+        return block.timestamp.sub(startTimestamp).div(bucketTime).add(1);
     }
 
     /**

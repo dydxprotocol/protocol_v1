@@ -15,7 +15,13 @@ const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 
 const { transact } = require('../../../../helpers/ContractHelper');
-const { ADDRESSES, BIGNUMBERS, BYTES, ORDER_TYPE } = require('../../../../helpers/Constants');
+const {
+  ADDRESSES,
+  BIGNUMBERS,
+  BYTES,
+  BYTES32,
+  ORDER_TYPE
+} = require('../../../../helpers/Constants');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
 const { signLoanOffering } = require('../../../../helpers/LoanHelper');
@@ -1016,6 +1022,22 @@ contract('BucketLender', accounts => {
     it('succeeds in withdrawing from bucket 0', async () => {
       await doWithdraw(lender1, 0);
       await doWithdraw(lender1, 0, { weight: 0 });
+    });
+
+    it('succeeds for a badly-formed BucketLender', async () => {
+      bucketLender = await TestBucketLender.new(
+        Margin.address,
+        BYTES32.ZERO,
+        heldToken.address,
+        owedToken.address,
+        [0, 0, 0, 0, 0, 0, 0],
+        []
+      );
+      await doDeposit(lender1, OT);
+      const {owedWithdrawn, heldWithdrawn, remainingWeight} = await doWithdraw(lender1, 0);
+      expect(owedWithdrawn).to.be.bignumber.eq(OT);
+      expect(heldWithdrawn).to.be.bignumber.eq(0);
+      expect(remainingWeight).to.be.bignumber.eq(0);
     });
 
     it('succeeds for withdrawing what was just put in', async () => {
