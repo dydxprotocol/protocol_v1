@@ -10,17 +10,15 @@ const HeldToken = artifacts.require("TokenA");
 const WETH9 = artifacts.require("WETH9");
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
+const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const ZeroExProxy = artifacts.require("ZeroExProxy");
 
-const { getOwedAmount } = require('../../../helpers/ClosePositionHelper');
-const {
-  doOpenPosition,
-  callClosePositionDirectly,
-  doClosePosition,
-} = require('../../../helpers/MarginHelper');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 const { issueTokenToAccountInAmountAndApproveProxy } = require('../../../helpers/MarginHelper');
-const { BIGNUMBERS } = require('../../../helpers/Constants');
-const { wait } = require('@digix/tempo')(web3);
+const { ADDRESSES, BIGNUMBERS, ORDER_TYPE } = require('../../../helpers/Constants');
+const { signOrder } = require('../../../helpers/ZeroExHelper');
+const { zeroExOrderToBytes } = require('../../../helpers/BytesHelper');
 
 contract('DutchAuctionCloser', accounts => {
   let dydxMargin, tokenProxy, weth, heldToken;
@@ -100,10 +98,39 @@ contract('DutchAuctionCloser', accounts => {
     });
 
     it('succeeds for weth owedToken', async () => {
-      await dydxMargin.closePositionDirectly(
+      const seller = accounts[5];
+
+      // set up tokens
+      await Promise.all([
+        weth.deposit({ value: OgAmount.times(10), from: seller }),
+        weth.approve(ZeroExProxy.address, BIGNUMBERS.MAX_UINT256, { from: seller }),
+      ]);
+
+      // set up order
+      let order = {
+        type: ORDER_TYPE.ZERO_EX,
+        exchangeContractAddress: ZeroExExchange.address,
+        expirationUnixTimestampSec: new BigNumber(100000000000000),
+        feeRecipient: ADDRESSES.ZERO,
+        maker: seller,
+        makerFee: BIGNUMBERS.ZERO,
+        salt: new BigNumber(11),
+        taker: ADDRESSES.ZERO,
+        takerFee: BIGNUMBERS.ZERO,
+        makerTokenAddress: weth.address,
+        makerTokenAmount: BIGNUMBERS.MAX_UINT128,
+        takerTokenAddress: heldToken.address,
+        takerTokenAmount: BIGNUMBERS.MAX_UINT128.div(10).floor(),
+      };
+      order.ecSignature = await signOrder(order);
+      // close the position
+      await dydxMargin.closePosition(
         positionId2,
         closeAmount,
         WethPayoutRecipient.address,
+        ZeroExExchangeWrapper.address,
+        false,
+        zeroExOrderToBytes(order),
         { from: opener }
       );
     });
