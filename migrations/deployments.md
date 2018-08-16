@@ -10,9 +10,9 @@
 - ERC721MarginPosition:            [0x3d1720538d31c5a396deb00ab9956dec072a6423](https://kovan.etherscan.io/address/0x3d1720538d31c5a396deb00ab9956dec072a6423)
 - ZeroExExchangeWrapper:           [0x721976badf842a263f8d1a5d64c5578a4368f330](https://kovan.etherscan.io/address/0x721976badf842a263f8d1a5d64c5578a4368f330)
 - OpenDirectlyExchangeWrapper:     [0x5aab90bacc2d3d6eb1d208920bdb0b3c3278e24d](https://kovan.etherscan.io/address/0x5aab90bacc2d3d6eb1d208920bdb0b3c3278e24d)
-- ERC20ShortCreator:               [0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c](https://kovan.etherscan.io/address/0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c)
-- ERC20LongCreator:                [0x8adf53551449c56394c2952ed8f01604e0de2683](https://kovan.etherscan.io/address/0x8adf53551449c56394c2952ed8f01604e0de2683)
-- SharedLoanCreator:               [0x49f2bff73a6c47391133022522725b9d2b62498c](https://kovan.etherscan.io/address/0x49f2bff73a6c47391133022522725b9d2b62498c)
+- ERC20ShortFactory:               [0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c](https://kovan.etherscan.io/address/0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c)
+- ERC20LongFactory:                [0x8adf53551449c56394c2952ed8f01604e0de2683](https://kovan.etherscan.io/address/0x8adf53551449c56394c2952ed8f01604e0de2683)
+- SharedLoanFactory:               [0x49f2bff73a6c47391133022522725b9d2b62498c](https://kovan.etherscan.io/address/0x49f2bff73a6c47391133022522725b9d2b62498c)
 
 ### Impl
 - TransferImpl:                    [0xfdf8cb392ec70bb0752165fda3961dc3ac55af17](https://kovan.etherscan.io/address/0xfdf8cb392ec70bb0752165fda3961dc3ac55af17)
@@ -39,9 +39,9 @@
 - ERC721MarginPosition:            [0xdf5eef0c021b60ab770b37a81a58678fe4dd823a](https://kovan.etherscan.io/address/0xdf5eef0c021b60ab770b37a81a58678fe4dd823a)
 - ZeroExExchangeWrapper:           [0xefa5f55da2bab6a314a589dabbb675d01986d5f1](https://kovan.etherscan.io/address/0xefa5f55da2bab6a314a589dabbb675d01986d5f1)
 - OpenDirectlyExchangeWrapper:     [0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36](https://kovan.etherscan.io/address/0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36)
-- ERC20ShortCreator:               [0xccca61c82ad2f6fb676cd4630d4b90b684684abc](https://kovan.etherscan.io/address/0xccca61c82ad2f6fb676cd4630d4b90b684684abc)
-- ERC20LongCreator:                [0x46c1686f889be57641fa6364f79f1cb057d3769c](https://kovan.etherscan.io/address/0x46c1686f889be57641fa6364f79f1cb057d3769c)
-- SharedLoanCreator:               [0xea725598cf0b5f2ddccaf989fd599f625b66e1f8](https://kovan.etherscan.io/address/0xea725598cf0b5f2ddccaf989fd599f625b66e1f8)
+- ERC20ShortFactory:               [0xccca61c82ad2f6fb676cd4630d4b90b684684abc](https://kovan.etherscan.io/address/0xccca61c82ad2f6fb676cd4630d4b90b684684abc)
+- ERC20LongFactory:                [0x46c1686f889be57641fa6364f79f1cb057d3769c](https://kovan.etherscan.io/address/0x46c1686f889be57641fa6364f79f1cb057d3769c)
+- SharedLoanFactory:               [0xea725598cf0b5f2ddccaf989fd599f625b66e1f8](https://kovan.etherscan.io/address/0xea725598cf0b5f2ddccaf989fd599f625b66e1f8)
 
 ### Impl
 - TransferImpl:                    [0xa5d5e97cb3d3d6856d877770335d3669faa9f61c](https://kovan.etherscan.io/address/0xa5d5e97cb3d3d6856d877770335d3669faa9f61c)

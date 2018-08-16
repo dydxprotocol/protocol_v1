@@ -21,63 +21,59 @@ pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
-import { SharedLoan } from "./SharedLoan.sol";
-import { OnlyMargin } from "../interfaces/OnlyMargin.sol";
-import { LoanOwner } from "../interfaces/lender/LoanOwner.sol";
+import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
+import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 
 
 /**
- * @title SharedLoanCreator
+ * @title ERC20PositionFactory
  * @author dYdX
  *
- * This contract is used to deploy new SharedLoan contracts. A new SharedLoan is automatically
- * deployed whenever a loan is transferred to this contract. That loan is then transferred to the
- * new SharedLoan, with the initial allocation going to the address that transferred the
- * loan originally to the SharedLoanCreator.
+ * Contains common code for ERC20ShortFactory and ERC20LongFactory
  */
-contract SharedLoanCreator is
+contract ERC20PositionFactory is
     ReentrancyGuard,
     NoOwner,
     OnlyMargin,
-    LoanOwner
+    PositionOwner
 {
     // ============ Events ============
 
-    event SharedLoanCreated(
-        bytes32 positionId,
-        address sharedLoanAddress
+    event TokenCreated(
+        bytes32 indexed positionId,
+        address tokenAddress
     );
 
     // ============ State Variables ============
 
     // Recipients that will fairly verify and redistribute funds from closing the position
-    address[] public TRUSTED_MARGIN_CALLERS;
+    address[] public TRUSTED_RECIPIENTS;
 
     // ============ Constructor ============
 
     constructor(
         address margin,
-        address[] trustedMarginCallers
+        address[] trustedRecipients
     )
         public
         OnlyMargin(margin)
     {
-        for (uint256 i = 0; i < trustedMarginCallers.length; i++) {
-            TRUSTED_MARGIN_CALLERS.push(trustedMarginCallers[i]);
+        for (uint256 i = 0; i < trustedRecipients.length; i++) {
+            TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
         }
     }
 
     // ============ Margin-Only Functions ============
 
     /**
-     * Implementation of LoanOwner functionality. Creates a new SharedLoan and assigns loan
-     * ownership to the SharedLoan. Called by Margin when a loan is transferred to this
+     * Implementation of PositionOwner functionality. Creates a new ERC20Short and assigns
+     * ownership to the ERC20Short. Called by Margin when a postion is transferred to this
      * contract.
      *
-     * @param  from  Address of the previous owner of the loan
-     * @return       Address of the new SharedLoan contract
+     * @param  from  Address of the previous owner of the position
+     * @return       Address of the new ERC20Short contract
      */
-    function receiveLoanOwnership(
+    function receivePositionOwnership(
         address from,
         bytes32 positionId
     )
@@ -85,15 +81,22 @@ contract SharedLoanCreator is
         onlyMargin
         returns (address)
     {
-        address sharedLoanAddress = new SharedLoan(
-            positionId,
-            DYDX_MARGIN,
+        address tokenAddress = createTokenContract(
             from,
-            TRUSTED_MARGIN_CALLERS
+            positionId
         );
 
-        emit SharedLoanCreated(positionId, sharedLoanAddress);
+        emit TokenCreated(positionId, tokenAddress);
 
-        return sharedLoanAddress;
+        return tokenAddress;
     }
+
+    // ============ Private Abstract Functions ============
+
+    function createTokenContract(
+        address from,
+        bytes32 positionId
+    )
+        private
+        returns (address);
 }

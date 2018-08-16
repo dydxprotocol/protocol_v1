@@ -12,9 +12,9 @@ const HeldToken = artifacts.require("TokenA");
 const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const ERC20Short = artifacts.require("ERC20Short");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const SharedLoan = artifacts.require("SharedLoan");
-const SharedLoanCreator = artifacts.require("SharedLoanCreator");
+const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const { BIGNUMBERS, DEFAULT_SALT } = require('../../../helpers/Constants');
 const { createLoanOffering, signLoanOffering } = require('../../../helpers/LoanHelper');
@@ -51,10 +51,10 @@ contract('#PayableMarginMinter', accounts => {
     positionId = web3Instance.utils.soliditySha3(opener, nonce);
     await dydxMargin.openWithoutCounterparty(
       [
-        ERC20ShortCreator.address,
+        ERC20ShortFactory.address,
         Weth.address,
         Dai.address,
-        SharedLoanCreator.address
+        SharedLoanFactory.address
       ],
       [
         1000, // principal

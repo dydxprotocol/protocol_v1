@@ -3,9 +3,9 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
 const ERC20Long = artifacts.require("ERC20Long");
-const ERC20LongCreator = artifacts.require("ERC20LongCreator");
+const ERC20LongFactory = artifacts.require("ERC20LongFactory");
 const ERC20Short = artifacts.require("ERC20Short");
-const ERC20ShortCreator = artifacts.require("ERC20ShortCreator");
+const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
@@ -18,9 +18,9 @@ const {
 } = require('../../../helpers/MarginHelper');
 const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
 
-const CREATORS = { ERC20ShortCreator, ERC20LongCreator };
+const FACTORIES = { ERC20ShortFactory, ERC20LongFactory };
 
-contract('ERC20PositionCreator', accounts => {
+contract('ERC20PositionFactory', accounts => {
   let dydxMargin;
   let salt = 112345;
 
@@ -36,8 +36,8 @@ contract('ERC20PositionCreator', accounts => {
     let contract;
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
-      for (let creator in CREATORS) {
-        contract = await CREATORS[creator].new(Margin.address, trustedRecipientsExpected);
+      for (let factory in FACTORIES) {
+        contract = await FACTORIES[factory].new(Margin.address, trustedRecipientsExpected);
         const dydxMarginAddress = await contract.DYDX_MARGIN.call();
         expect(dydxMarginAddress).to.equal(Margin.address);
 
@@ -54,7 +54,7 @@ contract('ERC20PositionCreator', accounts => {
   });
 
   describe('#receivePositionOwnership', () => {
-    async function checkSuccess(openTx, creator) {
+    async function checkSuccess(openTx, factory) {
       const trader = accounts[0];
 
       const [
@@ -68,7 +68,7 @@ contract('ERC20PositionCreator', accounts => {
       ]);
 
       let erc20Contract;
-      if (creator === 'ERC20ShortCreator') {
+      if (factory === 'ERC20ShortFactory') {
         erc20Contract = await ERC20Short.at(tokenAddress);
       } else {
         erc20Contract = await ERC20Long.at(tokenAddress);
@@ -82,7 +82,7 @@ contract('ERC20PositionCreator', accounts => {
       expect(constants.INITIAL_TOKEN_HOLDER).to.equal(trader);
       expect(constants.heldToken).to.equal(HeldToken.address);
 
-      if (creator === 'ERC20ShortCreator') {
+      if (factory === 'ERC20ShortFactory') {
         expect(constants.totalSupply).to.be.bignumber.equal(principal);
       } else {
         expect(constants.totalSupply).to.be.bignumber.equal(balance);
@@ -91,29 +91,29 @@ contract('ERC20PositionCreator', accounts => {
 
     it('fails for arbitrary caller', async () => {
       const badId = web3.fromAscii("06231993");
-      for (let creator in CREATORS) {
-        const creatorContract = await CREATORS[creator].deployed();
+      for (let factory in FACTORIES) {
+        const factoryContract = await FACTORIES[factory].deployed();
         await expectThrow(
-          creatorContract.receivePositionOwnership(accounts[0], badId)
+          factoryContract.receivePositionOwnership(accounts[0], badId)
         );
       }
     });
 
     it('succeeds for new position', async () => {
-      for (let creator in CREATORS) {
+      for (let factory in FACTORIES) {
         const openTx = await doOpenPosition(
           accounts,
           {
             salt: salt++,
-            positionOwner: CREATORS[creator].address
+            positionOwner: FACTORIES[factory].address
           }
         );
-        await checkSuccess(openTx, creator);
+        await checkSuccess(openTx, factory);
       }
     });
 
     it('succeeds for half-closed position', async () => {
-      for (let creator in CREATORS) {
+      for (let factory in FACTORIES) {
         const openTx = await doOpenPosition(accounts, { salt: salt++ });
 
         // close half the position
@@ -125,10 +125,10 @@ contract('ERC20PositionCreator', accounts => {
           sellOrder,
           openTx.principal.div(2).floor());
 
-        // transfer position to ERC20PositionCreator
-        await dydxMargin.transferPosition(openTx.id, CREATORS[creator].address);
+        // transfer position to ERC20PositionFactory
+        await dydxMargin.transferPosition(openTx.id, FACTORIES[factory].address);
 
-        await checkSuccess(openTx, creator);
+        await checkSuccess(openTx, factory);
       }
     });
   });
