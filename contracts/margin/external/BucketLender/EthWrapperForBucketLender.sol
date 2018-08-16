@@ -136,11 +136,15 @@ contract EthWrapperForBucketLender
         );
 
         // send all eth to msg.sender
-        WETH9(owedToken).withdraw(owedTokenAmount);
-        msg.sender.transfer(owedTokenAmount);
+        if (owedTokenAmount != 0) {
+            WETH9(owedToken).withdraw(owedTokenAmount);
+            msg.sender.transfer(owedTokenAmount);
+        }
 
         // send all other tokens to msg.sender
-        heldToken.transfer(msg.sender, heldTokenAmount);
+        if (heldTokenAmount != 0) {
+            heldToken.transfer(msg.sender, heldTokenAmount);
+        }
 
         return (owedTokenAmount, heldTokenAmount);
     }
