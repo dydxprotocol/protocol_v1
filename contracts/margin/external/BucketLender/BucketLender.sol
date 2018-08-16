@@ -257,6 +257,10 @@ contract BucketLender is
         HELD_TOKEN = heldToken;
         OWED_TOKEN = owedToken;
 
+        require(
+            parameters[0] != 0,
+            "BucketLender#constructor: BUCKET_TIME cannot be zero"
+        );
         BUCKET_TIME = parameters[0];
         INTEREST_RATE = parameters[1];
         INTEREST_PERIOD = parameters[2];
@@ -1201,7 +1205,7 @@ contract BucketLender is
         assert(!margin.isPositionClosed(positionId));
 
         // if position not created, allow deposits in the first bucket
-        if (bucketTime == 0 || !margin.containsPosition(positionId)) {
+        if (!margin.containsPosition(positionId)) {
             return 0;
         }
 

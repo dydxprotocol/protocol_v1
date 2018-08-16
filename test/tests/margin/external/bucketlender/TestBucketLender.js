@@ -355,6 +355,27 @@ contract('BucketLender', accounts => {
 
       expect(bucketLenderHeldToken).to.be.bignumber.eq(0);
     });
+
+    it('does not allow zero BUCKET_TIME', async () => {
+      await expectThrow(
+        TestBucketLender.new(
+          Margin.address,
+          POSITION_ID,
+          heldToken.address,
+          owedToken.address,
+          [
+            0, // BUCKET_TIME
+            INTEREST_RATE,
+            INTEREST_PERIOD,
+            MAX_DURATION,
+            CALL_TIMELIMIT,
+            3,
+            1
+          ],
+          []
+        )
+      );
+    });
   });
 
   // ============ Margin-Only State-Changing Functions ============
@@ -1030,7 +1051,7 @@ contract('BucketLender', accounts => {
         BYTES32.ZERO,
         heldToken.address,
         owedToken.address,
-        [0, 0, 0, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0],
         []
       );
       await doDeposit(lender1, OT);
