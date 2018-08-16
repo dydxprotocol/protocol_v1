@@ -30,6 +30,7 @@ const ERC20LongFactory = artifacts.require("ERC20LongFactory");
 const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
+const WethPayoutRecipient = artifacts.require("WethPayoutRecipient");
 const OpenPositionImpl = artifacts.require("OpenPositionImpl");
 const OpenWithoutCounterpartyImpl = artifacts.require(
   "OpenWithoutCounterpartyImpl"
@@ -243,7 +244,11 @@ async function deploySecondLayer(deployer, network) {
     deployer.deploy(
       EthWrapperForBucketLender,
       getWethAddress(network)
-    )
+    ),
+    deployer.deploy(
+      WethPayoutRecipient,
+      getWethAddress(network)
+    ),
   ]);
 }
 
