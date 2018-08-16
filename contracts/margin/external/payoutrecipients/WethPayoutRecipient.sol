@@ -27,7 +27,7 @@ import { PayoutRecipient } from "../../interfaces/PayoutRecipient.sol";
  * @author dYdX
  *
  * Contract that allows a closer to payout W-ETH to this contract, which will unwrap it and send it
- * to
+ * to the closer.
  */
 contract WethPayoutRecipient is
     PayoutRecipient
