@@ -8,5 +8,5 @@ npm run migrate -- --network=docker --reset
 kill -TERM $PROC_ID
 
 npm run clean_contract_json
-rm -rf ../build/contracts
+rm -rf ./build/contracts
 mv ./build/test ./build/contracts
