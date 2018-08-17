@@ -16,30 +16,58 @@
 
 */
 
-import promisify from "es6-promisify";
-
 export async function reset(provider, id) {
-  const func = provider.sendAsync || provider.send;
-
-  await promisify(func)({
+  const args = {
     jsonrpc: "2.0",
     method: "evm_revert",
     id: 12345,
     params: [id || '0x01'],
-  });
+  };
+
+  await sendAsync(provider, args);
 
   return snapshot(provider);
 }
 
 export async function snapshot(provider) {
-  // Needed for different versions of web3
-  const func = provider.sendAsync || provider.send;
-
-  const response = await promisify(func)({
+  const args = {
     jsonrpc: "2.0",
     method: "evm_snapshot",
     id: 12345,
-  });
+  };
+
+  const response = await sendAsync(provider, args);
 
   return response.result;
+}
+
+async function sendAsync(provider, args) {
+  let response;
+
+  // Needed for different versions of web3
+  if (provider.sendAsync) {
+    response = await new Promise((resolve, reject) => provider.sendAsync(
+      args,
+      (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      }
+    ));
+  } else {
+    response = await new Promise((resolve, reject) => provider.send(
+      args,
+      (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      }
+    ));
+  }
+
+  return response;
 }
