@@ -23,7 +23,6 @@ const fs = require('fs');
 const promisify = require("es6-promisify");
 const Margin = artifacts.require('Margin');
 const { isDevNetwork } = require('./helpers');
-const { snapshot } = require('../src/lib/snapshots');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
 const {
   createShortToken,
@@ -48,8 +47,6 @@ async function doMigration(deployer, network, accounts) {
     const positions = await createSeedPositions(accounts);
 
     const orders = await createSeedOrders(accounts);
-
-    await snapshot(web3.currentProvider);
 
     seeds.positions = positions;
     seeds.orders = orders;

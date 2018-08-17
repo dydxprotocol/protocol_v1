@@ -8,13 +8,13 @@ const TokenA = artifacts.require('TokenA');
 
 contract('Margin', accounts => {
   after(async () => {
-    await reset(web3.currentProvider);
-    // Snapshot a final time to fool truffle into reverting to this in the contract block
-    await snapshot(web3.currentProvider);
+    // Reset to the initial snapshot into reverting to this in the contract block
+    await reset(web3.currentProvider, '0x1');
   });
 
   describe('#reset', () => {
     it('resets any transactions made', async () => {
+      const id = await snapshot(web3.currentProvider);
       const account = accounts[5];
       const amount = new BigNumber(123456);
       const token = await TokenA.deployed();
@@ -25,13 +25,14 @@ contract('Margin', accounts => {
 
       expect(afterBalance).to.be.bignumber.eq(startingBalance.plus(amount));
 
-      await reset(web3.currentProvider);
+      await reset(web3.currentProvider, id);
 
       const balanceAfterReset = await token.balanceOf.call(account);
       expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);
     });
 
     it('works multiple times', async () => {
+      const id = await snapshot(web3.currentProvider);
       const account = accounts[5];
       const amount = new BigNumber(123456);
       const token = await TokenA.deployed();
@@ -42,14 +43,14 @@ contract('Margin', accounts => {
 
       expect(afterBalance).to.be.bignumber.eq(startingBalance.plus(amount));
 
-      await reset(web3.currentProvider);
+      await reset(web3.currentProvider, id);
 
       let balanceAfterReset = await token.balanceOf.call(account);
       expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);
 
       await token.issueTo(account, amount);
 
-      await reset(web3.currentProvider);
+      await reset(web3.currentProvider, id);
 
       balanceAfterReset = await token.balanceOf.call(account);
       expect(balanceAfterReset).to.be.bignumber.eq(startingBalance);

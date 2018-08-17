@@ -1,4 +1,4 @@
-const { seeds, reset, snapshot } = require('../../../src/index');
+const { seeds } = require('../../../src/index');
 const { getPosition } = require('../../helpers/MarginHelper');
 const chai = require('chai');
 const expect = chai.expect;
@@ -10,37 +10,15 @@ const TestToken = artifacts.require('TestToken');
 const ZeroExProxy = artifacts.require('ZeroExProxy');
 
 contract('Margin', () => {
-  after(async () => {
-    await reset(web3.currentProvider);
-    // Snapshot a final time to fool truffle into reverting to this in the contract block
-    await snapshot(web3.currentProvider);
-  });
-
   describe('seeds', () => {
     context('positions', () => {
       it('sets up seed positions correctly', async () => {
-        await checkSeedPositions();
-      });
-
-      it('seed positions still exist after reset', async () => {
-        await checkSeedPositions();
-
-        await reset(web3.currentProvider);
-
         await checkSeedPositions();
       });
     });
 
     context('orders', () => {
       it('sets up seed orders correctly', async () => {
-        await checkSeedOrders();
-      });
-
-      it('seed orders still exist after reset', async () => {
-        await checkSeedOrders();
-
-        await reset(web3.currentProvider);
-
         await checkSeedOrders();
       });
     });
