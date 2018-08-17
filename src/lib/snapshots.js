@@ -16,30 +16,65 @@
 
 */
 
-import promisify from "es6-promisify";
+/**
+ * Attempts to reset the EVM to its initial state. Useful for testing suites
+ *
+ * @param {Provider} provider a valid web3 provider
+ * @returns {null} null
+ */
+export async function resetEVM(provider) {
+  const id = await snapshot(provider);
+
+  if (id !== '0x1') {
+    await reset(provider, '0x1');
+  }
+}
 
 export async function reset(provider, id) {
-  const func = provider.sendAsync || provider.send;
+  if (!id) {
+    throw new Error('id must be set');
+  }
 
-  await promisify(func)({
+  const args = {
     jsonrpc: "2.0",
     method: "evm_revert",
     id: 12345,
-    params: [id || '0x01'],
-  });
+    params: [id],
+  };
+
+  await sendAsync(provider, args);
 
   return snapshot(provider);
 }
 
 export async function snapshot(provider) {
-  // Needed for different versions of web3
-  const func = provider.sendAsync || provider.send;
-
-  const response = await promisify(func)({
+  const args = {
     jsonrpc: "2.0",
     method: "evm_snapshot",
     id: 12345,
-  });
+  };
+
+  const response = await sendAsync(provider, args);
 
   return response.result;
+}
+
+async function sendAsync(provider, args) {
+  // Needed for different versions of web3
+  const func = provider.sendAsync || provider.send;
+  let response;
+
+  response = await new Promise((resolve, reject) => func.call(
+    provider,
+    args,
+    (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    }
+  ));
+
+  return response;
 }

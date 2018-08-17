@@ -72,17 +72,17 @@ console.log(order.maker);
 
 #### Snapshotting
 
-When using the docker container, you can reset the evm to the default state
+When using the docker container, you can reset the evm to the default state. This can be useful when running automated test suites
 
 ```javascript
-import { reset } from '@dydxprotocol/protocol';
+import { resetEVM } from '@dydxprotocol/protocol';
 
-await reset(web3.currentProvider);
+await resetEVM(web3.currentProvider);
 ```
 
 ## Docker Container
 
-[Docker container](https://hub.docker.com/r/dydxprotocol/protocol/) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212
+[Docker container](https://hub.docker.com/r/dydxprotocol/protocol/) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212. Docker container versions correspond to npm versions of this package, so use the same version for both
 
 ```
 docker pull dydxprotocol/protocol
