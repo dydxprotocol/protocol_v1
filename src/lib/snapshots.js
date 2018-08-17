@@ -16,12 +16,30 @@
 
 */
 
+/**
+ * Attempts to reset the EVM to its initial state. Useful for testing suites
+ *
+ * @param {Provider} provider a valid web3 provider
+ * @returns {null} null
+ */
+export async function resetEVM(provider) {
+  const id = await snapshot(provider);
+
+  if (id !== '0x1') {
+    await reset(provider, '0x1');
+  }
+}
+
 export async function reset(provider, id) {
+  if (!id) {
+    throw new Error('id must be set');
+  }
+
   const args = {
     jsonrpc: "2.0",
     method: "evm_revert",
     id: 12345,
-    params: [id || '0x01'],
+    params: [id],
   };
 
   await sendAsync(provider, args);
