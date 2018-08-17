@@ -1,5 +1,4 @@
 #!/bin/sh
-set -e
 
 VERSION=$(cat package.json | jq -r '.version')
 NAME=@dydxprotocol/protocol
@@ -7,6 +6,8 @@ NAME=@dydxprotocol/protocol
 test -z "$(npm info $NAME@$VERSION)"
 if [ $? -eq 0 ]
 then
+    set -e
+
     mkdir -p ~/.ssh
     touch ~/.ssh/known_hosts
     ssh-keyscan -H github.com >> ~/.ssh/known_hosts
