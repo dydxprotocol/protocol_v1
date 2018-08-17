@@ -46,7 +46,7 @@ async function clean() {
     const filename = contractName + '.json';
     await writeFileAsync(directory + filename, json, 'utf8');
 
-    console.log('Wrote ' + filename);
+    console.log('Wrote ' + directory + filename);
   });
 
   await Promise.all(promises);

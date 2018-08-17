@@ -14,6 +14,10 @@ const { createSignedOrder } = require('./ZeroExHelper');
 const HeldToken = artifacts.require("TokenA");
 const ZeroExProxy = artifacts.require('ZeroExProxy');
 
+BigNumber.config({
+  EXPONENTIAL_AT: 1000,
+});
+
 const DEPOSIT = new BigNumber('500e18');
 const SELL_PRICE = new BigNumber('3018104e14');  // 301.8104
 const BUY_PRICE = new BigNumber('2991231e14'); // 299.1231

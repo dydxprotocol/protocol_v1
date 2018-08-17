@@ -54,7 +54,7 @@
     "babel-runtime": "^6.26.0",
     "bignumber.js": "^4.1.0",
     "es6-promisify": "^5.0.0",
-    "zeppelin-solidity": "1.11.0"
+    "zeppelin-solidity": "1.12.0"
   },
   "devDependencies": {
     "0x.js": "^0.37.2",
@@ -71,12 +71,12 @@
     "coveralls": "^3.0.2",
     "eslint": "^4.19.1",
     "ethereumjs-util": "^5.2.0",
-    "ganache-cli": "^6.1.6",
-    "mocha-junit-reporter": "^1.17.0",
+    "ganache-cli": "^6.1.8",
+    "mocha-junit-reporter": "^1.18.0",
     "request-promise-native": "^1.0.5",
-    "solidity-coverage": "0.5.5",
+    "solidity-coverage": "0.5.7",
     "solium": "1.1.8",
-    "truffle": "4.1.13",
+    "truffle": "4.1.14",
     "web3": "1.0.0-beta.35",
     "websocket": "1.0.26"
   }
