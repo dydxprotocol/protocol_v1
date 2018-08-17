@@ -19,9 +19,9 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { NoOwner } from "zeppelin-solidity/contracts/ownership/NoOwner.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { NoOwner } from "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Vault } from "./Vault.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { CloseWithoutCounterpartyImpl } from "./impl/CloseWithoutCounterpartyImpl.sol";
