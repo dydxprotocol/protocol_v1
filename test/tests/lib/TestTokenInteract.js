@@ -105,7 +105,7 @@ contract('TokenInteract', accounts => {
       const token = await TestToken.new();
 
       await token.issueTo(TokenInteract.address, amount);
-      await TokenInteract.transfer(token.address, recipient, amount.times(2));
+      await TokenInteract.transfer(token.address, recipient, amount);
 
       const [TokenInteractBalance, recipientBalance] = await Promise.all([
         TokenInteract.balanceOf.call(token.address, TokenInteract.address),
