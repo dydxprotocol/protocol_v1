@@ -375,6 +375,7 @@ contract('BucketLender', accounts => {
             3,
             1
           ],
+          [],
           []
         )
       );
@@ -1055,6 +1056,7 @@ contract('BucketLender', accounts => {
         heldToken.address,
         owedToken.address,
         [1, 0, 0, 0, 0, 0, 0],
+        [],
         []
       );
       await doDeposit(lender1, OT);
