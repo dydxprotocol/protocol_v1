@@ -42,32 +42,21 @@ export async function snapshot(provider) {
 }
 
 async function sendAsync(provider, args) {
+  // Needed for different versions of web3
+  const func = provider.sendAsync || provider.send;
   let response;
 
-  // Needed for different versions of web3
-  if (provider.sendAsync) {
-    response = await new Promise((resolve, reject) => provider.sendAsync(
-      args,
-      (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
+  response = await new Promise((resolve, reject) => func.call(
+    provider,
+    args,
+    (err, result) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
       }
-    ));
-  } else {
-    response = await new Promise((resolve, reject) => provider.send(
-      args,
-      (err, result) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      }
-    ));
-  }
+    }
+  ));
 
   return response;
 }
