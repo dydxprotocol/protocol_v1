@@ -240,6 +240,9 @@ contract BucketLender is
     // Accounts that are permitted to margin-call positions (or cancel the margin call)
     mapping(address => bool) public TRUSTED_MARGIN_CALLERS;
 
+    // Accounts that are permitted to withdraw on behalf of any address
+    mapping(address => bool) public TRUSTED_WITHDRAWERS;
+
     // ============ Constructor ============
 
     constructor(
@@ -248,7 +251,8 @@ contract BucketLender is
         address heldToken,
         address owedToken,
         uint32[7] parameters,
-        address[] trustedMarginCallers
+        address[] trustedMarginCallers,
+        address[] trustedWithdrawers
     )
         public
         OnlyMargin(margin)
@@ -269,8 +273,13 @@ contract BucketLender is
         MIN_HELD_TOKEN_NUMERATOR = parameters[5];
         MIN_HELD_TOKEN_DENOMINATOR = parameters[6];
 
-        for (uint256 i = 0; i < trustedMarginCallers.length; i++) {
+        // Initialize TRUSTED_MARGIN_CALLERS and TRUSTED_WITHDRAWERS
+        uint256 i = 0;
+        for (i = 0; i < trustedMarginCallers.length; i++) {
             TRUSTED_MARGIN_CALLERS[trustedMarginCallers[i]] = true;
+        }
+        for (i = 0; i < trustedWithdrawers.length; i++) {
+            TRUSTED_WITHDRAWERS[trustedWithdrawers[i]] = true;
         }
 
         // Set maximum allowance on proxy
@@ -717,27 +726,29 @@ contract BucketLender is
      *                      Withdrawing the same weight from different buckets does not necessarily
      *                      return the same amounts from those buckets. In order to withdraw as many
      *                      tokens as possible, use the maximum uint256.
-     * @param  beneficiary  The address to send the tokens to
+     * @param  onBehalfOf   The address to withdraw on behalf of
      * @return              1) The number of owedTokens withdrawn
      *                      2) The number of heldTokens withdrawn
      */
     function withdraw(
         uint256[] buckets,
         uint256[] maxWeights,
-        address beneficiary
+        address onBehalfOf
     )
         external
         nonReentrant
         returns (uint256, uint256)
     {
         require(
-            beneficiary != address(0),
-            "BucketLender#withdraw: Beneficiary cannot be the zero address"
-        );
-        require(
             buckets.length == maxWeights.length,
             "BucketLender#withdraw: The lengths of the input arrays must match"
         );
+        if (onBehalfOf != msg.sender) {
+            require(
+                TRUSTED_WITHDRAWERS[msg.sender],
+                "BucketLender#withdraw: Only trusted withdrawers can withdraw on behalf of others"
+            );
+        }
 
         rebalanceBucketsInternal();
 
@@ -768,6 +779,7 @@ contract BucketLender is
             }
 
             (uint256 owedTokenForBucket, uint256 heldTokenForBucket) = withdrawSingleBucket(
+                onBehalfOf,
                 bucket,
                 maxWeights[i],
                 maxHeldToken
@@ -778,8 +790,8 @@ contract BucketLender is
         }
 
         // Transfer share of owedToken
-        OWED_TOKEN.transfer(beneficiary, totalOwedToken);
-        HELD_TOKEN.transfer(beneficiary, totalHeldToken);
+        OWED_TOKEN.transfer(msg.sender, totalOwedToken);
+        HELD_TOKEN.transfer(msg.sender, totalHeldToken);
 
         return (totalOwedToken, totalHeldToken);
     }
@@ -961,6 +973,7 @@ contract BucketLender is
     /**
      * Withdraw
      *
+     * @param  onBehalfOf    The account for which to withdraw for
      * @param  bucket        The bucket number to withdraw from
      * @param  maxWeight     The maximum weight to withdraw
      * @param  maxHeldToken  The total amount of heldToken that has been force-recovered
@@ -968,6 +981,7 @@ contract BucketLender is
      *                       2) The number of heldTokens withdrawn
      */
     function withdrawSingleBucket(
+        address onBehalfOf,
         uint256 bucket,
         uint256 maxWeight,
         uint256 maxHeldToken
@@ -981,7 +995,7 @@ contract BucketLender is
             return (0, 0);
         }
 
-        uint256 userWeight = weightForBucketForAccount[bucket][msg.sender];
+        uint256 userWeight = weightForBucketForAccount[bucket][onBehalfOf];
         uint256 weightToWithdraw = Math.min256(maxWeight, userWeight);
         if (weightToWithdraw == 0) {
             return (0, 0);
@@ -989,7 +1003,7 @@ contract BucketLender is
 
         // update state
         weightForBucket[bucket] = weightForBucket[bucket].sub(weightToWithdraw);
-        weightForBucketForAccount[bucket][msg.sender] = userWeight.sub(weightToWithdraw);
+        weightForBucketForAccount[bucket][onBehalfOf] = userWeight.sub(weightToWithdraw);
 
         // calculate for owedToken
         uint256 owedTokenToWithdraw = withdrawOwedToken(
@@ -1007,7 +1021,7 @@ contract BucketLender is
         );
 
         emit Withdraw(
-            msg.sender,
+            onBehalfOf,
             bucket,
             weightToWithdraw,
             owedTokenToWithdraw,

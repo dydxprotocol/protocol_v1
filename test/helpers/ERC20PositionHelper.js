@@ -153,7 +153,8 @@ async function createBucketLender(openTx) {
       DEPOSIT.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_NUMERATOR,
       PRINCIPAL.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_DENOMINATOR,
     ],
-    [] // trusted margin-callers
+    [], // trusted margin-callers
+    [EthWrapperForBucketLender.address] // trusted withdrawers
   );
 
   return bucketLender;

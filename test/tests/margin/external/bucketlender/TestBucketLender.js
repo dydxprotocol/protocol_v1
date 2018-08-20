@@ -48,7 +48,7 @@ let POSITION_ID, NONCE;
 let testLoanOwner, testMarginCallDelegator;
 let margin, heldToken, owedToken;
 let bucketLender;
-let TRUSTED_PARTY, lender1, lender2, uselessLender, trader, alice;
+let TRUSTED_PARTY, TRUSTED_WITHDRAWER, lender1, lender2, uselessLender, trader, alice;
 
 // grants tokens to a lender and has them deposit them into the bucket lender
 async function doDeposit(account, amount) {
@@ -62,9 +62,9 @@ async function doDeposit(account, amount) {
 // withdraws for a bucket from an account
 async function doWithdraw(account, bucket, args) {
   args = args || {};
-  args.beneficiary = args.beneficiary || account;
   args.throws = args.throws || false;
   args.weight = args.weight || BIGNUMBERS.MAX_UINT256;
+  args.onBehalfOf = args.onBehalfOf || account;
   await bucketLender.checkInvariants();
 
   if (args.throws) {
@@ -72,7 +72,7 @@ async function doWithdraw(account, bucket, args) {
       bucketLender.withdraw(
         [bucket],
         [args.weight],
-        args.beneficiary,
+        args.onBehalfOf,
         { from: account }
       )
     );
@@ -80,22 +80,22 @@ async function doWithdraw(account, bucket, args) {
   }
 
   const[owed0, held0] = await Promise.all([
-    owedToken.balanceOf.call(args.beneficiary),
-    heldToken.balanceOf.call(args.beneficiary),
+    owedToken.balanceOf.call(account),
+    heldToken.balanceOf.call(account),
   ]);
 
   const tx = await transact(
     bucketLender.withdraw,
     [bucket],
     [args.weight],
-    args.beneficiary,
+    args.onBehalfOf,
     { from: account }
   );
 
   const [owedWithdrawn, heldWithdrawn] = tx.result;
   const[owed1, held1] = await Promise.all([
-    owedToken.balanceOf.call(args.beneficiary),
-    heldToken.balanceOf.call(args.beneficiary),
+    owedToken.balanceOf.call(account),
+    heldToken.balanceOf.call(account),
   ]);
   expect(owed1.minus(owed0)).to.be.bignumber.eq(owedWithdrawn);
   expect(held1.minus(held0)).to.be.bignumber.eq(heldWithdrawn);
@@ -112,7 +112,7 @@ async function doIncrease(amount, args) {
 
   const incrTx = createIncreaseTx(trader, amount);
 
-  if(args.throws) {
+  if (args.throws) {
     await expectThrow(
       callIncreasePosition(margin, incrTx)
     );
@@ -168,6 +168,7 @@ async function giveAPositionTo(contract, accounts) {
 async function setUpPosition(accounts, openThePosition = true) {
   [
     TRUSTED_PARTY,
+    TRUSTED_WITHDRAWER,
     lender1,
     lender2,
     uselessLender,
@@ -175,6 +176,7 @@ async function setUpPosition(accounts, openThePosition = true) {
     alice
   ] = [
     accounts[0],
+    accounts[4],
     accounts[5],
     accounts[6],
     accounts[7],
@@ -202,7 +204,8 @@ async function setUpPosition(accounts, openThePosition = true) {
       3,
       1
     ],
-    [TRUSTED_PARTY] // trusted margin-callers
+    [TRUSTED_PARTY], // trusted margin-callers
+    [TRUSTED_WITHDRAWER]
   );
 
   await Promise.all([
@@ -372,6 +375,7 @@ contract('BucketLender', accounts => {
             3,
             1
           ],
+          [],
           []
         )
       );
@@ -1052,6 +1056,7 @@ contract('BucketLender', accounts => {
         heldToken.address,
         owedToken.address,
         [1, 0, 0, 0, 0, 0, 0],
+        [],
         []
       );
       await doDeposit(lender1, OT);
@@ -1094,7 +1099,7 @@ contract('BucketLender', accounts => {
       }
     });
 
-    it('Withdraw succeeds even when principal amount for lender is zero', async () => {
+    it('succeeds even when principal amount for lender is zero', async () => {
       await doDeposit(lender1, 1);
       await doDeposit(lender2, OT);
 
@@ -1208,10 +1213,6 @@ contract('BucketLender', accounts => {
       expect(remainingWeight).to.be.bignumber.eq(weight);
     });
 
-    it('fails to withdraw to the zero address', async () => {
-      await doWithdraw(lender1, 0, { weight: 0, throws: true, beneficiary: ADDRESSES.ZERO });
-    });
-
     it('fails if the array lengths dont match', async () => {
       await expectThrow(
         bucketLender.withdraw(
@@ -1229,6 +1230,14 @@ contract('BucketLender', accounts => {
           { from: lender1 }
         )
       );
+    });
+
+    it('succeeds for trusted withdrawer', async () => {
+      await doWithdraw(TRUSTED_WITHDRAWER, 0, { onBehalfOf: lender1 });
+    });
+
+    it('fails for non-trusted withdrawer', async () => {
+      await doWithdraw(TRUSTED_PARTY, 0, { onBehalfOf: lender1, throws: true});
     });
   });
 
