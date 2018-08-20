@@ -19,8 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { DetailedERC20 } from "zeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
+import { DetailedERC20 } from "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
 

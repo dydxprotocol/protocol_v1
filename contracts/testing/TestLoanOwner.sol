@@ -19,7 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IncreaseLoanDelegator } from "../margin/interfaces/lender/IncreaseLoanDelegator.sol";
 import { LoanOwner } from "../margin/interfaces/lender/LoanOwner.sol";
 import { OnlyMargin } from "../margin/interfaces/OnlyMargin.sol";

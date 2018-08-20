@@ -19,7 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Exponent } from "../../lib/Exponent.sol";
 import { Fraction } from "../../lib/Fraction.sol";
 import { FractionMath } from "../../lib/FractionMath.sol";

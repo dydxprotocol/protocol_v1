@@ -20,7 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
-import { ReentrancyGuard } from "zeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { Margin } from "../Margin.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";

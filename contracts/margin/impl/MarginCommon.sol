@@ -19,8 +19,8 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { Math } from "zeppelin-solidity/contracts/math/Math.sol";
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
+import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { InterestImpl } from "./InterestImpl.sol";
 import { MarginState } from "./MarginState.sol";
 import { TransferInternal } from "./TransferInternal.sol";
