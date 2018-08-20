@@ -36,10 +36,15 @@ import { ERC20Short } from "./ERC20Short.sol";
 contract ERC20ShortFactory is ERC20PositionFactory {
     constructor(
         address margin,
-        address[] trustedRecipients
+        address[] trustedRecipients,
+        address[] trustedWithdrawers
     )
         public
-        ERC20PositionFactory(margin, trustedRecipients)
+        ERC20PositionFactory(
+            margin,
+            trustedRecipients,
+            trustedWithdrawers
+        )
     {}
 
     // ============ Private Functions ============
@@ -55,7 +60,8 @@ contract ERC20ShortFactory is ERC20PositionFactory {
             positionId,
             DYDX_MARGIN,
             from,
-            TRUSTED_RECIPIENTS
+            TRUSTED_RECIPIENTS,
+            TRUSTED_WITHDRAWERS
         );
     }
 }

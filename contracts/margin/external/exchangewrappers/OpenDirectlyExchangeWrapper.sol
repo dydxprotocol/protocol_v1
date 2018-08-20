@@ -39,6 +39,7 @@ contract OpenDirectlyExchangeWrapper is
     ExchangeWrapper
 {
     using SafeMath for uint256;
+    using TokenInteract for address;
 
     // ============ Margin-Only Functions ============
 
@@ -53,8 +54,10 @@ contract OpenDirectlyExchangeWrapper is
         external
         returns (uint256)
     {
-        assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
-        assert(requestedFillAmount > 0);
+        require(
+            requestedFillAmount <= takerToken.balanceOf(address(this)),
+            "OpenDirectlyExchangeWrapper#exchange: Requested fill amount larger than tokens held"
+        );
 
         TokenInteract.transfer(takerToken, tradeOriginator, requestedFillAmount);
 

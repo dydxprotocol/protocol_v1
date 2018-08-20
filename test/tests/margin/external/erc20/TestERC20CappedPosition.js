@@ -6,16 +6,16 @@ const Margin = artifacts.require("Margin");
 const ERC20CappedShort = artifacts.require("ERC20CappedShort");
 const ERC20CappedLong = artifacts.require("ERC20CappedLong");
 const HeldToken = artifacts.require("TokenA");
-const { ADDRESSES, BYTES32 } = require('../../../helpers/Constants');
+const { ADDRESSES, BYTES32 } = require('../../../../helpers/Constants');
 const {
   callIncreasePosition,
   createOpenTx,
   doOpenPosition,
   issueTokensAndSetAllowances,
   issueTokenToAccountInAmountAndApproveProxy,
-} = require('../../../helpers/MarginHelper');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { signLoanOffering } = require('../../../helpers/LoanHelper');
+} = require('../../../../helpers/MarginHelper');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { signLoanOffering } = require('../../../../helpers/LoanHelper');
 const BigNumber = require('bignumber.js');
 
 contract('ERC20Short', accounts => {
@@ -83,7 +83,9 @@ contract('ERC20Short', accounts => {
 
   async function setUpTokens(multiplier) {
     POSITIONS.LONG.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
+    POSITIONS.LONG.TRUSTED_WITHDRAWERS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
     POSITIONS.SHORT.TRUSTED_RECIPIENTS = [ADDRESSES.TEST[3], ADDRESSES.TEST[4]];
+    POSITIONS.SHORT.TRUSTED_WITHDRAWERS = [ADDRESSES.TEST[1], ADDRESSES.TEST[2]];
     [
       POSITIONS.LONG.TOKEN_CONTRACT,
       POSITIONS.SHORT.TOKEN_CONTRACT
@@ -93,6 +95,7 @@ contract('ERC20Short', accounts => {
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.LONG.TRUSTED_RECIPIENTS,
+        POSITIONS.LONG.TRUSTED_WITHDRAWERS,
         POSITIONS.LONG.NUM_TOKENS.times(multiplier)
       ),
       ERC20CappedShort.new(
@@ -100,6 +103,7 @@ contract('ERC20Short', accounts => {
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.SHORT.TRUSTED_RECIPIENTS,
+        POSITIONS.LONG.TRUSTED_WITHDRAWERS,
         POSITIONS.SHORT.NUM_TOKENS.times(multiplier)
       )
     ]);
@@ -123,15 +127,17 @@ contract('ERC20Short', accounts => {
   describe('Constructor', () => {
     const positionId = BYTES32.TEST[0];
     const tokenCap = new BigNumber('123456787654321');
-    const trustedAccount = accounts[9];
-    const untrustedAccount = accounts[8];
+    const trustedRecipient = accounts[9];
+    const trustedWithdrawer = accounts[8];
+    const untrustedAccount = accounts[7];
 
     it('sets constants correctly for short', async () => {
       const tokenContract = await ERC20CappedShort.new(
         positionId,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
-        [trustedAccount],
+        [trustedRecipient],
+        [trustedWithdrawer],
         tokenCap
       );
       const [
@@ -139,22 +145,34 @@ contract('ERC20Short', accounts => {
         cap,
         pid,
         ith,
-        trusted1,
-        trusted2
+        tr_is_tr,
+        tw_is_tr,
+        ua_is_tr,
+        tr_is_tw,
+        tw_is_tw,
+        ua_is_tw,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
-        tokenContract.TRUSTED_RECIPIENTS.call(trustedAccount),
+        tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
+        tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
+        tokenContract.TRUSTED_WITHDRAWERS.call(trustedRecipient),
+        tokenContract.TRUSTED_WITHDRAWERS.call(trustedWithdrawer),
+        tokenContract.TRUSTED_WITHDRAWERS.call(untrustedAccount),
       ]);
       expect(supply).to.be.bignumber.eq(0);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
-      expect(trusted1).to.be.true;
-      expect(trusted2).to.be.false;
+      expect(tr_is_tr).to.be.true;
+      expect(tw_is_tr).to.be.false;
+      expect(ua_is_tr).to.be.false;
+      expect(tr_is_tw).to.be.false;
+      expect(tw_is_tw).to.be.true;
+      expect(ua_is_tw).to.be.false;
     });
 
     it('sets constants correctly for long', async () => {
@@ -162,7 +180,8 @@ contract('ERC20Short', accounts => {
         positionId,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
-        [trustedAccount],
+        [trustedRecipient],
+        [trustedWithdrawer],
         tokenCap
       );
       const [
@@ -170,22 +189,34 @@ contract('ERC20Short', accounts => {
         cap,
         pid,
         ith,
-        trusted1,
-        trusted2
+        tr_is_tr,
+        tw_is_tr,
+        ua_is_tr,
+        tr_is_tw,
+        tw_is_tw,
+        ua_is_tw,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
-        tokenContract.TRUSTED_RECIPIENTS.call(trustedAccount),
+        tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
+        tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
+        tokenContract.TRUSTED_WITHDRAWERS.call(trustedRecipient),
+        tokenContract.TRUSTED_WITHDRAWERS.call(trustedWithdrawer),
+        tokenContract.TRUSTED_WITHDRAWERS.call(untrustedAccount),
       ]);
       expect(supply).to.be.bignumber.eq(0);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
-      expect(trusted1).to.be.true;
-      expect(trusted2).to.be.false;
+      expect(tr_is_tr).to.be.true;
+      expect(tw_is_tr).to.be.false;
+      expect(ua_is_tr).to.be.false;
+      expect(tr_is_tw).to.be.false;
+      expect(tw_is_tw).to.be.true;
+      expect(ua_is_tw).to.be.false;
     });
   });
 

@@ -26,6 +26,7 @@ const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
+const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
 const ERC20LongFactory = artifacts.require("ERC20LongFactory");
 const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
@@ -182,7 +183,11 @@ async function deployBaseProtocol(deployer) {
 }
 
 async function deploySecondLayer(deployer, network) {
-  const promises = [
+  if (isDevNetwork(network)) {
+    await deployer.deploy(WETH9);
+  }
+
+  await Promise.all([
     deployer.deploy(
       ZeroExExchangeWrapper,
       get0xExchangeAddress(network),
@@ -194,6 +199,10 @@ async function deploySecondLayer(deployer, network) {
       OpenDirectlyExchangeWrapper
     ),
     deployer.deploy(
+      ERC20PositionWithdrawer,
+      getWethAddress(network)
+    ),
+    deployer.deploy(
       ERC721MarginPosition,
       Margin.address
     ),
@@ -203,26 +212,20 @@ async function deploySecondLayer(deployer, network) {
       new BigNumber(1), // Numerator
       new BigNumber(2), // Denominator
     ),
-  ];
-
-  if (isDevNetwork(network)) {
-    promises.push(deployer.deploy(
-      WETH9
-    ));
-  }
-
-  await Promise.all(promises);
+  ]);
 
   await Promise.all([
     deployer.deploy(
       ERC20ShortFactory,
       Margin.address,
-      [DutchAuctionCloser.address]
+      [DutchAuctionCloser.address],
+      [ERC20PositionWithdrawer.address]
     ),
     deployer.deploy(
       ERC20LongFactory,
       Margin.address,
-      [DutchAuctionCloser.address]
+      [DutchAuctionCloser.address],
+      [ERC20PositionWithdrawer.address]
     ),
     deployer.deploy(
       SharedLoanFactory,

@@ -16,15 +16,15 @@ const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const SharedLoan = artifacts.require("SharedLoan");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
-const { BIGNUMBERS, DEFAULT_SALT } = require('../../../helpers/Constants');
-const { createLoanOffering, signLoanOffering } = require('../../../helpers/LoanHelper');
-const { signOrder, createSignedBuyOrder } = require('../../../helpers/ZeroExHelper');
-const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
-const { transact } = require('../../../helpers/ContractHelper');
+const { BIGNUMBERS, DEFAULT_SALT } = require('../../../../helpers/Constants');
+const { createLoanOffering, signLoanOffering } = require('../../../../helpers/LoanHelper');
+const { signOrder, createSignedBuyOrder } = require('../../../../helpers/ZeroExHelper');
+const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
+const { transact } = require('../../../../helpers/ContractHelper');
 const {
   issueTokenToAccountInAmountAndApproveProxy,
   orderToBytes
-} = require('../../../helpers/MarginHelper');
+} = require('../../../../helpers/MarginHelper');
 
 
 let Seo, Weth, Dai, dydxMargin;

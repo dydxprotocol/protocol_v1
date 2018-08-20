@@ -41,7 +41,8 @@ contract ERC20Short is ERC20Position {
         bytes32 positionId,
         address margin,
         address initialTokenHolder,
-        address[] trustedRecipients
+        address[] trustedRecipients,
+        address[] trustedWithdrawers
     )
         public
         ERC20Position(
@@ -49,6 +50,7 @@ contract ERC20Short is ERC20Position {
             margin,
             initialTokenHolder,
             trustedRecipients,
+            trustedWithdrawers,
             "d/S"
         )
     {}

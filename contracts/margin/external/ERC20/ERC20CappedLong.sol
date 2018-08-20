@@ -39,6 +39,7 @@ contract ERC20CappedLong is ERC20Long {
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
+        address[] trustedWithdrawers,
         uint256 cap
     )
         public
@@ -46,7 +47,8 @@ contract ERC20CappedLong is ERC20Long {
             positionId,
             margin,
             initialTokenHolder,
-            trustedRecipients
+            trustedRecipients,
+            trustedWithdrawers
         )
     {
         tokenCap = cap;

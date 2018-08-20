@@ -9,12 +9,12 @@ const ZeroExProxy = artifacts.require("ZeroExProxy");
 const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
 
-const { BIGNUMBERS, ADDRESSES } = require('../../../helpers/Constants');
-const { zeroExOrderToBytes } = require('../../../helpers/BytesHelper');
-const { createSignedSellOrder, signOrder } = require('../../../helpers/ZeroExHelper');
-const { getPartialAmount } = require('../../../helpers/MathHelper');
-const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
+const { BIGNUMBERS, ADDRESSES } = require('../../../../helpers/Constants');
+const { zeroExOrderToBytes } = require('../../../../helpers/BytesHelper');
+const { createSignedSellOrder, signOrder } = require('../../../../helpers/ZeroExHelper');
+const { getPartialAmount } = require('../../../../helpers/MathHelper');
+const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
 
 const baseAmount = new BigNumber('1e18');
 

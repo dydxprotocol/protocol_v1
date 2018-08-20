@@ -5,19 +5,18 @@ const BigNumber = require('bignumber.js');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const Margin = artifacts.require("Margin");
-const TokenProxy = artifacts.require("TokenProxy");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
-const { signLoanOffering } = require('../../../helpers/LoanHelper');
-const { ADDRESSES, BYTES, ORDER_TYPE } = require('../../../helpers/Constants');
-const { getPartialAmount } = require('../../../helpers/MathHelper');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
+const { signLoanOffering } = require('../../../../helpers/LoanHelper');
+const { ADDRESSES, BYTES, ORDER_TYPE } = require('../../../../helpers/Constants');
+const { getPartialAmount } = require('../../../../helpers/MathHelper');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const {
   createOpenTx,
   callOpenPosition,
   issueTokenToAccountInAmountAndApproveProxy
-} = require('../../../helpers/MarginHelper');
+} = require('../../../../helpers/MarginHelper');
 
 describe('OpenDirectlyExchangeWrapper', () => {
   describe('#getExchangeCost', () => {
@@ -48,24 +47,23 @@ describe('OpenDirectlyExchangeWrapper', () => {
 
   describe('#exchange', () => {
     contract('OpenDirectlyExchangeWrapper', accounts => {
-      it('successfully executes a trade', async () => {
-        const [
-          dydxProxy,
+      let dydxMargin, owedToken, heldToken, exchangeWrapper;
+
+      before('set up contracts', async () => {
+        [
           dydxMargin,
           owedToken,
-          heldToken
+          heldToken,
+          exchangeWrapper
         ] = await Promise.all([
-          TokenProxy.deployed(),
           Margin.deployed(),
           OwedToken.deployed(),
-          HeldToken.deployed()
+          HeldToken.deployed(),
+          OpenDirectlyExchangeWrapper.deployed()
         ]);
+      });
 
-        const exchangeWrapper = await OpenDirectlyExchangeWrapper.new(
-          dydxMargin.address,
-          dydxProxy.address
-        );
-
+      it('successfully executes a trade', async () => {
         const openTx = await createOpenTx(accounts);
         openTx.loanOffering.rates.lenderFee = new BigNumber(0);
         openTx.loanOffering.rates.takerFee = new BigNumber(0);
@@ -120,6 +118,19 @@ describe('OpenDirectlyExchangeWrapper', () => {
         expect(traderHeld0.minus(traderHeld1)).to.be.bignumber.eq(openTx.depositAmount);
         expect(positionBalance).to.be.bignumber.eq(openTx.depositAmount);
         expect(positionPrincipal).to.be.bignumber.eq(openTx.principal);
+      });
+
+      it('fails if it doesnt have enough tokens', async () => {
+        await expectThrow(
+          exchangeWrapper.exchange(
+            accounts[0],
+            accounts[0],
+            heldToken.address,
+            owedToken.address,
+            1000,
+            BYTES.EMPTY,
+          )
+        );
       });
     });
   });
