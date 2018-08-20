@@ -1037,7 +1037,7 @@ contract('BucketLender', accounts => {
     });
   });
 
-  describe.only('#withdraw', () => {
+  describe('#withdraw', () => {
     it('Multiple deposit and withdraw', async () => {
       await runAliceBot();
       await runAliceBot();
