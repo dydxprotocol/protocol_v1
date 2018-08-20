@@ -88,7 +88,7 @@ async function doWithdraw(account, bucket, args) {
     bucketLender.withdraw,
     [bucket],
     [args.weight],
-    account,
+    args.onBehalfOf,
     { from: account }
   );
 
@@ -1099,7 +1099,7 @@ contract('BucketLender', accounts => {
       }
     });
 
-    it('Withdraw succeeds even when principal amount for lender is zero', async () => {
+    it('succeeds even when principal amount for lender is zero', async () => {
       await doDeposit(lender1, 1);
       await doDeposit(lender2, OT);
 
@@ -1230,6 +1230,14 @@ contract('BucketLender', accounts => {
           { from: lender1 }
         )
       );
+    });
+
+    it('succeeds for trusted withdrawer', async () => {
+      await doWithdraw(TRUSTED_WITHDRAWER, 0, { onBehalfOf: lender1 });
+    });
+
+    it('fails for non-trusted withdrawer', async () => {
+      await doWithdraw(TRUSTED_PARTY, 0, { onBehalfOf: lender1, throws: true});
     });
   });
 
