@@ -82,7 +82,7 @@ contract DutchAuctionCloser is
         public
         OnlyMargin(margin)
     {
-        // these two requirements also require (_denominator > 0)
+        // these two requirements also require (callTimeLimitDenominator > 0)
         require(
             callTimeLimitNumerator <= callTimeLimitDenominator,
             "DutchAuctionCloser#constructor: Invalid callTimeLimit fraction"
