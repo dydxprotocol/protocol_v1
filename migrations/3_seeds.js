@@ -68,9 +68,18 @@ async function createSeedPositions(accounts) {
   openTransactions.push(await createShortToken(accounts, { nonce: nonce++ }));
 
   const margin = await Margin.deployed();
-  const positions = await Promise.all(openTransactions.map(t => getPosition(margin, t.id)));
+
+  const positionPromises = openTransactions.map(t => getPosition(margin, t.id));
+  const balancePromises = openTransactions.map(t => margin.getPositionBalance.call(t.id));
+
+  const [positions, balances] = await Promise.all([
+    Promise.all(positionPromises),
+    Promise.all(balancePromises)
+  ]);
+
   for (let i = 0; i < openTransactions.length; i++) {
     positions[i].id = openTransactions[i].id;
+    positions[i].balance = balances[i];
 
     positions[i].isTokenized = i === 3 || i === 4 ? true : false;
   }
