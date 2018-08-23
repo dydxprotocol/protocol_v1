@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -41,7 +41,7 @@ contract('#PayableMarginMinter', accounts => {
       HeldToken.new()
     ]);
     Seo = await PayableMarginMinter.new(Margin.address, Weth.address);
-    await Weth.deposit({ value: new BigNumber("90e18"), from: opener });
+    await Weth.deposit({ value: new BN("90e18"), from: opener });
     await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: opener });
     await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.MAX_UINT128);
   });
@@ -77,14 +77,14 @@ contract('#PayableMarginMinter', accounts => {
 
   it('succeeds on valid inputs', async () => {
     const trader = accounts[9];
-    const principal = new BigNumber(10000);
+    const principal = new BN(10000);
 
     let order = await createSignedBuyOrder(accounts, { salt: salt++ });
     order.takerFee = order.makerFee = 0;
     order.makerTokenAddress = Dai.address,
-    order.makerTokenAmount = new BigNumber("1e36");
+    order.makerTokenAmount = new BN("1e36");
     order.takerTokenAddress = Weth.address,
-    order.takerTokenAmount = new BigNumber("1e36");
+    order.takerTokenAmount = new BN("1e36");
     order.ecSignature = await signOrder(order);
     await issueAndSetAllowance(
       Dai,
@@ -100,11 +100,11 @@ contract('#PayableMarginMinter', accounts => {
     loanOffering.rates.interestRate = 0;
     loanOffering.rates.minAmount = 0;
     loanOffering.rates.interestPeriod = 1;
-    loanOffering.rates.lenderFee = new BigNumber(0);
-    loanOffering.rates.takerFee = new BigNumber(0);
-    loanOffering.rates.minHeldToken = new BigNumber(0);
+    loanOffering.rates.lenderFee = new BN(0);
+    loanOffering.rates.takerFee = new BN(0);
+    loanOffering.rates.minHeldToken = new BN(0);
     loanOffering.signature = await signLoanOffering(loanOffering);
-    await Weth.deposit({ value: new BigNumber("90e18"), from: loanOffering.payer });
+    await Weth.deposit({ value: new BN("90e18"), from: loanOffering.payer });
     await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: loanOffering.payer });
 
     const addresses = [

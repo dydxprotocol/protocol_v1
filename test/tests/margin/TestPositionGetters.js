@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -306,7 +306,7 @@ contract('PositionGetters', (accounts) => {
 
       const increasePosTx = await createOpenTx(accounts, { salt: salt++ });
       increasePosTx.id = openTx.id;
-      increasePosTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+      increasePosTx.loanOffering.rates.minHeldToken = new BN(0);
       increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,
@@ -330,7 +330,7 @@ contract('PositionGetters', (accounts) => {
       expect(before.callTimestamp).to.be.bignumber.equal(0);
       expect(before.requiredDeposit).to.be.bignumber.equal(0);
 
-      const depositAmount = new BigNumber(12345);
+      const depositAmount = new BN(12345);
       const marginCallTx = await dydxMargin.marginCall(
         positionId,
         depositAmount,
@@ -530,7 +530,7 @@ contract('PositionGetters', (accounts) => {
         accounts,
         {
           salt: ++salt,
-          interestPeriod: new BigNumber(0)
+          interestPeriod: new BN(0)
         }
       );
 
@@ -599,7 +599,7 @@ contract('PositionGetters', (accounts) => {
         accounts,
         {
           salt: ++salt,
-          interestPeriod: new BigNumber(0)
+          interestPeriod: new BN(0)
         }
       );
 

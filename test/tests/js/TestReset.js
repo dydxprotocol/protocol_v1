@@ -2,7 +2,7 @@ const { reset, snapshot } = require('../../../src/index');
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TokenA = artifacts.require('TokenA');
 
@@ -16,7 +16,7 @@ contract('Margin', accounts => {
     it('resets any transactions made', async () => {
       const id = await snapshot(web3.currentProvider);
       const account = accounts[5];
-      const amount = new BigNumber(123456);
+      const amount = new BN(123456);
       const token = await TokenA.deployed();
 
       const startingBalance = await token.balanceOf.call(account);
@@ -34,7 +34,7 @@ contract('Margin', accounts => {
     it('works multiple times', async () => {
       const id = await snapshot(web3.currentProvider);
       const account = accounts[5];
-      const amount = new BigNumber(123456);
+      const amount = new BN(123456);
       const token = await TokenA.deployed();
 
       const startingBalance = await token.balanceOf.call(account);

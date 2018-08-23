@@ -1,6 +1,6 @@
 const chai = require('chai');
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const TestPositionOwner = artifacts.require('TestPositionOwner');
@@ -176,7 +176,7 @@ describe('#closePosition', () => {
   describe('#closeOnBehalfOf', () => {
     contract('Margin', accounts => {
       it('succeeds when position owner returns maximum value', async () => {
-        const closeAmount = new BigNumber(20000);
+        const closeAmount = new BN(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -210,7 +210,7 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('restricts close amount to value returned', async () => {
-        const closeAmount = new BigNumber(20000);
+        const closeAmount = new BN(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -244,7 +244,7 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('fails if 0 is returned', async () => {
-        const closeAmount = new BigNumber(20000);
+        const closeAmount = new BN(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()
@@ -266,7 +266,7 @@ describe('#closePosition', () => {
 
     contract('Margin', accounts => {
       it('fails if greater value is returned', async () => {
-        const closeAmount = new BigNumber(20000);
+        const closeAmount = new BN(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
           createSignedSellOrder(accounts),
           Margin.deployed()

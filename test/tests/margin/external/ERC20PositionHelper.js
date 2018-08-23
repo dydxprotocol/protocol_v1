@@ -1,9 +1,9 @@
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TOKENIZED_POSITION_STATE = {
-  UNINITIALIZED: new BigNumber(0),
-  OPEN: new BigNumber(1),
-  CLOSED: new BigNumber(2)
+  UNINITIALIZED: new BN(0),
+  OPEN: new BN(1),
+  CLOSED: new BN(2)
 };
 
 async function getERC20PositionConstants(erc20Contract) {

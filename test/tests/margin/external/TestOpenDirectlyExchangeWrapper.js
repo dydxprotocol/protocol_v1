@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const Margin = artifacts.require("Margin");
@@ -89,8 +89,8 @@ describe('OpenDirectlyExchangeWrapper', () => {
         );
 
         const openTx = await createOpenTx(accounts);
-        openTx.loanOffering.rates.lenderFee = new BigNumber(0);
-        openTx.loanOffering.rates.takerFee = new BigNumber(0);
+        openTx.loanOffering.rates.lenderFee = new BN(0);
+        openTx.loanOffering.rates.takerFee = new BN(0);
         openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
         openTx.buyOrder = { type: ORDER_TYPE.DIRECT };
         openTx.exchangeWrapper = exchangeWrapper.address;

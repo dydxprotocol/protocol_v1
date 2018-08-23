@@ -1,6 +1,6 @@
 const { createOpenTx } = require('./MarginHelper');
 const { BIGNUMBERS } = require('./Constants');
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const { issueAndSetAllowance } = require('./TokenHelper');
 
 const Margin = artifacts.require('Margin');
@@ -14,14 +14,14 @@ const { createSignedOrder } = require('./ZeroExHelper');
 const HeldToken = artifacts.require("TokenA");
 const ZeroExProxy = artifacts.require('ZeroExProxy');
 
-BigNumber.config({
+BN.config({
   EXPONENTIAL_AT: 1000,
 });
 
-const DEPOSIT = new BigNumber('500e18');
-const SELL_PRICE = new BigNumber('3018104e14');  // 301.8104
-const BUY_PRICE = new BigNumber('2991231e14'); // 299.1231
-const PRINCIPAL = new BigNumber('1e18');
+const DEPOSIT = new BN('500e18');
+const SELL_PRICE = new BN('3018104e14');  // 301.8104
+const BUY_PRICE = new BN('2991231e14'); // 299.1231
+const PRINCIPAL = new BN('1e18');
 
 async function createShortToken(
   accounts,
@@ -57,7 +57,7 @@ async function createShortToken(
       bucketLender.address,
       trader,
       {
-        value: new BigNumber('10').times(PRINCIPAL),
+        value: new BN('10').times(PRINCIPAL),
         from: trader
       },
     ),
@@ -97,9 +97,9 @@ async function createBuyOrderForToken(accounts) {
         salt: 7294234423,
         feeRecipient: ADDRESSES.ZERO,
         makerTokenAddress: HeldToken.address,
-        makerTokenAmount: new BigNumber('10').times(BUY_PRICE),
+        makerTokenAmount: new BN('10').times(BUY_PRICE),
         takerTokenAddress: WETH9.address,
-        takerTokenAmount: new BigNumber('10').times(PRINCIPAL),
+        takerTokenAmount: new BN('10').times(PRINCIPAL),
       },
     ),
   ]);
@@ -123,9 +123,9 @@ async function createSellOrderForToken(accounts) {
         salt: 7294234423,
         feeRecipient: ADDRESSES.ZERO,
         makerTokenAddress: WETH9.address,
-        makerTokenAmount: new BigNumber('10').times(PRINCIPAL),
+        makerTokenAmount: new BN('10').times(PRINCIPAL),
         takerTokenAddress: HeldToken.address,
-        takerTokenAmount: new BigNumber('10').times(SELL_PRICE),
+        takerTokenAmount: new BN('10').times(SELL_PRICE),
       },
     ),
   ]);
@@ -150,8 +150,8 @@ async function createBucketLender(openTx) {
       openTx.loanOffering.rates.interestPeriod,
       openTx.loanOffering.maxDuration,
       openTx.loanOffering.callTimeLimit,
-      DEPOSIT.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_NUMERATOR,
-      PRINCIPAL.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_DENOMINATOR,
+      DEPOSIT.div(new BN('1e18')), // MIN_HELD_TOKEN_NUMERATOR,
+      PRINCIPAL.div(new BN('1e18')), // MIN_HELD_TOKEN_DENOMINATOR,
     ],
     [], // trusted margin-callers
     [EthWrapperForBucketLender.address] // trusted withdrawers

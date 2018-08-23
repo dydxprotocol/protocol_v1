@@ -2,7 +2,7 @@
 
 const chai = require('chai');
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const ERC20Short = artifacts.require("ERC20Short");
@@ -67,9 +67,9 @@ contract('Deploy Costs', () => {
     it('', async () => {
       await TestInterestImpl.link('InterestImpl', InterestImpl.address);
       const contract = await TestInterestImpl.new();
-      const tokens1 = new BigNumber('1e18');
-      const tokens2 = new BigNumber('1e40');
-      const percent = new BigNumber('1e6');
+      const tokens1 = new BN('1e18');
+      const tokens2 = new BN('1e40');
+      const percent = new BN('1e6');
 
       async function printGasCost(seconds) {
         const tx = await contract.getCompoundedInterest(tokens1, percent, seconds);
@@ -81,12 +81,12 @@ contract('Deploy Costs', () => {
         console.log('\tInterestCalculation gas cost (large): ' + tx.receipt.gasUsed);
       }
 
-      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS));
-      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 5));
-      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS* 364));
-      await printGasCost(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
-      await printGasCostLarge(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 1));
-      await printGasCostLarge(new BigNumber(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
+      await printGasCost(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS));
+      await printGasCost(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS * 5));
+      await printGasCost(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS* 364));
+      await printGasCost(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
+      await printGasCostLarge(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS * 1));
+      await printGasCostLarge(new BN(BIGNUMBERS.ONE_DAY_IN_SECONDS * 365));
     });
   });
 });

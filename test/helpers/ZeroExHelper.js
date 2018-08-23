@@ -1,7 +1,7 @@
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const ZeroEx = require('0x.js').ZeroEx;
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const promisify = require("es6-promisify");
@@ -10,7 +10,7 @@ const { DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-const BASE_AMOUNT = new BigNumber('1098623452345987123')
+const BASE_AMOUNT = new BN('1098623452345987123')
 
 async function createSignedSellOrder(
   accounts,
@@ -22,11 +22,11 @@ async function createSignedSellOrder(
   let order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationUnixTimestampSec: new BN(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
     maker: accounts[5],
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
-    salt: new BigNumber(salt),
+    salt: new BN(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
 
@@ -54,11 +54,11 @@ async function createSignedBuyOrder(
   let order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationUnixTimestampSec: new BN(100000000000000),
     feeRecipient: feeRecipient || accounts[4],
     maker: accounts[2],
     makerFee: BASE_AMOUNT.times(.02012398).floor(),
-    salt: new BigNumber(salt),
+    salt: new BN(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BASE_AMOUNT.times(.1019238).floor(),
 
@@ -91,11 +91,11 @@ async function createSignedOrder(
   const order = {
     type: ORDER_TYPE.ZERO_EX,
     exchangeContractAddress: ZeroExExchange.address,
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationUnixTimestampSec: new BN(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
     maker: maker || accounts[5],
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
-    salt: new BigNumber(salt),
+    salt: new BN(salt),
     taker: ZeroEx.NULL_ADDRESS,
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
     makerTokenAddress,

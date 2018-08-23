@@ -54,8 +54,8 @@ const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 
 // Other constants
-const BigNumber = require('bignumber.js');
-const ONE_HOUR = new BigNumber(60 * 60);
+const BN = require('bignumber.js');
+const ONE_HOUR = new BN(60 * 60);
 
 function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
@@ -203,8 +203,8 @@ async function deploySecondLayer(deployer, network) {
     deployer.deploy(
       DutchAuctionCloser,
       Margin.address,
-      new BigNumber(1), // Numerator
-      new BigNumber(2), // Denominator
+      new BN(1), // Numerator
+      new BN(2), // Denominator
     ),
   ];
 

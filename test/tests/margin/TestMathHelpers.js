@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TestMathHelpers = artifacts.require("TestMathHelpers");
 const { BIGNUMBERS } = require('../../helpers/Constants');
@@ -130,7 +130,7 @@ contract('InterestHelper', function(_accounts) {
       let result = await contract.getNumBits.call(BIGNUMBERS.ZERO);
       expect(result).to.be.bignumber.equal(0);
 
-      let n = new BigNumber(1);
+      let n = new BN(1);
       for(let i = 0; i < 256; i++) {
         let result = await contract.getNumBits.call(n);
         expect(result).to.be.bignumber.equal(i + 1);

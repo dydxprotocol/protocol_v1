@@ -16,7 +16,7 @@ const {
 } = require('../../../helpers/MarginHelper');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 const { signLoanOffering } = require('../../../helpers/LoanHelper');
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 contract('ERC20Short', accounts => {
   let dydxMargin, heldToken;
@@ -122,7 +122,7 @@ contract('ERC20Short', accounts => {
 
   describe('Constructor', () => {
     const positionId = BYTES32.TEST[0];
-    const tokenCap = new BigNumber('123456787654321');
+    const tokenCap = new BN('123456787654321');
     const trustedAccount = accounts[9];
     const untrustedAccount = accounts[8];
 
@@ -236,7 +236,7 @@ contract('ERC20Short', accounts => {
       args.multiplier = args.multiplier || 1;
 
       let incrTx = await createOpenTx(acts, { salt: 99999 + pepper });
-      incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+      incrTx.loanOffering.rates.minHeldToken = new BN(0);
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
       incrTx.owner = position.TOKEN_CONTRACT.address;
       await issueTokensAndSetAllowances(incrTx);

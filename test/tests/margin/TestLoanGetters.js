@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const {
@@ -36,8 +36,8 @@ contract('LoanGetters', (accounts) => {
 
   describe('#getLoanUnavailableAmount, getLoanFilledAmount, #getLoanCanceledAmount', () => {
     it('succeeds for all', async () => {
-      const ca1 = new BigNumber("1e17");
-      const ca2 = new BigNumber("1e16");
+      const ca1 = new BN("1e17");
+      const ca2 = new BN("1e16");
       let openTx = await createOpenTx(accounts);
       openTx.principal = openTx.principal.div(2).floor();
 

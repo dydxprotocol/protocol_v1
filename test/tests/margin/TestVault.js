@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
@@ -15,10 +15,10 @@ const { expectLog } = require('../../helpers/EventHelper');
 const { ADDRESSES, BYTES32 } = require('../../helpers/Constants');
 
 contract('Vault', accounts => {
-  const gracePeriod = new BigNumber('1234567');
-  const num1 = new BigNumber(12);
-  const num2 = new BigNumber(7);
-  const num3 = new BigNumber(5);
+  const gracePeriod = new BN('1234567');
+  const num1 = new BN(12);
+  const num2 = new BN(7);
+  const num3 = new BN(5);
   const id1 = BYTES32.TEST[0];
   const id2 = BYTES32.TEST[1];
   const id3 = BYTES32.TEST[2];

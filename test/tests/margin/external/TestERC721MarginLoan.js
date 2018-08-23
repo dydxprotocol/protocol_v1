@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const ERC721MarginLoan = artifacts.require("ERC721MarginLoan");
 const Margin = artifacts.require("Margin");
@@ -388,7 +388,7 @@ describe('ERC721MarginLoan', () => {
 
     it('fails for msg.sender != Margin', async () => {
       const lender = accounts[1];
-      const increaseAmount = new BigNumber('1e18');
+      const increaseAmount = new BN('1e18');
       await expectThrow(
         loanContract.increaseLoanOnBehalfOf(
           lender,

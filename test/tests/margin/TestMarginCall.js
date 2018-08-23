@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const TestMarginCallDelegator = artifacts.require("TestMarginCallDelegator");
@@ -20,7 +20,7 @@ function getCallTimestamp(tx) {
 }
 
 describe('#marginCall', () => {
-  const REQUIRED_DEPOSIT = new BigNumber(10);
+  const REQUIRED_DEPOSIT = new BN(10);
   let dydxMargin;
 
   async function marginCall(

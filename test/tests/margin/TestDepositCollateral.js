@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require('TokenA');
@@ -23,7 +23,7 @@ describe('#deposit', () => {
     it('deposits additional funds into the position', async () => {
 
       const openTx = await doOpenPosition(accounts);
-      const amount = new BigNumber(1000);
+      const amount = new BN(1000);
 
       const tx = await doDepositCollateral({
         from: openTx.trader,
@@ -84,7 +84,7 @@ describe('#deposit', () => {
     it('allows depositCollateralOnBehalfOf', async () => {
       const depositor = accounts[9];
       const rando = accounts[8];
-      const depositAmount = new BigNumber('1e18');
+      const depositAmount = new BN('1e18');
 
       const dydxMargin = await Margin.deployed();
       const heldToken = await HeldToken.deployed();
@@ -143,7 +143,7 @@ describe('#deposit', () => {
       requiredDeposit = position.requiredDeposit;
       let callTimestamp = position.callTimestamp;
       expect(requiredDeposit).to.be.bignumber.eq(5);
-      expect(callTimestamp).to.be.bignumber.gt(new BigNumber(0));
+      expect(callTimestamp).to.be.bignumber.gt(new BN(0));
 
       const amount2 = 5;
       const tx2 = await doDepositCollateral({
@@ -172,7 +172,7 @@ async function doDepositCollateral({
   from,
   openTx,
   printGas = false,
-  amount = new BigNumber(1000)
+  amount = new BN(1000)
 }) {
   const [dydxMargin, heldToken] = await Promise.all([
     Margin.deployed(),

@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const ZeroExExchange = artifacts.require("ZeroExExchange");
 const OwedToken = artifacts.require("TokenB");
@@ -64,7 +64,7 @@ describe('#openPosition', () => {
         const openTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(openTx);
-        openTx.principal = new BigNumber(0);
+        openTx.principal = new BN(0);
 
         const dydxMargin = await Margin.deployed();
         await expectThrow(callOpenPosition(dydxMargin, openTx));
@@ -103,7 +103,7 @@ describe('#openPosition', () => {
 
         await issueTokensAndSetAllowances(openTx);
 
-        openTx.principal = openTx.loanOffering.rates.maxAmount.plus(new BigNumber(1));
+        openTx.principal = openTx.loanOffering.rates.maxAmount.plus(new BN(1));
 
         const dydxMargin = await Margin.deployed();
         await expectThrow(callOpenPosition(dydxMargin, openTx));
@@ -275,7 +275,7 @@ describe('#openPosition', () => {
 
         const dydxMargin = await Margin.deployed();
 
-        openTx.loanOffering.rates.interestPeriod = new BigNumber(
+        openTx.loanOffering.rates.interestPeriod = new BN(
           openTx.loanOffering.maxDuration + 1
         );
         openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
@@ -346,7 +346,7 @@ describe('#openPosition', () => {
         const openTx = await createOpenTx(accounts);
 
         const storedAmount = openTx.depositAmount;
-        openTx.depositAmount = openTx.depositAmount.minus(new BigNumber(1));
+        openTx.depositAmount = openTx.depositAmount.minus(new BN(1));
         await issueTokensAndSetAllowances(openTx);
         openTx.depositAmount = storedAmount;
 
@@ -360,7 +360,7 @@ describe('#openPosition', () => {
         const openTx = await createOpenTx(accounts);
 
         const storedAmount = openTx.loanOffering.rates.maxAmount;
-        openTx.loanOffering.rates.maxAmount = openTx.principal.minus(new BigNumber(1));
+        openTx.loanOffering.rates.maxAmount = openTx.principal.minus(new BN(1));
         await issueTokensAndSetAllowances(openTx);
         openTx.depositAmount = storedAmount;
 
@@ -378,7 +378,7 @@ describe('#openPosition', () => {
           openTx.buyOrder.makerTokenAmount,
           openTx.buyOrder.takerTokenAmount,
           openTx.principal
-        ).minus(new BigNumber(1));
+        ).minus(new BN(1));
         await issueTokensAndSetAllowances(openTx);
         openTx.buyOrder.makerTokenAmount = storedAmount;
 
@@ -396,7 +396,7 @@ describe('#openPosition', () => {
           openTx.buyOrder.makerFee,
           openTx.buyOrder.takerTokenAmount,
           openTx.principal
-        ).minus(new BigNumber(1));
+        ).minus(new BN(1));
         await issueTokensAndSetAllowances(openTx);
         openTx.buyOrder.makerFee = storedAmount;
 
@@ -414,7 +414,7 @@ describe('#openPosition', () => {
           openTx.loanOffering.rates.lenderFee,
           openTx.loanOffering.rates.maxAmount,
           openTx.principal
-        ).minus(new BigNumber(1));
+        ).minus(new BN(1));
         await issueTokensAndSetAllowances(openTx);
         openTx.loanOffering.rates.lenderFee = storedAmount;
 
@@ -433,7 +433,7 @@ describe('#openPosition', () => {
           openTx.loanOffering.rates.takerFee,
           openTx.loanOffering.rates.maxAmount,
           openTx.principal
-        ).minus(new BigNumber(1));
+        ).minus(new BN(1));
         openTx.buyOrder.takerFee = getPartialAmount(
           openTx.buyOrder.takerFee,
           openTx.buyOrder.takerTokenAmount,
@@ -522,7 +522,7 @@ describe('#closePosition', () => {
         ]);
 
         // Set the interest fee super high so it can't be paid
-        openTx.loanOffering.rates.interestRate = new BigNumber('4000e6');
+        openTx.loanOffering.rates.interestRate = new BN('4000e6');
         openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
 
         await issueTokensAndSetAllowances(openTx);
@@ -562,7 +562,7 @@ describe('#closePosition', () => {
           Margin.deployed()
         ]);
 
-        sellOrder.makerTokenAmount = openTx.principal.minus(new BigNumber(1));
+        sellOrder.makerTokenAmount = openTx.principal.minus(new BN(1));
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -630,7 +630,7 @@ describe('#closePosition', () => {
           Margin.deployed()
         ]);
 
-        sellOrder.makerTokenAmount = new BigNumber(100000);
+        sellOrder.makerTokenAmount = new BN(100000);
         sellOrder.ecSignature = await signOrder(sellOrder);
 
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -658,7 +658,7 @@ describe('#closePosition', () => {
         ]);
 
         const amountSave = sellOrder.makerTokenAmount;
-        sellOrder.makerTokenAmount = new BigNumber(0);
+        sellOrder.makerTokenAmount = new BN(0);
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.makerTokenAmount = amountSave;
         await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
@@ -674,7 +674,7 @@ describe('#closePosition', () => {
         ]);
 
         const amountSave = sellOrder.makerFee;
-        sellOrder.makerFee = new BigNumber(0);
+        sellOrder.makerFee = new BN(0);
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.makerFee = amountSave;
         await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));
@@ -690,7 +690,7 @@ describe('#closePosition', () => {
         ]);
 
         const amountSave = sellOrder.takerFee;
-        sellOrder.takerFee = new BigNumber(0);
+        sellOrder.takerFee = new BN(0);
         await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
         sellOrder.takerFee = amountSave;
         await expectThrow(callClosePosition(dydxMargin, openTx, sellOrder, openTx.principal));

@@ -1,6 +1,6 @@
 const expect = require('chai').expect;
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -24,7 +24,7 @@ const { issueAndSetAllowance } = require('./TokenHelper');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-BigNumber.config({ DECIMAL_PLACES: 80 });
+BN.config({ DECIMAL_PLACES: 80 });
 
 async function createOpenTx(
   accounts,
@@ -47,7 +47,7 @@ async function createOpenTx(
     owner: positionOwner || accounts[0],
     owedToken: OwedToken.address,
     heldToken: HeldToken.address,
-    principal: new BigNumber('1098765932109876544'),
+    principal: new BN('1098765932109876544'),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: trader || accounts[0],
@@ -207,7 +207,7 @@ function getExpectedHeldTokenFromSell(tx) {
     return null;
   }
   case ORDER_TYPE.DIRECT: {
-    return new BigNumber(0);
+    return new BN(0);
   }
   default:
     return null;
@@ -337,7 +337,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
     dydxMargin.getPositionBalance.call(positionId)
   ]);
   const owed = await getOwedAmountForTime(
-    new BigNumber(time2).minus(time1),
+    new BN(time2).minus(time1),
     tx.loanOffering.rates.interestPeriod,
     tx.loanOffering.rates.interestRate,
     tx.principal,
@@ -648,7 +648,7 @@ async function expectCloseLog(addresses, start, params) {
   const actualCloseAmount = start.principal.minus(endAmount);
 
   const owed = await getOwedAmountForTime(
-    new BigNumber(endTimestamp).minus(start.timestamp),
+    new BN(endTimestamp).minus(start.timestamp),
     params.openTx.loanOffering.rates.interestPeriod,
     params.openTx.loanOffering.rates.interestRate,
     actualCloseAmount,
@@ -774,7 +774,7 @@ async function callCancelLoanOffer(
   );
   const canceledAmount2 = await dydxMargin.getLoanCanceledAmount.call(loanOffering.loanHash);
 
-  const expectedCanceledAmount = BigNumber.min(
+  const expectedCanceledAmount = BN.min(
     canceledAmount1.plus(cancelAmount),
     loanOffering.rates.maxAmount
   );
@@ -782,7 +782,7 @@ async function callCancelLoanOffer(
 
   if (
     !canceledAmount1.equals(loanOffering.rates.maxAmount)
-    && !(new BigNumber(cancelAmount).equals(0))
+    && !(new BN(cancelAmount).equals(0))
   ) {
     expectLog(tx.logs[0], 'LoanOfferingCanceled', {
       loanHash: loanOffering.loanHash,
@@ -904,7 +904,7 @@ async function getPosition(dydxMargin, id) {
 async function doOpenPositionAndCall(
   accounts,
   {
-    requiredDeposit = new BigNumber(10),
+    requiredDeposit = new BN(10),
     salt = DEFAULT_SALT,
   } = {}
 ) {

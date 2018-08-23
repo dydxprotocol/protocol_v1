@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
 
@@ -23,13 +23,13 @@ const {
 const { wait } = require('@digix/tempo')(web3);
 
 let heldToken, weth, bucketLender, ethWrapper;
-const value = new BigNumber('1e18');
-const INTEREST_PERIOD = new BigNumber(60 * 60);
-const INTEREST_RATE = new BigNumber(0);
-const MAX_DURATION = new BigNumber(60 * 60 * 24 * 365);
-const CALL_TIMELIMIT = new BigNumber(1);
-const BUCKET_TIME = new BigNumber(60 * 60 * 24);
-const PRINCIPAL = new BigNumber('1e18');
+const value = new BN('1e18');
+const INTEREST_PERIOD = new BN(60 * 60);
+const INTEREST_RATE = new BN(0);
+const MAX_DURATION = new BN(60 * 60 * 24 * 365);
+const CALL_TIMELIMIT = new BN(1);
+const BUCKET_TIME = new BN(60 * 60 * 24);
+const PRINCIPAL = new BN('1e18');
 const DEPOSIT = PRINCIPAL.times(2);
 let NONCE = 101;
 let POSITION_ID;

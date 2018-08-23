@@ -1,6 +1,6 @@
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 module.exports = {
   SIGNATURE_TYPE: {
@@ -34,12 +34,12 @@ module.exports = {
     ]
   },
   BIGNUMBERS: {
-    ZERO: new BigNumber(0),
-    ONE_DAY_IN_SECONDS: new BigNumber(60 * 60 * 24),
-    ONE_YEAR_IN_SECONDS: new BigNumber(60 * 60 * 24 * 365),
-    MAX_UINT32: new BigNumber("4294967295"), // 2**32-1
-    MAX_UINT128: new BigNumber("340282366920938463463374607431768211455"), // 2**128-1
-    MAX_UINT256: new BigNumber(
+    ZERO: new BN(0),
+    ONE_DAY_IN_SECONDS: new BN(60 * 60 * 24),
+    ONE_YEAR_IN_SECONDS: new BN(60 * 60 * 24 * 365),
+    MAX_UINT32: new BN("4294967295"), // 2**32-1
+    MAX_UINT128: new BN("340282366920938463463374607431768211455"), // 2**128-1
+    MAX_UINT256: new BN(
       "115792089237316195423570985008687907853269984665640564039457584007913129639935"), // 2**256-1
   },
   BYTES32: {

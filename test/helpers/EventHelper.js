@@ -1,7 +1,7 @@
 const chai = require('chai')
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 function expectLog(log, name, params) {
   const nameErrorMessage = 'event ' + name + ' had incorrect name';
@@ -17,7 +17,7 @@ function expectLog(log, name, params) {
     if (expected === "unspecified") {
       expect(actual, errorMessage).to.be.not.equal(undefined);
     } else if (actual instanceof Object || expected instanceof Object) {
-      expect(actual, errorMessage).to.be.bignumber.equal(new BigNumber(params[key]));
+      expect(actual, errorMessage).to.be.bignumber.equal(new BN(params[key]));
     } else {
       expect(actual, errorMessage).to.be.equal(expected);
     }

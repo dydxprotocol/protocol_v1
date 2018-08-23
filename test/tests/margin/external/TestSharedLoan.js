@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const SharedLoan = artifacts.require("SharedLoan");
 const Margin = artifacts.require("Margin");
@@ -283,7 +283,7 @@ contract('SharedLoan', accounts => {
     });
 
     it('fails for msg.sender != Margin', async () => {
-      const increaseAmount = new BigNumber('1e18');
+      const increaseAmount = new BN('1e18');
       await expectThrow(
         SHARED_LOAN.CONTRACT.increaseLoanOnBehalfOf(
           SHARED_LOAN.INITIAL_LENDER,
@@ -454,8 +454,8 @@ contract('SharedLoan', accounts => {
     async function withdrawAccount(account, runningTally) {
       // withdraw once and validate change
       const w1 = await callWithdraw(account);
-      runningTally.heldToken = new BigNumber(runningTally.heldToken).plus(w1.heldGotten);
-      runningTally.owedToken = new BigNumber(runningTally.owedToken).plus(w1.owedGotten);
+      runningTally.heldToken = new BN(runningTally.heldToken).plus(w1.heldGotten);
+      runningTally.owedToken = new BN(runningTally.owedToken).plus(w1.owedGotten);
 
       // withdraw again and expect no change
       const w2 = await callWithdraw(account);
@@ -712,7 +712,7 @@ contract('SharedLoan', accounts => {
       await closeAmount(closer, principalShare.times(3));
 
       // add some heldToken dust
-      await heldToken.issueTo(SHARED_LOAN.CONTRACT.address, new BigNumber(1));
+      await heldToken.issueTo(SHARED_LOAN.CONTRACT.address, new BN(1));
 
       // withdraw all
       runningTallyA = await withdrawAccount(accountA, runningTallyA);

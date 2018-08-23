@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
@@ -370,5 +370,5 @@ async function getPositionLifetime(openTx, tx) {
   if (duration > maxDuration) {
     duration = maxDuration;
   }
-  return new BigNumber(duration);
+  return new BN(duration);
 }

@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -34,15 +34,15 @@ const {
 } = require('../../../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
-let OT = new BigNumber('1234567898765543211');
+let OT = new BN('1234567898765543211');
 
 const web3Instance = new Web3(web3.currentProvider);
 
-const INTEREST_PERIOD = new BigNumber(60 * 60);
-const INTEREST_RATE = new BigNumber(10 * 1000000);
-const MAX_DURATION = new BigNumber(60 * 60 * 24 * 365);
-const CALL_TIMELIMIT = new BigNumber(60 * 60 * 24);
-const BUCKET_TIME = new BigNumber(60 * 60 * 24);
+const INTEREST_PERIOD = new BN(60 * 60);
+const INTEREST_RATE = new BN(10 * 1000000);
+const MAX_DURATION = new BN(60 * 60 * 24 * 365);
+const CALL_TIMELIMIT = new BN(60 * 60 * 24);
+const BUCKET_TIME = new BN(60 * 60 * 24);
 let POSITION_ID, NONCE;
 
 let testLoanOwner, testMarginCallDelegator;
@@ -500,28 +500,28 @@ contract('BucketLender', accounts => {
 
       // minAmount
       incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.rates.minAmount = new BigNumber(1);
+      incrTx.loanOffering.rates.minAmount = new BN(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // minHeldToken
       incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.rates.minHeldToken = new BigNumber(1);
+      incrTx.loanOffering.rates.minHeldToken = new BN(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // lenderFee
       incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.rates.lenderFee = new BigNumber(1);
+      incrTx.loanOffering.rates.lenderFee = new BN(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
 
       // takerFee
       incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.rates.takerFee = new BigNumber(1);
+      incrTx.loanOffering.rates.takerFee = new BN(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
@@ -535,7 +535,7 @@ contract('BucketLender', accounts => {
 
       // salt
       incrTx = createIncreaseTx(trader, OT);
-      incrTx.loanOffering.salt = new BigNumber(1);
+      incrTx.loanOffering.salt = new BN(1);
       await expectThrow(
         callIncreasePosition(margin, incrTx)
       );
@@ -680,7 +680,7 @@ contract('BucketLender', accounts => {
 
       const incrTx = await createOpenTx(accounts);
       incrTx.loanOffering.owner = testLoanOwner.address;
-      incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+      incrTx.loanOffering.rates.minHeldToken = new BN(0);
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
       await issueTokensAndSetAllowances(incrTx);
       incrTx.id = positionId;
@@ -947,7 +947,7 @@ contract('BucketLender', accounts => {
 
   describe('#withdrawExcessToken', () => {
     const reciever = accounts[9];
-    const amount = new BigNumber("1123498756213");
+    const amount = new BN("1123498756213");
 
     async function doWithdrawExtra(token, toExpect) {
       const [bl0, rc0] = await Promise.all([
@@ -1682,7 +1682,7 @@ contract('BucketLender', accounts => {
     });
 
     it('Integration test with small numbers', async () => {
-      OT = new BigNumber(1);
+      OT = new BN(1);
       await setUpPosition(accounts);
       await runAliceBot();
 

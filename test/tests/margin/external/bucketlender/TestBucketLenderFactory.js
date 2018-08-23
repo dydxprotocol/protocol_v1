@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -35,13 +35,13 @@ contract('BucketLenderFactory', () => {
   describe('createBucketLender', () => {
     it('succeeds', async () => {
       const positionId = BYTES32.TEST[0];
-      const bucketTime = new BigNumber(123);
-      const interestRate = new BigNumber(456);
-      const interestPeriod = new BigNumber(789);
-      const maxDuration = new BigNumber(101112);
-      const callTimelimit = new BigNumber(131415);
-      const numerator = new BigNumber(161718);
-      const denominator = new BigNumber(192021);
+      const bucketTime = new BN(123);
+      const interestRate = new BN(456);
+      const interestPeriod = new BN(789);
+      const maxDuration = new BN(101112);
+      const callTimelimit = new BN(131415);
+      const numerator = new BN(161718);
+      const denominator = new BN(192021);
       const marginCaller = ADDRESSES.TEST[0];
       const withdrawer = ADDRESSES.TEST[2];
 

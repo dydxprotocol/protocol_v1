@@ -30,7 +30,7 @@ const {
   TOKENIZED_POSITION_STATE
 } = require('./ERC20PositionHelper');
 const { wait } = require('@digix/tempo')(web3);
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 contract('ERC20Long', accounts => {
   let dydxMargin, owedToken, heldToken;
@@ -171,7 +171,7 @@ contract('ERC20Long', accounts => {
   async function marginCallPositions(args) {
     args = args || {};
     args.cancel = args.cancel || false;
-    const requiredDeposit = new BigNumber(10);
+    const requiredDeposit = new BN(10);
 
     if (args.cancel) {
       await Promise.all([
@@ -680,7 +680,7 @@ contract('ERC20Long', accounts => {
       args.throws = args.throws || false;
 
       let incrTx = await createOpenTx(acts, { salt: 99999 + pepper });
-      incrTx.loanOffering.rates.minHeldToken = new BigNumber(0);
+      incrTx.loanOffering.rates.minHeldToken = new BN(0);
       incrTx.loanOffering.signature = await signLoanOffering(incrTx.loanOffering);
       incrTx.owner = position.TOKEN_CONTRACT.address;
       await issueTokensAndSetAllowances(incrTx);
@@ -794,7 +794,7 @@ contract('ERC20Long', accounts => {
 
     it('succeeds for multiple accounts', async () => {
       // close half, force recover, then some random person can't withdraw any funds
-      const heldTokenAmount = new BigNumber("1e18");
+      const heldTokenAmount = new BN("1e18");
       const rando = accounts[9];
       const halfHolder = ADDRESSES.TEST[6];
       const noHolder = ADDRESSES.TEST[7];
@@ -874,7 +874,7 @@ contract('ERC20Long', accounts => {
 
     it('returns all HeldToken when user has all tokens', async () => {
       // close half, force recover, then some random person can't withdraw any funds
-      const heldTokenAmount = new BigNumber("1e18");
+      const heldTokenAmount = new BN("1e18");
       const rando = accounts[9];
 
       for (let type in POSITIONS) {

@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TestTokenInteract = artifacts.require("TestTokenInteract");
 const TestToken = artifacts.require("TestToken");
@@ -12,7 +12,7 @@ const { expectThrow } = require('../../helpers/ExpectHelper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 
 contract('TokenInteract', accounts => {
-  const amount = new BigNumber(12);
+  const amount = new BN(12);
   let TokenInteract;
   const holder1 = accounts[4];
   const recipient = accounts[5];

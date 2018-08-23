@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const { wait } = require('@digix/tempo')(web3);
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
@@ -420,11 +420,11 @@ describe('#increasePosition', () => {
         ZeroExProxy.address
       );
 
-      increasePosTx.loanOffering.rates.maxAmount = new BigNumber(increasePosTx.principal);
-      increasePosTx.loanOffering.rates.lenderFee = new BigNumber(0);
-      increasePosTx.loanOffering.rates.takerFee = new BigNumber(0);
-      increasePosTx.loanOffering.rates.minAmount = new BigNumber(1);
-      increasePosTx.loanOffering.rates.minHeldToken = new BigNumber(1);
+      increasePosTx.loanOffering.rates.maxAmount = new BN(increasePosTx.principal);
+      increasePosTx.loanOffering.rates.lenderFee = new BN(0);
+      increasePosTx.loanOffering.rates.takerFee = new BN(0);
+      increasePosTx.loanOffering.rates.minAmount = new BN(1);
+      increasePosTx.loanOffering.rates.minHeldToken = new BN(1);
       increasePosTx.loanOffering.signature = await signLoanOffering(increasePosTx.loanOffering);
 
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));

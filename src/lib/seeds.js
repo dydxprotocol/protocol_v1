@@ -16,7 +16,7 @@
 
 */
 
-import BigNumber from 'bignumber.js';
+import BN from 'bignumber.js';
 import SeedsJson from '../../build/seeds.json';
 
 SeedsJson.positions = SeedsJson.positions.map(mapPositionFromJson);
@@ -27,25 +27,25 @@ export default SeedsJson;
 function mapPositionFromJson(jsonPosition) {
   return {
     ...jsonPosition,
-    position: new BigNumber(jsonPosition.principal),
-    interestRate: new BigNumber(jsonPosition.interestRate),
-    requiredDeposit: new BigNumber(jsonPosition.requiredDeposit),
-    callTimeLimit: new BigNumber(jsonPosition.callTimeLimit),
-    callTimestamp: new BigNumber(jsonPosition.callTimestamp),
-    startTimestamp: new BigNumber(jsonPosition.startTimestamp),
-    maxDuration: new BigNumber(jsonPosition.maxDuration),
-    interestPeriod: new BigNumber(jsonPosition.interestPeriod),
+    position: new BN(jsonPosition.principal),
+    interestRate: new BN(jsonPosition.interestRate),
+    requiredDeposit: new BN(jsonPosition.requiredDeposit),
+    callTimeLimit: new BN(jsonPosition.callTimeLimit),
+    callTimestamp: new BN(jsonPosition.callTimestamp),
+    startTimestamp: new BN(jsonPosition.startTimestamp),
+    maxDuration: new BN(jsonPosition.maxDuration),
+    interestPeriod: new BN(jsonPosition.interestPeriod),
   }
 }
 
 function mapOrderFromJson(jsonOrder) {
   return {
     ...jsonOrder,
-    expirationUnixTimestampSec: new BigNumber(jsonOrder.expirationUnixTimestampSec),
-    makerFee: new BigNumber(jsonOrder.makerFee),
-    salt: new BigNumber(jsonOrder.salt),
-    takerFee: new BigNumber(jsonOrder.takerFee),
-    makerTokenAmount: new BigNumber(jsonOrder.makerTokenAmount),
-    takerTokenAmount: new BigNumber(jsonOrder.takerTokenAmount),
+    expirationUnixTimestampSec: new BN(jsonOrder.expirationUnixTimestampSec),
+    makerFee: new BN(jsonOrder.makerFee),
+    salt: new BN(jsonOrder.salt),
+    takerFee: new BN(jsonOrder.takerFee),
+    makerTokenAmount: new BN(jsonOrder.makerTokenAmount),
+    takerTokenAmount: new BN(jsonOrder.takerTokenAmount),
   };
 }

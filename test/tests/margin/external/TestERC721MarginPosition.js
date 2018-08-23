@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
 const Margin = artifacts.require("Margin");
@@ -191,7 +191,7 @@ contract('ERC721MarginPosition', accounts => {
     });
 
     it('fails for non-owner', async () => {
-      const heldTokenAmount = new BigNumber('1e18');
+      const heldTokenAmount = new BN('1e18');
       const rando = accounts[8];
 
       await issueTokenToAccountInAmountAndApproveProxy(
@@ -210,7 +210,7 @@ contract('ERC721MarginPosition', accounts => {
     });
 
     it('succeeds for owner', async () => {
-      const heldTokenAmount = new BigNumber('1e18');
+      const heldTokenAmount = new BN('1e18');
 
       await issueTokenToAccountInAmountAndApproveProxy(
         heldToken,

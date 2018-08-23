@@ -1,4 +1,4 @@
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
@@ -29,12 +29,12 @@ async function createLoanOffering(
     lenderFeeTokenAddress: FeeToken.address,
     takerFeeTokenAddress: FeeToken.address,
     rates: {
-      maxAmount:          new BigNumber('3098765432109876541'),
-      minAmount:          new BigNumber('123456789012345789'),
-      minHeldToken:       new BigNumber('11098765432109871111'),
-      lenderFee:          new BigNumber('11098765432109871'),
-      takerFee:           new BigNumber('21098765432109871'),
-      interestRate:       new BigNumber('3650101'), // ~3.65% nominal per year
+      maxAmount:          new BN('3098765432109876541'),
+      minAmount:          new BN('123456789012345789'),
+      minHeldToken:       new BN('11098765432109871111'),
+      lenderFee:          new BN('11098765432109871'),
+      takerFee:           new BN('21098765432109871'),
+      interestRate:       new BN('3650101'), // ~3.65% nominal per year
       interestPeriod:     interestPeriod || BIGNUMBERS.ONE_DAY_IN_SECONDS
     },
     expirationTimestamp:  1000000000000, // 31.69 millennia from 1970

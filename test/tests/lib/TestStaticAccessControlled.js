@@ -1,14 +1,14 @@
 const expect = require('chai').expect;
 const { wait } = require('@digix/tempo')(web3);
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TestStaticAccessControlled = artifacts.require("TestStaticAccessControlled");
 const { expectThrow } = require('../../helpers/ExpectHelper');
 const { validateStaticAccessControlledConstants } = require('../../helpers/AccessControlledHelper');
 
 contract('StaticAccessControlled', function(accounts) {
-  const gracePeriod = new BigNumber('1234567');
-  const num1 = new BigNumber(12);
+  const gracePeriod = new BN('1234567');
+  const num1 = new BN(12);
   const [addr1, addr2] = [accounts[2], accounts[3]];
   let contract;
 

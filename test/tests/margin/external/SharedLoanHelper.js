@@ -1,10 +1,10 @@
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const { ADDRESSES } = require('../../../helpers/Constants');
 
 const SHARED_LOAN_STATE = {
-  UNINITIALIZED: new BigNumber(0),
-  OPEN: new BigNumber(1),
-  CLOSED: new BigNumber(2)
+  UNINITIALIZED: new BN(0),
+  OPEN: new BN(1),
+  CLOSED: new BN(2)
 };
 
 async function getSharedLoanConstants(sharedLoanContract, initialLender) {

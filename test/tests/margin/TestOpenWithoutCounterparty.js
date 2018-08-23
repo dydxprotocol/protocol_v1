@@ -2,7 +2,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const Web3 = require('web3');
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
@@ -260,14 +260,14 @@ async function setup(accounts) {
   const loanOwner = accounts[2];
   const positionOwner = accounts[3];
 
-  const deposit   = new BigNumber('1098765932109876543');
-  const principal = new BigNumber('2387492837498237491');
-  const nonce = new BigNumber('19238');
+  const deposit   = new BN('1098765932109876543');
+  const principal = new BN('2387492837498237491');
+  const nonce = new BN('19238');
 
   const callTimeLimit = BIGNUMBERS.ONE_DAY_IN_SECONDS;
   const maxDuration = BIGNUMBERS.ONE_YEAR_IN_SECONDS;
 
-  const interestRate = new BigNumber('600000');
+  const interestRate = new BN('600000');
   const interestPeriod = BIGNUMBERS.ONE_DAY_IN_SECONDS;
 
   const heldToken = await HeldToken.deployed();

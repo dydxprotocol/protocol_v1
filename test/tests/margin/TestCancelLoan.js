@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const { expectThrow } = require('../../helpers/ExpectHelper');
@@ -36,7 +36,7 @@ describe('#cancelLoanOffering', () => {
         getNewLoanOffering(accounts)
       ]);
 
-      const cancelAmount = new BigNumber(1000);
+      const cancelAmount = new BN(1000);
 
       const tx = await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
 
@@ -53,8 +53,8 @@ describe('#cancelLoanOffering', () => {
         getNewLoanOffering(accounts)
       ]);
 
-      const cancelAmount = new BigNumber(1000);
-      const cancelAmount2 = new BigNumber(2000);
+      const cancelAmount = new BN(1000);
+      const cancelAmount2 = new BN(2000);
 
       await callCancelLoanOffer(dydxMargin, loanOffering, cancelAmount);
       await expectCancelAmount(dydxMargin, loanOffering, cancelAmount);
@@ -123,7 +123,7 @@ describe('#cancelLoanOffering', () => {
 
       // Test unexpired loan offering
       let loanOfferingGood = Object.assign({}, loanOffering);
-      loanOfferingGood.expirationTimestamp = new BigNumber(now).plus(1000);
+      loanOfferingGood.expirationTimestamp = new BN(now).plus(1000);
       loanOfferingGood.signature = await signLoanOffering(loanOfferingGood);
       await callCancelLoanOffer(
         dydxMargin,
@@ -135,7 +135,7 @@ describe('#cancelLoanOffering', () => {
 
       // Test expired loan offering
       let loanOfferingBad = Object.assign({}, loanOffering);
-      loanOfferingBad.expirationTimestamp = new BigNumber(now);
+      loanOfferingBad.expirationTimestamp = new BN(now);
       loanOfferingBad.signature = await signLoanOffering(loanOfferingBad);
       await expectThrow(callCancelLoanOffer(
         dydxMargin,

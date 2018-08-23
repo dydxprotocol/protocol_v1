@@ -1,5 +1,5 @@
 const expect = require('chai').expect;
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require('TokenA');
 const TokenProxy = artifacts.require('TokenProxy');
@@ -109,7 +109,7 @@ describe('MarginAdmin', () => {
 
         await dydxMargin.marginCall(
           openTx.id,
-          new BigNumber(10),
+          new BN(10),
           { from: openTx.loanOffering.payer }
         );
 
@@ -134,7 +134,7 @@ describe('MarginAdmin', () => {
           HeldToken.deployed()
         ]);
         const openTx = await doOpenPosition(accounts);
-        const amount = new BigNumber(1000);
+        const amount = new BN(1000);
 
         await issueAndSetAllowance(
           heldToken,
@@ -161,7 +161,7 @@ describe('MarginAdmin', () => {
   });
 
   describe('#cancelLoanStateControl', () => {
-    const cancelAmount = new BigNumber(100000);
+    const cancelAmount = new BN(100000);
 
     async function test(accounts, state, shouldFail = false) {
       const openTx = await doOpenPosition(accounts);
@@ -212,7 +212,7 @@ describe('MarginAdmin', () => {
   });
 
   describe('#closePositionStateControl', () => {
-    const closeAmount = new BigNumber(100000);
+    const closeAmount = new BN(100000);
 
     async function test(accounts, state, shouldFail = false) {
       const openTx = await doOpenPosition(accounts);
@@ -257,7 +257,7 @@ describe('MarginAdmin', () => {
 
 
   describe('#closePositionDirectlyStateControl', () => {
-    const closeAmount = new BigNumber(100000);
+    const closeAmount = new BN(100000);
     async function test(accounts, state) {
       const openTx = await doOpenPosition(accounts);
       const dydxMargin = await Margin.deployed();

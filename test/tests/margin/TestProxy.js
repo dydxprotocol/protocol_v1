@@ -1,7 +1,7 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const TokenProxy = artifacts.require("TokenProxy");
 const TestToken = artifacts.require("TestToken");
@@ -11,8 +11,8 @@ const { validateStaticAccessControlledConstants } = require('../../helpers/Acces
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 
 contract('TokenProxy', accounts => {
-  const gracePeriod = new BigNumber('1234567');
-  const num1 = new BigNumber(12);
+  const gracePeriod = new BN('1234567');
+  const num1 = new BN(12);
   let contract, tokenA, tokenB;
 
   beforeEach(async () => {
@@ -113,8 +113,8 @@ contract('TokenProxy', accounts => {
 
   describe('#available', () => {
     let account;
-    const num1 = new BigNumber('1e18');
-    const num2 = new BigNumber('5e18');
+    const num1 = new BN('1e18');
+    const num2 = new BN('5e18');
 
     async function expectAvailable(expected) {
       const available = await contract.available.call(account, tokenA.address);

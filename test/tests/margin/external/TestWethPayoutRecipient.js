@@ -3,7 +3,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const Web3 = require('web3');
 const web3Instance = new Web3(web3.currentProvider);
-const BigNumber = require('bignumber.js');
+const BN = require('bignumber.js');
 
 const WethPayoutRecipient = artifacts.require("WethPayoutRecipient");
 const HeldToken = artifacts.require("TokenA");
@@ -24,7 +24,7 @@ contract('DutchAuctionCloser', accounts => {
   let dydxMargin, tokenProxy, weth, heldToken;
   const opener = accounts[9];
   const loanHolder = accounts[8];
-  const OgAmount = new BigNumber('1e18');
+  const OgAmount = new BN('1e18');
   let positionId1, positionId2;
 
   before('retrieve deployed contracts, set up two large positions', async () => {
@@ -110,11 +110,11 @@ contract('DutchAuctionCloser', accounts => {
       let order = {
         type: ORDER_TYPE.ZERO_EX,
         exchangeContractAddress: ZeroExExchange.address,
-        expirationUnixTimestampSec: new BigNumber(100000000000000),
+        expirationUnixTimestampSec: new BN(100000000000000),
         feeRecipient: ADDRESSES.ZERO,
         maker: seller,
         makerFee: BIGNUMBERS.ZERO,
-        salt: new BigNumber(11),
+        salt: new BN(11),
         taker: ADDRESSES.ZERO,
         takerFee: BIGNUMBERS.ZERO,
         makerTokenAddress: weth.address,
