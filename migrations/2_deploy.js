@@ -191,9 +191,7 @@ async function deploySecondLayer(deployer, network) {
       [Margin.address]
     ),
     deployer.deploy(
-      OpenDirectlyExchangeWrapper,
-      Margin.address,
-      TokenProxy.address
+      OpenDirectlyExchangeWrapper
     ),
     deployer.deploy(
       ERC721MarginPosition,
