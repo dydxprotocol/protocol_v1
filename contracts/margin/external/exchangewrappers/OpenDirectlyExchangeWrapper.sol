@@ -40,26 +40,17 @@ contract OpenDirectlyExchangeWrapper is
 {
     using SafeMath for uint256;
 
-    constructor(
-        address margin,
-        address dydxProxy
-    )
-        public
-        ExchangeWrapper(margin, dydxProxy)
-    {
-    }
-
     // ============ Margin-Only Functions ============
 
     function exchange(
+        address tradeOriginator,
+        address /* receiver */,
         address /* makerToken */,
         address takerToken,
-        address tradeOriginator,
         uint256 requestedFillAmount,
         bytes /* orderData */
     )
         external
-        onlyMargin
         returns (uint256)
     {
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);

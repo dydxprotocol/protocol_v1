@@ -206,9 +206,10 @@ library ClosePositionImpl {
 
         // Trade the heldToken for the owedToken
         uint256 receivedOwedToken = ExchangeWrapper(transaction.exchangeWrapper).exchange(
+            msg.sender,
+            state.TOKEN_PROXY,
             transaction.owedToken,
             transaction.heldToken,
-            msg.sender,
             buybackCostInHeldToken,
             orderData
         );

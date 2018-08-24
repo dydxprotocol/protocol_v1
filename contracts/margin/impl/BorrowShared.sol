@@ -201,9 +201,10 @@ library BorrowShared {
         uint256 heldTokenFromSell = Math.min256(
             maxHeldTokenToBuy,
             ExchangeWrapper(transaction.exchangeWrapper).exchange(
+                msg.sender,
+                state.TOKEN_PROXY,
                 transaction.loanOffering.heldToken,
                 transaction.loanOffering.owedToken,
-                msg.sender,
                 sellAmount,
                 orderData
             )
