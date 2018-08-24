@@ -19,7 +19,6 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ClosePositionShared } from "./ClosePositionShared.sol";
 import { MarginState } from "./MarginState.sol";

@@ -34,8 +34,9 @@ contract ExchangeWrapper {
     /**
      * Exchange some amount of takerToken for makerToken.
      *
-     * @param  sender               Address of the initiator of the trade (however, this value
-     *                              cannot always be trusted)
+     * @param  tradeOriginator      Address of the initiator of the trade (however, this value
+     *                              cannot always be trusted as it is set at the discretion of the
+     *                              msg.sender)
      * @param  receiver             Address to set allowance on once the trade has completed
      * @param  makerToken           Address of makerToken, the token to receive
      * @param  takerToken           Address of takerToken, the token to pay
@@ -44,7 +45,7 @@ contract ExchangeWrapper {
      * @return                      The amount of makerToken received
      */
     function exchange(
-        address sender,
+        address tradeOriginator,
         address receiver,
         address makerToken,
         address takerToken,

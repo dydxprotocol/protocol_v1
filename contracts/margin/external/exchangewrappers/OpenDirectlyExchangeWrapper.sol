@@ -43,7 +43,7 @@ contract OpenDirectlyExchangeWrapper is
     // ============ Margin-Only Functions ============
 
     function exchange(
-        address sender,
+        address tradeOriginator,
         address /* receiver */,
         address /* makerToken */,
         address takerToken,
@@ -56,7 +56,7 @@ contract OpenDirectlyExchangeWrapper is
         assert(TokenInteract.balanceOf(takerToken, address(this)) >= requestedFillAmount);
         assert(requestedFillAmount > 0);
 
-        TokenInteract.transfer(takerToken, sender, requestedFillAmount);
+        TokenInteract.transfer(takerToken, tradeOriginator, requestedFillAmount);
 
         return 0;
     }

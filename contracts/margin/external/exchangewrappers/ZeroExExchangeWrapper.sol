@@ -95,7 +95,7 @@ contract ZeroExExchangeWrapper is
     // ============ Public Functions ============
 
     function exchange(
-        address sender,
+        address tradeOriginator,
         address receiver,
         address makerToken,
         address takerToken,
@@ -119,7 +119,7 @@ contract ZeroExExchangeWrapper is
 
         transferTakerFee(
             order,
-            sender,
+            tradeOriginator,
             requestedFillAmount
         );
 
