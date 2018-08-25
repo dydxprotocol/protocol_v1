@@ -2,16 +2,16 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 
-contract ERC20 {
+interface ERC20 {
     function totalSupply()
-        public
+        external
         view
         returns (uint);
 
     function balanceOf(
         address guy
     )
-        public
+        external
         view
         returns (uint);
 
@@ -19,7 +19,7 @@ contract ERC20 {
         address src,
         address guy
     )
-        public
+        external
         view
         returns (uint);
 
@@ -27,14 +27,14 @@ contract ERC20 {
         address guy,
         uint wad
     )
-        public
+        external
         returns (bool);
 
     function transfer(
         address dst,
         uint wad
     )
-        public
+        external
         returns (bool);
 
     function transferFrom(
@@ -42,6 +42,6 @@ contract ERC20 {
         address dst,
         uint wad
     )
-        public
+        external
         returns (bool);
 }

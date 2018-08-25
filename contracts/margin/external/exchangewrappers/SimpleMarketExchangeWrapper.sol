@@ -19,9 +19,9 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { ERC20 } from "../../../external/Maker/ERC20.sol";
 import { SimpleMarketInterface } from "../../../external/Maker/SimpleMarketInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
@@ -37,7 +37,7 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * contracts to trade using a specific order. Since any MatchingMarket is also a SimpleMarket, this
  * ExchangeWrapper can also be used for any MatchingMarket.
  */
-contract MatchingMarketExchangeWrapper is
+contract SimpleMarketExchangeWrapper is
     HasNoEther,
     HasNoContracts,
     ExchangeWrapper
@@ -52,27 +52,24 @@ contract MatchingMarketExchangeWrapper is
     // ============ Constructor ============
 
     constructor(
-        address margin,
-        address dydxProxy,
         address simpleMarket
     )
         public
-        ExchangeWrapper(margin, dydxProxy)
     {
         SIMPLE_MARKET = simpleMarket;
     }
 
-    // ============ Margin-Only Functions ============
+    // ============ Public Functions ============
 
     function exchange(
+        address /*tradeOriginator*/,
+        address receiver,
         address makerToken,
         address takerToken,
-        address /*tradeOriginator*/,
         uint256 requestedFillAmount,
         bytes orderData
     )
         external
-        onlyMargin
         returns (uint256)
     {
         assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
@@ -113,7 +110,7 @@ contract MatchingMarketExchangeWrapper is
 
         ensureAllowance(
             makerToken,
-            DYDX_PROXY,
+            receiver,
             makerAmount
         );
 

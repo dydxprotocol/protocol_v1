@@ -19,9 +19,9 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { SafeMath } from "zeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "zeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "zeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
+import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { ERC20 } from "../../../external/Maker/ERC20.sol";
 import { MatchingMarketInterface } from "../../../external/Maker/MatchingMarketInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
@@ -50,27 +50,24 @@ contract MatchingMarketExchangeWrapper is
     // ============ Constructor ============
 
     constructor(
-        address margin,
-        address dydxProxy,
         address matchingMarket
     )
         public
-        ExchangeWrapper(margin, dydxProxy)
     {
         MATCHING_MARKET = matchingMarket;
     }
 
-    // ============ Margin-Only Functions ============
+    // ============ Public Functions ============
 
     function exchange(
+        address /*tradeOriginator*/,
+        address receiver,
         address makerToken,
         address takerToken,
-        address /*tradeOriginator*/,
         uint256 requestedFillAmount,
         bytes orderData
     )
         external
-        onlyMargin
         returns (uint256)
     {
         assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
@@ -86,7 +83,7 @@ contract MatchingMarketExchangeWrapper is
 
         ensureAllowance(
             makerToken,
-            DYDX_PROXY,
+            receiver,
             receivedMakerAmount
         );
 
@@ -103,7 +100,7 @@ contract MatchingMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        uint256 cost = MatchingMarketInterface(MATCHING_MARKET).getBuyAmount(
+        uint256 cost = MatchingMarketInterface(MATCHING_MARKET).getPayAmount(
             ERC20(takerToken),
             ERC20(makerToken),
             desiredMakerToken
