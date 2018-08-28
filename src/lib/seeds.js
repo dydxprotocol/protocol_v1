@@ -35,6 +35,7 @@ function mapPositionFromJson(jsonPosition) {
     startTimestamp: new BigNumber(jsonPosition.startTimestamp),
     maxDuration: new BigNumber(jsonPosition.maxDuration),
     interestPeriod: new BigNumber(jsonPosition.interestPeriod),
+    balance: new BigNumber(jsonPosition.balance),
   }
 }
 
