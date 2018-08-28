@@ -73,16 +73,14 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
      * different ERC20 before returning the funds to the holder.
      *
      * @param  erc20Position    The address of the ERC20Position contract to withdraw from
-     * @param  withdrawnToken   The address of the token to withdraw from the ERC20Position
      * @param  returnedToken    The address of the token that is returned to the token holder
      * @param  exchangeWrapper  The address of the ExchangeWrapper
      * @param  orderData        Arbitrary bytes data for any information to pass to the exchange
      * @return                  [1] The number of tokens withdrawn
      *                          [2] The number of tokens returned to the user
      */
-    function withdrawFromERC20Position(
+    function withdraw(
         address erc20Position,
-        address withdrawnToken,
         address returnedToken,
         address exchangeWrapper,
         bytes orderData
@@ -98,6 +96,7 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         }
 
         // do the exchange
+        address withdrawnToken = ERC20Position(erc20Position).heldToken();
         withdrawnToken.transfer(exchangeWrapper, tokensWithdrawn);
         uint256 tokensReturned = ExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,

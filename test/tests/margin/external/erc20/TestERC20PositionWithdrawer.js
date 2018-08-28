@@ -117,7 +117,7 @@ contract('ERC20PositionWithdrawer', accounts => {
     expect(fullCalled).to.be.eq(!args.cancel);
   }
 
-  describe('#withdrawFromERC20Position', () => {
+  describe('#withdraw', () => {
     beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
       async () => {
         await setUpPositions();
@@ -142,9 +142,8 @@ contract('ERC20PositionWithdrawer', accounts => {
       // rando can't withdraw
       const rando = accounts[9];
       const receipt = await transact(
-        withdrawer.withdrawFromERC20Position,
+        withdrawer.withdraw,
         POSITION.TOKEN_CONTRACT.address,
-        heldToken.address,
         owedToken.address,
         openDirectlyExchangeWrapper.address,
         BYTES.EMPTY,
@@ -171,9 +170,8 @@ contract('ERC20PositionWithdrawer', accounts => {
 
       // do the withdraw
       const receipt = await transact(
-        withdrawer.withdrawFromERC20Position,
+        withdrawer.withdraw,
         POSITION.TOKEN_CONTRACT.address,
-        heldToken.address,
         owedToken.address,
         testExchangeWrapper.address,
         BYTES.EMPTY,
@@ -214,9 +212,8 @@ contract('ERC20PositionWithdrawer', accounts => {
 
       // do the withdraw
       const receipt = await transact(
-        withdrawer.withdrawFromERC20Position,
+        withdrawer.withdraw,
         POSITION.TOKEN_CONTRACT.address,
-        heldToken.address,
         weth.address,
         testExchangeWrapper.address,
         BYTES.EMPTY,
