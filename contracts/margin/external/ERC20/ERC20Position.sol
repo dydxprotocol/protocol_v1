@@ -88,7 +88,7 @@ contract ERC20Position is
     /**
      * A user burned tokens to withdraw heldTokens from this contract after the position was closed
      */
-    event TokensRedeemedAfterForceClose(
+    event Withdraw(
         address indexed redeemer,
         uint256 tokensRedeemed,
         uint256 heldTokenPayout
@@ -97,7 +97,7 @@ contract ERC20Position is
     /**
      * A user burned tokens in order to partially close the position
      */
-    event TokensRedeemedForClose(
+    event Close(
         address indexed redeemer,
         uint256 closeAmount
     );
@@ -445,7 +445,7 @@ contract ERC20Position is
         // Send the redeemer their proportion of heldToken
         TokenInteract.transfer(heldToken, receiver, heldTokenPayout);
 
-        emit TokensRedeemedAfterForceClose(onBehalfOf, value, heldTokenPayout);
+        emit Withdraw(onBehalfOf, value, heldTokenPayout);
 
         return heldTokenPayout;
     }
@@ -515,7 +515,7 @@ contract ERC20Position is
         balances[closer] = balance.sub(tokenAmount);
         totalSupply_ = totalSupply_.sub(tokenAmount);
 
-        emit TokensRedeemedForClose(closer, tokenAmount);
+        emit Close(closer, tokenAmount);
 
         return allowedCloseAmount;
     }
