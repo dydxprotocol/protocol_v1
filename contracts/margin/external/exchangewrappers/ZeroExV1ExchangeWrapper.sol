@@ -29,12 +29,16 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title ZeroExExchangeWrapper
+ * @title ZeroExV1ExchangeWrapper
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with 0x Version 1
+ *
+ * Note: Any tokens left in this contract at the end of a transaction are able to be stolen.
+ * DO NOT transfer() tokens to this contract or call exchange() from an account.
+ * ONLY call this contract from another contract.
  */
-contract ZeroExExchangeWrapper is
+contract ZeroExV1ExchangeWrapper is
     HasNoEther,
     HasNoContracts,
     ExchangeWrapper
@@ -64,8 +68,13 @@ contract ZeroExExchangeWrapper is
     // msg.senders that will put the correct tradeOriginator in callerData when doing an exchange
     mapping (address => bool) public TRUSTED_MSG_SENDER;
 
+    // address of the ZeroEx V1 Exchange
     address public ZERO_EX_EXCHANGE;
+
+    // address of the ZeroEx V1 TokenTransferProxy
     address public ZERO_EX_TOKEN_PROXY;
+
+    // address of the ZRX token
     address public ZRX;
 
     // ============ Constructor ============
@@ -109,12 +118,12 @@ contract ZeroExExchangeWrapper is
 
         require(
             requestedFillAmount <= order.takerTokenAmount,
-            "ZeroExExchangeWrapper#exchange: Requested fill amount larger than order size"
+            "ZeroExV1ExchangeWrapper#exchange: Requested fill amount larger than order size"
         );
 
         require(
             requestedFillAmount <= takerToken.balanceOf(address(this)),
-            "ZeroExExchangeWrapper#exchange: Requested fill amount larger than tokens held"
+            "ZeroExV1ExchangeWrapper#exchange: Requested fill amount larger than tokens held"
         );
 
         transferTakerFee(
@@ -189,7 +198,7 @@ contract ZeroExExchangeWrapper is
 
         require(
             TRUSTED_MSG_SENDER[msg.sender],
-            "ZeroExExchangeWrapper#transferTakerFee: Only trusted senders can dictate the fee payer"
+            "ZeroExV1ExchangeWrapper#transferTakerFee: Only trusted senders can set a fee payer"
         );
 
         ZRX.transferFrom(
@@ -233,7 +242,7 @@ contract ZeroExExchangeWrapper is
 
         require(
             filledTakerTokenAmount == requestedFillAmount,
-            "ZeroExExchangeWrapper#doTrade: Could not fill requested amount"
+            "ZeroExV1ExchangeWrapper#doTrade: Could not fill requested amount"
         );
 
         uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(

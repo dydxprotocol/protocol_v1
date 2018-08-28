@@ -8,7 +8,7 @@
 ### Second Layer
 - DutchAuctionCloser:              [0x4e338944afbace1f1095b1fde436f91e79d11486](https://kovan.etherscan.io/address/0x4e338944afbace1f1095b1fde436f91e79d11486)
 - ERC721MarginPosition:            [0x3d1720538d31c5a396deb00ab9956dec072a6423](https://kovan.etherscan.io/address/0x3d1720538d31c5a396deb00ab9956dec072a6423)
-- ZeroExExchangeWrapper:           [0x721976badf842a263f8d1a5d64c5578a4368f330](https://kovan.etherscan.io/address/0x721976badf842a263f8d1a5d64c5578a4368f330)
+- ZeroExV1ExchangeWrapper:           [0x721976badf842a263f8d1a5d64c5578a4368f330](https://kovan.etherscan.io/address/0x721976badf842a263f8d1a5d64c5578a4368f330)
 - OpenDirectlyExchangeWrapper:     [0x5aab90bacc2d3d6eb1d208920bdb0b3c3278e24d](https://kovan.etherscan.io/address/0x5aab90bacc2d3d6eb1d208920bdb0b3c3278e24d)
 - ERC20ShortFactory:               [0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c](https://kovan.etherscan.io/address/0x1979bb1aa89b8f35ce1a891b4e7508faca07c01c)
 - ERC20LongFactory:                [0x8adf53551449c56394c2952ed8f01604e0de2683](https://kovan.etherscan.io/address/0x8adf53551449c56394c2952ed8f01604e0de2683)
@@ -37,7 +37,7 @@
 ### Second Layer
 - DutchAuctionCloser:              [0x746e9b178c9af049bbab25110f8f98907d36463e](https://kovan.etherscan.io/address/0x746e9b178c9af049bbab25110f8f98907d36463e)
 - ERC721MarginPosition:            [0xdf5eef0c021b60ab770b37a81a58678fe4dd823a](https://kovan.etherscan.io/address/0xdf5eef0c021b60ab770b37a81a58678fe4dd823a)
-- ZeroExExchangeWrapper:           [0xefa5f55da2bab6a314a589dabbb675d01986d5f1](https://kovan.etherscan.io/address/0xefa5f55da2bab6a314a589dabbb675d01986d5f1)
+- ZeroExV1ExchangeWrapper:           [0xefa5f55da2bab6a314a589dabbb675d01986d5f1](https://kovan.etherscan.io/address/0xefa5f55da2bab6a314a589dabbb675d01986d5f1)
 - OpenDirectlyExchangeWrapper:     [0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36](https://kovan.etherscan.io/address/0xdea3c6c61dd5b2594f6751dc0c0daf9312174a36)
 - ERC20ShortFactory:               [0xccca61c82ad2f6fb676cd4630d4b90b684684abc](https://kovan.etherscan.io/address/0xccca61c82ad2f6fb676cd4630d4b90b684684abc)
 - ERC20LongFactory:                [0x46c1686f889be57641fa6364f79f1cb057d3769c](https://kovan.etherscan.io/address/0x46c1686f889be57641fa6364f79f1cb057d3769c)

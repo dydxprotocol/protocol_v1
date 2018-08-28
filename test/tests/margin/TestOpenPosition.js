@@ -16,7 +16,7 @@ const TestClosePositionDelegator = artifacts.require("TestClosePositionDelegator
 const TestPositionOwner = artifacts.require("TestPositionOwner");
 const { ADDRESSES, BIGNUMBERS, BYTES } = require('../../helpers/Constants');
 const { expectThrow } = require('../../helpers/ExpectHelper');
-const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const web3Instance = new Web3(web3.currentProvider);
 
 const {

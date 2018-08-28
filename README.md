@@ -160,7 +160,7 @@ Holds all token funds. Is authorized to transfer user funds via the TokenProxy. 
 
 #### Second Layer
 
-##### ZeroExExchangeWrapper.sol
+##### ZeroExV1ExchangeWrapper.sol
 
 Allows positions to be opened or closed using 0x orders. Wraps the 0x Exchange Contract in a standard interface usable by Margin.
 
