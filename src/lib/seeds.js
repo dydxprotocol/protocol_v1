@@ -27,7 +27,7 @@ export default SeedsJson;
 function mapPositionFromJson(jsonPosition) {
   return {
     ...jsonPosition,
-    position: new BigNumber(jsonPosition.principal),
+    principal: new BigNumber(jsonPosition.principal),
     interestRate: new BigNumber(jsonPosition.interestRate),
     requiredDeposit: new BigNumber(jsonPosition.requiredDeposit),
     callTimeLimit: new BigNumber(jsonPosition.callTimeLimit),
