@@ -32,7 +32,7 @@ contract('BucketLenderFactory', () => {
 
   // ============ Functions ============
 
-  describe('createBucketLender', () => {
+  describe('#createBucketLender', () => {
     it('succeeds', async () => {
       const positionId = BYTES32.TEST[0];
       const bucketTime = new BigNumber(123);
@@ -44,12 +44,14 @@ contract('BucketLenderFactory', () => {
       const denominator = new BigNumber(192021);
       const marginCaller = ADDRESSES.TEST[0];
       const withdrawer = ADDRESSES.TEST[2];
+      const bucketLenderOwner = ADDRESSES.TEST[3];
 
       const factory = await BucketLenderFactory.new(Margin.address);
 
       const newBucketLender = await transact(
         factory.createBucketLender,
         positionId,
+        bucketLenderOwner,
         HeldToken.address,
         OwedToken.address,
         [
@@ -87,6 +89,7 @@ contract('BucketLenderFactory', () => {
         bl_notMarginCallerNotOkay,
         bl_withdrawerOkay,
         bl_notWithdrawerNotOkay,
+        bl_owner,
       ] = await Promise.all([
         bucketLender.DYDX_MARGIN.call(),
         bucketLender.POSITION_ID.call(),
@@ -103,6 +106,7 @@ contract('BucketLenderFactory', () => {
         bucketLender.TRUSTED_MARGIN_CALLERS.call(withdrawer),
         bucketLender.TRUSTED_WITHDRAWERS.call(withdrawer),
         bucketLender.TRUSTED_WITHDRAWERS.call(marginCaller),
+        bucketLender.owner.call(),
       ]);
 
       expect(bl_margin).to.be.eq(Margin.address);
@@ -120,6 +124,7 @@ contract('BucketLenderFactory', () => {
       expect(bl_notMarginCallerNotOkay).to.be.eq(false);
       expect(bl_withdrawerOkay).to.be.eq(true);
       expect(bl_notWithdrawerNotOkay).to.be.eq(false);
+      expect(bl_owner).to.be.eq(bucketLenderOwner);
     });
   });
 });
