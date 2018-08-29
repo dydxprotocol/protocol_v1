@@ -35,6 +35,7 @@ contract BucketLenderFactory {
 
     event BucketLenderCreated(
         address indexed creator,
+        address indexed owner,
         bytes32 indexed positionId,
         address at
     );
@@ -60,6 +61,7 @@ contract BucketLenderFactory {
      * Deploy a new BucketLender contract to the blockchain
      *
      * @param  positionId     Unique ID of the position
+     * @param  owner          Address to which ownership of the BucketLender will be transferred
      * @param  heldToken      Address of the token held in the position as collateral
      * @param  owedToken      Address of the token being lent by the BucketLender
      * @param  parameters     Values corresponding to:
@@ -77,6 +79,7 @@ contract BucketLenderFactory {
      */
     function createBucketLender(
         bytes32 positionId,
+        address owner,
         address heldToken,
         address owedToken,
         uint32[7] parameters,
@@ -96,10 +99,11 @@ contract BucketLenderFactory {
             withdrawers
         );
 
-        Ownable(newBucketLender).transferOwnership(msg.sender);
+        Ownable(newBucketLender).transferOwnership(owner);
 
         emit BucketLenderCreated(
             msg.sender,
+            owner,
             positionId,
             newBucketLender
         );
