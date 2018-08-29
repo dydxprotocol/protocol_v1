@@ -27,7 +27,7 @@ pragma experimental "v0.5.0";
  * Contract interface that Exchange Wrapper smart contracts must implement in order to interface
  * with other smart contracts through a common interface.
  */
-contract ExchangeWrapper {
+interface ExchangeWrapper {
 
     // ============ Public Functions ============
 

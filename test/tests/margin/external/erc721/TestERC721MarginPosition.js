@@ -9,10 +9,10 @@ const TokenProxy = artifacts.require("TokenProxy");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
-const { BYTES32 } = require('../../../helpers/Constants');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
-const { uint256, getPartialAmount } = require('../../../helpers/MathHelper');
+const { BYTES32 } = require('../../../../helpers/Constants');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { createSignedSellOrder } = require('../../../../helpers/ZeroExHelper');
+const { uint256, getPartialAmount } = require('../../../../helpers/MathHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
@@ -20,8 +20,8 @@ const {
   callClosePosition,
   getMaxInterestFee,
   callClosePositionDirectly
-} = require('../../../helpers/MarginHelper');
-const { issueAndSetAllowance } = require('../../../helpers/TokenHelper');
+} = require('../../../../helpers/MarginHelper');
+const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
 
 contract('ERC721MarginPosition', accounts => {
   let dydxMargin, erc721Contract, heldToken, owedToken;

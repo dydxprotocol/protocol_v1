@@ -109,12 +109,12 @@ contract ZeroExExchangeWrapper is
 
         require(
             requestedFillAmount <= order.takerTokenAmount,
-            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than order size"
+            "ZeroExExchangeWrapper#exchange: Requested fill amount larger than order size"
         );
 
         require(
             requestedFillAmount <= takerToken.balanceOf(address(this)),
-            "ZeroExExchangeWrapper#exchangeImpl: Requested fill amount larger than tokens held"
+            "ZeroExExchangeWrapper#exchange: Requested fill amount larger than tokens held"
         );
 
         transferTakerFee(

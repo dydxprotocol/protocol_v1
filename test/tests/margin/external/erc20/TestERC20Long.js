@@ -6,7 +6,7 @@ const Margin = artifacts.require("Margin");
 const ERC20Long = artifacts.require("ERC20Long");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
-const { ADDRESSES, BYTES32 } = require('../../../helpers/Constants');
+const { ADDRESSES, BYTES32 } = require('../../../../helpers/Constants');
 const {
   callClosePosition,
   callClosePositionDirectly,
@@ -18,13 +18,13 @@ const {
   issueTokensAndSetAllowancesForClose,
   issueTokenToAccountInAmountAndApproveProxy,
   getMaxInterestFee
-} = require('../../../helpers/MarginHelper');
+} = require('../../../../helpers/MarginHelper');
 const {
   createSignedSellOrder
-} = require('../../../helpers/ZeroExHelper');
-const { transact } = require('../../../helpers/ContractHelper');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { signLoanOffering } = require('../../../helpers/LoanHelper');
+} = require('../../../../helpers/ZeroExHelper');
+const { transact } = require('../../../../helpers/ContractHelper');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { signLoanOffering } = require('../../../../helpers/LoanHelper');
 const {
   getERC20PositionConstants,
   TOKENIZED_POSITION_STATE
@@ -120,12 +120,16 @@ contract('ERC20Long', accounts => {
         POSITIONS.FULL.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
-        POSITIONS.FULL.TRUSTED_RECIPIENTS),
+        POSITIONS.FULL.TRUSTED_RECIPIENTS,
+        []
+      ),
       ERC20Long.new(
         POSITIONS.PART.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
-        POSITIONS.PART.TRUSTED_RECIPIENTS)
+        POSITIONS.PART.TRUSTED_RECIPIENTS,
+        []
+      )
     ]);
   }
 
@@ -766,81 +770,6 @@ contract('ERC20Long', accounts => {
     });
   });
 
-  describe('#withdrawMultiple', () => {
-    beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
-      async () => {
-        await setUpPositions();
-        await setUpTokens();
-        await transferPositionsToTokens();
-        await returnTokenstoTrader();
-        await marginCallPositions();
-        await wait(POSITIONS.FULL.TX.loanOffering.callTimeLimit);
-      }
-    );
-
-    it('fails when position is still open', async () => {
-      // close position halfway and then try to withdraw
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const trader = POSITION.TX.trader;
-        await expectThrow(
-          POSITION.TOKEN_CONTRACT.withdrawMultiple(
-            [trader],
-            { from: trader }
-          )
-        );
-      }
-    });
-
-    it('succeeds for multiple accounts', async () => {
-      // close half, force recover, then some random person can't withdraw any funds
-      const heldTokenAmount = new BigNumber("1e18");
-      const rando = accounts[9];
-      const halfHolder = ADDRESSES.TEST[6];
-      const noHolder = ADDRESSES.TEST[7];
-
-      for (let type in POSITIONS) {
-        const POSITION = POSITIONS[type];
-        const lender = POSITION.TX.loanOffering.payer;
-        const trader = POSITION.TX.trader;
-
-        await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
-        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
-        await POSITION.TOKEN_CONTRACT.transfer(
-          halfHolder,
-          POSITION.NUM_TOKENS.div(2),
-          { from: trader }
-        );
-
-        const [traderBefore, halfHolderBefore, noHolderBefore] = await Promise.all([
-          heldToken.balanceOf.call(trader),
-          heldToken.balanceOf.call(halfHolder),
-          heldToken.balanceOf.call(noHolder),
-        ]);
-
-        await POSITION.TOKEN_CONTRACT.withdrawMultiple(
-          [trader, noHolder, trader, halfHolder],
-          { from: rando }
-        );
-
-        const [traderAfter, halfHolderAfter, noHolderAfter] = await Promise.all([
-          heldToken.balanceOf.call(trader),
-          heldToken.balanceOf.call(halfHolder),
-          heldToken.balanceOf.call(noHolder),
-        ]);
-
-        expect(
-          traderAfter.minus(traderBefore)
-        ).to.be.bignumber.equal(
-          halfHolderAfter.minus(halfHolderBefore)
-        ).to.be.bignumber.equal(
-          heldTokenAmount.div(2)
-        );
-        expect(noHolderAfter.minus(noHolderBefore)).to.be.bignumber.equal(0);
-      }
-    });
-  });
-
   describe('#withdraw', () => {
     beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
       async () => {
@@ -872,10 +801,27 @@ contract('ERC20Long', accounts => {
       }
     });
 
+    it('fails when a non-trusted withdrawer attempts to withdraw on another account', async () => {
+      const heldTokenAmount = new BigNumber("1e18");
+      const rando = accounts[9];
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const lender = POSITION.TX.loanOffering.payer;
+
+        await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
+        await expectThrow(
+          POSITION.TOKEN_CONTRACT.withdraw(
+            POSITION.TX.trader,
+            { from: rando }
+          )
+        );
+      }
+    });
+
     it('returns all HeldToken when user has all tokens', async () => {
       // close half, force recover, then some random person can't withdraw any funds
       const heldTokenAmount = new BigNumber("1e18");
-      const rando = accounts[9];
 
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
@@ -886,7 +832,7 @@ contract('ERC20Long', accounts => {
         const tx = await transact(
           POSITION.TOKEN_CONTRACT.withdraw,
           POSITION.TX.trader,
-          { from: rando }
+          { from: POSITION.TX.trader }
         );
 
         expect(tx.result).to.be.bignumber.eq(heldTokenAmount);
@@ -985,7 +931,9 @@ contract('ERC20Long', accounts => {
         POSITIONS.FULL.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
-        []);
+        [],
+        []
+      );
       await expectThrow(tokenContract.decimals.call());
     });
   });

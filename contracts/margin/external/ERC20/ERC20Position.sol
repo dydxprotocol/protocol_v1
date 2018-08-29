@@ -64,7 +64,7 @@ contract ERC20Position is
     // ============ Events ============
 
     /**
-     * This ERC20Short was successfully initialized
+     * This ERC20 was successfully initialized
      */
     event Initialized(
         bytes32 positionId,
@@ -72,7 +72,7 @@ contract ERC20Position is
     );
 
     /**
-     * The short was completely closed by a trusted third-party and tokens can be withdrawn
+     * The position was completely closed by a trusted third-party and tokens can be withdrawn
      */
     event ClosedByTrustedParty(
         address closer,
@@ -81,23 +81,23 @@ contract ERC20Position is
     );
 
     /**
-     * The short was completely closed and tokens can be withdrawn
+     * The position was completely closed and tokens can be withdrawn
      */
     event CompletelyClosed();
 
     /**
-     * A user burned tokens to withdraw heldTokens from this contract after the short was closed
+     * A user burned tokens to withdraw heldTokens from this contract after the position was closed
      */
-    event TokensRedeemedAfterForceClose(
+    event Withdraw(
         address indexed redeemer,
         uint256 tokensRedeemed,
         uint256 heldTokenPayout
     );
 
     /**
-     * A user burned tokens in order to partially close the short
+     * A user burned tokens in order to partially close the position
      */
-    event TokensRedeemedForClose(
+    event Close(
         address indexed redeemer,
         uint256 closeAmount
     );
@@ -113,13 +113,16 @@ contract ERC20Position is
     // Recipients that will fairly verify and redistribute funds from closing the position
     mapping (address => bool) public TRUSTED_RECIPIENTS;
 
+    // Withdrawers that will fairly withdraw funds after the position has been closed
+    mapping (address => bool) public TRUSTED_WITHDRAWERS;
+
     // Current State of this contract. See State enum
     State public state;
 
     // Symbol to be ERC20 compliant with frontends
     string public symbol;
 
-    // Address of the short's heldToken. Cached for convenience and lower-cost withdrawals
+    // Address of the position's heldToken. Cached for convenience and lower-cost withdrawals
     address public heldToken;
 
     // Position has been closed using a trusted recipient
@@ -150,6 +153,7 @@ contract ERC20Position is
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
+        address[] trustedWithdrawers,
         string _symbol
     )
         public
@@ -161,8 +165,12 @@ contract ERC20Position is
         symbol = _symbol;
         closedUsingTrustedRecipient = false;
 
-        for (uint256 i = 0; i < trustedRecipients.length; i++) {
+        uint256 i;
+        for (i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS[trustedRecipients[i]] = true;
+        }
+        for (i = 0; i < trustedWithdrawers.length; i++) {
+            TRUSTED_WITHDRAWERS[trustedWithdrawers[i]] = true;
         }
     }
 
@@ -308,28 +316,6 @@ contract ERC20Position is
     // ============ Public State Changing Functions ============
 
     /**
-     * Helper to allow withdrawal for multiple owners in one call
-     *
-     * @param  who  Array of addresses to withdraw for
-     */
-    function withdrawMultiple(
-        address[] who
-    )
-        external
-        nonReentrant
-    {
-        setStateClosedIfClosed();
-        require(
-            state == State.CLOSED,
-            "ERC20Position#withdrawMultiple: Position has not yet been closed"
-        );
-
-        for (uint256 i = 0; i < who.length; i++) {
-            withdrawImpl(who[i]);
-        }
-    }
-
-    /**
      * Withdraw heldTokens from this contract for any of the position that was closed via external
      * means (such as an auction-closing mechanism)
      *
@@ -344,11 +330,11 @@ contract ERC20Position is
      * yourself. Likely, rounding error will be small enough to not properly incentivize people to
      * carry out such an attack.
      *
-     * @param  who  Address of the account to withdraw for
-     * @return      The amount of heldToken withdrawn
+     * @param  onBehalfOf  Address of the account to withdraw for
+     * @return             The amount of heldToken withdrawn
      */
     function withdraw(
-        address who
+        address onBehalfOf
     )
         external
         nonReentrant
@@ -360,13 +346,20 @@ contract ERC20Position is
             "ERC20Position#withdraw: Position has not yet been closed"
         );
 
-        return withdrawImpl(who);
+        if (msg.sender != onBehalfOf) {
+            require(
+                TRUSTED_WITHDRAWERS[msg.sender],
+                "ERC20Position#withdraw: Only trusted withdrawers can withdraw on behalf of others"
+            );
+        }
+
+        return withdrawImpl(msg.sender, onBehalfOf);
     }
 
     // ============ Public Constant Functions ============
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the shorts's owedToken
+     * ERC20 decimals function. Returns the same number of decimals as the position's owedToken
      *
      * @return  The number of decimal places, or revert if the baseToken has no such function.
      */
@@ -424,12 +417,13 @@ contract ERC20Position is
     // ============ Private Helper-Functions ============
 
     function withdrawImpl(
-        address who
+        address receiver,
+        address onBehalfOf
     )
         private
         returns (uint256)
     {
-        uint256 value = balanceOf(who);
+        uint256 value = balanceOf(onBehalfOf);
 
         if (value == 0) {
             return 0;
@@ -444,14 +438,14 @@ contract ERC20Position is
             heldTokenBalance
         );
 
-        // Destroy the tokens
-        delete balances[who];
+        // Destroy the margin tokens
+        delete balances[onBehalfOf];
         totalSupply_ = totalSupply_.sub(value);
 
         // Send the redeemer their proportion of heldToken
-        TokenInteract.transfer(heldToken, who, heldTokenPayout);
+        TokenInteract.transfer(heldToken, receiver, heldTokenPayout);
 
-        emit TokensRedeemedAfterForceClose(who, value, heldTokenPayout);
+        emit Withdraw(onBehalfOf, value, heldTokenPayout);
 
         return heldTokenPayout;
     }
@@ -521,7 +515,7 @@ contract ERC20Position is
         balances[closer] = balance.sub(tokenAmount);
         totalSupply_ = totalSupply_.sub(tokenAmount);
 
-        emit TokensRedeemedForClose(closer, tokenAmount);
+        emit Close(closer, tokenAmount);
 
         return allowedCloseAmount;
     }

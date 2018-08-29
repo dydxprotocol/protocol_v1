@@ -55,6 +55,7 @@ contract('Deploy Costs', () => {
         BYTES32.ZERO,
         ADDRESSES.TEST[0],
         ADDRESSES.TEST[1],
+        [],
         []
       );
 

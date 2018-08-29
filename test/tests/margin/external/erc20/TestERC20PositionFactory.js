@@ -10,13 +10,13 @@ const HeldToken = artifacts.require("TokenA");
 const Margin = artifacts.require("Margin");
 
 const { getERC20PositionConstants, TOKENIZED_POSITION_STATE } = require('./ERC20PositionHelper');
-const { expectAssertFailure, expectThrow } = require('../../../helpers/ExpectHelper');
+const { expectAssertFailure, expectThrow } = require('../../../../helpers/ExpectHelper');
 const {
   doOpenPosition,
   issueTokensAndSetAllowancesForClose,
   callClosePosition
-} = require('../../../helpers/MarginHelper');
-const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
+} = require('../../../../helpers/MarginHelper');
+const { createSignedSellOrder } = require('../../../../helpers/ZeroExHelper');
 
 const FACTORIES = { ERC20ShortFactory, ERC20LongFactory };
 
@@ -36,19 +36,31 @@ contract('ERC20PositionFactory', accounts => {
     let contract;
     it('sets constants correctly', async () => {
       const trustedRecipientsExpected = [accounts[8], accounts[9]];
+      const trustedWithdrawersExpected = [accounts[6], accounts[7]];
       for (let factory in FACTORIES) {
-        contract = await FACTORIES[factory].new(Margin.address, trustedRecipientsExpected);
+        contract = await FACTORIES[factory].new(
+          Margin.address,
+          trustedRecipientsExpected,
+          trustedWithdrawersExpected,
+        );
         const dydxMarginAddress = await contract.DYDX_MARGIN.call();
         expect(dydxMarginAddress).to.equal(Margin.address);
 
         const numRecipients = trustedRecipientsExpected.length;
-        for(let i = 0; i < numRecipients; i++) {
+        for (let i = 0; i < numRecipients; i++) {
           const trustedRecipient = await contract.TRUSTED_RECIPIENTS.call(i);
           expect(trustedRecipient).to.equal(trustedRecipientsExpected[i]);
         }
 
+        const numWithdrawers = trustedWithdrawersExpected.length;
+        for (let i = 0; i < numWithdrawers; i++) {
+          const trustedWithdrawer = await contract.TRUSTED_WITHDRAWERS.call(i);
+          expect(trustedWithdrawer).to.equal(trustedWithdrawersExpected[i]);
+        }
+
         // cannot read from past the length of the array
         await expectAssertFailure(contract.TRUSTED_RECIPIENTS.call(numRecipients));
+        await expectAssertFailure(contract.TRUSTED_WITHDRAWERS.call(numWithdrawers));
       }
     });
   });

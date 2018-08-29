@@ -49,17 +49,25 @@ contract ERC20PositionFactory is
     // Recipients that will fairly verify and redistribute funds from closing the position
     address[] public TRUSTED_RECIPIENTS;
 
+    // Withdrawers that will fairly withdraw funds after the position has been closed
+    address[] public TRUSTED_WITHDRAWERS;
+
     // ============ Constructor ============
 
     constructor(
         address margin,
-        address[] trustedRecipients
+        address[] trustedRecipients,
+        address[] trustedWithdrawers
     )
         public
         OnlyMargin(margin)
     {
-        for (uint256 i = 0; i < trustedRecipients.length; i++) {
+        uint256 i;
+        for (i = 0; i < trustedRecipients.length; i++) {
             TRUSTED_RECIPIENTS.push(trustedRecipients[i]);
+        }
+        for (i = 0; i < trustedWithdrawers.length; i++) {
+            TRUSTED_WITHDRAWERS.push(trustedWithdrawers[i]);
         }
     }
 

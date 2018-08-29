@@ -8,13 +8,13 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
-const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../../helpers/Constants');
-const { expectThrow } = require('../../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
-const { getPartialAmount, uint256 } = require('../../../helpers/MathHelper');
-const { transact } = require('../../../helpers/ContractHelper');
-const { signLoanOffering } = require('../../../helpers/LoanHelper');
-const { expectLog } = require('../../../helpers/EventHelper');
+const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../../../helpers/Constants');
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { createSignedSellOrder } = require('../../../../helpers/ZeroExHelper');
+const { getPartialAmount, uint256 } = require('../../../../helpers/MathHelper');
+const { transact } = require('../../../../helpers/ContractHelper');
+const { signLoanOffering } = require('../../../../helpers/LoanHelper');
+const { expectLog } = require('../../../../helpers/EventHelper');
 const {
   issueTokensAndSetAllowances,
   issueTokensAndSetAllowancesForClose,
@@ -23,7 +23,7 @@ const {
   callOpenPosition,
   doOpenPosition,
   createOpenTx
-} = require('../../../helpers/MarginHelper');
+} = require('../../../../helpers/MarginHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 describe('ERC721MarginLoan', () => {

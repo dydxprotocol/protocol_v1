@@ -39,6 +39,7 @@ contract ERC20CappedShort is ERC20Short {
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
+        address[] trustedWithdrawers,
         uint256 cap
     )
         public
@@ -46,7 +47,8 @@ contract ERC20CappedShort is ERC20Short {
             positionId,
             margin,
             initialTokenHolder,
-            trustedRecipients
+            trustedRecipients,
+            trustedWithdrawers
         )
     {
         tokenCap = cap;
