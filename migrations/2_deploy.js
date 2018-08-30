@@ -210,7 +210,7 @@ async function deploySecondLayer(deployer, network) {
       DutchAuctionCloser,
       Margin.address,
       new BigNumber(1), // Numerator
-      new BigNumber(2), // Denominator
+      new BigNumber(1), // Denominator
     ),
   ]);
 
