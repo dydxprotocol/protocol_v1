@@ -46,7 +46,7 @@ async function createShortToken(
   ]);
 
   const [bucketLender, ethWrapper, heldToken] = await Promise.all([
-    createBucketLender(openTx),
+    createBucketLender(openTx, trader),
     EthWrapperForBucketLender.deployed(),
     HeldToken.deployed(),
   ]);
@@ -138,7 +138,7 @@ async function createSellOrderForToken(accounts) {
   return order;
 }
 
-async function createBucketLender(openTx) {
+async function createBucketLender(openTx, trader) {
   const bucketLender = await BucketLender.new(
     Margin.address,
     openTx.id,
@@ -153,7 +153,7 @@ async function createBucketLender(openTx) {
       DEPOSIT.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_NUMERATOR,
       PRINCIPAL.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_DENOMINATOR,
     ],
-    [], // trusted margin-callers
+    [trader], // trusted margin-callers
     [EthWrapperForBucketLender.address] // trusted withdrawers
   );
 
