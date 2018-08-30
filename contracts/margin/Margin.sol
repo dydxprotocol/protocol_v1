@@ -404,7 +404,8 @@ contract Margin is
      *
      * @param  positionId       Unique ID of the position
      * @param  requiredDeposit  Amount of deposit the position owner will have to put up to cancel
-     *                          the margin-call
+     *                          the margin-call. Passing in 0 means the margin call cannot be
+     *                          canceled by depositing
      */
     function marginCall(
         bytes32 positionId,
