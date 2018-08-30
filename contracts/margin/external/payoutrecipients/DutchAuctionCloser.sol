@@ -213,7 +213,7 @@ contract DutchAuctionCloser is
             CALL_TIMELIMIT_DENOMINATOR,
             callTimeLimit
         );
-        assert(auctionLength < callTimeLimit);
+        assert(auctionLength <= callTimeLimit);
 
         if (callTimestamp == 0 || callTimestamp.add(callTimeLimit) > maxTimestamp) {
             // auction time determined by maxTimestamp

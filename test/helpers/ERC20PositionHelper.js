@@ -27,10 +27,11 @@ async function createShortToken(
   accounts,
   {
     nonce,
-    interestPeriod
+    interestPeriod,
+    trader,
   }
 ) {
-  const trader = accounts[8];
+  trader = trader || accounts[8];
 
   const [openTx, dydxMargin] = await Promise.all([
     createOpenTx(

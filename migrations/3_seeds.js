@@ -60,12 +60,13 @@ async function createSeedPositions(accounts) {
   let salt = 729436712;
   let nonce = 238947238;
   const openTransactions = [];
+  const trader = accounts[8]
 
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
-  openTransactions.push(await createShortToken(accounts, { nonce: nonce++ }));
-  openTransactions.push(await createShortToken(accounts, { nonce: nonce++ }));
+  openTransactions.push(await createShortToken(accounts, { nonce: nonce++, trader }));
+  openTransactions.push(await createShortToken(accounts, { nonce: nonce++, trader }));
 
   const margin = await Margin.deployed();
 
@@ -81,7 +82,10 @@ async function createSeedPositions(accounts) {
     positions[i].id = openTransactions[i].id;
     positions[i].balance = balances[i];
 
-    positions[i].isTokenized = i === 3 || i === 4 ? true : false;
+    if (i === 3 || i === 4) {
+      positions[i].isTokenized = true;
+      positions[i].positionOpener = trader;
+    }
   }
 
   return positions;

@@ -1,4 +1,5 @@
 const chai = require('chai');
+const BigNumber = require('bignumber.js');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
@@ -119,6 +120,17 @@ contract('DutchAuctionCloser', accounts => {
     });
 
     it('fails if bid too early', async () => {
+      const dutchCloser = await DutchAuctionCloser.new(
+        Margin.address,
+        new BigNumber(1),
+        new BigNumber(2),
+      );
+      await ERC721MarginPositionContract.approveRecipient(
+        dutchCloser.address,
+        true,
+        { from: openTx.trader }
+      );
+
       await wait(callTimeLimit / 4);
 
       await expectThrow(callClosePositionDirectly(
@@ -127,7 +139,7 @@ contract('DutchAuctionCloser', accounts => {
         openTx.principal.div(2),
         {
           from: dutchBidder,
-          recipient: DutchAuctionCloser.address
+          recipient: dutchCloser.address
         }
       ));
     });
@@ -148,7 +160,7 @@ contract('DutchAuctionCloser', accounts => {
 
     it('succeeds for position near end of maxDuration', async () => {
       await dydxMargin.cancelMarginCall(openTx.id, { from: openTx.loanOffering.owner });
-      await wait(openTx.loanOffering.maxDuration - callTimeLimit / 2);
+      await wait(openTx.loanOffering.maxDuration - callTimeLimit);
 
       const closeAmount = openTx.principal.div(2).floor();
 
@@ -164,9 +176,9 @@ contract('DutchAuctionCloser', accounts => {
       );
     });
 
-    it('succeeds for position near end of even if margin-called', async () => {
+    it('succeeds for position near end of maxDuration even if margin-called', async () => {
       await dydxMargin.cancelMarginCall(openTx.id, { from: openTx.loanOffering.owner });
-      await wait(openTx.loanOffering.maxDuration - callTimeLimit / 2);
+      await wait(openTx.loanOffering.maxDuration - callTimeLimit);
       await dydxMargin.marginCall(openTx.id, 0, { from: openTx.loanOffering.owner });
 
       const closeAmount = openTx.principal.div(2).floor();
@@ -209,7 +221,7 @@ contract('DutchAuctionCloser', accounts => {
     });
 
     it('succeeds for unclosed position', async () => {
-      await wait(callTimeLimit * 3 / 4);
+      await wait(callTimeLimit * 1 / 2);
 
       const [
         owedTokenBidder0,
