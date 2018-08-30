@@ -3,8 +3,8 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
+const ZeroExV1Exchange = artifacts.require("ZeroExV1Exchange");
 const ZeroExProxy = artifacts.require("ZeroExProxy");
 const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
@@ -18,9 +18,9 @@ const { expectThrow } = require('../../../../helpers/ExpectHelper');
 
 const baseAmount = new BigNumber('1e18');
 
-describe('ZeroExExchangeWrapper', () => {
+describe('ZeroExV1ExchangeWrapper', () => {
   describe('Constructor', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('sets constants correctly', async () => {
         const {
           dydxMargin,
@@ -46,7 +46,7 @@ describe('ZeroExExchangeWrapper', () => {
 
         expect(marginIsTrusted).to.be.true;
         expect(randomIsTrusted).to.be.false;
-        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchange.address);
+        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExV1Exchange.address);
         expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExProxy.address);
         expect(ZRX).to.eq(FeeToken.address);
         expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.MAX_UINT256);
@@ -55,7 +55,7 @@ describe('ZeroExExchangeWrapper', () => {
   });
 
   describe('#getExchangeCost', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('gives the correct maker token for a given order', async () => {
         const {
           exchangeWrapper
@@ -84,7 +84,7 @@ describe('ZeroExExchangeWrapper', () => {
   });
 
   describe('#exchange', () => {
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('successfully executes a trade', async () => {
         const {
           exchangeWrapper,
@@ -127,7 +127,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('successfully executes multiple trades', async () => {
         const {
           exchangeWrapper,
@@ -226,7 +226,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('fails if the exchangeWrapper is not given enough tokens', async () => {
         const {
           exchangeWrapper,
@@ -253,7 +253,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('fails if a fee is dictated by someone else', async () => {
         const {
           exchangeWrapper,
@@ -279,7 +279,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('does not transfer taker fee when 0 feeRecipient', async () => {
         const {
           exchangeWrapper,
@@ -325,7 +325,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('fails if order is too small', async () => {
         const {
           exchangeWrapper,
@@ -352,7 +352,7 @@ describe('ZeroExExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExExchangeWrapper', accounts => {
+    contract('ZeroExV1ExchangeWrapper', accounts => {
       it('fails if order has already been filled', async () => {
         const {
           exchangeWrapper,
@@ -400,8 +400,8 @@ async function setup(accounts) {
 
   const feeToken = await FeeToken.deployed();
 
-  const exchangeWrapper = await ZeroExExchangeWrapper.new(
-    ZeroExExchange.address,
+  const exchangeWrapper = await ZeroExV1ExchangeWrapper.new(
+    ZeroExV1Exchange.address,
     ZeroExProxy.address,
     feeToken.address,
     [dydxMargin]

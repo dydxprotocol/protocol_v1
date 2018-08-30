@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
 import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { ZeroExExchangeInterface } from "../../../external/0x/ZeroExExchangeInterface.sol";
+import { ZeroExV1ExchangeInterface } from "../../../external/0x/ZeroExV1ExchangeInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
@@ -217,7 +217,7 @@ contract ZeroExV1ExchangeWrapper is
         private
         returns (uint256)
     {
-        uint256 filledTakerTokenAmount = ZeroExExchangeInterface(ZERO_EX_EXCHANGE).fillOrder(
+        uint256 filledTakerTokenAmount = ZeroExV1ExchangeInterface(ZERO_EX_EXCHANGE).fillOrder(
             [
                 order.maker,
                 order.taker,

@@ -6,7 +6,7 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExV1Proxy = artifacts.require("ZeroExV1Proxy");
 const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
@@ -429,7 +429,7 @@ async function issueTokensAndSetAllowances(tx) {
       heldToken,
       tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     ),
 
     // Buy Order Maker Fee
@@ -437,7 +437,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.buyOrder.maker,
       tx.buyOrder.makerFee,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     ),
 
     // Loan Payer Fee
@@ -842,7 +842,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       owedToken,
       sellOrder.maker,
       sellOrder.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     ),
 
     // Trader Sell Order Taker Fee
@@ -858,7 +858,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       feeToken,
       sellOrder.maker,
       sellOrder.makerFee,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     )
   ]);
 }

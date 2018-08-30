@@ -19,14 +19,14 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import "./ZeroExProxy.sol";
+import "./ZeroExV1Proxy.sol";
 import "./base/ZeroExToken.sol";
 import "./base/ZeroExSafeMath.sol";
 
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExExchange is ZeroExSafeMath {
+contract ZeroExV1Exchange is ZeroExSafeMath {
 
     // Error Codes
     enum Errors {
@@ -132,11 +132,11 @@ contract ZeroExExchange is ZeroExSafeMath {
 
         require(
             order.taker == address(0) || order.taker == msg.sender,
-            "ZeroExExchange#fillOrder: Invalid Taker"
+            "ZeroExV1Exchange#fillOrder: Invalid Taker"
         );
         require(
             order.makerTokenAmount > 0 && order.takerTokenAmount > 0 && fillTakerTokenAmount > 0,
-            "ZeroExExchange#fillOrder: Zero Amount"
+            "ZeroExV1Exchange#fillOrder: Zero Amount"
         );
         require(
             isValidSignature(
@@ -146,7 +146,7 @@ contract ZeroExExchange is ZeroExSafeMath {
                 r,
                 s
             ),
-            "ZeroExExchange#fillOrder: Invalid Signature"
+            "ZeroExV1Exchange#fillOrder: Invalid Signature"
         );
 
         if (block.timestamp >= order.expirationTimestampInSec) {
@@ -182,7 +182,7 @@ contract ZeroExExchange is ZeroExSafeMath {
                 msg.sender,
                 filledMakerTokenAmount
             ),
-            "ZeroExExchange#fillOrder: Failed to transfer maker tokens"
+            "ZeroExV1Exchange#fillOrder: Failed to transfer maker tokens"
         );
         require(
             transferViaTokenTransferProxy(
@@ -191,7 +191,7 @@ contract ZeroExExchange is ZeroExSafeMath {
                 order.maker,
                 filledTakerTokenAmount
             ),
-            "ZeroExExchange#fillOrder: Failed to transfer taker tokens"
+            "ZeroExV1Exchange#fillOrder: Failed to transfer taker tokens"
         );
 
         if (order.feeRecipient != address(0)) {
@@ -204,7 +204,7 @@ contract ZeroExExchange is ZeroExSafeMath {
                         order.feeRecipient,
                         paidMakerFee
                     ),
-                    "ZeroExExchange#fillOrder: Failed to transfer maker fee"
+                    "ZeroExV1Exchange#fillOrder: Failed to transfer maker fee"
                 );
             }
             if (order.takerFee > 0) {
@@ -216,7 +216,7 @@ contract ZeroExExchange is ZeroExSafeMath {
                         order.feeRecipient,
                         paidTakerFee
                     ),
-                    "ZeroExExchange#fillOrder: Failed to transfer taker fee"
+                    "ZeroExV1Exchange#fillOrder: Failed to transfer taker fee"
                 );
             }
         }
@@ -558,7 +558,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         internal
         returns (bool)
     {
-        return ZeroExProxy(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
+        return ZeroExV1Proxy(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
     }
 
     /// @dev Checks if any order transfers will fail.

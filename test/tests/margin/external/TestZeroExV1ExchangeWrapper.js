@@ -4,8 +4,8 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExV1Exchange = artifacts.require("ZeroExV1Exchange");
+const ZeroExV1Proxy = artifacts.require("ZeroExV1Proxy");
 const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
 
@@ -41,13 +41,13 @@ describe('ZeroExV1ExchangeWrapper', () => {
           exchangeWrapper.ZRX.call(),
           exchangeWrapper.TRUSTED_MSG_SENDER.call(dydxMargin),
           exchangeWrapper.TRUSTED_MSG_SENDER.call(accounts[0]),
-          feeToken.allowance.call(exchangeWrapper.address, ZeroExProxy.address)
+          feeToken.allowance.call(exchangeWrapper.address, ZeroExV1Proxy.address)
         ]);
 
         expect(marginIsTrusted).to.be.true;
         expect(randomIsTrusted).to.be.false;
-        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchange.address);
-        expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExProxy.address);
+        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExV1Exchange.address);
+        expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExV1Proxy.address);
         expect(ZRX).to.eq(FeeToken.address);
         expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.MAX_UINT256);
       });
@@ -401,8 +401,8 @@ async function setup(accounts) {
   const feeToken = await FeeToken.deployed();
 
   const exchangeWrapper = await ZeroExV1ExchangeWrapper.new(
-    ZeroExExchange.address,
-    ZeroExProxy.address,
+    ZeroExV1Exchange.address,
+    ZeroExV1Proxy.address,
     feeToken.address,
     [dydxMargin]
   );
@@ -429,7 +429,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
       makerToken,
       order.maker,
       order.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     ),
 
     // Taker Token
@@ -440,7 +440,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
       feeToken,
       order.maker,
       order.makerFee,
-      ZeroExProxy.address
+      ZeroExV1Proxy.address
     ),
 
     // Taker Fee Token

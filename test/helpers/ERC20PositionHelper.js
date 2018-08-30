@@ -12,7 +12,7 @@ const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender")
 const { ADDRESSES } = require('./Constants');
 const { createSignedOrder } = require('./ZeroExHelper');
 const HeldToken = artifacts.require("TokenA");
-const ZeroExProxy = artifacts.require('ZeroExProxy');
+const ZeroExV1Proxy = artifacts.require('ZeroExV1Proxy');
 
 BigNumber.config({
   EXPONENTIAL_AT: 1000,
@@ -109,7 +109,7 @@ async function createBuyOrderForToken(accounts) {
     heldToken,
     order.maker,
     order.makerTokenAmount,
-    ZeroExProxy.address,
+    ZeroExV1Proxy.address,
   );
 
   return order;
@@ -133,7 +133,7 @@ async function createSellOrderForToken(accounts) {
 
   await Promise.all([
     weth.deposit({ value: order.makerTokenAmount, from: order.maker }),
-    weth.approve(ZeroExProxy.address, order.makerTokenAmount, { from: order.maker })
+    weth.approve(ZeroExV1Proxy.address, order.makerTokenAmount, { from: order.maker })
   ]);
 
   return order;

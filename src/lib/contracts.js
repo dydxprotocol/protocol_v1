@@ -62,5 +62,5 @@ export {
 export { default as TokenA }            from '../../build/contracts/TokenA.json';
 export { default as TokenB }            from '../../build/contracts/TokenB.json';
 export { default as TokenC }            from '../../build/contracts/TokenC.json';
-export { default as ZeroExExchange }    from '../../build/contracts/ZeroExExchange.json';
-export { default as ZeroExProxy }       from '../../build/contracts/ZeroExProxy.json';
+export { default as ZeroExV1Exchange }    from '../../build/contracts/ZeroExV1Exchange.json';
+export { default as ZeroExV1Proxy }       from '../../build/contracts/ZeroExV1Proxy.json';
