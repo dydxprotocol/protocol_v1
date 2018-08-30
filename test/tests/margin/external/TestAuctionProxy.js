@@ -46,9 +46,18 @@ contract('AuctionProxy', accounts => {
     ]);
     auctionProxy = await AuctionProxy.new(dydxMargin.address, ZeroExExchange.address);
 
-
     const tx = await doOpenPosition(accounts);
     positionId = tx.id;
+
+    tokenContract = await ERC20Short.new(
+      positionId,
+      dydxMargin.address,
+      INITIAL_TOKEN_HOLDER,
+      POSITIONS.FULL.TRUSTED_RECIPIENTS,
+      []
+    );
+
+    await marginCallPo
 
   });
 
