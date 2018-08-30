@@ -52,20 +52,17 @@ contract AuctionProxy is
 
     address public DYDX_MARGIN;
     address public ZERO_EX_V1_EXCHANGE;
-    address public ZRX;
 
     // ============ Constructor ============
 
     constructor(
         address margin,
         address zeroExExchange,
-        address zrx
     )
         public
     {
         DYDX_MARGIN = margin;
         ZERO_EX_V1_EXCHANGE = zeroExExchange;
-        ZRX = zrx;
     }
 
     // ============ Public Functions ============
@@ -83,13 +80,6 @@ contract AuctionProxy is
         Position memory position = parsePosition(margin, positionId);
 
         uint256 maxCloseAmount = getMaxCloseAmount(position, orderData);
-
-        /*
-        uint256 auctionCost = DutchAuctionCloser(dutchAuction).getAuctionCost(positionId, heldTokenFreed);
-        require(
-            heldTokenFreed - takerAmount - auctionCost >= 0
-        );
-        */
 
         margin.closePosition(
             positionId,
@@ -156,15 +146,6 @@ contract AuctionProxy is
             takerAmount
         );
 
-        /*
-        // verify maker's maker tokens
-        verifyTradableTokens(position.owedToken, order.maker, tokenTransferProxy, makerAmount);
-
-        // verify maker's zrx tokens
-        uint256 makerFee = getMakerFee(order, takerAmount);
-        verifyTradableTokens(ZRX, order.maker, tokenTransferProxy, makerFee);
-        */
-
         // get maximum close amount
         uint256 closeAmount = MathHelpers.getPartialAmount(
             position.principal,
@@ -190,38 +171,4 @@ contract AuctionProxy is
             "AuctionProxy#getMaxCloseAmount: order has takerFee"
         );
     }
-
-    /*
-    function getMakerFee(
-        ZeroExV1Parser.Order memory order,
-        uint256 takerAmount
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return MathHelpers.getPartialAmount(
-            takerAmount,
-            order.takerTokenAmount,
-            order.makerFee
-        );
-    }
-
-    function verifyTradableTokens(
-        address token,
-        address maker,
-        address tokenTransferProxy,
-        uint256 amount
-    )
-        internal
-        view
-    {
-        require(
-            token.allowance(maker, tokenTransferProxy) >= amount
-        );
-        require(
-            token.balanceOf(maker) >= amount
-        );
-    }
-    */
 }
