@@ -72,7 +72,9 @@ contract MatchingMarketExchangeWrapper is
     {
         assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
 
-        uint256 receivedMakerAmount = MatchingMarketInterface(MATCHING_MARKET).sellAllAmount(
+        address market = MATCHING_MARKET;
+        takerToken.approve(market, requestedFillAmount);
+        uint256 receivedMakerAmount = MatchingMarketInterface(market).sellAllAmount(
             ERC20(takerToken),
             requestedFillAmount,
             ERC20(makerToken),
@@ -120,11 +122,9 @@ contract MatchingMarketExchangeWrapper is
     )
         private
     {
-        if (token.allowance(address(this), spender) >= requiredAmount) {
-            return;
+        if (token.allowance(address(this), spender) < requiredAmount) {
+            token.approve(spender, MathHelpers.maxUint256());
         }
-
-        token.approve(spender, MathHelpers.maxUint256());
     }
 
     function requireBelowMaximumPrice(

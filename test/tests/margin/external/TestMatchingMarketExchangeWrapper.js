@@ -13,6 +13,7 @@ const TokenB = artifacts.require("TokenB");
 const { BIGNUMBERS, BYTES } = require('../../../helpers/Constants');
 const { toBytes32 } = require('../../../helpers/BytesHelper');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
+const { transact } = require('../../../helpers/ContractHelper');
 
 
 contract('MatchingMarketExchangeWrapper', accounts => {
@@ -198,6 +199,39 @@ contract('MatchingMarketExchangeWrapper', accounts => {
   });
 
   describe('#exchange', () => {
-    //TODO
+    it('succeeds', async () => {
+      const amount = new BigNumber("1e18");
+      await DAI.issueTo(MMEW.address, amount);
+      const expectedResult = await OasisDEX.getBuyAmount.call(WETH.address, DAI.address, amount);
+      const receipt = await transact(
+        MMEW.exchange,
+        accounts[0],
+        accounts[0],
+        WETH.address,
+        DAI.address,
+        amount,
+        BYTES.EMPTY
+      );
+      expect(receipt.result).to.be.bignumber.eq(expectedResult);
+    });
+    it('fails for low maximum price', async () => {
+      const amount = new BigNumber("1e18");
+      let price = web3Instance.utils.bytesToHex([]
+        .concat(toBytes32(new BigNumber("1e1")))
+        .concat(toBytes32(new BigNumber("1e10")))
+      );
+      await DAI.issueTo(MMEW.address, amount);
+
+      await expectThrow(
+        MMEW.exchange(
+          accounts[0],
+          accounts[0],
+          WETH.address,
+          DAI.address,
+          1000,
+          price
+        )
+      );
+    });
   });
 });
