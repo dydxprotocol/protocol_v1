@@ -30,62 +30,39 @@ export async function resetEVM(provider) {
   }
 }
 
-export async function reset(provider, id) {
+export function reset(provider, id) {
   if (!id) {
     throw new Error('id must be set');
   }
 
-  const args = {
-    jsonrpc: "2.0",
-    method: "evm_revert",
-    id: 12345,
-    params: [id],
-  };
-
-  await sendAsync(provider, args);
-
-  return snapshot(provider);
+  return callJsonrpcMethod(provider, 'evm_revert', [id]);
 }
 
-export async function snapshot(provider) {
-  const args = {
-    jsonrpc: "2.0",
-    method: "evm_snapshot",
-    id: 12345,
-  };
-
-  const response = await sendAsync(provider, args);
-
-  return response.result;
+export function snapshot(provider) {
+  return callJsonrpcMethod(provider, 'evm_snapshot');
 }
 
-export async function stopMining(provider) {
-  const args = {
-    jsonrpc: "2.0",
-    method: "miner_stop",
-  };
-
-  const response = await sendAsync(provider, args);
-
-  return response.result;
+export function stopMining(provider) {
+  return callJsonrpcMethod(provider, 'miner_stop');
 }
 
-export async function startMining(provider) {
-  const args = {
-    jsonrpc: "2.0",
-    method: "miner_start",
-  };
-
-  const response = await sendAsync(provider, args);
-
-  return response.result;
+export function startMining(provider) {
+  return callJsonrpcMethod(provider, 'miner_start');
 }
 
-export async function mineBlock(provider) {
+export function mineBlock(provider) {
+  return callJsonrpcMethod(provider, 'evm_mine');
+}
+
+export async function callJsonrpcMethod(provider, method, params) {
   const args = {
     jsonrpc: "2.0",
-    method: "evm_mine",
+    method,
   };
+
+  if (params) {
+    args.params = params;
+  }
 
   const response = await sendAsync(provider, args);
 
