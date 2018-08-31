@@ -1,11 +1,10 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ERC20 } from "./ERC20.sol";
-import { ExpiringMarketInterface } from "./ExpiringMarketInterface.sol";
+import { ISimpleMarket } from "./ISimpleMarket.sol";
 
 
-contract MatchingMarketInterface is ExpiringMarketInterface {
+contract IMatchingMarket is ISimpleMarket {
 
     // ============ Structs ================
 
@@ -16,6 +15,10 @@ contract MatchingMarketInterface is ExpiringMarketInterface {
     }
 
     // ============ Storage ================
+
+    uint64 public close_time;
+
+    bool public stopped;
 
     bool public buyEnabled;
 
@@ -36,8 +39,8 @@ contract MatchingMarketInterface is ExpiringMarketInterface {
     // ============ Functions ================
 
     function make(
-        ERC20    pay_gem,
-        ERC20    buy_gem,
+        address  pay_gem,
+        address  buy_gem,
         uint128  pay_amt,
         uint128  buy_amt
     )
@@ -57,18 +60,18 @@ contract MatchingMarketInterface is ExpiringMarketInterface {
 
     function offer(
         uint pay_amt,
-        ERC20 pay_gem,
+        address pay_gem,
         uint buy_amt,
-        ERC20 buy_gem
+        address buy_gem
     )
         public
         returns (uint);
 
     function offer(
         uint pay_amt,
-        ERC20 pay_gem,
+        address pay_gem,
         uint buy_amt,
-        ERC20 buy_gem,
+        address buy_gem,
         uint pos
     )
         public
@@ -76,9 +79,9 @@ contract MatchingMarketInterface is ExpiringMarketInterface {
 
     function offer(
         uint pay_amt,
-        ERC20 pay_gem,
+        address pay_gem,
         uint buy_amt,
-        ERC20 buy_gem,
+        address buy_gem,
         uint pos,
         bool rounding
     )
@@ -111,99 +114,115 @@ contract MatchingMarketInterface is ExpiringMarketInterface {
         public
         returns (bool);
 
-    function isTokenPairWhitelisted(
-        ERC20 baseToken,
-        ERC20 quoteToken
-    )
-        public
-        constant
-        returns (bool);
-
-    function getMinSell(
-        ERC20 pay_gem
-    )
-        public
-        constant
-        returns (uint);
-
-    function getBestOffer(
-        ERC20 sell_gem,
-        ERC20 buy_gem
-    )
-        public
-        constant
-        returns(uint);
-
-    function getWorseOffer(
-        uint id
-    )
-        public
-        constant
-        returns(uint);
-
-    function getBetterOffer(
-        uint id
-    )
-        public
-        constant
-        returns(uint);
-
-    function getOfferCount(
-        ERC20 sell_gem,
-        ERC20 buy_gem
-    )
-        public
-        constant
-        returns(uint);
-
-    function getFirstUnsortedOffer()
-        public
-        constant
-        returns(uint);
-
-    function getNextUnsortedOffer(uint id)
-        public
-        constant
-        returns(uint);
-
-    function isOfferSorted(uint id)
-        public
-        constant
-        returns(bool);
-
     function sellAllAmount(
-        ERC20 pay_gem,
+        address pay_gem,
         uint pay_amt,
-        ERC20 buy_gem,
+        address buy_gem,
         uint min_fill_amount
     )
         public
         returns (uint fill_amt);
 
     function buyAllAmount(
-        ERC20 buy_gem,
+        address buy_gem,
         uint buy_amt,
-        ERC20 pay_gem,
+        address pay_gem,
         uint max_fill_amount
     )
         public
         returns (uint fill_amt);
 
+    // ============ Constant Functions ================
+
+    function isTokenPairWhitelisted(
+        address baseToken,
+        address quoteToken
+    )
+        public
+        view
+        returns (bool);
+
+    function getMinSell(
+        address pay_gem
+    )
+        public
+        view
+        returns (uint);
+
+    function getBestOffer(
+        address sell_gem,
+        address buy_gem
+    )
+        public
+        view
+        returns(uint);
+
+    function getWorseOffer(
+        uint id
+    )
+        public
+        view
+        returns(uint);
+
+    function getBetterOffer(
+        uint id
+    )
+        public
+        view
+        returns(uint);
+
+    function getOfferCount(
+        address sell_gem,
+        address buy_gem
+    )
+        public
+        view
+        returns(uint);
+
+    function getFirstUnsortedOffer()
+        public
+        view
+        returns(uint);
+
+    function getNextUnsortedOffer(
+        uint id
+    )
+        public
+        view
+        returns(uint);
+
+    function isOfferSorted(
+        uint id
+    )
+        public
+        view
+        returns(bool);
+
     function getBuyAmount(
-        ERC20 buy_gem,
-        ERC20 pay_gem,
+        address buy_gem,
+        address pay_gem,
         uint pay_amt
     )
         public
-        constant
+        view
         returns (uint fill_amt);
 
     function getPayAmount(
-        ERC20 pay_gem,
-        ERC20 buy_gem,
+        address pay_gem,
+        address buy_gem,
         uint buy_amt
     )
         public
-        constant
+        view
         returns (uint fill_amt);
+
+    function isClosed()
+        public
+        view
+        returns (bool closed);
+
+    function getTime()
+        public
+        view
+        returns (uint64);
 }

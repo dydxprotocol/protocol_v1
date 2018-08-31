@@ -20,12 +20,10 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { ERC20 } from "../../../external/Maker/ERC20.sol";
-import { MatchingMarketInterface } from "../../../external/Maker/MatchingMarketInterface.sol";
+import { IMatchingMarket } from "../../../external/Maker/IMatchingMarket.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
@@ -36,12 +34,20 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * dYdX ExchangeWrapper to interface with Maker's MatchingMarket contract (Oasis exchange)
  */
 contract MatchingMarketExchangeWrapper is
-    HasNoEther,
-    HasNoContracts,
-    ExchangeWrapper
+    ExchangeWrapper,
+    ExchangeReader
 {
     using SafeMath for uint256;
     using TokenInteract for address;
+
+    // ============ Structs ============
+
+    struct Offer {
+        uint256 makerAmount;
+        address makerToken;
+        uint256 takerAmount;
+        address takerToken;
+    }
 
     // ============ State Variables ============
 
@@ -72,12 +78,12 @@ contract MatchingMarketExchangeWrapper is
     {
         assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
 
-        address market = MATCHING_MARKET;
-        takerToken.approve(market, requestedFillAmount);
-        uint256 receivedMakerAmount = MatchingMarketInterface(market).sellAllAmount(
-            ERC20(takerToken),
+        IMatchingMarket market = IMatchingMarket(MATCHING_MARKET);
+        takerToken.approve(address(market), requestedFillAmount);
+        uint256 receivedMakerAmount = market.sellAllAmount(
+            takerToken,
             requestedFillAmount,
-            ERC20(makerToken),
+            makerToken,
             0
         );
 
@@ -102,15 +108,53 @@ contract MatchingMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        uint256 cost = MatchingMarketInterface(MATCHING_MARKET).getPayAmount(
-            ERC20(takerToken),
-            ERC20(makerToken),
+        uint256 cost = IMatchingMarket(MATCHING_MARKET).getPayAmount(
+            takerToken,
+            makerToken,
             desiredMakerToken
         );
 
         requireBelowMaximumPrice(cost, desiredMakerToken, orderData);
 
         return cost;
+    }
+
+    function getMaxMakerAmount(
+        address makerToken,
+        address takerToken,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        (uint256 takerAmountRatio, uint256 makerAmountRatio) = getMaximumPrice(orderData);
+        require(
+            makerAmountRatio > 0,
+            "MatchingMarketExchangeWrapper#getMaxMakerAmount: No maximum price given"
+        );
+
+        IMatchingMarket market = IMatchingMarket(MATCHING_MARKET);
+        uint256 offerId = market.getBestOffer(makerToken, takerToken);
+        uint256 totalMakerAmount = 0;
+
+        while (offerId != 0) {
+            // get the offer info
+            Offer memory offer = getOffer(market, offerId);
+
+            assert(makerToken == offer.makerToken);
+            assert(takerToken == offer.takerToken);
+
+            // decide whether the offer satisfies the price ratio provided
+            if (offer.makerAmount.mul(takerAmountRatio) < offer.takerAmount.mul(makerAmountRatio)) {
+                break;
+            } else {
+                totalMakerAmount = totalMakerAmount.add(offer.makerAmount);
+            }
+            offerId = market.getWorseOffer(offerId);
+        }
+
+        return totalMakerAmount;
     }
 
     // ============ Private Functions ============
@@ -142,6 +186,29 @@ contract MatchingMarketExchangeWrapper is
                 "MatchingMarketExchangeWrapper:#requireBelowMaximumPrice: price is too high"
             );
         }
+    }
+
+    function getOffer(
+        IMatchingMarket market,
+        uint256 offerId
+    )
+        private
+        view
+        returns (Offer memory)
+    {
+        (
+            uint256 offerMakerAmount,
+            address offerMakerToken,
+            uint256 offerTakerAmount,
+            address offerTakerToken
+        ) = market.getOffer(offerId);
+
+        return Offer({
+            makerAmount: offerMakerAmount,
+            makerToken: offerMakerToken,
+            takerAmount: offerTakerAmount,
+            takerToken: offerTakerToken
+        });
     }
 
     // ============ Parsing Functions ============

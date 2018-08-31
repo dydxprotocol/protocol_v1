@@ -20,12 +20,10 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
-import { ERC20 } from "../../../external/Maker/ERC20.sol";
-import { SimpleMarketInterface } from "../../../external/Maker/SimpleMarketInterface.sol";
+import { ISimpleMarket } from "../../../external/Maker/ISimpleMarket.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
@@ -34,16 +32,24 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with Maker's (Oasis exchange) SimpleMarket or MatchingMarket
- * contracts to trade using a specific order. Since any MatchingMarket is also a SimpleMarket, this
+ * contracts to trade using a specific offer. Since any MatchingMarket is also a SimpleMarket, this
  * ExchangeWrapper can also be used for any MatchingMarket.
  */
 contract SimpleMarketExchangeWrapper is
-    HasNoEther,
-    HasNoContracts,
-    ExchangeWrapper
+    ExchangeWrapper,
+    ExchangeReader
 {
     using SafeMath for uint256;
     using TokenInteract for address;
+
+    // ============ Structs ============
+
+    struct Offer {
+        uint256 makerAmount;
+        address makerToken;
+        uint256 takerAmount;
+        address takerToken;
+    }
 
     // ============ State Variables ============
 
@@ -72,41 +78,26 @@ contract SimpleMarketExchangeWrapper is
         external
         returns (uint256)
     {
-        assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
+        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        uint256 offerId = bytesToOfferId(orderData);
 
-        SimpleMarketInterface market = SimpleMarketInterface(SIMPLE_MARKET);
-        uint256 orderId = getOrderId(orderData);
+        Offer memory offer = getOffer(market, offerId);
+        verifyOffer(offer, makerToken, takerToken);
 
-        (
-            uint256 orderMakerAmount,
-            ERC20 orderMakerToken,
-            uint256 orderTakerAmount,
-            ERC20 orderTakerToken
-        ) = market.getOffer(orderId);
-
-        require(
-            makerToken == address(orderMakerToken),
-            "SimpleMarketExchangeWrapper#exchange: makerToken does not match order makerToken"
-        );
-        require(
-            takerToken == address(orderTakerToken),
-            "SimpleMarketExchangeWrapper#exchange: takerToken does not match order takerToken"
-        );
-        require(
-            requestedFillAmount <= orderTakerAmount,
-            "SimpleMarketExchangeWrapper#exchange: Order is not large enough"
-        );
-
+        // calculate maximum amount of makerToken to receive given requestedFillAmount
         uint256 makerAmount = MathHelpers.getPartialAmount(
             requestedFillAmount,
-            orderTakerAmount,
-            orderMakerAmount
+            offer.takerAmount,
+            offer.makerAmount
         );
 
+        // complete the exchange
+        takerToken.approve(address(market), requestedFillAmount);
         require(
-            market.buy(orderId, makerAmount),
-            "SimpleMarketExchangeWrapper#exchange: Failed to buy() using the provided order"
+            market.buy(offerId, makerAmount),
+            "SimpleMarketExchangeWrapper#exchange: Buy failed"
         );
+        assert(makerToken.balanceOf(address(this)) >= makerAmount);
 
         ensureAllowance(
             makerToken,
@@ -127,36 +118,37 @@ contract SimpleMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        SimpleMarketInterface market = SimpleMarketInterface(SIMPLE_MARKET);
-        uint256 orderId = getOrderId(orderData);
-
-        (
-            uint256 orderMakerAmount,
-            ERC20 orderMakerToken,
-            uint256 orderTakerAmount,
-            ERC20 orderTakerToken
-        ) = market.getOffer(orderId);
+        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        Offer memory offer = getOffer(market, bytesToOfferId(orderData));
+        verifyOffer(offer, makerToken, takerToken);
 
         require(
-            makerToken == address(orderMakerToken),
-            "SimpleMarketExchangeWrapper#getExchangeCost: makerToken does not match order makerToken"
-        );
-        require(
-            takerToken == address(orderTakerToken),
-            "SimpleMarketExchangeWrapper#getExchangeCost: takerToken does not match order takerToken"
-        );
-        require(
-            desiredMakerToken <= orderMakerAmount,
-            "SimpleMarketExchangeWrapper#getExchangeCost: Order is not large enough"
+            desiredMakerToken <= offer.makerAmount,
+            "SimpleMarketExchangeWrapper#getExchangeCost: Offer is not large enough"
         );
 
-        uint256 cost = MathHelpers.getPartialAmount(
+        // return takerToken cost of desiredMakerToken
+        return MathHelpers.getPartialAmount(
             desiredMakerToken,
-            orderMakerAmount,
-            orderTakerAmount
+            offer.makerAmount,
+            offer.takerAmount
         );
+    }
 
-        return cost;
+    function getMaxMakerAmount(
+        address makerToken,
+        address takerToken,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        Offer memory offer = getOffer(market, bytesToOfferId(orderData));
+        verifyOffer(offer, makerToken, takerToken);
+
+        return offer.makerAmount;
     }
 
     // ============ Private Functions ============
@@ -168,16 +160,53 @@ contract SimpleMarketExchangeWrapper is
     )
         private
     {
-        if (token.allowance(address(this), spender) >= requiredAmount) {
-            return;
+        if (token.allowance(address(this), spender) < requiredAmount) {
+            token.approve(spender, MathHelpers.maxUint256());
         }
-
-        token.approve(spender, MathHelpers.maxUint256());
     }
 
-    // ============ Parsing Functions ============
+    function getOffer(
+        ISimpleMarket market,
+        uint256 offerId
+    )
+        private
+        view
+        returns (Offer memory)
+    {
+        (
+            uint256 offerMakerAmount,
+            address offerMakerToken,
+            uint256 offerTakerAmount,
+            address offerTakerToken
+        ) = market.getOffer(offerId);
 
-    function getOrderId(
+        return Offer({
+            makerAmount: offerMakerAmount,
+            makerToken: offerMakerToken,
+            takerAmount: offerTakerAmount,
+            takerToken: offerTakerToken
+        });
+    }
+
+    function verifyOffer(
+        Offer memory offer,
+        address makerToken,
+        address takerToken
+    )
+        private
+        pure
+    {
+        require(
+            makerToken == offer.makerToken,
+            "SimpleMarketExchangeWrapper#verifyOffer: offer makerToken does not match"
+        );
+        require(
+            takerToken == offer.takerToken,
+            "SimpleMarketExchangeWrapper#verifyOffer: offer takerToken does not match"
+        );
+    }
+
+    function bytesToOfferId(
         bytes orderData
     )
         private
@@ -186,7 +215,7 @@ contract SimpleMarketExchangeWrapper is
     {
         require(
             orderData.length == 32,
-            "SimpleMarketExchangeWrapper:#getMaximumPrice: orderData is not the right length"
+            "SimpleMarketExchangeWrapper:#bytesToOfferId: orderData is not the right length"
         );
 
         uint256 offerId;

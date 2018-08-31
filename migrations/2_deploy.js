@@ -19,6 +19,8 @@
 const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
+const SimpleMarketExchangeWrapper = artifacts.require("SimpleMarketExchangeWrapper");
+const MatchingMarketExchangeWrapper = artifacts.require("MatchingMarketExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -57,6 +59,7 @@ const FeeToken = artifacts.require("TokenC");
 // External contracts
 const { networks } = require("../truffle");
 const { assetDataUtils } = require("@0xproject/order-utils");
+let { MatchingMarket } = require("../test/contracts/OasisDex");
 let { ZeroExExchangeV1, ZeroExProxyV1 } = require("../test/contracts/ZeroExV1");
 let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../test/contracts/ZeroExV2");
 
@@ -88,6 +91,13 @@ async function maybeDeployTestTokens(deployer, network) {
       deployer.deploy(TokenB),
       deployer.deploy(FeeToken)
     ]);
+  }
+}
+
+async function maybeDeployOasisDex(deployer, network) {
+  if (isDevNetwork(network)) {
+    parseExternalContracts([MatchingMarket]);
+    await deployer.deploy(MatchingMarket, new BigNumber("18446744073709551615"));
   }
 }
 
@@ -130,6 +140,15 @@ async function maybeDeploy0xV2(deployer, network) {
   }
 }
 
+function getOasisDexAddress(network) {
+  if (isDevNetwork(network)) {
+    return MatchingMarket.address;
+  } else if (network === 'kovan') {
+    return '0x8cf1cab422a0b6b554077a361f8419cdf122a9f9';
+  }
+  throw "OasisDex Not Found";
+}
+
 function getZeroExExchangeV2Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchangeV2.address;
@@ -138,7 +157,6 @@ function getZeroExExchangeV2Address(network) {
   } else if (isMainNet(network)) {
     return '0x4f833a24e1f95d70f028921e27040ca56e09ab0b';
   }
-
   throw "0x ExchangeV2 Not Found";
 }
 
@@ -150,7 +168,6 @@ function getZeroExProxyV2Address(network) {
   } else if (isMainNet(network)) {
     return '0x2240dab907db71e64d3e0dba4800c83b5c502d4e';
   }
-
   throw "0x TokenProxyV2 Not Found";
 }
 
@@ -162,7 +179,6 @@ function getZeroExExchangeV1Address(network) {
   } else if (isMainNet(network)) {
     return '0x12459C951127e0c374FF9105DdA097662A027093';
   }
-
   throw "0x ExchangeV1 Not Found";
 }
 
@@ -174,7 +190,6 @@ function getZeroExProxyV1Address(network) {
   } else if (isMainNet(network)) {
     return '0x8da0d80f5007ef1e431dd2127178d224e32c2ef4';
   }
-
   throw "0x TokenProxyV1 Not Found";
 }
 
@@ -186,7 +201,6 @@ function getZRXAddress(network) {
   } else if (isMainNet(network)) {
     return '0xE41d2489571d322189246DaFA5ebDe1F4699F498';
   }
-
   throw "ZRX Not Found";
 }
 
@@ -198,7 +212,6 @@ function getSharedLoanTrustedMarginCallers(network) {
   } else if (isMainNet(network)) {
     return [MULTISIG.MAINNET.MARGIN_CALLER];
   }
-
   throw "Network Unsupported";
 }
 
@@ -210,7 +223,6 @@ function getWethAddress(network) {
   } else if (isMainNet(network)) {
     return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   }
-
   throw "WETH Not Found";
 }
 
@@ -309,6 +321,14 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
+      SimpleMarketExchangeWrapper,
+      getOasisDexAddress(network)
+    ),
+    deployer.deploy(
+      MatchingMarketExchangeWrapper,
+      getOasisDexAddress(network)
+    ),
+    deployer.deploy(
       ZeroExV1ExchangeWrapper,
       getZeroExExchangeV1Address(network),
       getZeroExProxyV1Address(network),
@@ -394,6 +414,7 @@ async function deploySecondLayer(deployer, network) {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await Promise.all([
+    maybeDeployOasisDex(deployer, network),
     maybeDeploy0xV1(deployer, network),
     maybeDeploy0xV2(deployer, network)
   ]);
