@@ -25,7 +25,7 @@ import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther
 import { ZeroExExchangeInterface } from "../../../external/0x/ZeroExExchangeInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
-import { ZeroExV1Parser } from "../../../lib/ZeroExV1Parser.sol";
+import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
@@ -36,13 +36,30 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * dYdX ExchangeWrapper to interface with 0x Version 1
  */
 contract ZeroExExchangeWrapper is
-    ZeroExV1Parser,
     HasNoEther,
     HasNoContracts,
-    ExchangeWrapper
+    ExchangeWrapper,
+    ExchangeReader
 {
     using SafeMath for uint256;
     using TokenInteract for address;
+
+    // ============ Structs ============
+
+    struct Order {
+        address maker;
+        address taker;
+        address feeRecipient;
+        uint256 makerTokenAmount;
+        uint256 takerTokenAmount;
+        uint256 makerFee;
+        uint256 takerFee;
+        uint256 expirationUnixTimestampSec;
+        uint256 salt;
+        uint8 v;
+        bytes32 r;
+        bytes32 s;
+    }
 
     // ============ State Variables ============
 
@@ -149,6 +166,42 @@ contract ZeroExExchangeWrapper is
         );
     }
 
+    function getMaxMakerAmount(
+        address makerToken,
+        address takerToken,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        address zeroExExchange = ZERO_EX_EXCHANGE;
+        Order memory order = parseOrder(orderData);
+
+        // order cannot be taken if expired
+        if (block.timestamp >= order.expirationUnixTimestampSec) {
+            return 0;
+        }
+
+        bytes32 orderHash = getOrderHash(
+            zeroExExchange,
+            makerToken,
+            takerToken,
+            order
+        );
+
+        uint256 unavailableTakerAmount =
+            ZeroExExchangeInterface(zeroExExchange).getUnavailableTakerTokenAmount(orderHash);
+        uint256 takerAmount = order.takerTokenAmount.sub(unavailableTakerAmount);
+        uint256 makerAmount = MathHelpers.getPartialAmount(
+            takerAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+
+        return makerAmount;
+    }
+
     // ============ Private Functions ============
 
     function transferTakerFee(
@@ -245,5 +298,70 @@ contract ZeroExExchangeWrapper is
             spender,
             MathHelpers.maxUint256()
         );
+    }
+
+    function getOrderHash(
+        address exchangeAddress,
+        address makerToken,
+        address takerToken,
+        Order memory order
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                exchangeAddress,
+                order.maker,
+                order.taker,
+                makerToken,
+                takerToken,
+                order.feeRecipient,
+                order.makerTokenAmount,
+                order.takerTokenAmount,
+                order.makerFee,
+                order.takerFee,
+                order.expirationUnixTimestampSec,
+                order.salt
+            )
+        );
+    }
+
+    /**
+     * Accepts a byte array with each variable padded to 32 bytes
+     */
+    function parseOrder(
+        bytes orderData
+    )
+        private
+        pure
+        returns (Order memory)
+    {
+        Order memory order;
+
+        /**
+         * Total: 384 bytes
+         * mstore stores 32 bytes at a time, so go in increments of 32 bytes
+         *
+         * NOTE: The first 32 bytes in an array stores the length, so we start reading from 32
+         */
+        /* solium-disable-next-line */
+        assembly {
+            mstore(order,           mload(add(orderData, 32)))  // maker
+            mstore(add(order, 32),  mload(add(orderData, 64)))  // taker
+            mstore(add(order, 64),  mload(add(orderData, 96)))  // feeRecipient
+            mstore(add(order, 96),  mload(add(orderData, 128))) // makerTokenAmount
+            mstore(add(order, 128), mload(add(orderData, 160))) // takerTokenAmount
+            mstore(add(order, 160), mload(add(orderData, 192))) // makerFee
+            mstore(add(order, 192), mload(add(orderData, 224))) // takerFee
+            mstore(add(order, 224), mload(add(orderData, 256))) // expirationUnixTimestampSec
+            mstore(add(order, 256), mload(add(orderData, 288))) // salt
+            mstore(add(order, 288), mload(add(orderData, 320))) // v
+            mstore(add(order, 320), mload(add(orderData, 352))) // r
+            mstore(add(order, 352), mload(add(orderData, 384))) // s
+        }
+
+        return order;
     }
 }

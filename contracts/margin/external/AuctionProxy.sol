@@ -21,20 +21,18 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Margin } from "../Margin.sol";
-import { ZeroExExchangeInterface } from "../../external/0x/ZeroExExchangeInterface.sol";
 import { MathHelpers } from "../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../lib/TokenInteract.sol";
-import { ZeroExV1Parser } from "../../lib/ZeroExV1Parser.sol";
+import { ExchangeReader } from "../interfaces/ExchangeReader.sol";
 
 
 /**
  * @title AuctionProxy
  * @author dYdX
  *
- * Contract for allowing anyone to close a Dutch Auction
+ * Contract that automatically sets the close amount for bidding in a Dutch Auction
  */
-contract AuctionProxy is
-    ZeroExV1Parser
+contract AuctionProxy
 {
     using TokenInteract for address;
     using SafeMath for uint256;
@@ -44,33 +42,41 @@ contract AuctionProxy is
     struct Position {
         address heldToken;
         address owedToken;
-        address tokenContract;
+        address owner;
         uint256 principal;
         uint256 owedTokenOwed;
-        uint256 collateralAmount;
     }
 
     // ============ State Variables ============
 
     address public DYDX_MARGIN;
-    address public ZERO_EX_V1_EXCHANGE;
 
     // ============ Constructor ============
 
     constructor(
-        address margin,
-        address zeroExExchange
+        address margin
     )
         public
     {
         DYDX_MARGIN = margin;
-        ZERO_EX_V1_EXCHANGE = zeroExExchange;
     }
 
     // ============ Public Functions ============
 
+    /**
+     * Using the Dutch Auction mechanism, bids on a position that is currently closing.
+     * Calculates the maximum close amount for a position, exchange, and order.
+     *
+     * @param  positionId       Unique ID of the position
+     * @param  minCloseAmount   The minimum acceptable close amount
+     * @param  dutchAuction     The address of the Dutch Auction contract to use
+     * @param  exchangeWrapper  The address of the Exchange Wrapper (and Exchange Reader) to use
+     * @param  orderData        The order data to pass to the Exchange Wrapper
+     * @return                  The principal amount of the position that was closed
+     */
     function closePosition(
         bytes32 positionId,
+        uint256 minCloseAmount,
         address dutchAuction,
         address exchangeWrapper,
         bytes   orderData
@@ -79,9 +85,21 @@ contract AuctionProxy is
         returns (uint256)
     {
         Margin margin = Margin(DYDX_MARGIN);
-        Position memory position = parsePosition(margin, positionId);
 
-        uint256 maxCloseAmount = getMaxCloseAmount(position, orderData);
+        if (!margin.containsPosition(positionId)) {
+            return 0; // if position is closed, return zero instead of throwing
+        }
+
+        Position memory position = parsePosition(margin, positionId);
+        uint256 maxCloseAmount = getMaxCloseAmount(position, exchangeWrapper, orderData);
+
+        if (maxCloseAmount == 0) {
+            return 0; // if order cannot be used, return zero instead of throwing
+        }
+
+        if (maxCloseAmount < minCloseAmount) {
+            return 0; // if order is already taken, return zero instead of throwing
+        }
 
         margin.closePosition(
             positionId,
@@ -92,9 +110,9 @@ contract AuctionProxy is
             orderData
         );
 
-        // give all tokens to the token contract
+        // give all tokens to the owner
         uint256 heldTokenAmount = position.heldToken.balanceOf(address(this));
-        position.heldToken.transfer(position.tokenContract, heldTokenAmount);
+        position.heldToken.transfer(position.owner, heldTokenAmount);
 
         return maxCloseAmount;
     }
@@ -105,72 +123,41 @@ contract AuctionProxy is
         Margin margin,
         bytes32 positionId
     )
-        internal
+        private
         view
         returns (Position memory)
     {
         Position memory position;
         position.heldToken = margin.getPositionHeldToken(positionId);
         position.owedToken = margin.getPositionOwedToken(positionId);
-        position.tokenContract = margin.getPositionOwner(positionId);
+        position.owner = margin.getPositionOwner(positionId);
         position.principal = margin.getPositionPrincipal(positionId);
         position.owedTokenOwed = margin.getPositionOwedAmount(positionId);
-        position.collateralAmount = margin.getPositionBalance(positionId);
         return position;
     }
 
     function getMaxCloseAmount(
         Position memory position,
+        address exchangeWrapper,
         bytes orderData
     )
-        internal
+        private
         view
         returns (uint256)
     {
-        ZeroExV1Parser.Order memory order = parseOrder(orderData);
-        validateOrder(order);
-
-        address exchange = ZERO_EX_V1_EXCHANGE;
-        bytes32 orderHash = getOrderHash(
-            order,
-            exchange,
+        uint256 makerTokenAmount = ExchangeReader(exchangeWrapper).getMaxMakerAmount(
             position.owedToken,
-            position.heldToken
-        );
-
-        // get maximum executable amounts
-        uint256 takerAmount = order.takerTokenAmount.sub(
-            ZeroExExchangeInterface(exchange).getUnavailableTakerTokenAmount(orderHash)
-        );
-        uint256 makerAmount = MathHelpers.getPartialAmount(
-            order.makerTokenAmount,
-            order.takerTokenAmount,
-            takerAmount
+            position.heldToken,
+            orderData
         );
 
         // get maximum close amount
         uint256 closeAmount = MathHelpers.getPartialAmount(
             position.principal,
             position.owedTokenOwed,
-            makerAmount
+            makerTokenAmount
         );
 
         return closeAmount;
-    }
-
-    function validateOrder(
-        ZeroExV1Parser.Order memory order
-    )
-        internal
-        view
-    {
-        require(
-            block.timestamp < order.expirationUnixTimestampSec,
-            "AuctionProxy#getMaxCloseAmount: order is expired"
-        );
-        require(
-            order.feeRecipient == address(0) || order.takerFee == 0,
-            "AuctionProxy#getMaxCloseAmount: order has takerFee"
-        );
     }
 }

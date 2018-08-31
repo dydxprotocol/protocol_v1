@@ -11,10 +11,15 @@ const TestToken = artifacts.require("TestToken");
 
 const { BIGNUMBERS, ADDRESSES } = require('../../../../helpers/Constants');
 const { zeroExOrderToBytes } = require('../../../../helpers/BytesHelper');
-const { createSignedSellOrder, signOrder } = require('../../../../helpers/ZeroExHelper');
 const { getPartialAmount } = require('../../../../helpers/MathHelper');
 const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
+const { callCancelOrder } = require('../../../../helpers/ExchangeHelper');
+const {
+  createSignedSellOrder,
+  signOrder,
+  getOrderHash
+} = require('../../../../helpers/ZeroExHelper');
 
 const baseAmount = new BigNumber('1e18');
 
@@ -79,6 +84,44 @@ describe('ZeroExExchangeWrapper', () => {
         );
 
         expect(requiredTakerTokenAmount).to.be.bignumber.eq(expected);
+      });
+    });
+  });
+
+  describe('#getMaxMakerAmount', () => {
+    contract('ZeroExExchangeWrapper', accounts => {
+      it('gives the correct maker token for a given order', async () => {
+        const {
+          exchangeWrapper
+        } = await setup(accounts);
+
+        const order = await createSignedSellOrder(accounts);
+        order.feeRecipient = ADDRESSES.ZERO;
+        order.ecSignature = await signOrder(order);
+
+        // test for un-taken order
+        const responseFull = await exchangeWrapper.getMaxMakerAmount.call(
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          zeroExOrderToBytes(order)
+        );
+        expect(responseFull).to.be.bignumber.eq(order.makerTokenAmount);
+
+        // cancel half of order
+        const cancelAmount = order.takerTokenAmount.div(2).floor();
+        const exchange = await ZeroExExchange.deployed();
+        await callCancelOrder(exchange, order, cancelAmount);
+        const cancelled = await exchange.cancelled.call(getOrderHash(order));
+        expect(cancelled).to.be.bignumber.eq(cancelAmount);
+
+        // test for partially-taken order
+        const expectedAmount = order.makerTokenAmount.div(2).floor()
+        const responsePart = await exchangeWrapper.getMaxMakerAmount.call(
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          zeroExOrderToBytes(order)
+        );
+        expect(responsePart).to.be.bignumber.eq(expectedAmount);
       });
     });
   });
