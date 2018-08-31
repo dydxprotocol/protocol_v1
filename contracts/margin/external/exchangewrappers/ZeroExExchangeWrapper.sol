@@ -90,7 +90,7 @@ contract ZeroExExchangeWrapper is
         external
         returns (uint256)
     {
-        ZeroExV1Parser.Order memory order = parseOrder(orderData);
+        Order memory order = parseOrder(orderData);
 
         require(
             requestedFillAmount <= order.takerTokenAmount,
@@ -140,7 +140,7 @@ contract ZeroExExchangeWrapper is
         view
         returns (uint256)
     {
-        ZeroExV1Parser.Order memory order = parseOrder(orderData);
+        Order memory order = parseOrder(orderData);
 
         return MathHelpers.getPartialAmountRoundedUp(
             order.takerTokenAmount,

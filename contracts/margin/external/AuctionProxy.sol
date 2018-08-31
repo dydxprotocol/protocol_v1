@@ -39,6 +39,8 @@ contract AuctionProxy is
     using TokenInteract for address;
     using SafeMath for uint256;
 
+    // ============ Structs ============
+
     struct Position {
         address heldToken;
         address owedToken;
@@ -57,7 +59,7 @@ contract AuctionProxy is
 
     constructor(
         address margin,
-        address zeroExExchange,
+        address zeroExExchange
     )
         public
     {
