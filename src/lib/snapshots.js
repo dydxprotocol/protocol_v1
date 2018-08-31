@@ -59,6 +59,39 @@ export async function snapshot(provider) {
   return response.result;
 }
 
+export async function stopMining(provider) {
+  const args = {
+    jsonrpc: "2.0",
+    method: "miner_stop",
+  };
+
+  const response = await sendAsync(provider, args);
+
+  return response.result;
+}
+
+export async function startMining(provider) {
+  const args = {
+    jsonrpc: "2.0",
+    method: "miner_start",
+  };
+
+  const response = await sendAsync(provider, args);
+
+  return response.result;
+}
+
+export async function mineBlock(provider) {
+  const args = {
+    jsonrpc: "2.0",
+    method: "evm_mine",
+  };
+
+  const response = await sendAsync(provider, args);
+
+  return response.result;
+}
+
 async function sendAsync(provider, args) {
   // Needed for different versions of web3
   const func = provider.sendAsync || provider.send;
