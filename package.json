@@ -24,6 +24,7 @@
     "compile": "truffle compile",
     "migrate": "truffle migrate",
     "develop": "truffle develop",
+    "console": "truffle console",
     "lint": "eslint --ext .js --ignore-path .gitignore .",
     "solint": "solium -d contracts/",
     "coverage": "./node_modules/.bin/solidity-coverage",

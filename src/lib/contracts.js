@@ -57,6 +57,9 @@ export {
 export {
   default as BucketLender
 }                                       from '../../build/contracts/BucketLender.json';
+export {
+  default as ERC20PositionWithdrawer
+} from '../../build/contracts/ERC20PositionWithdrawer.json';
 
 // Testing Contracts
 export { default as TokenA }            from '../../build/contracts/TokenA.json';
