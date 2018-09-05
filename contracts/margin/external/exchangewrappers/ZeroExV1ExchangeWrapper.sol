@@ -75,14 +75,14 @@ contract ZeroExV1ExchangeWrapper is
 
     constructor(
         address zeroExExchange,
-        address ZeroExProxyV1,
+        address zeroExProxy,
         address zrxToken,
         address[] trustedMsgSenders
     )
         public
     {
         ZERO_EX_EXCHANGE = zeroExExchange;
-        ZERO_EX_TOKEN_PROXY = ZeroExProxyV1;
+        ZERO_EX_TOKEN_PROXY = zeroExProxy;
         ZRX = zrxToken;
 
         for (uint i = 0; i < trustedMsgSenders.length; i++) {
