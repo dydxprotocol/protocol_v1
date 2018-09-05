@@ -24,7 +24,7 @@ import "./base/ZeroExOwnable.sol";
 
 /// @title TokenTransferProxy - Transfers tokens on behalf of contracts that have been approved via decentralized governance.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExProxy is ZeroExOwnable {
+contract ZeroExProxyV1 is ZeroExOwnable {
 
     /// @dev Only authorized addresses can invoke functions with this modifier.
     modifier onlyAuthorized {

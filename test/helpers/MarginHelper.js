@@ -6,12 +6,12 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
 const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
@@ -51,7 +51,7 @@ async function createOpenTx(
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: trader || accounts[0],
-    exchangeWrapper: ZeroExExchangeWrapper.address,
+    exchangeWrapper: ZeroExExchangeWrapperV1.address,
     depositInHeldToken: depositInHeldToken,
     nonce: nonce || Math.floor(Math.random() * 12983748912748)
   };
@@ -429,7 +429,7 @@ async function issueTokensAndSetAllowances(tx) {
       heldToken,
       tx.buyOrder.maker,
       tx.buyOrder.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExProxyV1.address
     ),
 
     // Buy Order Maker Fee
@@ -437,7 +437,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.buyOrder.maker,
       tx.buyOrder.makerFee,
-      ZeroExProxy.address
+      ZeroExProxyV1.address
     ),
 
     // Loan Payer Fee
@@ -461,7 +461,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.trader,
       tx.buyOrder.takerFee,
-      ZeroExExchangeWrapper.address
+      ZeroExExchangeWrapperV1.address
     ),
   ]);
 }
@@ -516,7 +516,7 @@ async function callClosePosition(
     from,
     recipient,
     payoutInHeldToken = true,
-    exchangeWrapper = ZeroExExchangeWrapper.address
+    exchangeWrapper = ZeroExExchangeWrapperV1.address
   } = {}
 ) {
   const closer = from || openTx.trader;
@@ -842,7 +842,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       owedToken,
       sellOrder.maker,
       sellOrder.makerTokenAmount,
-      ZeroExProxy.address
+      ZeroExProxyV1.address
     ),
 
     // Trader Sell Order Taker Fee
@@ -850,7 +850,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       feeToken,
       openTx.trader,
       sellOrder.takerFee,
-      ZeroExExchangeWrapper.address
+      ZeroExExchangeWrapperV1.address
     ),
 
     // Sell Order Maker Fee
@@ -858,7 +858,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       feeToken,
       sellOrder.maker,
       sellOrder.makerFee,
-      ZeroExProxy.address
+      ZeroExProxyV1.address
     )
   ]);
 }
