@@ -10,6 +10,7 @@ const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
+const BucketLenderFactory = artifacts.require("BucketLenderFactory");
 const { getGasCost } = require('../test/helpers/NodeHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../test/helpers/Constants');
 
@@ -61,6 +62,17 @@ contract('Deploy Costs', () => {
 
       const deployGasCost = await getGasCost(contract.transactionHash);
       console.log('\tERC20Short deploy gas cost: ' + deployGasCost);
+    });
+  });
+
+  describe('BucketLenderFactory', () => {
+    it('', async () => {
+      const contract = await BucketLenderFactory.new(
+        ADDRESSES.TEST[0],
+      );
+
+      const deployGasCost = await getGasCost(contract.transactionHash);
+      console.log('\tBucketLenderFactory deploy gas cost: ' + deployGasCost);
     });
   });
 
