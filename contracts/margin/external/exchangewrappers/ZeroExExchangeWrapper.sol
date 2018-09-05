@@ -25,6 +25,7 @@ import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther
 import { ZeroExExchangeInterface } from "../../../external/0x/ZeroExExchangeInterface.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
@@ -37,7 +38,8 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 contract ZeroExExchangeWrapper is
     HasNoEther,
     HasNoContracts,
-    ExchangeWrapper
+    ExchangeWrapper,
+    ExchangeReader
 {
     using SafeMath for uint256;
     using TokenInteract for address;
@@ -164,10 +166,46 @@ contract ZeroExExchangeWrapper is
         );
     }
 
+    function getMaxMakerAmount(
+        address makerToken,
+        address takerToken,
+        bytes orderData
+    )
+        external
+        view
+        returns (uint256)
+    {
+        address zeroExExchange = ZERO_EX_EXCHANGE;
+        Order memory order = parseOrder(orderData);
+
+        // order cannot be taken if expired
+        if (block.timestamp >= order.expirationUnixTimestampSec) {
+            return 0;
+        }
+
+        bytes32 orderHash = getOrderHash(
+            zeroExExchange,
+            makerToken,
+            takerToken,
+            order
+        );
+
+        uint256 unavailableTakerAmount =
+            ZeroExExchangeInterface(zeroExExchange).getUnavailableTakerTokenAmount(orderHash);
+        uint256 takerAmount = order.takerTokenAmount.sub(unavailableTakerAmount);
+        uint256 makerAmount = MathHelpers.getPartialAmount(
+            takerAmount,
+            order.takerTokenAmount,
+            order.makerTokenAmount
+        );
+
+        return makerAmount;
+    }
+
     // ============ Private Functions ============
 
     function transferTakerFee(
-        Order order,
+        Order memory order,
         address tradeOriginator,
         uint256 requestedFillAmount
     )
@@ -200,7 +238,7 @@ contract ZeroExExchangeWrapper is
     }
 
     function doTrade(
-        Order order,
+        Order memory order,
         address makerToken,
         address takerToken,
         uint256 requestedFillAmount
@@ -262,7 +300,33 @@ contract ZeroExExchangeWrapper is
         );
     }
 
-    // ============ Parsing Functions ============
+    function getOrderHash(
+        address exchangeAddress,
+        address makerToken,
+        address takerToken,
+        Order memory order
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(
+            abi.encodePacked(
+                exchangeAddress,
+                order.maker,
+                order.taker,
+                makerToken,
+                takerToken,
+                order.feeRecipient,
+                order.makerTokenAmount,
+                order.takerTokenAmount,
+                order.makerFee,
+                order.takerFee,
+                order.expirationUnixTimestampSec,
+                order.salt
+            )
+        );
+    }
 
     /**
      * Accepts a byte array with each variable padded to 32 bytes
