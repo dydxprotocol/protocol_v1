@@ -23,7 +23,7 @@ const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
 const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
@@ -70,16 +70,16 @@ function maybeDeployTestTokens(deployer, network) {
 function maybeDeploy0x(deployer, network) {
   if (isDevNetwork(network)) {
     return deployer.deploy(ZeroExProxyV1)
-      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxyV1.address))
+      .then(() => deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address))
       .then(() => ZeroExProxyV1.deployed())
-      .then(proxy => proxy.addAuthorizedAddress(ZeroExExchange.address));
+      .then(proxy => proxy.addAuthorizedAddress(ZeroExExchangeV1.address));
   }
   return Promise.resolve(true);
 }
 
 function get0xExchangeAddress(network) {
   if (isDevNetwork(network)) {
-    return ZeroExExchange.address;
+    return ZeroExExchangeV1.address;
   } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }

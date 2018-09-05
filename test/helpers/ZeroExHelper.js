@@ -1,4 +1,4 @@
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroEx = require('0x.js').ZeroEx;
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
@@ -21,7 +21,7 @@ async function createSignedSellOrder(
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX,
-    exchangeContractAddress: ZeroExExchange.address,
+    exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
     maker: accounts[5],
@@ -53,7 +53,7 @@ async function createSignedBuyOrder(
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX,
-    exchangeContractAddress: ZeroExExchange.address,
+    exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[4],
     maker: accounts[2],
@@ -90,7 +90,7 @@ async function createSignedOrder(
 ) {
   const order = {
     type: ORDER_TYPE.ZERO_EX,
-    exchangeContractAddress: ZeroExExchange.address,
+    exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
     maker: maker || accounts[5],
@@ -125,7 +125,7 @@ async function signOrder(order) {
 
 function getOrderHash(order) {
   return web3Instance.utils.soliditySha3(
-    ZeroExExchange.address,
+    ZeroExExchangeV1.address,
     order.maker,
     order.taker,
     order.makerTokenAddress,

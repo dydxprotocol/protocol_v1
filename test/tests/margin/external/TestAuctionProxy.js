@@ -7,7 +7,7 @@ const OwedToken = artifacts.require("TokenB");
 const AuctionProxy = artifacts.require("AuctionProxy");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
 const ERC20Short = artifacts.require("ERC20Short");
 const Margin = artifacts.require("Margin");
@@ -25,8 +25,6 @@ contract('AuctionProxy', accounts => {
   let owedToken;
   let dydxMargin;
   let dutchAuction;
-  let zeroExExchange;
-  let ZeroExExchangeWrapperV1;
   let auctionProxy;
 
   let positionId;
@@ -36,14 +34,10 @@ contract('AuctionProxy', accounts => {
       owedToken,
       dydxMargin,
       dutchAuction,
-      ZeroExExchangeWrapperV1,
-      zeroExExchange,
     ] = await Promise.all([
       OwedToken.deployed(),
       Margin.deployed(),
       DutchAuctionCloser.deployed(),
-      ZeroExExchangeWrapperV1.deployed(),
-      ZeroExExchange.deployed(),
     ]);
     auctionProxy = await AuctionProxy.new(dydxMargin.address);
     const tx = await doOpenPosition(accounts);
@@ -99,7 +93,8 @@ contract('AuctionProxy', accounts => {
         zeroExOrderToBytes(order)
       );
 
-      const unavail = await zeroExExchange.getUnavailableTakerTokenAmount.call(getOrderHash(order));
+      const exchange = await ZeroExExchangeV1.deployed();
+      const unavail = await exchange.getUnavailableTakerTokenAmount.call(getOrderHash(order));
       expect(order.takerTokenAmount.minus(unavail)).to.be.bignumber.lte(10);
     });
 

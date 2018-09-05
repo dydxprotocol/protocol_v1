@@ -10,7 +10,7 @@ const HeldToken = artifacts.require("TokenA");
 const WETH9 = artifacts.require("WETH9");
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 
@@ -109,7 +109,7 @@ contract('DutchAuctionCloser', accounts => {
       // set up order
       let order = {
         type: ORDER_TYPE.ZERO_EX,
-        exchangeContractAddress: ZeroExExchange.address,
+        exchangeContractAddress: ZeroExExchangeV1.address,
         expirationUnixTimestampSec: new BigNumber(100000000000000),
         feeRecipient: ADDRESSES.ZERO,
         maker: seller,

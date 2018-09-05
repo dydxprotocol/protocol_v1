@@ -4,7 +4,7 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
@@ -51,7 +51,7 @@ describe('ZeroExExchangeWrapperV1', () => {
 
         expect(marginIsTrusted).to.be.true;
         expect(randomIsTrusted).to.be.false;
-        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchange.address);
+        expect(ZERO_EX_EXCHANGE).to.eq(ZeroExExchangeV1.address);
         expect(ZERO_EX_TOKEN_PROXY).to.eq(ZeroExProxyV1.address);
         expect(ZRX).to.eq(FeeToken.address);
         expect(zrxProxyAllowance).to.be.bignumber.eq(BIGNUMBERS.MAX_UINT256);
@@ -109,7 +109,7 @@ describe('ZeroExExchangeWrapperV1', () => {
 
         // cancel half of order
         const cancelAmount = order.takerTokenAmount.div(2).floor();
-        const exchange = await ZeroExExchange.deployed();
+        const exchange = await ZeroExExchangeV1.deployed();
         await callCancelOrder(exchange, order, cancelAmount);
         const cancelled = await exchange.cancelled.call(getOrderHash(order));
         expect(cancelled).to.be.bignumber.eq(cancelAmount);
@@ -444,7 +444,7 @@ async function setup(accounts) {
   const feeToken = await FeeToken.deployed();
 
   const exchangeWrapper = await ZeroExExchangeWrapperV1.new(
-    ZeroExExchange.address,
+    ZeroExExchangeV1.address,
     ZeroExProxyV1.address,
     feeToken.address,
     [dydxMargin]

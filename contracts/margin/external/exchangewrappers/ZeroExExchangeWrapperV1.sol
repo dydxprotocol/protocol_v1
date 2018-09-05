@@ -20,7 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { ZeroExExchangeInterfaceV1 } from "../../../external/0x/ZeroExExchangeInterfaceV1.sol";
+import { ZeroExExchangeInterfaceV1 } from "../../../external/0x/v1/ZeroExExchangeInterfaceV1.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
