@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExExchangeInterface {
+contract ZeroExV1ExchangeInterface {
     // Error Codes
     enum Errors {
         ORDER_EXPIRED,                    // Order has already expired
