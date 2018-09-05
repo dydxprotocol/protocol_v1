@@ -11,7 +11,7 @@ const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
-const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const { zeroExOrderToBytes } = require('./BytesHelper');
 const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
@@ -51,7 +51,7 @@ async function createOpenTx(
     loanOffering: loanOffering,
     buyOrder: buyOrder,
     trader: trader || accounts[0],
-    exchangeWrapper: ZeroExExchangeWrapperV1.address,
+    exchangeWrapper: ZeroExV1ExchangeWrapper.address,
     depositInHeldToken: depositInHeldToken,
     nonce: nonce || Math.floor(Math.random() * 12983748912748)
   };
@@ -461,7 +461,7 @@ async function issueTokensAndSetAllowances(tx) {
       feeToken,
       tx.trader,
       tx.buyOrder.takerFee,
-      ZeroExExchangeWrapperV1.address
+      ZeroExV1ExchangeWrapper.address
     ),
   ]);
 }
@@ -516,7 +516,7 @@ async function callClosePosition(
     from,
     recipient,
     payoutInHeldToken = true,
-    exchangeWrapper = ZeroExExchangeWrapperV1.address
+    exchangeWrapper = ZeroExV1ExchangeWrapper.address
   } = {}
 ) {
   const closer = from || openTx.trader;
@@ -850,7 +850,7 @@ async function issueTokensAndSetAllowancesForClose(openTx, sellOrder) {
       feeToken,
       openTx.trader,
       sellOrder.takerFee,
-      ZeroExExchangeWrapperV1.address
+      ZeroExV1ExchangeWrapper.address
     ),
 
     // Sell Order Maker Fee

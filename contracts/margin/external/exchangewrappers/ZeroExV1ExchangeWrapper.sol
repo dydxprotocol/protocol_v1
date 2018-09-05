@@ -28,12 +28,12 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title ZeroExExchangeWrapperV1
+ * @title ZeroExV1ExchangeWrapper
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with 0x Version 1
  */
-contract ZeroExExchangeWrapperV1 is
+contract ZeroExV1ExchangeWrapper is
     ExchangeWrapper,
     ExchangeReader
 {
@@ -112,12 +112,12 @@ contract ZeroExExchangeWrapperV1 is
 
         require(
             requestedFillAmount <= order.takerTokenAmount,
-            "ZeroExExchangeWrapperV1#exchange: Requested fill amount larger than order size"
+            "ZeroExV1ExchangeWrapper#exchange: Requested fill amount larger than order size"
         );
 
         require(
             requestedFillAmount <= takerToken.balanceOf(address(this)),
-            "ZeroExExchangeWrapperV1#exchange: Requested fill amount larger than tokens held"
+            "ZeroExV1ExchangeWrapper#exchange: Requested fill amount larger than tokens held"
         );
 
         transferTakerFee(
@@ -228,7 +228,7 @@ contract ZeroExExchangeWrapperV1 is
 
         require(
             TRUSTED_MSG_SENDER[msg.sender],
-            "ZeroExExchangeWrapperV1#transferTakerFee: Only trusted senders can dictate the fee payer"
+            "ZeroExV1ExchangeWrapper#transferTakerFee: Only trusted senders can dictate the fee payer"
         );
 
         ZRX.transferFrom(
@@ -272,7 +272,7 @@ contract ZeroExExchangeWrapperV1 is
 
         require(
             filledTakerTokenAmount == requestedFillAmount,
-            "ZeroExExchangeWrapperV1#doTrade: Could not fill requested amount"
+            "ZeroExV1ExchangeWrapper#doTrade: Could not fill requested amount"
         );
 
         uint256 receivedMakerTokenAmount = MathHelpers.getPartialAmount(

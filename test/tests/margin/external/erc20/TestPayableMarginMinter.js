@@ -9,7 +9,7 @@ const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
 const WETH9 = artifacts.require("WETH9");
 const HeldToken = artifacts.require("TokenA");
-const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const ERC20Short = artifacts.require("ERC20Short");
 const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
@@ -114,7 +114,7 @@ contract('#PayableMarginMinter', accounts => {
       loanOffering.feeRecipient,
       loanOffering.lenderFeeTokenAddress,
       loanOffering.takerFeeTokenAddress,
-      ZeroExExchangeWrapperV1.address
+      ZeroExV1ExchangeWrapper.address
     ];
 
     const values256 = [

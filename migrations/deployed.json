@@ -66,7 +66,7 @@
             "transactionHash": "0x4681720ce633964e7bebbb136e0b57829e93d5123f44e2e6a3bd2483db654b8a"
         }
     },
-    "ZeroExExchangeWrapperV1": {
+    "ZeroExV1ExchangeWrapper": {
         "42": {
             "links": {},
             "address": "0xb604adc66574c028c5fab82ef031bcbc6e63a929",

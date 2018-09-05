@@ -19,7 +19,7 @@
 const { isDevNetwork } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
-const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
@@ -189,7 +189,7 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
-      ZeroExExchangeWrapperV1,
+      ZeroExV1ExchangeWrapper,
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
       getZRXAddress(network),

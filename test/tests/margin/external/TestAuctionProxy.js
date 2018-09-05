@@ -8,7 +8,7 @@ const AuctionProxy = artifacts.require("AuctionProxy");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
-const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ERC20Short = artifacts.require("ERC20Short");
 const Margin = artifacts.require("Margin");
 
@@ -78,7 +78,7 @@ contract('AuctionProxy', accounts => {
         positionId,
         order.makerTokenAmount.div(2),
         dutchAuction.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         true,
         zeroExOrderToBytes(order),
       );
@@ -89,7 +89,7 @@ contract('AuctionProxy', accounts => {
         positionId,
         0,
         dutchAuction.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         zeroExOrderToBytes(order)
       );
 
@@ -105,7 +105,7 @@ contract('AuctionProxy', accounts => {
         BYTES32.BAD_ID,
         0,
         dutchAuction.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         zeroExOrderToBytes(order)
       );
       expect(receipt.result).to.be.bignumber.equal(0);
@@ -122,7 +122,7 @@ contract('AuctionProxy', accounts => {
           positionId,
           0,
           dutchAuction.address,
-          ZeroExExchangeWrapperV1.address,
+          ZeroExV1ExchangeWrapper.address,
           zeroExOrderToBytes(order)
         )
       );
@@ -135,7 +135,7 @@ contract('AuctionProxy', accounts => {
         positionId,
         BIGNUMBERS.MAX_UINT256,
         dutchAuction.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         zeroExOrderToBytes(order)
       );
       expect(receipt.result).to.be.bignumber.equal(0);
@@ -150,7 +150,7 @@ contract('AuctionProxy', accounts => {
         positionId,
         0,
         dutchAuction.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         zeroExOrderToBytes(order)
       );
       expect(receipt.result).to.be.bignumber.equal(0);

@@ -11,7 +11,7 @@ const WETH9 = artifacts.require("WETH9");
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
 const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
-const ZeroExExchangeWrapperV1 = artifacts.require("ZeroExExchangeWrapperV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 
 const { expectThrow } = require('../../../helpers/ExpectHelper');
@@ -128,7 +128,7 @@ contract('DutchAuctionCloser', accounts => {
         positionId2,
         closeAmount,
         WethPayoutRecipient.address,
-        ZeroExExchangeWrapperV1.address,
+        ZeroExV1ExchangeWrapper.address,
         false,
         zeroExOrderToBytes(order),
         { from: opener }
