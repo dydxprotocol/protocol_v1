@@ -20,8 +20,6 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { ZeroExExchangeInterfaceV1 } from "../../../external/0x/ZeroExExchangeInterfaceV1.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
@@ -36,8 +34,6 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * dYdX ExchangeWrapper to interface with 0x Version 1
  */
 contract ZeroExExchangeWrapperV1 is
-    HasNoEther,
-    HasNoContracts,
     ExchangeWrapper,
     ExchangeReader
 {

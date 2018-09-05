@@ -20,8 +20,6 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
@@ -34,8 +32,6 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  * it. This requires the trader to put up the entire collateral themselves.
  */
 contract OpenDirectlyExchangeWrapper is
-    HasNoEther,
-    HasNoContracts,
     ExchangeWrapper
 {
     using SafeMath for uint256;

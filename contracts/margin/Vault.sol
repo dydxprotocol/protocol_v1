@@ -20,8 +20,6 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoContracts } from "openzeppelin-solidity/contracts/ownership/HasNoContracts.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { TokenProxy } from "./TokenProxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
@@ -39,9 +37,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  */
 contract Vault is
     Ownable,
-    StaticAccessControlled,
-    HasNoEther,
-    HasNoContracts
+    StaticAccessControlled
 {
     using SafeMath for uint256;
 
