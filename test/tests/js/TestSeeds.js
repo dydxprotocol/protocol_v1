@@ -7,7 +7,7 @@ const { ZeroEx } = require('0x.js');
 
 const Margin = artifacts.require('Margin');
 const TestToken = artifacts.require('TestToken');
-const ZeroExProxy = artifacts.require('ZeroExProxy');
+const ZeroExProxyV1 = artifacts.require('ZeroExProxyV1');
 
 contract('Margin', () => {
   describe('seeds', () => {
@@ -59,7 +59,7 @@ async function checkSeedOrders() {
 
     const [makerBalance, makerAllowance] = await Promise.all([
       makerToken.balanceOf.call(seedOrder.maker),
-      makerToken.allowance.call(seedOrder.maker, ZeroExProxy.address),
+      makerToken.allowance.call(seedOrder.maker, ZeroExProxyV1.address),
     ]);
 
     expect(makerBalance).to.be.bignumber.gte(seedOrder.makerTokenAmount);

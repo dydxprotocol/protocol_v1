@@ -37,8 +37,8 @@ export {
   default as ERC721MarginPosition
 }                                       from '../../build/contracts/ERC721MarginPosition.json';
 export {
-  default as ZeroExExchangeWrapper
-}                                       from '../../build/contracts/ZeroExExchangeWrapper.json';
+  default as ZeroExV1ExchangeWrapper
+}                                       from '../../build/contracts/ZeroExV1ExchangeWrapper.json';
 export {
   default as OpenDirectlyExchangeWrapper
 }                                     from '../../build/contracts/OpenDirectlyExchangeWrapper.json';
@@ -65,5 +65,5 @@ export {
 export { default as TokenA }            from '../../build/contracts/TokenA.json';
 export { default as TokenB }            from '../../build/contracts/TokenB.json';
 export { default as TokenC }            from '../../build/contracts/TokenC.json';
-export { default as ZeroExExchange }    from '../../build/contracts/ZeroExExchange.json';
-export { default as ZeroExProxy }       from '../../build/contracts/ZeroExProxy.json';
+export { default as ZeroExExchangeV1 }    from '../../build/contracts/ZeroExExchangeV1.json';
+export { default as ZeroExProxyV1 }       from '../../build/contracts/ZeroExProxyV1.json';

@@ -10,9 +10,9 @@ const HeldToken = artifacts.require("TokenA");
 const WETH9 = artifacts.require("WETH9");
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
+const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 const { issueTokenToAccountInAmountAndApproveProxy } = require('../../../helpers/MarginHelper');
@@ -103,13 +103,13 @@ contract('DutchAuctionCloser', accounts => {
       // set up tokens
       await Promise.all([
         weth.deposit({ value: OgAmount.times(10), from: seller }),
-        weth.approve(ZeroExProxy.address, BIGNUMBERS.MAX_UINT256, { from: seller }),
+        weth.approve(ZeroExProxyV1.address, BIGNUMBERS.MAX_UINT256, { from: seller }),
       ]);
 
       // set up order
       let order = {
         type: ORDER_TYPE.ZERO_EX,
-        exchangeContractAddress: ZeroExExchange.address,
+        exchangeContractAddress: ZeroExExchangeV1.address,
         expirationUnixTimestampSec: new BigNumber(100000000000000),
         feeRecipient: ADDRESSES.ZERO,
         maker: seller,
@@ -128,7 +128,7 @@ contract('DutchAuctionCloser', accounts => {
         positionId2,
         closeAmount,
         WethPayoutRecipient.address,
-        ZeroExExchangeWrapper.address,
+        ZeroExV1ExchangeWrapper.address,
         false,
         zeroExOrderToBytes(order),
         { from: opener }

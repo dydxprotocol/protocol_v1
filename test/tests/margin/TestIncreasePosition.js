@@ -8,11 +8,11 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
 const { ADDRESSES, DEFAULT_SALT } = require('../../helpers/Constants');
-const ExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
 const { getPartialAmount } = require('../../helpers/MathHelper');
@@ -376,7 +376,7 @@ describe('#increasePosition', () => {
         heldToken,
         increasePosTx.buyOrder.maker,
         increasePosTx.buyOrder.makerTokenAmount,
-        ZeroExProxy.address
+        ZeroExProxyV1.address
       );
 
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
@@ -398,7 +398,7 @@ describe('#increasePosition', () => {
         heldToken,
         increasePosTx.buyOrder.maker,
         increasePosTx.buyOrder.makerTokenAmount,
-        ZeroExProxy.address
+        ZeroExProxyV1.address
       );
 
       await expectThrow(callIncreasePosition(dydxMargin, increasePosTx));
@@ -417,7 +417,7 @@ describe('#increasePosition', () => {
         heldToken,
         increasePosTx.buyOrder.maker,
         increasePosTx.buyOrder.makerTokenAmount,
-        ZeroExProxy.address
+        ZeroExProxyV1.address
       );
 
       increasePosTx.loanOffering.rates.maxAmount = new BigNumber(increasePosTx.principal);

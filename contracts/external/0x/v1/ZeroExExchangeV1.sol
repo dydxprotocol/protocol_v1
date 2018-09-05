@@ -19,14 +19,14 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import "./ZeroExProxy.sol";
+import "./ZeroExProxyV1.sol";
 import "./base/ZeroExToken.sol";
 import "./base/ZeroExSafeMath.sol";
 
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExExchange is ZeroExSafeMath {
+contract ZeroExExchangeV1 is ZeroExSafeMath {
 
     // Error Codes
     enum Errors {
@@ -558,7 +558,7 @@ contract ZeroExExchange is ZeroExSafeMath {
         internal
         returns (bool)
     {
-        return ZeroExProxy(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
+        return ZeroExProxyV1(TOKEN_TRANSFER_PROXY_CONTRACT).transferFrom(token, from, to, value);
     }
 
     /// @dev Checks if any order transfers will fail.

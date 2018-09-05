@@ -19,12 +19,12 @@
 const { isDevNetwork } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
-const ZeroExExchangeWrapper = artifacts.require("ZeroExExchangeWrapper");
+const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
-const ZeroExProxy = artifacts.require("ZeroExProxy");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
+const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
 const ERC20LongFactory = artifacts.require("ERC20LongFactory");
@@ -69,17 +69,17 @@ function maybeDeployTestTokens(deployer, network) {
 
 function maybeDeploy0x(deployer, network) {
   if (isDevNetwork(network)) {
-    return deployer.deploy(ZeroExProxy)
-      .then(() => deployer.deploy(ZeroExExchange, FeeToken.address, ZeroExProxy.address))
-      .then(() => ZeroExProxy.deployed())
-      .then(proxy => proxy.addAuthorizedAddress(ZeroExExchange.address));
+    return deployer.deploy(ZeroExProxyV1)
+      .then(() => deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address))
+      .then(() => ZeroExProxyV1.deployed())
+      .then(proxy => proxy.addAuthorizedAddress(ZeroExExchangeV1.address));
   }
   return Promise.resolve(true);
 }
 
 function get0xExchangeAddress(network) {
   if (isDevNetwork(network)) {
-    return ZeroExExchange.address;
+    return ZeroExExchangeV1.address;
   } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }
@@ -89,7 +89,7 @@ function get0xExchangeAddress(network) {
 
 function get0xProxyAddress(network) {
   if (isDevNetwork(network)) {
-    return ZeroExProxy.address;
+    return ZeroExProxyV1.address;
   } else if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
@@ -189,7 +189,7 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
-      ZeroExExchangeWrapper,
+      ZeroExV1ExchangeWrapper,
       get0xExchangeAddress(network),
       get0xProxyAddress(network),
       getZRXAddress(network),

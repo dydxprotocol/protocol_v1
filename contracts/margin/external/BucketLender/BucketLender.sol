@@ -22,7 +22,7 @@ pragma experimental "v0.5.0";
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { HasNoEther } from "openzeppelin-solidity/contracts/ownership/HasNoEther.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
@@ -89,7 +89,7 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
      with Available Amount
  */
 contract BucketLender is
-    HasNoEther,
+    Ownable,
     OnlyMargin,
     LoanOwner,
     IncreaseLoanDelegator,

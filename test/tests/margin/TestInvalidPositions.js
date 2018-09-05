@@ -2,7 +2,7 @@ const expect = require('chai').expect;
 
 const BigNumber = require('bignumber.js');
 const Margin = artifacts.require("Margin");
-const ZeroExExchange = artifacts.require("ZeroExExchange");
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
@@ -225,7 +225,7 @@ describe('#openPosition', () => {
         const openTx = await createOpenTx(accounts);
 
         await issueTokensAndSetAllowances(openTx);
-        const exchange = await ZeroExExchange.deployed();
+        const exchange = await ZeroExExchangeV1.deployed();
 
         await callCancelOrder(
           exchange,
