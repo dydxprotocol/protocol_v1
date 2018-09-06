@@ -47,6 +47,7 @@ const InterestImpl = artifacts.require("InterestImpl");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const BucketLenderFactory = artifacts.require("BucketLenderFactory");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const AuctionProxy = artifacts.require("AuctionProxy");
 const WETH9 = artifacts.require("WETH9");
 
 // For testing
@@ -204,6 +205,10 @@ async function deploySecondLayer(deployer, network) {
     ),
     deployer.deploy(
       ERC721MarginPosition,
+      Margin.address
+    ),
+    deployer.deploy(
+      AuctionProxy,
       Margin.address
     ),
     deployer.deploy(

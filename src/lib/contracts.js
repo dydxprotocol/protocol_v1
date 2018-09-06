@@ -33,6 +33,7 @@ export { default as ERC20Long }         from '../../build/contracts/ERC20Long.js
 export { default as ERC20ShortFactory } from '../../build/contracts/ERC20ShortFactory.json';
 export { default as ERC20LongFactory }  from '../../build/contracts/ERC20LongFactory.json';
 export { default as ERC721MarginLoan }  from '../../build/contracts/ERC721MarginLoan.json';
+export { default as AuctionProxy }  from '../../build/contracts/AuctionProxy.json';
 export {
   default as ERC721MarginPosition
 }                                       from '../../build/contracts/ERC721MarginPosition.json';
