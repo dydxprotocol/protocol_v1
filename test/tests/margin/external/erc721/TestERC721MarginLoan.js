@@ -10,7 +10,7 @@ const OwedToken = artifacts.require("TokenB");
 
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../../../helpers/Constants');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../../../helpers/ZeroExHelper');
+const { createSignedV1SellOrder } = require('../../../../helpers/ZeroExV1Helper');
 const { getPartialAmount, uint256 } = require('../../../../helpers/MathHelper');
 const { transact } = require('../../../../helpers/ContractHelper');
 const { signLoanOffering } = require('../../../../helpers/LoanHelper');
@@ -261,7 +261,7 @@ describe('ERC721MarginLoan', () => {
       await expectNoToken(openTx2.id);
 
       // close half of openTx2
-      const sellOrder = await createSignedSellOrder(accounts);
+      const sellOrder = await createSignedV1SellOrder(accounts);
       await issueTokensAndSetAllowancesForClose(openTx2, sellOrder);
       await callClosePosition(
         dydxMargin,

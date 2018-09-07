@@ -10,16 +10,16 @@ const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
 
 const { BIGNUMBERS, ADDRESSES } = require('../../../../helpers/Constants');
-const { zeroExOrderToBytes } = require('../../../../helpers/BytesHelper');
+const { zeroExV1OrderToBytes } = require('../../../../helpers/BytesHelper');
 const { getPartialAmount } = require('../../../../helpers/MathHelper');
 const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const { callCancelOrder } = require('../../../../helpers/ExchangeHelper');
 const {
-  createSignedSellOrder,
+  createSignedV1SellOrder,
   signOrder,
-  getOrderHash
-} = require('../../../../helpers/ZeroExHelper');
+  getV1OrderHash
+} = require('../../../../helpers/ZeroExV1Helper');
 
 const baseAmount = new BigNumber('1e18');
 
@@ -66,14 +66,14 @@ describe('ZeroExV1ExchangeWrapper', () => {
           exchangeWrapper
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
         const amount = new BigNumber(baseAmount.times(2));
 
         const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order)
+          zeroExV1OrderToBytes(order)
         );
 
         const expected = getPartialAmount(
@@ -95,7 +95,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           exchangeWrapper
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
         order.feeRecipient = ADDRESSES.ZERO;
         order.ecSignature = await signOrder(order);
 
@@ -103,7 +103,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
         const responseFull = await exchangeWrapper.getMaxMakerAmount.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
-          zeroExOrderToBytes(order)
+          zeroExV1OrderToBytes(order)
         );
         expect(responseFull).to.be.bignumber.eq(order.makerTokenAmount);
 
@@ -111,7 +111,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
         const cancelAmount = order.takerTokenAmount.div(2).floor();
         const exchange = await ZeroExExchangeV1.deployed();
         await callCancelOrder(exchange, order, cancelAmount);
-        const cancelled = await exchange.cancelled.call(getOrderHash(order));
+        const cancelled = await exchange.cancelled.call(getV1OrderHash(order));
         expect(cancelled).to.be.bignumber.eq(cancelAmount);
 
         // test for partially-taken order
@@ -119,7 +119,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
         const responsePart = await exchangeWrapper.getMaxMakerAmount.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
-          zeroExOrderToBytes(order)
+          zeroExV1OrderToBytes(order)
         );
         expect(responsePart).to.be.bignumber.eq(expectedAmount);
       });
@@ -136,7 +136,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         const amount = new BigNumber(baseAmount.times(2));
 
@@ -155,7 +155,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -179,7 +179,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         let amount = new BigNumber(baseAmount.times(2));
 
@@ -198,7 +198,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -226,7 +226,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -254,7 +254,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -278,7 +278,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         const amount = new BigNumber(baseAmount.times(2));
 
@@ -290,7 +290,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         ));
       });
@@ -304,7 +304,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         const amount = new BigNumber(baseAmount.times(2));
 
@@ -316,7 +316,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: accounts[0] }
         ));
       });
@@ -331,7 +331,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         order.feeRecipient = ADDRESSES.ZERO;
         order.ecSignature = await signOrder(order);
@@ -353,7 +353,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -377,7 +377,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         const amount = new BigNumber(order.takerTokenAmount.plus(1));
 
@@ -389,7 +389,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         ));
       });
@@ -404,7 +404,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           dydxProxy
         } = await setup(accounts);
 
-        const order = await createSignedSellOrder(accounts);
+        const order = await createSignedV1SellOrder(accounts);
 
         const amount = new BigNumber(order.takerTokenAmount.times(2).div(3).floor());
 
@@ -416,7 +416,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         );
 
@@ -428,7 +428,7 @@ describe('ZeroExV1ExchangeWrapper', () => {
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
-          zeroExOrderToBytes(order),
+          zeroExV1OrderToBytes(order),
           { from: dydxMargin }
         ));
       });

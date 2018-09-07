@@ -13,8 +13,8 @@ const {
   callClosePositionDirectly
 } = require('../../helpers/MarginHelper');
 const {
-  createSignedSellOrder
-} = require('../../helpers/ZeroExHelper');
+  createSignedV1SellOrder
+} = require('../../helpers/ZeroExV1Helper');
 const {
   checkSuccess,
   checkSuccessCloseDirectly,
@@ -29,7 +29,7 @@ describe('#closePosition', () => {
     it('Successfully closes a position in increments', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
-        createSignedSellOrder(accounts),
+        createSignedV1SellOrder(accounts),
         Margin.deployed()
       ]);
 
@@ -64,7 +64,7 @@ describe('#closePosition', () => {
       const payoutInHeldToken = false;
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
-        createSignedSellOrder(accounts),
+        createSignedV1SellOrder(accounts),
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -125,7 +125,7 @@ describe('#closePosition', () => {
     it('only allows the position owner to close', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
-        createSignedSellOrder(accounts),
+        createSignedV1SellOrder(accounts),
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -147,7 +147,7 @@ describe('#closePosition', () => {
     it('Only closes up to the current position principal', async () => {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
-        createSignedSellOrder(accounts),
+        createSignedV1SellOrder(accounts),
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -178,7 +178,7 @@ describe('#closePosition', () => {
       it('succeeds when position owner returns maximum value', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
         const owner = await TestPositionOwner.new(
@@ -212,7 +212,7 @@ describe('#closePosition', () => {
       it('restricts close amount to value returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
         const owner = await TestPositionOwner.new(
@@ -246,7 +246,7 @@ describe('#closePosition', () => {
       it('fails if 0 is returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
         const owner = await TestPositionOwner.new(
@@ -268,7 +268,7 @@ describe('#closePosition', () => {
       it('fails if greater value is returned', async () => {
         const closeAmount = new BigNumber(20000);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
         const owner = await TestPositionOwner.new(

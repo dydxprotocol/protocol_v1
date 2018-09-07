@@ -20,8 +20,8 @@ const {
   getMaxInterestFee
 } = require('../../../../helpers/MarginHelper');
 const {
-  createSignedSellOrder
-} = require('../../../../helpers/ZeroExHelper');
+  createSignedV1SellOrder
+} = require('../../../../helpers/ZeroExV1Helper');
 const { transact } = require('../../../../helpers/ContractHelper');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const { signLoanOffering } = require('../../../../helpers/LoanHelper');
@@ -85,7 +85,7 @@ contract('ERC20Short', accounts => {
     POSITIONS.FULL.ID = POSITIONS.FULL.TX.id;
     POSITIONS.PART.ID = POSITIONS.PART.TX.id;
 
-    POSITIONS.PART.SELL_ORDER = await createSignedSellOrder(
+    POSITIONS.PART.SELL_ORDER = await createSignedV1SellOrder(
       accounts,
       { salt: POSITIONS.PART.SALT }
     );

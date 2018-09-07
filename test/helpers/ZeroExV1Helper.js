@@ -12,7 +12,7 @@ const web3Instance = new Web3(web3.currentProvider);
 
 const BASE_AMOUNT = new BigNumber('1098623452345987123')
 
-async function createSignedSellOrder(
+async function createSignedV1SellOrder(
   accounts,
   {
     salt = DEFAULT_SALT,
@@ -20,7 +20,7 @@ async function createSignedSellOrder(
   } = {}
 ) {
   let order = {
-    type: ORDER_TYPE.ZERO_EX,
+    type: ORDER_TYPE.ZERO_EX_V1,
     exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
@@ -44,7 +44,7 @@ async function createSignedSellOrder(
   return order;
 }
 
-async function createSignedBuyOrder(
+async function createSignedV1BuyOrder(
   accounts,
   {
     salt = DEFAULT_SALT,
@@ -52,7 +52,7 @@ async function createSignedBuyOrder(
   } = {}
 ) {
   let order = {
-    type: ORDER_TYPE.ZERO_EX,
+    type: ORDER_TYPE.ZERO_EX_V1,
     exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[4],
@@ -76,7 +76,7 @@ async function createSignedBuyOrder(
   return order;
 }
 
-async function createSignedOrder(
+async function createSignedV1Order(
   accounts,
   {
     salt = DEFAULT_SALT,
@@ -89,7 +89,7 @@ async function createSignedOrder(
   }
 ) {
   const order = {
-    type: ORDER_TYPE.ZERO_EX,
+    type: ORDER_TYPE.ZERO_EX_V1,
     exchangeContractAddress: ZeroExExchangeV1.address,
     expirationUnixTimestampSec: new BigNumber(100000000000000),
     feeRecipient: feeRecipient || accounts[6],
@@ -111,7 +111,7 @@ async function createSignedOrder(
 
 async function signOrder(order) {
   const signature = await promisify(web3Instance.eth.sign)(
-    getOrderHash(order), order.maker
+    getV1OrderHash(order), order.maker
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -123,7 +123,7 @@ async function signOrder(order) {
   };
 }
 
-function getOrderHash(order) {
+function getV1OrderHash(order) {
   return web3Instance.utils.soliditySha3(
     ZeroExExchangeV1.address,
     order.maker,
@@ -141,9 +141,9 @@ function getOrderHash(order) {
 }
 
 module.exports = {
-  createSignedSellOrder,
-  createSignedBuyOrder,
-  createSignedOrder,
+  createSignedV1SellOrder,
+  createSignedV1BuyOrder,
+  createSignedV1Order,
   signOrder,
-  getOrderHash
+  getV1OrderHash
 }

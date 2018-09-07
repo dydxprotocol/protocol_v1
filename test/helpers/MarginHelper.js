@@ -13,8 +13,8 @@ const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
-const { zeroExOrderToBytes } = require('./BytesHelper');
-const { createSignedBuyOrder, createSignedSellOrder } = require('./ZeroExHelper');
+const { zeroExV1OrderToBytes, zeroExV2OrderToBytes } = require('./BytesHelper');
+const { createSignedV1BuyOrder, createSignedV1SellOrder } = require('./ZeroExV1Helper');
 const { transact } = require('./ContractHelper');
 const { expectLog } = require('./EventHelper');
 const { createLoanOffering, setLoanHash } = require('./LoanHelper');
@@ -40,7 +40,7 @@ async function createOpenTx(
 ) {
   const [loanOffering, buyOrder] = await Promise.all([
     createLoanOffering(accounts, { salt, interestPeriod, loanOwner }),
-    createSignedBuyOrder(accounts, { salt })
+    createSignedV1BuyOrder(accounts, { salt })
   ]);
 
   const tx = {
@@ -100,11 +100,11 @@ function getMinimumDeposit(openTx) {
 
 function orderToBytes(order) {
   switch (order.type) {
-  case ORDER_TYPE.ZERO_EX: {
-    return zeroExOrderToBytes(order);
+  case ORDER_TYPE.ZERO_EX_V1: {
+    return zeroExV1OrderToBytes(order);
   }
-  case ORDER_TYPE.KYBER: {
-    return null;
+  case ORDER_TYPE.ZERO_EX_V2: {
+    return zeroExV2OrderToBytes(order);
   }
   case ORDER_TYPE.DIRECT: {
     return BYTES.EMPTY;
@@ -192,7 +192,8 @@ async function callOpenPosition(
 
 function getExpectedHeldTokenFromSell(tx) {
   switch (tx.buyOrder.type){
-  case ORDER_TYPE.ZERO_EX: {
+  case ORDER_TYPE.ZERO_EX_V1:
+  case ORDER_TYPE.ZERO_EX_V2: {
     let soldAmount = tx.principal;
     if (!tx.depositInHeldToken) {
       soldAmount = soldAmount.plus(tx.depositAmount)
@@ -202,9 +203,6 @@ function getExpectedHeldTokenFromSell(tx) {
       tx.buyOrder.takerTokenAmount,
       tx.buyOrder.makerTokenAmount
     );
-  }
-  case ORDER_TYPE.KYBER: {
-    return null;
   }
   case ORDER_TYPE.DIRECT: {
     return new BigNumber(0);
@@ -350,7 +348,7 @@ async function expectIncreasePositionLog(dydxMargin, tx, response, start) {
     true
   );
   let heldTokenFromSell;
-  if (tx.buyOrder.type === ORDER_TYPE.ZERO_EX) {
+  if (tx.buyOrder.type === ORDER_TYPE.ZERO_EX_V1) {
     heldTokenFromSell = tx.depositInHeldToken ?
       getPartialAmount(
         owed,
@@ -499,7 +497,7 @@ async function doClosePosition(
   } = {}
 ) {
   const [sellOrder, dydxMargin] = await Promise.all([
-    createSignedSellOrder(accounts, { salt }),
+    createSignedV1SellOrder(accounts, { salt }),
     Margin.deployed()
   ]);
   await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
@@ -533,7 +531,7 @@ async function callClosePosition(
     recipient,
     exchangeWrapper,
     payoutInHeldToken,
-    zeroExOrderToBytes(sellOrder),
+    zeroExV1OrderToBytes(sellOrder),
     { from: closer }
   );
 

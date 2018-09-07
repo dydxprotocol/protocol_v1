@@ -11,8 +11,8 @@ module.exports = {
     HEX: 2,
   },
   ORDER_TYPE: {
-    ZERO_EX: "zeroEx",
-    KYBER: "kyber",
+    ZERO_EX_V1: "zeroExV1",
+    ZERO_EX_V2: "zeroExV2",
     DIRECT: "openDirectly"
   },
   addr1: '0xec37D2aFfb54cBFaE6f8e66E0161E1cfa4bBf471',

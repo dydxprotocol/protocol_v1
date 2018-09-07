@@ -19,12 +19,12 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import "./base/ZeroExToken.sol";
-import "./base/ZeroExOwnable.sol";
+import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /// @title TokenTransferProxy - Transfers tokens on behalf of contracts that have been approved via decentralized governance.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExProxyV1 is ZeroExOwnable {
+contract ZeroExProxyV1 is Ownable {
 
     /// @dev Only authorized addresses can invoke functions with this modifier.
     modifier onlyAuthorized {
@@ -97,7 +97,7 @@ contract ZeroExProxyV1 is ZeroExOwnable {
         onlyAuthorized
         returns (bool)
     {
-        return ZeroExToken(token).transferFrom(from, to, value);
+        return ERC20(token).transferFrom(from, to, value);
     }
 
     /*
