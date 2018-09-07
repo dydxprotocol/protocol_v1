@@ -8,13 +8,16 @@
     <img src='https://coveralls.io/repos/github/dydxprotocol/protocol/badge.svg?branch=master' alt='Coverage Status' />
   </a>
   <a href='https://github.com/dydxprotocol/protocol/blob/master/LICENSE'>
-    <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg' alt='License' />
+    <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
   </a>
   <a href='https://www.npmjs.com/package/@dydxprotocol/protocol'>
     <img src='https://img.shields.io/npm/v/@dydxprotocol/protocol.svg' alt='NPM' />
   </a>
+  <a href='https://store.docker.com/community/images/dydxprotocol/protocol/tags'>
+    <img src='https://img.shields.io/badge/docker-container-blue.svg?logo=docker&longCache=true' alt='Docker' />
+  </a>
   <a href='https://slack.dydx.exchange/'>
-    <img src='https://img.shields.io/badge/chat-on%20slack-brightgreen.svg' alt='Slack' />
+    <img src='https://img.shields.io/badge/chat-on%20slack-brightgreen.svg?longCache=true' alt='Slack' />
   </a>
 </p>
 
@@ -82,7 +85,7 @@ await resetEVM(web3.currentProvider);
 
 ## Docker Container
 
-[Docker container](https://hub.docker.com/r/dydxprotocol/protocol/) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212. Docker container versions correspond to npm versions of this package, so use the same version for both
+[Docker container](https://store.docker.com/community/images/dydxprotocol/protocol/tags) with a a deployed version of the protocol running on a ganache-cli node with network_id = 1212. Docker container versions correspond to npm versions of this package, so use the same version for both
 
 ```
 docker pull dydxprotocol/protocol
