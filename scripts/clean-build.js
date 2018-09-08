@@ -1,5 +1,6 @@
 import * as contracts from '../src/lib/contracts';
 import deployed from '../migrations/deployed';
+import externalDeployed from '../migrations/external-deployed';
 import fs from 'fs';
 import promisify from 'es6-promisify';
 import mkdirp from 'mkdirp';
@@ -31,6 +32,10 @@ async function clean() {
 
     if (deployed[contractName]) {
       cleaned.networks = deployed[contractName];
+    }
+
+    if (externalDeployed[contractName]) {
+      cleaned.networks = externalDeployed[contractName];
     }
 
     if (contract.networks[DOCKER_NETWORK_ID]) {
