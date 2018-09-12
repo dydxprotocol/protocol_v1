@@ -119,14 +119,7 @@ contract ZeroExV2ExchangeWrapper is
         FillResults memory fill = v2Exchange.fillOrKillOrder(order, requestedFillAmount, signature);
 
         // validate results
-        require(
-            fill.takerAssetFilledAmount <= requestedFillAmount,
-            "ZeroExV2ExchangeWrapper#exchange: Invalid takerAssetFilledAmount"
-        );
-        require(
-            fill.makerAssetFilledAmount != 0,
-            "ZeroExV2ExchangeWrapper#exchange: Invalid makerAssetFilledAmount"
-        );
+        assert(fill.takerAssetFilledAmount == requestedFillAmount);
 
         // set allowance
         ensureAllowance(makerToken, receiver, fill.makerAssetFilledAmount);

@@ -66,15 +66,15 @@ const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const ZeroExProxyV2 = artifacts.require("ZeroExProxyV2");
 const ZeroExExchangeV2 = artifacts.require("ZeroExExchangeV2");
 
-function maybeDeployTestTokens(deployer, network) {
+async function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
-    return deployer.deploy(TokenA)
-      .then(() => deployer.deploy(TokenB))
-      .then(() => deployer.deploy(FeeToken));
+    await Promise.all([
+      deployer.deploy(TokenA),
+      deployer.deploy(TokenB),
+      deployer.deploy(FeeToken),
+    ]);
   }
-  return Promise.resolve(true);
 }
-
 
 async function maybeDeploy0xV1(deployer, network) {
   if (isDevNetwork(network)) {
@@ -83,7 +83,6 @@ async function maybeDeploy0xV1(deployer, network) {
     const proxy = await ZeroExProxyV1.deployed();
     await proxy.addAuthorizedAddress(ZeroExExchangeV1.address);
   }
-  return Promise.resolve(true);
 }
 
 async function maybeDeploy0xV2(deployer, network) {
@@ -104,9 +103,7 @@ async function maybeDeploy0xV2(deployer, network) {
       await erc20Proxy.addAuthorizedAddress(ZeroExExchangeV2.address),
       await exchange.registerAssetProxy(ZeroExProxyV2.address)
     ]);
-
   }
-  return Promise.resolve(true);
 }
 
 function getZeroExExchangeV2Address(network) {
