@@ -6,12 +6,13 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const TokenProxy = artifacts.require("TokenProxy");
 const Vault = artifacts.require("Vault");
 const InterestImpl = artifacts.require("InterestImpl");
 const TestInterestImpl = artifacts.require("TestInterestImpl");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
+const { ZeroExProxyV1 } = require('../contracts/ZeroExV1');
+
 const { DEFAULT_SALT, ORDER_TYPE, BYTES } = require('./Constants');
 const { zeroExV1OrderToBytes, zeroExV2OrderToBytes } = require('./BytesHelper');
 const { createSignedV1BuyOrder, createSignedV1SellOrder } = require('./ZeroExV1Helper');

@@ -1,14 +1,14 @@
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
-const ZeroEx = require('0x.js').ZeroEx;
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
-const { DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
-
 const web3Instance = new Web3(web3.currentProvider);
+
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
+const { ZeroExExchangeV1 } = require('../contracts/ZeroExV1');
+
+const { ADDRESSES, DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
 
 const BASE_AMOUNT = new BigNumber('1098623452345987123')
 
@@ -27,7 +27,7 @@ async function createSignedV1SellOrder(
     maker: accounts[5],
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     salt: new BigNumber(salt),
-    taker: ZeroEx.NULL_ADDRESS,
+    taker: ADDRESSES.ZERO,
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
 
     // owedToken
@@ -59,7 +59,7 @@ async function createSignedV1BuyOrder(
     maker: accounts[2],
     makerFee: BASE_AMOUNT.times(.02012398).floor(),
     salt: new BigNumber(salt),
-    taker: ZeroEx.NULL_ADDRESS,
+    taker: ADDRESSES.ZERO,
     takerFee: BASE_AMOUNT.times(.1019238).floor(),
 
     // heldToken
@@ -96,7 +96,7 @@ async function createSignedV1Order(
     maker: maker || accounts[5],
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     salt: new BigNumber(salt),
-    taker: ZeroEx.NULL_ADDRESS,
+    taker: ADDRESSES.ZERO,
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
     makerTokenAddress,
     makerTokenAmount: makerTokenAmount || BASE_AMOUNT.times(6.382472).floor(),

@@ -21,9 +21,9 @@ pragma experimental "v0.5.0";
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IExchange } from "../../../external/0x/v2/protocol/Exchange/interfaces/IExchange.sol";
-import { LibFillResults } from "../../../external/0x/v2/protocol/Exchange/libs/LibFillResults.sol";
-import { LibOrder } from "../../../external/0x/v2/protocol/Exchange/libs/LibOrder.sol";
+import { IExchange } from "../../../external/0x/v2/interfaces/IExchange.sol";
+import { LibFillResults } from "../../../external/0x/v2/libs/LibFillResults.sol";
+import { LibOrder } from "../../../external/0x/v2/libs/LibOrder.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";

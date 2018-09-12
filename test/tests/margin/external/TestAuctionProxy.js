@@ -6,11 +6,10 @@ chai.use(require('chai-bignumber')());
 const OwedToken = artifacts.require("TokenB");
 const AuctionProxy = artifacts.require("AuctionProxy");
 const DutchAuctionCloser = artifacts.require("DutchAuctionCloser");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ERC20Short = artifacts.require("ERC20Short");
 const Margin = artifacts.require("Margin");
+const { ZeroExExchangeV1, ZeroExProxyV1 } = require('../../../contracts/ZeroExV1');
 
 const { zeroExV1OrderToBytes } = require('../../../helpers/BytesHelper');
 const { ADDRESSES, BIGNUMBERS, BYTES32 } = require('../../../helpers/Constants');
