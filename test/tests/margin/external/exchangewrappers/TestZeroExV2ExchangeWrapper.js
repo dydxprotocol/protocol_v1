@@ -135,6 +135,26 @@ describe('ZeroExV2ExchangeWrapper', () => {
         expect(responsePart).to.be.bignumber.eq(expectedAmount);
       });
     });
+
+    contract('ZeroExV2ExchangeWrapper', accounts => {
+      it('returns 0 for a non-fillable order', async () => {
+        const {
+          exchangeWrapper,
+        } = await setup(accounts);
+
+        const order = await createSignedV2SellOrder(accounts);
+        order.expirationUnixTimestampSec = new BigNumber(1);
+        order.signature = await signV2Order(order);
+
+        // test for partially-taken order
+        const responsePart = await exchangeWrapper.getMaxMakerAmount.call(
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          zeroExV2OrderToBytes(order)
+        );
+        expect(responsePart).to.be.bignumber.eq(0);
+      });
+    });
   });
 
   describe('#exchange', () => {
@@ -330,6 +350,78 @@ describe('ZeroExV2ExchangeWrapper', () => {
           zeroExV2OrderToBytes(order),
           { from: accounts[0] }
         ));
+      });
+    });
+
+    contract('ZeroExV2ExchangeWrapper', accounts => {
+      it('fails if makerToken returned is zero', async () => {
+        const {
+          exchangeWrapper,
+          tradeOriginator,
+          dydxMargin,
+          dydxProxy
+        } = await setup(accounts);
+
+        const order = await createSignedV2SellOrder(accounts);
+        order.makerTokenAmount = new BigNumber(0);
+        order.signature = await signV2Order(order);
+
+        const amount = new BigNumber(baseAmount.times(2));
+
+        await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
+
+        await expectThrow(exchangeWrapper.exchange(
+          tradeOriginator,
+          dydxProxy,
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          amount,
+          zeroExV2OrderToBytes(order),
+          { from: dydxMargin }
+        ));
+      });
+    });
+
+    contract('ZeroExV1ExchangeWrapper', accounts => {
+      it('succeeds if no-fee is provided by anyone', async () => {
+        const {
+          exchangeWrapper,
+          tradeOriginator,
+          dydxProxy
+        } = await setup(accounts);
+
+        const order = await createSignedV2SellOrder(accounts);
+        order.takerFee = new BigNumber(0);
+        order.signature = await signV2Order(order);
+
+        const amount = new BigNumber(baseAmount.times(2));
+
+        await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
+
+        const startingBalances = await getBalances(
+          order,
+          exchangeWrapper,
+          tradeOriginator,
+          dydxProxy
+        );
+
+        await exchangeWrapper.exchange(
+          tradeOriginator,
+          dydxProxy,
+          order.makerTokenAddress,
+          order.takerTokenAddress,
+          amount,
+          zeroExV2OrderToBytes(order)
+        );
+
+        await validateBalances(
+          startingBalances,
+          order,
+          exchangeWrapper,
+          tradeOriginator,
+          amount,
+          dydxProxy
+        );
       });
     });
 
