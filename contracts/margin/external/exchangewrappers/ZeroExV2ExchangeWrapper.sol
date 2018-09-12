@@ -21,7 +21,7 @@ pragma experimental "v0.5.0";
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { ZeroExExchangeV2 } from "../../../external/0x/v2/protocol/Exchange/ZeroExExchangeV2.sol";
+import { IExchange } from "../../../external/0x/v2/protocol/Exchange/interfaces/IExchange.sol";
 import { LibFillResults } from "../../../external/0x/v2/protocol/Exchange/libs/LibFillResults.sol";
 import { LibOrder } from "../../../external/0x/v2/protocol/Exchange/libs/LibOrder.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
@@ -115,7 +115,7 @@ contract ZeroExV2ExchangeWrapper is
         );
 
         // do the exchange
-        ZeroExExchangeV2 v2Exchange = ZeroExExchangeV2(ZERO_EX_EXCHANGE);
+        IExchange v2Exchange = IExchange(ZERO_EX_EXCHANGE);
         FillResults memory fill = v2Exchange.fillOrKillOrder(order, requestedFillAmount, signature);
 
         // validate results
@@ -163,7 +163,7 @@ contract ZeroExV2ExchangeWrapper is
         returns (uint256)
     {
         Order memory order = parseOrder(orderData, makerToken, takerToken);
-        ZeroExExchangeV2 v2Exchange = ZeroExExchangeV2(ZERO_EX_EXCHANGE);
+        IExchange v2Exchange = IExchange(ZERO_EX_EXCHANGE);
         OrderInfo memory orderInfo = v2Exchange.getOrderInfo(order);
 
         if (orderInfo.orderStatus != uint8(OrderStatus.FILLABLE)) {

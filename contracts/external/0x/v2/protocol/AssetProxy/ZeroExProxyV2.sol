@@ -41,8 +41,9 @@ contract ZeroExProxyV2 is
             // to Address to transfer asset to.
             // amount Amount of asset to transfer.
             // bytes4(keccak256("transferFrom(bytes,address,address,uint256)")) = 0xa85e59e4
-            if eq(selector, 0xa85e59e400000000000000000000000000000000000000000000000000000000) {
 
+            switch selector
+            case 0xa85e59e400000000000000000000000000000000000000000000000000000000 {
                 // To lookup a value in a mapping, we load from the storage location keccak256(k, p),
                 // where k is the key left padded to 32 bytes and p is the storage slot
                 let start := mload(64)
@@ -50,7 +51,8 @@ contract ZeroExProxyV2 is
                 mstore(add(start, 32), authorized_slot)
 
                 // Revert if authorized[msg.sender] == false
-                if iszero(sload(keccak256(start, 64))) {
+                switch sload(keccak256(start, 64))
+                case 0 {
                     // Revert with `Error("SENDER_NOT_AUTHORIZED")`
                     mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
                     mstore(32, 0x0000002000000000000000000000000000000000000000000000000000000000)
@@ -58,6 +60,7 @@ contract ZeroExProxyV2 is
                     mstore(96, 0)
                     revert(0, 100)
                 }
+                default {}
 
                 // `transferFrom`.
                 // The function is marked `external`, so no abi decodeding is done for
@@ -155,17 +158,20 @@ contract ZeroExProxyV2 is
                         gt(mload(0), 0)
                     )
                 ))
-                if success {
+                switch success
+                case 1 {
                     return(0, 0)
                 }
-
-                // Revert with `Error("TRANSFER_FAILED")`
-                mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
-                mstore(32, 0x0000002000000000000000000000000000000000000000000000000000000000)
-                mstore(64, 0x0000000f5452414e534645525f4641494c454400000000000000000000000000)
-                mstore(96, 0)
-                revert(0, 100)
+                default {
+                    // Revert with `Error("TRANSFER_FAILED")`
+                    mstore(0, 0x08c379a000000000000000000000000000000000000000000000000000000000)
+                    mstore(32, 0x0000002000000000000000000000000000000000000000000000000000000000)
+                    mstore(64, 0x0000000f5452414e534645525f4641494c454400000000000000000000000000)
+                    mstore(96, 0)
+                    revert(0, 100)
+                }
             }
+            default {}
 
             // Revert if undefined function is called
             revert(0, 0)
