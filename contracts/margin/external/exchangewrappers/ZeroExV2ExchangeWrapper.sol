@@ -50,10 +50,10 @@ contract ZeroExV2ExchangeWrapper is
     // msg.senders that will put the correct tradeOriginator in callerData when doing an exchange
     mapping (address => bool) public TRUSTED_MSG_SENDER;
 
-    // address of the ZeroEx V1 Exchange
+    // address of the ZeroEx V2 Exchange
     address public ZERO_EX_EXCHANGE;
 
-    // address of the ZeroEx V1 TokenTransferProxy
+    // address of the ZeroEx V2 ERC20Proxy
     address public ZERO_EX_TOKEN_PROXY;
 
     // address of the ZRX token
@@ -253,15 +253,15 @@ contract ZeroExV2ExchangeWrapper is
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            mstore(order,           mload(add(orderData, 32)))  // maker
-            mstore(add(order, 32),  mload(add(orderData, 64)))  // taker
-            mstore(add(order, 64),  mload(add(orderData, 96)))  // feeRecipient
-            mstore(add(order, 96),  mload(add(orderData, 128))) // sender
-            mstore(add(order, 128), mload(add(orderData, 160))) // makerTokenAmount
-            mstore(add(order, 160), mload(add(orderData, 192))) // takerTokenAmount
+            mstore(order,           mload(add(orderData, 32)))  // makerAddress
+            mstore(add(order, 32),  mload(add(orderData, 64)))  // takerAddress
+            mstore(add(order, 64),  mload(add(orderData, 96)))  // feeRecipientAddress
+            mstore(add(order, 96),  mload(add(orderData, 128))) // senderAddress
+            mstore(add(order, 128), mload(add(orderData, 160))) // makerAssetAmount
+            mstore(add(order, 160), mload(add(orderData, 192))) // takerAssetAmount
             mstore(add(order, 192), mload(add(orderData, 224))) // makerFee
             mstore(add(order, 224), mload(add(orderData, 256))) // takerFee
-            mstore(add(order, 256), mload(add(orderData, 288))) // expirationUnixTimestampSec
+            mstore(add(order, 256), mload(add(orderData, 288))) // expirationTimeSeconds
             mstore(add(order, 288), mload(add(orderData, 320))) // salt
         }
 
@@ -285,7 +285,8 @@ contract ZeroExV2ExchangeWrapper is
 
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
-            // Store the neighbors and address into memory
+            // Store the selector and address in the asset data
+            // The first 32 bytes of an array are the length (already set above)
             mstore(add(result, 32), selector)
             mstore(add(result, 36), tokenAddress)
         }

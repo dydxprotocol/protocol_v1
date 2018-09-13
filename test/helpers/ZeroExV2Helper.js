@@ -151,24 +151,6 @@ async function signV2Order(order) {
 function getV2OrderHash(order) {
 
   const eip712Hash = "0x770501f88a26ede5c04a20ef877969e961eb11fc13b78aaf414b633da0d4f86f";
-  /*
-  = web3Instance.utils.soliditySha3(
-    "Order(",
-    "address makerAddress,",
-    "address takerAddress,",
-    "address feeRecipientAddress,",
-    "address senderAddress,",
-    "uint256 makerTokenAmount,",
-    "uint256 takerTokenAmount,",
-    "uint256 makerFee,",
-    "uint256 takerFee,",
-    "uint256 expirationUnixTimestampSecSeconds,",
-    "uint256 salt,",
-    "bytes makerAssetData,",
-    "bytes takerAssetData",
-    ")"
-  );
-  */
 
   const makerAssetData = addressToAssetData(order.makerTokenAddress);
   const takerAssetData = addressToAssetData(order.takerTokenAddress);
@@ -189,16 +171,10 @@ function getV2OrderHash(order) {
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'bytes', v: takerAssetData })}
   );
 
-  const eip712DomainSeparatorSchemaHash = web3Instance.utils.soliditySha3(
-    { t: 'string', v: "EIP712Domain(" },
-    { t: 'string', v: "string name," },
-    { t: 'string', v: "string version," },
-    { t: 'string', v: "address verifyingContract" },
-    { t: 'string', v: ")" },
-  );
+  const eip712DomSepHash = "0x91ab3d17e3a50a9d89e63fd30b92be7f5336b03b287bb946787a83a9d62a2766";
 
   const eip712DomainHash = web3Instance.utils.soliditySha3(
-    { t: 'bytes32', v: eip712DomainSeparatorSchemaHash },
+    { t: 'bytes32', v: eip712DomSepHash },
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'string', v: '0x Protocol' })},
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'string', v: '2' })},
     { t: 'bytes32', v: addressToBytes32(order.exchangeContractAddress) }

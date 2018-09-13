@@ -327,8 +327,10 @@ async function grantAccessToVault() {
 
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
-  await maybeDeploy0xV1(deployer, network);
-  await maybeDeploy0xV2(deployer, network);
+  await Promise.all([
+    maybeDeploy0xV1(deployer, network),
+    maybeDeploy0xV2(deployer, network)
+  ]);
   await deployContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
