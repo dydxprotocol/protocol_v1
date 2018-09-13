@@ -20,7 +20,6 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { TokenProxy } from "./TokenProxy.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
@@ -35,9 +34,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  * Vault only supports ERC20 tokens, and will not accept any tokens that require
  * a tokenFallback or equivalent function (See ERC223, ERC777, etc.)
  */
-contract Vault is
-    Ownable,
-    StaticAccessControlled
+contract Vault is StaticAccessControlled
 {
     using SafeMath for uint256;
 
