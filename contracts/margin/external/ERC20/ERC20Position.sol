@@ -25,7 +25,6 @@ import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { StandardToken } from "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
-import { StringHelpers } from "../../../lib/StringHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
@@ -119,9 +118,6 @@ contract ERC20Position is
     // Current State of this contract. See State enum
     State public state;
 
-    // Symbol to be ERC20 compliant with frontends
-    string public symbol;
-
     // Address of the position's heldToken. Cached for convenience and lower-cost withdrawals
     address public heldToken;
 
@@ -153,8 +149,7 @@ contract ERC20Position is
         address margin,
         address initialTokenHolder,
         address[] trustedRecipients,
-        address[] trustedWithdrawers,
-        string _symbol
+        address[] trustedWithdrawers
     )
         public
         OnlyMargin(margin)
@@ -162,7 +157,6 @@ contract ERC20Position is
         POSITION_ID = positionId;
         state = State.UNINITIALIZED;
         INITIAL_TOKEN_HOLDER = initialTokenHolder;
-        symbol = _symbol;
         closedUsingTrustedRecipient = false;
 
         uint256 i;
@@ -369,31 +363,14 @@ contract ERC20Position is
         returns (uint8);
 
     /**
-     * ERC20 name function. Returns a name based off positionId.
+     * ERC20 symbol function.
      *
-     * NOTE: This is not a gas-efficient function and is not intended to be used on-chain
-     *
-     * @return  The name of the token which includes the hexadecimal positionId
+     * @return  The symbol of the Margin Token
      */
-    function name()
+    function symbol()
         external
         view
-        returns (string)
-    {
-        if (state == State.UNINITIALIZED) {
-            return string(StringHelpers.strcat(getNameIntro(), " [UNINITIALIZED]"));
-        }
-
-        return string(
-            StringHelpers.strcat(
-                StringHelpers.strcat(
-                    getNameIntro(),
-                    " 0x"
-                ),
-                StringHelpers.bytes32ToHex(POSITION_ID)
-            )
-        );
-    }
+        returns (string);
 
     /**
      * Implements PositionCustodian functionality. Called by external contracts to see where to pay
@@ -540,9 +517,4 @@ contract ERC20Position is
             uint256 /* tokenAmount */,
             uint256 /* allowedCloseAmount */
         );
-
-    function getNameIntro()
-        private
-        pure
-        returns (bytes);
 }

@@ -229,8 +229,6 @@ contract('ERC20Long', accounts => {
         expect(tsc.state).to.be.bignumber.eq(TOKENIZED_POSITION_STATE.UNINITIALIZED);
         expect(tsc.INITIAL_TOKEN_HOLDER).to.eq(INITIAL_TOKEN_HOLDER);
         expect(tsc.heldToken).to.eq(ADDRESSES.ZERO);
-        expect(tsc.symbol).to.eq("d/LL");
-        expect(tsc.name).to.eq("dYdX Leveraged Long Token [UNINITIALIZED]");
         for (let i in position.TRUSTED_RECIPIENTS) {
           const recipient = position.TRUSTED_RECIPIENTS[i];
           const isIn = await position.TOKEN_CONTRACT.TRUSTED_RECIPIENTS.call(recipient);
@@ -925,7 +923,7 @@ contract('ERC20Long', accounts => {
       }
     });
 
-    it('fails  if not initialized', async () => {
+    it('fails if not initialized', async () => {
       await setUpPositions();
       const tokenContract = await ERC20Long.new(
         POSITIONS.FULL.ID,
@@ -952,6 +950,43 @@ contract('ERC20Long', accounts => {
         ]);
         expect(positionId).to.be.bignumber.eq(POSITION.ID);
         expect(tokenName).to.eq("dYdX Leveraged Long Token " + POSITION.ID.toString());
+      }
+    });
+
+    it('succeeds if UNINITIALIZED', async () => {
+      await setUpTokens();
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const tokenName = await POSITION.TOKEN_CONTRACT.name.call();
+        expect(tokenName).to.eq("dYdX Leveraged Long Token [UNINITIALIZED]");
+      }
+    });
+  });
+
+  describe('#symbol', () => {
+    it('successfully returns the positionId of the position', async () => {
+      await setUpPositions();
+      await setUpTokens();
+      await transferPositionsToTokens();
+
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const [positionId, tokenSymbol, heldTokenSymbol] = await Promise.all([
+          POSITION.TOKEN_CONTRACT.POSITION_ID.call(),
+          POSITION.TOKEN_CONTRACT.symbol.call(),
+          heldToken.symbol.call()
+        ]);
+        expect(positionId).to.be.bignumber.eq(POSITION.ID);
+        expect(tokenSymbol).to.eq("l" + heldTokenSymbol);
+      }
+    });
+
+    it('succeeds if UNINITIALIZED', async () => {
+      await setUpTokens();
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        const tokenName = await POSITION.TOKEN_CONTRACT.symbol.call();
+        expect(tokenName).to.eq("l[UNINITIALIZED]");
       }
     });
   });

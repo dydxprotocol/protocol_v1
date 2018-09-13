@@ -11,8 +11,6 @@ async function getERC20PositionConstants(erc20Contract) {
     DYDX_MARGIN,
     POSITION_ID,
     state,
-    name,
-    symbol,
     INITIAL_TOKEN_HOLDER,
     heldToken,
     totalSupply
@@ -20,18 +18,15 @@ async function getERC20PositionConstants(erc20Contract) {
     erc20Contract.DYDX_MARGIN.call(),
     erc20Contract.POSITION_ID.call(),
     erc20Contract.state.call(),
-    erc20Contract.name.call(),
-    erc20Contract.symbol.call(),
     erc20Contract.INITIAL_TOKEN_HOLDER.call(),
     erc20Contract.heldToken.call(),
     erc20Contract.totalSupply.call(),
   ]);
+
   return {
     DYDX_MARGIN,
     POSITION_ID,
     state,
-    name,
-    symbol,
     INITIAL_TOKEN_HOLDER,
     heldToken,
     totalSupply

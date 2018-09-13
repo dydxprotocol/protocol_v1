@@ -23,6 +23,7 @@ import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { DetailedERC20 } from "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
+import { StringHelpers } from "../../../lib/StringHelpers.sol";
 
 
 /**
@@ -50,8 +51,7 @@ contract ERC20Short is ERC20Position {
             margin,
             initialTokenHolder,
             trustedRecipients,
-            trustedWithdrawers,
-            "d/S"
+            trustedWithdrawers
         )
     {}
 
@@ -64,6 +64,39 @@ contract ERC20Short is ERC20Position {
     {
         address owedToken = Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID);
         return DetailedERC20(owedToken).decimals();
+    }
+
+    function symbol()
+        external
+        view
+        returns (string)
+    {
+        if (state == State.UNINITIALIZED) {
+            return "s[UNINITIALIZED]";
+        }
+        address owedToken = Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID);
+        return string(
+            StringHelpers.strcat(
+                "s",
+                bytes(DetailedERC20(owedToken).symbol())
+            )
+        );
+    }
+
+    function name()
+        external
+        view
+        returns (string)
+    {
+        if (state == State.UNINITIALIZED) {
+            return "dYdX Short Token [UNINITIALIZED]";
+        }
+        return string(
+            StringHelpers.strcat(
+                "dYdX Short Token ",
+                StringHelpers.bytes32ToHex(POSITION_ID)
+            )
+        );
     }
 
     // ============ Private Functions ============
@@ -96,13 +129,5 @@ contract ERC20Short is ERC20Position {
         uint256 amount = Math.min256(balance, requestedCloseAmount);
 
         return (amount, amount);
-    }
-
-    function getNameIntro()
-        private
-        pure
-        returns (bytes)
-    {
-        return "dYdX Short Token";
     }
 }

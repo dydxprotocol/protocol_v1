@@ -58,7 +58,7 @@ library StringHelpers {
     }
 
     /**
-     * Translates a bytes32 into an ascii hexadecimal representation of those bytes
+     * Translates a bytes32 to an ascii hexadecimal representation starting with "0x"
      *
      * @param  input  The bytes to convert to hexadecimal
      * @return        A representation of the bytes in ascii hexadecimal
@@ -70,8 +70,10 @@ library StringHelpers {
         pure
         returns (bytes)
     {
-        bytes memory numberAsString = new bytes(64);
         uint256 number = uint256(input);
+        bytes memory numberAsString = new bytes(66); // "0x" and then 2 chars per byte
+        numberAsString[0] = byte(48);  // '0'
+        numberAsString[1] = byte(120); // 'x'
 
         for (uint256 n = 0; n < 32; n++) {
             uint256 nthByte = number / uint256(uint256(2) ** uint256(248 - 8 * n));
@@ -83,8 +85,8 @@ library StringHelpers {
             // 87 is ascii for '0', 48 is ascii for 'a'
             hex1 += (hex1 > 9) ? 87 : 48; // shift into proper ascii value
             hex2 += (hex2 > 9) ? 87 : 48; // shift into proper ascii value
-            numberAsString[2 * n] = byte(hex1);
-            numberAsString[2 * n + 1] = byte(hex2);
+            numberAsString[2 * n + 2] = byte(hex1);
+            numberAsString[2 * n + 3] = byte(hex2);
         }
         return numberAsString;
     }

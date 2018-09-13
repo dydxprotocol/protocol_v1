@@ -23,4 +23,14 @@ import { TestToken } from "./TestToken.sol";
 
 
 /* solium-disable-next-line */
-contract TokenA is TestToken {}
+contract TokenA is TestToken {
+    function decimals() public pure returns (uint8) {
+        return 11;
+    }
+    function symbol() public pure returns (string) {
+        return "AAA";
+    }
+    function name() public pure returns (string) {
+        return "Test Token A";
+    }
+}
