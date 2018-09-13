@@ -23,6 +23,7 @@ import { DetailedERC20 } from "openzeppelin-solidity/contracts/token/ERC20/Detai
 import { ERC20Position } from "./ERC20Position.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { StringHelpers } from "../../../lib/StringHelpers.sol";
 
 
 /**
@@ -50,8 +51,7 @@ contract ERC20Long is ERC20Position {
             margin,
             initialTokenHolder,
             trustedRecipients,
-            trustedWithdrawers,
-            "d/LL"
+            trustedWithdrawers
         )
     {}
 
@@ -62,8 +62,39 @@ contract ERC20Long is ERC20Position {
         view
         returns (uint8)
     {
-        return
-            DetailedERC20(heldToken).decimals();
+        return DetailedERC20(heldToken).decimals();
+    }
+
+    function symbol()
+        external
+        view
+        returns (string)
+    {
+        if (state == State.UNINITIALIZED) {
+            return "l[UNINITIALIZED]";
+        }
+        return string(
+            StringHelpers.strcat(
+                "l",
+                bytes(DetailedERC20(heldToken).symbol())
+            )
+        );
+    }
+
+    function name()
+        external
+        view
+        returns (string)
+    {
+        if (state == State.UNINITIALIZED) {
+            return "dYdX Leveraged Long Token [UNINITIALIZED]";
+        }
+        return string(
+            StringHelpers.strcat(
+                "dYdX Leveraged Long Token ",
+                StringHelpers.bytes32ToHex(POSITION_ID)
+            )
+        );
     }
 
     // ============ Private Functions ============
@@ -125,13 +156,5 @@ contract ERC20Long is ERC20Position {
         );
 
         return (allowedTokenAmount, allowedCloseAmount);
-    }
-
-    function getNameIntro()
-        private
-        pure
-        returns (bytes)
-    {
-        return "dYdX Leveraged Long Token";
     }
 }
