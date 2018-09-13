@@ -68,7 +68,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
         const order = await createSignedV2SellOrder(accounts);
         const amount = new BigNumber(baseAmount.times(2));
 
-        const requiredTakerTokenAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
@@ -76,13 +76,13 @@ describe('ZeroExV2ExchangeWrapper', () => {
         );
 
         const expected = getPartialAmount(
-          order.takerTokenAmount,
-          order.makerTokenAmount,
+          order.takerAssetAmount,
+          order.makerAssetAmount,
           amount,
           true
         );
 
-        expect(requiredTakerTokenAmount).to.be.bignumber.eq(expected);
+        expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
       });
     });
   });
@@ -98,7 +98,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
         } = await setup(accounts);
 
         const order = await createSignedV2SellOrder(accounts);
-        order.feeRecipient = ADDRESSES.ZERO;
+        order.feeRecipientAddress = ADDRESSES.ZERO;
         order.signature = await signV2Order(order);
 
         // test for un-taken order
@@ -107,10 +107,10 @@ describe('ZeroExV2ExchangeWrapper', () => {
           order.takerTokenAddress,
           zeroExV2OrderToBytes(order)
         );
-        expect(responseFull).to.be.bignumber.eq(order.makerTokenAmount);
+        expect(responseFull).to.be.bignumber.eq(order.makerAssetAmount);
 
         // fill half of order
-        const amount = order.takerTokenAmount.div(2).floor();
+        const amount = order.takerAssetAmount.div(2).floor();
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
         await exchangeWrapper.exchange(
           tradeOriginator,
@@ -126,7 +126,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
         expect(filled).to.be.bignumber.eq(amount);
 
         // test for partially-taken order
-        const expectedAmount = order.makerTokenAmount.div(2).floor()
+        const expectedAmount = order.makerAssetAmount.div(2).floor()
         const responsePart = await exchangeWrapper.getMaxMakerAmount.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
@@ -143,7 +143,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
         } = await setup(accounts);
 
         const order = await createSignedV2SellOrder(accounts);
-        order.expirationUnixTimestampSec = new BigNumber(1);
+        order.expirationTimeSeconds = new BigNumber(1);
         order.signature = await signV2Order(order);
 
         // test for partially-taken order
@@ -363,7 +363,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
         } = await setup(accounts);
 
         const order = await createSignedV2SellOrder(accounts);
-        order.makerTokenAmount = new BigNumber(0);
+        order.makerAssetAmount = new BigNumber(0);
         order.signature = await signV2Order(order);
 
         const amount = new BigNumber(baseAmount.times(2));
@@ -383,7 +383,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
     });
 
     contract('ZeroExV1ExchangeWrapper', accounts => {
-      it('succeeds if no-fee is provided by anyone', async () => {
+      it('succeeds if zero taker fee for any msg.sender', async () => {
         const {
           exchangeWrapper,
           tradeOriginator,
@@ -436,7 +436,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
 
         const order = await createSignedV2SellOrder(accounts);
 
-        const amount = new BigNumber(order.takerTokenAmount.plus(1));
+        const amount = new BigNumber(order.takerAssetAmount.plus(1));
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
@@ -463,7 +463,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
 
         const order = await createSignedV2SellOrder(accounts);
 
-        const amount = new BigNumber(order.takerTokenAmount.times(2).div(3).floor());
+        const amount = new BigNumber(order.takerAssetAmount.times(2).div(3).floor());
 
         await grantTokens(order, exchangeWrapper, tradeOriginator, amount);
 
@@ -527,8 +527,8 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
     // Maker Token
     issueAndSetAllowance(
       makerToken,
-      order.maker,
-      order.makerTokenAmount,
+      order.makerAddress,
+      order.makerAssetAmount,
       ZeroExProxyV2.address
     ),
 
@@ -538,7 +538,7 @@ async function grantTokens(order, exchangeWrapper, tradeOriginator, amount) {
     // Maker Fee Token
     issueAndSetAllowance(
       feeToken,
-      order.maker,
+      order.makerAddress,
       order.makerFee,
       ZeroExProxyV2.address
     ),
@@ -575,15 +575,15 @@ async function getBalances(order, exchangeWrapper, tradeOriginator, dydxProxy) {
 
     exchangeWrapperProxyAllowance
   ] = await Promise.all([
-    makerToken.balanceOf.call(order.maker),
-    takerToken.balanceOf.call(order.maker),
-    feeToken.balanceOf.call(order.maker),
+    makerToken.balanceOf.call(order.makerAddress),
+    takerToken.balanceOf.call(order.makerAddress),
+    feeToken.balanceOf.call(order.makerAddress),
 
     makerToken.balanceOf.call(exchangeWrapper.address),
     takerToken.balanceOf.call(exchangeWrapper.address),
     feeToken.balanceOf.call(exchangeWrapper.address),
 
-    feeToken.balanceOf.call(order.feeRecipient),
+    feeToken.balanceOf.call(order.feeRecipientAddress),
 
     feeToken.balanceOf.call(tradeOriginator),
 
@@ -633,17 +633,17 @@ async function validateBalances(
 
   const tradedMakerToken = getPartialAmount(
     amount,
-    order.takerTokenAmount,
-    order.makerTokenAmount
+    order.takerAssetAmount,
+    order.makerAssetAmount
   );
-  const makerFee = order.feeRecipient === ADDRESSES.ZERO ? BIGNUMBERS.ZERO : getPartialAmount(
+  const makerFee = getPartialAmount(
     amount,
-    order.takerTokenAmount,
+    order.takerAssetAmount,
     order.makerFee
   );
-  const takerFee = order.feeRecipient === ADDRESSES.ZERO ? BIGNUMBERS.ZERO : getPartialAmount(
+  const takerFee = getPartialAmount(
     amount,
-    order.takerTokenAmount,
+    order.takerAssetAmount,
     order.takerFee
   );
 

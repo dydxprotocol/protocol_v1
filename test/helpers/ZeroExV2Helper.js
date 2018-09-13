@@ -1,4 +1,3 @@
-
 const Web3 = require('web3');
 const BigNumber = require('bignumber.js');
 
@@ -18,30 +17,30 @@ async function createSignedV2SellOrder(
   accounts,
   {
     salt = DEFAULT_SALT,
-    feeRecipient,
+    feeRecipientAddress,
   } = {}
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX_V2,
-    exchangeContractAddress: ZeroExExchangeV2.address,
+    exchangeAddress: ZeroExExchangeV2.address,
 
-    maker: accounts[5],
-    taker: ADDRESSES.ZERO,
-    feeRecipient: feeRecipient || accounts[6],
-    sender: ADDRESSES.ZERO,
+    makerAddress: accounts[5],
+    takerAddress: ADDRESSES.ZERO,
+    feeRecipientAddress: feeRecipientAddress || accounts[6],
+    senderAddress: ADDRESSES.ZERO,
 
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationTimeSeconds: new BigNumber(100000000000000),
     salt: new BigNumber(salt),
 
     // owedToken
     makerTokenAddress: OwedToken.address,
-    makerTokenAmount: BASE_AMOUNT.times(6.382472).floor(),
+    makerAssetAmount: BASE_AMOUNT.times(6.382472).floor(),
 
     // heldToken
     takerTokenAddress: HeldToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(19.123475).floor()
+    takerAssetAmount: BASE_AMOUNT.times(19.123475).floor()
   };
 
   order.signature = await signV2Order(order);
@@ -53,30 +52,30 @@ async function createSignedV2BuyOrder(
   accounts,
   {
     salt = DEFAULT_SALT,
-    feeRecipient,
+    feeRecipientAddress,
   } = {}
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX_V2,
-    exchangeContractAddress: ZeroExExchangeV2.address,
+    exchangeAddress: ZeroExExchangeV2.address,
 
-    maker: accounts[2],
-    taker: ADDRESSES.ZERO,
-    feeRecipient: feeRecipient || accounts[4],
-    sender: ADDRESSES.ZERO,
+    makerAddress: accounts[2],
+    takerAddress: ADDRESSES.ZERO,
+    feeRecipientAddress: feeRecipientAddress || accounts[4],
+    senderAddress: ADDRESSES.ZERO,
 
     makerFee: BASE_AMOUNT.times(.02012398).floor(),
     takerFee: BASE_AMOUNT.times(.1019238).floor(),
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationTimeSeconds: new BigNumber(100000000000000),
     salt: new BigNumber(salt),
 
     // heldToken
     makerTokenAddress: HeldToken.address,
-    makerTokenAmount: BASE_AMOUNT.times(30.091234687).floor(),
+    makerAssetAmount: BASE_AMOUNT.times(30.091234687).floor(),
 
     // owedToken
     takerTokenAddress: OwedToken.address,
-    takerTokenAmount: BASE_AMOUNT.times(10.092138781).floor(),
+    takerAssetAmount: BASE_AMOUNT.times(10.092138781).floor(),
   };
 
   order.signature = await signV2Order(order);
@@ -88,32 +87,32 @@ async function createSignedV2Order(
   accounts,
   {
     salt = DEFAULT_SALT,
-    feeRecipient,
-    maker,
+    feeRecipientAddress,
+    makerAddress,
     makerToken,
-    makerTokenAmount,
+    makerAssetAmount,
     takerToken,
-    takerTokenAmount,
+    takerAssetAmount,
   }
 ) {
   const order = {
     type: ORDER_TYPE.ZERO_EX_V2,
-    exchangeContractAddress: ZeroExExchangeV2.address,
+    exchangeAddress: ZeroExExchangeV2.address,
 
-    maker: maker || accounts[5],
-    taker: ADDRESSES.ZERO,
-    feeRecipient: feeRecipient || accounts[6],
-    sender: ADDRESSES.ZERO,
+    makerAddress: makerAddress || accounts[5],
+    takerAddress: ADDRESSES.ZERO,
+    feeRecipientAddress: feeRecipientAddress || accounts[6],
+    senderAddress: ADDRESSES.ZERO,
 
     makerFee: BASE_AMOUNT.times(0.010928345).floor(),
     takerFee: BASE_AMOUNT.times(0.109128341).floor(),
-    expirationUnixTimestampSec: new BigNumber(100000000000000),
+    expirationTimeSeconds: new BigNumber(100000000000000),
     salt: new BigNumber(salt),
 
     makerTokenAddress: makerToken,
-    makerTokenAmount: makerTokenAmount || BASE_AMOUNT.times(6.382472).floor(),
+    makerAssetAmount: makerAssetAmount || BASE_AMOUNT.times(6.382472).floor(),
     takerTokenAddress: takerToken,
-    takerTokenAmount: takerTokenAmount || BASE_AMOUNT.times(19.123475).floor()
+    takerAssetAmount: takerAssetAmount || BASE_AMOUNT.times(19.123475).floor()
   };
 
   order.signature = await signV2Order(order);
@@ -123,7 +122,7 @@ async function createSignedV2Order(
 
 async function signV2Order(order) {
   const signature = await promisify(web3Instance.eth.sign)(
-    getV2OrderHash(order), order.maker
+    getV2OrderHash(order), order.makerAddress
   );
 
   const { v, r, s } = ethUtil.fromRpcSig(signature);
@@ -157,15 +156,15 @@ function getV2OrderHash(order) {
 
   const basicHash = web3Instance.utils.soliditySha3(
     { t: 'bytes32', v: eip712Hash },
-    { t: 'bytes32', v: addressToBytes32(order.maker) },
-    { t: 'bytes32', v: addressToBytes32(order.taker) },
-    { t: 'bytes32', v: addressToBytes32(order.feeRecipient) },
-    { t: 'bytes32', v: addressToBytes32(order.sender) },
-    { t: 'uint256', v: order.makerTokenAmount },
-    { t: 'uint256', v: order.takerTokenAmount },
+    { t: 'bytes32', v: addressToBytes32(order.makerAddress) },
+    { t: 'bytes32', v: addressToBytes32(order.takerAddress) },
+    { t: 'bytes32', v: addressToBytes32(order.feeRecipientAddress) },
+    { t: 'bytes32', v: addressToBytes32(order.senderAddress) },
+    { t: 'uint256', v: order.makerAssetAmount },
+    { t: 'uint256', v: order.takerAssetAmount },
     { t: 'uint256', v: order.makerFee },
     { t: 'uint256', v: order.takerFee },
-    { t: 'uint256', v: order.expirationUnixTimestampSec },
+    { t: 'uint256', v: order.expirationTimeSeconds },
     { t: 'uint256', v: order.salt },
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'bytes', v: makerAssetData })},
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'bytes', v: takerAssetData })}
@@ -177,7 +176,7 @@ function getV2OrderHash(order) {
     { t: 'bytes32', v: eip712DomSepHash },
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'string', v: '0x Protocol' })},
     { t: 'bytes32', v: web3Instance.utils.soliditySha3({ t: 'string', v: '2' })},
-    { t: 'bytes32', v: addressToBytes32(order.exchangeContractAddress) }
+    { t: 'bytes32', v: addressToBytes32(order.exchangeAddress) }
   );
 
   const retVal = web3Instance.utils.soliditySha3(

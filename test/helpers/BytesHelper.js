@@ -44,15 +44,15 @@ function zeroExV1OrderToBytes(order) {
 
 function zeroExV2OrderToBytes(order) {
   const v = []
-    .concat(toBytes32(order.maker))
-    .concat(toBytes32(order.taker))
-    .concat(toBytes32(order.feeRecipient))
-    .concat(toBytes32(order.sender))
-    .concat(toBytes32(order.makerTokenAmount))
-    .concat(toBytes32(order.takerTokenAmount))
+    .concat(toBytes32(order.makerAddress))
+    .concat(toBytes32(order.takerAddress))
+    .concat(toBytes32(order.feeRecipientAddress))
+    .concat(toBytes32(order.senderAddress))
+    .concat(toBytes32(order.makerAssetAmount))
+    .concat(toBytes32(order.takerAssetAmount))
     .concat(toBytes32(order.makerFee))
     .concat(toBytes32(order.takerFee))
-    .concat(toBytes32(order.expirationUnixTimestampSec))
+    .concat(toBytes32(order.expirationTimeSeconds))
     .concat(toBytes32(order.salt))
     .concat(toBytes32(order.signature));
   return web3Instance.utils.bytesToHex(v);
