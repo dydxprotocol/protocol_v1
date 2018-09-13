@@ -19,7 +19,6 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { BucketLender } from "./BucketLender.sol";
 
 
@@ -99,7 +98,7 @@ contract BucketLenderFactory {
             withdrawers
         );
 
-        Ownable(newBucketLender).transferOwnership(owner);
+        BucketLender(newBucketLender).transferOwnership(owner);
 
         emit BucketLenderCreated(
             msg.sender,

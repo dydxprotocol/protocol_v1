@@ -20,7 +20,6 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
-import { NoOwner } from "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 
@@ -33,7 +32,6 @@ import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
  */
 contract ERC20PositionFactory is
     ReentrancyGuard,
-    NoOwner,
     OnlyMargin,
     PositionOwner
 {

@@ -21,7 +21,6 @@ pragma experimental "v0.5.0";
 
 import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { NoOwner } from "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { StaticAccessControlled } from "../lib/StaticAccessControlled.sol";
 import { TokenInteract } from "../lib/TokenInteract.sol";
 
@@ -32,7 +31,7 @@ import { TokenInteract } from "../lib/TokenInteract.sol";
  *
  * Used to transfer tokens between addresses which have set allowance on this contract.
  */
-contract TokenProxy is StaticAccessControlled, NoOwner {
+contract TokenProxy is StaticAccessControlled {
     using SafeMath for uint256;
 
     // ============ Constructor ============

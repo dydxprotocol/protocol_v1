@@ -21,7 +21,6 @@ pragma experimental "v0.5.0";
 
 import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { NoOwner } from "openzeppelin-solidity/contracts/ownership/NoOwner.sol";
 import { Vault } from "./Vault.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { CloseWithoutCounterpartyImpl } from "./impl/CloseWithoutCounterpartyImpl.sol";
@@ -47,7 +46,6 @@ import { TransferImpl } from "./impl/TransferImpl.sol";
  * This contract is used to facilitate margin trading as per the dYdX protocol
  */
 contract Margin is
-    NoOwner,
     ReentrancyGuard,
     MarginStorage,
     MarginEvents,
