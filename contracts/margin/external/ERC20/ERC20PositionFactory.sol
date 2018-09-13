@@ -19,7 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { PositionOwner } from "../../interfaces/owner/PositionOwner.sol";
 

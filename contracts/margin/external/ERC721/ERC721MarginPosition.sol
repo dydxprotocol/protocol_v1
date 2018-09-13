@@ -19,10 +19,10 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ERC721Token } from "openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import { Margin } from "../../Margin.sol";
+import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { ClosePositionDelegator } from "../../interfaces/owner/ClosePositionDelegator.sol";
 import { DepositCollateralDelegator } from "../../interfaces/owner/DepositCollateralDelegator.sol";
