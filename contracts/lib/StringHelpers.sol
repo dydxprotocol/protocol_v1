@@ -58,7 +58,7 @@ library StringHelpers {
     }
 
     /**
-     * Translates a bytes32 into an ascii hexadecimal representation of those bytes "0x..."
+     * Translates a bytes32 to an ascii hexadecimal representation starting with "0x"
      *
      * @param  input  The bytes to convert to hexadecimal
      * @return        A representation of the bytes in ascii hexadecimal
@@ -71,7 +71,7 @@ library StringHelpers {
         returns (bytes)
     {
         uint256 number = uint256(input);
-        bytes memory numberAsString = new bytes(66);
+        bytes memory numberAsString = new bytes(66); // "0x" and then 2 chars per byte
         numberAsString[0] = byte(48);  // '0'
         numberAsString[1] = byte(120); // 'x'
 
