@@ -1351,6 +1351,30 @@ contract('BucketLender', accounts => {
       expect(result1.available1).to.be.bignumber.eq(result2.available1);
     });
   });
+});
+
+
+contract('BucketLender', accounts => {
+
+  // ============ Before/After ============
+
+  beforeEach('set up contracts', async () => {
+    [
+      margin,
+      heldToken,
+      owedToken
+    ] = await Promise.all([
+      Margin.deployed(),
+      HeldToken.new(),
+      OwedToken.new(),
+    ]);
+
+    await setUpPosition(accounts);
+  });
+
+  afterEach('make checks', async () => {
+    await bucketLender.checkInvariants();
+  });
 
   // ============ Integration Tests ============
 
