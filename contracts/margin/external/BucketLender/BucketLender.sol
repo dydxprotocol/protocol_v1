@@ -762,7 +762,7 @@ contract BucketLender is
             lockedBucket = criticalBucket;
         }
 
-        uint256[2] memory results; // [0] = owedToken, [1] = heldToken
+        uint256[2] memory results; // [0] = totalOwedToken, [1] = totalHeldToken
 
         uint256 maxHeldToken = 0;
         if (wasForceClosed) {
