@@ -26,19 +26,12 @@ pragma solidity 0.4.24;
  * Optimized version of the well-known ReentrancyGuard contract
  */
 contract ReentrancyGuard {
-
     uint256 private _guardCounter = 1;
 
     modifier nonReentrant() {
-        // SLOAD
         uint256 localCounter = _guardCounter + 1;
-
-        // SSTORE
         _guardCounter = localCounter;
-
         _;
-
-        // SLOAD
         require(
             _guardCounter == localCounter,
             "Reentrancy check failure"
