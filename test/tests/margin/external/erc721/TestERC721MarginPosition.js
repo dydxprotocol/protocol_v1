@@ -11,7 +11,7 @@ const OwedToken = artifacts.require("TokenB");
 
 const { BYTES32 } = require('../../../../helpers/Constants');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
-const { createSignedSellOrder } = require('../../../../helpers/ZeroExHelper');
+const { createSignedV1SellOrder } = require('../../../../helpers/ZeroExV1Helper');
 const { uint256, getPartialAmount } = require('../../../../helpers/MathHelper');
 const {
   doOpenPosition,
@@ -75,7 +75,7 @@ contract('ERC721MarginPosition', accounts => {
       const openTx = await doOpenPosition(accounts, { salt: salt++ });
 
       // close half the position
-      const sellOrder = await createSignedSellOrder(accounts, { salt: salt++ });
+      const sellOrder = await createSignedV1SellOrder(accounts, { salt: salt++ });
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       await callClosePosition(
         dydxMargin,

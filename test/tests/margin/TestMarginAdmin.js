@@ -16,8 +16,8 @@ const {
   callClosePositionDirectly
 } = require('../../helpers/MarginHelper');
 const {
-  createSignedSellOrder
-} = require('../../helpers/ZeroExHelper');
+  createSignedV1SellOrder
+} = require('../../helpers/ZeroExV1Helper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 
 const OperationState = {
@@ -217,7 +217,7 @@ describe('MarginAdmin', () => {
     async function test(accounts, state, shouldFail = false) {
       const openTx = await doOpenPosition(accounts);
       const [sellOrder, dydxMargin] = await Promise.all([
-        createSignedSellOrder(accounts),
+        createSignedV1SellOrder(accounts),
         Margin.deployed()
       ]);
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);

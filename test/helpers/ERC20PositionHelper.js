@@ -10,7 +10,7 @@ const TokenProxy = artifacts.require('TokenProxy');
 const WETH9 = artifacts.require("WETH9");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
 const { ADDRESSES } = require('./Constants');
-const { createSignedOrder } = require('./ZeroExHelper');
+const { createSignedV1Order } = require('./ZeroExV1Helper');
 const HeldToken = artifacts.require("TokenA");
 const ZeroExProxyV1 = artifacts.require('ZeroExProxyV1');
 
@@ -92,7 +92,7 @@ async function createShortToken(
 async function createBuyOrderForToken(accounts) {
   const [heldToken, order] = await Promise.all([
     HeldToken.deployed(),
-    createSignedOrder(
+    createSignedV1Order(
       accounts,
       {
         salt: 7294234423,
@@ -118,7 +118,7 @@ async function createBuyOrderForToken(accounts) {
 async function createSellOrderForToken(accounts) {
   const [weth, order] = await Promise.all([
     WETH9.deployed(),
-    createSignedOrder(
+    createSignedV1Order(
       accounts,
       {
         salt: 7294234423,

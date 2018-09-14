@@ -25,9 +25,9 @@ const {
   getPartialAmount
 } = require('../../helpers/MathHelper');
 const {
-  createSignedSellOrder,
+  createSignedV1SellOrder,
   signOrder
-} = require('../../helpers/ZeroExHelper');
+} = require('../../helpers/ZeroExV1Helper');
 const { callCancelOrder } = require('../../helpers/ExchangeHelper');
 const { wait } = require('@digix/tempo')(web3);
 const { expectThrow } = require('../../helpers/ExpectHelper');
@@ -456,7 +456,7 @@ describe('#closePosition', () => {
       it('Does not allow lender to close', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -470,7 +470,7 @@ describe('#closePosition', () => {
       it('Does not allow external address to close', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -486,7 +486,7 @@ describe('#closePosition', () => {
       it('Enforces that the position exists', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -500,7 +500,7 @@ describe('#closePosition', () => {
       it('Only allows position to be entirely closed once', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -517,7 +517,7 @@ describe('#closePosition', () => {
       it('Fails if interest fee cannot be paid', async () => {
         const openTx = await createOpenTx(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -543,7 +543,7 @@ describe('#closePosition', () => {
       it('Fails on invalid order signature', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -558,7 +558,7 @@ describe('#closePosition', () => {
       it('Fails if sell order is not large enough', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -581,7 +581,7 @@ describe('#closePosition', () => {
       it('Disallows paying out in base token if no exchange wrapper', async() => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -605,7 +605,7 @@ describe('#closePosition', () => {
       it('Fails if payout recipient is 0', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -626,7 +626,7 @@ describe('#closePosition', () => {
       it('Fails if paying out in owedToken and cannot pay back lender', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -653,7 +653,7 @@ describe('#closePosition', () => {
       it('Fails on insufficient sell order balance/allowance', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -669,7 +669,7 @@ describe('#closePosition', () => {
       it('Fails on insufficient sell order fee token balance/allowance', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 
@@ -685,7 +685,7 @@ describe('#closePosition', () => {
       it('Fails on insufficient trader fee token balance/allowance', async () => {
         const openTx = await doOpenPosition(accounts);
         const [sellOrder, dydxMargin] = await Promise.all([
-          createSignedSellOrder(accounts),
+          createSignedV1SellOrder(accounts),
           Margin.deployed()
         ]);
 

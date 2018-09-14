@@ -1,6 +1,6 @@
 /*
 
-  Copyright 2017 ZeroEx Intl.
+  Copyright 2018 ZeroEx Intl.
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,60 +17,54 @@
 */
 
 pragma solidity 0.4.24;
-pragma experimental "v0.5.0";
 
-import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "./mixins/MAuthorizable.sol";
 
-/// @title TokenTransferProxy - Transfers tokens on behalf of contracts that have been approved via decentralized governance.
-/// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExProxyV1 is Ownable {
 
+contract MixinAuthorizable is
+    Ownable,
+    MAuthorizable
+{
     /// @dev Only authorized addresses can invoke functions with this modifier.
     modifier onlyAuthorized {
-        require(authorized[msg.sender]);
-        _;
-    }
-
-    modifier targetAuthorized(address target) {
-        require(authorized[target]);
-        _;
-    }
-
-    modifier targetNotAuthorized(address target) {
-        require(!authorized[target]);
+        require(
+            authorized[msg.sender],
+            "SENDER_NOT_AUTHORIZED"
+        );
         _;
     }
 
     mapping (address => bool) public authorized;
     address[] public authorities;
 
-    event LogAuthorizedAddressAdded(address indexed target, address indexed caller);
-    event LogAuthorizedAddressRemoved(address indexed target, address indexed caller);
-
-    /*
-     * Public functions
-     */
-
     /// @dev Authorizes an address.
     /// @param target Address to authorize.
     function addAuthorizedAddress(address target)
-        public
+        external
         onlyOwner
-        targetNotAuthorized(target)
     {
+        require(
+            !authorized[target],
+            "TARGET_ALREADY_AUTHORIZED"
+        );
+
         authorized[target] = true;
         authorities.push(target);
-        emit LogAuthorizedAddressAdded(target, msg.sender);
+        emit AuthorizedAddressAdded(target, msg.sender);
     }
 
     /// @dev Removes authorizion of an address.
     /// @param target Address to remove authorization from.
     function removeAuthorizedAddress(address target)
-        public
+        external
         onlyOwner
-        targetAuthorized(target)
     {
+        require(
+            authorized[target],
+            "TARGET_NOT_AUTHORIZED"
+        );
+
         delete authorized[target];
         for (uint256 i = 0; i < authorities.length; i++) {
             if (authorities[i] == target) {
@@ -79,37 +73,44 @@ contract ZeroExProxyV1 is Ownable {
                 break;
             }
         }
-        emit LogAuthorizedAddressRemoved(target, msg.sender);
+        emit AuthorizedAddressRemoved(target, msg.sender);
     }
 
-    /// @dev Calls into ERC20 Token contract, invoking transferFrom.
-    /// @param token Address of token to transfer.
-    /// @param from Address to transfer token from.
-    /// @param to Address to transfer token to.
-    /// @param value Amount of token to transfer.
-    /// @return Success of transfer.
-    function transferFrom(
-        address token,
-        address from,
-        address to,
-        uint256 value)
-        public
-        onlyAuthorized
-        returns (bool)
+    /// @dev Removes authorizion of an address.
+    /// @param target Address to remove authorization from.
+    /// @param index Index of target in authorities array.
+    function removeAuthorizedAddressAtIndex(
+        address target,
+        uint256 index
+    )
+        external
+        onlyOwner
     {
-        return ERC20(token).transferFrom(from, to, value);
-    }
+        require(
+            authorized[target],
+            "TARGET_NOT_AUTHORIZED"
+        );
+        require(
+            index < authorities.length,
+            "INDEX_OUT_OF_BOUNDS"
+        );
+        require(
+            authorities[index] == target,
+            "AUTHORIZED_ADDRESS_MISMATCH"
+        );
 
-    /*
-     * Public constant functions
-     */
+        delete authorized[target];
+        authorities[index] = authorities[authorities.length - 1];
+        authorities.length -= 1;
+        emit AuthorizedAddressRemoved(target, msg.sender);
+    }
 
     /// @dev Gets all authorized addresses.
     /// @return Array of authorized addresses.
     function getAuthorizedAddresses()
-        public
+        external
         view
-        returns (address[])
+        returns (address[] memory)
     {
         return authorities;
     }

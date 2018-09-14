@@ -19,14 +19,15 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./ZeroExProxyV1.sol";
-import "./base/ZeroExToken.sol";
-import "./base/ZeroExSafeMath.sol";
 
 
 /// @title Exchange - Facilitates exchange of ERC20 tokens.
 /// @author Amir Bandeali - <amir@0xProject.com>, Will Warren - <will@0xProject.com>
-contract ZeroExExchangeV1 is ZeroExSafeMath {
+contract ZeroExExchangeV1 {
 
     // Error Codes
     enum Errors {
@@ -154,8 +155,8 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
             return 0;
         }
 
-        uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
-        filledTakerTokenAmount = min256(fillTakerTokenAmount, remainingTakerTokenAmount);
+        uint256 remainingTakerTokenAmount = SafeMath.sub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
+        filledTakerTokenAmount = Math.min256(fillTakerTokenAmount, remainingTakerTokenAmount);
         if (filledTakerTokenAmount == 0) {
             emit LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
             return 0;
@@ -174,7 +175,7 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         uint256 filledMakerTokenAmount = getPartialAmount(filledTakerTokenAmount, order.takerTokenAmount, order.makerTokenAmount);
         uint256 paidMakerFee;
         uint256 paidTakerFee;
-        filled[order.orderHash] = safeAdd(filled[order.orderHash], filledTakerTokenAmount);
+        filled[order.orderHash] = SafeMath.add(filled[order.orderHash], filledTakerTokenAmount);
         require(
             transferViaTokenTransferProxy(
                 order.makerToken,
@@ -271,14 +272,14 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
             return 0;
         }
 
-        uint256 remainingTakerTokenAmount = safeSub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
-        uint256 cancelledTakerTokenAmount = min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
+        uint256 remainingTakerTokenAmount = SafeMath.sub(order.takerTokenAmount, getUnavailableTakerTokenAmount(order.orderHash));
+        uint256 cancelledTakerTokenAmount = Math.min256(cancelTakerTokenAmount, remainingTakerTokenAmount);
         if (cancelledTakerTokenAmount == 0) {
             emit LogError(uint8(Errors.ORDER_FULLY_FILLED_OR_CANCELLED), order.orderHash);
             return 0;
         }
 
-        cancelled[order.orderHash] = safeAdd(cancelled[order.orderHash], cancelledTakerTokenAmount);
+        cancelled[order.orderHash] = SafeMath.add(cancelled[order.orderHash], cancelledTakerTokenAmount);
 
         emit LogCancel(
             order.maker,
@@ -406,10 +407,10 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         uint256 filledTakerTokenAmount = 0;
         for (uint256 i = 0; i < orderAddresses.length; i++) {
             require(orderAddresses[i][3] == orderAddresses[0][3]); // takerToken must be the same for each order
-            filledTakerTokenAmount = safeAdd(filledTakerTokenAmount, fillOrder(
+            filledTakerTokenAmount = SafeMath.add(filledTakerTokenAmount, fillOrder(
                 orderAddresses[i],
                 orderValues[i],
-                safeSub(fillTakerTokenAmount, filledTakerTokenAmount),
+                SafeMath.sub(fillTakerTokenAmount, filledTakerTokenAmount),
                 shouldThrowOnInsufficientBalanceOrAllowance,
                 v[i],
                 r[i],
@@ -508,9 +509,9 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         uint256 remainder = mulmod(target, numerator, denominator);
         if (remainder == 0) return false; // No rounding error.
 
-        uint256 errPercentageTimes1000000 = safeDiv(
-            safeMul(remainder, 1000000),
-            safeMul(numerator, target)
+        uint256 errPercentageTimes1000000 = SafeMath.div(
+            SafeMath.mul(remainder, 1000000),
+            SafeMath.mul(numerator, target)
         );
         return errPercentageTimes1000000 > 1000;
     }
@@ -525,7 +526,7 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         pure
         returns (uint256)
     {
-        return safeDiv(safeMul(numerator, target), denominator);
+        return SafeMath.div(SafeMath.mul(numerator, target), denominator);
     }
 
     /// @dev Calculates the sum of values already filled and cancelled for a given order.
@@ -536,7 +537,7 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         view
         returns (uint256)
     {
-        return safeAdd(filled[orderHash], cancelled[orderHash]);
+        return SafeMath.add(filled[orderHash], cancelled[orderHash]);
     }
 
 
@@ -578,8 +579,8 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
             bool isTakerTokenZRX = order.takerToken == ZRX_TOKEN_CONTRACT;
             uint256 paidMakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.makerFee);
             uint256 paidTakerFee = getPartialAmount(fillTakerTokenAmount, order.takerTokenAmount, order.takerFee);
-            uint256 requiredMakerZRX = isMakerTokenZRX ? safeAdd(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
-            uint256 requiredTakerZRX = isTakerTokenZRX ? safeAdd(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
+            uint256 requiredMakerZRX = isMakerTokenZRX ? SafeMath.add(fillMakerTokenAmount, paidMakerFee) : paidMakerFee;
+            uint256 requiredTakerZRX = isTakerTokenZRX ? SafeMath.add(fillTakerTokenAmount, paidTakerFee) : paidTakerFee;
 
             if (   getBalance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
                 || getAllowance(ZRX_TOKEN_CONTRACT, order.maker) < requiredMakerZRX
@@ -611,7 +612,7 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
         returns (uint256)
     {
-        return ZeroExToken(token).balanceOf(owner); // Limit gas to prevent reentrancy
+        return ERC20(token).balanceOf(owner); // Limit gas to prevent reentrancy
     }
 
     /// @dev Get allowance of token given to TokenTransferProxy by an address.
@@ -623,6 +624,6 @@ contract ZeroExExchangeV1 is ZeroExSafeMath {
         view  // The called token contract may attempt to change state, but will not be able to due to an added gas limit.
         returns (uint256)
     {
-        return ZeroExToken(token).allowance(owner, TOKEN_TRANSFER_PROXY_CONTRACT); // Limit gas to prevent reentrancy
+        return ERC20(token).allowance(owner, TOKEN_TRANSFER_PROXY_CONTRACT); // Limit gas to prevent reentrancy
     }
 }

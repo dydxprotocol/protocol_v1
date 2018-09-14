@@ -18,7 +18,7 @@ const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const { BIGNUMBERS, DEFAULT_SALT } = require('../../../../helpers/Constants');
 const { createLoanOffering, signLoanOffering } = require('../../../../helpers/LoanHelper');
-const { signOrder, createSignedBuyOrder } = require('../../../../helpers/ZeroExHelper');
+const { signOrder, createSignedV1BuyOrder } = require('../../../../helpers/ZeroExV1Helper');
 const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
 const { transact } = require('../../../../helpers/ContractHelper');
 const {
@@ -79,7 +79,7 @@ contract('#PayableMarginMinter', accounts => {
     const trader = accounts[9];
     const principal = new BigNumber(10000);
 
-    let order = await createSignedBuyOrder(accounts, { salt: salt++ });
+    let order = await createSignedV1BuyOrder(accounts, { salt: salt++ });
     order.takerFee = order.makerFee = 0;
     order.makerTokenAddress = Dai.address,
     order.makerTokenAmount = new BigNumber("1e36");

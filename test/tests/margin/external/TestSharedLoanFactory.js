@@ -9,7 +9,7 @@ const Margin = artifacts.require("Margin");
 const { BIGNUMBERS } = require('../../../helpers/Constants');
 const { expectAssertFailure, expectThrow } = require('../../../helpers/ExpectHelper');
 const { getSharedLoanConstants, SHARED_LOAN_STATE } = require('./SharedLoanHelper');
-const { createSignedSellOrder } = require('../../../helpers/ZeroExHelper');
+const { createSignedV1SellOrder } = require('../../../helpers/ZeroExV1Helper');
 const { signLoanOffering } = require('../../../helpers/LoanHelper');
 const {
   callOpenPosition,
@@ -107,7 +107,7 @@ contract('SharedLoanFactory', accounts => {
     it('succeeds for half-closed position', async () => {
       const openTx = await doOpenPosition(accounts, { salt: salt++ });
       // close half the position
-      const sellOrder = await createSignedSellOrder(accounts, { salt: salt++ });
+      const sellOrder = await createSignedV1SellOrder(accounts, { salt: salt++ });
       await issueTokensAndSetAllowancesForClose(openTx, sellOrder);
       await callClosePosition(
         dydxMargin,

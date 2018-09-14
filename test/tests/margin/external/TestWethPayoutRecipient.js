@@ -17,8 +17,8 @@ const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 const { issueTokenToAccountInAmountAndApproveProxy } = require('../../../helpers/MarginHelper');
 const { ADDRESSES, BIGNUMBERS, ORDER_TYPE } = require('../../../helpers/Constants');
-const { signOrder } = require('../../../helpers/ZeroExHelper');
-const { zeroExOrderToBytes } = require('../../../helpers/BytesHelper');
+const { signOrder } = require('../../../helpers/ZeroExV1Helper');
+const { zeroExV1OrderToBytes } = require('../../../helpers/BytesHelper');
 
 contract('DutchAuctionCloser', accounts => {
   let dydxMargin, tokenProxy, weth, heldToken;
@@ -108,7 +108,7 @@ contract('DutchAuctionCloser', accounts => {
 
       // set up order
       let order = {
-        type: ORDER_TYPE.ZERO_EX,
+        type: ORDER_TYPE.ZERO_EX_V1,
         exchangeContractAddress: ZeroExExchangeV1.address,
         expirationUnixTimestampSec: new BigNumber(100000000000000),
         feeRecipient: ADDRESSES.ZERO,
@@ -130,7 +130,7 @@ contract('DutchAuctionCloser', accounts => {
         WethPayoutRecipient.address,
         ZeroExV1ExchangeWrapper.address,
         false,
-        zeroExOrderToBytes(order),
+        zeroExV1OrderToBytes(order),
         { from: opener }
       );
     });

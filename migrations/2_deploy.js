@@ -20,11 +20,10 @@ const { isDevNetwork } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
+const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
 const ERC20LongFactory = artifacts.require("ERC20LongFactory");
@@ -59,43 +58,92 @@ const FeeToken = artifacts.require("TokenC");
 const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 
-function maybeDeployTestTokens(deployer, network) {
+// Zero Ex V1
+const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
+const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
+
+// Zero Ex V2
+const ZeroExProxyV2 = artifacts.require("ZeroExProxyV2");
+const ZeroExExchangeV2 = artifacts.require("ZeroExExchangeV2");
+
+async function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
-    return deployer.deploy(TokenA)
-      .then(() => deployer.deploy(TokenB))
-      .then(() => deployer.deploy(FeeToken));
+    await Promise.all([
+      deployer.deploy(TokenA),
+      deployer.deploy(TokenB),
+      deployer.deploy(FeeToken),
+    ]);
   }
-  return Promise.resolve(true);
 }
 
-function maybeDeploy0x(deployer, network) {
+async function maybeDeploy0xV1(deployer, network) {
   if (isDevNetwork(network)) {
-    return deployer.deploy(ZeroExProxyV1)
-      .then(() => deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address))
-      .then(() => ZeroExProxyV1.deployed())
-      .then(proxy => proxy.addAuthorizedAddress(ZeroExExchangeV1.address));
+    await deployer.deploy(ZeroExProxyV1);
+    await deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address);
+    const proxy = await ZeroExProxyV1.deployed();
+    await proxy.addAuthorizedAddress(ZeroExExchangeV1.address);
   }
-  return Promise.resolve(true);
 }
 
-function get0xExchangeAddress(network) {
+async function maybeDeploy0xV2(deployer, network) {
+  if (isDevNetwork(network)) {
+    const zrxAssetData = "0xf47261b0000000000000000000000000" + FeeToken.address.substr(2);
+    await Promise.all([
+      deployer.deploy(ZeroExProxyV2),
+      deployer.deploy(ZeroExExchangeV2, zrxAssetData)
+    ]);
+    const [
+      exchange,
+      erc20Proxy
+    ] = await Promise.all([
+      ZeroExExchangeV2.deployed(),
+      ZeroExProxyV2.deployed()
+    ]);
+    await Promise.all([
+      await erc20Proxy.addAuthorizedAddress(ZeroExExchangeV2.address),
+      await exchange.registerAssetProxy(ZeroExProxyV2.address)
+    ]);
+  }
+}
+
+function getZeroExExchangeV2Address(network) {
+  if (isDevNetwork(network)) {
+    return ZeroExExchangeV2.address;
+  } else if (network === 'kovan') {
+    return '0x35dd2932454449b14cee11a94d3674a936d5d7b2';
+  }
+
+  throw "0x ExchangeV2 Not Found";
+}
+
+function getZeroExProxyV2Address(network) {
+  if (isDevNetwork(network)) {
+    return ZeroExProxyV2.address;
+  } else if (network === 'kovan') {
+    return '0xf1ec01d6236d3cd881a0bf0130ea25fe4234003e';
+  }
+
+  throw "0x TokenProxyV2 Not Found";
+}
+
+function getZeroExExchangeV1Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchangeV1.address;
   } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
   }
 
-  throw "0x Exchange Not Found";
+  throw "0x ExchangeV1 Not Found";
 }
 
-function get0xProxyAddress(network) {
+function getZeroExProxyV1Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxyV1.address;
   } else if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
   }
 
-  throw "0x TokenProxy Not Found";
+  throw "0x TokenProxyV1 Not Found";
 }
 
 function getZRXAddress(network) {
@@ -191,8 +239,15 @@ async function deploySecondLayer(deployer, network) {
   await Promise.all([
     deployer.deploy(
       ZeroExV1ExchangeWrapper,
-      get0xExchangeAddress(network),
-      get0xProxyAddress(network),
+      getZeroExExchangeV1Address(network),
+      getZeroExProxyV1Address(network),
+      getZRXAddress(network),
+      [Margin.address]
+    ),
+    deployer.deploy(
+      ZeroExV2ExchangeWrapper,
+      getZeroExExchangeV2Address(network),
+      getZeroExProxyV2Address(network),
       getZRXAddress(network),
       [Margin.address]
     ),
@@ -272,7 +327,10 @@ async function grantAccessToVault() {
 
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
-  await maybeDeploy0x(deployer, network);
+  await Promise.all([
+    maybeDeploy0xV1(deployer, network),
+    maybeDeploy0xV2(deployer, network)
+  ]);
   await deployContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),

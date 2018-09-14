@@ -18,7 +18,7 @@ const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
 const { getPartialAmount } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');
 const { expectThrow } = require('../../helpers/ExpectHelper');
-const { signOrder } = require('../../helpers/ZeroExHelper');
+const { signOrder } = require('../../helpers/ZeroExV1Helper');
 const { issueAndSetAllowance } = require('../../helpers/TokenHelper');
 const {
   getPosition,
