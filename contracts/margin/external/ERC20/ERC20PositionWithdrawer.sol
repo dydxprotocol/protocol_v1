@@ -20,8 +20,8 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { ERC20Position } from "./ERC20Position.sol";
+import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 

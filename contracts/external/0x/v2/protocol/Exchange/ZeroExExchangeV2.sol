@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import { ReentrancyGuard } from "../../../../../lib/ReentrancyGuard.sol";
 import "./libs/LibConstants.sol";
 import "./libs/LibMath.sol";
 import "./libs/LibOrder.sol";

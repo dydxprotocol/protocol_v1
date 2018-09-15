@@ -19,9 +19,9 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Vault } from "./Vault.sol";
+import { ReentrancyGuard } from "../lib/ReentrancyGuard.sol";
 import { ClosePositionImpl } from "./impl/ClosePositionImpl.sol";
 import { CloseWithoutCounterpartyImpl } from "./impl/CloseWithoutCounterpartyImpl.sol";
 import { DepositCollateralImpl } from "./impl/DepositCollateralImpl.sol";

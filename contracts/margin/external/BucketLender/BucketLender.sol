@@ -19,12 +19,12 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ReentrancyGuard } from "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { Margin } from "../../Margin.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { LoanOfferingVerifier } from "../../interfaces/LoanOfferingVerifier.sol";
@@ -762,8 +762,7 @@ contract BucketLender is
             lockedBucket = criticalBucket;
         }
 
-        uint256 totalOwedToken = 0;
-        uint256 totalHeldToken = 0;
+        uint256[2] memory results; // [0] = totalOwedToken, [1] = totalHeldToken
 
         uint256 maxHeldToken = 0;
         if (wasForceClosed) {
@@ -785,15 +784,15 @@ contract BucketLender is
                 maxHeldToken
             );
 
-            totalOwedToken = totalOwedToken.add(owedTokenForBucket);
-            totalHeldToken = totalHeldToken.add(heldTokenForBucket);
+            results[0] = results[0].add(owedTokenForBucket);
+            results[1] = results[1].add(heldTokenForBucket);
         }
 
         // Transfer share of owedToken
-        OWED_TOKEN.transfer(msg.sender, totalOwedToken);
-        HELD_TOKEN.transfer(msg.sender, totalHeldToken);
+        OWED_TOKEN.transfer(msg.sender, results[0]);
+        HELD_TOKEN.transfer(msg.sender, results[1]);
 
-        return (totalOwedToken, totalHeldToken);
+        return (results[0], results[1]);
     }
 
     /**
