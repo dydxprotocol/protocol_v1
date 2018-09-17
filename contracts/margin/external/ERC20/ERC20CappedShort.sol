@@ -20,6 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ERC20Short } from "./ERC20Short.sol";
 
 
@@ -29,10 +30,23 @@ import { ERC20Short } from "./ERC20Short.sol";
  *
  * CappedToken version of an ERC20Short
  */
-contract ERC20CappedShort is ERC20Short {
+contract ERC20CappedShort is
+    ERC20Short,
+    Ownable
+{
     using SafeMath for uint256;
 
+    // ============ Events ============
+
+    event TokenCapSet(
+        uint256 tokenCap
+    );
+
+    // ============ State Variables ============
+
     uint256 public tokenCap;
+
+    // ============ Constructor ============
 
     constructor(
         bytes32 positionId,
@@ -43,6 +57,7 @@ contract ERC20CappedShort is ERC20Short {
         uint256 cap
     )
         public
+        Ownable()
         ERC20Short(
             positionId,
             margin,
@@ -51,7 +66,18 @@ contract ERC20CappedShort is ERC20Short {
             trustedWithdrawers
         )
     {
-        tokenCap = cap;
+        setTokenCapInternal(cap);
+    }
+
+    // ============ Public Functions ============
+
+    function setTokenCap(
+        uint256 newCap
+    )
+        external
+        onlyOwner
+    {
+        setTokenCapInternal(newCap);
     }
 
     // ============ Private Functions ============
@@ -71,5 +97,16 @@ contract ERC20CappedShort is ERC20Short {
         );
 
         return tokenAmount;
+    }
+
+    function setTokenCapInternal(
+        uint256 newCap
+    )
+        private
+    {
+        // We do not need to require that the tokenCap is >= totalSupply_ because the cap is only
+        // checked when increasing the position. It does not prevent any other functionality
+        tokenCap = newCap;
+        emit TokenCapSet(newCap);
     }
 }
