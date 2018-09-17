@@ -19,7 +19,7 @@ const { ADDRESSES, BIGNUMBERS, ORDER_TYPE } = require('../../../helpers/Constant
 const { signOrder } = require('../../../helpers/ZeroExV1Helper');
 const { zeroExV1OrderToBytes } = require('../../../helpers/BytesHelper');
 
-contract('DutchAuctionCloser', accounts => {
+contract('WethPayoutRecipient', accounts => {
   let dydxMargin, tokenProxy, weth, heldToken;
   const opener = accounts[9];
   const loanHolder = accounts[8];

@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { Math } from "openzeppelin-solidity/contracts/math/Math.sol";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { Fraction } from "../../../lib/Fraction.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
@@ -66,33 +67,56 @@ contract DutchAuctionCloser is
 
     // ============ State Variables ============
 
-    // Numerator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public CALL_TIMELIMIT_NUMERATOR;
+    // The fraction of the way through the callTimeLimit that the auction starts
+    Fraction.Fraction128 public auctionStartFraction;
 
-    // Denominator of the fraction of the callTimeLimit allocated to the auction
-    uint256 public CALL_TIMELIMIT_DENOMINATOR;
+    // The fraction of the way through the callTimeLimit that the auction ends
+    Fraction.Fraction128 public auctionEndFraction;
 
     // ============ Constructor ============
 
     constructor(
         address margin,
-        uint256 callTimeLimitNumerator,
-        uint256 callTimeLimitDenominator
+        uint128 auctionStartNum,
+        uint128 auctionStartDen,
+        uint128 auctionEndNum,
+        uint128 auctionEndDen
     )
         public
         OnlyMargin(margin)
     {
-        // these two requirements also require (callTimeLimitDenominator > 0)
+        // validate fractions
         require(
-            callTimeLimitNumerator <= callTimeLimitDenominator,
-            "DutchAuctionCloser#constructor: Invalid callTimeLimit fraction"
+            auctionStartNum <= auctionStartDen,
+            "DutchAuctionCloser#constructor: Invalid auctionStartFraction"
         );
         require(
-            callTimeLimitNumerator > 0,
-            "DutchAuctionCloser#constructor: callTimeLimit fraction cannot be 0"
+            auctionEndNum <= auctionEndDen,
+            "DutchAuctionCloser#constructor: Invalid auctionEndFraction"
         );
-        CALL_TIMELIMIT_NUMERATOR = callTimeLimitNumerator;
-        CALL_TIMELIMIT_DENOMINATOR = callTimeLimitDenominator;
+        require(
+            auctionStartDen > 0,
+            "DutchAuctionCloser#constructor: auctionStartDen cannot be zero"
+        );
+        require(
+            auctionEndDen > 0,
+            "DutchAuctionCloser#constructor: auctionEndDen cannot be zero"
+        );
+        require(
+            uint256(auctionStartNum).mul(auctionEndDen) <
+            uint256(auctionEndNum).mul(auctionStartDen),
+            "DutchAuctionCloser#constructor: auctionEndFraction smaller than auctionStartFraction"
+        );
+
+        // store fractions
+        auctionStartFraction = Fraction.Fraction128({
+            num: auctionStartNum,
+            den: auctionStartDen
+        });
+        auctionEndFraction = Fraction.Fraction128({
+            num: auctionEndNum,
+            den: auctionEndDen
+        });
     }
 
     // ============ Margin-Only State-Changing Functions ============
@@ -179,6 +203,15 @@ contract DutchAuctionCloser is
             uint256 auctionEndTimestamp
         ) = getAuctionTimeLimits(positionId);
 
+        require(
+            block.timestamp >= auctionStartTimestamp,
+            "DutchAuctionCloser#getAuctionTimeLimits: Auction has not started"
+        );
+        require(
+            block.timestamp <= auctionEndTimestamp,
+            "DutchAuctionCloser#getAuctionTimeLimits: Auction has ended"
+        );
+
         // linearly decreases from maximum amount to zero over the course of the auction
         return MathHelpers.getPartialAmount(
             auctionEndTimestamp.sub(block.timestamp),
@@ -189,56 +222,64 @@ contract DutchAuctionCloser is
 
     // ============ Private Helper-Functions ============
 
+    /**
+     * Returns the start and end timestamps of the Dutch Auction.
+     */
     function getAuctionTimeLimits(
         bytes32 positionId
     )
         private
         view
-        returns (
-            uint256 /* auctionStartTimestamp */,
-            uint256 /* auctionEndTimestamp */
-        )
+        returns (uint256, uint256)
     {
-        uint256 auctionStartTimestamp;
-        uint256 auctionEndTimestamp;
-
         MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, positionId);
+        uint256 callStart = getEffectiveCallTimestamp(position);
 
+        return (
+            callStart.add(fractionMul(auctionStartFraction, position.callTimeLimit)),
+            callStart.add(fractionMul(auctionEndFraction, position.callTimeLimit))
+        );
+    }
+
+    /**
+     * Returns the callTimestamp if it exists, otherwise returns callTimeLimit seconds before the
+     * end of the position.
+     */
+    function getEffectiveCallTimestamp(
+        MarginCommon.Position memory position
+    )
+        private
+        pure
+        returns (uint256)
+    {
         uint256 maxTimestamp = uint256(position.startTimestamp).add(position.maxDuration);
         uint256 callTimestamp = uint256(position.callTimestamp);
         uint256 callTimeLimit = uint256(position.callTimeLimit);
 
-        uint256 auctionLength = MathHelpers.getPartialAmount(
-            CALL_TIMELIMIT_NUMERATOR,
-            CALL_TIMELIMIT_DENOMINATOR,
-            callTimeLimit
-        );
-        assert(auctionLength <= callTimeLimit);
-
         if (callTimestamp == 0 || callTimestamp.add(callTimeLimit) > maxTimestamp) {
             // auction time determined by maxTimestamp
-            auctionStartTimestamp = Math.max256(
-                uint256(position.startTimestamp),
-                maxTimestamp.sub(auctionLength));
-            auctionEndTimestamp = maxTimestamp;
+            return maxTimestamp.sub(callTimeLimit);
         } else {
             // auction time determined by callTimestamp
-            auctionStartTimestamp = callTimestamp.add(callTimeLimit).sub(auctionLength);
-            auctionEndTimestamp = callTimestamp.add(callTimeLimit);
+            return callTimestamp;
         }
+    }
 
-        require(
-            block.timestamp >= auctionStartTimestamp,
-            "DutchAuctionCloser#getAuctionTimeLimits: Auction has not started"
-        );
-        require(
-            block.timestamp <= auctionEndTimestamp,
-            "DutchAuctionCloser#getAuctionTimeLimits: Auction has ended"
-        );
-
-        return (
-            auctionStartTimestamp,
-            auctionEndTimestamp
+    /**
+     * Multiplies a fraction by a uint256
+     */
+    function fractionMul(
+        Fraction.Fraction128 memory fraction,
+        uint256 n
+    )
+        private
+        pure
+        returns (uint256)
+    {
+        return MathHelpers.getPartialAmount(
+            fraction.num,
+            fraction.den,
+            n
         );
     }
 }
