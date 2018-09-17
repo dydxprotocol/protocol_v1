@@ -18,8 +18,6 @@
 
 pragma solidity 0.4.24;
 
-import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-
 
 contract LibFillResults
 {
@@ -34,19 +32,5 @@ contract LibFillResults
         FillResults left;                    // Amounts filled and fees paid of left order.
         FillResults right;                   // Amounts filled and fees paid of right order.
         uint256 leftMakerAssetSpreadAmount;  // Spread between price of left and right order, denominated in the left order's makerAsset, paid to taker.
-    }
-
-    /// @dev Adds properties of both FillResults instances.
-    ///      Modifies the first FillResults instance specified.
-    /// @param totalFillResults Fill results instance that will be added onto.
-    /// @param singleFillResults Fill results instance that will be added to totalFillResults.
-    function addFillResults(FillResults memory totalFillResults, FillResults memory singleFillResults)
-        internal
-        pure
-    {
-        totalFillResults.makerAssetFilledAmount = SafeMath.add(totalFillResults.makerAssetFilledAmount, singleFillResults.makerAssetFilledAmount);
-        totalFillResults.takerAssetFilledAmount = SafeMath.add(totalFillResults.takerAssetFilledAmount, singleFillResults.takerAssetFilledAmount);
-        totalFillResults.makerFeePaid = SafeMath.add(totalFillResults.makerFeePaid, singleFillResults.makerFeePaid);
-        totalFillResults.takerFeePaid = SafeMath.add(totalFillResults.takerFeePaid, singleFillResults.takerFeePaid);
     }
 }

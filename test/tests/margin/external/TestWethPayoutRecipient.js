@@ -10,9 +10,8 @@ const HeldToken = artifacts.require("TokenA");
 const WETH9 = artifacts.require("WETH9");
 const Margin = artifacts.require("Margin");
 const TokenProxy = artifacts.require("TokenProxy");
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
+const { ZeroExExchangeV1, ZeroExProxyV1 } = require('../../../contracts/ZeroExV1');
 
 const { expectThrow } = require('../../../helpers/ExpectHelper');
 const { issueTokenToAccountInAmountAndApproveProxy } = require('../../../helpers/MarginHelper');

@@ -26,7 +26,9 @@ module.exports = {
     dev: {
       host: "localhost",
       port: 8545,
-      network_id: "*"
+      network_id: "*",
+      gasPrice: 1000000000, // 1 gwei
+      gas: 7900000
     },
     coverage: {
       host: 'localhost',
@@ -38,7 +40,7 @@ module.exports = {
     docker: {
       host: 'localhost',
       network_id: '1212',
-      port: 8545,
+      port: 8545
     }
   },
   mocha,

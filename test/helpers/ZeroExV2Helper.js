@@ -1,15 +1,15 @@
 const Web3 = require('web3');
+const web3Instance = new Web3(web3.currentProvider);
 const BigNumber = require('bignumber.js');
-
-const ZeroExExchangeV2 = artifacts.require("ZeroExExchangeV2");
-const HeldToken = artifacts.require("TokenA");
-const OwedToken = artifacts.require("TokenB");
 const promisify = require("es6-promisify");
 const ethUtil = require('ethereumjs-util');
+
+const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
+let { ZeroExExchangeV2 } = require("../contracts/ZeroExV2");
+
 const { ADDRESSES, DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
 const { addressToBytes32, concatBytes } = require('./BytesHelper');
-
-const web3Instance = new Web3(web3.currentProvider);
 
 const BASE_AMOUNT = new BigNumber('1098623452345987123')
 

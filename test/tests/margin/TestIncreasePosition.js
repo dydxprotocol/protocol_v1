@@ -8,12 +8,13 @@ const Margin = artifacts.require("Margin");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const TestPositionOwner = artifacts.require("TestPositionOwner");
 const TestLoanOwner = artifacts.require("TestLoanOwner");
-const { ADDRESSES, DEFAULT_SALT } = require('../../helpers/Constants');
 const ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const Vault = artifacts.require("Vault");
+const { ZeroExProxyV1 } = require('../../contracts/ZeroExV1');
+
+const { ADDRESSES, DEFAULT_SALT } = require('../../helpers/Constants');
 const { getOwedAmount } = require('../../helpers/ClosePositionHelper');
 const { getPartialAmount } = require('../../helpers/MathHelper');
 const { signLoanOffering } = require('../../helpers/LoanHelper');

@@ -1,12 +1,13 @@
 const expect = require('chai').expect;
-
 const BigNumber = require('bignumber.js');
+
 const Margin = artifacts.require("Margin");
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
 const OwedToken = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 const TestSmartContractLender = artifacts.require("TestSmartContractLender");
 const TokenProxy = artifacts.require("TokenProxy");
+const { ZeroExExchangeV1 } = require('../../contracts/ZeroExV1');
+
 const {
   createOpenTx,
   issueTokensAndSetAllowances,

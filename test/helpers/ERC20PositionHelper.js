@@ -9,10 +9,11 @@ const BucketLender = artifacts.require('BucketLender');
 const TokenProxy = artifacts.require('TokenProxy');
 const WETH9 = artifacts.require("WETH9");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const { ZeroExProxyV1 } = require('../contracts/ZeroExV1');
+
 const { ADDRESSES } = require('./Constants');
 const { createSignedV1Order } = require('./ZeroExV1Helper');
 const HeldToken = artifacts.require("TokenA");
-const ZeroExProxyV1 = artifacts.require('ZeroExProxyV1');
 
 BigNumber.config({
   EXPONENTIAL_AT: 1000,

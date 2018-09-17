@@ -10,12 +10,13 @@ const TokenProxy = artifacts.require("TokenProxy");
 const WETH9 = artifacts.require("WETH9");
 const HeldToken = artifacts.require("TokenA");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
 const ERC20Short = artifacts.require("ERC20Short");
 const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const SharedLoan = artifacts.require("SharedLoan");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
+const { ZeroExProxyV1 } = require('../../../../contracts/ZeroExV1');
+
 const { BIGNUMBERS, DEFAULT_SALT } = require('../../../../helpers/Constants');
 const { createLoanOffering, signLoanOffering } = require('../../../../helpers/LoanHelper');
 const { signOrder, createSignedV1BuyOrder } = require('../../../../helpers/ZeroExV1Helper');

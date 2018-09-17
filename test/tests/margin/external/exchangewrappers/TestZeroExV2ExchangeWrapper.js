@@ -4,10 +4,9 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
-const ZeroExExchangeV2 = artifacts.require("ZeroExExchangeV2");
-const ZeroExProxyV2 = artifacts.require("ZeroExProxyV2");
 const FeeToken = artifacts.require("TokenC");
 const TestToken = artifacts.require("TestToken");
+let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../../../../contracts/ZeroExV2");
 
 const { BIGNUMBERS, ADDRESSES } = require('../../../../helpers/Constants');
 const { zeroExV2OrderToBytes } = require('../../../../helpers/BytesHelper');

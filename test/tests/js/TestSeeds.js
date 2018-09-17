@@ -7,7 +7,7 @@ const { ZeroEx } = require('0x.js');
 
 const Margin = artifacts.require('Margin');
 const TestToken = artifacts.require('TestToken');
-const ZeroExProxyV1 = artifacts.require('ZeroExProxyV1');
+const { ZeroExProxyV1 } = require('../../contracts/ZeroExV1');
 
 contract('Margin', () => {
   describe('seeds', () => {

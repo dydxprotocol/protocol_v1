@@ -54,30 +54,46 @@ const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
 
+// External contracts
+const { networks } = require("../truffle");
+const { assetDataUtils } = require("@0xproject/order-utils");
+let { ZeroExExchangeV1, ZeroExProxyV1 } = require("../test/contracts/ZeroExV1");
+let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../test/contracts/ZeroExV2");
+
 // Other constants
 const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
 
-// Zero Ex V1
-const ZeroExExchangeV1 = artifacts.require("ZeroExExchangeV1");
-const ZeroExProxyV1 = artifacts.require("ZeroExProxyV1");
+// Helper functions
+function parseExternalContracts(contracts, network) {
+  const defaults = networks[network] || {}; // try to grab defaults from truffle.js
+  const classDefaults = {
+    from: web3.eth.accounts[0],
+    gas: defaults.gas || 6721975,
+    gasPrice: defaults.gasPrice || 100000000000
+  };
+  for (let i in contracts) {
+    let contract = contracts[i];
+    contract.setProvider(web3.currentProvider);
+    contract.setNetwork(network);
+    contract.class_defaults = classDefaults;
+  }
+}
 
-// Zero Ex V2
-const ZeroExProxyV2 = artifacts.require("ZeroExProxyV2");
-const ZeroExExchangeV2 = artifacts.require("ZeroExExchangeV2");
-
+// Deploy functions
 async function maybeDeployTestTokens(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
       deployer.deploy(TokenA),
       deployer.deploy(TokenB),
-      deployer.deploy(FeeToken),
+      deployer.deploy(FeeToken)
     ]);
   }
 }
 
 async function maybeDeploy0xV1(deployer, network) {
   if (isDevNetwork(network)) {
+    parseExternalContracts([ZeroExExchangeV1, ZeroExProxyV1]);
     await deployer.deploy(ZeroExProxyV1);
     await deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address);
     const proxy = await ZeroExProxyV1.deployed();
@@ -87,11 +103,19 @@ async function maybeDeploy0xV1(deployer, network) {
 
 async function maybeDeploy0xV2(deployer, network) {
   if (isDevNetwork(network)) {
-    const zrxAssetData = "0xf47261b0000000000000000000000000" + FeeToken.address.substr(2);
+    // Set up Truffle Contract objects
+    parseExternalContracts([ZeroExExchangeV2, ZeroExProxyV2]);
+
+    // Create fake ZRX Token asset data
+    const zrxAssetData = assetDataUtils.encodeERC20AssetData(FeeToken.address);
+
+    // Deploy the Exchange and ERC20Proxy
     await Promise.all([
-      deployer.deploy(ZeroExProxyV2),
-      deployer.deploy(ZeroExExchangeV2, zrxAssetData)
+      deployer.deploy(ZeroExExchangeV2, zrxAssetData),
+      deployer.deploy(ZeroExProxyV2)
     ]);
+
+    // Register the Exchange and ERC20Proxy with each other
     const [
       exchange,
       erc20Proxy
