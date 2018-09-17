@@ -1,5 +1,4 @@
 const chai = require('chai');
-const BigNumber = require('bignumber.js');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 
@@ -47,20 +46,38 @@ contract('DutchAuctionCloser', accounts => {
 
   describe('Constructor', () => {
     it('sets constants correctly', async () => {
-      const contract = await DutchAuctionCloser.new(Margin.address, 1, 2);
-      const [ssAddress, num, den] = await Promise.all([
+      const [startNum, startDen, endNum, endDen] = [1, 2, 3, 4];
+      const contract = await DutchAuctionCloser.new(
+        Margin.address,
+        startNum,
+        startDen,
+        endNum,
+        endDen
+      );
+      const [ssAddress, startFraction, endFraction] = await Promise.all([
         contract.DYDX_MARGIN.call(),
-        contract.CALL_TIMELIMIT_NUMERATOR.call(),
-        contract.CALL_TIMELIMIT_DENOMINATOR.call(),
+        contract.auctionStartFraction.call(),
+        contract.auctionEndFraction.call(),
       ]);
-      expect(ssAddress).to.equal(Margin.address);
-      expect(num).to.be.bignumber.equal(1);
-      expect(den).to.be.bignumber.equal(2);
+      expect(ssAddress).to.be.bignumber.eq(dydxMargin.address);
+      expect(startFraction[0]).to.be.bignumber.eq(startNum);
+      expect(startFraction[1]).to.be.bignumber.eq(startDen);
+      expect(endFraction[0]).to.be.bignumber.eq(endNum);
+      expect(endFraction[1]).to.be.bignumber.eq(endDen);
     });
 
     it('fails for bad constants', async () => {
-      await expectThrow(DutchAuctionCloser.new(Margin.address, 0, 2));
-      await expectThrow(DutchAuctionCloser.new(Margin.address, 3, 2));
+      // zero denominators
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 1, 0, 2, 2));
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 1, 2, 2, 0));
+
+      // fractions larger than 1
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 1, 2, 3, 2));
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 3, 2, 1, 1));
+
+      // denominator larger than numerator
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 1, 1, 1, 2));
+      await expectThrow(DutchAuctionCloser.new(Margin.address, 2, 3, 4, 8));
     });
   });
 
@@ -120,11 +137,7 @@ contract('DutchAuctionCloser', accounts => {
     });
 
     it('fails if bid too early', async () => {
-      const dutchCloser = await DutchAuctionCloser.new(
-        Margin.address,
-        new BigNumber(1),
-        new BigNumber(2),
-      );
+      const dutchCloser = await DutchAuctionCloser.new(Margin.address, 1, 2, 1, 1);
       await ERC721MarginPositionContract.approveRecipient(
         dutchCloser.address,
         true,
