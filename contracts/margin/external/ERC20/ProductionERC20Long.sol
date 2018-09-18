@@ -22,15 +22,17 @@ pragma experimental "v0.5.0";
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import { ERC20Long } from "./ERC20Long.sol";
+import { MarginCommon } from "../../impl/MarginCommon.sol";
+import { MarginHelper } from "../lib/MarginHelper.sol";
 
 
 /**
- * @title ERC20CappedLong
+ * @title ProductionERC20Long
  * @author dYdX
  *
- * CappedToken version of an ERC20Long
+ * Early production version of an ERC20Long with a token cap and a trusted closer
  */
-contract ERC20CappedLong is
+contract ProductionERC20Long is
     ERC20Long,
     Ownable
 {
@@ -44,6 +46,8 @@ contract ERC20CappedLong is
 
     // ============ State Variables ============
 
+    address public TRUSTED_LATE_CLOSER;
+
     uint256 public tokenCap;
 
     // ============ Constructor ============
@@ -54,7 +58,8 @@ contract ERC20CappedLong is
         address initialTokenHolder,
         address[] trustedRecipients,
         address[] trustedWithdrawers,
-        uint256 cap
+        uint256 cap,
+        address trustedLateCloser
     )
         public
         Ownable()
@@ -66,7 +71,8 @@ contract ERC20CappedLong is
             trustedWithdrawers
         )
     {
-        setTokenCapInternal(cap);
+        TRUSTED_LATE_CLOSER = trustedLateCloser;
+        tokenCap = cap;
     }
 
     // ============ Owner-Only Functions ============
@@ -77,10 +83,13 @@ contract ERC20CappedLong is
         external
         onlyOwner
     {
-        setTokenCapInternal(newCap);
+        // We do not need to require that the tokenCap is >= totalSupply_ because the cap is only
+        // checked when increasing the position. It does not prevent any other functionality
+        tokenCap = newCap;
+        emit TokenCapSet(newCap);
     }
 
-    // ============ Private Functions ============
+    // ============ Internal Overriding Functions ============
 
     function getTokenAmountOnAdd(
         uint256 principalAdded
@@ -93,20 +102,35 @@ contract ERC20CappedLong is
 
         require(
             totalSupply_.add(tokenAmount) <= tokenCap,
-            "ERC20CappedLong#getTokenAmountOnAdd: Adding tokenAmount would exceed cap"
+            "ProductionERC20Long#getTokenAmountOnAdd: Adding tokenAmount would exceed cap"
         );
 
         return tokenAmount;
     }
 
-    function setTokenCapInternal(
-        uint256 newCap
+    function closeUsingTrustedRecipient(
+        address closer,
+        address payoutRecipient,
+        uint256 requestedAmount
     )
-        private
+        internal
+        returns (uint256)
     {
-        // We do not need to require that the tokenCap is >= totalSupply_ because the cap is only
-        // checked when increasing the position. It does not prevent any other functionality
-        tokenCap = newCap;
-        emit TokenCapSet(newCap);
+        MarginCommon.Position memory position = MarginHelper.getPosition(DYDX_MARGIN, POSITION_ID);
+
+        bool afterEnd =
+            block.timestamp > uint256(position.startTimestamp).add(position.maxDuration);
+        bool afterCall =
+            position.callTimestamp > 0 &&
+            block.timestamp > uint256(position.callTimestamp).add(position.callTimeLimit);
+
+        if (afterCall || afterEnd) {
+            require (
+                closer == TRUSTED_LATE_CLOSER,
+                "ProductionERC20Long#closeUsingTrustedRecipient: Not TRUSTED_LATE_CLOSER"
+            );
+        }
+
+        return super.closeUsingTrustedRecipient(closer, payoutRecipient, requestedAmount);
     }
 }

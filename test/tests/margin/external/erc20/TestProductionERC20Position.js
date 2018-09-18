@@ -4,11 +4,12 @@ chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
-const ERC20CappedShort = artifacts.require("ERC20CappedShort");
-const ERC20CappedLong = artifacts.require("ERC20CappedLong");
+const ProductionERC20Short = artifacts.require("ProductionERC20Short");
+const ProductionERC20Long = artifacts.require("ProductionERC20Long");
 const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 
+const { wait } = require('@digix/tempo')(web3);
 const { ADDRESSES, BYTES32 } = require('../../../../helpers/Constants');
 const {
   callIncreasePosition,
@@ -46,6 +47,7 @@ contract('ERC20Short', accounts => {
 
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
+  const TRUSTED_LATE_CLOSER = accounts[8];
 
   before('Set up Proxy, Margin accounts', async () => {
     [
@@ -94,21 +96,23 @@ contract('ERC20Short', accounts => {
       POSITIONS.LONG.TOKEN_CONTRACT,
       POSITIONS.SHORT.TOKEN_CONTRACT
     ] = await Promise.all([
-      ERC20CappedLong.new(
+      ProductionERC20Long.new(
         POSITIONS.LONG.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.LONG.TRUSTED_RECIPIENTS,
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
-        POSITIONS.LONG.NUM_TOKENS.times(multiplier)
+        POSITIONS.LONG.NUM_TOKENS.times(multiplier),
+        TRUSTED_LATE_CLOSER
       ),
-      ERC20CappedShort.new(
+      ProductionERC20Short.new(
         POSITIONS.SHORT.ID,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         POSITIONS.SHORT.TRUSTED_RECIPIENTS,
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
-        POSITIONS.SHORT.NUM_TOKENS.times(multiplier)
+        POSITIONS.SHORT.NUM_TOKENS.times(multiplier),
+        TRUSTED_LATE_CLOSER
       )
     ]);
   }
@@ -136,19 +140,21 @@ contract('ERC20Short', accounts => {
     const untrustedAccount = accounts[7];
 
     it('sets constants correctly for short', async () => {
-      const tokenContract = await ERC20CappedShort.new(
+      const tokenContract = await ProductionERC20Short.new(
         positionId,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         [trustedRecipient],
         [trustedWithdrawer],
-        tokenCap
+        tokenCap,
+        TRUSTED_LATE_CLOSER
       );
       const [
         supply,
         cap,
         pid,
         ith,
+        tlc,
         tr_is_tr,
         tw_is_tr,
         ua_is_tr,
@@ -160,6 +166,7 @@ contract('ERC20Short', accounts => {
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
+        tokenContract.TRUSTED_LATE_CLOSER.call(),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
@@ -171,6 +178,7 @@ contract('ERC20Short', accounts => {
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
+      expect(tlc).to.be.bignumber.eq(TRUSTED_LATE_CLOSER);
       expect(tr_is_tr).to.be.true;
       expect(tw_is_tr).to.be.false;
       expect(ua_is_tr).to.be.false;
@@ -180,19 +188,21 @@ contract('ERC20Short', accounts => {
     });
 
     it('sets constants correctly for long', async () => {
-      const tokenContract = await ERC20CappedShort.new(
+      const tokenContract = await ProductionERC20Short.new(
         positionId,
         dydxMargin.address,
         INITIAL_TOKEN_HOLDER,
         [trustedRecipient],
         [trustedWithdrawer],
-        tokenCap
+        tokenCap,
+        TRUSTED_LATE_CLOSER
       );
       const [
         supply,
         cap,
         pid,
         ith,
+        tlc,
         tr_is_tr,
         tw_is_tr,
         ua_is_tr,
@@ -204,6 +214,7 @@ contract('ERC20Short', accounts => {
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
+        tokenContract.TRUSTED_LATE_CLOSER.call(),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
@@ -215,6 +226,7 @@ contract('ERC20Short', accounts => {
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
+      expect(tlc).to.be.bignumber.eq(TRUSTED_LATE_CLOSER);
       expect(tr_is_tr).to.be.true;
       expect(tw_is_tr).to.be.false;
       expect(ua_is_tr).to.be.false;
@@ -400,32 +412,23 @@ contract('ERC20Short', accounts => {
   });
 
   describe('#closePositionOnBehalfOf', () => {
-    it('succeeds even when remaining amount is above tokenCap', async () => {
-      let tempAccounts = accounts;
+    const untrustedParty = accounts[0];
 
+    beforeEach('set up positions', async () => {
       await setUpPositions();
       await setUpTokens(1);
       await transferPositionsToTokens();
+    });
 
+    it('succeeds even when remaining amount is above tokenCap', async () => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
-        tempAccounts = tempAccounts.slice(1);
 
         const tokenContract = POSITION.TOKEN_CONTRACT;
         const owner = await tokenContract.owner.call();
         await tokenContract.setTokenCap(POSITION.NUM_TOKENS.div(2), { from: owner });
 
-        await issueTokenToAccountInAmountAndApproveProxy(
-          owedToken,
-          INITIAL_TOKEN_HOLDER,
-          POSITION.TX.loanOffering.rates.maxAmount
-        );
-        await dydxMargin.closePositionDirectly(
-          POSITION.ID,
-          POSITION.NUM_TOKENS.div(10),
-          INITIAL_TOKEN_HOLDER,
-          { from: INITIAL_TOKEN_HOLDER }
-        );
+        await doClose(POSITION, INITIAL_TOKEN_HOLDER, INITIAL_TOKEN_HOLDER, false);
 
         const [
           supply,
@@ -437,5 +440,80 @@ contract('ERC20Short', accounts => {
         expect(supply).to.be.bignumber.gt(cap);
       }
     });
+
+    it('fails for trusted closer without trusted recipient', async () => {
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, untrustedParty, true);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, untrustedParty, true);
+      }
+    });
+
+    it('succeeds for trusted closer and trusted recipient', async () => {
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, trustedRecipient, false);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, trustedRecipient, false);
+      }
+    });
+
+    it('succeeds only before expiration for trustedRecipient and non-trusted closer', async () => {
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], untrustedParty, trustedRecipient, false);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], untrustedParty, trustedRecipient, true);
+      }
+    });
+
+    it('fails for untrusted closer and untrusted recipient', async () => {
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], untrustedParty, untrustedParty, true);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], untrustedParty, untrustedParty, true);
+      }
+    });
+
+    async function waitUntilEndOfPosition() {
+      await wait(POSITIONS.LONG.TX.loanOffering.maxDuration);
+    }
+
+    async function doClose(position, closer, recipient, throws) {
+      await issueTokenToAccountInAmountAndApproveProxy(
+        owedToken,
+        closer,
+        position.TX.loanOffering.rates.maxAmount
+      );
+      const promise = dydxMargin.closePositionDirectly(
+        position.ID,
+        position.NUM_TOKENS.div(10),
+        recipient,
+        { from: closer }
+      );
+      if (throws) {
+        await expectThrow(promise);
+      } else {
+        await promise;
+      }
+    }
   });
 });
