@@ -603,16 +603,7 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
-        require(
-            recipient == address(this),
-            "BucketLender#forceRecoverCollateralOnBehalfOf: Recipient must be this contract"
-        );
-
-        rebalanceBucketsInternal();
-
-        wasForceClosed = true;
-
-        return address(this);
+        return forceRecoverCollateralInternal(recipient);
     }
 
     // ============ Public State-Changing Functions ============
@@ -829,7 +820,28 @@ contract BucketLender is
         return amount;
     }
 
-    // ============ Helper Functions ============
+    // ============ Internal Functions ============
+
+    function forceRecoverCollateralInternal(
+        address recipient
+    )
+        internal
+        returns (address)
+    {
+
+        require(
+            recipient == address(this),
+            "BucketLender#forceRecoverCollateralOnBehalfOf: Recipient must be this contract"
+        );
+
+        rebalanceBucketsInternal();
+
+        wasForceClosed = true;
+
+        return address(this);
+    }
+
+    // ============ Private Helper Functions ============
 
     /**
      * Recalculates the Outstanding Principal and Available Amount for the buckets. Only changes the
