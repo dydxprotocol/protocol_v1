@@ -69,7 +69,7 @@ contract ERC20CappedLong is
         setTokenCapInternal(cap);
     }
 
-    // ============ Public Functions ============
+    // ============ Owner-Only Functions ============
 
     function setTokenCap(
         uint256 newCap
