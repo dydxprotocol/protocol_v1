@@ -115,26 +115,4 @@ contract MakerOracle is
         // TODO: Do not continue if the position is undercollateralized.
         return address(this);
     }
-
-    /**
-     * Allows the owner to withdraw any excess tokens sent to the vault by
-     * unconventional means, including (but not limited-to) token airdrops. We
-     * do not expect this contract to own any tokens.
-     *
-     * @param  token  ERC20 token address
-     * @param  to     Address to transfer tokens to
-     * @return        Amount of tokens withdrawn
-     */
-    function withdrawExcessToken(
-        address token,
-        address to
-    )
-        external
-        onlyOwner
-        returns (uint256)
-    {
-        uint256 amount = token.balanceOf(address(this));
-        token.transfer(to, amount);
-        return amount;
-    }
 }
