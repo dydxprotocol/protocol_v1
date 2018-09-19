@@ -127,29 +127,6 @@ contract MakerOracle is
     }
 
     /**
-     * Indicates whether the held/owed pair used by the position is a pair for
-     * which we have pricing information. Currently we support ETH/DAI and
-     * DAI/ETH.
-     *
-     * @return Boolean indicating whether the position uses supported tokens.
-     */
-    function positionUsesSupportedTokens(
-        bytes32 positionId
-    )
-        external
-        view
-        returns (bool)
-    {
-        Margin margin = Margin(DYDX_MARGIN);
-        address heldToken = margin.getPositionHeldToken(positionId);
-        address owedToken = margin.getPositionOwedToken(positionId);
-        return (
-            (heldToken == WETH || heldToken == DAI) &&
-            (owedToken == WETH || owedToken == DAI)
-        );
-    }
-
-    /**
      * Read position information from the Margin contract and use the exchange
      * rate give by the oracle contract to determine whether the held amount
      * (i.e. collateral) meets the collateral requirement relative to the value
@@ -167,35 +144,36 @@ contract MakerOracle is
         onlyMargin
         returns (bool)
     {
-        require(this.positionUsesSupportedTokens(positionId));
         Margin margin = Margin(DYDX_MARGIN);
+
+        address heldToken = margin.getPositionHeldToken(positionId);
+        address owedToken = margin.getPositionOwedToken(positionId);
+
+        // Currently we only support ETH/DAI and DAI/ETH.
+        require(
+            (heldToken == DAI && owedToken == WETH) ||
+            (heldToken == WETH && owedToken == DAI)
+        );
 
         // The MakerDAO medianizer contract returns ETH/USD with 18 digits after
         // the decimal point.
         bytes32 oracleRead = IMedianizer(MAKERDAO_MEDIANIZER).read();
         uint256 ethUsdRate = uint256(oracleRead);
 
-        address heldToken = margin.getPositionHeldToken(positionId);
-        address owedToken = margin.getPositionOwedToken(positionId);
         uint256 heldAmount = margin.getPositionBalance(positionId);
         uint256 owedAmount = margin.getPositionOwedAmount(positionId);
 
         if (heldToken == DAI && owedToken == WETH) {
             // I.e. short position against ETH.
             return (
-                heldAmount * (10**8) * (10**18) >=
-                owedAmount * COLLATERAL_REQUIREMENT * ethUsdRate
-            );
-        } else if (heldToken == WETH && owedToken == DAI) {
-            // I.e. long position in ETH.
-            return (
-                heldAmount * (10**8) * ethUsdRate >=
-                owedAmount * COLLATERAL_REQUIREMENT * (10**18)
+                heldAmount.mul(10**26) >=
+                owedAmount.mul(COLLATERAL_REQUIREMENT).mul(ethUsdRate)
             );
         } else {
-            // The held and owed tokens are the same.
+            // I.e. long position in ETH.
             return (
-                heldAmount * (10**8) >= COLLATERAL_REQUIREMENT * owedAmount
+                heldAmount.mul(ethUsdRate) >=
+                owedAmount.mul(COLLATERAL_REQUIREMENT).mul(10**10)
             );
         }
     }
