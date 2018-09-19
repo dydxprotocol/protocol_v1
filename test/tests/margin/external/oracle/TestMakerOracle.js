@@ -13,28 +13,43 @@ const MakerOracle = artifacts.require('MakerOracle');
 const MockMedianizer = artifacts.require('MockMedianizer');
 const TestMarginCallDelegator = artifacts.require('TestMarginCallDelegator');
 
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const { issueAndSetAllowance } = require('../../../../helpers/TokenHelper');
+const { wait } = require('@digix/tempo')(web3);
+
+// contracts
+let makerOracle;
+let medianizer;
+let margin;
+let weth;
+let dai;
+
+// collateral requirement as a percentage, parameter of MakerOracle contract
+const collateralRequirement = new BigNumber("150e6");
+
+// ensures different poisition IDs each time
+let salt = 0;
+
+// stores the position IDs
+let shortPositionId;
+let longPositionId;
+
+async function setOraclePrice(daiPerEth) {
+  // Multiply by 10**18 and round to match format of the Medianizer contract.
+  const priceE18 = new BigNumber(`${daiPerEth}e18`).round();
+  const asHex = priceE18.toString(16);
+
+  // Left-pad the hex string with zeros in order to pass the value as bytes32.
+  const asHex256 = `0x${'0'.repeat(64 - asHex.length)}${asHex}`;
+
+  return medianizer.poke(asHex256);
+}
 
 contract('MakerOracle', accounts => {
 
-  // contracts
-  let makerOracle;
-  let medianizer;
-  let margin;
-  let weth;
-  let dai;
-
-  // collateral requirement as a percentage, parameter of MakerOracle contract
-  const collateralRequirement = 150;
-
   // addresses
-  const thirdPartyAddress = accounts[1];
-
-  // ensures different poisition IDs each time
-  let salt = 0;
-
-  // stores the position IDs
-  let positionIds = [0, 0];
+  // TODO: Use an address like accounts[1].
+  const thirdPartyAddress = accounts[0];
 
   // runs once before everything else
   before('gets margin contract', async () => {
@@ -54,7 +69,8 @@ contract('MakerOracle', accounts => {
       MockMedianizer.new()
     ]);
     makerOracle = await MakerOracle.new(
-        margin.address, medianizer.address, collateralRequirement);
+        margin.address, medianizer.address, weth.address,
+        dai.address, collateralRequirement);
 
     // transfer positions to a mock lender that defers margin-calling logic to the MakerOracle
     const defaultAccount = accounts[0];
@@ -83,6 +99,7 @@ contract('MakerOracle', accounts => {
     };
 
     // open the positions ([0] = shortEth position, [1] = longEth position)
+    let positionIds = [null, null];
     for (let i = 0; i < 2; i++) {
       // issue the tokens to the position opener
       await issueAndSetAllowance(
@@ -117,33 +134,34 @@ contract('MakerOracle', accounts => {
       // extract the expected positionId
       positionIds[i] = web3Instance.utils.soliditySha3(defaultAccount, constants.nonce[i]);
     }
+
+    [shortPositionId, longPositionId] = positionIds;
   });
 
   describe('#marginCallOnBehalfOf (short position)', () => {
     it('succeeds if the position is undercollateralized', async () => {
       // Exchange rate of 267 DAI/ETH, just under collaterization requirement.
-      await medianizer.poke(new BigNumber('267e18'));
+      await setOraclePrice(267);
 
-      await margin.marginCall(positionIds[0], 0, { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[0]);
+      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.true;
     });
 
-    it('fails if the position is not undercollateralized', async () => {
+    it('fails if the position meets the collateral requirement', async () => {
       // Exchange rate of 266 DAI/ETH, just over collaterization requirement.
-      await medianizer.poke(new BigNumber('266e18'));
+      await setOraclePrice(266);
 
       await expectThrow(
-        margin.marginCall(positionIds[0], 0, { from: thirdPartyAddress })
+        margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress })
       );
-      // TODO: May not work as expected--I'm not sure state resets between cases.
-      const isCalled = await margin.isPositionCalled.call(positionIds[0]);
+      const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.false;
     });
 
     it('fails for non-zero deposit', async () => {
       await expectThrow(
-        margin.marginCall(positionIds[0], 1, { from: thirdPartyAddress })
+        margin.marginCall(shortPositionId, 1, { from: thirdPartyAddress })
       );
     });
   });
@@ -151,28 +169,27 @@ contract('MakerOracle', accounts => {
   describe('#marginCallOnBehalfOf (long position)', () => {
     it('succeeds if the position is undercollateralized', async () => {
       // Exchange rate of 149 DAI/ETH, just under collaterization requirement.
-      await medianizer.poke(new BigNumber('149e18'));
+      await setOraclePrice(149);
 
-      await margin.marginCall(positionIds[1], 0, { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[1]);
+      await margin.marginCall(longPositionId, 0, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.true;
     });
 
-    it('fails if the position is not undercollateralized', async () => {
-      // Exchange rate of 150 DAI/ETH, exactly the collaterization requirement.
-      await medianizer.poke(new BigNumber('150e18'));
+    it('fails if the position meets the collateral requirement', async () => {
+      // Exchange rate of 151 DAI/ETH, just over the collaterization requirement.
+      await setOraclePrice(151);
 
       await expectThrow(
-        margin.marginCall(positionIds[1], 0, { from: thirdPartyAddress })
+        margin.marginCall(longPositionId, 0, { from: thirdPartyAddress })
       );
-      // TODO: May not work as expected--I'm not sure state resets between cases.
-      const isCalled = await margin.isPositionCalled.call(positionIds[1]);
+      const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.false;
     });
 
     it('fails for non-zero deposit', async () => {
       await expectThrow(
-        margin.marginCall(positionIds[1], 1, { from: thirdPartyAddress })
+        margin.marginCall(longPositionId, 1, { from: thirdPartyAddress })
       );
     });
   });
@@ -180,26 +197,26 @@ contract('MakerOracle', accounts => {
   describe('#cancelMarginCallOnBehalfOf (short position)', () => {
     beforeEach('margin-call the position', async () => {
       // Exchange rate of 267 DAI/ETH, just under collaterization requirement.
-      await medianizer.poke(new BigNumber('267e18'));
+      await setOraclePrice(267);
 
-      await margin.marginCall(positionIds[0], 0, { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[0]);
+      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.true;
       await wait(1);
     });
 
     it('fails if the position is undercollateralized', async () => {
       await expectThrow(
-        margin.cancelMarginCall(positionIds[0], { from: thirdPartyAddress })
+        margin.cancelMarginCall(shortPositionId, { from: thirdPartyAddress })
       );
     });
 
-    it('succeeds if the position is not undercollateralized', async () => {
+    it('succeeds if the position meets the collateral requirement', async () => {
       // Exchange rate of 266 DAI/ETH, just over collaterization requirement.
-      await medianizer.poke(new BigNumber('266e18'));
+      await setOraclePrice(266);
 
-      await margin.cancelMarginCall(positionIds[0], { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[0]);
+      await margin.cancelMarginCall(shortPositionId, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.false;
     });
   });
@@ -207,26 +224,26 @@ contract('MakerOracle', accounts => {
   describe('#cancelMarginCallOnBehalfOf (long position)', () => {
     beforeEach('margin-call the position', async () => {
       // Exchange rate of 149 DAI/ETH, just under collaterization requirement.
-      await medianizer.poke(new BigNumber('149e18'));
+      await setOraclePrice(149);
 
-      await margin.marginCall(positionIds[1], 0, { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[1]);
+      await margin.marginCall(longPositionId, 0, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.true;
       await wait(1);
     });
 
     it('fails if the position is undercollateralized', async () => {
       await expectThrow(
-        margin.cancelMarginCall(positionIds[1], { from: thirdPartyAddress })
+        margin.cancelMarginCall(longPositionId, { from: thirdPartyAddress })
       );
     });
 
-    it('succeeds if the position is not undercollateralized', async () => {
-      // Exchange rate of 150 DAI/ETH, exactly the collaterization requirement.
-      await medianizer.poke(new BigNumber('150e18'));
+    it('succeeds if the position meets the collateral requirement', async () => {
+      // Exchange rate of 151 DAI/ETH, just over the collaterization requirement.
+      await setOraclePrice(151);
 
-      await margin.cancelMarginCall(positionIds[1], { from: thirdPartyAddress });
-      const isCalled = await margin.isPositionCalled.call(positionIds[1]);
+      await margin.cancelMarginCall(longPositionId, { from: thirdPartyAddress });
+      const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.false;
     });
   });

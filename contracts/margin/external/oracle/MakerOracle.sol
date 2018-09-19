@@ -19,9 +19,12 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import { IMedianizer } from "../../../external/maker/IMedianizer.sol";
 import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
+import { Margin } from "../../Margin.sol";
 import { OnlyMargin } from "../../interfaces/OnlyMargin.sol";
 import { CancelMarginCallDelegator } from "../../interfaces/lender/CancelMarginCallDelegator.sol";
 import { MarginCallDelegator } from "../../interfaces/lender/MarginCallDelegator.sol";
@@ -41,9 +44,14 @@ contract MakerOracle is
     CancelMarginCallDelegator,
     MarginCallDelegator
 {
+    using SafeMath for uint256;
     using TokenInteract for address;
 
     // ============ State Variables ============
+
+    address public MAKERDAO_MEDIANIZER;
+    address public WETH;
+    address public DAI;
 
     /**
      * The collateral requirement determines whether a margin call is permitted.
@@ -52,7 +60,7 @@ contract MakerOracle is
      * amount. That fraction is defined by the collateral requirement, and the
      * exchange rate between the two currencies is given by the oracle contract.
      */
-    // The collateral requirement to avoid a margin call, as a percent.
+    // The collateral requirement to avoid a margin call, as a percent, * 10^6.
     uint32 public COLLATERAL_REQUIREMENT;
 
     // ============ Constructor ============
@@ -60,18 +68,22 @@ contract MakerOracle is
     constructor(
         address margin,
         address medianizer,
+        address weth,
+        address dai,
         uint32 collateralRequirement
     )
         public
         OnlyMargin(margin)
     {
+        MAKERDAO_MEDIANIZER = medianizer;
+        WETH = weth;
+        DAI = dai;
         COLLATERAL_REQUIREMENT = collateralRequirement;
     }
 
     /**
      * Function a contract must implement in order to let other addresses call marginCall().
      *
-     * @param  caller         Address of the caller of the marginCall function
      * @param  positionId     Unique ID of the position
      * @param  depositAmount  Amount of heldToken deposit that will be required to cancel the call
      * @return                This address to accept, a different address to ask that contract
@@ -86,20 +98,18 @@ contract MakerOracle is
         nonReentrant
         returns (address)
     {
-        // TODO: Allow a deposit to cancel the margin call.
         require(
             depositAmount == 0,
             "BucketLender#marginCallOnBehalfOf: Deposit amount must be zero"
         );
 
-        // TODO: Do not continue unless the position is undercollateralized.
+        require(!meetsCollateralRequirement(positionId));
         return address(this);
     }
 
     /**
      * Function a contract must implement in order to let other addresses call cancelMarginCall().
      *
-     * @param  canceler    Address of the caller of the cancelMarginCall function
      * @param  positionId  Unique ID of the position
      * @return             This address to accept, a different address to ask that contract
      */
@@ -112,7 +122,81 @@ contract MakerOracle is
         nonReentrant
         returns (address)
     {
-        // TODO: Do not continue if the position is undercollateralized.
+        require(meetsCollateralRequirement(positionId));
         return address(this);
+    }
+
+    /**
+     * Indicates whether the held/owed pair used by the position is a pair for
+     * which we have pricing information. Currently we support ETH/DAI and
+     * DAI/ETH.
+     *
+     * @return Boolean indicating whether the position uses supported tokens.
+     */
+    function positionUsesSupportedTokens(
+        bytes32 positionId
+    )
+        external
+        view
+        returns (bool)
+    {
+        Margin margin = Margin(DYDX_MARGIN);
+        address heldToken = margin.getPositionHeldToken(positionId);
+        address owedToken = margin.getPositionOwedToken(positionId);
+        return (
+            (heldToken == WETH || heldToken == DAI) &&
+            (owedToken == WETH || owedToken == DAI)
+        );
+    }
+
+    /**
+     * Read position information from the Margin contract and use the exchange
+     * rate give by the oracle contract to determine whether the held amount
+     * (i.e. collateral) meets the collateral requirement relative to the value
+     * of the owed amount.
+     *
+     * Will revert if the position does not use supported tokens.
+     *
+     * @return Boolean indicating whether the position meets the collateral requirement.
+     */
+    function meetsCollateralRequirement(
+        bytes32 positionId
+    )
+        private
+        view
+        onlyMargin
+        returns (bool)
+    {
+        require(this.positionUsesSupportedTokens(positionId));
+        Margin margin = Margin(DYDX_MARGIN);
+
+        // The MakerDAO medianizer contract returns ETH/USD with 18 digits after
+        // the decimal point.
+        bytes32 oracleRead = IMedianizer(MAKERDAO_MEDIANIZER).read();
+        uint256 ethUsdRate = uint256(oracleRead);
+
+        address heldToken = margin.getPositionHeldToken(positionId);
+        address owedToken = margin.getPositionOwedToken(positionId);
+        uint256 heldAmount = margin.getPositionBalance(positionId);
+        uint256 owedAmount = margin.getPositionOwedAmount(positionId);
+
+        if (heldToken == DAI && owedToken == WETH) {
+            // I.e. short position against ETH.
+            return (
+                heldAmount * (10**8) * (10**18) >=
+                owedAmount * COLLATERAL_REQUIREMENT * ethUsdRate
+            );
+        } else if (heldToken == WETH && owedToken == DAI) {
+            // I.e. long position in ETH.
+            return (
+                heldAmount * (10**8) * ethUsdRate >=
+                owedAmount * COLLATERAL_REQUIREMENT * (10**18)
+            );
+        } else {
+            // The held and owed tokens are the same.
+            return (
+                heldAmount * (10**8) >= COLLATERAL_REQUIREMENT * owedAmount
+            );
+        }
     }
 }
