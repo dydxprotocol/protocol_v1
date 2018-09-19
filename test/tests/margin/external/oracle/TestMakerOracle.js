@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 
 const WETH = artifacts.require('TokenA');
 const DAI = artifacts.require('TokenB');
+const TokenC = artifacts.require('TokenC');
 const Margin = artifacts.require('Margin');
 const TokenProxy = artifacts.require('TokenProxy');
 const MakerOracle = artifacts.require('MakerOracle');
@@ -21,8 +22,6 @@ const { wait } = require('@digix/tempo')(web3);
 let makerOracle;
 let medianizer;
 let margin;
-let weth;
-let dai;
 
 // collateral requirement as a percentage, parameter of MakerOracle contract
 const collateralRequirement = new BigNumber("150e6");
@@ -33,6 +32,8 @@ let salt = 0;
 // stores the position IDs
 let shortPositionId;
 let longPositionId;
+let shortTokenCPositionId;
+let longTokenCPositionId;
 
 async function setOraclePrice(daiPerEth) {
   // Multiply by 10**18 and round to match format of the Medianizer contract.
@@ -51,21 +52,27 @@ contract('MakerOracle', accounts => {
   // TODO: Use an address like accounts[1].
   const thirdPartyAddress = accounts[0];
 
-  // runs once before everything else
   before('gets margin contract', async () => {
     margin = await Margin.deployed();
   });
 
-  // runs before each 'describe' block
   beforeEach('sets up contracts and positions', async () => {
+
+    // token contracts
+    let weth;
+    let dai;
+    let tokenC;
+
     // set up the relevant contracts
     [
       weth,
       dai,
+      tokenC,
       medianizer
     ] = await Promise.all([
       WETH.new(),
       DAI.new(),
+      TokenC.new(),
       MockMedianizer.new()
     ]);
     makerOracle = await MakerOracle.new(
@@ -83,29 +90,38 @@ contract('MakerOracle', accounts => {
 
     // set constants for positions
     //
-    // Suppose exchange rate of 200 DAI/ETH.
+    // Suppose an exchange rate of 200 DAI/ETH.
     // [0] Collateralize 400k DAI to take out 1k ETH => 200% collaterized.
     // [1] Collateralize 2k ETH to take out 200k DAI => 200% collaterized.
     const constants = {
-      nonce: [new BigNumber(0).plus(salt), new BigNumber(999).plus(salt++)],
+      nonce: [
+        new BigNumber(0).plus(salt),
+        new BigNumber(999).plus(salt++),
+        new BigNumber(1999).plus(salt++),
+        new BigNumber(2999).plus(salt++),
+      ],
       principal: [new BigNumber('1e3'), new BigNumber('200e3')],
       deposit: [new BigNumber('400e3'), new BigNumber('2e3')],
-      heldToken: [dai, weth],
-      owedToken: [weth, dai],
+      heldToken: [dai, weth, dai, tokenC],
+      owedToken: [weth, dai, tokenC, dai],
       callTimeLimit: new BigNumber(100),
       maxDuration: new BigNumber(100),
       interestRate: new BigNumber(100),
       interestPeriod: new BigNumber(100),
     };
 
-    // open the positions ([0] = shortEth position, [1] = longEth position)
-    let positionIds = [null, null];
-    for (let i = 0; i < 2; i++) {
+    // Open the positions.
+    // [0] = short ETH
+    // [1] = long ETH
+    // [2] = short TokenC
+    // [3] = long TokenC
+    let positionIds = [null, null, null, null];
+    for (let i = 0; i < 4; i++) {
       // issue the tokens to the position opener
       await issueAndSetAllowance(
         constants.heldToken[i],
         defaultAccount,
-        constants.deposit[i],
+        constants.deposit[i % 2],
         TokenProxy.address
       );
 
@@ -118,8 +134,8 @@ contract('MakerOracle', accounts => {
           loanOwner.address // loanOwner
         ],
         [
-          constants.principal[i],
-          constants.deposit[i],
+          constants.principal[i % 2],
+          constants.deposit[i % 2],
           constants.nonce[i]
         ],
         [
@@ -135,7 +151,10 @@ contract('MakerOracle', accounts => {
       positionIds[i] = web3Instance.utils.soliditySha3(defaultAccount, constants.nonce[i]);
     }
 
-    [shortPositionId, longPositionId] = positionIds;
+    [
+      shortPositionId, longPositionId,
+      shortTokenCPositionId, longTokenCPositionId
+    ] = positionIds;
   });
 
   describe('#marginCallOnBehalfOf (short position)', () => {
@@ -162,6 +181,13 @@ contract('MakerOracle', accounts => {
     it('fails for non-zero deposit', async () => {
       await expectThrow(
         margin.marginCall(shortPositionId, 1, { from: thirdPartyAddress })
+      );
+    });
+
+    it('fails for an unsupported token', async () => {
+      await setOraclePrice(267);
+      await expectThrow(
+        margin.marginCall(shortTokenCPositionId, 0, { from: thirdPartyAddress })
       );
     });
   });
@@ -192,6 +218,13 @@ contract('MakerOracle', accounts => {
         margin.marginCall(longPositionId, 1, { from: thirdPartyAddress })
       );
     });
+
+    it('fails for an unsupported token', async () => {
+      await setOraclePrice(149);
+      await expectThrow(
+        margin.marginCall(longTokenCPositionId, 0, { from: thirdPartyAddress })
+      );
+    });
   });
 
   describe('#cancelMarginCallOnBehalfOf (short position)', () => {
@@ -219,6 +252,13 @@ contract('MakerOracle', accounts => {
       const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.false;
     });
+
+    it('fails for an unsupported token', async () => {
+      await setOraclePrice(267);
+      await expectThrow(
+        margin.cancelMarginCall(shortTokenCPositionId, { from: thirdPartyAddress })
+      );
+    });
   });
 
   describe('#cancelMarginCallOnBehalfOf (long position)', () => {
@@ -245,6 +285,13 @@ contract('MakerOracle', accounts => {
       await margin.cancelMarginCall(longPositionId, { from: thirdPartyAddress });
       const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.false;
+    });
+
+    it('fails for an unsupported token', async () => {
+      await setOraclePrice(149);
+      await expectThrow(
+        margin.cancelMarginCall(longTokenCPositionId, { from: thirdPartyAddress })
+      );
     });
   });
 });
