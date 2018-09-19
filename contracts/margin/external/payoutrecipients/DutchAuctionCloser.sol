@@ -197,12 +197,12 @@ contract DutchAuctionCloser is
         );
     }
 
-    // ============ Internal Helper-Functions ============
+    // ============ Private Helper-Functions ============
 
     function getAuctionTimeLimits(
         bytes32 positionId
     )
-        internal
+        private
         view
         returns (
             uint256 /* auctionStartTimestamp */,

@@ -21,19 +21,19 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { Ownable } from "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import { ERC20Short } from "./ERC20Short.sol";
+import { ERC20Position } from "./ERC20Position.sol";
 import { MarginCommon } from "../../impl/MarginCommon.sol";
 import { MarginHelper } from "../lib/MarginHelper.sol";
 
 
 /**
- * @title ProductionERC20Short
+ * @title ERC20CappedPosition
  * @author dYdX
  *
- * Early production version of an ERC20Short with a token cap and a trusted closer
+ * Early production version of an ERC20Long with a token cap and a trusted closer
  */
-contract ProductionERC20Short is
-    ERC20Short,
+contract ERC20CappedPosition is
+    ERC20Position,
     Ownable
 {
     using SafeMath for uint256;
@@ -44,34 +44,29 @@ contract ProductionERC20Short is
         uint256 tokenCap
     );
 
+    event TrustedCloserSet(
+        address closer,
+        bool allowed
+    );
+
     // ============ State Variables ============
 
-    address public TRUSTED_LATE_CLOSER;
+    mapping(address => bool) public TRUSTED_LATE_CLOSERS;
 
     uint256 public tokenCap;
 
     // ============ Constructor ============
 
     constructor(
-        bytes32 positionId,
-        address margin,
-        address initialTokenHolder,
-        address[] trustedRecipients,
-        address[] trustedWithdrawers,
-        uint256 cap,
-        address trustedLateCloser
+        address[] trustedLateClosers,
+        uint256 cap
     )
         public
         Ownable()
-        ERC20Short(
-            positionId,
-            margin,
-            initialTokenHolder,
-            trustedRecipients,
-            trustedWithdrawers
-        )
     {
-        TRUSTED_LATE_CLOSER = trustedLateCloser;
+        for (uint256 i = 0; i < trustedLateClosers.length; i++) {
+            TRUSTED_LATE_CLOSERS[trustedLateClosers[i]] = true;
+        }
         tokenCap = cap;
     }
 
@@ -89,25 +84,20 @@ contract ProductionERC20Short is
         emit TokenCapSet(newCap);
     }
 
-    // ============ Internal Overriding Functions ============
-
-    function getTokenAmountOnAdd(
-        uint256 principalAdded
+    function setTrustedLateCloser(
+        address closer,
+        bool allowed
     )
-        internal
-        view
-        returns (uint256)
+        external
+        onlyOwner
     {
-        uint256 tokenAmount = super.getTokenAmountOnAdd(principalAdded);
-
-        require(
-            totalSupply_.add(tokenAmount) <= tokenCap,
-            "ProductionERC20Short#getTokenAmountOnAdd: Adding tokenAmount would exceed cap"
-        );
-
-        return tokenAmount;
+        TRUSTED_LATE_CLOSERS[closer] = allowed;
+        emit TrustedCloserSet(closer, allowed);
     }
 
+    // ============ Internal Overriding Functions ============
+
+    // overrides the function in ERC20Position
     function closeUsingTrustedRecipient(
         address closer,
         address payoutRecipient,
@@ -126,8 +116,8 @@ contract ProductionERC20Short is
 
         if (afterCall || afterEnd) {
             require (
-                closer == TRUSTED_LATE_CLOSER,
-                "ProductionERC20Short#closeUsingTrustedRecipient: Not TRUSTED_LATE_CLOSER"
+                TRUSTED_LATE_CLOSERS[closer],
+                "ERC20CappedPosition#closeUsingTrustedRecipient: closer not in TRUSTED_LATE_CLOSERS"
             );
         }
 
