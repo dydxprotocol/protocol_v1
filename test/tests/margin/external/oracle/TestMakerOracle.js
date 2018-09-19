@@ -49,8 +49,11 @@ async function setOraclePrice(daiPerEth) {
 contract('MakerOracle', accounts => {
 
   // addresses
-  // TODO: Use an address like accounts[1].
-  const thirdPartyAddress = accounts[0];
+  //
+  // Create the positions using accounts[0] but do the margin calls and margin
+  // call cancellations from accounts[1].
+  const defaultAccount = accounts[0];
+  const thirdPartyAccount = accounts[1];
 
   before('gets margin contract', async () => {
     margin = await Margin.deployed();
@@ -80,11 +83,10 @@ contract('MakerOracle', accounts => {
         dai.address, collateralRequirement);
 
     // transfer positions to a mock lender that defers margin-calling logic to the MakerOracle
-    const defaultAccount = accounts[0];
     const loanOwner = await TestMarginCallDelegator.new(
       margin.address,
-      defaultAccount,
-      defaultAccount
+      thirdPartyAccount,
+      thirdPartyAccount
     );
     await loanOwner.setToReturn(makerOracle.address);
 
@@ -162,7 +164,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 267 DAI/ETH, just under collaterization requirement.
       await setOraclePrice(267);
 
-      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress });
+      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.true;
     });
@@ -172,7 +174,7 @@ contract('MakerOracle', accounts => {
       await setOraclePrice(266);
 
       await expectThrow(
-        margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress })
+        margin.marginCall(shortPositionId, 0, { from: thirdPartyAccount })
       );
       const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.false;
@@ -180,14 +182,14 @@ contract('MakerOracle', accounts => {
 
     it('fails for non-zero deposit', async () => {
       await expectThrow(
-        margin.marginCall(shortPositionId, 1, { from: thirdPartyAddress })
+        margin.marginCall(shortPositionId, 1, { from: thirdPartyAccount })
       );
     });
 
     it('fails for an unsupported token', async () => {
       await setOraclePrice(267);
       await expectThrow(
-        margin.marginCall(shortTokenCPositionId, 0, { from: thirdPartyAddress })
+        margin.marginCall(shortTokenCPositionId, 0, { from: thirdPartyAccount })
       );
     });
   });
@@ -197,7 +199,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 149 DAI/ETH, just under collaterization requirement.
       await setOraclePrice(149);
 
-      await margin.marginCall(longPositionId, 0, { from: thirdPartyAddress });
+      await margin.marginCall(longPositionId, 0, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.true;
     });
@@ -207,7 +209,7 @@ contract('MakerOracle', accounts => {
       await setOraclePrice(151);
 
       await expectThrow(
-        margin.marginCall(longPositionId, 0, { from: thirdPartyAddress })
+        margin.marginCall(longPositionId, 0, { from: thirdPartyAccount })
       );
       const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.false;
@@ -215,14 +217,14 @@ contract('MakerOracle', accounts => {
 
     it('fails for non-zero deposit', async () => {
       await expectThrow(
-        margin.marginCall(longPositionId, 1, { from: thirdPartyAddress })
+        margin.marginCall(longPositionId, 1, { from: thirdPartyAccount })
       );
     });
 
     it('fails for an unsupported token', async () => {
       await setOraclePrice(149);
       await expectThrow(
-        margin.marginCall(longTokenCPositionId, 0, { from: thirdPartyAddress })
+        margin.marginCall(longTokenCPositionId, 0, { from: thirdPartyAccount })
       );
     });
   });
@@ -232,7 +234,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 267 DAI/ETH, just under collaterization requirement.
       await setOraclePrice(267);
 
-      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAddress });
+      await margin.marginCall(shortPositionId, 0, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.true;
       await wait(1);
@@ -240,7 +242,7 @@ contract('MakerOracle', accounts => {
 
     it('fails if the position is undercollateralized', async () => {
       await expectThrow(
-        margin.cancelMarginCall(shortPositionId, { from: thirdPartyAddress })
+        margin.cancelMarginCall(shortPositionId, { from: thirdPartyAccount })
       );
     });
 
@@ -248,7 +250,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 266 DAI/ETH, just over collaterization requirement.
       await setOraclePrice(266);
 
-      await margin.cancelMarginCall(shortPositionId, { from: thirdPartyAddress });
+      await margin.cancelMarginCall(shortPositionId, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(shortPositionId);
       expect(isCalled).to.be.false;
     });
@@ -256,7 +258,7 @@ contract('MakerOracle', accounts => {
     it('fails for an unsupported token', async () => {
       await setOraclePrice(267);
       await expectThrow(
-        margin.cancelMarginCall(shortTokenCPositionId, { from: thirdPartyAddress })
+        margin.cancelMarginCall(shortTokenCPositionId, { from: thirdPartyAccount })
       );
     });
   });
@@ -266,7 +268,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 149 DAI/ETH, just under collaterization requirement.
       await setOraclePrice(149);
 
-      await margin.marginCall(longPositionId, 0, { from: thirdPartyAddress });
+      await margin.marginCall(longPositionId, 0, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.true;
       await wait(1);
@@ -274,7 +276,7 @@ contract('MakerOracle', accounts => {
 
     it('fails if the position is undercollateralized', async () => {
       await expectThrow(
-        margin.cancelMarginCall(longPositionId, { from: thirdPartyAddress })
+        margin.cancelMarginCall(longPositionId, { from: thirdPartyAccount })
       );
     });
 
@@ -282,7 +284,7 @@ contract('MakerOracle', accounts => {
       // Exchange rate of 151 DAI/ETH, just over the collaterization requirement.
       await setOraclePrice(151);
 
-      await margin.cancelMarginCall(longPositionId, { from: thirdPartyAddress });
+      await margin.cancelMarginCall(longPositionId, { from: thirdPartyAccount });
       const isCalled = await margin.isPositionCalled.call(longPositionId);
       expect(isCalled).to.be.false;
     });
@@ -290,7 +292,7 @@ contract('MakerOracle', accounts => {
     it('fails for an unsupported token', async () => {
       await setOraclePrice(149);
       await expectThrow(
-        margin.cancelMarginCall(longTokenCPositionId, { from: thirdPartyAddress })
+        margin.cancelMarginCall(longTokenCPositionId, { from: thirdPartyAccount })
       );
     });
   });
