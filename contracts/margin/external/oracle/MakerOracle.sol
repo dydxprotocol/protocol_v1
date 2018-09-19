@@ -165,12 +165,19 @@ contract MakerOracle is
 
         if (heldToken == DAI && owedToken == WETH) {
             // I.e. short position against ETH.
+            //
+            // The collateral requirement is expressed as a percentage * 10^6--
+            // in other words it is scaled by 10^8--and the ETH/USD rate
+            // returned by the MakerDAO medianizer is scaled by 10^18. Therefore
+            // we multiply the left-hand side by a normalization constant.
             return (
                 heldAmount.mul(10**26) >=
                 owedAmount.mul(COLLATERAL_REQUIREMENT).mul(ethUsdRate)
             );
         } else {
             // I.e. long position in ETH.
+            //
+            // Multiply the right-hand side by a normalization constant.
             return (
                 heldAmount.mul(ethUsdRate) >=
                 owedAmount.mul(COLLATERAL_REQUIREMENT).mul(10**10)
