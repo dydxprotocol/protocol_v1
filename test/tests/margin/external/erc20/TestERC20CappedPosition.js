@@ -1,11 +1,15 @@
 const chai = require('chai');
 const expect = chai.expect;
 chai.use(require('chai-bignumber')());
+const BigNumber = require('bignumber.js');
 
 const Margin = artifacts.require("Margin");
 const ERC20CappedShort = artifacts.require("ERC20CappedShort");
 const ERC20CappedLong = artifacts.require("ERC20CappedLong");
 const HeldToken = artifacts.require("TokenA");
+const OwedToken = artifacts.require("TokenB");
+
+const { wait } = require('@digix/tempo')(web3);
 const { ADDRESSES, BYTES32 } = require('../../../../helpers/Constants');
 const {
   callIncreasePosition,
@@ -16,10 +20,9 @@ const {
 } = require('../../../../helpers/MarginHelper');
 const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const { signLoanOffering } = require('../../../../helpers/LoanHelper');
-const BigNumber = require('bignumber.js');
 
-contract('ERC20Short', accounts => {
-  let dydxMargin, heldToken;
+contract('ERC20CappedPosition', accounts => {
+  let dydxMargin, heldToken, owedToken;
 
   let POSITIONS = {
     LONG: {
@@ -44,14 +47,17 @@ contract('ERC20Short', accounts => {
 
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
+  const TRUSTED_LATE_CLOSER = accounts[8];
 
   before('Set up Proxy, Margin accounts', async () => {
     [
       dydxMargin,
-      heldToken
+      heldToken,
+      owedToken
     ] = await Promise.all([
       Margin.deployed(),
-      HeldToken.deployed()
+      HeldToken.deployed(),
+      OwedToken.deployed()
     ]);
   });
 
@@ -96,7 +102,8 @@ contract('ERC20Short', accounts => {
         INITIAL_TOKEN_HOLDER,
         POSITIONS.LONG.TRUSTED_RECIPIENTS,
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
-        POSITIONS.LONG.NUM_TOKENS.times(multiplier)
+        [TRUSTED_LATE_CLOSER],
+        POSITIONS.LONG.NUM_TOKENS.times(multiplier),
       ),
       ERC20CappedShort.new(
         POSITIONS.SHORT.ID,
@@ -104,7 +111,8 @@ contract('ERC20Short', accounts => {
         INITIAL_TOKEN_HOLDER,
         POSITIONS.SHORT.TRUSTED_RECIPIENTS,
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
-        POSITIONS.SHORT.NUM_TOKENS.times(multiplier)
+        [TRUSTED_LATE_CLOSER],
+        POSITIONS.SHORT.NUM_TOKENS.times(multiplier),
       )
     ]);
   }
@@ -129,15 +137,18 @@ contract('ERC20Short', accounts => {
     const tokenCap = new BigNumber('123456787654321');
     const trustedRecipient = accounts[9];
     const trustedWithdrawer = accounts[8];
-    const untrustedAccount = accounts[7];
+    const trustedLateCloser = accounts[7];
+    const initialTokenHolder = accounts[6];
+    const untrustedAccount = accounts[5];
 
     it('sets constants correctly for short', async () => {
       const tokenContract = await ERC20CappedShort.new(
         positionId,
         dydxMargin.address,
-        INITIAL_TOKEN_HOLDER,
+        initialTokenHolder,
         [trustedRecipient],
         [trustedWithdrawer],
+        [trustedLateCloser],
         tokenCap
       );
       const [
@@ -145,6 +156,8 @@ contract('ERC20Short', accounts => {
         cap,
         pid,
         ith,
+        tlc_is_tlc,
+        tw_is_tlc,
         tr_is_tr,
         tw_is_tr,
         ua_is_tr,
@@ -156,6 +169,8 @@ contract('ERC20Short', accounts => {
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
+        tokenContract.TRUSTED_LATE_CLOSERS.call(trustedLateCloser),
+        tokenContract.TRUSTED_LATE_CLOSERS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
@@ -166,7 +181,9 @@ contract('ERC20Short', accounts => {
       expect(supply).to.be.bignumber.eq(0);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
-      expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
+      expect(ith).to.be.bignumber.eq(initialTokenHolder);
+      expect(tlc_is_tlc).to.be.true;
+      expect(tw_is_tlc).to.be.false;
       expect(tr_is_tr).to.be.true;
       expect(tw_is_tr).to.be.false;
       expect(ua_is_tr).to.be.false;
@@ -179,9 +196,10 @@ contract('ERC20Short', accounts => {
       const tokenContract = await ERC20CappedShort.new(
         positionId,
         dydxMargin.address,
-        INITIAL_TOKEN_HOLDER,
+        initialTokenHolder,
         [trustedRecipient],
         [trustedWithdrawer],
+        [trustedLateCloser],
         tokenCap
       );
       const [
@@ -189,6 +207,8 @@ contract('ERC20Short', accounts => {
         cap,
         pid,
         ith,
+        tlc_is_tlc,
+        tw_is_tlc,
         tr_is_tr,
         tw_is_tr,
         ua_is_tr,
@@ -200,6 +220,8 @@ contract('ERC20Short', accounts => {
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
+        tokenContract.TRUSTED_LATE_CLOSERS.call(trustedLateCloser),
+        tokenContract.TRUSTED_LATE_CLOSERS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedRecipient),
         tokenContract.TRUSTED_RECIPIENTS.call(trustedWithdrawer),
         tokenContract.TRUSTED_RECIPIENTS.call(untrustedAccount),
@@ -210,7 +232,9 @@ contract('ERC20Short', accounts => {
       expect(supply).to.be.bignumber.eq(0);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
-      expect(ith).to.be.bignumber.eq(INITIAL_TOKEN_HOLDER);
+      expect(ith).to.be.bignumber.eq(initialTokenHolder);
+      expect(tlc_is_tlc).to.be.true;
+      expect(tw_is_tlc).to.be.false;
       expect(tr_is_tr).to.be.true;
       expect(tw_is_tr).to.be.false;
       expect(ua_is_tr).to.be.false;
@@ -258,6 +282,102 @@ contract('ERC20Short', accounts => {
     });
   });
 
+  describe('#setTrustedLateCloser', () => {
+    it('fails for non-owner', async () => {
+      const rando = accounts[6];
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+        await expectThrow(
+          contract.setTrustedLateCloser(rando, true, { from: rando })
+        );
+      }
+    });
+
+    it('succeeds for adding address', async () => {
+      const rando = accounts[6];
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+        const owner = await contract.owner.call();
+
+        const before = await contract.TRUSTED_LATE_CLOSERS.call(rando);
+        await contract.setTrustedLateCloser(rando, true, { from: owner });
+        const after = await contract.TRUSTED_LATE_CLOSERS.call(rando);
+
+        expect(before).to.be.false;
+        expect(after).to.be.true;
+      }
+    });
+
+    it('succeeds for removing address', async () => {
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+        const owner = await contract.owner.call();
+
+        const before = await contract.TRUSTED_LATE_CLOSERS.call(TRUSTED_LATE_CLOSER);
+        await contract.setTrustedLateCloser(TRUSTED_LATE_CLOSER, false, { from: owner });
+        const after = await contract.TRUSTED_LATE_CLOSERS.call(TRUSTED_LATE_CLOSER);
+
+        expect(before).to.be.true;
+        expect(after).to.be.false;
+      }
+    });
+  });
+
+  describe('#setTokenCap', () => {
+    it('fails for non-owner', async () => {
+      const rando = accounts[6];
+      const newCap = new BigNumber(1000);
+      await setUpTokens(0);
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+
+        await expectThrow(
+          contract.setTokenCap(newCap, { from: rando })
+        );
+      }
+    });
+
+    it('sets the value properly for uninitialized token contract', async () => {
+      const newCap1 = new BigNumber(2000);
+      const newCap2 = new BigNumber(1000);
+      await setUpTokens(0);
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+
+        const owner = await contract.owner.call();
+        const contractCap1 = await contract.tokenCap.call();
+        await contract.setTokenCap(newCap1, { from: owner });
+        const contractCap2 = await contract.tokenCap.call();
+        await contract.setTokenCap(newCap2, { from: owner });
+        const contractCap3 = await contract.tokenCap.call();
+
+        expect(contractCap1).to.be.bignumber.eq(0);
+        expect(contractCap2).to.be.bignumber.eq(newCap1);
+        expect(contractCap3).to.be.bignumber.eq(newCap2);
+      }
+    });
+
+    it('sets values properly for initialized token contract', async () => {
+      await setUpPositions();
+      await setUpTokens(1);
+      await transferPositionsToTokens();
+
+      for (let type in POSITIONS) {
+        const contract = POSITIONS[type].TOKEN_CONTRACT;
+
+        const owner = await contract.owner.call();
+        const contractCap1 = await contract.tokenCap.call();
+        await contract.setTokenCap(contractCap1.div(2), { from: owner });
+        const contractCap2 = await contract.tokenCap.call();
+        await contract.setTokenCap(contractCap1.times(2), { from: owner });
+        const contractCap3 = await contract.tokenCap.call();
+
+        expect(contractCap2).to.be.bignumber.eq(contractCap1.div(2));
+        expect(contractCap3).to.be.bignumber.eq(contractCap1.times(2));
+      }
+    });
+  });
+
   describe('#increasePositionOnBehalfOf', () => {
     let pepper = 0;
 
@@ -287,13 +407,11 @@ contract('ERC20Short', accounts => {
       return incrTx;
     }
 
-    beforeEach('Set up all tokenized positions',
-      async () => {
-        await setUpPositions();
-        await setUpTokens(2);
-        await transferPositionsToTokens();
-      }
-    );
+    beforeEach('Set up all tokenized positions', async () => {
+      await setUpPositions();
+      await setUpTokens(2);
+      await transferPositionsToTokens();
+    });
 
     it('succeeds if the number of tokens remains under the token cap', async () => {
       let tempAccounts = accounts;
@@ -321,5 +439,130 @@ contract('ERC20Short', accounts => {
         await doIncrease(POSITION, tempAccounts, { throws: true, multiplier: 1.1 });
       }
     });
+
+    it('succeeds after increase', async () => {
+      let tempAccounts = accounts;
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+        tempAccounts = tempAccounts.slice(1);
+
+        // increase fails
+        await doIncrease(POSITION, tempAccounts, { throws: true, multiplier: 1.5 });
+
+        // setTokenCap for higher amount
+        const tokenContract = POSITION.TOKEN_CONTRACT;
+        const owner = await tokenContract.owner.call();
+        await tokenContract.setTokenCap(POSITION.NUM_TOKENS.times(4), { from: owner });
+
+        // increase succeeds
+        await doIncrease(POSITION, tempAccounts, { throws: false, multiplier: 1.5 });
+      }
+    });
+  });
+
+  describe('#closePositionOnBehalfOf', () => {
+    const untrustedParty = accounts[0];
+
+    beforeEach('set up positions', async () => {
+      await setUpPositions();
+      await setUpTokens(1);
+      await transferPositionsToTokens();
+    });
+
+    it('succeeds even when remaining amount is above tokenCap', async () => {
+      for (let type in POSITIONS) {
+        const POSITION = POSITIONS[type];
+
+        const tokenContract = POSITION.TOKEN_CONTRACT;
+        const owner = await tokenContract.owner.call();
+        await tokenContract.setTokenCap(POSITION.NUM_TOKENS.div(2), { from: owner });
+
+        await doClose(POSITION, INITIAL_TOKEN_HOLDER, INITIAL_TOKEN_HOLDER, false);
+
+        const [
+          supply,
+          cap
+        ] = await Promise.all([
+          POSITION.TOKEN_CONTRACT.totalSupply.call(),
+          POSITION.TOKEN_CONTRACT.tokenCap.call(),
+        ]);
+        expect(supply).to.be.bignumber.gt(cap);
+      }
+    });
+
+    it('fails for trusted closer without trusted recipient', async () => {
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, untrustedParty, true);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, untrustedParty, true);
+      }
+    });
+
+    it('succeeds for trusted closer and trusted recipient', async () => {
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, trustedRecipient, false);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], TRUSTED_LATE_CLOSER, trustedRecipient, false);
+      }
+    });
+
+    it('succeeds only before expiration for trustedRecipient and non-trusted closer', async () => {
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], untrustedParty, trustedRecipient, false);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        const trustedRecipient = POSITIONS[type].TRUSTED_RECIPIENTS[0];
+        await doClose(POSITIONS[type], untrustedParty, trustedRecipient, true);
+      }
+    });
+
+    it('fails for untrusted closer and untrusted recipient', async () => {
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], untrustedParty, untrustedParty, true);
+      }
+
+      await waitUntilEndOfPosition();
+
+      for (let type in POSITIONS) {
+        await doClose(POSITIONS[type], untrustedParty, untrustedParty, true);
+      }
+    });
+
+    async function waitUntilEndOfPosition() {
+      await wait(POSITIONS.LONG.TX.loanOffering.maxDuration);
+    }
+
+    async function doClose(position, closer, recipient, throws) {
+      await issueTokenToAccountInAmountAndApproveProxy(
+        owedToken,
+        closer,
+        position.TX.loanOffering.rates.maxAmount
+      );
+      const promise = dydxMargin.closePositionDirectly(
+        position.ID,
+        position.NUM_TOKENS.div(10),
+        recipient,
+        { from: closer }
+      );
+      if (throws) {
+        await expectThrow(promise);
+      } else {
+        await promise;
+      }
+    }
   });
 });

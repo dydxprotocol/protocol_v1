@@ -144,10 +144,9 @@ contract('DutchAuctionCloser', accounts => {
       ));
     });
 
-    it('fails if bid too late', async () => {
+    it('succeeds if bids after callTimeLimit', async () => {
       await wait(callTimeLimit + 1);
-
-      await expectThrow(callClosePositionDirectly(
+      await callClosePositionDirectly(
         dydxMargin,
         openTx,
         openTx.principal.div(2),
@@ -155,7 +154,7 @@ contract('DutchAuctionCloser', accounts => {
           from: dutchBidder,
           recipient: DutchAuctionCloser.address
         }
-      ));
+      );
     });
 
     it('succeeds for position near end of maxDuration', async () => {

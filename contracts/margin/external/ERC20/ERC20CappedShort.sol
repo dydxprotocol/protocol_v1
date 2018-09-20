@@ -20,6 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { ERC20CappedPosition } from "./ERC20CappedPosition.sol";
 import { ERC20Short } from "./ERC20Short.sol";
 
 
@@ -27,12 +28,16 @@ import { ERC20Short } from "./ERC20Short.sol";
  * @title ERC20CappedShort
  * @author dYdX
  *
- * CappedToken version of an ERC20Short
+ * ERC20Short with a limit on the number of tokens that can be minted, and a restriction on
+ * which addreses can close the position after it is force-recoverable.
  */
-contract ERC20CappedShort is ERC20Short {
+contract ERC20CappedShort is
+    ERC20Short,
+    ERC20CappedPosition
+{
     using SafeMath for uint256;
 
-    uint256 public tokenCap;
+    // ============ Constructor ============
 
     constructor(
         bytes32 positionId,
@@ -40,6 +45,7 @@ contract ERC20CappedShort is ERC20Short {
         address initialTokenHolder,
         address[] trustedRecipients,
         address[] trustedWithdrawers,
+        address[] trustedLateClosers,
         uint256 cap
     )
         public
@@ -50,11 +56,14 @@ contract ERC20CappedShort is ERC20Short {
             trustedRecipients,
             trustedWithdrawers
         )
+        ERC20CappedPosition(
+            trustedLateClosers,
+            cap
+        )
     {
-        tokenCap = cap;
     }
 
-    // ============ Private Functions ============
+    // ============ Internal Overriding Functions ============
 
     function getTokenAmountOnAdd(
         uint256 principalAdded

@@ -391,6 +391,32 @@ contract ERC20Position is
         return address(this);
     }
 
+    // ============ Internal Helper-Functions ============
+
+    /**
+     * Tokens are not burned when a trusted recipient is used, but we require the position to be
+     * completely closed. All token holders are then entitled to the heldTokens in the contract
+     */
+    function closeUsingTrustedRecipient(
+        address closer,
+        address payoutRecipient,
+        uint256 requestedAmount
+    )
+        internal
+        returns (uint256)
+    {
+        assert(requestedAmount > 0);
+
+        // remember that a trusted recipient was used
+        if (!closedUsingTrustedRecipient) {
+            closedUsingTrustedRecipient = true;
+        }
+
+        emit ClosedByTrustedParty(closer, requestedAmount, payoutRecipient);
+
+        return requestedAmount;
+    }
+
     // ============ Private Helper-Functions ============
 
     function withdrawImpl(
@@ -436,30 +462,6 @@ contract ERC20Position is
             state = State.CLOSED;
             emit CompletelyClosed();
         }
-    }
-
-    /**
-     * Tokens are not burned when a trusted recipient is used, but we require the position to be
-     * completely closed. All token holders are then entitled to the heldTokens in the contract
-     */
-    function closeUsingTrustedRecipient(
-        address closer,
-        address payoutRecipient,
-        uint256 requestedAmount
-    )
-        private
-        returns (uint256)
-    {
-        assert(requestedAmount > 0);
-
-        // remember that a trusted recipient was used
-        if (!closedUsingTrustedRecipient) {
-            closedUsingTrustedRecipient = true;
-        }
-
-        emit ClosedByTrustedParty(closer, requestedAmount, payoutRecipient);
-
-        return requestedAmount;
     }
 
     function close(
