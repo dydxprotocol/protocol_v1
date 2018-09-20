@@ -828,7 +828,6 @@ contract BucketLender is
         internal
         returns (address)
     {
-
         require(
             recipient == address(this),
             "BucketLender#forceRecoverCollateralOnBehalfOf: Recipient must be this contract"

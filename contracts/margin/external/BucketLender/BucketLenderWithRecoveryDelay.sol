@@ -36,7 +36,7 @@ contract BucketLenderWithRecoveryDelay is BucketLender
     // ============ State Variables ============
 
     // number of seconds after position has closed that must be waited before force-recovering
-    uint32 public RECOVERY_DELAY;
+    uint256 public RECOVERY_DELAY;
 
     // ============ Constructor ============
 
@@ -48,7 +48,7 @@ contract BucketLenderWithRecoveryDelay is BucketLender
         uint32[7] parameters,
         address[] trustedMarginCallers,
         address[] trustedWithdrawers,
-        uint32 recoveryDelay
+        uint256 recoveryDelay
     )
         public
         BucketLender(
