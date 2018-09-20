@@ -28,7 +28,8 @@ import { ERC20Short } from "./ERC20Short.sol";
  * @title ERC20CappedShort
  * @author dYdX
  *
- * Early production version of an ERC20Short with a token cap and a trusted closer
+ * ERC20Short with a limit on the number of tokens that can be minted, and a restriction on
+ * which addreses can close the position after it is force-recoverable.
  */
 contract ERC20CappedShort is
     ERC20Short,

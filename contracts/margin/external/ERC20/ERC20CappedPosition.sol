@@ -30,7 +30,8 @@ import { MarginHelper } from "../lib/MarginHelper.sol";
  * @title ERC20CappedPosition
  * @author dYdX
  *
- * Early production version of an ERC20Long with a token cap and a trusted closer
+ * ERC20 Position with a limit on the number of tokens that can be minted, and a restriction on
+ * which addreses can close the position after it is force-recoverable.
  */
 contract ERC20CappedPosition is
     ERC20Position,
