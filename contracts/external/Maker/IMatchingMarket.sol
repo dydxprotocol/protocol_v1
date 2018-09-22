@@ -9,9 +9,9 @@ contract IMatchingMarket is ISimpleMarket {
     // ============ Structs ================
 
     struct sortInfo {
-        uint next;  //points to id of next higher offer
-        uint prev;  //points to id of previous lower offer
-        uint delb;  //the blocknumber where this entry was marked for delete
+        uint256 next;  //points to id of next higher offer
+        uint256 prev;  //points to id of previous lower offer
+        uint256 delb;  //the blocknumber where this entry was marked for delete
     }
 
     // ============ Storage ================
@@ -24,7 +24,7 @@ contract IMatchingMarket is ISimpleMarket {
 
     bool public matchingEnabled;
 
-    mapping(uint => sortInfo) public _rank;
+    mapping(uint256 => sortInfo) public _rank;
 
     mapping(address => mapping(address => uint)) public _best;
 
@@ -32,7 +32,7 @@ contract IMatchingMarket is ISimpleMarket {
 
     mapping(address => uint) public _dust;
 
-    mapping(uint => uint) public _near;
+    mapping(uint256 => uint) public _near;
 
     mapping(bytes32 => bool) public _menu;
 
@@ -59,78 +59,78 @@ contract IMatchingMarket is ISimpleMarket {
         public;
 
     function offer(
-        uint pay_amt,
+        uint256 pay_amt,
         address pay_gem,
-        uint buy_amt,
+        uint256 buy_amt,
         address buy_gem
     )
         public
         returns (uint);
 
     function offer(
-        uint pay_amt,
+        uint256 pay_amt,
         address pay_gem,
-        uint buy_amt,
+        uint256 buy_amt,
         address buy_gem,
-        uint pos
+        uint256 pos
     )
         public
         returns (uint);
 
     function offer(
-        uint pay_amt,
+        uint256 pay_amt,
         address pay_gem,
-        uint buy_amt,
+        uint256 buy_amt,
         address buy_gem,
-        uint pos,
+        uint256 pos,
         bool rounding
     )
         public
         returns (uint);
 
     function buy(
-        uint id,
-        uint amount
+        uint256 id,
+        uint256 amount
     )
         public
         returns (bool);
 
     function cancel(
-        uint id
+        uint256 id
     )
         public
         returns (bool success);
 
     function insert(
-        uint id,
-        uint pos
+        uint256 id,
+        uint256 pos
     )
         public
         returns (bool);
 
     function del_rank(
-        uint id
+        uint256 id
     )
         public
         returns (bool);
 
     function sellAllAmount(
         address pay_gem,
-        uint pay_amt,
+        uint256 pay_amt,
         address buy_gem,
-        uint min_fill_amount
+        uint256 min_fill_amount
     )
         public
-        returns (uint fill_amt);
+        returns (uint256 fill_amt);
 
     function buyAllAmount(
         address buy_gem,
-        uint buy_amt,
+        uint256 buy_amt,
         address pay_gem,
-        uint max_fill_amount
+        uint256 max_fill_amount
     )
         public
-        returns (uint fill_amt);
+        returns (uint256 fill_amt);
 
     // ============ Constant Functions ================
 
@@ -158,14 +158,14 @@ contract IMatchingMarket is ISimpleMarket {
         returns(uint);
 
     function getWorseOffer(
-        uint id
+        uint256 id
     )
         public
         view
         returns(uint);
 
     function getBetterOffer(
-        uint id
+        uint256 id
     )
         public
         view
@@ -185,14 +185,14 @@ contract IMatchingMarket is ISimpleMarket {
         returns(uint);
 
     function getNextUnsortedOffer(
-        uint id
+        uint256 id
     )
         public
         view
         returns(uint);
 
     function isOfferSorted(
-        uint id
+        uint256 id
     )
         public
         view
@@ -201,20 +201,20 @@ contract IMatchingMarket is ISimpleMarket {
     function getBuyAmount(
         address buy_gem,
         address pay_gem,
-        uint pay_amt
+        uint256 pay_amt
     )
         public
         view
-        returns (uint fill_amt);
+        returns (uint256 fill_amt);
 
     function getPayAmount(
         address pay_gem,
         address buy_gem,
-        uint buy_amt
+        uint256 buy_amt
     )
         public
         view
-        returns (uint fill_amt);
+        returns (uint256 fill_amt);
 
     function isClosed()
         public

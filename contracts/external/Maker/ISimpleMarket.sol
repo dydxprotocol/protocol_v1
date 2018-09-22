@@ -7,9 +7,9 @@ contract ISimpleMarket {
     // ============ Structs ================
 
     struct OfferInfo {
-        uint     pay_amt;
+        uint256     pay_amt;
         address  pay_gem;
-        uint     buy_amt;
+        uint256     buy_amt;
         address  buy_gem;
         address  owner;
         uint64   timestamp;
@@ -17,28 +17,28 @@ contract ISimpleMarket {
 
     // ============ Storage ================
 
-    uint public last_offer_id;
+    uint256 public last_offer_id;
 
-    mapping (uint => OfferInfo) public offers;
+    mapping (uint256 => OfferInfo) public offers;
 
     // ============ Functions ================
 
     function isActive(
-        uint id
+        uint256 id
     )
         public
         view
         returns (bool active );
 
     function getOwner(
-        uint id
+        uint256 id
     )
         public
         view
         returns (address owner);
 
     function getOffer(
-        uint id
+        uint256 id
     )
         public
         view
@@ -50,14 +50,14 @@ contract ISimpleMarket {
         public;
 
     function buy(
-        uint id,
-        uint quantity
+        uint256 id,
+        uint256 quantity
     )
         public
         returns (bool);
 
     function cancel(
-        uint id
+        uint256 id
     )
         public
         returns (bool success);
@@ -78,13 +78,13 @@ contract ISimpleMarket {
 
 
     function offer(
-        uint pay_amt,
+        uint256 pay_amt,
         address pay_gem,
-        uint buy_amt,
+        uint256 buy_amt,
         address buy_gem
     )
         public
-        returns (uint id);
+        returns (uint256 id);
 
     function take(
         bytes32 id,
