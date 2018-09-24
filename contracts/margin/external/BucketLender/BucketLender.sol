@@ -503,18 +503,20 @@ contract BucketLender is
         onlyPosition(positionId)
         returns (address)
     {
+        Margin margin = Margin(DYDX_MARGIN);
+
         require(
             payer == address(this),
             "BucketLender#increaseLoanOnBehalfOf: Other lenders cannot lend for this position"
         );
         require(
-            !Margin(DYDX_MARGIN).isPositionCalled(POSITION_ID),
+            !margin.isPositionCalled(POSITION_ID),
             "BucketLender#increaseLoanOnBehalfOf: No lending while the position is margin-called"
         );
 
         // This function is only called after the state has been updated in the base protocol;
         // thus, the principal in the base protocol will equal the principal after the increase
-        uint256 principalAfterIncrease = getPositionPrincipal();
+        uint256 principalAfterIncrease = margin.getPositionPrincipal(POSITION_ID);
         uint256 principalBeforeIncrease = principalAfterIncrease.sub(principalAdded);
 
         // principalTotal was the principal after the previous increase
@@ -820,6 +822,78 @@ contract BucketLender is
         return amount;
     }
 
+    // ============ Public Getter Functions ============
+
+    /**
+     * Get the current bucket number that funds will be deposited into. This is also the highest
+     * bucket so far.
+     *
+     * @return The highest bucket and the one that funds will be deposited into
+     */
+    function getCurrentBucket()
+        public
+        view
+        returns (uint256)
+    {
+        // load variables from storage;
+        Margin margin = Margin(DYDX_MARGIN);
+        bytes32 positionId = POSITION_ID;
+        uint32 bucketTime = BUCKET_TIME;
+
+        assert(!margin.isPositionClosed(positionId));
+
+        // if position not created, allow deposits in the first bucket
+        if (!margin.containsPosition(positionId)) {
+            return 0;
+        }
+
+        // return the number of BUCKET_TIME periods elapsed since the position start, rounded-up
+        uint256 startTimestamp = margin.getPositionStartTimestamp(positionId);
+        return block.timestamp.sub(startTimestamp).div(bucketTime).add(1);
+    }
+
+    /**
+     * Gets the outstanding amount of owedToken owed to a bucket. This is the principal amount of
+     * the bucket multiplied by the interest accrued in the position. If the position is closed,
+     * then any outstanding principal will never be repaid in the form of owedToken.
+     *
+     * @param  bucket  The bucket number
+     * @return         The amount of owedToken that this bucket expects to be paid-back if the posi
+     */
+    function getBucketOwedAmount(
+        uint256 bucket
+    )
+        public
+        view
+        returns (uint256)
+    {
+        // if the position is completely closed, then the outstanding principal will never be repaid
+        if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
+            return 0;
+        }
+
+        uint256 lentPrincipal = principalForBucket[bucket];
+
+        // the bucket has no outstanding principal
+        if (lentPrincipal == 0) {
+            return 0;
+        }
+
+        // get the total amount of owedToken that would be paid back at this time
+        uint256 owedAmount = Margin(DYDX_MARGIN).getPositionOwedAmountAtTime(
+            POSITION_ID,
+            principalTotal,
+            uint32(block.timestamp)
+        );
+
+        // return the bucket's share
+        return MathHelpers.getPartialAmount(
+            lentPrincipal,
+            principalTotal,
+            owedAmount
+        );
+    }
+
     // ============ Internal Functions ============
 
     function forceRecoverCollateralInternal(
@@ -855,7 +929,7 @@ contract BucketLender is
             return;
         }
 
-        uint256 marginPrincipal = getPositionPrincipal();
+        uint256 marginPrincipal = Margin(DYDX_MARGIN).getPositionPrincipal(POSITION_ID);
 
         accountForClose(principalTotal.sub(marginPrincipal));
 
@@ -1206,90 +1280,5 @@ contract BucketLender is
 
         principalTotal = newTotal;
         principalForBucket[bucket] = newForBucket;
-    }
-
-    // ============ Getter Functions ============
-
-    /**
-     * Get the current bucket number that funds will be deposited into. This is also the highest
-     * bucket so far.
-     *
-     * @return The highest bucket and the one that funds will be deposited into
-     */
-    function getCurrentBucket()
-        private
-        view
-        returns (uint256)
-    {
-        // load variables from storage;
-        Margin margin = Margin(DYDX_MARGIN);
-        bytes32 positionId = POSITION_ID;
-        uint32 bucketTime = BUCKET_TIME;
-
-        assert(!margin.isPositionClosed(positionId));
-
-        // if position not created, allow deposits in the first bucket
-        if (!margin.containsPosition(positionId)) {
-            return 0;
-        }
-
-        // return the number of BUCKET_TIME periods elapsed since the position start, rounded-up
-        uint256 startTimestamp = margin.getPositionStartTimestamp(positionId);
-        return block.timestamp.sub(startTimestamp).div(bucketTime).add(1);
-    }
-
-    /**
-     * Gets the outstanding amount of owedToken owed to a bucket. This is the principal amount of
-     * the bucket multiplied by the interest accrued in the position. If the position is closed,
-     * then any outstanding principal will never be repaid in the form of owedToken.
-     *
-     * @param  bucket  The bucket number
-     * @return         The amount of owedToken that this bucket expects to be paid-back if the posi
-     */
-    function getBucketOwedAmount(
-        uint256 bucket
-    )
-        private
-        view
-        returns (uint256)
-    {
-        // if the position is completely closed, then the outstanding principal will never be repaid
-        if (Margin(DYDX_MARGIN).isPositionClosed(POSITION_ID)) {
-            return 0;
-        }
-
-        uint256 lentPrincipal = principalForBucket[bucket];
-
-        // the bucket has no outstanding principal
-        if (lentPrincipal == 0) {
-            return 0;
-        }
-
-        // get the total amount of owedToken that would be paid back at this time
-        uint256 owedAmount = Margin(DYDX_MARGIN).getPositionOwedAmountAtTime(
-            POSITION_ID,
-            principalTotal,
-            uint32(block.timestamp)
-        );
-
-        // return the bucket's share
-        return MathHelpers.getPartialAmount(
-            lentPrincipal,
-            principalTotal,
-            owedAmount
-        );
-    }
-
-    /**
-     * Gets the position's current principal amount from the Margin contract
-     *
-     * @return The position's current principal
-     */
-    function getPositionPrincipal()
-        private
-        view
-        returns (uint256)
-    {
-        return Margin(DYDX_MARGIN).getPositionPrincipal(POSITION_ID);
     }
 }
