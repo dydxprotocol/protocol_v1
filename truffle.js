@@ -16,6 +16,13 @@ if (process.env.TRUFFLE_REPORTER) {
 
 module.exports = {
   networks: {
+    mainnet: {
+      host: "127.0.0.1",
+      port: 8545,
+      network_id: "1",
+      gasPrice: process.env.GAS_PRICE,
+      gas: 7900000
+    },
     kovan: {
       host: "127.0.0.1",
       port: 8545,
