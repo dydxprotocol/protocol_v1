@@ -135,6 +135,8 @@ function getZeroExExchangeV2Address(network) {
     return ZeroExExchangeV2.address;
   } else if (network === 'kovan') {
     return '0x35dd2932454449b14cee11a94d3674a936d5d7b2';
+  } else if (network === 'mainnet') {
+    return '0x4f833a24e1f95d70f028921e27040ca56e09ab0b';
   }
 
   throw "0x ExchangeV2 Not Found";
@@ -145,6 +147,8 @@ function getZeroExProxyV2Address(network) {
     return ZeroExProxyV2.address;
   } else if (network === 'kovan') {
     return '0xf1ec01d6236d3cd881a0bf0130ea25fe4234003e';
+  } else if (network === 'mainnet') {
+    return '0x2240dab907db71e64d3e0dba4800c83b5c502d4e';
   }
 
   throw "0x TokenProxyV2 Not Found";
@@ -155,6 +159,8 @@ function getZeroExExchangeV1Address(network) {
     return ZeroExExchangeV1.address;
   } else if (network === 'kovan') {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
+  } else if (network === 'mainnet') {
+    return '0x12459C951127e0c374FF9105DdA097662A027093';
   }
 
   throw "0x ExchangeV1 Not Found";
@@ -165,6 +171,8 @@ function getZeroExProxyV1Address(network) {
     return ZeroExProxyV1.address;
   } else if (network === 'kovan') {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
+  } else if (network === 'mainnet') {
+    return '0x8da0d80f5007ef1e431dd2127178d224e32c2ef4';
   }
 
   throw "0x TokenProxyV1 Not Found";
@@ -175,6 +183,8 @@ function getZRXAddress(network) {
     return FeeToken.address;
   } else if (network === 'kovan') {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
+  } else if (network === 'mainnet') {
+    return '0xE41d2489571d322189246DaFA5ebDe1F4699F498';
   }
 
   throw "ZRX Not Found";
@@ -195,7 +205,11 @@ function getWethAddress(network) {
     return WETH9.address;
   } else if (network === 'kovan') {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  } else if (network === 'mainnet') {
+    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   }
+
+  throw "WETH Not Found";
 }
 
 async function deployContracts(deployer, network) {
@@ -298,7 +312,7 @@ async function deploySecondLayer(deployer, network) {
     ),
   ]);
 
-  await Promise.all([
+  const promises = [
     deployer.deploy(
       ERC20ShortFactory,
       Margin.address,
@@ -311,11 +325,7 @@ async function deploySecondLayer(deployer, network) {
       [DutchAuctionCloser.address],
       [ERC20PositionWithdrawer.address]
     ),
-    deployer.deploy(
-      SharedLoanFactory,
-      Margin.address,
-      getSharedLoanTrustedMarginCallers(network)
-    ),
+
     deployer.deploy(
       PayableMarginMinter,
       Margin.address,
@@ -333,7 +343,19 @@ async function deploySecondLayer(deployer, network) {
       WethPayoutRecipient,
       getWethAddress(network)
     ),
-  ]);
+  ];
+
+  if (network !== 'mainnet') {
+    promises.push(
+      deployer.deploy(
+        SharedLoanFactory,
+        Margin.address,
+        getSharedLoanTrustedMarginCallers(network)
+      ),
+    );
+  }
+
+  await Promise.all(promises);
 }
 
 async function authorizeOnProxy() {
