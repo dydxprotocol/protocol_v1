@@ -142,6 +142,24 @@ describe('#openWithoutCounterparty', () => {
     });
 
     contract('Margin', accounts => {
+      it('Succeeds if callTimeLimit is 0', async () => {
+        const [
+          openTx,
+          dydxMargin
+        ] = await Promise.all([
+          setup(accounts),
+          Margin.deployed()
+        ]);
+
+        openTx.callTimeLimit = new BigNumber(0);
+
+        const tx = await callOpenWithoutCounterparty(dydxMargin, openTx);
+        const contains = await dydxMargin.containsPosition.call(tx.id);
+        expect(contains).to.be.true;
+      });
+    });
+
+    contract('Margin', accounts => {
       it('Fails if loan owner is 0', async () => {
         const [
           openTx,

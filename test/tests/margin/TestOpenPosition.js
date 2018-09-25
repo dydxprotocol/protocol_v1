@@ -441,6 +441,22 @@ describe('#openPosition', () => {
   });
 
   contract('Margin', accounts => {
+    it('works with 0 callTimeLimit', async () => {
+      const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
+      const startingBalances = await getBalances(openTx, dydxMargin);
+
+      openTx.loanOffering.callTimeLimit = 0;
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+
+      await issueTokensAndSetAllowances(openTx);
+
+      await callOpenPosition(dydxMargin, openTx);
+
+      await checkSuccess(dydxMargin, openTx, startingBalances);
+    });
+  });
+
+  contract('Margin', accounts => {
     it('allows a specified taker to take the loan', async () => {
       const { dydxMargin, openTx } = await getMarginAndOpenTx(accounts);
       const startingBalances = await getBalances(openTx, dydxMargin);

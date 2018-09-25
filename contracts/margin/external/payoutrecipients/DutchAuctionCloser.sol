@@ -185,7 +185,7 @@ contract DutchAuctionCloser is
         );
 
         // return zero cost after the auction is over
-        if (block.timestamp > auctionEndTimestamp) {
+        if (block.timestamp >= auctionEndTimestamp) {
             return 0;
         }
 

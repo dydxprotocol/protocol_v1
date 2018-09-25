@@ -101,7 +101,6 @@ library MarginCommon {
         assert(position.owner != address(0));
         assert(position.lender != address(0));
         assert(position.maxDuration != 0);
-        assert(position.callTimeLimit != 0);
         assert(position.interestPeriod <= position.maxDuration);
         assert(position.callTimestamp == 0);
         assert(position.requiredDeposit == 0);
