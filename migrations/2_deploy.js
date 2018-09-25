@@ -16,7 +16,7 @@
 
 */
 
-const { isDevNetwork } = require('./helpers');
+const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
@@ -133,9 +133,9 @@ async function maybeDeploy0xV2(deployer, network) {
 function getZeroExExchangeV2Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchangeV2.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0x35dd2932454449b14cee11a94d3674a936d5d7b2';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0x4f833a24e1f95d70f028921e27040ca56e09ab0b';
   }
 
@@ -145,9 +145,9 @@ function getZeroExExchangeV2Address(network) {
 function getZeroExProxyV2Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxyV2.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0xf1ec01d6236d3cd881a0bf0130ea25fe4234003e';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0x2240dab907db71e64d3e0dba4800c83b5c502d4e';
   }
 
@@ -157,9 +157,9 @@ function getZeroExProxyV2Address(network) {
 function getZeroExExchangeV1Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExExchangeV1.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0x90fe2af704b34e0224bf2299c838e04d4dcf1364';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0x12459C951127e0c374FF9105DdA097662A027093';
   }
 
@@ -169,9 +169,9 @@ function getZeroExExchangeV1Address(network) {
 function getZeroExProxyV1Address(network) {
   if (isDevNetwork(network)) {
     return ZeroExProxyV1.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0x087eed4bc1ee3de49befbd66c662b434b15d49d4';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0x8da0d80f5007ef1e431dd2127178d224e32c2ef4';
   }
 
@@ -181,9 +181,9 @@ function getZeroExProxyV1Address(network) {
 function getZRXAddress(network) {
   if (isDevNetwork(network)) {
     return FeeToken.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0x6Ff6C0Ff1d68b964901F986d4C9FA3ac68346570';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0xE41d2489571d322189246DaFA5ebDe1F4699F498';
   }
 
@@ -193,8 +193,10 @@ function getZRXAddress(network) {
 function getSharedLoanTrustedMarginCallers(network) {
   if (isDevNetwork(network)) {
     return [];
-  } else if (network === 'kovan') {
-    return ['0x008E81A8817e0f1820cE98c92C8c72be27443857'];
+  } else if (isKovan(network)) {
+    return [MULTISIG.KOVAN.MARGIN_CALLER];
+  } else if (isMainNet(network)) {
+    return [MULTISIG.MAINNET.MARGIN_CALLER];
   }
 
   throw "Network Unsupported";
@@ -203,9 +205,9 @@ function getSharedLoanTrustedMarginCallers(network) {
 function getWethAddress(network) {
   if (isDevNetwork(network)) {
     return WETH9.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
-  } else if (network === 'mainnet') {
+  } else if (isMainNet(network)) {
     return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
   }
 
@@ -371,6 +373,38 @@ async function grantAccessToVault() {
   return vault.grantAccess(Margin.address);
 }
 
+async function grantMultisigOwnership(deployer, network) {
+  // dont grant ownership on dev networks
+  if (isDevNetwork(network)) {
+    return;
+  }
+
+  // get the multisig addresses based on network
+  let MULTISIG_MAPPING;
+  if (isKovan(network)) {
+    MULTISIG_MAPPING = MULTISIG.KOVAN;
+  } else if (isMainNet(network)) {
+    MULTISIG_MAPPING = MULTISIG.MAINNET;
+  } else {
+    throw "Multisig addresses not found";
+  }
+
+  // retrieve contracts
+  const [
+    vault,
+    margin
+  ] = await Promise.all([
+    Vault.deployed(),
+    Margin.deployed()
+  ]);
+
+  // set permissions
+  await Promise.all([
+    margin.transferOwnership(MULTISIG_MAPPING.PROTOCOL_CONTROLLER),
+    vault.transferOwnership(MULTISIG_MAPPING.TOKEN_WITHDRAWER)
+  ]);
+}
+
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await Promise.all([
@@ -380,8 +414,9 @@ async function doMigration(deployer, network) {
   await deployContracts(deployer, network);
   await Promise.all([
     authorizeOnProxy(),
-    grantAccessToVault()
+    grantAccessToVault(),
   ]);
+  await grantMultisigOwnership(deployer, network);
 }
 
 module.exports = (deployer, network, _addresses) => {
