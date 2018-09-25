@@ -13,14 +13,16 @@ const Vault = artifacts.require("Vault");
 
 const { getOwedAmount } = require('../../../helpers/ClosePositionHelper');
 const {
+  createOpenTx,
+  issueTokensAndSetAllowances,
+  callOpenPosition,
+  doOpenPosition,
   callClosePositionDirectly,
   doClosePosition,
   getMaxInterestFee
 } = require('../../../helpers/MarginHelper');
 const { expectThrow } = require('../../../helpers/ExpectHelper');
-const {
-  doOpenPosition
-} = require('../../../helpers/MarginHelper');
+const { signLoanOffering } = require('../../../helpers/LoanHelper');
 const { wait } = require('@digix/tempo')(web3);
 
 contract('DutchAuctionCloser', accounts => {
@@ -296,6 +298,57 @@ contract('DutchAuctionCloser', accounts => {
         traderDiff.plus(bidderDiff)
       ).to.be.bignumber.equal(
         heldTokenVault
+      );
+    });
+
+    it('succeeds for callTimeLimit of zero', async () => {
+      // open a position
+      let openTx = await createOpenTx(
+        accounts, {salt: salt++, positionOwner: ERC721MarginPosition.address}
+      );
+      openTx.loanOffering.callTimeLimit = 0;
+      openTx.loanOffering.signature = await signLoanOffering(openTx.loanOffering);
+      await issueTokensAndSetAllowances(openTx);
+      const response = await callOpenPosition(dydxMargin, openTx);
+      openTx.id = response.id;
+
+      // grant tokens and set permissions for bidder
+      const maxInterest = await getMaxInterestFee(openTx);
+      const targetTokens = openTx.principal.plus(maxInterest);
+      await Promise.all([
+        OwedTokenContract.issueTo(dutchBidder, targetTokens),
+        OwedTokenContract.approve(TokenProxy.address, targetTokens, { from: dutchBidder })
+      ]);
+
+      // fail before margin-call
+      const closeArgs = { from: dutchBidder, recipient: DutchAuctionCloser.address };
+      await expectThrow(callClosePositionDirectly(
+        dydxMargin,
+        openTx,
+        openTx.principal.div(4),
+        closeArgs
+      ));
+
+      // succeeds at margin-call
+      await dydxMargin.marginCall(
+        openTx.id,
+        0,
+        { from: openTx.loanOffering.owner }
+      );
+      await callClosePositionDirectly(
+        dydxMargin,
+        openTx,
+        openTx.principal.div(4),
+        closeArgs
+      );
+
+      // succeeds after margin-call finished
+      await wait(10);
+      await callClosePositionDirectly(
+        dydxMargin,
+        openTx,
+        openTx.principal.div(4),
+        closeArgs
       );
     });
   });
