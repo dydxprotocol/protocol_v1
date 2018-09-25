@@ -326,5 +326,15 @@ contract('MatchingMarketExchangeWrapper', accounts => {
         )
       );
     });
+
+    it('fails for no maxPrice', async () => {
+      await expectThrow(
+        MMEW.getMaxMakerAmount.call(
+          DAI.address,
+          WETH.address,
+          BYTES.EMPTY
+        )
+      );
+    });
   });
 });
