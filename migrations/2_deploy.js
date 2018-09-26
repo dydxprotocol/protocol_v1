@@ -214,13 +214,7 @@ function getWethAddress(network) {
   throw "WETH Not Found";
 }
 
-async function deployContracts(deployer, network) {
-  await deployBaseProtocol(deployer);
-
-  await deploySecondLayer(deployer, network);
-}
-
-async function deployBaseProtocol(deployer) {
+async function deployBaseProtocol(deployer, network) {
   await Promise.all([
     deployer.deploy(TokenProxy, ONE_HOUR),
     deployer.deploy(InterestImpl),
@@ -258,19 +252,56 @@ async function deployBaseProtocol(deployer) {
     Margin.link('OpenWithoutCounterpartyImpl', OpenWithoutCounterpartyImpl.address),
   ]);
 
+  // Deploy Vault
   await deployer.deploy(
     Vault,
     TokenProxy.address,
     ONE_HOUR
   );
 
+  // Deploy Margin
   await deployer.deploy(
     Margin,
     Vault.address,
     TokenProxy.address
   );
-}
 
+  // Get contracts
+  const [
+    proxy,
+    vault,
+    margin
+  ] = await Promise.all([
+    TokenProxy.deployed(),
+    Vault.deployed(),
+    Margin.deployed()
+  ]);
+
+  // Grant access between Margin, Vault, and Proxy
+  await Promise.all([
+    vault.grantAccess(Margin.address),
+    proxy.grantAccess(Vault.address),
+    proxy.grantAccess(Margin.address),
+  ]);
+
+  // Give ownership of Base Protocol contracts to MultiSig wallets
+  if (!isDevNetwork(network)) {
+    // get the multisig addresses based on network
+    let MULTISIG_MAPPING;
+    if (isKovan(network)) {
+      MULTISIG_MAPPING = MULTISIG.KOVAN;
+    } else if (isMainNet(network)) {
+      MULTISIG_MAPPING = MULTISIG.MAINNET;
+    } else {
+      throw "Multisig addresses not found";
+    }
+    // set multisig permissions
+    await Promise.all([
+      margin.transferOwnership(MULTISIG_MAPPING.PROTOCOL_CONTROLLER),
+      vault.transferOwnership(MULTISIG_MAPPING.TOKEN_WITHDRAWER)
+    ]);
+  }
+}
 async function deploySecondLayer(deployer, network) {
   if (isDevNetwork(network)) {
     await deployer.deploy(WETH9);
@@ -347,7 +378,7 @@ async function deploySecondLayer(deployer, network) {
     ),
   ];
 
-  if (network !== 'mainnet') {
+  if (!isMainNet(network)) {
     promises.push(
       deployer.deploy(
         SharedLoanFactory,
@@ -360,63 +391,14 @@ async function deploySecondLayer(deployer, network) {
   await Promise.all(promises);
 }
 
-async function authorizeOnProxy() {
-  const proxy = await TokenProxy.deployed();
-  await Promise.all([
-    proxy.grantAccess(Vault.address),
-    proxy.grantAccess(Margin.address)
-  ]);
-}
-
-async function grantAccessToVault() {
-  const vault = await Vault.deployed();
-  return vault.grantAccess(Margin.address);
-}
-
-async function grantMultisigOwnership(deployer, network) {
-  // dont grant ownership on dev networks
-  if (isDevNetwork(network)) {
-    return;
-  }
-
-  // get the multisig addresses based on network
-  let MULTISIG_MAPPING;
-  if (isKovan(network)) {
-    MULTISIG_MAPPING = MULTISIG.KOVAN;
-  } else if (isMainNet(network)) {
-    MULTISIG_MAPPING = MULTISIG.MAINNET;
-  } else {
-    throw "Multisig addresses not found";
-  }
-
-  // retrieve contracts
-  const [
-    vault,
-    margin
-  ] = await Promise.all([
-    Vault.deployed(),
-    Margin.deployed()
-  ]);
-
-  // set permissions
-  await Promise.all([
-    margin.transferOwnership(MULTISIG_MAPPING.PROTOCOL_CONTROLLER),
-    vault.transferOwnership(MULTISIG_MAPPING.TOKEN_WITHDRAWER)
-  ]);
-}
-
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await Promise.all([
     maybeDeploy0xV1(deployer, network),
     maybeDeploy0xV2(deployer, network)
   ]);
-  await deployContracts(deployer, network);
-  await Promise.all([
-    authorizeOnProxy(),
-    grantAccessToVault(),
-  ]);
-  await grantMultisigOwnership(deployer, network);
+  await deployBaseProtocol(deployer, network);
+  await deploySecondLayer(deployer, network);
 }
 
 module.exports = (deployer, network, _addresses) => {
