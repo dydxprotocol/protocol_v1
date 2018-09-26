@@ -59,7 +59,7 @@ contract TestBucketLender is BucketLender {
         uint256 cb = criticalBucket;
         uint256 principalSum = 0;
         uint256 availableSum = 0;
-        uint i = 0;
+        uint256 i = 0;
 
         for(i = 0; (principalSum != principalTotal || availableSum != availableTotal); i++) {
             uint256 aa = availableForBucket[i];
@@ -77,7 +77,7 @@ contract TestBucketLender is BucketLender {
         require(principalSum == principalTotal);
         require(availableSum == availableTotal);
 
-        for (uint j = i; j < i + 10; j++) {
+        for (uint256 j = i; j < i + 10; j++) {
             uint256 aa = availableForBucket[i];
             uint256 op = principalForBucket[i];
             require(aa == 0 && op == 0);

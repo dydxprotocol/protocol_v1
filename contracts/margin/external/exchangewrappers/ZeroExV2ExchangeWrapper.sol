@@ -73,7 +73,7 @@ contract ZeroExV2ExchangeWrapper is
         ZERO_EX_TOKEN_PROXY = zeroExProxy;
         ZRX = zrxToken;
 
-        for (uint i = 0; i < trustedMsgSenders.length; i++) {
+        for (uint256 i = 0; i < trustedMsgSenders.length; i++) {
             TRUSTED_MSG_SENDER[trustedMsgSenders[i]] = true;
         }
 
