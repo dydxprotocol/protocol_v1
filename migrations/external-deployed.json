@@ -3,18 +3,50 @@
         "42": {
             "links": {},
             "address": "0xd0a1e359811322d97991e03f863a0c30c2cf029c"
-        }
+        },
+        "1": {
+            "links": {},
+            "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+        },
     },
     "ZeroExExchangeV1": {
         "42": {
             "links": {},
             "address": "0x90fe2af704b34e0224bf2299c838e04d4dcf1364"
+        },
+        "1": {
+            "links": {},
+            "address": "0x12459C951127e0c374FF9105DdA097662A027093"
         }
     },
     "ZeroExProxyV1": {
         "42": {
             "links": {},
             "address": "0x087eed4bc1ee3de49befbd66c662b434b15d49d4"
+        },
+        "1": {
+            "links": {},
+            "address": "0x8da0d80f5007ef1e431dd2127178d224e32c2ef4"
+        }
+    },
+    "ZeroExExchangeV2": {
+        "42": {
+            "links": {},
+            "address": "0x35dd2932454449b14cee11a94d3674a936d5d7b2"
+        },
+        "1": {
+            "links": {},
+            "address": "0x4f833a24e1f95d70f028921e27040ca56e09ab0b"
+        }
+    },
+    "ZeroExProxyV2": {
+        "42": {
+            "links": {},
+            "address": "0xf1ec01d6236d3cd881a0bf0130ea25fe4234003e"
+        },
+        "1": {
+            "links": {},
+            "address": "0x2240dab907db71e64d3e0dba4800c83b5c502d4e"
         }
     }
 }
