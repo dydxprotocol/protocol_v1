@@ -25,7 +25,7 @@ contract('SimpleMarketExchangeWrapper', accounts => {
   const DAI_PER_WETH = 400;
   const MAKER_WETH_AMOUNT = new BigNumber("1e24");
   const MAKER_DAI_AMOUNT = MAKER_WETH_AMOUNT.times(DAI_PER_WETH);
-  let wethToDaiId, daiToWethId, wethToTestId, testToWethId;
+  let wethToDaiId, daiToWethId, testToWethId;
 
   beforeEach('Sets up OasisDEX', async () => {
     const OASIS_DEX_CLOSE_TIME = 1000000000000000;
@@ -79,22 +79,11 @@ contract('SimpleMarketExchangeWrapper', accounts => {
     );
     daiToWethId = daiToWethId.result;
 
-    wethToTestId = await transact(
-      OasisDEX.offer,
-      MAKER_WETH_AMOUNT,
-      TEST.address,
-      MAKER_WETH_AMOUNT.times(1.1),
-      WETH.address,
-      0,
-      { from: maker }
-    );
-    wethToTestId = wethToTestId.result;
-
     testToWethId = await transact(
       OasisDEX.offer,
       MAKER_WETH_AMOUNT,
       WETH.address,
-      MAKER_WETH_AMOUNT.times(1.1),
+      MAKER_WETH_AMOUNT,
       TEST.address,
       0,
       { from: maker }
@@ -160,7 +149,7 @@ contract('SimpleMarketExchangeWrapper', accounts => {
           DAI.address,
           WETH.address,
           amount,
-          orderIdToBytes(wethToTestId)
+          orderIdToBytes(testToWethId)
         )
       );
     });
@@ -235,6 +224,22 @@ contract('SimpleMarketExchangeWrapper', accounts => {
       // check return values
       expect(receipt1.result).to.be.bignumber.eq(expectedResult);
       expect(receipt2.result).to.be.bignumber.eq(expectedResult);
+    });
+
+    it('succeeds for no rounding-error', async () => {
+      const amount = MAKER_WETH_AMOUNT;
+      const expectedResult = await OasisDEX.getBuyAmount.call(WETH.address, TEST.address, amount);
+      await TEST.issueTo(SMEW.address, amount);
+      const receipt1 = await transact(
+        SMEW.exchange,
+        accounts[0],
+        accounts[0],
+        WETH.address,
+        TEST.address,
+        amount,
+        orderIdToBytes(testToWethId)
+      );
+      expect(receipt1.result).to.be.bignumber.eq(expectedResult);
     });
 
     it('fails when trying to take too much', async () => {

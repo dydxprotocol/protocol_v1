@@ -26,7 +26,7 @@ import { GeneralERC20 } from "./GeneralERC20.sol";
  * @title TokenInteract
  * @author dYdX
  *
- * This library contains functions for interacting with ERC20 tokens
+ * This library contains basic functions for interacting with ERC20 tokens
  */
 library TokenInteract {
     function balanceOf(

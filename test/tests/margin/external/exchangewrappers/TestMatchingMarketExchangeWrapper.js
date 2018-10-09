@@ -170,6 +170,32 @@ contract('MatchingMarketExchangeWrapper', accounts => {
       expect(direct2).to.be.bignumber.eq(result2);
     });
 
+    it('fails for takerAmount > 128 bits', async () => {
+      const amount = new BigNumber("1e18");
+      let price1 = priceToBytes("1e40", "1e10");
+      await expectThrow(
+        MMEW.getExchangeCost.call(
+          WETH.address,
+          DAI.address,
+          amount,
+          price1
+        )
+      );
+    });
+
+    it('fails for makerAmount > 128 bits', async () => {
+      const amount = new BigNumber("1e18");
+      let price1 = priceToBytes("1e10", "1e40");
+      await expectThrow(
+        MMEW.getExchangeCost.call(
+          WETH.address,
+          DAI.address,
+          amount,
+          price1
+        )
+      );
+    });
+
     it('fails for low maximum price', async () => {
       const amount = new BigNumber("1e18");
       let price1 = priceToBytes("1", "1e10");

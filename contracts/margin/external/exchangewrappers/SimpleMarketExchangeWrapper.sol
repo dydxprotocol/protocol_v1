@@ -21,6 +21,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { ISimpleMarket } from "../../../external/Maker/ISimpleMarket.sol";
+import { AdvancedTokenInteract } from "../../../lib/AdvancedTokenInteract.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
@@ -41,6 +42,7 @@ contract SimpleMarketExchangeWrapper is
 {
     using SafeMath for uint256;
     using TokenInteract for address;
+    using AdvancedTokenInteract for address;
 
     // ============ Structs ============
 
@@ -85,25 +87,23 @@ contract SimpleMarketExchangeWrapper is
         verifyOffer(offer, makerToken, takerToken);
 
         // calculate maximum amount of makerToken to receive given requestedFillAmount
-        uint256 makerAmount = MathHelpers.getPartialAmount(
-            requestedFillAmount,
+        uint256 makerAmount = getInversePartialAmount(
             offer.takerAmount,
-            offer.makerAmount
+            offer.makerAmount,
+            requestedFillAmount
         );
 
-        // complete the exchange
-        takerToken.approve(address(market), requestedFillAmount);
+        // make sure that the exchange can take the tokens from this contract
+        takerToken.ensureAllowance(address(market), requestedFillAmount);
+
+        // do the exchange
         require(
             market.buy(offerId, makerAmount),
             "SimpleMarketExchangeWrapper#exchange: Buy failed"
         );
-        assert(makerToken.balanceOf(address(this)) >= makerAmount);
 
-        ensureAllowance(
-            makerToken,
-            receiver,
-            makerAmount
-        );
+        // set allowance for the receiver
+        makerToken.ensureAllowance(receiver, makerAmount);
 
         return makerAmount;
     }
@@ -153,16 +153,32 @@ contract SimpleMarketExchangeWrapper is
 
     // ============ Private Functions ============
 
-    function ensureAllowance(
-        address token,
-        address spender,
-        uint256 requiredAmount
+    /**
+     * Calculate the greatest target amount that can be passed into getPartialAmount such that a
+     * certain result is achieved.
+     *
+     * @param  numerator    The numerator of the getPartialAmount function
+     * @param  denominator  The denominator of the getPartialAmount function
+     * @param  result       The result of the getPartialAmount function
+     * @return              The largest value of target such that the result is achieved
+     */
+    function getInversePartialAmount(
+        uint256 numerator,
+        uint256 denominator,
+        uint256 result
     )
         private
+        pure
+        returns (uint256)
     {
-        if (token.allowance(address(this), spender) < requiredAmount) {
-            token.approve(spender, MathHelpers.maxUint256());
+        uint256 temp = result.add(1).mul(denominator);
+        uint256 target = temp.div(numerator);
+
+        if (target.mul(numerator) == temp) {
+            target = target.sub(1);
         }
+
+        return target;
     }
 
     function getOffer(

@@ -21,7 +21,7 @@ pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import { IMatchingMarket } from "../../../external/Maker/IMatchingMarket.sol";
-import { MathHelpers } from "../../../lib/MathHelpers.sol";
+import { AdvancedTokenInteract } from "../../../lib/AdvancedTokenInteract.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
@@ -39,6 +39,7 @@ contract MatchingMarketExchangeWrapper is
 {
     using SafeMath for uint256;
     using TokenInteract for address;
+    using AdvancedTokenInteract for address;
 
     // ============ Structs ============
 
@@ -76,10 +77,12 @@ contract MatchingMarketExchangeWrapper is
         external
         returns (uint256)
     {
-        assert(takerToken.balanceOf(address(this)) >= requestedFillAmount);
-
         IMatchingMarket market = IMatchingMarket(MATCHING_MARKET);
-        takerToken.approve(address(market), requestedFillAmount);
+
+        // make sure that the exchange can take the tokens from this contract
+        takerToken.ensureAllowance(address(market), requestedFillAmount);
+
+        // do the exchange
         uint256 receivedMakerAmount = market.sellAllAmount(
             takerToken,
             requestedFillAmount,
@@ -87,13 +90,11 @@ contract MatchingMarketExchangeWrapper is
             0
         );
 
+        // validate results
         requireBelowMaximumPrice(requestedFillAmount, receivedMakerAmount, orderData);
 
-        ensureAllowance(
-            makerToken,
-            receiver,
-            receivedMakerAmount
-        );
+        // set allowance for the receiver
+        makerToken.ensureAllowance(receiver, receivedMakerAmount);
 
         return receivedMakerAmount;
     }
@@ -108,15 +109,15 @@ contract MatchingMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        uint256 cost = IMatchingMarket(MATCHING_MARKET).getPayAmount(
+        uint256 costInTakerToken = IMatchingMarket(MATCHING_MARKET).getPayAmount(
             takerToken,
             makerToken,
             desiredMakerToken
         );
 
-        requireBelowMaximumPrice(cost, desiredMakerToken, orderData);
+        requireBelowMaximumPrice(costInTakerToken, desiredMakerToken, orderData);
 
-        return cost;
+        return costInTakerToken;
     }
 
     function getMaxMakerAmount(
@@ -159,18 +160,6 @@ contract MatchingMarketExchangeWrapper is
 
     // ============ Private Functions ============
 
-    function ensureAllowance(
-        address token,
-        address spender,
-        uint256 requiredAmount
-    )
-        private
-    {
-        if (token.allowance(address(this), spender) < requiredAmount) {
-            token.approve(spender, MathHelpers.maxUint256());
-        }
-    }
-
     function requireBelowMaximumPrice(
         uint256 takerAmount,
         uint256 makerAmount,
@@ -179,10 +168,11 @@ contract MatchingMarketExchangeWrapper is
         private
         pure
     {
-        (uint256 maxTakerAmount, uint256 forMakerAmount) = getMaximumPrice(orderData);
-        if (maxTakerAmount > 0 || forMakerAmount > 0) {
+        (uint256 takerAmountRatio, uint256 makerAmountRatio) = getMaximumPrice(orderData);
+        if (takerAmountRatio > 0 || makerAmountRatio > 0) {
+            // all amounts have previously been required to fit within 128 bits each
             require(
-                takerAmount.mul(forMakerAmount) <= makerAmount.mul(maxTakerAmount),
+                takerAmount.mul(makerAmountRatio) <= makerAmount.mul(takerAmountRatio),
                 "MatchingMarketExchangeWrapper:#requireBelowMaximumPrice: price is too high"
             );
         }
@@ -234,6 +224,16 @@ contract MatchingMarketExchangeWrapper is
                 takerAmount := mload(add(orderData, 32))
                 makerAmount := mload(add(orderData, 64))
             }
+
+            // require numbers to fit within 128 bits to prevent overflow when checking bounds
+            require(
+                uint128(takerAmount) == takerAmount,
+                "MatchingMarketExchangeWrapper:#getMaximumPrice: takerAmount larger than 128 bits"
+            );
+            require(
+                uint128(makerAmount) == makerAmount,
+                "MatchingMarketExchangeWrapper:#getMaximumPrice: makerAmount larger than 128 bits"
+            );
 
             // since this is a price ratio, the denominator cannot be zero
             require(
