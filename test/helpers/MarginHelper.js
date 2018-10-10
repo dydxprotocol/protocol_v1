@@ -37,8 +37,8 @@ async function createOpenTx(
     loanOwner,
     nonce,
     trader,
-    owedToken = OwedToken.address,
-    heldToken = HeldToken.address,
+    owedToken,
+    heldToken,
   } = {}
 ) {
   const [loanOffering, buyOrder] = await Promise.all([
@@ -48,8 +48,8 @@ async function createOpenTx(
 
   const tx = {
     owner: positionOwner || accounts[0],
-    owedToken,
-    heldToken,
+    owedToken: owedToken || OwedToken.address,
+    heldToken: heldToken || HeldToken.address,
     principal: new BigNumber('1098765932109876544'),
     loanOffering: loanOffering,
     buyOrder: buyOrder,
