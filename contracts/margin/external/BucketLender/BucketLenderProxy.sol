@@ -144,10 +144,10 @@ contract BucketLenderProxy
         (
             uint256 owedTokenAmount,
             uint256 heldTokenAmount
-        ) = withdrawInternal(
-            bucketLender,
+        ) = BucketLender(bucketLender).withdraw(
             buckets,
-            maxWeights
+            maxWeights,
+            msg.sender
         );
 
         transferInternal(owedToken, msg.sender, owedTokenAmount);
@@ -159,29 +159,29 @@ contract BucketLenderProxy
     /**
      * Reinvest tokens by withdrawing them from one BucketLender and depositing them into another
      *
-     * @param  withdrawLender  The address of the BucketLender contract to withdraw from
-     * @param  depositLender   The address of the BucketLender contract to deposit into
-     * @param  buckets         The buckets to withdraw from
-     * @param  maxWeights      The maximum weight to withdraw from each bucket
-     * @return                 Values corresponding to:
-     *                           [0]  = The bucket number that was deposited into
-     *                           [1]  = The number of owedTokens reinvested
-     *                           [2]  = The number of heldTokens withdrawn
+     * @param  withdrawFrom  The address of the BucketLender contract to withdraw from
+     * @param  depositInto   The address of the BucketLender contract to deposit into
+     * @param  buckets       The buckets to withdraw from
+     * @param  maxWeights    The maximum weight to withdraw from each bucket
+     * @return               Values corresponding to:
+     *                         [0]  = The bucket number that was deposited into
+     *                         [1]  = The number of owedTokens reinvested
+     *                         [2]  = The number of heldTokens withdrawn
      */
     function rollover(
-        address withdrawLender,
-        address depositLender,
+        address withdrawFrom,
+        address depositInto,
         uint256[] buckets,
         uint256[] maxWeights
     )
         external
         returns (uint256, uint256, uint256)
     {
-        address owedToken = BucketLender(depositLender).OWED_TOKEN();
+        address owedToken = BucketLender(depositInto).OWED_TOKEN();
 
         // the owedTokens of the two BucketLenders must be the same
         require (
-            owedToken == BucketLender(withdrawLender).OWED_TOKEN(),
+            owedToken == BucketLender(withdrawFrom).OWED_TOKEN(),
             "BucketLenderTokenProxy#rollover: Token mismatch"
         );
 
@@ -189,21 +189,21 @@ contract BucketLenderProxy
         (
             uint256 owedTokenAmount,
             uint256 heldTokenAmount
-        ) = withdrawInternal(
-            withdrawLender,
+        ) = BucketLender(withdrawFrom).withdraw(
             buckets,
-            maxWeights
+            maxWeights,
+            msg.sender
         );
 
         // reinvest any owedToken into the second BucketLender
         uint256 bucket = depositInternal(
-            depositLender,
+            depositInto,
             owedToken,
             owedTokenAmount
         );
 
         // return any heldToken to the msg.sender
-        address heldToken = BucketLender(depositLender).HELD_TOKEN();
+        address heldToken = BucketLender(depositInto).HELD_TOKEN();
         transferInternal(heldToken, msg.sender, heldTokenAmount);
 
         return (bucket, owedTokenAmount, heldTokenAmount);
@@ -221,22 +221,6 @@ contract BucketLenderProxy
     {
         token.ensureAllowance(bucketLender, amount);
         return BucketLender(bucketLender).deposit(msg.sender, amount);
-    }
-
-    function withdrawInternal(
-        address bucketLender,
-        uint256[] buckets,
-        uint256[] maxWeights
-    )
-        private
-        returns (uint256, uint256)
-    {
-        // returns (owedTokenAmount, heldTokenAmount)
-        return BucketLender(bucketLender).withdraw(
-            buckets,
-            maxWeights,
-            msg.sender
-        );
     }
 
     function transferInternal(
