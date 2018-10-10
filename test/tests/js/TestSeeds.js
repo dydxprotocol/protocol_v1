@@ -25,7 +25,6 @@ contract('Margin', () => {
   });
 });
 
-
 async function checkSeedPositions() {
   const promises = seeds.positions.map(async seedPosition => {
     const margin = await Margin.deployed();

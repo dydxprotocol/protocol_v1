@@ -59,7 +59,13 @@ async function doMigration(deployer, network, accounts) {
     // Needs to complete before createSeedOrders
     const positions = await createSeedPositions(accounts);
 
-    const orders = await generateBuySellOrders(accounts, WETH9, TokenA);
+    const orders = await generateBuySellOrders(
+      accounts,
+      {
+        MakerToken: WETH9,
+        TakerToken: TokenA,
+      }
+    );
 
     seeds.positions = positions;
     seeds.orders = orders;

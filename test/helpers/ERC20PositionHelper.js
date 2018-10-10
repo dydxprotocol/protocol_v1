@@ -1,7 +1,9 @@
 const { createOpenTx } = require('./MarginHelper');
-const { BIGNUMBERS } = require('./Constants');
+const { BIGNUMBERS, ADDRESSES, POSITION_TYPE } = require('./Constants');
 const BigNumber = require('bignumber.js');
 const { issueAndSetAllowance } = require('./TokenHelper');
+const { createSignedV1Order } = require('./ZeroExV1Helper');
+
 const Margin = artifacts.require('Margin');
 const DutchAuctionCloser = artifacts.require('DutchAuctionCloser');
 const ERC20PositionWithdrawer = artifacts.require('ERC20PositionWithdrawer');
@@ -12,9 +14,6 @@ const TokenProxy = artifacts.require('TokenProxy');
 const WETH9 = artifacts.require("WETH9");
 const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
 const { ZeroExProxyV1 } = require('../contracts/ZeroExV1');
-
-const { ADDRESSES, POSITION_TYPE } = require('./Constants');
-const { createSignedV1Order } = require('./ZeroExV1Helper');
 
 BigNumber.config({
   EXPONENTIAL_AT: 1000,
@@ -36,6 +35,10 @@ async function createMarginToken(
   }
 ) {
   trader = trader || accounts[8];
+
+  if (type !== POSITION_TYPE.SHORT || type !== POSITION_TYPE.LONG ) {
+    throw new Error('Type is not defined for margin token');
+  }
 
   const [openTx, dydxMargin] = await Promise.all([
     createOpenTx(
@@ -127,8 +130,7 @@ async function setupDepositAndPrincipal(
       issueAndSetAllowance(heldToken, trader, deposit, TokenProxy.address)
     ]);
     return;
-  }
-  if (type === POSITION_TYPE.LONG) {
+  } else if (type === POSITION_TYPE.LONG) {
     await Promise.all([
       heldToken.deposit({ value: deposit, from: trader }),
       heldToken.approve(TokenProxy.address, deposit, { from: trader }),
@@ -208,10 +210,12 @@ function createMarginTokenContract(openTx, type) {
 
 function generateBuySellOrders(
   accounts,
-  MakerToken,
-  TakerToken,
-  amountToMint = new BigNumber('1e18'),
-  multiplier = new BigNumber('10'),
+  {
+    MakerToken,
+    TakerToken,
+    amountToMint = new BigNumber('1e18'),
+    multiplier = new BigNumber('10'),
+  },
 ) {
   const orderAmount = multiplier.times(amountToMint);
   const orderBuyPrice = multiplier.times(BUY_PRICE);
