@@ -36,10 +36,6 @@ async function createMarginToken(
 ) {
   trader = trader || accounts[8];
 
-  if (type !== POSITION_TYPE.SHORT || type !== POSITION_TYPE.LONG ) {
-    throw new Error('Type is not defined for margin token');
-  }
-
   const [openTx, dydxMargin] = await Promise.all([
     createOpenTx(
       accounts,
