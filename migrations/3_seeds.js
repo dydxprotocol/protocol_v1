@@ -21,13 +21,16 @@ global.web3 = web3;
 
 const fs = require('fs');
 const promisify = require("es6-promisify");
+const BigNumber = require('bignumber.js');
 const Margin = artifacts.require('Margin');
+const WETH9 = artifacts.require('WETH9');
+const TokenA = artifacts.require('TokenA');
 const { isDevNetwork } = require('./helpers');
+const { POSITION_TYPE } = require('../test/helpers/Constants');
 const { doOpenPosition, getPosition } = require('../test/helpers/MarginHelper');
 const {
-  createShortToken,
-  createBuyOrderForToken,
-  createSellOrderForToken
+  createMarginToken,
+  generateBuySellOrders,
 } = require('../test/helpers/ERC20PositionHelper');
 const mkdirp = require('mkdirp');
 
@@ -35,6 +38,16 @@ const mkdirAsync = promisify(mkdirp);
 web3.currentProvider.sendAsync = web3.currentProvider.send;
 
 const writeFileAsync = promisify(fs.writeFile);
+
+const LEVERAGED_AMOUNTS = {
+  DEPOSIT_ETH: new BigNumber('1e18'),
+  PRINCIPAL_DAI: new BigNumber('500e18')
+};
+
+const SHORT_AMOUNTS = {
+  DEPOSIT_DAI: new BigNumber('500e18'),
+  PRINCIPAL_ETH: new BigNumber('1e18'),
+};
 
 async function doMigration(deployer, network, accounts) {
   if (isDevNetwork(network)) {
@@ -46,7 +59,13 @@ async function doMigration(deployer, network, accounts) {
     // Needs to complete before createSeedOrders
     const positions = await createSeedPositions(accounts);
 
-    const orders = await createSeedOrders(accounts);
+    const orders = await generateBuySellOrders(
+      accounts,
+      {
+        MakerToken: WETH9,
+        TakerToken: TokenA,
+      }
+    );
 
     seeds.positions = positions;
     seeds.orders = orders;
@@ -65,8 +84,32 @@ async function createSeedPositions(accounts) {
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
   openTransactions.push(await doOpenPosition(accounts, { salt: salt++, nonce: nonce++ }));
-  openTransactions.push(await createShortToken(accounts, { nonce: nonce++, trader }));
-  openTransactions.push(await createShortToken(accounts, { nonce: nonce++, trader }));
+  openTransactions.push(await createMarginToken(
+    accounts,
+    {
+      type: POSITION_TYPE.LONG,
+      salt: salt++,
+      nonce: nonce++,
+      trader,
+      HeldToken: WETH9,
+      OwedToken: TokenA,
+      deposit: LEVERAGED_AMOUNTS.DEPOSIT_ETH,
+      principal: LEVERAGED_AMOUNTS.PRINCIPAL_DAI,
+    }
+  ));
+  openTransactions.push(await createMarginToken(
+    accounts,
+    {
+      type: POSITION_TYPE.SHORT,
+      salt: salt++,
+      nonce: nonce++,
+      trader,
+      HeldToken: TokenA,
+      OwedToken: WETH9,
+      deposit: SHORT_AMOUNTS.DEPOSIT_DAI,
+      principal: SHORT_AMOUNTS.PRINCIPAL_ETH,
+    }
+  ));
 
   const margin = await Margin.deployed();
 
@@ -89,15 +132,6 @@ async function createSeedPositions(accounts) {
   }
 
   return positions;
-}
-
-async function createSeedOrders(accounts) {
-  const orders = await Promise.all([
-    createBuyOrderForToken(accounts),
-    createSellOrderForToken(accounts),
-  ]);
-
-  return orders;
 }
 
 module.exports = (deployer, network, accounts) => {
