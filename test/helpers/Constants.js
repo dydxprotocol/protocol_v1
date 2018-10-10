@@ -15,6 +15,10 @@ module.exports = {
     ZERO_EX_V2: "zeroExV2",
     DIRECT: "openDirectly"
   },
+  POSITION_TYPE: {
+    SHORT: 'SHORT',
+    LONG: 'LONG',
+  },
   addr1: '0xec37D2aFfb54cBFaE6f8e66E0161E1cfa4bBf471',
   addr2: '0xec37D2aFfb54cBFaE6f8e66E0161E1cfa4bBf472',
   ADDRESSES: {
