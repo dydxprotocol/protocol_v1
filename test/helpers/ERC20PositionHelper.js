@@ -15,7 +15,6 @@ const { ZeroExProxyV1 } = require('../contracts/ZeroExV1');
 
 const { ADDRESSES, POSITION_TYPE } = require('./Constants');
 const { createSignedV1Order } = require('./ZeroExV1Helper');
-// const HeldToken = artifacts.require("TokenA");
 
 BigNumber.config({
   EXPONENTIAL_AT: 1000,
