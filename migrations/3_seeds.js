@@ -41,7 +41,7 @@ const writeFileAsync = promisify(fs.writeFile);
 
 const LEVERAGED_AMOUNTS = {
   DEPOSIT_ETH: new BigNumber('1e18'),
-  PRINCIPAL_DAI: new BigNumber('500e18')
+  PRINCIPAL_DAI: new BigNumber('150e18')
 };
 
 const SHORT_AMOUNTS = {
