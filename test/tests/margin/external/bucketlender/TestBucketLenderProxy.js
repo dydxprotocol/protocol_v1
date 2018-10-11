@@ -41,6 +41,7 @@ const DEPOSIT = PRINCIPAL.times(2);
 
 contract('lenderProxyForBucketLender', accounts => {
   let opener = accounts[9];
+  let sender = accounts[8];
 
   // ============ Before ============
 
@@ -124,8 +125,6 @@ contract('lenderProxyForBucketLender', accounts => {
   });
 
   describe('#depositEth', () => {
-    const sender = accounts[1];
-
     it('fails for zero amount', async () => {
       await expectThrow(lenderProxy.depositEth(
         bucketLender1.address,
@@ -140,6 +139,13 @@ contract('lenderProxyForBucketLender', accounts => {
       ));
       await expectThrow(lenderProxy.depositEth(
         sender,
+        { from: sender, value: value }
+      ));
+    });
+
+    it('fails for bucketLender that doesnt take WETH', async () => {
+      await expectThrow(lenderProxy.depositEth(
+        bucketLender3.address,
         { from: sender, value: value }
       ));
     });
@@ -174,12 +180,10 @@ contract('lenderProxyForBucketLender', accounts => {
   });
 
   describe('#deposit', () => {
-    const sender = accounts[1];
-
     it('fails for invalid bucketLender address', async () => {
       await issueAndSetAllowance(testToken, sender, value, lenderProxy.address);
       await expectThrow(lenderProxy.deposit(
-        bucketLender3.address,
+        Margin.address,
         value,
         { from: sender }
       ));
@@ -225,9 +229,82 @@ contract('lenderProxyForBucketLender', accounts => {
     });
   });
 
-  describe('#withdraw', () => {
-    const sender = accounts[1];
+  describe('#rollover', () => {
+    beforeEach('deposit in bucket lender 1', async () => {
+      const receipt = await transact(
+        lenderProxy.depositEth,
+        bucketLender1.address,
+        { from: sender, value: value }
+      );
+      expect(receipt.result).to.be.bignumber.eq(0);
+    });
 
+    it('fails for invalid withdrawFrom', async () => {
+      await expectThrow(
+        lenderProxy.rollover(
+          Margin.address,
+          bucketLender2.address,
+          [0],
+          [BIGNUMBERS.MAX_UINT256],
+          { from: sender }
+        )
+      );
+    });
+
+    it('fails for invalid depositInto', async () => {
+      await expectThrow(
+        lenderProxy.rollover(
+          bucketLender1.address,
+          Margin.address,
+          [0],
+          [BIGNUMBERS.MAX_UINT256],
+          { from: sender }
+        )
+      );
+    });
+
+    it('fails for token mismatch', async () => {
+      await expectThrow(
+        lenderProxy.rollover(
+          bucketLender1.address,
+          bucketLender3.address,
+          [0],
+          [BIGNUMBERS.MAX_UINT256],
+          { from: sender }
+        )
+      );
+    });
+
+    it('fails for zero withdraw amount', async () => {
+      await expectThrow(
+        lenderProxy.rollover(
+          bucketLender1.address,
+          bucketLender2.address,
+          [1],
+          [BIGNUMBERS.MAX_UINT256],
+          { from: sender }
+        )
+      );
+    });
+
+    it('succeeds', async () => {
+      const expectedOwedTokenAmount = await bucketLender1.weightForBucketForAccount.call(0, sender);
+      const receipt = await transact(
+        lenderProxy.rollover,
+        bucketLender1.address,
+        bucketLender2.address,
+        [0],
+        [BIGNUMBERS.MAX_UINT256],
+        { from: sender }
+      );
+      const [bucket, owedTokenAmount, heldTokenAmount] = receipt.result;
+      expect(bucket).to.be.bignumber.eq(0);
+      expect(owedTokenAmount).to.be.bignumber.eq(expectedOwedTokenAmount);
+      expect(heldTokenAmount).to.be.bignumber.eq(0);
+    });
+  });
+
+  describe('#withdraw', () => {
     it('succeeds when withdrawing just eth', async () => {
       await lenderProxy.depositEth(
         bucketLender1.address,
@@ -327,7 +404,6 @@ contract('lenderProxyForBucketLender', accounts => {
     });
 
     it('fails for bad bucketLender address', async () => {
-      const sender = accounts[1];
       await expectThrow(lenderProxy.withdraw(
         Margin.address,
         [0],
@@ -340,29 +416,6 @@ contract('lenderProxyForBucketLender', accounts => {
         [BIGNUMBERS.MAX_UINT256],
         { from: sender }
       ));
-    });
-  });
-
-  describe('#rollover', () => {
-    it('fails for invalid withdrawFrom', async () => {
-      // TODO
-    });
-
-    it('fails for invalid depositInto', async () => {
-      // TODO
-    });
-
-    it('fails for token mismatch', async () => {
-      // TODO
-    });
-
-    it('fails for zero withdraw amount', async () => {
-      // TODO
-    });
-
-    it('succeeds', async () => {
-      // TODO
-      //Check the buckets, weights, and amounts for everything
     });
   });
 });

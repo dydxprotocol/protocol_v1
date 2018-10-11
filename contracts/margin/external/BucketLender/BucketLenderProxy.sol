@@ -203,7 +203,7 @@ contract BucketLenderProxy
         );
 
         // return any heldToken to the msg.sender
-        address heldToken = BucketLender(depositInto).HELD_TOKEN();
+        address heldToken = BucketLender(withdrawFrom).HELD_TOKEN();
         transferInternal(heldToken, msg.sender, heldTokenAmount);
 
         return (bucket, owedTokenAmount, heldTokenAmount);

@@ -19,6 +19,7 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
+import { MathHelpers } from "./MathHelpers.sol";
 import { TokenInteract } from "./TokenInteract.sol";
 
 
@@ -30,9 +31,6 @@ import { TokenInteract } from "./TokenInteract.sol";
  */
 library AdvancedTokenInteract {
     using TokenInteract for address;
-
-    uint256 constant MAX_UINT256 =
-    0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF;
 
     /**
      * Checks if the spender has some amount of allowance. If it doesn't, then set allowance at
@@ -50,7 +48,7 @@ library AdvancedTokenInteract {
         internal
     {
         if (token.allowance(address(this), spender) < amount) {
-            token.approve(spender, MAX_UINT256);
+            token.approve(spender, MathHelpers.maxUint256());
         }
     }
 }
