@@ -63,7 +63,7 @@ contract BucketLenderProxy
     {
         require( // coverage-disable-line
             msg.sender == WETH,
-            "EthWrapperForBucketLender#fallback: Cannot recieve ETH directly unless unwrapping WETH"
+            "BucketLenderProxy#fallback: Cannot recieve ETH directly unless unwrapping WETH"
         );
     }
 
@@ -84,7 +84,7 @@ contract BucketLenderProxy
 
         require(
             weth == BucketLender(bucketLender).OWED_TOKEN(),
-            "EthWrapperForBucketLender#depositEth: BucketLender does not take WETH"
+            "BucketLenderProxy#depositEth: BucketLender does not take WETH"
         );
 
         WETH9(weth).deposit.value(msg.value)();

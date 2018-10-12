@@ -47,7 +47,7 @@ const TransferImpl = artifacts.require("TransferImpl");
 const InterestImpl = artifacts.require("InterestImpl");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const BucketLenderFactory = artifacts.require("BucketLenderFactory");
-const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const BucketLenderProxy = artifacts.require("BucketLenderProxy");
 const AuctionProxy = artifacts.require("AuctionProxy");
 const WETH9 = artifacts.require("WETH9");
 
@@ -386,7 +386,6 @@ async function deploySecondLayer(deployer, network) {
       [DutchAuctionCloser.address],
       [ERC20PositionWithdrawer.address]
     ),
-
     deployer.deploy(
       PayableMarginMinter,
       Margin.address,
@@ -397,7 +396,7 @@ async function deploySecondLayer(deployer, network) {
       Margin.address
     ),
     deployer.deploy(
-      EthWrapperForBucketLender,
+      BucketLenderProxy,
       getWethAddress(network)
     ),
     deployer.deploy(
