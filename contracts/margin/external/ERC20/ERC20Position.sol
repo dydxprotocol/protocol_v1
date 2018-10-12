@@ -195,18 +195,13 @@ contract ERC20Position is
 
         // set relevant constants
         state = State.OPEN;
+        heldToken = position.heldToken;
 
         uint256 tokenAmount = getTokenAmountOnAdd(position.principal);
 
-        totalSupply_ = tokenAmount;
-        balances[INITIAL_TOKEN_HOLDER] = tokenAmount;
-        heldToken = position.heldToken;
-
-        // Record event
         emit Initialized(POSITION_ID, tokenAmount);
 
-        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), INITIAL_TOKEN_HOLDER, tokenAmount);
+        mint(INITIAL_TOKEN_HOLDER, tokenAmount);
 
         return address(this); // returning own address retains ownership of position
     }
@@ -243,11 +238,7 @@ contract ERC20Position is
 
         uint256 tokenAmount = getTokenAmountOnAdd(principalAdded);
 
-        balances[trader] = balances[trader].add(tokenAmount);
-        totalSupply_ = totalSupply_.add(tokenAmount);
-
-        // ERC20 Standard requires Transfer event from 0x0 when tokens are minted
-        emit Transfer(address(0), trader, tokenAmount);
+        mint(trader, tokenAmount);
 
         return address(this);
     }
@@ -442,13 +433,11 @@ contract ERC20Position is
         );
 
         // Destroy the margin tokens
-        delete balances[onBehalfOf];
-        totalSupply_ = totalSupply_.sub(value);
+        burn(onBehalfOf, value);
+        emit Withdraw(onBehalfOf, value, heldTokenPayout);
 
         // Send the redeemer their proportion of heldToken
         TokenInteract.transfer(heldToken, receiver, heldTokenPayout);
-
-        emit Withdraw(onBehalfOf, value, heldTokenPayout);
 
         return heldTokenPayout;
     }
@@ -488,15 +477,37 @@ contract ERC20Position is
             "ERC20Position#close: Cannot close 0 amount"
         );
 
-        assert(tokenAmount <= balance);
         assert(allowedCloseAmount <= requestedAmount);
 
-        balances[closer] = balance.sub(tokenAmount);
-        totalSupply_ = totalSupply_.sub(tokenAmount);
+        burn(closer, tokenAmount);
 
         emit Close(closer, tokenAmount);
 
         return allowedCloseAmount;
+    }
+
+    function burn(
+        address from,
+        uint256 amount
+    )
+        private
+    {
+        assert(from != address(0));
+        totalSupply_ = totalSupply_.sub(amount);
+        balances[from] = balances[from].sub(amount);
+        emit Transfer(from, address(0), amount);
+    }
+
+    function mint(
+        address to,
+        uint256 amount
+    )
+        private
+    {
+        assert(to != address(0));
+        totalSupply_ = totalSupply_.add(amount);
+        balances[to] = balances[to].add(amount);
+        emit Transfer(address(0), to, amount);
     }
 
     // ============ Private Abstract Functions ============
