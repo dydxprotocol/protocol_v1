@@ -19,11 +19,12 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ERC20 } from "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import { TokenInteract } from "../lib/TokenInteract.sol";
 import { LoanOfferingVerifier } from "../margin/interfaces/LoanOfferingVerifier.sol";
 
 
 contract TestSmartContractLender is LoanOfferingVerifier {
+    using TokenInteract for address;
     bool SHOULD_ALLOW;
     address TO_RETURN;
 
@@ -58,6 +59,7 @@ contract TestSmartContractLender is LoanOfferingVerifier {
         external
         returns (bool)
     {
-        return ERC20(token).approve(spender, amount);
+        token.approve(spender, amount);
+        return true;
     }
 }

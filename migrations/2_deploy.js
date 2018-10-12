@@ -19,6 +19,8 @@
 const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
+const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
+const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -57,6 +59,7 @@ const FeeToken = artifacts.require("TokenC");
 // External contracts
 const { networks } = require("../truffle");
 const { assetDataUtils } = require("@0xproject/order-utils");
+let { MatchingMarket } = require("../test/contracts/OasisDex");
 let { ZeroExExchangeV1, ZeroExProxyV1 } = require("../test/contracts/ZeroExV1");
 let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../test/contracts/ZeroExV2");
 
@@ -88,6 +91,13 @@ async function maybeDeployTestTokens(deployer, network) {
       deployer.deploy(TokenB),
       deployer.deploy(FeeToken)
     ]);
+  }
+}
+
+async function maybeDeployOasisDex(deployer, network) {
+  if (isDevNetwork(network)) {
+    parseExternalContracts([MatchingMarket]);
+    await deployer.deploy(MatchingMarket, new BigNumber("18446744073709551615"));
   }
 }
 
@@ -128,6 +138,16 @@ async function maybeDeploy0xV2(deployer, network) {
       await exchange.registerAssetProxy(ZeroExProxyV2.address)
     ]);
   }
+}
+
+function getOasisDexAddress(network) {
+  if (isDevNetwork(network)) {
+    return MatchingMarket.address;
+  } else if (network === 'kovan') {
+    return '0x8cf1cab422a0b6b554077a361f8419cdf122a9f9';
+  }
+
+  throw "OasisDex Not Found";
 }
 
 function getZeroExExchangeV2Address(network) {
@@ -309,6 +329,14 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
+      OasisV1SimpleExchangeWrapper,
+      getOasisDexAddress(network)
+    ),
+    deployer.deploy(
+      OasisV1MatchingExchangeWrapper,
+      getOasisDexAddress(network)
+    ),
+    deployer.deploy(
       ZeroExV1ExchangeWrapper,
       getZeroExExchangeV1Address(network),
       getZeroExProxyV1Address(network),
@@ -394,6 +422,7 @@ async function deploySecondLayer(deployer, network) {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await Promise.all([
+    maybeDeployOasisDex(deployer, network),
     maybeDeploy0xV1(deployer, network),
     maybeDeploy0xV2(deployer, network)
   ]);
