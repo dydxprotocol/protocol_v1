@@ -20,7 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { ISimpleMarket } from "../../../external/Maker/ISimpleMarket.sol";
+import { ISimpleMarketV1 } from "../../../external/Maker/OasisV1/ISimpleMarketV1.sol";
 import { AdvancedTokenInteract } from "../../../lib/AdvancedTokenInteract.sol";
 import { MathHelpers } from "../../../lib/MathHelpers.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
@@ -29,14 +29,14 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title SimpleMarketExchangeWrapper
+ * @title OasisV1SimpleExchangeWrapper
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with Maker's (Oasis exchange) SimpleMarket or MatchingMarket
  * contracts to trade using a specific offer. Since any MatchingMarket is also a SimpleMarket, this
  * ExchangeWrapper can also be used for any MatchingMarket.
  */
-contract SimpleMarketExchangeWrapper is
+contract OasisV1SimpleExchangeWrapper is
     ExchangeWrapper,
     ExchangeReader
 {
@@ -80,7 +80,7 @@ contract SimpleMarketExchangeWrapper is
         external
         returns (uint256)
     {
-        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         uint256 offerId = bytesToOfferId(orderData);
 
         Offer memory offer = getOffer(market, offerId);
@@ -99,7 +99,7 @@ contract SimpleMarketExchangeWrapper is
         // do the exchange
         require(
             market.buy(offerId, makerAmount),
-            "SimpleMarketExchangeWrapper#exchange: Buy failed"
+            "OasisV1SimpleExchangeWrapper#exchange: Buy failed"
         );
 
         // set allowance for the receiver
@@ -118,13 +118,13 @@ contract SimpleMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         Offer memory offer = getOffer(market, bytesToOfferId(orderData));
         verifyOffer(offer, makerToken, takerToken);
 
         require(
             desiredMakerToken <= offer.makerAmount,
-            "SimpleMarketExchangeWrapper#getExchangeCost: Offer is not large enough"
+            "OasisV1SimpleExchangeWrapper#getExchangeCost: Offer is not large enough"
         );
 
         // return takerToken cost of desiredMakerToken
@@ -144,7 +144,7 @@ contract SimpleMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        ISimpleMarket market = ISimpleMarket(SIMPLE_MARKET);
+        ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         Offer memory offer = getOffer(market, bytesToOfferId(orderData));
         verifyOffer(offer, makerToken, takerToken);
 
@@ -182,7 +182,7 @@ contract SimpleMarketExchangeWrapper is
     }
 
     function getOffer(
-        ISimpleMarket market,
+        ISimpleMarketV1 market,
         uint256 offerId
     )
         private
@@ -214,11 +214,11 @@ contract SimpleMarketExchangeWrapper is
     {
         require(
             makerToken == offer.makerToken,
-            "SimpleMarketExchangeWrapper#verifyOffer: offer makerToken does not match"
+            "OasisV1SimpleExchangeWrapper#verifyOffer: offer makerToken does not match"
         );
         require(
             takerToken == offer.takerToken,
-            "SimpleMarketExchangeWrapper#verifyOffer: offer takerToken does not match"
+            "OasisV1SimpleExchangeWrapper#verifyOffer: offer takerToken does not match"
         );
     }
 
@@ -231,7 +231,7 @@ contract SimpleMarketExchangeWrapper is
     {
         require(
             orderData.length == 32,
-            "SimpleMarketExchangeWrapper:#bytesToOfferId: orderData is not the right length"
+            "OasisV1SimpleExchangeWrapper:#bytesToOfferId: orderData is not the right length"
         );
 
         uint256 offerId;

@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const SimpleMarketExchangeWrapper = artifacts.require("SimpleMarketExchangeWrapper");
+const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const TokenC = artifacts.require("TokenC");
@@ -20,7 +20,7 @@ function orderIdToBytes(orderId) {
   return web3Instance.utils.bytesToHex([].concat(toBytes32(orderId)));
 }
 
-contract('SimpleMarketExchangeWrapper', accounts => {
+contract('OasisV1SimpleExchangeWrapper', accounts => {
   let DAI, WETH, TEST, OasisDEX, SMEW;
   const DAI_PER_WETH = 400;
   const MAKER_WETH_AMOUNT = new BigNumber("1e24");
@@ -40,7 +40,7 @@ contract('SimpleMarketExchangeWrapper', accounts => {
       TokenC.new(),
       MatchingMarket.new(OASIS_DEX_CLOSE_TIME)
     ]);
-    SMEW = await SimpleMarketExchangeWrapper.new(OasisDEX.address);
+    SMEW = await OasisV1SimpleExchangeWrapper.new(OasisDEX.address);
 
     // set up makers
     const maker = accounts[9];

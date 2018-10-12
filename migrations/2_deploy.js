@@ -19,8 +19,8 @@
 const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
-const SimpleMarketExchangeWrapper = artifacts.require("SimpleMarketExchangeWrapper");
-const MatchingMarketExchangeWrapper = artifacts.require("MatchingMarketExchangeWrapper");
+const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
+const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -329,11 +329,11 @@ async function deploySecondLayer(deployer, network) {
 
   await Promise.all([
     deployer.deploy(
-      SimpleMarketExchangeWrapper,
+      OasisV1SimpleExchangeWrapper,
       getOasisDexAddress(network)
     ),
     deployer.deploy(
-      MatchingMarketExchangeWrapper,
+      OasisV1MatchingExchangeWrapper,
       getOasisDexAddress(network)
     ),
     deployer.deploy(

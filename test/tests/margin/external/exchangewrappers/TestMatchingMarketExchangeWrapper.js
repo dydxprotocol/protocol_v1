@@ -5,7 +5,7 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const MatchingMarketExchangeWrapper = artifacts.require("MatchingMarketExchangeWrapper");
+const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const { MatchingMarket } = require('../../../../contracts/OasisDex');
@@ -22,7 +22,7 @@ function priceToBytes(num, den) {
   );
 }
 
-contract('MatchingMarketExchangeWrapper', accounts => {
+contract('OasisV1MatchingExchangeWrapper', accounts => {
   let DAI, WETH, OasisDEX, MMEW;
   const DAI_PER_WETH = 400;
   const MAKER_WETH_AMOUNT = new BigNumber("1e24");
@@ -39,7 +39,7 @@ contract('MatchingMarketExchangeWrapper', accounts => {
       TokenB.new(),
       MatchingMarket.new(OASIS_DEX_CLOSE_TIME)
     ]);
-    MMEW = await MatchingMarketExchangeWrapper.new(OasisDEX.address);
+    MMEW = await OasisV1MatchingExchangeWrapper.new(OasisDEX.address);
 
     // set up makers
     const maker = accounts[9];

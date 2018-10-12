@@ -1,10 +1,10 @@
 pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
-import { ISimpleMarket } from "./ISimpleMarket.sol";
+import { ISimpleMarketV1 } from "./ISimpleMarketV1.sol";
 
 
-contract IMatchingMarket is ISimpleMarket {
+contract IMatchingMarketV1 is ISimpleMarketV1 {
 
     // ============ Structs ================
 

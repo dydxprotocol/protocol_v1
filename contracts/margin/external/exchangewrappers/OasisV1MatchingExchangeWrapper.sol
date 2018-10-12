@@ -20,7 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import { IMatchingMarket } from "../../../external/Maker/IMatchingMarket.sol";
+import { IMatchingMarketV1 } from "../../../external/Maker/OasisV1/IMatchingMarketV1.sol";
 import { AdvancedTokenInteract } from "../../../lib/AdvancedTokenInteract.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeReader } from "../../interfaces/ExchangeReader.sol";
@@ -28,12 +28,12 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title MatchingMarketExchangeWrapper
+ * @title OasisV1MatchingExchangeWrapper
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with Maker's MatchingMarket contract (Oasis exchange)
  */
-contract MatchingMarketExchangeWrapper is
+contract OasisV1MatchingExchangeWrapper is
     ExchangeWrapper,
     ExchangeReader
 {
@@ -77,7 +77,7 @@ contract MatchingMarketExchangeWrapper is
         external
         returns (uint256)
     {
-        IMatchingMarket market = IMatchingMarket(MATCHING_MARKET);
+        IMatchingMarketV1 market = IMatchingMarketV1(MATCHING_MARKET);
 
         // make sure that the exchange can take the tokens from this contract
         takerToken.ensureAllowance(address(market), requestedFillAmount);
@@ -109,7 +109,9 @@ contract MatchingMarketExchangeWrapper is
         view
         returns (uint256)
     {
-        uint256 costInTakerToken = IMatchingMarket(MATCHING_MARKET).getPayAmount(
+        IMatchingMarketV1 market = IMatchingMarketV1(MATCHING_MARKET);
+
+        uint256 costInTakerToken = market.getPayAmount(
             takerToken,
             makerToken,
             desiredMakerToken
@@ -132,10 +134,10 @@ contract MatchingMarketExchangeWrapper is
         (uint256 takerAmountRatio, uint256 makerAmountRatio) = getMaximumPrice(orderData);
         require(
             makerAmountRatio > 0,
-            "MatchingMarketExchangeWrapper#getMaxMakerAmount: No maximum price given"
+            "OasisV1MatchingExchangeWrapper#getMaxMakerAmount: No maximum price given"
         );
 
-        IMatchingMarket market = IMatchingMarket(MATCHING_MARKET);
+        IMatchingMarketV1 market = IMatchingMarketV1(MATCHING_MARKET);
         uint256 offerId = market.getBestOffer(makerToken, takerToken);
         uint256 totalMakerAmount = 0;
 
@@ -173,13 +175,13 @@ contract MatchingMarketExchangeWrapper is
             // all amounts have previously been required to fit within 128 bits each
             require(
                 takerAmount.mul(makerAmountRatio) <= makerAmount.mul(takerAmountRatio),
-                "MatchingMarketExchangeWrapper:#requireBelowMaximumPrice: price is too high"
+                "OasisV1MatchingExchangeWrapper:#requireBelowMaximumPrice: price is too high"
             );
         }
     }
 
     function getOffer(
-        IMatchingMarket market,
+        IMatchingMarketV1 market,
         uint256 offerId
     )
         private
@@ -210,38 +212,38 @@ contract MatchingMarketExchangeWrapper is
         pure
         returns (uint256, uint256)
     {
-        uint256 takerAmount = 0;
-        uint256 makerAmount = 0;
+        uint256 takerAmountRatio = 0;
+        uint256 makerAmountRatio = 0;
 
         if (orderData.length > 0) {
             require(
                 orderData.length == 64,
-                "MatchingMarketExchangeWrapper:#getMaximumPrice: orderData is not the right length"
+                "OasisV1MatchingExchangeWrapper:#getMaximumPrice: orderData is not the right length"
             );
 
             /* solium-disable-next-line security/no-inline-assembly */
             assembly {
-                takerAmount := mload(add(orderData, 32))
-                makerAmount := mload(add(orderData, 64))
+                takerAmountRatio := mload(add(orderData, 32))
+                makerAmountRatio := mload(add(orderData, 64))
             }
 
             // require numbers to fit within 128 bits to prevent overflow when checking bounds
             require(
-                uint128(takerAmount) == takerAmount,
-                "MatchingMarketExchangeWrapper:#getMaximumPrice: takerAmount larger than 128 bits"
+                uint128(takerAmountRatio) == takerAmountRatio,
+                "OasisV1MatchingExchangeWrapper:#getMaximumPrice: takerAmountRatio > 128 bits"
             );
             require(
-                uint128(makerAmount) == makerAmount,
-                "MatchingMarketExchangeWrapper:#getMaximumPrice: makerAmount larger than 128 bits"
+                uint128(makerAmountRatio) == makerAmountRatio,
+                "OasisV1MatchingExchangeWrapper:#getMaximumPrice: makerAmountRatio > 128 bits"
             );
 
             // since this is a price ratio, the denominator cannot be zero
             require(
-                makerAmount > 0,
-                "MatchingMarketExchangeWrapper:#getMaximumPrice: makerAmount cannot be zero"
+                makerAmountRatio > 0,
+                "OasisV1MatchingExchangeWrapper:#getMaximumPrice: makerAmountRatio cannot be zero"
             );
         }
 
-        return (takerAmount, makerAmount);
+        return (takerAmountRatio, makerAmountRatio);
     }
 }
