@@ -12,7 +12,7 @@ const ERC20Short = artifacts.require('ERC20Short');
 const BucketLender = artifacts.require('BucketLender');
 const TokenProxy = artifacts.require('TokenProxy');
 const WETH9 = artifacts.require("WETH9");
-const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
+const BucketLenderProxy = artifacts.require("BucketLenderProxy");
 const { ZeroExProxyV1 } = require('../contracts/ZeroExV1');
 
 BigNumber.config({
@@ -113,11 +113,10 @@ async function setupDepositAndPrincipal(
   }
 ) {
   if (type === POSITION_TYPE.SHORT) {
-    const ethWrapper = await EthWrapperForBucketLender.deployed();
+    const bucketLenderProxy = await BucketLenderProxy.deployed();
     await Promise.all([
-      ethWrapper.depositEth(
+      bucketLenderProxy.depositEth(
         bucketLender.address,
-        accounts[7],
         {
           value: new BigNumber('10').times(principal),
           from: accounts[7],
@@ -255,7 +254,7 @@ async function createBucketLender(
       principal.div(new BigNumber('1e18')), // MIN_HELD_TOKEN_DENOMINATOR,
     ],
     [trader], // trusted margin-callers
-    [EthWrapperForBucketLender.address] // trusted withdrawers
+    [BucketLenderProxy.address] // trusted withdrawers
   );
 
   return bucketLender;
