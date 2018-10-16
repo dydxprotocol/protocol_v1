@@ -90,13 +90,13 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         returns (uint256, uint256)
     {
         // withdraw tokens
+        address withdrawnToken = ERC20Position(erc20Position).heldToken();
         uint256 tokensWithdrawn = ERC20Position(erc20Position).withdraw(msg.sender);
         if (tokensWithdrawn == 0) {
             return (0, 0);
         }
 
         // do the exchange
-        address withdrawnToken = ERC20Position(erc20Position).heldToken();
         withdrawnToken.transfer(exchangeWrapper, tokensWithdrawn);
         uint256 tokensReturned = ExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,
@@ -119,5 +119,33 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         }
 
         return (tokensWithdrawn, tokensReturned);
+    }
+
+    /**
+     * Withdraw WETH tokens from a position, unwrap the tokens, and send back to the trader
+     *
+     * @param  erc20Position  The address of the ERC20Position contract to withdraw from
+     * @return                The amount of ETH withdrawn
+     */
+    function withdrawAsEth(
+        address erc20Position
+    )
+        external
+        returns (uint256)
+    {
+        // verify that WETH will be withdrawn
+        address token = ERC20Position(erc20Position).heldToken();
+        require(
+            token == WETH,
+            "ERC20PositionWithdrawer#withdrawAsEth: Withdrawn token must be WETH"
+        );
+
+        // withdraw tokens
+        uint256 amount = ERC20Position(erc20Position).withdraw(msg.sender);
+        assert(WETH9(token).balanceOf(address(this)) >= amount);
+        WETH9(token).withdraw(amount);
+        msg.sender.transfer(amount);
+
+        return amount;
     }
 }
