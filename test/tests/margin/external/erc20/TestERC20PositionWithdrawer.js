@@ -24,6 +24,7 @@ contract('ERC20PositionWithdrawer', accounts => {
   let withdrawer;
   let weth;
   let testExchangeWrapper;
+  const heldTokenAmount = new BigNumber("1e18");
 
   let POSITION = {
     TOKEN_CONTRACT: null,
@@ -118,7 +119,7 @@ contract('ERC20PositionWithdrawer', accounts => {
   }
 
   describe('#withdraw', () => {
-    beforeEach('Set up all tokenized positions, then margin-call, waiting for calltimelimit',
+    beforeEach('Set up closed tokenized position',
       async () => {
         await setUpPositions();
         await setUpTokens();
@@ -126,6 +127,10 @@ contract('ERC20PositionWithdrawer', accounts => {
         await returnTokenstoTrader();
         await marginCallPositions();
         await wait(POSITION.TX.loanOffering.callTimeLimit);
+        // set up closed position
+        const lender = POSITION.TX.loanOffering.payer;
+        await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
+        await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
       }
     );
 
@@ -153,13 +158,7 @@ contract('ERC20PositionWithdrawer', accounts => {
       expect(receipt.result[1]).to.be.bignumber.eq(0);
     });
 
-    it('succeeds for non-weth', async () => {
-      // set up closed position
-      const heldTokenAmount = new BigNumber("1e18");
-      const lender = POSITION.TX.loanOffering.payer;
-      await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
-      await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
-
+    it('succeeds for ERC20 swap', async () => {
       // set up exchange with tokens
       const tokenToReturn = new BigNumber("1e9");
       await owedToken.issueTo(testExchangeWrapper.address, tokenToReturn);
@@ -194,13 +193,7 @@ contract('ERC20PositionWithdrawer', accounts => {
       expect(owedTokenBalance1.minus(owedTokenBalance0)).to.be.bignumber.eq(tokenToReturn);
     });
 
-    it('succeeds for weth', async () => {
-      // set up closed position
-      const heldTokenAmount = new BigNumber("1e18");
-      const lender = POSITION.TX.loanOffering.payer;
-      await heldToken.issueTo(POSITION.TOKEN_CONTRACT.address, heldTokenAmount);
-      await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
-
+    it('succeeds for ERC20 swap to WETH -> ETH', async () => {
       // set up exchange with weth
       const wethToReturn = new BigNumber("1e9");
       await weth.deposit({ value: wethToReturn });
@@ -214,7 +207,7 @@ contract('ERC20PositionWithdrawer', accounts => {
       const receipt = await transact(
         withdrawer.withdraw,
         POSITION.TOKEN_CONTRACT.address,
-        weth.address,
+        ADDRESSES.ZERO,
         testExchangeWrapper.address,
         BYTES.EMPTY,
         { from: POSITION.TX.trader }
@@ -238,6 +231,44 @@ contract('ERC20PositionWithdrawer', accounts => {
       expect(receipt.result[0]).to.be.bignumber.eq(heldTokenAmount);
       expect(receipt.result[1]).to.be.bignumber.eq(wethToReturn);
       expect(ethBalance1.minus(ethBalance0)).to.be.bignumber.eq(wethToReturn.minus(gasFeeInWei));
+    });
+
+    it('succeeds for simple passthrough', async () => {
+
+    });
+
+    it('succeeds for WETH -> ETH', async () => {
+      // check token values beforehand
+      const ethBalance0 = await web3.eth.getBalance(POSITION.TX.trader);
+
+      // do the withdraw
+      const receipt = await transact(
+        withdrawer.withdraw,
+        POSITION.TOKEN_CONTRACT.address,
+        ADDRESSES.ZERO,
+        ADDRESSES.ZERO,
+        BYTES.EMPTY,
+        { from: POSITION.TX.trader }
+      );
+
+      // check token values afterwards
+      const tx = await web3.eth.getTransaction(receipt.tx);
+      const gasUsed = receipt.receipt.gasUsed;
+      const gasPrice = tx.gasPrice;
+      const gasFeeInWei = gasPrice.times(gasUsed);
+      const [
+        ethBalance1,
+        marginTokenBalance1
+      ] = await Promise.all([
+        web3.eth.getBalance(POSITION.TX.trader),
+        POSITION.TOKEN_CONTRACT.balanceOf.call(POSITION.TX.trader)
+      ]);
+
+      // verify the withdraw
+      expect(marginTokenBalance1).to.be.bignumber.eq(0);
+      expect(receipt.result[0]).to.be.bignumber.eq(heldTokenAmount);
+      expect(receipt.result[1]).to.be.bignumber.eq(heldTokenAmount);
+      expect(ethBalance1.minus(ethBalance0)).to.be.bignumber.eq(heldTokenAmount.minus(gasFeeInWei));
     });
   });
 });

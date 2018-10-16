@@ -40,6 +40,8 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
 
     address public WETH;
 
+    address constant public ETH = address(0);
+
     // ============ Constructor ============
 
     constructor(
@@ -62,7 +64,7 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
     {
         require( // coverage-disable-line
             msg.sender == WETH,
-            "PayableMarginMinter#fallback: Cannot recieve ETH directly unless unwrapping WETH"
+            "ERC20PositionWithdrawer#fallback: Cannot recieve ETH directly unless unwrapping WETH"
         );
     }
 
@@ -105,7 +107,7 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
             tokensReturned = doPassThrough(
                 withdrawnToken,
                 tokensWithdrawn,
-                returnedtoken,
+                returnedToken
             );
 
         // do exchange if exchangeWrapper
@@ -113,9 +115,9 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
             tokensReturned = doExchange(
                 withdrawnToken,
                 tokensWithdrawn,
-                returnedtoken,
+                returnedToken,
                 exchangeWrapper,
-                orderData,
+                orderData
             );
         }
 
@@ -125,7 +127,7 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
     // ============ Private Functions ============
 
     /**
-     * [doPassThrough description]
+     * Transfer tokens to the withdrawer without exchanging them on an exchange
      *
      * @param  withdrawnToken   The address of the token withdrawn from the ERC20Position
      * @param  tokensWithdrawn  The number of withdrawnTokens withdrawn from the ERC20Position
@@ -135,27 +137,21 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
     function doPassThrough(
         address withdrawnToken,
         uint256 tokensWithdrawn,
-        address returnedToken,
+        address returnedToken
     )
         internal
         returns (uint256)
     {
-        // payout in ETH
-        if (returnedToken == address(0)) {
-            address weth = WETH;
-            require (
-                withdrawnToken == weth,
-                "TODO"
-            );
-            WETH9(weth).withdraw(tokensWithdrawn);
-            msg.sender.transfer(tokensWithdrawn);
+        require (
+            withdrawnToken == trueAddress(returnedToken),
+            "ERC20PositionWithdrawer#doPassThrough: Token mismatch"
+        );
 
-        // payout in the same token
+        if (returnedToken == ETH) {
+            // before returning, convert WETH to ETH
+            unwrapAndSendWeth(tokensWithdrawn);
         } else {
-            require(
-                withdrawnToken == returnedToken,
-                "TODO"
-            );
+            // payout the withdrawer using the same token
             withdrawnToken.transfer(msg.sender, tokensWithdrawn);
         }
 
@@ -163,7 +159,8 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
     }
 
     /**
-     * [doExchange description]
+     * Exchange withdrawn tokens by first exchanging them on an exchange and then sending the result
+     * to the withdrawer.
      *
      * @param  withdrawnToken   The address of the token withdrawn from the ERC20Position
      * @param  tokensWithdrawn  The number of withdrawnTokens withdrawn from the ERC20Position
@@ -182,30 +179,63 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         internal
         returns (uint256)
     {
+        require (
+            withdrawnToken != trueAddress(returnedToken),
+            "ERC20PositionWithdrawer#doExchange: Cannot exchange token for the same token"
+        );
+
         // do the exchange
         withdrawnToken.transfer(exchangeWrapper, tokensWithdrawn);
-        address weth = WETH;
-        address makerToken = (returnedToken == address(0)) ? weth : returnedToken;
         uint256 tokensReturned = ExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,
             address(this),
-            makerToken,
+            trueAddress(returnedToken),
             withdrawnToken,
             tokensWithdrawn,
             orderData
         );
 
         // return returnedToken back to msg.sender
-        if (returnedToken == address(0)) {
+        if (returnedToken == ETH) {
             // take the WETH back, withdraw into ETH, and send to the msg.sender
-            weth.transferFrom(exchangeWrapper, address(this), tokensReturned);
-            WETH9(weth).withdraw(tokensReturned);
-            msg.sender.transfer(tokensReturned);
+            WETH.transferFrom(exchangeWrapper, address(this), tokensReturned);
+            unwrapAndSendWeth(tokensReturned);
         } else {
             // send the tokens directly to the msg.sender
             returnedToken.transferFrom(exchangeWrapper, msg.sender, tokensReturned);
         }
 
         return tokensReturned;
+    }
+
+    /**
+     * Unwraps WETH and sends the result ETH to msg.sender
+     *
+     * @param  weth    The address of the WETH ERC20 token contract
+     * @param  amount  The amount of WETH to unwrap and send
+     */
+    function unwrapAndSendWeth(
+        uint256 amount
+    )
+        internal
+    {
+        WETH9(WETH).withdraw(amount);
+        msg.sender.transfer(amount);
+    }
+
+    /**
+     * Returns WETH if ETH is passed in, otherwise returns the input.
+     *
+     * @param  token  Address of an ERC20 Token or zero
+     * @return        The input address, or WETH if the input was zero
+     */
+    function trueAddress(
+        address token
+    )
+        internal
+        pure
+        returns (address)
+    {
+        return (token == ETH) ? WETH : token;
     }
 }
