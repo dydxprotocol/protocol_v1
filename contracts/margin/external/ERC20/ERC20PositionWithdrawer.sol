@@ -21,7 +21,6 @@ pragma experimental "v0.5.0";
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { ERC20Position } from "./ERC20Position.sol";
-import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
@@ -32,7 +31,7 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
  *
  * Proxy contract to withdraw from an ERC20Position and exchange the withdrawn tokens on a DEX
  */
-contract ERC20PositionWithdrawer is ReentrancyGuard
+contract ERC20PositionWithdrawer
 {
     using TokenInteract for address;
 
@@ -86,17 +85,16 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         bytes orderData
     )
         external
-        nonReentrant
         returns (uint256, uint256)
     {
         // withdraw tokens
-        address withdrawnToken = ERC20Position(erc20Position).heldToken();
         uint256 tokensWithdrawn = ERC20Position(erc20Position).withdraw(msg.sender);
         if (tokensWithdrawn == 0) {
             return (0, 0);
         }
 
         // do the exchange
+        address withdrawnToken = ERC20Position(erc20Position).heldToken();
         withdrawnToken.transfer(exchangeWrapper, tokensWithdrawn);
         uint256 tokensReturned = ExchangeWrapper(exchangeWrapper).exchange(
             msg.sender,
@@ -142,7 +140,6 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
 
         // withdraw tokens
         uint256 amount = ERC20Position(erc20Position).withdraw(msg.sender);
-        assert(WETH9(token).balanceOf(address(this)) >= amount);
         WETH9(token).withdraw(amount);
         msg.sender.transfer(amount);
 
