@@ -43,6 +43,7 @@ export { default as ERC20 }                         from '../../build/contracts/
 export { default as WETH9 }                         from '../../build/contracts/WETH9.json';
 export { default as PayableMarginMinter }           from '../../build/contracts/PayableMarginMinter.json';
 export { default as BucketLenderFactory }           from '../../build/contracts/BucketLenderFactory.json';
+export { default as EthWrapperForBucketLender }     from '../../build/contracts/EthWrapperForBucketLender.json';
 export { default as BucketLenderProxy }             from '../../build/contracts/BucketLenderProxy.json';
 export { default as BucketLender }                  from '../../build/contracts/BucketLender.json';
 export { default as BucketLenderWithRecoveryDelay } from '../../build/contracts/BucketLenderWithRecoveryDelay.json';
