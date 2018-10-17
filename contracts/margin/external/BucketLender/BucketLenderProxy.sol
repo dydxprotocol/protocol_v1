@@ -70,17 +70,21 @@ contract BucketLenderProxy
     /**
      * Send ETH directly to this contract, convert it to WETH, and sent it to a BucketLender
      *
-     * @param  bucketLender  The address of the BucketLender contract to deposit into
-     * @return               The bucket number that was deposited into
+     * @param  bucketLender         The address of the BucketLender contract to deposit into
+     * @param  optionalBeneficiary  The address that will have the rights to withdraw the deposit.
+     *                              If zero, then the msg.sender will retain the rights.
+     * @return                      The bucket number that was deposited into
      */
     function depositEth(
-        address bucketLender
+        address bucketLender,
+        address optionalBeneficiary
     )
         external
         payable
         returns (uint256)
     {
         address weth = WETH;
+        address beneficiary = getBeneficiary(optionalBeneficiary);
 
         require(
             weth == BucketLender(bucketLender).OWED_TOKEN(),
@@ -91,6 +95,7 @@ contract BucketLenderProxy
 
         return depositInternal(
             bucketLender,
+            beneficiary,
             weth,
             msg.value
         );
@@ -99,22 +104,27 @@ contract BucketLenderProxy
     /**
      * Deposits tokens from msg.sender into a BucketLender
      *
-     * @param  bucketLender  The address of the BucketLender contract to deposit into
-     * @param  amount        The amount of token to deposit
-     * @return               The bucket number that was deposited into
+     * @param  bucketLender         The address of the BucketLender contract to deposit into
+     * @param  optionalBeneficiary  The address that will have the rights to withdraw the deposit.
+     *                              If zero, then the msg.sender will retain the rights.
+     * @param  amount               The amount of token to deposit
+     * @return                      The bucket number that was deposited into
      */
     function deposit(
         address bucketLender,
+        address optionalBeneficiary,
         uint256 amount
     )
         external
         returns (uint256)
     {
+        address beneficiary = getBeneficiary(optionalBeneficiary);
         address token = BucketLender(bucketLender).OWED_TOKEN();
         token.transferFrom(msg.sender, address(this), amount);
 
         return depositInternal(
             bucketLender,
+            beneficiary,
             token,
             amount
         );
@@ -159,24 +169,28 @@ contract BucketLenderProxy
     /**
      * Reinvest tokens by withdrawing them from one BucketLender and depositing them into another
      *
-     * @param  withdrawFrom  The address of the BucketLender contract to withdraw from
-     * @param  depositInto   The address of the BucketLender contract to deposit into
-     * @param  buckets       The buckets to withdraw from
-     * @param  maxWeights    The maximum weight to withdraw from each bucket
-     * @return               Values corresponding to:
-     *                         [0]  = The bucket number that was deposited into
-     *                         [1]  = The number of owedTokens reinvested
-     *                         [2]  = The number of heldTokens withdrawn
+     * @param  withdrawFrom         The address of the BucketLender contract to withdraw from
+     * @param  depositInto          The address of the BucketLender contract to deposit into
+     * @param  optionalBeneficiary  The address that will have the rights to withdraw the deposit.
+     *                              If zero, then the msg.sender will retain the rights.
+     * @param  buckets              The buckets to withdraw from
+     * @param  maxWeights           The maximum weight to withdraw from each bucket
+     * @return                      Values corresponding to:
+     *                                  [0]  = The bucket number that was deposited into
+     *                                  [1]  = The number of owedTokens reinvested
+     *                                  [2]  = The number of heldTokens withdrawn
      */
     function rollover(
         address withdrawFrom,
         address depositInto,
+        address optionalBeneficiary,
         uint256[] buckets,
         uint256[] maxWeights
     )
         external
         returns (uint256, uint256, uint256)
     {
+        address beneficiary = getBeneficiary(optionalBeneficiary);
         address owedToken = BucketLender(depositInto).OWED_TOKEN();
 
         // the owedTokens of the two BucketLenders must be the same
@@ -198,6 +212,7 @@ contract BucketLenderProxy
         // reinvest any owedToken into the second BucketLender
         uint256 bucket = depositInternal(
             depositInto,
+            beneficiary,
             owedToken,
             owedTokenAmount
         );
@@ -213,6 +228,7 @@ contract BucketLenderProxy
 
     function depositInternal(
         address bucketLender,
+        address beneficiary,
         address token,
         uint256 amount
     )
@@ -220,7 +236,7 @@ contract BucketLenderProxy
         returns (uint256)
     {
         token.ensureAllowance(bucketLender, amount);
-        return BucketLender(bucketLender).deposit(msg.sender, amount);
+        return BucketLender(bucketLender).deposit(beneficiary, amount);
     }
 
     function transferInternal(
@@ -234,10 +250,23 @@ contract BucketLenderProxy
         if (token == weth) {
             if (amount != 0) {
                 WETH9(weth).withdraw(amount);
-                msg.sender.transfer(amount);
+                recipient.transfer(amount);
             }
         } else {
             token.transfer(recipient, amount);
         }
+    }
+
+    function getBeneficiary(
+        address optionalBeneficiary
+    )
+        private
+        view
+        returns (address)
+    {
+        if (optionalBeneficiary == address(0)) {
+            return msg.sender;
+        }
+        return optionalBeneficiary;
     }
 }

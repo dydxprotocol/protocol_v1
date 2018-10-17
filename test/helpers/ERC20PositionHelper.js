@@ -112,14 +112,16 @@ async function setupDepositAndPrincipal(
     principal,
   }
 ) {
+  const depositor = accounts[7];
   if (type === POSITION_TYPE.SHORT) {
     const bucketLenderProxy = await BucketLenderProxy.deployed();
     await Promise.all([
       bucketLenderProxy.depositEth(
         bucketLender.address,
+        depositor,
         {
           value: new BigNumber('10').times(principal),
-          from: accounts[7],
+          from: depositor,
         },
       ),
       issueAndSetAllowance(heldToken, trader, deposit, TokenProxy.address)
@@ -131,7 +133,7 @@ async function setupDepositAndPrincipal(
       heldToken.approve(TokenProxy.address, deposit, { from: trader }),
       issueAndSetAllowance(
         owedToken,
-        accounts[7],
+        depositor,
         new BigNumber('10').times(principal),
         bucketLender.address,
       ),
@@ -139,7 +141,7 @@ async function setupDepositAndPrincipal(
     await bucketLender.deposit(
       accounts[7],
       new BigNumber('10').times(principal),
-      { from: accounts[7] },
+      { from: depositor },
     );
     return;
   }
