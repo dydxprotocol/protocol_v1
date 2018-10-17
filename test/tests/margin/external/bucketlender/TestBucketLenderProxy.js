@@ -39,9 +39,10 @@ const BUCKET_TIME = new BigNumber(60 * 60 * 24);
 const PRINCIPAL = new BigNumber('1e18');
 const DEPOSIT = PRINCIPAL.times(2);
 
-contract('lenderProxyForBucketLender', accounts => {
+contract('BucketLenderProxy', accounts => {
   let opener = accounts[9];
   let sender = accounts[8];
+  let rando = accounts[7];
 
   // ============ Before ============
 
@@ -128,6 +129,7 @@ contract('lenderProxyForBucketLender', accounts => {
     it('fails for zero amount', async () => {
       await expectThrow(lenderProxy.depositEth(
         bucketLender1.address,
+        sender,
         { from: sender, value: BIGNUMBERS.ZERO }
       ));
     });
@@ -135,9 +137,11 @@ contract('lenderProxyForBucketLender', accounts => {
     it('fails for bad bucketLender address', async () => {
       await expectThrow(lenderProxy.depositEth(
         Margin.address,
+        sender,
         { from: sender, value: value }
       ));
       await expectThrow(lenderProxy.depositEth(
+        sender,
         sender,
         { from: sender, value: value }
       ));
@@ -146,6 +150,7 @@ contract('lenderProxyForBucketLender', accounts => {
     it('fails for bucketLender that doesnt take WETH', async () => {
       await expectThrow(lenderProxy.depositEth(
         bucketLender3.address,
+        sender,
         { from: sender, value: value }
       ));
     });
@@ -153,29 +158,45 @@ contract('lenderProxyForBucketLender', accounts => {
     it('succeeds', async () => {
       let result;
 
+      // deposit to self beneficiary
       result = await transact(
         lenderProxy.depositEth,
         bucketLender1.address,
+        sender,
         { from: sender, value: value }
       );
       expect(result.result).to.be.bignumber.eq(0); // expect bucket 0
 
+      // deposit to zero beneficiary
       result = await transact(
         lenderProxy.depositEth,
         bucketLender1.address,
+        ADDRESSES.ZERO,
+        { from: sender, value: value }
+      );
+      expect(result.result).to.be.bignumber.eq(0); // expect bucket 0
+
+      // deposit to other beneficiary
+      result = await transact(
+        lenderProxy.depositEth,
+        bucketLender1.address,
+        rando,
         { from: sender, value: value }
       );
       expect(result.result).to.be.bignumber.eq(0); // expect bucket 0
 
       const [
         weight1,
-        weight2
+        weight2,
+        weight3,
       ] = await Promise.all([
         bucketLender1.weightForBucket.call(0),
         bucketLender1.weightForBucketForAccount.call(0, sender),
+        bucketLender1.weightForBucketForAccount.call(0, rando),
       ]);
-      expect(weight1).to.be.bignumber.eq(value.times(2));
+      expect(weight1).to.be.bignumber.eq(value.times(3));
       expect(weight2).to.be.bignumber.eq(value.times(2));
+      expect(weight3).to.be.bignumber.eq(value);
     });
   });
 
@@ -184,6 +205,7 @@ contract('lenderProxyForBucketLender', accounts => {
       await issueAndSetAllowance(testToken, sender, value, lenderProxy.address);
       await expectThrow(lenderProxy.deposit(
         Margin.address,
+        sender,
         value,
         { from: sender }
       ));
@@ -192,6 +214,7 @@ contract('lenderProxyForBucketLender', accounts => {
     it('fails for zero amount', async () => {
       await expectThrow(lenderProxy.deposit(
         bucketLender3.address,
+        sender,
         new BigNumber(0),
         { from: sender }
       ));
@@ -204,6 +227,7 @@ contract('lenderProxyForBucketLender', accounts => {
       result = await transact(
         lenderProxy.deposit,
         bucketLender3.address,
+        sender,
         value,
         { from: sender }
       );
@@ -212,6 +236,7 @@ contract('lenderProxyForBucketLender', accounts => {
       result = await transact(
         lenderProxy.deposit,
         bucketLender3.address,
+        sender,
         value,
         { from: sender }
       );
@@ -234,6 +259,7 @@ contract('lenderProxyForBucketLender', accounts => {
       const receipt = await transact(
         lenderProxy.depositEth,
         bucketLender1.address,
+        sender,
         { from: sender, value: value }
       );
       expect(receipt.result).to.be.bignumber.eq(0);
@@ -244,6 +270,7 @@ contract('lenderProxyForBucketLender', accounts => {
         lenderProxy.rollover(
           Margin.address,
           bucketLender2.address,
+          sender,
           [0],
           [BIGNUMBERS.MAX_UINT256],
           { from: sender }
@@ -256,6 +283,7 @@ contract('lenderProxyForBucketLender', accounts => {
         lenderProxy.rollover(
           bucketLender1.address,
           Margin.address,
+          sender,
           [0],
           [BIGNUMBERS.MAX_UINT256],
           { from: sender }
@@ -268,6 +296,7 @@ contract('lenderProxyForBucketLender', accounts => {
         lenderProxy.rollover(
           bucketLender1.address,
           bucketLender3.address,
+          sender,
           [0],
           [BIGNUMBERS.MAX_UINT256],
           { from: sender }
@@ -280,6 +309,7 @@ contract('lenderProxyForBucketLender', accounts => {
         lenderProxy.rollover(
           bucketLender1.address,
           bucketLender2.address,
+          sender,
           [1],
           [BIGNUMBERS.MAX_UINT256],
           { from: sender }
@@ -288,19 +318,68 @@ contract('lenderProxyForBucketLender', accounts => {
     });
 
     it('succeeds', async () => {
-      const expectedOwedTokenAmount = await bucketLender1.weightForBucketForAccount.call(0, sender);
-      const receipt = await transact(
+      let expectedOwedTokenAmount = await bucketLender1.weightForBucketForAccount.call(0, sender);
+      expectedOwedTokenAmount = expectedOwedTokenAmount.div(4);
+      let receipt, bucket, owedTokenAmount, heldTokenAmount;
+
+      // rollover for own address
+      receipt = await transact(
         lenderProxy.rollover,
         bucketLender1.address,
         bucketLender2.address,
+        sender,
         [0],
-        [BIGNUMBERS.MAX_UINT256],
+        [value.div(4)],
         { from: sender }
       );
-      const [bucket, owedTokenAmount, heldTokenAmount] = receipt.result;
+      [bucket, owedTokenAmount, heldTokenAmount] = receipt.result;
       expect(bucket).to.be.bignumber.eq(0);
       expect(owedTokenAmount).to.be.bignumber.eq(expectedOwedTokenAmount);
       expect(heldTokenAmount).to.be.bignumber.eq(0);
+
+      // rollover for address zero
+      receipt = await transact(
+        lenderProxy.rollover,
+        bucketLender1.address,
+        bucketLender2.address,
+        ADDRESSES.ZERO,
+        [0],
+        [value.div(4)],
+        { from: sender }
+      );
+      [bucket, owedTokenAmount, heldTokenAmount] = receipt.result;
+      expect(bucket).to.be.bignumber.eq(0);
+      expect(owedTokenAmount).to.be.bignumber.eq(expectedOwedTokenAmount);
+      expect(heldTokenAmount).to.be.bignumber.eq(0);
+
+      // rollover for rando
+      receipt = await transact(
+        lenderProxy.rollover,
+        bucketLender1.address,
+        bucketLender2.address,
+        rando,
+        [0],
+        [value.div(4)],
+        { from: sender }
+      );
+      [bucket, owedTokenAmount, heldTokenAmount] = receipt.result;
+      expect(bucket).to.be.bignumber.eq(0);
+      expect(owedTokenAmount).to.be.bignumber.eq(expectedOwedTokenAmount);
+      expect(heldTokenAmount).to.be.bignumber.eq(0);
+
+      // expect final result
+      const [
+        weight1,
+        weight2,
+        weight3
+      ] = await Promise.all([
+        bucketLender2.weightForBucket.call(0),
+        bucketLender2.weightForBucketForAccount.call(0, sender),
+        bucketLender2.weightForBucketForAccount.call(0, rando),
+      ]);
+      expect(weight1).to.be.bignumber.eq(value.times(3).div(4));
+      expect(weight2).to.be.bignumber.eq(value.div(2));
+      expect(weight3).to.be.bignumber.eq(value.div(4));
     });
   });
 
@@ -308,6 +387,7 @@ contract('lenderProxyForBucketLender', accounts => {
     it('succeeds when withdrawing just eth', async () => {
       await lenderProxy.depositEth(
         bucketLender1.address,
+        sender,
         { from: sender, value: value }
       );
 
@@ -362,6 +442,7 @@ contract('lenderProxyForBucketLender', accounts => {
       await wait(10);
       await lenderProxy.depositEth(
         bucketLender1.address,
+        sender,
         { from: sender, value: value }
       );
 
