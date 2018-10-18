@@ -47,6 +47,7 @@ const TransferImpl = artifacts.require("TransferImpl");
 const InterestImpl = artifacts.require("InterestImpl");
 const PayableMarginMinter = artifacts.require("PayableMarginMinter");
 const BucketLenderFactory = artifacts.require("BucketLenderFactory");
+const EthWrapperForBucketLender = artifacts.require("EthWrapperForBucketLender");
 const BucketLenderProxy = artifacts.require("BucketLenderProxy");
 const AuctionProxy = artifacts.require("AuctionProxy");
 const WETH9 = artifacts.require("WETH9");
@@ -394,6 +395,10 @@ async function deploySecondLayer(deployer, network) {
     deployer.deploy(
       BucketLenderFactory,
       Margin.address
+    ),
+    deployer.deploy(
+      EthWrapperForBucketLender,
+      getWethAddress(network)
     ),
     deployer.deploy(
       BucketLenderProxy,
