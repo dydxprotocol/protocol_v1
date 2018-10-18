@@ -21,18 +21,18 @@ pragma experimental "v0.5.0";
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { ERC20Position } from "./ERC20Position.sol";
-import { ReentrancyGuard } from "../../../lib/ReentrancyGuard.sol";
 import { TokenInteract } from "../../../lib/TokenInteract.sol";
 import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title ERC20PositionWithdrawer
+ * @title ERC20PositionWithdrawerV2
  * @author dYdX
  *
- * Proxy contract to withdraw from an ERC20Position and exchange the withdrawn tokens on a DEX
+ * Proxy contract to withdraw from an ERC20Position and exchange the withdrawn tokens on a DEX, or
+ * to unwrap WETH to ETH.
  */
-contract ERC20PositionWithdrawer is ReentrancyGuard
+contract ERC20PositionWithdrawerV2
 {
     using TokenInteract for address;
 
@@ -86,7 +86,6 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         bytes orderData
     )
         external
-        nonReentrant
         returns (uint256, uint256)
     {
         // withdraw tokens
@@ -119,5 +118,32 @@ contract ERC20PositionWithdrawer is ReentrancyGuard
         }
 
         return (tokensWithdrawn, tokensReturned);
+    }
+
+    /**
+     * Withdraw WETH tokens from a position, unwrap the tokens, and send back to the trader
+     *
+     * @param  erc20Position  The address of the ERC20Position contract to withdraw from
+     * @return                The amount of ETH withdrawn
+     */
+    function withdrawAsEth(
+        address erc20Position
+    )
+        external
+        returns (uint256)
+    {
+        // verify that WETH will be withdrawn
+        address token = ERC20Position(erc20Position).heldToken();
+        require(
+            token == WETH,
+            "ERC20PositionWithdrawer#withdrawAsEth: Withdrawn token must be WETH"
+        );
+
+        // withdraw tokens
+        uint256 amount = ERC20Position(erc20Position).withdraw(msg.sender);
+        WETH9(token).withdraw(amount);
+        msg.sender.transfer(amount);
+
+        return amount;
     }
 }

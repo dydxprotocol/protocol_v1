@@ -28,6 +28,7 @@ const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
 const SharedLoanFactory = artifacts.require("SharedLoanFactory");
 const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
+const ERC20PositionWithdrawerV2 = artifacts.require("ERC20PositionWithdrawerV2");
 const ERC20LongFactory = artifacts.require("ERC20LongFactory");
 const ERC20ShortFactory = artifacts.require("ERC20ShortFactory");
 const ERC721MarginPosition = artifacts.require("ERC721MarginPosition");
@@ -359,6 +360,10 @@ async function deploySecondLayer(deployer, network) {
       getWethAddress(network)
     ),
     deployer.deploy(
+      ERC20PositionWithdrawerV2,
+      getWethAddress(network)
+    ),
+    deployer.deploy(
       ERC721MarginPosition,
       Margin.address
     ),
@@ -379,13 +384,13 @@ async function deploySecondLayer(deployer, network) {
       ERC20ShortFactory,
       Margin.address,
       [DutchAuctionCloser.address],
-      [ERC20PositionWithdrawer.address]
+      [ERC20PositionWithdrawerV2.address]
     ),
     deployer.deploy(
       ERC20LongFactory,
       Margin.address,
       [DutchAuctionCloser.address],
-      [ERC20PositionWithdrawer.address]
+      [ERC20PositionWithdrawerV2.address]
     ),
     deployer.deploy(
       PayableMarginMinter,
