@@ -19,6 +19,7 @@
 - PayableMarginMinter:             [0x059550a1ca3c46a2adb803e9e3ea4585a34f004a](https://etherscan.io/address/0x059550a1ca3c46a2adb803e9e3ea4585a34f004a)
 - BucketLenderFactory:             [0xfbc08a66f8bac391f21472d9625c1092ff41cc04](https://etherscan.io/address/0xfbc08a66f8bac391f21472d9625c1092ff41cc04)
 - EthWrapperForBucketLender:       [0x61fa58d7ef40d6f6853740330b62ccad34f8bc04](https://etherscan.io/address/0x61fa58d7ef40d6f6853740330b62ccad34f8bc04)
+- BucketLenderProxy:               N/A
 - ERC20PositionWithdrawer:         [0x5be497a12e92b8deb68da9d0ed9943f8dc3067ca](https://etherscan.io/address/0x5be497a12e92b8deb68da9d0ed9943f8dc3067ca)
 
 ### Impl
@@ -55,6 +56,7 @@
 - PayableMarginMinter:             [0x44ca523305b8ae5839ddeb96b906ef56c88c3dd8](https://kovan.etherscan.io/address/0x44ca523305b8ae5839ddeb96b906ef56c88c3dd8)
 - BucketLenderFactory:             [0xdd7f8b876dd5100281d9996daa49810d86b86af0](https://kovan.etherscan.io/address/0xdd7f8b876dd5100281d9996daa49810d86b86af0)
 - EthWrapperForBucketLender:       [0xa054a92bd5163dedb6f8020db06562bf158295d9](https://kovan.etherscan.io/address/0xa054a92bd5163dedb6f8020db06562bf158295d9)
+- BucketLenderProxy:               [0xa054a92bd5163dedb6f8020db06562bf158295d9](https://kovan.etherscan.io/address/0x7872c58b1fb252d000aa8c27722e3f159eac6e1a)
 - ERC20PositionWithdrawer:         [0x7f5b53fec9b26fb1145a5c48e42da021d0f1c5eb](https://kovan.etherscan.io/address/0x7f5b53fec9b26fb1145a5c48e42da021d0f1c5eb)
 
 ### Impl

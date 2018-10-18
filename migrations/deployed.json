@@ -219,5 +219,12 @@
             "address": "0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d",
             "transactionHash": "0x8a906360b1ce6be4cf29c24e58da0e7a0c2eb37b00191726f1f89c2e3b786571"
         }
+    },
+    "BucketLenderProxy": {
+        "42": {
+            "links": {},
+            "address": "0x7872c58b1fb252d000aa8c27722e3f159eac6e1a",
+            "transactionHash": "0xced286e11b86d5e92d83e7e49a5f54c1957a0220a832eba297785f02dbeeb667"
+        }
     }
 }
