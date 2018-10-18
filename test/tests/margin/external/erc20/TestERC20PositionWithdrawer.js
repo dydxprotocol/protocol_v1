@@ -5,6 +5,7 @@ chai.use(require('chai-bignumber')());
 const Margin = artifacts.require("Margin");
 const ERC20Short = artifacts.require("ERC20Short");
 const ERC20PositionWithdrawer = artifacts.require("ERC20PositionWithdrawer");
+const TestERC20Position = artifacts.require("TestERC20Position");
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const TestExchangeWrapper = artifacts.require("TestExchangeWrapper");
 const HeldToken = artifacts.require("TokenA");
@@ -14,6 +15,7 @@ const { ADDRESSES, BYTES } = require('../../../../helpers/Constants');
 const { doOpenPosition, callClosePositionDirectly } = require('../../../../helpers/MarginHelper');
 const { transact } = require('../../../../helpers/ContractHelper');
 const { wait } = require('@digix/tempo')(web3);
+const { expectThrow } = require('../../../../helpers/ExpectHelper');
 const BigNumber = require('bignumber.js');
 
 contract('ERC20PositionWithdrawer', accounts => {
@@ -24,6 +26,7 @@ contract('ERC20PositionWithdrawer', accounts => {
   let withdrawer;
   let weth;
   let testExchangeWrapper;
+  let testErc20Position;
 
   let POSITION = {
     TOKEN_CONTRACT: null,
@@ -37,6 +40,7 @@ contract('ERC20PositionWithdrawer', accounts => {
 
   let pepper = 0;
   const INITIAL_TOKEN_HOLDER = accounts[9];
+  const RANDO = accounts[8];
 
   before('Set up TokenProxy, Margin accounts', async () => {
     [
@@ -46,7 +50,8 @@ contract('ERC20PositionWithdrawer', accounts => {
       openDirectlyExchangeWrapper,
       withdrawer,
       weth,
-      testExchangeWrapper
+      testExchangeWrapper,
+      testErc20Position
     ] = await Promise.all([
       Margin.deployed(),
       OwedToken.deployed(),
@@ -55,6 +60,7 @@ contract('ERC20PositionWithdrawer', accounts => {
       ERC20PositionWithdrawer.deployed(),
       WETH9.deployed(),
       TestExchangeWrapper.new(),
+      TestERC20Position.new(),
     ]);
   });
 
@@ -140,14 +146,13 @@ contract('ERC20PositionWithdrawer', accounts => {
       await dydxMargin.forceRecoverCollateral(POSITION.ID, lender, { from: lender });
 
       // rando can't withdraw
-      const rando = accounts[9];
       const receipt = await transact(
         withdrawer.withdraw,
         POSITION.TOKEN_CONTRACT.address,
         owedToken.address,
         openDirectlyExchangeWrapper.address,
         BYTES.EMPTY,
-        { from: rando }
+        { from: RANDO }
       );
       expect(receipt.result[0]).to.be.bignumber.eq(0);
       expect(receipt.result[1]).to.be.bignumber.eq(0);
@@ -238,6 +243,70 @@ contract('ERC20PositionWithdrawer', accounts => {
       expect(receipt.result[0]).to.be.bignumber.eq(heldTokenAmount);
       expect(receipt.result[1]).to.be.bignumber.eq(wethToReturn);
       expect(ethBalance1.minus(ethBalance0)).to.be.bignumber.eq(wethToReturn.minus(gasFeeInWei));
+    });
+  });
+
+  describe('#withdrawToEth', () => {
+    it('fails for non-WETH', async () => {
+      // set up mock position
+      const amount = new BigNumber("1e18");
+      await Promise.all([
+        testErc20Position.setter(owedToken.address, amount),
+        owedToken.issueTo(testErc20Position.address, amount),
+      ]);
+
+      // do the withdraw
+      await expectThrow(
+        withdrawer.withdrawAsEth(
+          testErc20Position.address,
+          { from: POSITION.TX.trader }
+        )
+      );
+    });
+
+    it('returns zero for no tokens', async () => {
+      // set up mock position
+      await testErc20Position.setter(weth.address, 0)
+
+      // do the withdraw
+      const receipt = await transact(
+        withdrawer.withdrawAsEth,
+        testErc20Position.address,
+        { from: RANDO },
+      );
+
+      expect(receipt.result).to.be.bignumber.eq(0);
+    });
+
+    it('succeeds', async () => {
+      // set up mock position
+      const amount = new BigNumber("1e18");
+      await Promise.all([
+        testErc20Position.setter(weth.address, amount),
+        weth.deposit({ from: RANDO, value: amount }),
+      ]);
+      await weth.transfer(testErc20Position.address, amount, { from: RANDO });
+
+      // get eth balance before
+      const ethBalance0 = await web3.eth.getBalance(POSITION.TX.trader);
+
+      // do the withdraw
+      const receipt = await transact(
+        withdrawer.withdrawAsEth,
+        testErc20Position.address,
+        { from: POSITION.TX.trader }
+      );
+
+      // check token values afterwards
+      const tx = await web3.eth.getTransaction(receipt.tx);
+      const gasUsed = receipt.receipt.gasUsed;
+      const gasPrice = tx.gasPrice;
+      const gasFeeInWei = gasPrice.times(gasUsed);
+      const ethBalance1 = await web3.eth.getBalance(POSITION.TX.trader);
+
+      // verify the withdraw
+      expect(receipt.result).to.be.bignumber.eq(amount);
+      expect(ethBalance1.minus(ethBalance0)).to.be.bignumber.eq(amount.minus(gasFeeInWei));
     });
   });
 });
