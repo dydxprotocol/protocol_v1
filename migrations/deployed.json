@@ -91,25 +91,25 @@
     "ERC20ShortFactory": {
         "1": {
             "links": {},
-            "address": "0xc72786ad71b5ef5326299409d5fe6912c05635ab",
-            "transactionHash": "0x61e55abf04caa7c4bbc01b8561d94c9ec915126f979fdf4070e32b967b3b5a99"
+            "address": "0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28",
+            "transactionHash": "0x7393b8a84f291ef58b93ba6805b461afdc245b3b8ef1e776ca58d8335cc2d871"
         },
         "42": {
             "links": {},
-            "address": "0x381883afacb2657db0dc48f5de8b9d11ad0ee08f",
-            "transactionHash": "0x13f06af23ae14ad8af5d2f13082568319aec76a21ac5203a0a3d89c373b262c3"
+            "address": "0x1ff1c89b10edde9aba85a82f55bf65259e011ae5",
+            "transactionHash": "0xae0be0860570c9b29deab93b45753a095aaf5b9cb87d2ad48dd9fc84bfae24d0"
         }
     },
     "ERC20LongFactory": {
         "1": {
             "links": {},
-            "address": "0x2657eca107d7c2abcf72c7a97c8eeef863c22507",
-            "transactionHash": "0xb950c391c65709705177c9b805760a10028a87c0e7665fef6a8c29c604dd5d40"
+            "address": "0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d",
+            "transactionHash": "0xd27befd163bbc7d468d132c48dd268bfd63de9bde4504e4e263be9934075c3b2"
         },
         "42": {
             "links": {},
-            "address": "0x305a064e171d1a5669410a7d977fd886ec7fc7df",
-            "transactionHash": "0xcf8f727862cfcafa2ceec0fbe34db868fe3bfa7e07f7eb6c2e4974e38482a135"
+            "address": "0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358",
+            "transactionHash": "0xf43ea4a0c098df2d9462f03bdaa368b0af7df2526e7502aea6ce64dcf113b291"
         }
     },
     "AuctionProxy": {
@@ -208,6 +208,18 @@
             "transactionHash": "0x62646e607c8e6460f7a6772dc9d9175f32f796e518feaf32ec03741e0517f19b"
         }
     },
+    "ERC20PositionWithdrawerV2": {
+        "1": {
+            "links": {},
+            "address": "0xf57263953d4d02707cc26b64b920820cd310a01d",
+            "transactionHash": "0x25b0d680dd2829861275a7bdd4c4d513ca0933b4e71c7d53cfb2eb80ae2460ceq"
+        },
+        "42": {
+            "links": {},
+            "address": "0xd4cd20d3b0039b826b72226886014dd4f6f0bbe1",
+            "transactionHash": "0xc32dd056d57c38db835a03eb9a3425d3b7974ef469a496e8353c33df3fd34842"
+        }
+    },
     "ZeroExV2ExchangeWrapper": {
         "1": {
             "links": {},
@@ -221,6 +233,11 @@
         }
     },
     "BucketLenderProxy": {
+        "1": {
+            "links": {},
+            "address": "0x4e28e1933d0d5ae3b1951b07648d245b2811cf14",
+            "transactionHash": "0xbc7a4f7805000b67a0da34eb4ebd085fe87954ded3fabaec3f80a65a0055cfe0"
+        },
         "42": {
             "links": {},
             "address": "0x7872c58b1fb252d000aa8c27722e3f159eac6e1a",
