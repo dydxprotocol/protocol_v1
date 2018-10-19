@@ -48,6 +48,7 @@ export { default as BucketLenderProxy }             from '../../build/contracts/
 export { default as BucketLender }                  from '../../build/contracts/BucketLender.json';
 export { default as BucketLenderWithRecoveryDelay } from '../../build/contracts/BucketLenderWithRecoveryDelay.json';
 export { default as ERC20PositionWithdrawer }       from '../../build/contracts/ERC20PositionWithdrawer.json';
+export { default as ERC20PositionWithdrawerV2 }     from '../../build/contracts/ERC20PositionWithdrawerV2.json';
 
 // Testing Contracts
 export { default as TokenA }                        from '../../build/contracts/TokenA.json';
