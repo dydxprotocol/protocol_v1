@@ -49,8 +49,8 @@
 - ZeroExV1ExchangeWrapper:         [0x4669aa8222da10aa0dd236680b8c24c657acac00](https://kovan.etherscan.io/address/0x4669aa8222da10aa0dd236680b8c24c657acac00)
 - ZeroExV2ExchangeWrapper:         [0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d](https://kovan.etherscan.io/address/0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d)
 - OpenDirectlyExchangeWrapper:     [0x8085b9646593bc35456a71f1b0c38315eb074ede](https://kovan.etherscan.io/address/0x8085b9646593bc35456a71f1b0c38315eb074ede)
-- ERC20ShortFactory:               [0x381883afacb2657db0dc48f5de8b9d11ad0ee08f](https://kovan.etherscan.io/address/0x381883afacb2657db0dc48f5de8b9d11ad0ee08f)
-- ERC20LongFactory:                [0x305a064e171d1a5669410a7d977fd886ec7fc7df](https://kovan.etherscan.io/address/0x305a064e171d1a5669410a7d977fd886ec7fc7df)
+- ERC20ShortFactory:               [0x1ff1c89b10edde9aba85a82f55bf65259e011ae5](https://kovan.etherscan.io/address/0x1ff1c89b10edde9aba85a82f55bf65259e011ae5)
+- ERC20LongFactory:                [0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358](https://kovan.etherscan.io/address/0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358)
 - SharedLoanFactory:               [0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69](https://kovan.etherscan.io/address/0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69)
 - WethPayoutRecipient:             [0xdd6a6bf9671d409f4992bc3d8dddc9d10af1743c](https://kovan.etherscan.io/address/0xdd6a6bf9671d409f4992bc3d8dddc9d10af1743c)
 - AuctionProxy:                    [0xe267bae55955bb2f8fee25b12544c34b6da227c3](https://kovan.etherscan.io/address/0xe267bae55955bb2f8fee25b12544c34b6da227c3)
@@ -59,6 +59,7 @@
 - EthWrapperForBucketLender:       [0xa054a92bd5163dedb6f8020db06562bf158295d9](https://kovan.etherscan.io/address/0xa054a92bd5163dedb6f8020db06562bf158295d9)
 - BucketLenderProxy:               [0x7872c58b1fb252d000aa8c27722e3f159eac6e1a](https://kovan.etherscan.io/address/0x7872c58b1fb252d000aa8c27722e3f159eac6e1a)
 - ERC20PositionWithdrawer:         [0x7f5b53fec9b26fb1145a5c48e42da021d0f1c5eb](https://kovan.etherscan.io/address/0x7f5b53fec9b26fb1145a5c48e42da021d0f1c5eb)
+- ERC20PositionWithdrawerV2:       [0xd4cd20d3b0039b826b72226886014dd4f6f0bbe1](https://kovan.etherscan.io/address/0xd4cd20d3b0039b826b72226886014dd4f6f0bbe1)
 
 ### Impl
 - TransferImpl:                    [0x0e5e28dfbc78fa9fa9473294a4378e3ff3dca9e0](https://kovan.etherscan.io/address/0x0e5e28dfbc78fa9fa9473294a4378e3ff3dca9e0)
