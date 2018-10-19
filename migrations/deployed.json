@@ -91,8 +91,8 @@
     "ERC20ShortFactory": {
         "1": {
             "links": {},
-            "address": "0xc72786ad71b5ef5326299409d5fe6912c05635ab",
-            "transactionHash": "0x61e55abf04caa7c4bbc01b8561d94c9ec915126f979fdf4070e32b967b3b5a99"
+            "address": "0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28",
+            "transactionHash": "0x7393b8a84f291ef58b93ba6805b461afdc245b3b8ef1e776ca58d8335cc2d871"
         },
         "42": {
             "links": {},
@@ -103,8 +103,8 @@
     "ERC20LongFactory": {
         "1": {
             "links": {},
-            "address": "0x2657eca107d7c2abcf72c7a97c8eeef863c22507",
-            "transactionHash": "0xb950c391c65709705177c9b805760a10028a87c0e7665fef6a8c29c604dd5d40"
+            "address": "0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d",
+            "transactionHash": "0xd27befd163bbc7d468d132c48dd268bfd63de9bde4504e4e263be9934075c3b2"
         },
         "42": {
             "links": {},
@@ -208,6 +208,13 @@
             "transactionHash": "0x62646e607c8e6460f7a6772dc9d9175f32f796e518feaf32ec03741e0517f19b"
         }
     },
+    "ERC20PositionWithdrawerV2": {
+        "1": {
+            "links": {},
+            "address": "0xf57263953d4d02707cc26b64b920820cd310a01d",
+            "transactionHash": "0x25b0d680dd2829861275a7bdd4c4d513ca0933b4e71c7d53cfb2eb80ae2460ceq"
+        }
+    },
     "ZeroExV2ExchangeWrapper": {
         "1": {
             "links": {},
@@ -221,6 +228,11 @@
         }
     },
     "BucketLenderProxy": {
+        "1": {
+            "links": {},
+            "address": "0x4e28e1933d0d5ae3b1951b07648d245b2811cf14",
+            "transactionHash": "0xbc7a4f7805000b67a0da34eb4ebd085fe87954ded3fabaec3f80a65a0055cfe0"
+        },
         "42": {
             "links": {},
             "address": "0x7872c58b1fb252d000aa8c27722e3f159eac6e1a",
