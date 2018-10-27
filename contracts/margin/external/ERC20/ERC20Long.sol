@@ -71,11 +71,11 @@ contract ERC20Long is ERC20Position {
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "l[UNINITIALIZED]";
+            return "L[UNINITIALIZED]";
         }
         return string(
             StringHelpers.strcat(
-                "l",
+                "L",
                 bytes(DetailedERC20(heldToken).symbol())
             )
         );
