@@ -979,7 +979,7 @@ contract('ERC20Short', accounts => {
           owedToken.symbol.call()
         ]);
         expect(positionId).to.be.bignumber.eq(POSITION.ID);
-        expect(tokenSymbol).to.eq("s" + owedTokenSymbol);
+        expect(tokenSymbol).to.eq("S" + owedTokenSymbol);
       }
     });
 
@@ -988,7 +988,7 @@ contract('ERC20Short', accounts => {
       for (let type in POSITIONS) {
         const POSITION = POSITIONS[type];
         const tokenName = await POSITION.TOKEN_CONTRACT.symbol.call();
-        expect(tokenName).to.eq("s[UNINITIALIZED]");
+        expect(tokenName).to.eq("S[UNINITIALIZED]");
       }
     });
   });

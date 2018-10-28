@@ -72,12 +72,12 @@ contract ERC20Short is ERC20Position {
         returns (string)
     {
         if (state == State.UNINITIALIZED) {
-            return "s[UNINITIALIZED]";
+            return "S[UNINITIALIZED]";
         }
         address owedToken = Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID);
         return string(
             StringHelpers.strcat(
-                "s",
+                "S",
                 bytes(DetailedERC20(owedToken).symbol())
             )
         );
