@@ -20,6 +20,7 @@ async function clean() {
     const cleaned = {
       contractName: contract.contractName,
       abi: contract.abi,
+      bytecode: contract.bytecode,
       networks: {},
       schemaVersion: contract.schemaVersion
     }
