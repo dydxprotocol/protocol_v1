@@ -43,18 +43,7 @@ library StringHelpers {
         pure
         returns (bytes)
     {
-        uint256 lengthA = stringA.length;
-        uint256 lengthB = stringB.length;
-        bytes memory result = new bytes(lengthA + lengthB);
-
-        uint256 i = 0;
-        for (i = 0; i < lengthA; i++) {
-            result[i] = stringA[i];
-        }
-        for (i = 0; i < lengthB; i++) {
-            result[lengthA + i] = stringB[i];
-        }
-        return result;
+        return abi.encodePacked(stringA, stringB);
     }
 
     /**
