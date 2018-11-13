@@ -76,7 +76,7 @@ contract ERC20Short is ERC20Position {
         }
         address owedToken = Margin(DYDX_MARGIN).getPositionOwedToken(POSITION_ID);
         return string(
-            StringHelpers.strcat(
+            abi.encodePacked(
                 "s",
                 bytes(DetailedERC20(owedToken).symbol())
             )
@@ -92,7 +92,7 @@ contract ERC20Short is ERC20Position {
             return "dYdX Short Token [UNINITIALIZED]";
         }
         return string(
-            StringHelpers.strcat(
+            abi.encodePacked(
                 "dYdX Short Token ",
                 StringHelpers.bytes32ToHex(POSITION_ID)
             )

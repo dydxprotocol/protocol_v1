@@ -74,9 +74,9 @@ contract ERC20Long is ERC20Position {
             return "L[UNINITIALIZED]";
         }
         return string(
-            StringHelpers.strcat(
+            abi.encodePacked(
                 "L",
-                bytes(DetailedERC20(heldToken).symbol())
+                DetailedERC20(heldToken).symbol()
             )
         );
     }
@@ -90,7 +90,7 @@ contract ERC20Long is ERC20Position {
             return "dYdX Leveraged Long Token [UNINITIALIZED]";
         }
         return string(
-            StringHelpers.strcat(
+            abi.encodePacked(
                 "dYdX Leveraged Long Token ",
                 StringHelpers.bytes32ToHex(POSITION_ID)
             )
