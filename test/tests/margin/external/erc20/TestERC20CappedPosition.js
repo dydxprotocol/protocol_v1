@@ -26,6 +26,9 @@ contract('ERC20CappedPosition', accounts => {
 
   let POSITIONS = {
     LONG: {
+      NAME: "LONG_NAME",
+      SYMBOL: "LONG_SYMBOL",
+      DECIMALS: 222,
       TOKEN_CONTRACT: null,
       TX: null,
       ID: null,
@@ -35,6 +38,9 @@ contract('ERC20CappedPosition', accounts => {
       SALT: 0
     },
     SHORT: {
+      NAME: "SHORT_NAME",
+      SYMBOL: "SHORT_SYMBOL",
+      DECIMALS: 111,
       TOKEN_CONTRACT: null,
       TX: null,
       ID: null,
@@ -104,6 +110,9 @@ contract('ERC20CappedPosition', accounts => {
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
         [TRUSTED_LATE_CLOSER],
         POSITIONS.LONG.NUM_TOKENS.times(multiplier),
+        POSITIONS.LONG.NAME,
+        POSITIONS.LONG.SYMBOL,
+        POSITIONS.LONG.DECIMALS,
       ),
       ERC20CappedShort.new(
         POSITIONS.SHORT.ID,
@@ -113,6 +122,9 @@ contract('ERC20CappedPosition', accounts => {
         POSITIONS.LONG.TRUSTED_WITHDRAWERS,
         [TRUSTED_LATE_CLOSER],
         POSITIONS.SHORT.NUM_TOKENS.times(multiplier),
+        POSITIONS.SHORT.NAME,
+        POSITIONS.SHORT.SYMBOL,
+        POSITIONS.SHORT.DECIMALS,
       )
     ]);
   }
@@ -140,6 +152,9 @@ contract('ERC20CappedPosition', accounts => {
     const trustedLateCloser = accounts[7];
     const initialTokenHolder = accounts[6];
     const untrustedAccount = accounts[5];
+    const givenName = 'givenName';
+    const givenSymbol = 'givenSymbol';
+    const givenDecimals = 99;
 
     it('sets constants correctly for short', async () => {
       const tokenContract = await ERC20CappedShort.new(
@@ -149,10 +164,16 @@ contract('ERC20CappedPosition', accounts => {
         [trustedRecipient],
         [trustedWithdrawer],
         [trustedLateCloser],
-        tokenCap
+        tokenCap,
+        givenName,
+        givenSymbol,
+        givenDecimals,
       );
       const [
         supply,
+        name,
+        symbol,
+        decimals,
         cap,
         pid,
         ith,
@@ -166,6 +187,9 @@ contract('ERC20CappedPosition', accounts => {
         ua_is_tw,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
+        tokenContract.name.call(),
+        tokenContract.symbol.call(),
+        tokenContract.decimals.call(),
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
@@ -179,6 +203,9 @@ contract('ERC20CappedPosition', accounts => {
         tokenContract.TRUSTED_WITHDRAWERS.call(untrustedAccount),
       ]);
       expect(supply).to.be.bignumber.eq(0);
+      expect(name).to.be.eq(givenName);
+      expect(symbol).to.be.eq(givenSymbol);
+      expect(decimals).to.be.bignumber.eq(givenDecimals);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(initialTokenHolder);
@@ -193,17 +220,23 @@ contract('ERC20CappedPosition', accounts => {
     });
 
     it('sets constants correctly for long', async () => {
-      const tokenContract = await ERC20CappedShort.new(
+      const tokenContract = await ERC20CappedLong.new(
         positionId,
         dydxMargin.address,
         initialTokenHolder,
         [trustedRecipient],
         [trustedWithdrawer],
         [trustedLateCloser],
-        tokenCap
+        tokenCap,
+        givenName,
+        givenSymbol,
+        givenDecimals,
       );
       const [
         supply,
+        name,
+        symbol,
+        decimals,
         cap,
         pid,
         ith,
@@ -217,6 +250,9 @@ contract('ERC20CappedPosition', accounts => {
         ua_is_tw,
       ] = await Promise.all([
         tokenContract.totalSupply.call(),
+        tokenContract.name.call(),
+        tokenContract.symbol.call(),
+        tokenContract.decimals.call(),
         tokenContract.tokenCap.call(),
         tokenContract.POSITION_ID.call(),
         tokenContract.INITIAL_TOKEN_HOLDER.call(),
@@ -230,6 +266,9 @@ contract('ERC20CappedPosition', accounts => {
         tokenContract.TRUSTED_WITHDRAWERS.call(untrustedAccount),
       ]);
       expect(supply).to.be.bignumber.eq(0);
+      expect(name).to.be.eq(givenName);
+      expect(symbol).to.be.eq(givenSymbol);
+      expect(decimals).to.be.bignumber.eq(givenDecimals);
       expect(cap).to.be.bignumber.eq(tokenCap);
       expect(pid).to.be.bignumber.eq(positionId);
       expect(ith).to.be.bignumber.eq(initialTokenHolder);

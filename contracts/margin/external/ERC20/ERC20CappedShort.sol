@@ -20,6 +20,7 @@ pragma solidity 0.4.24;
 pragma experimental "v0.5.0";
 
 import { SafeMath } from "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import { DetailedERC20 } from "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
 import { ERC20CappedPosition } from "./ERC20CappedPosition.sol";
 import { ERC20Short } from "./ERC20Short.sol";
 
@@ -33,7 +34,8 @@ import { ERC20Short } from "./ERC20Short.sol";
  */
 contract ERC20CappedShort is
     ERC20Short,
-    ERC20CappedPosition
+    ERC20CappedPosition,
+    DetailedERC20
 {
     using SafeMath for uint256;
 
@@ -46,7 +48,10 @@ contract ERC20CappedShort is
         address[] trustedRecipients,
         address[] trustedWithdrawers,
         address[] trustedLateClosers,
-        uint256 cap
+        uint256 cap,
+        string name,
+        string symbol,
+        uint8 decimals
     )
         public
         ERC20Short(
@@ -59,6 +64,11 @@ contract ERC20CappedShort is
         ERC20CappedPosition(
             trustedLateClosers,
             cap
+        )
+        DetailedERC20(
+            name,
+            symbol,
+            decimals
         )
     {
     }
