@@ -344,17 +344,17 @@ contract ERC20Position is
     // ============ Public Constant Functions ============
 
     /**
-     * ERC20 decimals function. Returns the same number of decimals as the position's owedToken
+     * ERC20 name function
      *
-     * @return  The number of decimal places, or revert if the baseToken has no such function.
+     * @return  The name of the Margin Token
      */
-    function decimals()
+    function name()
         external
         view
-        returns (uint8);
+        returns (string);
 
     /**
-     * ERC20 symbol function.
+     * ERC20 symbol function
      *
      * @return  The symbol of the Margin Token
      */
@@ -362,6 +362,16 @@ contract ERC20Position is
         external
         view
         returns (string);
+
+    /**
+     * ERC20 decimals function
+     *
+     * @return  The number of decimal places
+     */
+    function decimals()
+        external
+        view
+        returns (uint8);
 
     /**
      * Implements PositionCustodian functionality. Called by external contracts to see where to pay
