@@ -582,7 +582,11 @@ contract('ERC20CappedPosition', accounts => {
     });
 
     async function waitUntilEndOfPosition() {
-      await wait(POSITIONS.LONG.TX.loanOffering.maxDuration);
+      const minWaitTime = 1 + Math.max(
+        POSITIONS.LONG.TX.loanOffering.maxDuration,
+        POSITIONS.SHORT.TX.loanOffering.maxDuration,
+      );
+      await wait(minWaitTime);
     }
 
     async function doClose(position, closer, recipient, throws) {
