@@ -27,36 +27,6 @@ pragma experimental "v0.5.0";
  * This library helps with string manipulation in Solidity
  */
 library StringHelpers {
-
-    /**
-     * Concatenates two byte arrays and return the result
-     *
-     * @param  stringA  The string that goes first
-     * @param  stringB  The string that goes second
-     * @return          The two strings concatenated
-     */
-    function strcat(
-        bytes stringA,
-        bytes stringB
-    )
-        internal
-        pure
-        returns (bytes)
-    {
-        uint256 lengthA = stringA.length;
-        uint256 lengthB = stringB.length;
-        bytes memory result = new bytes(lengthA + lengthB);
-
-        uint256 i = 0;
-        for (i = 0; i < lengthA; i++) {
-            result[i] = stringA[i];
-        }
-        for (i = 0; i < lengthB; i++) {
-            result[lengthA + i] = stringB[i];
-        }
-        return result;
-    }
-
     /**
      * Translates a bytes32 to an ascii hexadecimal representation starting with "0x"
      *
