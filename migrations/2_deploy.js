@@ -147,6 +147,8 @@ function getOasisDexAddress(network) {
     return MatchingMarket.address;
   } else if (network === 'kovan') {
     return '0x8cf1cab422a0b6b554077a361f8419cdf122a9f9';
+  } else if (isMainNet(network)) {
+    return '0x14fbca95be7e99c15cc2996c6c9d841e54b79425';
   }
 
   throw "OasisDex Not Found";
