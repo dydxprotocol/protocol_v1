@@ -212,7 +212,7 @@
         "1": {
             "links": {},
             "address": "0xf57263953d4d02707cc26b64b920820cd310a01d",
-            "transactionHash": "0x25b0d680dd2829861275a7bdd4c4d513ca0933b4e71c7d53cfb2eb80ae2460ceq"
+            "transactionHash": "0x25b0d680dd2829861275a7bdd4c4d513ca0933b4e71c7d53cfb2eb80ae2460ce"
         },
         "42": {
             "links": {},
@@ -242,6 +242,30 @@
             "links": {},
             "address": "0x7872c58b1fb252d000aa8c27722e3f159eac6e1a",
             "transactionHash": "0xced286e11b86d5e92d83e7e49a5f54c1957a0220a832eba297785f02dbeeb667"
+        }
+    },
+    "OasisV1SimpleExchangeWrapper": {
+        "1": {
+            "links": {},
+            "address": "0xeefc9ee01604315ce1e69474033618ee7d21a33e",
+            "transactionHash": "0xa28e4da331f75b29a801bb9317ce58cd44c6ea35832f19874884f08a8bf16ca2"
+        },
+        "42": {
+            "links": {},
+            "address": "0x2893572793cf2bf93992cdacac7a90654f44c170",
+            "transactionHash": "0x81e9cea45e0328adfed4b310d27c01639ea9724128d0b580690bbfd55ed65ca0"
+        }
+    },
+    "OasisV1MatchingExchangeWrapper": {
+        "1": {
+            "links": {},
+            "address": "0xd72136c6da6ae959b5960c204edf8bc260087bca",
+            "transactionHash": "0xe7cc149d80313ee8366015b945571e0b5a78bdf7ac0bc86b0a39ba58aaf98af7"
+        },
+        "42": {
+            "links": {},
+            "address": "0xdf22045d446fea3867d83bd3ef5e8688ec888038",
+            "transactionHash": "0xead3e041c82711399e9871620d1af2c0fc53256b4b825ae5cf3e2e9e03946085"
         }
     }
 }

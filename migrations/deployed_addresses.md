@@ -11,6 +11,8 @@
 - ZeroExV1ExchangeWrapper:         [0x5d4b4d9f5274f72d7d4308597d0ea95b97b094cf](https://etherscan.io/address/0x5d4b4d9f5274f72d7d4308597d0ea95b97b094cf)
 - ZeroExV2ExchangeWrapper:         [0xa26d16a21805b14b2977555ffdea34e5e6fc43ba](https://etherscan.io/address/0xa26d16a21805b14b2977555ffdea34e5e6fc43ba)
 - OpenDirectlyExchangeWrapper:     [0xcb17e969288ae849d5e0717694c5c56e70e798ed](https://etherscan.io/address/0xcb17e969288ae849d5e0717694c5c56e70e798ed)
+- OasisV1SimpleExchangeWrapper:    [0xeefc9ee01604315ce1e69474033618ee7d21a33e](https://etherscan.io/address/0xeefc9ee01604315ce1e69474033618ee7d21a33e)
+- OasisV1MatchingExchangeWrapper:  [0xd72136c6da6ae959b5960c204edf8bc260087bca](https://etherscan.io/address/0xd72136c6da6ae959b5960c204edf8bc260087bca)
 - ERC20ShortFactory:               [0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28](https://etherscan.io/address/0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28)
 - ERC20LongFactory:                [0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d](https://etherscan.io/address/0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d)
 - SharedLoanFactory:               N/A
@@ -49,6 +51,8 @@
 - ZeroExV1ExchangeWrapper:         [0x4669aa8222da10aa0dd236680b8c24c657acac00](https://kovan.etherscan.io/address/0x4669aa8222da10aa0dd236680b8c24c657acac00)
 - ZeroExV2ExchangeWrapper:         [0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d](https://kovan.etherscan.io/address/0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d)
 - OpenDirectlyExchangeWrapper:     [0x8085b9646593bc35456a71f1b0c38315eb074ede](https://kovan.etherscan.io/address/0x8085b9646593bc35456a71f1b0c38315eb074ede)
+- OasisV1SimpleExchangeWrapper:    [0x2893572793cf2bf93992cdacac7a90654f44c170](https://kovan.etherscan.io/address/0x2893572793cf2bf93992cdacac7a90654f44c170)
+- OasisV1MatchingExchangeWrapper:  [0xdf22045d446fea3867d83bd3ef5e8688ec888038](https://kovan.etherscan.io/address/0xdf22045d446fea3867d83bd3ef5e8688ec888038)
 - ERC20ShortFactory:               [0x1ff1c89b10edde9aba85a82f55bf65259e011ae5](https://kovan.etherscan.io/address/0x1ff1c89b10edde9aba85a82f55bf65259e011ae5)
 - ERC20LongFactory:                [0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358](https://kovan.etherscan.io/address/0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358)
 - SharedLoanFactory:               [0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69](https://kovan.etherscan.io/address/0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69)
