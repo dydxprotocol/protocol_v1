@@ -29,14 +29,14 @@ import { ExchangeWrapper } from "../../interfaces/ExchangeWrapper.sol";
 
 
 /**
- * @title OasisV1SimpleExchangeWrapper
+ * @title OasisV2SimpleExchangeWrapper
  * @author dYdX
  *
  * dYdX ExchangeWrapper to interface with Maker's (Oasis exchange) SimpleMarket or MatchingMarket
  * contracts to trade using a specific offer. Since any MatchingMarket is also a SimpleMarket, this
  * ExchangeWrapper can also be used for any MatchingMarket.
  */
-contract OasisV1SimpleExchangeWrapper is
+contract OasisV2SimpleExchangeWrapper is
     ExchangeWrapper,
     ExchangeReader
 {
@@ -82,9 +82,10 @@ contract OasisV1SimpleExchangeWrapper is
     {
         ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         uint256 offerId = bytesToOfferId(orderData);
-
         Offer memory offer = getOffer(market, offerId);
-        verifyOffer(offer, makerToken, takerToken);
+
+        // make sure offer is for the correct tokens
+        verifyOfferTokens(offer, makerToken, takerToken);
 
         // calculate maximum amount of makerToken to receive given requestedFillAmount
         uint256 makerAmount = getInversePartialAmount(
@@ -93,14 +94,15 @@ contract OasisV1SimpleExchangeWrapper is
             requestedFillAmount
         );
 
+        // make sure offer is fillable
+        verifyOfferAmount(offer, makerAmount);
+
         // make sure that the exchange can take the tokens from this contract
         takerToken.ensureAllowance(address(market), requestedFillAmount);
 
-        // do the exchange
-        require(
-            market.buy(offerId, makerAmount),
-            "OasisV1SimpleExchangeWrapper#exchange: Buy failed"
-        );
+        // do the exchange. take() is either successful or reverts
+        assert(makerAmount == uint128(makerAmount));
+        market.take(bytes32(offerId), uint128(makerAmount));
 
         // set allowance for the receiver
         makerToken.ensureAllowance(receiver, makerAmount);
@@ -120,12 +122,8 @@ contract OasisV1SimpleExchangeWrapper is
     {
         ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         Offer memory offer = getOffer(market, bytesToOfferId(orderData));
-        verifyOffer(offer, makerToken, takerToken);
-
-        require(
-            desiredMakerToken <= offer.makerAmount,
-            "OasisV1SimpleExchangeWrapper#getExchangeCost: Offer is not large enough"
-        );
+        verifyOfferTokens(offer, makerToken, takerToken);
+        verifyOfferAmount(offer, desiredMakerToken);
 
         // return takerToken cost of desiredMakerToken
         return MathHelpers.getPartialAmount(
@@ -146,7 +144,7 @@ contract OasisV1SimpleExchangeWrapper is
     {
         ISimpleMarketV1 market = ISimpleMarketV1(SIMPLE_MARKET);
         Offer memory offer = getOffer(market, bytesToOfferId(orderData));
-        verifyOffer(offer, makerToken, takerToken);
+        verifyOfferTokens(offer, makerToken, takerToken);
 
         return offer.makerAmount;
     }
@@ -190,21 +188,21 @@ contract OasisV1SimpleExchangeWrapper is
         returns (Offer memory)
     {
         (
-            uint256 offerMakerAmount,
-            address offerMakerToken,
-            uint256 offerTakerAmount,
-            address offerTakerToken
+            uint256 makerAmount,
+            address makerToken,
+            uint256 takerAmount,
+            address takerToken
         ) = market.getOffer(offerId);
 
         return Offer({
-            makerAmount: offerMakerAmount,
-            makerToken: offerMakerToken,
-            takerAmount: offerTakerAmount,
-            takerToken: offerTakerToken
+            makerAmount: makerAmount,
+            makerToken: makerToken,
+            takerAmount: takerAmount,
+            takerToken: takerToken
         });
     }
 
-    function verifyOffer(
+    function verifyOfferTokens(
         Offer memory offer,
         address makerToken,
         address takerToken
@@ -213,12 +211,42 @@ contract OasisV1SimpleExchangeWrapper is
         pure
     {
         require(
+            offer.makerToken != address(0),
+            "OasisV2SimpleExchangeWrapper#verifyOfferTokens: offer does not exist"
+        );
+        require(
             makerToken == offer.makerToken,
-            "OasisV1SimpleExchangeWrapper#verifyOffer: offer makerToken does not match"
+            "OasisV2SimpleExchangeWrapper#verifyOfferTokens: makerToken mismatch"
         );
         require(
             takerToken == offer.takerToken,
-            "OasisV1SimpleExchangeWrapper#verifyOffer: offer takerToken does not match"
+            "OasisV2SimpleExchangeWrapper#verifyOfferTokens: takerToken mismatch"
+        );
+    }
+
+    function verifyOfferAmount(
+        Offer memory offer,
+        uint256 fillAmount
+    )
+        private
+        pure
+    {
+        require(
+            fillAmount != 0,
+            "OasisV2SimpleExchangeWrapper#verifyOfferAmount: cannot trade zero makerAmount"
+        );
+        require(
+            fillAmount <= offer.makerAmount,
+            "OasisV2SimpleExchangeWrapper#verifyOfferAmount: offer is not large enough"
+        );
+        uint256 spend = MathHelpers.getPartialAmount(
+            fillAmount,
+            offer.makerAmount,
+            offer.takerAmount
+        );
+        require(
+            spend != 0,
+            "OasisV2SimpleExchangeWrapper#verifyOfferAmount: cannot trade zero takerAmount"
         );
     }
 
@@ -231,7 +259,7 @@ contract OasisV1SimpleExchangeWrapper is
     {
         require(
             orderData.length == 32,
-            "OasisV1SimpleExchangeWrapper:#bytesToOfferId: orderData is not the right length"
+            "OasisV2SimpleExchangeWrapper:#bytesToOfferId: invalid orderData"
         );
 
         uint256 offerId;

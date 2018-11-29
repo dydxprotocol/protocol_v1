@@ -5,11 +5,11 @@ const expect = chai.expect;
 chai.use(require('chai-bignumber')());
 const BigNumber = require('bignumber.js');
 
-const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
+const OasisV2SimpleExchangeWrapper = artifacts.require("OasisV2SimpleExchangeWrapper");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const TokenC = artifacts.require("TokenC");
-const { MatchingMarket } = require('../../../../contracts/OasisDex');
+const { MatchingMarketV2 } = require('../../../../contracts/OasisDex');
 
 const { BIGNUMBERS, BYTES } = require('../../../../helpers/Constants');
 const { toBytes32 } = require('../../../../helpers/BytesHelper');
@@ -20,7 +20,7 @@ function orderIdToBytes(orderId) {
   return web3Instance.utils.bytesToHex([].concat(toBytes32(orderId)));
 }
 
-contract('OasisV1SimpleExchangeWrapper', accounts => {
+contract('OasisV2SimpleExchangeWrapper', accounts => {
   let DAI, WETH, TEST, OasisDEX, SMEW;
   const DAI_PER_WETH = 400;
   const MAKER_WETH_AMOUNT = new BigNumber("1e24");
@@ -38,16 +38,14 @@ contract('OasisV1SimpleExchangeWrapper', accounts => {
       TokenA.new(),
       TokenB.new(),
       TokenC.new(),
-      MatchingMarket.new(OASIS_DEX_CLOSE_TIME)
+      MatchingMarketV2.new(OASIS_DEX_CLOSE_TIME)
     ]);
-    SMEW = await OasisV1SimpleExchangeWrapper.new(OasisDEX.address);
+    SMEW = await OasisV2SimpleExchangeWrapper.new(OasisDEX.address);
 
     // set up makers
     const maker = accounts[9];
 
     await Promise.all([
-      OasisDEX.addTokenPairWhitelist(WETH.address, DAI.address),
-      OasisDEX.addTokenPairWhitelist(WETH.address, TEST.address),
       DAI.issueTo(maker, MAKER_DAI_AMOUNT),
       WETH.issueTo(maker, MAKER_WETH_AMOUNT.times(2)),
       TEST.issueTo(maker, MAKER_WETH_AMOUNT),

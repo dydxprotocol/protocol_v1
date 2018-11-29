@@ -23,7 +23,7 @@ contract('DutchAuctionCloser', accounts => {
   let dydxMargin, tokenProxy, weth, heldToken;
   const opener = accounts[9];
   const loanHolder = accounts[8];
-  const OgAmount = new BigNumber('1e18');
+  const OgAmount = new BigNumber('1e9');
   let positionId1, positionId2;
 
   before('retrieve deployed contracts, set up two large positions', async () => {

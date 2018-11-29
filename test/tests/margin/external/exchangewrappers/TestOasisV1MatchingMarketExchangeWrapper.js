@@ -8,7 +8,7 @@ const BigNumber = require('bignumber.js');
 const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
-const { MatchingMarket } = require('../../../../contracts/OasisDex');
+const { MatchingMarketV1 } = require('../../../../contracts/OasisDex');
 
 const { BIGNUMBERS, BYTES } = require('../../../../helpers/Constants');
 const { toBytes32 } = require('../../../../helpers/BytesHelper');
@@ -37,7 +37,7 @@ contract('OasisV1MatchingExchangeWrapper', accounts => {
     ] = await Promise.all([
       TokenA.new(),
       TokenB.new(),
-      MatchingMarket.new(OASIS_DEX_CLOSE_TIME)
+      MatchingMarketV1.new(OASIS_DEX_CLOSE_TIME)
     ]);
     MMEW = await OasisV1MatchingExchangeWrapper.new(OasisDEX.address);
 

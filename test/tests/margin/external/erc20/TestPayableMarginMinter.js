@@ -42,7 +42,7 @@ contract('#PayableMarginMinter', accounts => {
       HeldToken.new()
     ]);
     Seo = await PayableMarginMinter.new(Margin.address, Weth.address);
-    await Weth.deposit({ value: new BigNumber("10e18"), from: opener });
+    await Weth.deposit({ value: new BigNumber("1e10"), from: opener });
     await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: opener });
     await issueTokenToAccountInAmountAndApproveProxy(Dai, opener, BIGNUMBERS.MAX_UINT128);
   });
@@ -83,9 +83,9 @@ contract('#PayableMarginMinter', accounts => {
     let order = await createSignedV1BuyOrder(accounts, { salt: salt++ });
     order.takerFee = order.makerFee = 0;
     order.makerTokenAddress = Dai.address,
-    order.makerTokenAmount = new BigNumber("1e36");
+    order.makerTokenAmount = new BigNumber("1e27");
     order.takerTokenAddress = Weth.address,
-    order.takerTokenAmount = new BigNumber("1e36");
+    order.takerTokenAmount = new BigNumber("1e27");
     order.ecSignature = await signOrder(order);
     await issueAndSetAllowance(
       Dai,
@@ -105,7 +105,7 @@ contract('#PayableMarginMinter', accounts => {
     loanOffering.rates.takerFee = new BigNumber(0);
     loanOffering.rates.minHeldToken = new BigNumber(0);
     loanOffering.signature = await signLoanOffering(loanOffering);
-    await Weth.deposit({ value: new BigNumber("10e18"), from: loanOffering.payer });
+    await Weth.deposit({ value: new BigNumber("1e10"), from: loanOffering.payer });
     await Weth.approve(TokenProxy.address, BIGNUMBERS.MAX_UINT256, { from: loanOffering.payer });
 
     const addresses = [
