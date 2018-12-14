@@ -155,7 +155,7 @@ async function maybeDeploy0xV2(deployer, network) {
 function getOasisDexV1Address(network) {
   if (isDevNetwork(network)) {
     return MatchingMarketV1.address;
-  } else if (network === 'kovan') {
+  } else if (isKovan(network)) {
     return '0x8cf1cab422a0b6b554077a361f8419cdf122a9f9';
   } else if (isMainNet(network)) {
     return '0x14fbca95be7e99c15cc2996c6c9d841e54b79425';
@@ -167,10 +167,10 @@ function getOasisDexV1Address(network) {
 function getOasisDexV2Address(network) {
   if (isDevNetwork(network)) {
     return MatchingMarketV2.address;
-  } else if (network === 'kovan') {
-    throw "OasisDexV2 Not Found"; // TODO
+  } else if (isKovan(network)) {
+    return '0xdb3b642ebc6ff85a3ab335cff9af2954f9215994';
   } else if (isMainNet(network)) {
-    throw "OasisDexV2 Not Found"; // TODO
+    return '0xb7ac09c2c0217b07d7c103029b4918a2c401eecb';
   }
 
   throw "OasisDexV2 Not Found";
@@ -366,10 +366,6 @@ async function deploySecondLayer(deployer, network) {
       OasisV2SimpleExchangeWrapper,
       getOasisDexV2Address(network)
     ),
-    /* deployer.deploy(
-      OasisV2MatchingExchangeWrapper,
-      getOasisDexV2Address(network)
-    ), */ // TODO
     deployer.deploy(
       ZeroExV1ExchangeWrapper,
       getZeroExExchangeV1Address(network),
