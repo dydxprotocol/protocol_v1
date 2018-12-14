@@ -132,6 +132,18 @@ contract('OasisV2SimpleExchangeWrapper', accounts => {
       expect(direct2).to.be.bignumber.eq(result2);
     });
 
+    it('fails for zero amount', async () => {
+      const amount = new BigNumber("0");
+      await expectThrow(
+        SMEW.getExchangeCost.call(
+          DAI.address,
+          WETH.address,
+          amount,
+          orderIdToBytes(wethToDaiId)
+        )
+      );
+    });
+
     it('fails for wrong order', async () => {
       const amount = new BigNumber("1e18");
       await expectThrow(
@@ -243,6 +255,20 @@ contract('OasisV2SimpleExchangeWrapper', accounts => {
     it('fails when trying to take too much', async () => {
       const amount = new BigNumber("1e36");
       await DAI.issueTo(SMEW.address, amount);
+      await expectThrow(
+        SMEW.exchange(
+          accounts[0],
+          accounts[0],
+          WETH.address,
+          DAI.address,
+          amount,
+          orderIdToBytes(daiToWethId)
+        )
+      );
+    });
+
+    it('fails when trying to take zero', async () => {
+      const amount = new BigNumber("0");
       await expectThrow(
         SMEW.exchange(
           accounts[0],
