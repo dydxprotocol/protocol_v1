@@ -46,8 +46,10 @@ module.exports = {
     },
     docker: {
       host: 'localhost',
+      port: 8545,
       network_id: '1212',
-      port: 8545
+      gasPrice: 1000000000, // 1 gwei
+      gas: 7900000
     }
   },
   mocha,
