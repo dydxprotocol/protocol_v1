@@ -1036,6 +1036,29 @@ contract('BucketLender', accounts => {
       await doWithdrawExtra(randomToken, amount);
     });
   });
+});
+
+contract('BucketLender', accounts => {
+
+  // ============ Before/After ============
+
+  beforeEach('set up contracts', async () => {
+    [
+      margin,
+      heldToken,
+      owedToken
+    ] = await Promise.all([
+      Margin.deployed(),
+      HeldToken.new(),
+      OwedToken.new(),
+    ]);
+
+    await setUpPosition(accounts);
+  });
+
+  afterEach('make checks', async () => {
+    await bucketLender.checkInvariants();
+  });
 
   describe('#withdraw', () => {
     it('Multiple deposit and withdraw', async () => {
@@ -1333,13 +1356,13 @@ contract('BucketLender', accounts => {
 
     it('does nothing when the position has not been closed since the last rebalance', async () => {
       await wait(1);
-      await doDeposit(lender1, OT.times(5));
+      await doDeposit(lender1, OT.times(3));
       await wait(60 * 60 * 24);
-      await doIncrease(OT.times(5));
+      await doIncrease(OT.times(3));
       await wait(60 * 60 * 24);
       await doClose(OT.times(2));
       await wait(60 * 60 * 24);
-      await doIncrease(OT.times(5));
+      await doIncrease(OT.times(3));
 
       const result1 = await getAmounts();
       await bucketLender.rebalanceBuckets();
