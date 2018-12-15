@@ -46,9 +46,9 @@ module.exports = {
     },
     docker: {
       host: 'localhost',
+      port: 8545,
       network_id: '1212',
-      port: 8545
-    }
+    },
   },
   mocha,
   solc: {

@@ -1,10 +1,12 @@
 const TruffleContract = require("truffle-contract");
 
-let MatchingMarketJSON = require("./json/MatchingMarket.json");
+const MatchingMarketV1JSON = require("./json/MatchingMarketV1.json");
+const MatchingMarketV2JSON = require("./json/MatchingMarketV2.json");
 
-let MatchingMarket = TruffleContract(MatchingMarketJSON);
+const MatchingMarketV1 = TruffleContract(MatchingMarketV1JSON);
+const MatchingMarketV2 = TruffleContract(MatchingMarketV2JSON);
 
 module.exports = {
-  MatchingMarket,
-  MatchingMarketJSON,
+  MatchingMarketV1,
+  MatchingMarketV2,
 };

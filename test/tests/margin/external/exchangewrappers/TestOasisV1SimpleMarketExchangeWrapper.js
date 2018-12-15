@@ -9,7 +9,7 @@ const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWra
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const TokenC = artifacts.require("TokenC");
-const { MatchingMarket } = require('../../../../contracts/OasisDex');
+const { MatchingMarketV1 } = require('../../../../contracts/OasisDex');
 
 const { BIGNUMBERS, BYTES } = require('../../../../helpers/Constants');
 const { toBytes32 } = require('../../../../helpers/BytesHelper');
@@ -38,7 +38,7 @@ contract('OasisV1SimpleExchangeWrapper', accounts => {
       TokenA.new(),
       TokenB.new(),
       TokenC.new(),
-      MatchingMarket.new(OASIS_DEX_CLOSE_TIME)
+      MatchingMarketV1.new(OASIS_DEX_CLOSE_TIME)
     ]);
     SMEW = await OasisV1SimpleExchangeWrapper.new(OasisDEX.address);
 

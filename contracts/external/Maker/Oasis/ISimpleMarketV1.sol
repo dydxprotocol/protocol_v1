@@ -7,12 +7,12 @@ contract ISimpleMarketV1 {
     // ============ Structs ================
 
     struct OfferInfo {
-        uint256     pay_amt;
-        address  pay_gem;
-        uint256     buy_amt;
-        address  buy_gem;
-        address  owner;
-        uint64   timestamp;
+        uint256 pay_amt;
+        address pay_gem;
+        uint256 buy_amt;
+        address buy_gem;
+        address owner;
+        uint64 timestamp;
     }
 
     // ============ Storage ================

@@ -21,6 +21,8 @@ const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
 const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
 const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
+const OasisV2SimpleExchangeWrapper = artifacts.require("OasisV2SimpleExchangeWrapper");
+// TODO const OasisV2MatchingExchangeWrapper = artifacts.require("OasisV2MatchingExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -61,13 +63,14 @@ const FeeToken = artifacts.require("TokenC");
 // External contracts
 const { networks } = require("../truffle");
 const { assetDataUtils } = require("@0xproject/order-utils");
-let { MatchingMarket } = require("../test/contracts/OasisDex");
+let { MatchingMarketV1, MatchingMarketV2 } = require("../test/contracts/OasisDex");
 let { ZeroExExchangeV1, ZeroExProxyV1 } = require("../test/contracts/ZeroExV1");
 let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../test/contracts/ZeroExV2");
 
 // Other constants
 const BigNumber = require('bignumber.js');
 const ONE_HOUR = new BigNumber(60 * 60);
+const EXPIRING_MARKET_EXPIRY = new BigNumber("18446744073709551615");
 
 // Helper functions
 function parseExternalContracts(contracts, network) {
@@ -96,16 +99,23 @@ async function maybeDeployTestTokens(deployer, network) {
   }
 }
 
-async function maybeDeployOasisDex(deployer, network) {
+async function maybeDeployOasisDexV1(deployer, network) {
   if (isDevNetwork(network)) {
-    parseExternalContracts([MatchingMarket]);
-    await deployer.deploy(MatchingMarket, new BigNumber("18446744073709551615"));
+    parseExternalContracts([MatchingMarketV1], network);
+    await deployer.deploy(MatchingMarketV1, EXPIRING_MARKET_EXPIRY);
+  }
+}
+
+async function maybeDeployOasisDexV2(deployer, network) {
+  if (isDevNetwork(network)) {
+    parseExternalContracts([MatchingMarketV2], network);
+    await deployer.deploy(MatchingMarketV2, EXPIRING_MARKET_EXPIRY);
   }
 }
 
 async function maybeDeploy0xV1(deployer, network) {
   if (isDevNetwork(network)) {
-    parseExternalContracts([ZeroExExchangeV1, ZeroExProxyV1]);
+    parseExternalContracts([ZeroExExchangeV1, ZeroExProxyV1], network);
     await deployer.deploy(ZeroExProxyV1);
     await deployer.deploy(ZeroExExchangeV1, FeeToken.address, ZeroExProxyV1.address);
     const proxy = await ZeroExProxyV1.deployed();
@@ -116,7 +126,7 @@ async function maybeDeploy0xV1(deployer, network) {
 async function maybeDeploy0xV2(deployer, network) {
   if (isDevNetwork(network)) {
     // Set up Truffle Contract objects
-    parseExternalContracts([ZeroExExchangeV2, ZeroExProxyV2]);
+    parseExternalContracts([ZeroExExchangeV2, ZeroExProxyV2], network);
 
     // Create fake ZRX Token asset data
     const zrxAssetData = assetDataUtils.encodeERC20AssetData(FeeToken.address);
@@ -142,16 +152,28 @@ async function maybeDeploy0xV2(deployer, network) {
   }
 }
 
-function getOasisDexAddress(network) {
+function getOasisDexV1Address(network) {
   if (isDevNetwork(network)) {
-    return MatchingMarket.address;
-  } else if (network === 'kovan') {
+    return MatchingMarketV1.address;
+  } else if (isKovan(network)) {
     return '0x8cf1cab422a0b6b554077a361f8419cdf122a9f9';
   } else if (isMainNet(network)) {
     return '0x14fbca95be7e99c15cc2996c6c9d841e54b79425';
   }
 
-  throw "OasisDex Not Found";
+  throw "OasisDexV1 Not Found";
+}
+
+function getOasisDexV2Address(network) {
+  if (isDevNetwork(network)) {
+    return MatchingMarketV2.address;
+  } else if (isKovan(network)) {
+    return '0xdb3b642ebc6ff85a3ab335cff9af2954f9215994';
+  } else if (isMainNet(network)) {
+    return '0xb7ac09c2c0217b07d7c103029b4918a2c401eecb';
+  }
+
+  throw "OasisDexV2 Not Found";
 }
 
 function getZeroExExchangeV2Address(network) {
@@ -334,11 +356,15 @@ async function deploySecondLayer(deployer, network) {
   await Promise.all([
     deployer.deploy(
       OasisV1SimpleExchangeWrapper,
-      getOasisDexAddress(network)
+      getOasisDexV1Address(network)
     ),
     deployer.deploy(
       OasisV1MatchingExchangeWrapper,
-      getOasisDexAddress(network)
+      getOasisDexV1Address(network)
+    ),
+    deployer.deploy(
+      OasisV2SimpleExchangeWrapper,
+      getOasisDexV2Address(network)
     ),
     deployer.deploy(
       ZeroExV1ExchangeWrapper,
@@ -433,7 +459,8 @@ async function deploySecondLayer(deployer, network) {
 async function doMigration(deployer, network) {
   await maybeDeployTestTokens(deployer, network);
   await Promise.all([
-    maybeDeployOasisDex(deployer, network),
+    maybeDeployOasisDexV1(deployer, network),
+    maybeDeployOasisDexV2(deployer, network),
     maybeDeploy0xV1(deployer, network),
     maybeDeploy0xV2(deployer, network)
   ]);
