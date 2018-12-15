@@ -1060,6 +1060,8 @@ contract('BucketLender', accounts => {
     await bucketLender.checkInvariants();
   });
 
+  // ============ Withdraw ============
+
   describe('#withdraw', () => {
     it('Multiple deposit and withdraw', async () => {
       await runAliceBot();
