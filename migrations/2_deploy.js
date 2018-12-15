@@ -22,7 +22,6 @@ const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapp
 const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
 const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const OasisV2SimpleExchangeWrapper = artifacts.require("OasisV2SimpleExchangeWrapper");
-// TODO const OasisV2MatchingExchangeWrapper = artifacts.require("OasisV2MatchingExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");

@@ -144,6 +144,18 @@ contract('OasisV2SimpleExchangeWrapper', accounts => {
       );
     });
 
+    it('fails for zero spend amount', async () => {
+      const amount = new BigNumber("2");
+      await expectThrow(
+        SMEW.getExchangeCost.call(
+          DAI.address,
+          WETH.address,
+          amount,
+          orderIdToBytes(wethToDaiId)
+        )
+      );
+    });
+
     it('fails for wrong order', async () => {
       const amount = new BigNumber("1e18");
       await expectThrow(
