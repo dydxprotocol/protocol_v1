@@ -39,6 +39,7 @@ export { default as ERC721MarginPosition }            from '../../build/contract
 export { default as ZeroExV1ExchangeWrapper }         from '../../build/contracts/ZeroExV1ExchangeWrapper.json';
 export { default as ZeroExV2ExchangeWrapper }         from '../../build/contracts/ZeroExV2ExchangeWrapper.json';
 export { default as OpenDirectlyExchangeWrapper }     from '../../build/contracts/OpenDirectlyExchangeWrapper.json';
+export { default as OasisV3SimpleExchangeWrapper }    from '../../build/contracts/OasisV2SimpleExchangeWrapper.json';
 export { default as OasisV2SimpleExchangeWrapper }    from '../../build/contracts/OasisV2SimpleExchangeWrapper.json';
 export { default as OasisV1SimpleExchangeWrapper }    from '../../build/contracts/OasisV1SimpleExchangeWrapper.json';
 export { default as OasisV1MatchingExchangeWrapper }  from '../../build/contracts/OasisV1MatchingExchangeWrapper.json';
