@@ -14,6 +14,7 @@
 - OasisV1SimpleExchangeWrapper:    [0xeefc9ee01604315ce1e69474033618ee7d21a33e](https://etherscan.io/address/0xeefc9ee01604315ce1e69474033618ee7d21a33e)
 - OasisV1MatchingExchangeWrapper:  [0xd72136c6da6ae959b5960c204edf8bc260087bca](https://etherscan.io/address/0xd72136c6da6ae959b5960c204edf8bc260087bca)
 - OasisV2SimpleExchangeWrapper:    [0xf85baccc3e7fd4b6a49818fc46503bb51539d554](https://etherscan.io/address/0xf85baccc3e7fd4b6a49818fc46503bb51539d554)
+- OasisV3SimpleExchangeWrapper:    [0x772f00a3cc671559f95e0f5d229548352906f782](https://etherscan.io/address/0x772f00a3cc671559f95e0f5d229548352906f782)
 - ERC20ShortFactory:               [0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28](https://etherscan.io/address/0x4cf98de1793ef45a2cfe9c622d871c63d61ecb28)
 - ERC20LongFactory:                [0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d](https://etherscan.io/address/0xd5e3e6f3f5de6c778bcd31e175e7b4a543b9d89d)
 - SharedLoanFactory:               N/A
