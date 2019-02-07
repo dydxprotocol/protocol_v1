@@ -56,6 +56,7 @@
 - OasisV1SimpleExchangeWrapper:    [0x2893572793cf2bf93992cdacac7a90654f44c170](https://kovan.etherscan.io/address/0x2893572793cf2bf93992cdacac7a90654f44c170)
 - OasisV1MatchingExchangeWrapper:  [0xdf22045d446fea3867d83bd3ef5e8688ec888038](https://kovan.etherscan.io/address/0xdf22045d446fea3867d83bd3ef5e8688ec888038)
 - OasisV2SimpleExchangeWrapper:    [0x37ddfbb1a86b16e4e3a34e564fa7f434f5c24eee](https://kovan.etherscan.io/address/0x37ddfbb1a86b16e4e3a34e564fa7f434f5c24eee)
+- OasisV3SimpleExchangeWrapper:    [0xf4c166306bd12ee81bd04289be32f71bfa002142](https://kovan.etherscan.io/address/0xf4c166306bd12ee81bd04289be32f71bfa002142)
 - ERC20ShortFactory:               [0x1ff1c89b10edde9aba85a82f55bf65259e011ae5](https://kovan.etherscan.io/address/0x1ff1c89b10edde9aba85a82f55bf65259e011ae5)
 - ERC20LongFactory:                [0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358](https://kovan.etherscan.io/address/0xb9a9889bfbc05d717e8be06b6611f9e3f10e2358)
 - SharedLoanFactory:               [0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69](https://kovan.etherscan.io/address/0xdfb147974aee4fe0f99d7d4707962ffa56ac8d69)

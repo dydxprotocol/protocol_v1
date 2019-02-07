@@ -180,7 +180,7 @@ function getOasisDexV3Address(network) {
   if (isDevNetwork(network)) {
     return MatchingMarketV2.address;
   } else if (isKovan(network)) {
-    throw "OasisDexV3 Not Found";
+    return '0x4a6bc4e803c62081ffebcc8d227b5a87a58f1f8f';
   } else if (isMainNet(network)) {
     return '0x39755357759ce0d7f32dc8dc45414cca409ae24e';
   }
