@@ -283,8 +283,8 @@
     "OasisV3SimpleExchangeWrapper": {
         "1": {
             "links": {},
-            "address": "0x772f00a3cc671559f95e0f5d229548352906f782",
-            "transactionHash": "0x39b039bc26c827a5bbe5d801d3f959ad8869f191e82f9ce0706edded07a88fdc"
+            "address": "0x89b5925a310b22e3e51cf9e2b3405a8c9b680835",
+            "transactionHash": "0xaab33fb34bb04fd3eabe97790e92c6b57e5c245f78b2fed1a44fe98ed4c70e44"
         }
     }
 }
