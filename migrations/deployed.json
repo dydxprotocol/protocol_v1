@@ -279,5 +279,17 @@
             "address": "0x37ddfbb1a86b16e4e3a34e564fa7f434f5c24eee",
             "transactionHash": "0x9ad5743662dd25b97fc7abf4f3bf788d1cb5c44414744fa3a373004a58591d03"
         }
+    },
+    "OasisV3SimpleExchangeWrapper": {
+        "1": {
+            "links": {},
+            "address": "0x89b5925a310b22e3e51cf9e2b3405a8c9b680835",
+            "transactionHash": "0xaab33fb34bb04fd3eabe97790e92c6b57e5c245f78b2fed1a44fe98ed4c70e44"
+        },
+        "42": {
+            "links": {},
+            "address": "0xf4c166306bd12ee81bd04289be32f71bfa002142",
+            "transactionHash": "0xad7882c501e7a1b0b214fbc2a941ceb3e3a3c253015ad957d345fd6181ccff1f"
+        }
     }
 }

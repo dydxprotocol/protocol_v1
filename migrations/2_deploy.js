@@ -22,6 +22,7 @@ const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapp
 const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
 const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const OasisV2SimpleExchangeWrapper = artifacts.require("OasisV2SimpleExchangeWrapper");
+const OasisV3SimpleExchangeWrapper = artifacts.require("OasisV3SimpleExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
 const Vault = artifacts.require("Vault");
@@ -173,6 +174,18 @@ function getOasisDexV2Address(network) {
   }
 
   throw "OasisDexV2 Not Found";
+}
+
+function getOasisDexV3Address(network) {
+  if (isDevNetwork(network)) {
+    return MatchingMarketV2.address;
+  } else if (isKovan(network)) {
+    return '0x4a6bc4e803c62081ffebcc8d227b5a87a58f1f8f';
+  } else if (isMainNet(network)) {
+    return '0x39755357759ce0d7f32dc8dc45414cca409ae24e';
+  }
+
+  throw "OasisDexV3 Not Found";
 }
 
 function getZeroExExchangeV2Address(network) {
@@ -364,6 +377,10 @@ async function deploySecondLayer(deployer, network) {
     deployer.deploy(
       OasisV2SimpleExchangeWrapper,
       getOasisDexV2Address(network)
+    ),
+    deployer.deploy(
+      OasisV3SimpleExchangeWrapper,
+      getOasisDexV3Address(network)
     ),
     deployer.deploy(
       ZeroExV1ExchangeWrapper,
