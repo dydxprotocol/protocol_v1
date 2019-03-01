@@ -175,7 +175,7 @@ contract OasisV3MatchingExchangeWrapper is
             // all amounts have previously been required to fit within 128 bits each
             require(
                 takerAmount.mul(makerAmountRatio) <= makerAmount.mul(takerAmountRatio),
-                "OasisV3MatchingExchangeWrapper:#requireBelowMaximumPrice: price is too high"
+                "OasisV3MatchingExchangeWrapper#requireBelowMaximumPrice: price is too high"
             );
         }
     }
@@ -221,7 +221,7 @@ contract OasisV3MatchingExchangeWrapper is
 
         require(
             orderData.length == 64,
-            "OasisV3MatchingExchangeWrapper:#getMaximumPrice: orderData is not the right length"
+            "OasisV3MatchingExchangeWrapper#getMaximumPrice: orderData is not the right length"
         );
 
         /* solium-disable-next-line security/no-inline-assembly */
@@ -233,17 +233,17 @@ contract OasisV3MatchingExchangeWrapper is
         // require numbers to fit within 128 bits to prevent overflow when checking bounds
         require(
             uint128(takerAmountRatio) == takerAmountRatio,
-            "OasisV3MatchingExchangeWrapper:#getMaximumPrice: takerAmountRatio > 128 bits"
+            "OasisV3MatchingExchangeWrapper#getMaximumPrice: takerAmountRatio > 128 bits"
         );
         require(
             uint128(makerAmountRatio) == makerAmountRatio,
-            "OasisV3MatchingExchangeWrapper:#getMaximumPrice: makerAmountRatio > 128 bits"
+            "OasisV3MatchingExchangeWrapper#getMaximumPrice: makerAmountRatio > 128 bits"
         );
 
         // since this is a price ratio, the denominator cannot be zero
         require(
             makerAmountRatio > 0,
-            "OasisV3MatchingExchangeWrapper:#getMaximumPrice: makerAmountRatio cannot be zero"
+            "OasisV3MatchingExchangeWrapper#getMaximumPrice: makerAmountRatio cannot be zero"
         );
 
         return (takerAmountRatio, makerAmountRatio);

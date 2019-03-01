@@ -295,8 +295,8 @@
     "OasisV3MatchingExchangeWrapper": {
         "42": {
             "links": {},
-            "address": "0xfa7c87b6c3373c7fd12583c733f53e93d3f51aa7",
-            "transactionHash": "0x7e4cfc3f42ce6d520be90f7663da4c5524a6ee8765930c7f3cb98546116ec455"
+            "address": "0xe97d1f4c17bf15847d6bc1e8f708a004018c69a3",
+            "transactionHash": "0x69fe4f45b645c535fa2ea26461c16e76f6ee1662f38fa6def11379e9926ce4e2"
         }
     }
 }
