@@ -291,5 +291,12 @@
             "address": "0xf4c166306bd12ee81bd04289be32f71bfa002142",
             "transactionHash": "0xad7882c501e7a1b0b214fbc2a941ceb3e3a3c253015ad957d345fd6181ccff1f"
         }
+    },
+    "OasisV3MatchingExchangeWrapper": {
+        "42": {
+            "links": {},
+            "address": "0xe97d1f4c17bf15847d6bc1e8f708a004018c69a3",
+            "transactionHash": "0x69fe4f45b645c535fa2ea26461c16e76f6ee1662f38fa6def11379e9926ce4e2"
+        }
     }
 }
