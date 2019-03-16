@@ -97,6 +97,28 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
     });
   });
 
+  describe('integration tests', () => {
+    it('will work for a buy workflow', async () => {
+      const amount = new BigNumber('12345654321');
+      const cost = await MMEW.getExchangeCost.call(
+        DAI.address,
+        WETH.address,
+        amount,
+        BYTES.EMPTY
+      );
+      await WETH.issueTo(MMEW.address, cost);
+      const result = await MMEW.exchange.call(
+        accounts[0],
+        accounts[0],
+        DAI.address,
+        WETH.address,
+        cost,
+        BYTES.EMPTY
+      );
+      expect(result).to.be.bignumber.gte(amount);
+    });
+  });
+
   describe('#getExchangeCost', () => {
     it('succeeds for no maximum price', async () => {
       const amount = new BigNumber("1e18");
@@ -129,13 +151,15 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
           BYTES.EMPTY
         ),
       ]);
-      expect(direct1).to.be.bignumber.eq(result1);
-      expect(direct2).to.be.bignumber.eq(result2);
+      expect(result1).to.be.bignumber.gte(direct1);
+      expect(result1).to.be.bignumber.lte(direct1.plus(2));
+      expect(result2).to.be.bignumber.gte(direct2);
+      expect(result2).to.be.bignumber.lte(direct2.plus(2 * DAI_PER_WETH));
     });
 
     it('succeeds for high maximum price', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = priceToBytes("1e10", "1e1");
+      let price = priceToBytes("1e10", "1e1");
       const [
         direct1,
         result1,
@@ -151,7 +175,7 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
           DAI.address,
           WETH.address,
           amount,
-          price1
+          price
         ),
         OasisDEX.getPayAmount.call(
           DAI.address,
@@ -162,68 +186,77 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
           WETH.address,
           DAI.address,
           amount,
-          price1
+          price
         ),
       ]);
-      expect(direct1).to.be.bignumber.eq(result1);
-      expect(direct2).to.be.bignumber.eq(result2);
+      expect(result1).to.be.bignumber.gte(direct1);
+      expect(result1).to.be.bignumber.lte(direct1.plus(2));
+      expect(result2).to.be.bignumber.gte(direct2);
+      expect(result2).to.be.bignumber.lte(direct2.plus(2 * DAI_PER_WETH));
     });
 
     it('fails for takerAmount > 128 bits', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = priceToBytes("1e40", "1e10");
+      let price = priceToBytes("1e40", "1e10");
       await expectThrow(
         MMEW.getExchangeCost.call(
           WETH.address,
           DAI.address,
           amount,
-          price1
+          price
         )
       );
     });
 
     it('fails for makerAmount > 128 bits', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = priceToBytes("1e10", "1e40");
+      let price = priceToBytes("1e10", "1e40");
       await expectThrow(
         MMEW.getExchangeCost.call(
           WETH.address,
           DAI.address,
           amount,
-          price1
+          price
         )
       );
     });
 
-    it('fails for low maximum price', async () => {
+    it('fails for mid-market price', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = priceToBytes("1", "1e10");
       await expectThrow(
         MMEW.getExchangeCost.call(
           WETH.address,
           DAI.address,
           amount,
-          price1
+          priceToBytes(DAI_PER_WETH, 1),
+        )
+      );
+      await expectThrow(
+        MMEW.getExchangeCost.call(
+          DAI.address,
+          WETH.address,
+          amount,
+          priceToBytes(1, DAI_PER_WETH),
         )
       );
     });
 
     it('fails for zero makerAmount (infinite max price)', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = priceToBytes("1e10", "0");
+      let price = priceToBytes("1e10", "0");
       await expectThrow(
         MMEW.getExchangeCost.call(
           WETH.address,
           DAI.address,
           amount,
-          price1
+          price
         )
       );
     });
 
     it('fails for improperly-formatted maximum price', async () => {
       const amount = new BigNumber("1e18");
-      let price1 = web3Instance.utils.bytesToHex([]
+      let price = web3Instance.utils.bytesToHex([]
         .concat(toBytes32(new BigNumber("1e1")))
         .concat(toBytes32(new BigNumber("1e10")))
         .concat(toBytes32(new BigNumber("1e100")))
@@ -233,7 +266,7 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
           WETH.address,
           DAI.address,
           amount,
-          price1
+          price
         )
       );
     });
@@ -273,11 +306,12 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
       expect(receipt2.result).to.be.bignumber.eq(expectedResult);
     });
 
-    it('fails for low maximum price', async () => {
+    it('fails for mid-market price', async () => {
       const amount = new BigNumber("1e18");
-      let price = priceToBytes("1", "1e10");
-      await DAI.issueTo(MMEW.address, amount);
-
+      await Promise.all([
+        DAI.issueTo(MMEW.address, amount),
+        WETH.issueTo(MMEW.address, amount),
+      ]);
       await expectThrow(
         MMEW.exchange(
           accounts[0],
@@ -285,7 +319,17 @@ contract('OasisV3MatchingExchangeWrapper', accounts => {
           WETH.address,
           DAI.address,
           amount,
-          price
+          priceToBytes(DAI_PER_WETH, 1),
+        )
+      );
+      await expectThrow(
+        MMEW.exchange(
+          accounts[0],
+          accounts[0],
+          DAI.address,
+          WETH.address,
+          amount,
+          priceToBytes(1, DAI_PER_WETH),
         )
       );
     });
