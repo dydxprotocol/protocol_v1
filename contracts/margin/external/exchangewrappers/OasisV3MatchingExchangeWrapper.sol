@@ -111,8 +111,9 @@ contract OasisV3MatchingExchangeWrapper is
     {
         IMatchingMarketV1 market = MATCHING_MARKET;
 
-        // must add 1 to the maker and taker amounts due to rounding differences in OasisDEX when
-        // calling the "pay" functions vs the "buy" functions
+        // Must add 1 to the maker and taker amounts due to rounding differences in OasisDEX when
+        // calling the "pay" functions vs the "buy" functions. This will lock some tokens in this
+        // contract, but the value will be less than the sum of the smallest unit of each token.
         uint256 costInTakerToken = market.getPayAmount(
             takerToken,
             makerToken,

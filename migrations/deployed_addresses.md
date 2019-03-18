@@ -54,7 +54,7 @@
 - ZeroExV2ExchangeWrapper:         [0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d](https://kovan.etherscan.io/address/0x94995fb8dd3d49731b6b5a84a2c10ae2901a5f9d)
 - OpenDirectlyExchangeWrapper:     [0x8085b9646593bc35456a71f1b0c38315eb074ede](https://kovan.etherscan.io/address/0x8085b9646593bc35456a71f1b0c38315eb074ede)
 - OasisV1MatchingExchangeWrapper:  [0xdf22045d446fea3867d83bd3ef5e8688ec888038](https://kovan.etherscan.io/address/0xdf22045d446fea3867d83bd3ef5e8688ec888038)
-- OasisV3MatchingExchangeWrapper:  [0xfa7c87b6c3373c7fd12583c733f53e93d3f51aa7](https://kovan.etherscan.io/address/0xfa7c87b6c3373c7fd12583c733f53e93d3f51aa7)
+- OasisV3MatchingExchangeWrapper:  [0xc8186273d1828942e44234c10ee6d83253143237](https://kovan.etherscan.io/address/0xc8186273d1828942e44234c10ee6d83253143237)
 - OasisV1SimpleExchangeWrapper:    [0x2893572793cf2bf93992cdacac7a90654f44c170](https://kovan.etherscan.io/address/0x2893572793cf2bf93992cdacac7a90654f44c170)
 - OasisV2SimpleExchangeWrapper:    [0x37ddfbb1a86b16e4e3a34e564fa7f434f5c24eee](https://kovan.etherscan.io/address/0x37ddfbb1a86b16e4e3a34e564fa7f434f5c24eee)
 - OasisV3SimpleExchangeWrapper:    [0xf4c166306bd12ee81bd04289be32f71bfa002142](https://kovan.etherscan.io/address/0xf4c166306bd12ee81bd04289be32f71bfa002142)
