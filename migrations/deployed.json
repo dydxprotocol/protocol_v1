@@ -293,6 +293,11 @@
         }
     },
     "OasisV3MatchingExchangeWrapper": {
+        "1": {
+            "links": {},
+            "address": "0xab33e884ec8fed4f5867246e4300228f3d666561",
+            "transactionHash": "0x1564d4d34c0fec6d945fe5f1674f3bb3bd0f3016cf1b5bd18244456ecd14120f"
+        },
         "42": {
             "links": {},
             "address": "0xc8186273d1828942e44234c10ee6d83253143237",

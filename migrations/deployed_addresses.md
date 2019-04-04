@@ -12,6 +12,7 @@
 - ZeroExV2ExchangeWrapper:         [0xa26d16a21805b14b2977555ffdea34e5e6fc43ba](https://etherscan.io/address/0xa26d16a21805b14b2977555ffdea34e5e6fc43ba)
 - OpenDirectlyExchangeWrapper:     [0xcb17e969288ae849d5e0717694c5c56e70e798ed](https://etherscan.io/address/0xcb17e969288ae849d5e0717694c5c56e70e798ed)
 - OasisV1MatchingExchangeWrapper:  [0xd72136c6da6ae959b5960c204edf8bc260087bca](https://etherscan.io/address/0xd72136c6da6ae959b5960c204edf8bc260087bca)
+- OasisV3MatchingExchangeWrapper:  [0xab33e884ec8fed4f5867246e4300228f3d666561](https://etherscan.io/address/0xab33e884ec8fed4f5867246e4300228f3d666561)
 - OasisV1SimpleExchangeWrapper:    [0xeefc9ee01604315ce1e69474033618ee7d21a33e](https://etherscan.io/address/0xeefc9ee01604315ce1e69474033618ee7d21a33e)
 - OasisV2SimpleExchangeWrapper:    [0xf85baccc3e7fd4b6a49818fc46503bb51539d554](https://etherscan.io/address/0xf85baccc3e7fd4b6a49818fc46503bb51539d554)
 - OasisV3SimpleExchangeWrapper:    [0x89b5925a310b22e3e51cf9e2b3405a8c9b680835](https://etherscan.io/address/0x89b5925a310b22e3e51cf9e2b3405a8c9b680835)
