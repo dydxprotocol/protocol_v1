@@ -21,6 +21,8 @@
   </a>
 </p>
 
+**DEPRECATED see our new protocol [here](https://github.com/dydxprotocol/solo)**
+
 Source code for Ethereum Smart Contracts used by the dYdX Margin Trading Protocol
 
 [Whitepaper](https://whitepaper.dydx.exchange)
