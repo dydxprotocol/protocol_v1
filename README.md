@@ -2,7 +2,7 @@
 
 <p align="center">
   <a href="https://circleci.com/gh/dydxprotocol/workflows/protocol/tree/master">
-    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/protocol.svg" alt='CI' />
+    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/protocol_v1.svg" alt='CI' />
   </a>
   <a href='https://coveralls.io/github/dydxprotocol/protocol'>
     <img src='https://coveralls.io/repos/github/dydxprotocol/protocol/badge.svg?branch=master' alt='Coverage Status' />
