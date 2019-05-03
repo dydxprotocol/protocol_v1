@@ -1,7 +1,7 @@
 <p align="center"><img src="https://s3.amazonaws.com/dydx-assets/logo_large_white.png" width="256" /></p>
 
 <p align="center">
-  <a href="https://circleci.com/gh/dydxprotocol/workflows/protocol/tree/master">
+  <a href="https://circleci.com/gh/dydxprotocol/workflows/protocol_v1/tree/master">
     <img src="https://img.shields.io/circleci/project/github/dydxprotocol/protocol_v1.svg" alt='CI' />
   </a>
   <a href='https://coveralls.io/github/dydxprotocol/protocol'>
