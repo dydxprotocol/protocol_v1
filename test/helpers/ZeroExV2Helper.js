@@ -8,7 +8,7 @@ const HeldToken = artifacts.require("TokenA");
 const OwedToken = artifacts.require("TokenB");
 let { ZeroExExchangeV2 } = require("../contracts/ZeroExV2");
 
-const { ADDRESSES, DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
+const { ADDRESSES, BIGNUMBERS, DEFAULT_SALT, ORDER_TYPE } = require('./Constants');
 const { addressToBytes32, concatBytes } = require('./BytesHelper');
 
 const BASE_AMOUNT = new BigNumber('1098623452345987123')
@@ -16,8 +16,12 @@ const BASE_AMOUNT = new BigNumber('1098623452345987123')
 async function createSignedV2SellOrder(
   accounts,
   {
-    salt = DEFAULT_SALT,
     feeRecipientAddress,
+    salt = DEFAULT_SALT,
+    fees = true,
+    makerAssetMultiplier = '6.382472',
+    takerAssetMultiplier = '19.123475',
+    expirationTimeSeconds = '100000000000000',
   } = {}
 ) {
   let order = {
@@ -29,18 +33,18 @@ async function createSignedV2SellOrder(
     feeRecipientAddress: feeRecipientAddress || accounts[6],
     senderAddress: ADDRESSES.ZERO,
 
-    makerFee: BASE_AMOUNT.times(0.010928345).floor(),
-    takerFee: BASE_AMOUNT.times(0.109128341).floor(),
-    expirationTimeSeconds: new BigNumber(100000000000000),
+    makerFee: fees ? BASE_AMOUNT.times(0.010928345).floor() : BIGNUMBERS.ZERO,
+    takerFee: fees? BASE_AMOUNT.times(0.109128341).floor() : BIGNUMBERS.ZERO,
+    expirationTimeSeconds: new BigNumber(expirationTimeSeconds),
     salt: new BigNumber(salt),
 
     // owedToken
     makerTokenAddress: OwedToken.address,
-    makerAssetAmount: BASE_AMOUNT.times(6.382472).floor(),
+    makerAssetAmount: BASE_AMOUNT.times(makerAssetMultiplier).floor(),
 
     // heldToken
     takerTokenAddress: HeldToken.address,
-    takerAssetAmount: BASE_AMOUNT.times(19.123475).floor()
+    takerAssetAmount: BASE_AMOUNT.times(takerAssetMultiplier).floor()
   };
 
   order.signature = await signV2Order(order);
