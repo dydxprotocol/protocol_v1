@@ -26,6 +26,7 @@ const OasisV2SimpleExchangeWrapper = artifacts.require("OasisV2SimpleExchangeWra
 const OasisV3SimpleExchangeWrapper = artifacts.require("OasisV3SimpleExchangeWrapper");
 const ZeroExV1ExchangeWrapper = artifacts.require("ZeroExV1ExchangeWrapper");
 const ZeroExV2ExchangeWrapper = artifacts.require("ZeroExV2ExchangeWrapper");
+const ZeroExV2MultiOrderExchangeWrapper = artifacts.require("ZeroExV2MultiOrderExchangeWrapper");
 const Vault = artifacts.require("Vault");
 const TokenProxy = artifacts.require("TokenProxy");
 const Margin = artifacts.require("Margin");
@@ -400,6 +401,11 @@ async function deploySecondLayer(deployer, network) {
       getZeroExProxyV2Address(network),
       getZRXAddress(network),
       [Margin.address]
+    ),
+    deployer.deploy(
+      ZeroExV2MultiOrderExchangeWrapper,
+      getZeroExExchangeV2Address(network),
+      getZeroExProxyV2Address(network),
     ),
     deployer.deploy(
       OpenDirectlyExchangeWrapper

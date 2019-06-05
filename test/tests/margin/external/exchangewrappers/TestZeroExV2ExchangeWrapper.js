@@ -381,7 +381,7 @@ describe('ZeroExV2ExchangeWrapper', () => {
       });
     });
 
-    contract('ZeroExV1ExchangeWrapper', accounts => {
+    contract('ZeroExV2ExchangeWrapper', accounts => {
       it('succeeds if zero taker fee for any msg.sender', async () => {
         const {
           exchangeWrapper,
