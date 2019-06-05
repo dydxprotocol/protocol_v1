@@ -286,7 +286,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         pure
         returns (uint256)
     {
-        return PRICE_DATA_LENGTH + index * ORDER_DATA_LENGTH;
+        return PRICE_DATA_LENGTH.add(index.mul(ORDER_DATA_LENGTH));
     }
 
     /**
