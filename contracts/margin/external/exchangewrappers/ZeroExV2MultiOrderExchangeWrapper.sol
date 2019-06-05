@@ -171,12 +171,15 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         running.takerAmount = 0;
         running.makerAmount = desiredMakerToken;
 
+        // read exchange address from storage
+        IExchange exchange = IExchange(ZERO_EX_EXCHANGE);
+
         // for all orders
         for (uint256 i = 0; i < orders.length && running.makerAmount != 0; i++) {
             Order memory order = orders[i];
 
             // get order info
-            OrderInfo memory info = IExchange(ZERO_EX_EXCHANGE).getOrderInfo(order);
+            OrderInfo memory info = exchange.getOrderInfo(order);
 
             // ignore unfillable orders
             if (info.orderStatus != uint8(OrderStatus.FILLABLE)) {
