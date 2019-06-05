@@ -167,15 +167,15 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         Order[] memory orders = parseOrders(orderData, makerToken, takerToken);
 
         // keep running count of how much takerToken is needed until desiredMakerToken is acquired
-        TokenAmounts memory running;
-        running.takerAmount = 0;
-        running.makerAmount = desiredMakerToken;
+        TokenAmounts memory total;
+        total.takerAmount = 0;
+        total.makerAmount = desiredMakerToken;
 
         // read exchange address from storage
         IExchange exchange = IExchange(ZERO_EX_EXCHANGE);
 
         // for all orders
-        for (uint256 i = 0; i < orders.length && running.makerAmount != 0; i++) {
+        for (uint256 i = 0; i < orders.length && total.makerAmount != 0; i++) {
             Order memory order = orders[i];
 
             // get order info
@@ -186,45 +186,45 @@ contract ZeroExV2MultiOrderExchangeWrapper is
                 continue;
             }
 
-            // calculate the remaining taker and maker amounts in the order
-            TokenAmounts memory remaining;
-            remaining.takerAmount = order.takerAssetAmount.sub(info.orderTakerAssetFilledAmount);
-            remaining.makerAmount = MathHelpers.getPartialAmount(
-                remaining.takerAmount,
+            // calculate the remaining available taker and maker amounts in the order
+            TokenAmounts memory available;
+            available.takerAmount = order.takerAssetAmount.sub(info.orderTakerAssetFilledAmount);
+            available.makerAmount = MathHelpers.getPartialAmount(
+                available.takerAmount,
                 order.takerAssetAmount,
                 order.makerAssetAmount
             );
 
-            // bound the remaining amounts by the maker amount still needed
-            if (remaining.makerAmount > running.makerAmount) {
-                remaining.makerAmount = running.makerAmount;
-                remaining.takerAmount = MathHelpers.getPartialAmountRoundedUp(
+            // bound the remaining available amounts by the maker amount still needed
+            if (available.makerAmount > total.makerAmount) {
+                available.makerAmount = total.makerAmount;
+                available.takerAmount = MathHelpers.getPartialAmountRoundedUp(
                     order.takerAssetAmount,
                     order.makerAssetAmount,
-                    remaining.makerAmount
+                    available.makerAmount
                 );
             }
 
             // update the running tallies
-            running.takerAmount = running.takerAmount.add(remaining.takerAmount);
-            running.makerAmount = running.makerAmount.sub(remaining.makerAmount);
+            total.takerAmount = total.takerAmount.add(available.takerAmount);
+            total.makerAmount = total.makerAmount.sub(available.makerAmount);
         }
 
         // require that all amount was bought
         require(
-            running.makerAmount == 0,
+            total.makerAmount == 0,
             "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
         );
 
         // validate that max price will not be violated
         validateTradePrice(
             priceRatio,
-            running.takerAmount,
+            total.takerAmount,
             desiredMakerToken
         );
 
         // return the amount of taker token needed
-        return running.takerAmount;
+        return total.takerAmount;
     }
 
     // ============ Private Functions ============
