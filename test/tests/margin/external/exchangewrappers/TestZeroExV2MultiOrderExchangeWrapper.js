@@ -72,7 +72,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
         const order = await createSignedV2SellOrder(accounts, { fees: false });
         const amount = new BigNumber(baseAmount.times(2));
 
-        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order.makerTokenAddress,
           order.takerTokenAddress,
           amount,
@@ -86,7 +86,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
           true
         );
 
-        expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expected);
       });
     });
 
@@ -104,7 +104,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
         });
         const amount = new BigNumber(baseAmount.times(2));
 
-        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order1.makerTokenAddress,
           order1.takerTokenAddress,
           amount,
@@ -118,7 +118,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
           true
         );
 
-        expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expected);
       });
     });
 
@@ -136,7 +136,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
         });
         const amount = order1.makerAssetAmount.plus(order2.makerAssetAmount);
 
-        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order1.makerTokenAddress,
           order1.takerTokenAddress,
           amount,
@@ -145,7 +145,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
 
         const expected = order1.takerAssetAmount.plus(order2.takerAssetAmount);
 
-        expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expected);
       });
     });
 
@@ -163,13 +163,97 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
           fees: false,
         });
         const amount = order1.makerAssetAmount;
-        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order1.makerTokenAddress,
           order1.takerTokenAddress,
           amount,
           zeroExV2MultiOrdersToBytes([order1, order2])
         );
-        expect(requiredtakerAssetAmount).to.be.bignumber.eq(order2.takerAssetAmount);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(order2.takerAssetAmount);
+      });
+    });
+
+    contract('ZeroExV2MultiOrderExchangeWrapper', accounts => {
+      it('skips order where the maker has enough tokens for the first order', async () => {
+        const {
+          exchangeWrapper
+        } = await setup(accounts);
+
+        const order1 = await createSignedV2SellOrder(accounts, {
+          makerAddress: accounts[9],
+          fees: false,
+          salt: 1,
+        });
+        const order2 = await createSignedV2SellOrder(accounts, {
+          makerAddress: accounts[9],
+          fees: false,
+          salt: 2,
+        });
+        const order3 = await createSignedV2SellOrder(accounts, {
+          fees: false,
+          takerAssetMultiplier: '21.123475',
+        });
+
+        const makerToken = await OwedToken.deployed();
+        await issueAndSetAllowance(
+          makerToken,
+          order1.makerAddress,
+          order1.makerAssetAmount.times(1.5),
+          ZeroExProxyV2.address
+        );
+
+        const amount = order1.makerAssetAmount.plus(order3.makerAssetAmount);
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+          order1.makerTokenAddress,
+          order1.takerTokenAddress,
+          amount,
+          zeroExV2MultiOrdersToBytes([order1, order2, order3]),
+        );
+        const expectedTakerAssetAmount = order1.takerAssetAmount.plus(order3.takerAssetAmount);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expectedTakerAssetAmount);
+      });
+    });
+
+    contract('ZeroExV2MultiOrderExchangeWrapper', accounts => {
+      it('skips order where the maker has enough tokens for the second order', async () => {
+        const {
+          exchangeWrapper
+        } = await setup(accounts);
+
+        const order1 = await createSignedV2SellOrder(accounts, {
+          makerAddress: accounts[9],
+          fees: false,
+          salt: 1,
+          makerAssetMultiplier: '20',
+        });
+        const order2 = await createSignedV2SellOrder(accounts, {
+          makerAddress: accounts[9],
+          fees: false,
+          salt: 2,
+          makerAssetMultiplier: '10',
+        });
+        const order3 = await createSignedV2SellOrder(accounts, {
+          fees: false,
+          takerAssetMultiplier: '21.123475',
+        });
+
+        const makerToken = await OwedToken.deployed();
+        await issueAndSetAllowance(
+          makerToken,
+          order2.makerAddress,
+          order2.makerAssetAmount.times(1.5),
+          ZeroExProxyV2.address
+        );
+
+        const amount = order2.makerAssetAmount.plus(order3.makerAssetAmount);
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+          order1.makerTokenAddress,
+          order1.takerTokenAddress,
+          amount,
+          zeroExV2MultiOrdersToBytes([order1, order2, order3]),
+        );
+        const expectedTakerAssetAmount = order2.takerAssetAmount.plus(order3.takerAssetAmount);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expectedTakerAssetAmount);
       });
     });
 
@@ -226,7 +310,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
           zeroExV2MultiOrdersToBytes([order2])
         );
 
-        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+        const requiredTakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
           order1.makerTokenAddress,
           order1.takerTokenAddress,
           amount,
@@ -240,7 +324,7 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
           true
         );
 
-        expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
+        expect(requiredTakerAssetAmount).to.be.bignumber.eq(expected);
       });
     });
 
