@@ -197,6 +197,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
 
     // ============ Private Functions ============
 
+    struct Balance{
+        address maker;
+        uint256 balance;
+    }
+
     /**
      * Gets the amount of takerToken required to fill the amount of total.makerToken.
      * Does not return a value, only modifies the values inside total.
@@ -211,6 +216,9 @@ contract ZeroExV2MultiOrderExchangeWrapper is
     {
         // read exchange address from storage
         IExchange zeroExExchange = IExchange(ZERO_EX_EXCHANGE);
+
+        // cache balances for makers
+        Balance[] memory balances = new Balance[](orders.length);
 
         // for all orders
         for (uint256 i = 0; i < orders.length && total.makerAmount != 0; i++) {
@@ -244,13 +252,62 @@ contract ZeroExV2MultiOrderExchangeWrapper is
             }
 
             // ignore orders that the maker will definitely not be able to fill
-            if (makerToken.balanceOf(order.makerAddress) < available.makerAmount) {
+            if (!updateBalanceCache(
+                makerToken,
+                balances,
+                order.makerAddress,
+                available.makerAmount)
+            ) {
                 continue;
             }
 
             // update the running tallies
             total.takerAmount = total.takerAmount.add(available.takerAmount);
             total.makerAmount = total.makerAmount.sub(available.makerAmount);
+        }
+    }
+
+    function updateBalanceCache(
+        address makerToken,
+        Balance[] memory balances,
+        address maker,
+        uint256 amount
+    )
+        private
+        view
+        returns (bool)
+    {
+        bool makerInCache = false;
+        uint256 i;
+        Balance memory current;
+        for (i = 0; i < balances.length; i++) {
+            current = balances[i];
+            if (current.maker == address(0)) {
+                break;
+            }
+            if (current.maker == maker) {
+                makerInCache = true;
+                break;
+            }
+        }
+        if (makerInCache) {
+            if (current.balance >= amount) {
+                current.balance = current.balance.sub(amount);
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            uint256 startingBalance = makerToken.balanceOf(maker);
+            if (startingBalance >= amount) {
+                balances[i] = Balance({
+                    maker: maker,
+                    balance: startingBalance.sub(amount)
+                });
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 
