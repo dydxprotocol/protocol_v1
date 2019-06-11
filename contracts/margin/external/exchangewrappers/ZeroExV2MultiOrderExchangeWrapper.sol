@@ -61,6 +61,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         uint256 makerAmount;
     }
 
+    struct TokenBalance {
+        address owner;
+        uint256 balance;
+    }
+
     // ============ State Variables ============
 
     // address of the ZeroEx V2 Exchange
@@ -171,15 +176,47 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         total.takerAmount = 0;
         total.makerAmount = desiredMakerToken;
 
+        // gets the exchange cost. modifies total
+        uint256 takerCost = getExchangeCostInternal(
+            makerToken,
+            orders,
+            total
+        );
+
+        // validate that max price will not be violated
+        validateTradePrice(priceRatio, takerCost, desiredMakerToken);
+
+        // return the amount of taker token needed
+        return takerCost;
+    }
+
+    // ============ Private Functions ============
+
+    /**
+     * Gets the amount of takerToken required to fill the amount of total.makerToken.
+     * Does not return a value, only modifies the values inside total.
+     */
+    function getExchangeCostInternal(
+        address makerToken,
+        Order[] memory orders,
+        TokenAmounts memory total
+    )
+        private
+        view
+        returns (uint256)
+    {
         // read exchange address from storage
-        IExchange exchange = IExchange(ZERO_EX_EXCHANGE);
+        IExchange zeroExExchange = IExchange(ZERO_EX_EXCHANGE);
+
+        // cache balances for makers
+        TokenBalance[] memory balances = new TokenBalance[](orders.length);
 
         // for all orders
         for (uint256 i = 0; i < orders.length && total.makerAmount != 0; i++) {
             Order memory order = orders[i];
 
             // get order info
-            OrderInfo memory info = exchange.getOrderInfo(order);
+            OrderInfo memory info = zeroExExchange.getOrderInfo(order);
 
             // ignore unfillable orders
             if (info.orderStatus != uint8(OrderStatus.FILLABLE)) {
@@ -205,29 +242,85 @@ contract ZeroExV2MultiOrderExchangeWrapper is
                 );
             }
 
+            // ignore orders that the maker will not be able to fill
+            if (!makerHasEnoughTokens(
+                makerToken,
+                balances,
+                order.makerAddress,
+                available.makerAmount)
+            ) {
+                continue;
+            }
+
             // update the running tallies
             total.takerAmount = total.takerAmount.add(available.takerAmount);
             total.makerAmount = total.makerAmount.sub(available.makerAmount);
         }
 
-        // require that all amount was bought
+        // require that entire amount was bought
         require(
             total.makerAmount == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
+            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCostInternal: Cannot buy enough maker token"
         );
 
-        // validate that max price will not be violated
-        validateTradePrice(
-            priceRatio,
-            total.takerAmount,
-            desiredMakerToken
-        );
-
-        // return the amount of taker token needed
         return total.takerAmount;
     }
 
-    // ============ Private Functions ============
+    /**
+     * Checks and modifies balances to keep track of the expected balance of the maker after filling
+     * each order. Returns true if the maker has enough makerToken left to transfer amount.
+     */
+    function makerHasEnoughTokens(
+        address makerToken,
+        TokenBalance[] memory balances,
+        address makerAddress,
+        uint256 amount
+    )
+        private
+        view
+        returns (bool)
+    {
+        // find the maker's balance in the cache or the first non-populated balance in the cache
+        TokenBalance memory current;
+        uint256 i;
+        for (i = 0; i < balances.length; i++) {
+            current = balances[i];
+            if (
+                current.owner == address(0)
+                || current.owner == makerAddress
+            ) {
+                break;
+            }
+        }
+
+        // if the maker is already in the cache
+        if (current.owner == makerAddress) {
+            if (current.balance >= amount) {
+                current.balance = current.balance.sub(amount);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        // if the maker is not already in the cache
+        else {
+            uint256 startingBalance = makerToken.balanceOf(makerAddress);
+            if (startingBalance >= amount) {
+                balances[i] = TokenBalance({
+                    owner: makerAddress,
+                    balance: startingBalance.sub(amount)
+                });
+                return true;
+            } else {
+                balances[i] = TokenBalance({
+                    owner: makerAddress,
+                    balance: startingBalance
+                });
+                return false;
+            }
+        }
+    }
 
     /**
      * Validates that a certain takerAmount and makerAmount are within the maxPrice bounds
@@ -259,7 +352,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         require(
             orderData.length >= PRICE_DATA_LENGTH + ORDER_DATA_LENGTH
             && orderData.length.sub(PRICE_DATA_LENGTH) % ORDER_DATA_LENGTH == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#parseOrder: Invalid orderData length"
+            "ZeroExV2MultiOrderExchangeWrapper#validateOrderData: Invalid orderData length"
         );
     }
 
@@ -311,11 +404,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         // require numbers to fit within 128 bits to prevent overflow when checking bounds
         require(
             uint128(takerAmountRatio) == takerAmountRatio,
-            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPrice: takerAmountRatio > 128 bits"
+            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPriceRatio: takerAmountRatio > 128 bits"
         );
         require(
             uint128(makerAmountRatio) == makerAmountRatio,
-            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPrice: makerAmountRatio > 128 bits"
+            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPriceRatio: makerAmountRatio > 128 bits"
         );
 
         return TokenAmounts({
