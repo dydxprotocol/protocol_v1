@@ -260,7 +260,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         // require that entire amount was bought
         require(
             total.makerAmount == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
+            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCostInternal: Cannot buy enough maker token"
         );
 
         return total.takerAmount;
@@ -352,7 +352,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         require(
             orderData.length >= PRICE_DATA_LENGTH + ORDER_DATA_LENGTH
             && orderData.length.sub(PRICE_DATA_LENGTH) % ORDER_DATA_LENGTH == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#parseOrder: Invalid orderData length"
+            "ZeroExV2MultiOrderExchangeWrapper#validateOrderData: Invalid orderData length"
         );
     }
 
@@ -404,11 +404,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         // require numbers to fit within 128 bits to prevent overflow when checking bounds
         require(
             uint128(takerAmountRatio) == takerAmountRatio,
-            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPrice: takerAmountRatio > 128 bits"
+            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPriceRatio: takerAmountRatio > 128 bits"
         );
         require(
             uint128(makerAmountRatio) == makerAmountRatio,
-            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPrice: makerAmountRatio > 128 bits"
+            "ZeroExV2MultiOrderExchangeWrapper#parseMaxPriceRatio: makerAmountRatio > 128 bits"
         );
 
         return TokenAmounts({
