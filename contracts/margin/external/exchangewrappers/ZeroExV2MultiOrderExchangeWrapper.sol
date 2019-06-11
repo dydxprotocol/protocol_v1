@@ -243,6 +243,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
                 );
             }
 
+            // ignore orders that the maker will definitely not be able to fill
+            if (makerToken.balanceOf(order.makerAddress) < available.makerAmount) {
+                continue;
+            }
+
             // update the running tallies
             total.takerAmount = total.takerAmount.add(available.takerAmount);
             total.makerAmount = total.makerAmount.sub(available.makerAmount);
