@@ -61,7 +61,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         uint256 makerAmount;
     }
 
-    struct TokenBalance{
+    struct TokenBalance {
         address owner;
         uint256 balance;
     }
@@ -177,27 +177,17 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         total.makerAmount = desiredMakerToken;
 
         // gets the exchange cost. modifies total
-        getExchangeCostInternal(
+        uint256 takerCost = getExchangeCostInternal(
             makerToken,
             orders,
             total
         );
 
-        // require that all amount was bought
-        require(
-            total.makerAmount == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
-        );
-
         // validate that max price will not be violated
-        validateTradePrice(
-            priceRatio,
-            total.takerAmount,
-            desiredMakerToken
-        );
+        validateTradePrice(priceRatio, takerCost, desiredMakerToken);
 
         // return the amount of taker token needed
-        return total.takerAmount;
+        return takerCost;
     }
 
     // ============ Private Functions ============
@@ -213,6 +203,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
     )
         private
         view
+        returns (uint256)
     {
         // read exchange address from storage
         IExchange zeroExExchange = IExchange(ZERO_EX_EXCHANGE);
@@ -265,6 +256,14 @@ contract ZeroExV2MultiOrderExchangeWrapper is
             total.takerAmount = total.takerAmount.add(available.takerAmount);
             total.makerAmount = total.makerAmount.sub(available.makerAmount);
         }
+
+        // require that entire amount was bought
+        require(
+            total.makerAmount == 0,
+            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
+        );
+
+        return total.takerAmount;
     }
 
     /**
