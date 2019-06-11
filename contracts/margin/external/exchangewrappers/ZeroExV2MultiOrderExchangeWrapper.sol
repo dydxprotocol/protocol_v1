@@ -61,6 +61,11 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         uint256 makerAmount;
     }
 
+    struct TokenBalance{
+        address owner;
+        uint256 balance;
+    }
+
     // ============ State Variables ============
 
     // address of the ZeroEx V2 Exchange
@@ -171,7 +176,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         total.takerAmount = 0;
         total.makerAmount = desiredMakerToken;
 
-        // modify total
+        // gets the exchange cost. modifies total
         getExchangeCostInternal(
             makerToken,
             orders,
@@ -197,11 +202,6 @@ contract ZeroExV2MultiOrderExchangeWrapper is
 
     // ============ Private Functions ============
 
-    struct Balance{
-        address maker;
-        uint256 balance;
-    }
-
     /**
      * Gets the amount of takerToken required to fill the amount of total.makerToken.
      * Does not return a value, only modifies the values inside total.
@@ -218,7 +218,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         IExchange zeroExExchange = IExchange(ZERO_EX_EXCHANGE);
 
         // cache balances for makers
-        Balance[] memory balances = new Balance[](orders.length);
+        TokenBalance[] memory balances = new TokenBalance[](orders.length);
 
         // for all orders
         for (uint256 i = 0; i < orders.length && total.makerAmount != 0; i++) {
@@ -251,8 +251,8 @@ contract ZeroExV2MultiOrderExchangeWrapper is
                 );
             }
 
-            // ignore orders that the maker will definitely not be able to fill
-            if (!updateBalanceCache(
+            // ignore orders that the maker will not be able to fill
+            if (!makerHasEnoughTokens(
                 makerToken,
                 balances,
                 order.makerAddress,
@@ -267,45 +267,57 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         }
     }
 
-    function updateBalanceCache(
+    /**
+     * Checks and modifies balances to keep track of the expected balance of the maker after filling
+     * each order. Returns true if the maker has enough makerToken left to transfer amount.
+     */
+    function makerHasEnoughTokens(
         address makerToken,
-        Balance[] memory balances,
-        address maker,
+        TokenBalance[] memory balances,
+        address makerAddress,
         uint256 amount
     )
         private
         view
         returns (bool)
     {
-        bool makerInCache = false;
+        // find the maker's balance in the cache or the first non-populated balance in the cache
+        TokenBalance memory current;
         uint256 i;
-        Balance memory current;
         for (i = 0; i < balances.length; i++) {
             current = balances[i];
-            if (current.maker == address(0)) {
-                break;
-            }
-            if (current.maker == maker) {
-                makerInCache = true;
+            if (
+                current.owner == address(0)
+                || current.owner == makerAddress
+            ) {
                 break;
             }
         }
-        if (makerInCache) {
+
+        // if the maker is already in the cache
+        if (current.owner == makerAddress) {
             if (current.balance >= amount) {
                 current.balance = current.balance.sub(amount);
                 return true;
             } else {
                 return false;
             }
-        } else {
-            uint256 startingBalance = makerToken.balanceOf(maker);
+        }
+
+        // if the maker is not already in the cache
+        else {
+            uint256 startingBalance = makerToken.balanceOf(makerAddress);
             if (startingBalance >= amount) {
-                balances[i] = Balance({
-                    maker: maker,
+                balances[i] = TokenBalance({
+                    owner: makerAddress,
                     balance: startingBalance.sub(amount)
                 });
                 return true;
             } else {
+                balances[i] = TokenBalance({
+                    owner: makerAddress,
+                    balance: startingBalance
+                });
                 return false;
             }
         }
