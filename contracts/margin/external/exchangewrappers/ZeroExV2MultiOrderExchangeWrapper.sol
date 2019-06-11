@@ -171,15 +171,53 @@ contract ZeroExV2MultiOrderExchangeWrapper is
         total.takerAmount = 0;
         total.makerAmount = desiredMakerToken;
 
+        // modify total
+        getExchangeCostInternal(
+            makerToken,
+            orders,
+            total
+        );
+
+        // require that all amount was bought
+        require(
+            total.makerAmount == 0,
+            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
+        );
+
+        // validate that max price will not be violated
+        validateTradePrice(
+            priceRatio,
+            total.takerAmount,
+            desiredMakerToken
+        );
+
+        // return the amount of taker token needed
+        return total.takerAmount;
+    }
+
+    // ============ Private Functions ============
+
+    /**
+     * Gets the amount of takerToken required to fill the amount of total.makerToken.
+     * Does not return a value, only modifies the values inside total.
+     */
+    function getExchangeCostInternal(
+        address makerToken,
+        Order[] memory orders,
+        TokenAmounts memory total
+    )
+        private
+        view
+    {
         // read exchange address from storage
-        IExchange exchange = IExchange(ZERO_EX_EXCHANGE);
+        IExchange zeroExExchange = IExchange(ZERO_EX_EXCHANGE);
 
         // for all orders
         for (uint256 i = 0; i < orders.length && total.makerAmount != 0; i++) {
             Order memory order = orders[i];
 
             // get order info
-            OrderInfo memory info = exchange.getOrderInfo(order);
+            OrderInfo memory info = zeroExExchange.getOrderInfo(order);
 
             // ignore unfillable orders
             if (info.orderStatus != uint8(OrderStatus.FILLABLE)) {
@@ -209,25 +247,7 @@ contract ZeroExV2MultiOrderExchangeWrapper is
             total.takerAmount = total.takerAmount.add(available.takerAmount);
             total.makerAmount = total.makerAmount.sub(available.makerAmount);
         }
-
-        // require that all amount was bought
-        require(
-            total.makerAmount == 0,
-            "ZeroExV2MultiOrderExchangeWrapper#getExchangeCost: Cannot buy enough maker token"
-        );
-
-        // validate that max price will not be violated
-        validateTradePrice(
-            priceRatio,
-            total.takerAmount,
-            desiredMakerToken
-        );
-
-        // return the amount of taker token needed
-        return total.takerAmount;
     }
-
-    // ============ Private Functions ============
 
     /**
      * Validates that a certain takerAmount and makerAmount are within the maxPrice bounds

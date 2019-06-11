@@ -7,6 +7,7 @@ const BigNumber = require('bignumber.js');
 
 const ZeroExV2MultiOrderExchangeWrapper = artifacts.require("ZeroExV2MultiOrderExchangeWrapper");
 const TestToken = artifacts.require("TestToken");
+const OwedToken = artifacts.require("TokenB");
 let { ZeroExExchangeV2, ZeroExProxyV2 } = require("../../../../contracts/ZeroExV2");
 
 const { zeroExV2MultiOrdersToBytes } = require('../../../../helpers/BytesHelper');
@@ -18,6 +19,7 @@ const {
   signV2Order,
 } = require('../../../../helpers/ZeroExV2Helper');
 const { toBytes32 } = require('../../../../helpers/BytesHelper');
+const { BIGNUMBERS } = require('../../../../helpers/Constants');
 
 const baseAmount = new BigNumber('1e18');
 
@@ -144,6 +146,30 @@ describe('ZeroExV2MultiOrderExchangeWrapper', () => {
         const expected = order1.takerAssetAmount.plus(order2.takerAssetAmount);
 
         expect(requiredtakerAssetAmount).to.be.bignumber.eq(expected);
+      });
+    });
+
+    contract('ZeroExV2MultiOrderExchangeWrapper', accounts => {
+      it('skips orders where the maker has not-enough tokens', async () => {
+        const {
+          exchangeWrapper
+        } = await setup(accounts);
+
+        const order1 = await createSignedV2SellOrder(accounts, {
+          makerAddress: accounts[9],
+          fees: false,
+        });
+        const order2 = await createSignedV2SellOrder(accounts, {
+          fees: false,
+        });
+        const amount = order1.makerAssetAmount;
+        const requiredtakerAssetAmount = await exchangeWrapper.getExchangeCost.call(
+          order1.makerTokenAddress,
+          order1.takerTokenAddress,
+          amount,
+          zeroExV2MultiOrdersToBytes([order1, order2])
+        );
+        expect(requiredtakerAssetAmount).to.be.bignumber.eq(order2.takerAssetAmount);
       });
     });
 
@@ -783,6 +809,14 @@ function priceToBytes(num, den) {
 async function setup(accounts) {
   const dydxProxy = accounts[3];
   const tradeOriginator = accounts[2];
+  const makerAddress = accounts[5];
+  const makerToken = await OwedToken.deployed();
+  await issueAndSetAllowance(
+    makerToken,
+    makerAddress,
+    BIGNUMBERS.MAX_UINT128,
+    ZeroExProxyV2.address
+  );
 
   const exchangeWrapper = await ZeroExV2MultiOrderExchangeWrapper.new(
     ZeroExExchangeV2.address,

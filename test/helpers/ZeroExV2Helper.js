@@ -22,13 +22,14 @@ async function createSignedV2SellOrder(
     makerAssetMultiplier = '6.382472',
     takerAssetMultiplier = '19.123475',
     expirationTimeSeconds = '100000000000000',
+    makerAddress = null,
   } = {}
 ) {
   let order = {
     type: ORDER_TYPE.ZERO_EX_V2,
     exchangeAddress: ZeroExExchangeV2.address,
 
-    makerAddress: accounts[5],
+    makerAddress: makerAddress || accounts[5],
     takerAddress: ADDRESSES.ZERO,
     feeRecipientAddress: feeRecipientAddress || accounts[6],
     senderAddress: ADDRESSES.ZERO,
