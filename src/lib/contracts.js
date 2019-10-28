@@ -40,6 +40,7 @@ export { default as ZeroExV1ExchangeWrapper }           from '../../build/contra
 export { default as ZeroExV2ExchangeWrapper }           from '../../build/contracts/ZeroExV2ExchangeWrapper.json';
 export { default as ZeroExV2MultiOrderExchangeWrapper } from '../../build/contracts/ZeroExV2MultiOrderExchangeWrapper.json';
 export { default as OpenDirectlyExchangeWrapper }       from '../../build/contracts/OpenDirectlyExchangeWrapper.json';
+export { default as SaiDaiExchangeWrapper }             from '../../build/contracts/SaiDaiExchangeWrapper.json';
 export { default as OasisV3SimpleExchangeWrapper }      from '../../build/contracts/OasisV3SimpleExchangeWrapper.json';
 export { default as OasisV2SimpleExchangeWrapper }      from '../../build/contracts/OasisV2SimpleExchangeWrapper.json';
 export { default as OasisV1SimpleExchangeWrapper }      from '../../build/contracts/OasisV1SimpleExchangeWrapper.json';
