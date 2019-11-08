@@ -19,6 +19,7 @@
 const { isDevNetwork, isMainNet, isKovan, MULTISIG } = require('./helpers');
 
 const OpenDirectlyExchangeWrapper = artifacts.require("OpenDirectlyExchangeWrapper");
+const SaiDaiExchangeWrapper = artifacts.require("SaiDaiExchangeWrapper");
 const OasisV1MatchingExchangeWrapper = artifacts.require("OasisV1MatchingExchangeWrapper");
 const OasisV3MatchingExchangeWrapper = artifacts.require("OasisV3MatchingExchangeWrapper");
 const OasisV1SimpleExchangeWrapper = artifacts.require("OasisV1SimpleExchangeWrapper");
@@ -61,6 +62,7 @@ const WETH9 = artifacts.require("WETH9");
 const TokenA = artifacts.require("TokenA");
 const TokenB = artifacts.require("TokenB");
 const FeeToken = artifacts.require("TokenC");
+const TestScdMcdMigration = artifacts.require("TestScdMcdMigration");
 
 // External contracts
 const { networks } = require("../truffle");
@@ -151,6 +153,16 @@ async function maybeDeploy0xV2(deployer, network) {
       await erc20Proxy.addAuthorizedAddress(ZeroExExchangeV2.address),
       await exchange.registerAssetProxy(ZeroExProxyV2.address)
     ]);
+  }
+}
+
+async function maybeDeployScdMcdMigration(deployer, network) {
+  if (isDevNetwork(network)) {
+    await deployer.deploy(
+      TestScdMcdMigration,
+      TokenA.address,
+      TokenB.address,
+    );
   }
 }
 
@@ -248,6 +260,34 @@ function getZRXAddress(network) {
   }
 
   throw "ZRX Not Found";
+}
+
+function getSCDAddress(network) {
+  if (isDevNetwork(network)) {
+    return TokenA.address;
+  } else if (isKovan(network)) {
+    return '0xc4375b7de8af5a38a93548eb8453a498222c4ff2';
+  } else if (isMainNet(network)) {
+    return '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359';
+  }
+
+  throw "SCD Not Found";
+}
+
+function getMCDAddress(network) {
+  if (isDevNetwork(network)) {
+    return TokenB.address;
+  }
+
+  throw "MCD Not Found";
+}
+
+function getScdMcdMigrationContractAddress(network) {
+  if (isDevNetwork(network)) {
+    return TestScdMcdMigration.address;
+  }
+
+  throw "ScdMcdMigrationContract Not Found";
 }
 
 function getSharedLoanTrustedMarginCallers(network) {
@@ -411,6 +451,12 @@ async function deploySecondLayer(deployer, network) {
       OpenDirectlyExchangeWrapper
     ),
     deployer.deploy(
+      SaiDaiExchangeWrapper,
+      getScdMcdMigrationContractAddress(network),
+      getSCDAddress(network),
+      getMCDAddress(network),
+    ),
+    deployer.deploy(
       ERC20PositionWithdrawer,
       getWethAddress(network)
     ),
@@ -489,7 +535,8 @@ async function doMigration(deployer, network) {
     maybeDeployOasisDexV1(deployer, network),
     maybeDeployOasisDexV2(deployer, network),
     maybeDeploy0xV1(deployer, network),
-    maybeDeploy0xV2(deployer, network)
+    maybeDeploy0xV2(deployer, network),
+    maybeDeployScdMcdMigration(deployer, network),
   ]);
   await deployBaseProtocol(deployer, network);
   await deploySecondLayer(deployer, network);
